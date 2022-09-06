@@ -27,58 +27,30 @@ package sun.jvm.hotspot.utilities;
 import java.io.PrintStream;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.types.*;
 
 /**
  * Decompression algorithm from utilities/unsigned5.hpp.
  */
 public class Unsigned5 {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
-
-  private static void initialize(TypeDataBase db) {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(!VM.getVM().isCore(), "Debug info not used in core build");
-    }
-
-    Integer bval = db.lookupIntConstant("UNSIGNED5::MAX_LENGTH", false);
-    int hval, lval, xval;
-    if (bval == null) {
-      // older vmStructs does not record this information; it's hardwired
-      System.out.println("[Unsigned5: defaulting BHLX values...]");//@@
-      bval = 5; hval = 64; lval = 192; xval = 0;
-    } else {
-      hval = db.lookupIntConstant("UNSIGNED5::H").intValue();
-      lval = db.lookupIntConstant("UNSIGNED5::L").intValue();
-      xval = db.lookupIntConstant("UNSIGNED5::X").intValue();
-    }
-    // push values to mutable fields:
-    MAX_LENGTH = bval;
-    L = lval;
-    X = xval;
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(hval == H, "hardwired to 64 == (1<<(lg_H=6))");
-      Assert.that(hval+lval+xval == 256, "code counts must balance to octet number");
-    }
-  }
-
   public static final int LogBitsPerByte = 3;
   public static final int BitsPerByte = 1 << 3;
 
   // Constants for UNSIGNED5 coding of Pack200
-  private static final int lg_H = 6;
-  private static final int H = 1<<lg_H;  // number of high codes (64)
+  private static final int lg_H = 6;     // log-base-2 of H (lg 64 == 6)
+  private static final int H = 1<<lg_H;  // number of "high" bytes (64)
+  private static final int X = 1;  // there is one excluded byte ('\0')
   private static final int MAX_b = (1<<BitsPerByte)-1;  // largest byte value
-  // these three can vary; vmStructs gets a crack at them:
-  public static int X = 1 /*or 0*/;  // there may be an excluded byte ('\0')
-  public static int L = (MAX_b+1)-X-H;  // number of low codes (192 or 191)
-  public static int MAX_LENGTH = 5;  // lengths are in [1..5]
+  private static final int L = (MAX_b+1)-X-H;  // number of "low" bytes (191)
+  public static final int MAX_LENGTH = 5;  // lengths are in [1..5]
+
+  // Note:  Previous versions of HotSpot used X=0 (not 1) and L=192 (not 191)
+  //
+  // Using this SA code on old versions of HotSpot, or older SA code
+  // on newer versions of HotSpot, will decode compressed data
+  // wrongly.  One might consider using vmStructs to communicate this
+  // particular change between the SA and VM, but it is mostly futile.
+  // There are a myriad of new changes in any version of HotSpot.  You
+  // have to use the right SA and VM versions together.
 
   public interface GetByte<ARR> {
       short getByte(ARR array, int position);

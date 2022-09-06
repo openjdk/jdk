@@ -26,10 +26,6 @@
 #include "utilities/unsigned5.hpp"
 #include "unittest.hpp"
 
-// T.I.L.
-// $ sh ./configure ... --with-gtest=<...>/googletest ...
-// $ make exploded-test TEST=gtest:unsigned5
-
 TEST_VM(unsigned5, max_encoded_in_length) {
   int maxlen = UNSIGNED5::MAX_LENGTH;
   EXPECT_EQ(maxlen, 5);
@@ -125,9 +121,6 @@ static int count_cases() {
   return case_count;
 }
 
-// try out a command from debug.cpp:
-extern "C" intptr_t u5p(intptr_t addr, intptr_t limit, int count);
-
 TEST_VM(unsigned5, transcode_multiple) {
   int case_count = count_cases();
   const int limit = 200;
@@ -155,7 +148,7 @@ TEST_VM(unsigned5, transcode_multiple) {
       buffer[i] = 0;
     }
     if (sublimit == limit-1) {
-      u5p((intptr_t)&buffer[0], (intptr_t)&buffer[sublimit], case_count + 1);
+      UNSIGNED5::print_count(case_count + 1, &buffer[0], sublimit);
     }
     //printf("encoded %d values in %d bytes: [[%s]]\n", count, length, buffer);
     // now read it all back
@@ -249,6 +242,19 @@ TEST_VM(unsigned5, reader) {
   std::string buf_s(buf, buflen);
   std::string arr_s(array, strlen(array));
   ASSERT_EQ(buf_s, arr_s);
+
+  // try printing:
+  {
+    char stbuf[1000];
+    stringStream st(stbuf, sizeof(stbuf)-1);
+    UNSIGNED5::Reader<char*,int> printer(buf);
+    printer.print_on(&st, 4, "(", ")");
+    std::string st_s(st.base(), st.size());
+    char buf2[sizeof(stbuf)];
+    sprintf(buf2, "(%d %d %d %d)", ints[0], ints[1], ints[2], ints[3]);
+    std::string exp_s(buf2, strlen(buf2));
+    ASSERT_EQ(exp_s, st_s);
+  }
 }
 
 // Here is some object code to look at if we want to do a manual

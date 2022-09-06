@@ -26,14 +26,58 @@
 #include "memory/allocation.hpp"
 #include "utilities/unsigned5.hpp"
 
+// Most of UNSIGNED5 is in the header file.
+// Let's put a few debug functions out-of-line here.
+
+// For the record, UNSIGNED5 was defined around 2001 and was first
+// published in the initial Pack200 spec.  See:
+// https://docs.oracle.com/en/java/javase/11/docs/specs/pack-spec.html
+// in Section 6.1, "Encoding of Small Whole Numbers".
+
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+
+// For debugging, even in product builds (see debug.cpp).
+template<typename ARR, typename OFF, typename GET>
+void UNSIGNED5::Reader<ARR,OFF,GET>::
+print_on(outputStream* st, int count,
+         const char* left,   // "U5: ["
+         const char* right   // "] (values=%d/length=%d)\n"
+         ) {
+  if (left == NULL)   left = "U5: [";
+  if (right == NULL)  right = "] (values=%d/length=%d)\n";
+  int printed = 0;
+  st->print("%s", left);
+  for (;;) {
+    if (count >= 0 && printed >= count)  break;
+    if (!has_next()) {
+      if ((_limit == 0 || _position < _limit) && _array[_position] == 0) {
+        st->print(" null");
+        ++_position;  // skip null byte
+        ++printed;
+        if (_limit != 0)  continue;  // keep going to explicit limit
+      }
+      break;
+    }
+    u4 value = next_uint();
+    if (printed == 0)
+      st->print("%d", value);
+    else
+      st->print(" %d", value);
+    ++printed;
+  }
+  st->print(right,
+            // these arguments may or may not be used in the format string:
+            printed,
+            (int)_position);
+}
+
+PRAGMA_DIAG_POP
+
 // Explicit instantiation for supported types.
-
-using AGS = UNSIGNED5::ArrayGetSet<u_char*,int>;
-
-template u4 UNSIGNED5::read_uint(u_char* array, int& offset_rw, int limit, AGS);
-template void UNSIGNED5::write_uint(uint32_t value, u_char* array, int& offset_rw, int limit, AGS);
-template int UNSIGNED5::check_length(u_char* array, int offset, int limit, AGS);
-
-//template uint32_t UNSIGNED5::read_uint(address array, size_t& offset_rw, size_t limit, AGS);
-//template void UNSIGNED5::write_uint(uint32_t value, address array, size_t& offset_rw, size_t limit, AGS);
-//template int UNSIGNED5::check_length(address array, size_t offset, size_t limit, AGS);
+template void UNSIGNED5::Reader<char*,int>::
+print_on(outputStream* st, int count, const char* left, const char* right);
+template void UNSIGNED5::Reader<u1*,int>::
+print_on(outputStream* st, int count, const char* left, const char* right);
+template void UNSIGNED5::Reader<address,size_t>::
+print_on(outputStream* st, int count, const char* left, const char* right);

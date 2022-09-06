@@ -81,8 +81,9 @@ CompressedWriteStream::CompressedWriteStream(int initial_size) : CompressedStrea
 void CompressedWriteStream::grow() {
   int nsize = _size * 2;
   const int min_expansion = UNSIGNED5::MAX_LENGTH;
-  if (nsize < min_expansion*2)
+  if (nsize < min_expansion*2) {
     nsize = min_expansion*2;
+  }
   u_char* _new_buffer = NEW_RESOURCE_ARRAY(u_char, nsize);
   memcpy(_new_buffer, _buffer, _position);
   _buffer = _new_buffer;

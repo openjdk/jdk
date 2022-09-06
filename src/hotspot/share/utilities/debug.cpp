@@ -660,37 +660,23 @@ extern "C" JNIEXPORT u4 u5decode(intptr_t addr) {
   return UNSIGNED5::read_uint(arr, off, lim);
 }
 
-// check and decode a series of u5 values
-// return the address after the last decoded byte
-// if limit is non-zero stop before limit
-// if count is non-negative stop when count is reached
-// if count is negative stop on null (works kind of like strlen)
-extern "C" JNIEXPORT intptr_t u5p(intptr_t addr, intptr_t limit, int count) {
+// Sets up a Reader from addr/limit and prints count items.
+// A limit of zero means no set limit; stop at the first null
+// or after count items are printed.
+// A count of zero or less is converted to -1, which means
+// there is no limit on the count of items printed; the
+// printing stops when an null is printed or at limit.
+// See documentation for UNSIGNED5::Reader::print(count).
+extern "C" JNIEXPORT intptr_t u5p(intptr_t addr,
+                                  intptr_t limit,
+                                  int count) {
   Command c("u5p");
   u1* arr = (u1*)addr;
   if (limit && limit < addr)  limit = addr;
-  size_t lim = !limit ? 0 : (size_t)(limit - addr);
-  UNSIGNED5::Reader<u1*, size_t> r(arr, lim);
-  int printed = 0;
-  tty->print("U5: [");
-  for (;;) {
-    if (count >= 0 && printed >= count)  break;
-    if (!r.has_next()) {
-      if ((r.position() < lim || lim == 0) && arr[r.position()] == 0) {
-        tty->print(" null");
-        r.set_position(r.position()+1);  // skip null byte
-        ++printed;
-        if (lim != 0)  continue;  // keep going to explicit limit
-      }
-      break;
-    }
-    u4 value = r.next_uint();
-    tty->print(" %d", value);
-    ++printed;
-  }
-  tty->print_cr(" ] (values=%d/length=%d)",
-                printed, (int)r.position());
-  return addr + r.position();
+  size_t lim = !limit ? 0 : (limit - addr);
+  size_t endpos = UNSIGNED5::print_count(count > 0 ? count : -1,
+                                         arr, (size_t)0, lim);
+  return addr + endpos;
 }
 
 

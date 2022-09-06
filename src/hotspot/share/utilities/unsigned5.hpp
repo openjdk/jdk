@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 
 // Low-level interface for [de-]coding compressed uint32_t (u4) values.
 
@@ -81,8 +82,6 @@
 // length limit.
 
 class UNSIGNED5 : AllStatic {
-  friend class VMStructs;  // for constants B=MAX_LENGTH,H,L,X
-
  private:
   // Math constants for the modified UNSIGNED5 coding of Pack200
   static const int lg_H  = 6;        // log-base-2 of H (lg 64 == 6)
@@ -288,6 +287,26 @@ class UNSIGNED5 : AllStatic {
     OFF limit() { return _limit; }
     OFF position() { return _position; }
     void set_position(OFF position) { _position = position; }
+
+    // For debugging, even in product builds (see debug.cpp).
+    // Checks and decodes a series of u5 values from the reader.
+    // Sets position just after the last decoded byte or null byte.
+    // If this reader has a limit, stop before that limit.
+    // If this reader has no limit, stop after the first null byte.
+    // In any case, if count is non-negative, print no more than
+    // count items (uint32_t values or "null").
+    // A negative count means we stop only at the limit or null,
+    // kind of like strlen.
+    void print(int count = -1) { print_on(tty, count); }
+
+    // The character strings are printed before and after the
+    // series of values (which are separated only by spaces).
+    // If they are null they default to something like "U5:[ "
+    // and " ] (values=%d/length=%d)\n".
+    // The %d formats are for the number of printed items and
+    // their length in bytes, if you want to see that also.
+    void print_on(outputStream* st, int count = -1,
+                  const char* left = NULL, const char* right = NULL);
   };
 
   // Writer example use
@@ -302,17 +321,20 @@ class UNSIGNED5 : AllStatic {
     ARR& _array;
     OFF* const _limit_ptr;
     OFF _position;
-    void limit_init() {
-      assert(_limit_ptr == NULL || *_limit_ptr != 0, "limit required");
-    }
   public:
     Writer(const ARR& array)
-      : _array(const_cast<ARR&>(array)), _limit_ptr(NULL)
-        // note:  if _limit_ptr is NULL, the ARR& is never reassigned
-    { limit_init(); _position = 0; }
+      : _array(const_cast<ARR&>(array)), _limit_ptr(NULL), _position(0) {
+      // Note: if _limit_ptr is NULL, the ARR& is never reassigned,
+      // because has_limit is false.  So the const_cast here is safe.
+      assert(!has_limit(), "this writer cannot be growable");
+    }
     Writer(ARR& array, OFF& limit)
-      : _array(array), _limit_ptr(&limit)
-    { limit_init(); _position = 0; }
+      : _array(array), _limit_ptr(&limit), _position(0) {
+      // Writable array argument can be rewritten by accept_grow.
+      // So we need a legitimate (non-zero) limit to work with.
+      // As a result, a writer's initial buffer must not be empty.
+      assert(limit() != 0, "limit required");
+    }
     void accept_uint(uint32_t value) {
       const OFF lim = has_limit() ? limit() : 0;
       UNSIGNED5::write_uint(value, _array, _position, lim, SET());
@@ -378,5 +400,20 @@ class UNSIGNED5 : AllStatic {
   // use this to better compress 32-bit values that might be negative
   static uint32_t encode_sign(int32_t value) { return ((uint32_t)value << 1) ^ (value >> 31); }
   static int32_t decode_sign(uint32_t value) { return (value >> 1) ^ -(int32_t)(value & 1); }
+
+  template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
+  static OFF print(ARR array, OFF offset = 0, OFF limit = 0,
+                   GET get = GET()) {
+    print_count(-1, array, offset, limit, get);
+  }
+  template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
+  static OFF print_count(int count,
+                         ARR array, OFF offset = 0, OFF limit = 0,
+                         GET get = GET()) {
+    Reader<ARR,OFF,GET> r(array, offset);
+
+    r.print_on(tty, count);
+    return r.position();
+  }
 };
 #endif // SHARE_UTILITIES_UNSIGNED5_HPP

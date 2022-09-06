@@ -37,15 +37,6 @@ public class CompressedReadStream extends CompressedStream {
 
   public CompressedReadStream(Address buffer, int position) {
     super(buffer, position);
-    if (false) {  // manually enable to get more data
-        // Example output: -
-        // java.lang.ref.ReferenceQueue.remove(long) @bci=36 >> CRS on
-        // 0x0000000800b984f0+75: U5: [ 23 null null null null null
-        // null null 135 175 102 null 7 null null null 103 132 184
-        // null ] (values=20/length=20)
-        System.out.print(">> CRS on "+buffer+"+"+position+": ");
-        dump(20);  // dump 20 bytes of stuff at the top of each stream
-    }
   }
 
   public boolean readBoolean() {
