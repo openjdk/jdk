@@ -186,12 +186,12 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register store_addr,
                                                   Register new_val,
                                                   Register thread,
-                                                  Register tmp,
+                                                  Register tmp1,
                                                   Register tmp2) {
   assert(thread == rthread, "must be");
-  assert_different_registers(store_addr, new_val, thread, tmp, tmp2,
+  assert_different_registers(store_addr, new_val, thread, tmp1, tmp2,
                              rscratch1);
-  assert(store_addr != noreg && new_val != noreg && tmp != noreg
+  assert(store_addr != noreg && new_val != noreg && tmp1 != noreg
          && tmp2 != noreg, "expecting a register");
 
   Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
@@ -206,9 +206,9 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   // Does store cross heap regions?
 
-  __ eor(tmp, store_addr, new_val);
-  __ lsr(tmp, tmp, HeapRegion::LogOfHRGrainBytes);
-  __ cbz(tmp, done);
+  __ eor(tmp1, store_addr, new_val);
+  __ lsr(tmp1, tmp1, HeapRegion::LogOfHRGrainBytes);
+  __ cbz(tmp1, done);
 
   // crosses regions, storing NULL?
 
@@ -216,7 +216,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   // storing region crossing non-NULL, is card already dirty?
 
-  const Register card_addr = tmp;
+  const Register card_addr = tmp1;
 
   __ lsr(card_addr, store_addr, CardTable::card_shift());
 
