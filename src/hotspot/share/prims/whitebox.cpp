@@ -25,9 +25,10 @@
 #include "precompiled.hpp"
 #include <new>
 #include "cds.h"
+#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -1992,7 +1993,7 @@ WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreSharedStringsMapped(JNIEnv* env))
-  return HeapShared::closed_regions_mapped();
+  return ArchiveHeapLoader::closed_regions_mapped();
 WB_END
 
 WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz))
@@ -2017,7 +2018,7 @@ WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
-  return HeapShared::open_regions_mapped();
+  return ArchiveHeapLoader::open_regions_mapped();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))

@@ -1172,7 +1172,7 @@ typedef struct {
     </tr>
     <xsl:for-each select="//capabilityfield">
       <xsl:variable name="capa" select="@id"/>
-      <xsl:variable name="events" select="//event[capabilities/required/@id=$capa]"/>
+      <xsl:variable name="events" select="//event[capabilities/required/@id=$capa and not(ancestor::elide)]"/>
       <xsl:if test="count($events)">
         <tr>
           <th scope="row">

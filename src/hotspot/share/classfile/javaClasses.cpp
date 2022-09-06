@@ -25,7 +25,8 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -55,6 +56,7 @@
 #include "oops/klass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -894,7 +896,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (HeapShared::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1321,7 +1323,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  if (HeapShared::is_mapped()) {
+  if (ArchiveHeapLoader::is_mapped()) {
     assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
   }
   assert(as_Klass(m) == k, "must be");
