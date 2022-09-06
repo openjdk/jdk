@@ -40,63 +40,13 @@ import static java.nio.file.LinkOption.*;
 import java.nio.file.attribute.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 
 public class CopyAndMove {
-    // File system types that support copy-on-write (CoW)
-    // for testing cloning / reflink on Linux
-    private static final Set<String> COW_TYPES =
-        Set.of("bcachefs", "btrfs", "ocfs2", "xfs");
-
     static final Random rand = RandomFactory.getRandom();
-    private static boolean testPosixAttributes = false;
-
     static boolean heads() { return rand.nextBoolean(); }
-
-    /**
-     * Returns the secondary test directory as a path name string.
-     * If the system property "test.dir" is definied it is returned.
-     * Otherwise, if the platform is not Linux, the current directory
-     * "." is returned. If the platform is Linux, then the first
-     * located top level directory which supports CoW is returned. If
-     * there is no such directory then "." is returned.
-     *
-     * @return the path string of the secondary test directory
-     */
-    private static final String getTestDir() {
-        final String dot = ".";
-        if (!Platform.isLinux()) {
-            return System.getProperty("test.dir", dot);
-        }
-
-        String testDir = System.getProperty("test.dir");
-        if (testDir != null) {
-            return testDir;
-        }
-
-        final Path dotPath = Path.of(dot);
-        try {
-            if (COW_TYPES.contains(getFileStore(dotPath).type().toLowerCase())) {
-                return dot;
-            }
-        } catch (IOException ignored) {
-        }
-
-        Spliterator<FileStore> spfs =
-            FileSystems.getDefault().getFileStores().spliterator();
-        Stream<FileStore> sfs = StreamSupport.stream(spfs, false);
-        return sfs.filter(fs -> !fs.isReadOnly() &&
-                                COW_TYPES.contains(fs.type().toLowerCase()))
-                  .map(fs -> fs.toString().split(" ")[0])
-                  .map(s -> Path.of(s))
-                  .filter(d -> Files.exists(d) && Files.isDirectory(d))
-                  .findFirst()
-                  .orElse(dotPath)
-                  .toString();
-    }
+    private static boolean testPosixAttributes = false;
 
     public static void main(String[] args) throws Exception {
         Path dir1 = TestUtil.createTemporaryDirectory();
@@ -111,14 +61,14 @@ public class CopyAndMove {
 
             // Use test.dir to define second directory if possible as it might
             // be a different volume/file system and so improve test coverage.
-            String testDir = getTestDir();
+            String testDir = System.getProperty("test.dir", ".");
             Path dir2 = TestUtil.createTemporaryDirectory(testDir);
             FileStore fileStore2 = getFileStore(dir2);
+            printDirInfo("dir2", dir2, fileStore2);
 
             // If different type (format) from dir1, re-do same directory tests
             if (!fileStore1.type().equals(fileStore2.type())) {
                 try {
-                    printDirInfo("dir2", dir2, fileStore2);
                     testPosixAttributes =
                         fileStore2.supportsFileAttributeView("posix");
                     testCopyFileToFile(dir2, dir2, TestUtil.supportsLinks(dir2));
@@ -136,7 +86,6 @@ public class CopyAndMove {
                 }
                 boolean testSymbolicLinks =
                     TestUtil.supportsLinks(dir1) && TestUtil.supportsLinks(dir2);
-                printDirInfo("dir2", dir2, fileStore2);
                 testPosixAttributes = fileStore1.supportsFileAttributeView("posix") &&
                                       fileStore2.supportsFileAttributeView("posix");
                 testCopyFileToFile(dir1, dir2, testSymbolicLinks);
