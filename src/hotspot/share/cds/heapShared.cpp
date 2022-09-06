@@ -1528,6 +1528,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name =  SymbolTable::new_symbol(info->klass_name);
     TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name);
+    ResourceMark rm; // for stringStream::as_string() etc.
 
 #ifndef PRODUCT
     bool is_test_class = (ArchiveHeapTestClass != NULL) && (strcmp(info->klass_name, ArchiveHeapTestClass) == 0);
@@ -1659,10 +1660,8 @@ bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
         //   (B) test classes which must be in the unnamed package of the unnamed module.
         // So if we see a '/' character in the class name, it must be in (A);
         // otherwise it must be in (B).
-        for (int j = 0; j < name->utf8_length(); j++) {
-          if (name->char_at(j) == '/') {
-            return false; // (A)
-          }
+        if (name->index_of_at(0, "/", 1)  >= 0) {
+          return false; // (A)
         }
 
         return true; // (B)
