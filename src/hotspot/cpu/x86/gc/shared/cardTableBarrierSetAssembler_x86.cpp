@@ -112,7 +112,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
     // entry and that entry is not properly handled by the relocation code.
     AddressLiteral cardtable((address)byte_map_base, relocInfo::none);
     Address index(noreg, obj, Address::times_1);
-    card_addr = __ as_Address(ArrayAddress(cardtable, index));
+    card_addr = __ as_Address(ArrayAddress(cardtable, index), rscratch1);
   }
 
   int dirty = CardTable::dirty_card_val();

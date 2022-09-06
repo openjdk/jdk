@@ -42,6 +42,13 @@ on:
         required: false
         type: string
         default: '[ "debug", "release" ]'
+      gcc-major-version:
+        required: true
+        type: string
+      gcc-package-suffix:
+        required: false
+        type: string
+        default: ''
       apt-gcc-version:
         required: true
         type: string
@@ -101,8 +108,8 @@ jobs:
           fi
           sudo apt-get update
           sudo apt-get install --only-upgrade apt
-          sudo apt-get install gcc-${{ inputs.apt-gcc-version }} g++-${{ inputs.apt-gcc-version }} libxrandr-dev${{ steps.arch.outputs.suffix }} libxtst-dev${{ steps.arch.outputs.suffix }} libcups2-dev${{ steps.arch.outputs.suffix }} libasound2-dev${{ steps.arch.outputs.suffix }} ${{ inputs.apt-extra-packages }}
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
+          sudo apt-get install gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }}=${{ inputs.apt-gcc-version }} g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }}=${{ inputs.apt-gcc-version }} libxrandr-dev${{ steps.arch.outputs.suffix }} libxtst-dev${{ steps.arch.outputs.suffix }} libcups2-dev${{ steps.arch.outputs.suffix }} libasound2-dev${{ steps.arch.outputs.suffix }} ${{ inputs.apt-extra-packages }}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Configure'
         run: >

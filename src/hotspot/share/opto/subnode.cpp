@@ -38,6 +38,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/moveBits.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1619,14 +1620,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
   if (cop == Op_CmpU &&
       cmp1_op != Op_LoadRange &&
-      ((_test._test == BoolTest::lt &&
+      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
         cmp2->find_int_con(-1) == 1) ||
-       (_test._test == BoolTest::le &&
+       ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
         cmp2->find_int_con(-1) == 0))) {
     Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
-    return new BoolNode(ncmp, BoolTest::eq);
+    return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
 
   // Change (arraylength <= 0) or (arraylength == 0)
@@ -1900,13 +1902,6 @@ const Type* SqrtFNode::Value(PhaseGVN* phase) const {
   return TypeF::make( (float)sqrt( (double)f ) );
 }
 
-static jlong reverse_bits(jlong val) {
-  jlong res = ((val & 0xF0F0F0F0F0F0F0F0L) >> 4) | ((val & 0x0F0F0F0F0F0F0F0F) << 4);
-  res = ((res & 0xCCCCCCCCCCCCCCCCL) >> 2) | ((res & 0x3333333333333333L) << 2);
-  res = ((res & 0xAAAAAAAAAAAAAAAAL) >> 1) | ((res & 0x5555555555555555L) << 1);
-  return res;
-}
-
 const Type* ReverseINode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   if (t1 == Type::TOP) {
@@ -1917,7 +1912,7 @@ const Type* ReverseINode::Value(PhaseGVN* phase) const {
     jint res = reverse_bits(t1int->get_con());
     return TypeInt::make(res);
   }
-  return t1int;
+  return bottom_type();
 }
 
 const Type* ReverseLNode::Value(PhaseGVN* phase) const {
@@ -1927,10 +1922,10 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
   }
   const TypeLong* t1long = t1->isa_long();
   if (t1long && t1long->is_con()) {
-    jint res = reverse_bits(t1long->get_con());
+    jlong res = reverse_bits(t1long->get_con());
     return TypeLong::make(res);
   }
-  return t1long;
+  return bottom_type();
 }
 
 Node* ReverseINode::Identity(PhaseGVN* phase) {

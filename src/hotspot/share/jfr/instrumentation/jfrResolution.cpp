@@ -78,20 +78,32 @@ void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
   if (IS_METHOD_BLESSED(sender)) {
     return;
   }
+#if INCLUDE_JVMCI
+  // JVMCI compiler is doing linktime resolution
+  if (sender->method_holder()->name() == vmSymbols::jdk_vm_ci_hotspot_CompilerToVM()) {
+    if (sender->name()->equals("lookupMethodInPool")) {
+      return;
+    }
+  }
+#endif
   THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), link_error_msg);
+}
+
+static inline bool is_compiler_linking_event_writer(const Symbol* holder, const Symbol* name) {
+  static const Symbol* const event_writer_factory_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriterFactory();
+  assert(event_writer_factory_klass_name != nullptr, "invariant");
+  if (holder != event_writer_factory_klass_name) {
+    return false;
+  }
+  static const Symbol* const event_writer_method_name = vmSymbols::getEventWriter_name();
+  assert(event_writer_method_name != nullptr, "invariant");
+  return name == event_writer_method_name;
 }
 
 static inline bool is_compiler_linking_event_writer(const ciKlass * holder, const ciMethod * target) {
   assert(holder != nullptr, "invariant");
   assert(target != nullptr, "invariant");
-  static const Symbol* const event_writer_factory_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriterFactory();
-  assert(event_writer_factory_klass_name != nullptr, "invariant");
-  if (holder->name()->get_symbol() != event_writer_factory_klass_name) {
-    return false;
-  }
-  static const Symbol* const event_writer_method_name = vmSymbols::getEventWriter_name();
-  assert(event_writer_method_name != nullptr, "invariant");
-  return target->name()->get_symbol() == event_writer_method_name;
+  return is_compiler_linking_event_writer(holder->name()->get_symbol(), target->name()->get_symbol());
 }
 
 #ifdef COMPILER1
@@ -108,6 +120,15 @@ void JfrResolution::on_c1_resolution(const GraphBuilder * builder, const ciKlass
 void JfrResolution::on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target) {
   if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(parse->method()->get_Method())) {
     parse->C->record_failure(link_error_msg);
+  }
+}
+#endif
+
+#if INCLUDE_JVMCI
+// JVMCI
+void JfrResolution::on_jvmci_resolution(const Method* caller, const Method* target, TRAPS) {
+  if (is_compiler_linking_event_writer(target->method_holder()->name(), target->name()) && !IS_METHOD_BLESSED(caller)) {
+    THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), link_error_msg);
   }
 }
 #endif

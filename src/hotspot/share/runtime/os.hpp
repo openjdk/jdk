@@ -27,6 +27,7 @@
 
 #include "jvm_md.h"
 #include "metaprogramming/integralConstant.hpp"
+#include "runtime/osInfo.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
@@ -256,7 +257,7 @@ class os: AllStatic {
   static jlong  javaTimeNanos();
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
-  static void   run_periodic_checks();
+  static void   run_periodic_checks(outputStream* st);
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -371,7 +372,7 @@ class os: AllStatic {
   // OS interface to Virtual Memory
 
   // Return the default page size.
-  static int    vm_page_size();
+  static int vm_page_size() { return OSInfo::vm_page_size(); }
 
   // The set of page sizes which the VM is allowed to use (may be a subset of
   //  the page sizes actually available on the platform).
@@ -412,7 +413,8 @@ class os: AllStatic {
                                                   const char* base,
                                                   const size_t size);
 
-  static int    vm_allocation_granularity();
+  static int vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
+
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
@@ -517,7 +519,7 @@ class os: AllStatic {
   enum ThreadType {
     vm_thread,
     gc_thread,         // GC thread
-    java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
+    java_thread,       // Java, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
     asynclog_thread,   // dedicated to flushing logs

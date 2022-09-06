@@ -323,7 +323,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // BugId 4454115: A read from a MappedByteBuffer can fault
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         if ((nm != NULL && nm->has_unsafe_access()) || (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc))) {
           unsafe_access = true;
@@ -331,12 +331,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       } else if (sig == SIGSEGV &&
                  MacroAssembler::uses_implicit_null_check(info->si_addr)) {
           // Determination of interpreter/vtable stub/compiled code null exception
-          CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+          CodeBlob* cb = CodeCache::find_blob(pc);
           if (cb != NULL) {
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
           }
-      } else if (sig == SIGILL && *(int *)pc == NativeInstruction::zombie_illegal_instruction) {
-        // Zombie
+      } else if (sig == SIGILL && *(int *)pc == NativeInstruction::not_entrant_illegal_instruction) {
+        // Not entrant
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }
     } else if ((thread->thread_state() == _thread_in_vm ||

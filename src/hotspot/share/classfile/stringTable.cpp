@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -74,13 +75,13 @@ inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
   if (UseCompressedOops) {
     assert(sizeof(narrowOop) == sizeof(offset), "must be");
     narrowOop v = CompressedOops::narrow_oop_cast(offset);
-    return HeapShared::decode_from_archive(v);
+    return ArchiveHeapLoader::decode_from_archive(v);
   } else {
     intptr_t dumptime_oop = (uintptr_t)offset;
     assert(dumptime_oop != 0, "null strings cannot be interned");
     intptr_t runtime_oop = dumptime_oop +
                            (intptr_t)FileMapInfo::current_info()->header()->heap_begin() +
-                           (intptr_t)HeapShared::runtime_delta();
+                           (intptr_t)ArchiveHeapLoader::runtime_delta();
     return (oop)cast_to_oop(runtime_oop);
   }
 }
@@ -212,18 +213,12 @@ class StringTableLookupOop : public StackObj {
   }
 };
 
-static size_t ceil_log2(size_t val) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < val; ++ret);
-  return ret;
-}
-
 void StringTable::create_table() {
   size_t start_size_log_2 = ceil_log2(StringTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(stringtable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                          _current_size, start_size_log_2);
-  _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN);
+  _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
   _oop_storage = OopStorageSet::create_weak("StringTable Weak", mtSymbol);
   _oop_storage->register_num_dead_callback(&gc_notification);
 }
@@ -503,7 +498,7 @@ bool StringTable::do_rehash() {
 
   // We use current size, not max size.
   size_t new_size = _local_table->get_size_log2(Thread::current());
-  StringTableHash* new_table = new StringTableHash(new_size, END_SIZE, REHASH_LEN);
+  StringTableHash* new_table = new StringTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
   if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
@@ -837,7 +832,7 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
     _shared_table.reset();
-  } else if (!HeapShared::are_archived_strings_available()) {
+  } else if (!ArchiveHeapLoader::are_archived_strings_available()) {
     _shared_table.reset();
   }
 
@@ -867,7 +862,7 @@ public:
 // _shared_table invalid. Therefore, we proactively copy all the shared
 // strings into the _local_table, which can deal with oop relocation.
 void StringTable::transfer_shared_strings_to_local_table() {
-  assert(HeapShared::is_loaded(), "must be");
+  assert(ArchiveHeapLoader::is_loaded(), "must be");
   EXCEPTION_MARK;
 
   // Reset _shared_table so that during the transfer, StringTable::intern()
