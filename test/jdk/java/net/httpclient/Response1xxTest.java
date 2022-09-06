@@ -31,7 +31,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -75,6 +77,7 @@ public class Response1xxTest {
         http2Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost", false, 0));
         http2Server.addHandler(new Http2Handler(), "/http2/102");
         http2Server.addHandler(new Http2Handler(), "/http2/103");
+        http2Server.addHandler(new OnlyInformationalHandler(), "/http2/only-informational");
         http2RequestURIBase = "http://" + http2Server.serverAuthority() + "/http2";
         http2Server.start();
         System.out.println("Started HTTP2 server at " + http2Server.getAddress());
@@ -229,6 +232,24 @@ public class Response1xxTest {
         }
     }
 
+    private static class OnlyInformationalHandler implements HttpServerAdapters.HttpTestHandler {
+
+        @Override
+        public void handle(final HttpServerAdapters.HttpTestExchange exchange) throws IOException {
+            // we only send informational response and then return
+            for (int i = 0; i < 3; i++) {
+                exchange.sendResponseHeaders(102, -1);
+                System.out.println("Sent 102 response code from H2 server");
+                // wait for a while before sending again
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    // just return
+                    System.err.println("Handler thread interrupted");
+                }
+            }
+        }
+    }
 
     /**
      * Tests that when a HTTP/1.1 server sends intermediate 1xx response codes and then the final
@@ -245,9 +266,11 @@ public class Response1xxTest {
                 new URI(http1RequestURIBase + "/test/bar")};
         for (final URI requestURI : requestURIs) {
             final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
-            System.out.println("Issuing request to " + request);
+            System.out.println("Issuing request to " + requestURI);
             final HttpResponse<String> response = client.send(request,
                     HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            Assert.assertEquals(response.version(), HttpClient.Version.HTTP_1_1,
+                    "Unexpected HTTP version in response");
             Assert.assertEquals(response.statusCode(), 200, "Unexpected response code");
             Assert.assertEquals(response.body(), EXPECTED_RSP_BODY, "Unexpected response body");
         }
@@ -268,11 +291,35 @@ public class Response1xxTest {
                 new URI(http2RequestURIBase + "/103")};
         for (final URI requestURI : requestURIs) {
             final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
-            System.out.println("Issuing request to " + request);
+            System.out.println("Issuing request to " + requestURI);
             final HttpResponse<String> response = client.send(request,
                     HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            Assert.assertEquals(response.version(), HttpClient.Version.HTTP_2,
+                    "Unexpected HTTP version in response");
             Assert.assertEquals(response.statusCode(), 200, "Unexpected response code");
             Assert.assertEquals(response.body(), EXPECTED_RSP_BODY, "Unexpected response body");
         }
+    }
+
+
+    /**
+     * Tests that when a request is issued with a specific request timeout and the server
+     * responds with intermediate 1xx response code but doesn't respond with a final response within
+     * the timeout duration, then the application fails with a request timeout
+     */
+    @Test
+    public void test1xxRequestTimeout() throws Exception {
+        final HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .proxy(HttpClient.Builder.NO_PROXY).build();
+        final URI requestURI = new URI(http2RequestURIBase + "/only-informational");
+        final Duration requestTimeout = Duration.ofSeconds(15);
+        final HttpRequest request = HttpRequest.newBuilder(requestURI).timeout(requestTimeout)
+                .build();
+        System.out.println("Issuing request to " + requestURI);
+        // we expect the request to timeout
+        Assert.assertThrows(HttpTimeoutException.class, () -> {
+            client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        });
     }
 }
