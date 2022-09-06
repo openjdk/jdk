@@ -587,8 +587,23 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     @Override
-    public synchronized long transferTo(OutputStream out) throws IOException {
+    public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
+        if (lock != null) {
+            lock.lock();
+            try {
+                return implTransferTo(out);
+            } finally {
+                lock.unlock();
+            }
+        } else {
+            synchronized (this) {
+                return implTransferTo(out);
+            }
+        }
+    }
+
+    private long implTransferTo(OutputStream out) throws IOException {
         int avail = count - pos;
         if (avail > 0) {
             out.write(getBufIfOpen(), pos, avail);
