@@ -1898,7 +1898,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
   frame fr = stub_frame.sender(&reg_map);
 
   // Log a message
-  Events::log_deopt_message(current, "Uncommon trap: trap_request=" PTR32_FORMAT " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
+  Events::log_deopt_message(current, "Uncommon trap: trap_request=" INT32_FORMAT_X_0 " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
               trap_request, p2i(fr.pc()), fr.pc() - fr.cb()->code_begin());
 
   {

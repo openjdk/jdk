@@ -22,9 +22,11 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include <type_traits>
 #include "unittest.hpp"
 
@@ -215,4 +217,67 @@ TEST(globalDefinitions, array_size) {
     static_assert(6 == ARRAY_SIZE(test_array), "must be");
   }
 
+}
+
+#define check_format(format, value, expected)                  \
+  do {                                                         \
+    ResourceMark rm;                                           \
+    stringStream out;                                          \
+    out.print((format), (value));                              \
+    const char* result = out.as_string();                      \
+    EXPECT_EQ(strcmp(result, (expected)), 0) << "Failed with"  \
+        << " format '"   << (format)   << "'"                  \
+        << " value '"    << (value)    << "'"                  \
+        << " result '"   << result     << "'"                  \
+        << " expected '" << (expected) << "'";                 \
+  } while (false)
+
+TEST(globalDefinitions, format_specifiers) {
+  check_format(INT8_FORMAT_X_0,        (int8_t)0x01,      "0x01");
+  check_format(UINT8_FORMAT_X_0,       (uint8_t)0x01u,    "0x01");
+
+  check_format(INT16_FORMAT_X_0,       (int16_t)0x0123,   "0x0123");
+  check_format(UINT16_FORMAT_X_0,      (uint16_t)0x0123u, "0x0123");
+
+  check_format(INT32_FORMAT,           123,               "123");
+  check_format(INT32_FORMAT_X_0,       0x123,             "0x00000123");
+  check_format(INT32_FORMAT_W(5),      123,               "  123");
+  check_format(INT32_FORMAT_W(-5),     123,               "123  ");
+  check_format(UINT32_FORMAT,          123u,              "123");
+  check_format(UINT32_FORMAT_X_0,      0x123u,            "0x00000123");
+  check_format(UINT32_FORMAT_W(5),     123u,              "  123");
+  check_format(UINT32_FORMAT_W(-5),    123u,              "123  ");
+
+  check_format(INT64_FORMAT,           (int64_t)123,      "123");
+  check_format(INT64_FORMAT_X,         (int64_t)0x123,    "0x123");
+  check_format(INT64_FORMAT_X_0,       (int64_t)0x123,    "0x0000000000000123");
+  check_format(INT64_FORMAT_W(5),      (int64_t)123,      "  123");
+  check_format(INT64_FORMAT_W(-5),     (int64_t)123,      "123  ");
+
+  check_format(UINT64_FORMAT,          (uint64_t)123,     "123");
+  check_format(UINT64_FORMAT_X,        (uint64_t)0x123,   "0x123");
+  check_format(UINT64_FORMAT_X_0,      (uint64_t)0x123,   "0x0000000000000123");
+  check_format(UINT64_FORMAT_W(5),     (uint64_t)123,     "  123");
+  check_format(UINT64_FORMAT_W(-5),    (uint64_t)123,     "123  ");
+
+  check_format(SSIZE_FORMAT,           (ssize_t)123,      "123");
+  check_format(SSIZE_FORMAT_W(5),      (ssize_t)123,      "  123");
+  check_format(SSIZE_FORMAT_W(-5),     (ssize_t)123,      "123  ");
+  check_format(SIZE_FORMAT,            (size_t)123u,      "123");
+  check_format(SIZE_FORMAT_X,          (size_t)0x123u,    "0x123");
+  check_format(SIZE_FORMAT_W(5),       (size_t)123u,      "  123");
+  check_format(SIZE_FORMAT_W(-5),      (size_t)123u,      "123  ");
+
+  check_format(INTX_FORMAT,            (intx)123,         "123");
+  check_format(INTX_FORMAT_X,          (intx)0x123,       "0x123");
+  check_format(INTX_FORMAT_W(5),       (intx)123,         "  123");
+  check_format(INTX_FORMAT_W(-5),      (intx)123,         "123  ");
+
+  check_format(UINTX_FORMAT,           (uintx)123u,       "123");
+  check_format(UINTX_FORMAT_X,         (uintx)0x123u,     "0x123");
+  check_format(UINTX_FORMAT_W(5),      (uintx)123u,       "  123");
+  check_format(UINTX_FORMAT_W(-5),     (uintx)123u,       "123  ");
+
+  check_format(INTPTR_FORMAT,          (intptr_t)0x123,   "0x" LP64_ONLY("00000000") "00000123");
+  check_format(PTR_FORMAT,             (uintptr_t)0x123,  "0x" LP64_ONLY("00000000") "00000123");
 }

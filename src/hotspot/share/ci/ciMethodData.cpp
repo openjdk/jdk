@@ -722,7 +722,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
     // We could use INTPTR_FORMAT here but that's zero justified
     // which makes comparing it with the SA version of this output
     // harder. data()'s element type is intptr_t.
-    out->print(" " INTPTRNZ_FORMAT, data()[i]);
+    out->print(" " INTX_FORMAT_X, data()[i]);
   }
 
   // The MDO contained oop references as ciObjects, so scan for those

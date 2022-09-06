@@ -95,20 +95,8 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   public WindbgDebuggerLocal(MachineDescription machDesc,
                             boolean useCache) throws DebuggerException {
     this.machDesc = machDesc;
-    utils = new DebuggerUtilities(machDesc.getAddressSize(), machDesc.isBigEndian()) {
-           public void checkAlignment(long address, long alignment) {
-             // Need to override default checkAlignment because we need to
-             // relax alignment constraints on Windows/x86
-             if ( (address % alignment != 0)
-                &&(alignment != 8 || address % 4 != 0)) {
-                throw new UnalignedAddressException(
-                        "Trying to read at address: "
-                      + addressValueToString(address)
-                      + " with alignment: " + alignment,
-                        address);
-             }
-           }
-        };
+    utils = new DebuggerUtilities(machDesc.getAddressSize(), machDesc.isBigEndian(),
+                                  machDesc.supports32bitAlignmentOf64bitTypes());
 
     String cpu = PlatformInfo.getCPU();
     if (cpu.equals("x86")) {
@@ -267,22 +255,6 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   public long getThreadIdFromSysId(long sysId) throws DebuggerException {
     requireAttach();
     return getThreadIdFromSysId0(sysId);
-  }
-
-  //----------------------------------------------------------------------
-  // Overridden from DebuggerBase because we need to relax alignment
-  // constraints on x86
-
-  public long readJLong(long address)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    // FIXME: allow this to be configurable. Undesirable to add a
-    // dependency on the runtime package here, though, since this
-    // package should be strictly underneath it.
-    //    utils.checkAlignment(address, jlongSize);
-    utils.checkAlignment(address, jintSize);
-    byte[] data = readBytes(address, jlongSize);
-    return utils.dataToJLong(data, jlongSize);
   }
 
   //--------------------------------------------------------------------------------
