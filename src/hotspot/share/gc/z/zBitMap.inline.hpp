@@ -47,26 +47,19 @@ inline bool ZBitMap::par_set_bit_pair_strong(idx_t bit, bool& inc_live) {
   verify_index(bit);
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t pair_mask = bit_mask_pair(bit);
-  bm_word_t old_val = *addr;
 
-  do {
-    const bm_word_t new_val = old_val | pair_mask;
-    if (new_val == old_val) {
-      // Someone else beat us to it
-      inc_live = false;
-      return false;
-    }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val);
-    if (cur_val == old_val) {
-      // Success
-      const bm_word_t marked_mask = bit_mask(bit);
-      inc_live = !(old_val & marked_mask);
-      return true;
-    }
+  const bm_word_t old_val = *addr;
+  const bm_word_t new_val = old_val | pair_mask;
+  if (new_val == old_val) {
+    // Someone else beat us to it
+    inc_live = false;
+    return false;
+  }
 
-    // The value changed, retry
-    old_val = cur_val;
-  } while (true);
+  const bm_word_t cur_val = Atomic::fetch_and_or(addr, pair_mask);
+  const bm_word_t marked_mask = bit_mask(bit);
+  inc_live = !(cur_val & marked_mask);
+  return inc_live;
 }
 
 inline bool ZBitMap::par_set_bit_pair(idx_t bit, bool finalizable, bool& inc_live) {
