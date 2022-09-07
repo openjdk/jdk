@@ -21,10 +21,12 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraintParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
 import compiler.lib.ir_framework.shared.TestFormat;
 
 import java.util.ArrayList;
@@ -32,7 +34,7 @@ import java.util.List;
 
 /**
  * This class parses a {@link IR#counts()} attribute. It returns a list of {@link RawCountsConstraint} which does not have
- * any default regexes defined in {@link IRNode} replaced, yet. This is done later in the {@link RawCountsConstraintParser}.
+ * any default regexes defined in {@link IRNode} replaced, yet. This is done later in the {@link RawConstraintParser}.
  */
 public class CountsAttributeParser extends CheckAttributeParser<RawCountsConstraint> {
 
@@ -50,8 +52,8 @@ public class CountsAttributeParser extends CheckAttributeParser<RawCountsConstra
         String rawNodeString = checkAttributeIterator.getNextElement();
         String userProvidedPostfix = getUserProvidedPostfix(checkAttributeIterator);
         String countString = getCountString(rawNodeString, checkAttributeIterator);
-        rawConstraintResultList.add(new RawCountsConstraint(rawNodeString, userProvidedPostfix,
-                                                             countString, checkAttributeIterator.getCurrentConstraintIndex()));
+        rawConstraintResultList.add(new RawCountsConstraint(rawNodeString, userProvidedPostfix, countString,
+                                                            checkAttributeIterator.getCurrentConstraintIndex()));
     }
 
     private static String getCountString(String rawNodeString, CheckAttributeIterator checkAttributeIterator) {

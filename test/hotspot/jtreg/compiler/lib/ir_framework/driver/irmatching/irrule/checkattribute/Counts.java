@@ -21,10 +21,11 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.shared.Comparison;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 
 import java.util.List;
 
@@ -34,29 +35,22 @@ import java.util.List;
  * @see IR#counts()
  * @see CheckAttribute
  */
-public class Counts extends CheckAttribute<CountsConstraint> {
+public class Counts extends CheckAttribute {
 
-    public Counts(List<CountsConstraint> constraints) {
+    public Counts(List<Constraint> constraints) {
         super(constraints);
     }
 
-    @Override
-    protected CheckAttributeMatchResult createMatchResult() {
-        return new CheckAttributeMatchResult(CheckAttributeKind.COUNTS);
-    }
 
     @Override
-    protected void checkConstraint(List<ConstraintFailure> constraintFailures, CountsConstraint constraint,
-                                   String phaseCompilationOutput) {
-        List<String> countsMatches = getMatchedNodes(constraint, phaseCompilationOutput);
-        Comparison<Integer> comparison = constraint.getComparison();
-        if (!comparison.compare(countsMatches.size())) {
-            constraintFailures.add(createRegexFailure(countsMatches, constraint));
+    public CheckAttributeMatchResult match() {
+        CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeKind.COUNTS);
+        for (Constraint constraint : constraints) {
+            ConstraintFailure constraintFailure = constraint.match();
+            if (constraintFailure != null) {
+                checkAttributeMatchResult.addFailure(constraintFailure);
+            }
         }
-    }
-
-
-    private CountsConstraintFailure createRegexFailure(List<String> countsMatches, CountsConstraint constraint) {
-        return new CountsConstraintFailure(constraint, countsMatches);
+        return checkAttributeMatchResult;
     }
 }

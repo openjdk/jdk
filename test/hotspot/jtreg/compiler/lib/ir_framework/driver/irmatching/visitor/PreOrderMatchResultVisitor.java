@@ -27,10 +27,11 @@ import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
 
 public class PreOrderMatchResultVisitor implements MatchResultVisitor {
 
@@ -67,6 +68,11 @@ public class PreOrderMatchResultVisitor implements MatchResultVisitor {
     public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
         action.doAction(compilePhaseIRRuleMatchResult);
         compilePhaseIRRuleMatchResult.acceptChildren(this);
+    }
+
+    @Override
+    public void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
+        action.doAction(noCompilePhaseCompilationResult);
     }
 
     @Override

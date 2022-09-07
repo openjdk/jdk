@@ -26,10 +26,12 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CountsAttributeParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.FailOnAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.*;
 import compiler.lib.ir_framework.shared.TestFormat;
 
@@ -78,73 +80,56 @@ public class CompilePhaseIRRuleBuilder {
     }
 
     private void createCompilePhaseIRRulesForDefault() {
-        Map<CompilePhase, ConstraintLists> map = new HashMap<>();
-        collectFailOnConstraints(map);
-        collectCountsConstraints(map);
-        createCompilePhaseIRRules(map);
+        Map<CompilePhase, ConstraintLists> constraints = collectConstraintsForPhases();
+        constraints.forEach((compilePhase, constraintLists) ->
+                                    createCompilePhaseIRRule(constraintLists.getFailOnConstraints(),
+                                                             constraintLists.getCountsConstraints(),
+                                                             compilePhase));
     }
 
-    private void collectFailOnConstraints(Map<CompilePhase, ConstraintLists> map) {
-        List<Constraint> failOnConstraints = RawFailOnConstraintParser.parse(rawFailOnConstraints, CompilePhase.DEFAULT);
-        if (failOnConstraints != null) {
-            Map<CompilePhase, List<Constraint>> sortedPhases =
-                    failOnConstraints.stream().collect(Collectors.groupingBy(Constraint::getCompilePhase));
-            sortedPhases.forEach((phase, constraintsList) ->
-                                         map.put(phase, ConstraintLists.createWithFailOnConstraints(constraintsList)));
-        }
+    private Map<CompilePhase, ConstraintLists> collectConstraintsForPhases() {
+        List<Constraint> failOnConstraints = RawConstraintParser.parse(rawFailOnConstraints, CompilePhase.DEFAULT, irMethod);
+        List<Constraint> countsConstraints = RawConstraintParser.parse(rawCountsConstraints, CompilePhase.DEFAULT, irMethod);
+        Map<CompilePhase, ConstraintLists> constraintsMap = new HashMap<>();
+        createConstraintLists(constraintsMap, failOnConstraints, true);
+        createConstraintLists(constraintsMap, countsConstraints, false);
+        return constraintsMap;
     }
 
-    private void collectCountsConstraints(Map<CompilePhase, ConstraintLists> map) {
-        List<CountsConstraint> countsConstraints = RawCountsConstraintParser.parse(rawCountsConstraints, CompilePhase.DEFAULT);
-        if (countsConstraints != null) {
-            Map<CompilePhase, List<CountsConstraint>> sortedPhases =
-                    countsConstraints.stream().collect(Collectors.groupingBy(Constraint::getCompilePhase));
-            sortedPhases.forEach((phase, constraintsList) -> {
-                ConstraintLists constraintLists = map.get(phase);
-                if (constraintLists != null) {
-                    constraintLists.setCountsConstraints(constraintsList);
-                } else {
-                    map.put(phase, ConstraintLists.createWithCountsConstraints(constraintsList));
-                }
-            });
-        }
-    }
-
-    private void createCompilePhaseIRRules(Map<CompilePhase, ConstraintLists> map) {
-        map.forEach((compilePhase, constraintLists) ->
-                            createCompilePhaseIRRule(constraintLists.getFailOnConstraints(),
-                                                     constraintLists.getCountsConstraints(),
-                                                     compilePhase));
-    }
-
-
-    private FailOn createFailOn(List<Constraint> constraintsList) {
-        if (constraintsList != null) {
-            return new FailOn(constraintsList);
-        } else {
-            return null;
-        }
-    }
-
-    private Counts createCounts(List<CountsConstraint> constraintList) {
-        if (constraintList != null) {
-            return new Counts(constraintList);
-        } else {
-            return null;
-        }
+    private void createConstraintLists(Map<CompilePhase, ConstraintLists> constraintsMap, List<Constraint> constraints,
+                                       boolean isFailOn) {
+        Map<CompilePhase, List<Constraint>> constraintsByCompilePhase =
+                constraints.stream().collect(Collectors.groupingBy(Constraint::getCompilePhase));
+        constraintsByCompilePhase.forEach((phase, constraintList) -> {
+            ConstraintLists constraintLists = constraintsMap.get(phase);
+            if (constraintLists == null) {
+                constraintLists = new ConstraintLists();
+                constraintsMap.put(phase, constraintLists);
+            }
+            if (isFailOn) {
+                constraintLists.setFailOnConstraints(constraintList);
+            } else {
+                constraintLists.setCountsConstraints(constraintList);
+            }
+        });
     }
 
     private void createCompilePhaseIRRule(CompilePhase compilePhase) {
-        List<Constraint> failOnConstraints = RawFailOnConstraintParser.parse(rawFailOnConstraints, compilePhase);
-        List<CountsConstraint> countsConstraints = RawCountsConstraintParser.parse(rawCountsConstraints, compilePhase);
+        List<Constraint> failOnConstraints = RawConstraintParser.parse(rawFailOnConstraints, compilePhase, irMethod);
+        List<Constraint> countsConstraints = RawConstraintParser.parse(rawCountsConstraints, compilePhase, irMethod);
         createCompilePhaseIRRule(failOnConstraints, countsConstraints, compilePhase);
     }
 
-    private void createCompilePhaseIRRule(List<Constraint> failOnConstraints, List<CountsConstraint> countsConstraints,
+    private void createCompilePhaseIRRule(List<Constraint> failOnConstraints, List<Constraint> countsConstraints,
                                           CompilePhase compilePhase) {
-        FailOn failOn = createFailOn(failOnConstraints);
-        Counts counts = createCounts(countsConstraints);
-        compilePhaseIRRules.add(new CompilePhaseIRRule(compilePhase, failOn, counts, irMethod.getOutput(compilePhase)));
+        String compilationOutput = irMethod.getOutput(compilePhase);
+        if (compilationOutput.isEmpty()) {
+            compilePhaseIRRules.add(new CompilePhaseNoCompilationIRRule(compilePhase));
+        } else {
+            FailOn failOn = failOnConstraints.isEmpty() ? null : new FailOn(failOnConstraints, compilationOutput);
+            Counts counts = countsConstraints.isEmpty() ? null : new Counts(countsConstraints);
+            compilePhaseIRRules.add(new CompilePhaseIRRule(compilePhase, failOn, counts));
+        }
     }
 }
 

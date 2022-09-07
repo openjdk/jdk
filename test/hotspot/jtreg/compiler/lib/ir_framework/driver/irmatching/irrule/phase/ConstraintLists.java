@@ -24,36 +24,27 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraint;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class ConstraintLists {
-    private final List<Constraint> failOnConstraints;
-    private List<CountsConstraint> countsConstraints;
-
-    private ConstraintLists(List<Constraint> failOnConstraints, List<CountsConstraint> countsConstraints) {
-        this.failOnConstraints = failOnConstraints;
-        this.countsConstraints = countsConstraints;
-    }
-
-    public static ConstraintLists createWithFailOnConstraints(List<Constraint> failOnConstraints) {
-        return new ConstraintLists(failOnConstraints, null);
-    }
-
-    public static ConstraintLists createWithCountsConstraints(List<CountsConstraint> countsConstraints) {
-        return new ConstraintLists(null, countsConstraints);
-    }
+    private List<Constraint> failOnConstraints;
+    private List<Constraint> countsConstraints;
 
     public List<Constraint> getFailOnConstraints() {
-        return failOnConstraints;
+        return failOnConstraints == null ? new ArrayList<>() : failOnConstraints;
     }
 
-    public List<CountsConstraint> getCountsConstraints() {
-        return countsConstraints;
+    public void setFailOnConstraints(List<Constraint> failOnConstraints) {
+        this.failOnConstraints = failOnConstraints;
     }
 
-    public void setCountsConstraints(List<CountsConstraint> countsConstraints) {
+    public List<Constraint> getCountsConstraints() {
+        return countsConstraints == null ? new ArrayList<>() : countsConstraints;
+    }
+
+    public void setCountsConstraints(List<Constraint> countsConstraints) {
         this.countsConstraints = countsConstraints;
     }
 }

@@ -27,10 +27,11 @@ import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
 
 public interface MatchResultVisitor {
     default void visit(TestClassResult testClassResult) {}
@@ -38,6 +39,7 @@ public interface MatchResultVisitor {
     default void visit(NotCompiledResult notCompiledResult) {}
     default void visit(IRRuleMatchResult irRuleMatchResult) {}
     default void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {}
+    default void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {}
     default void visit(CheckAttributeMatchResult checkAttributeMatchResult) {}
     default void visit(FailOnConstraintFailure failOnConstraintFailure) {}
     default void visit(CountsConstraintFailure countsConstraintFailure) {}

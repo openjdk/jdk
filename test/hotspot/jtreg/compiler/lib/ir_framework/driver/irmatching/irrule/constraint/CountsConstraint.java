@@ -25,7 +25,10 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.shared.Comparison;
+
+import java.util.List;
 
 /**
  * This class represents a single counts constraint of a {@link Counts} attribute of an IR rule for a compile phase.
@@ -39,12 +42,22 @@ import compiler.lib.ir_framework.shared.Comparison;
 public class CountsConstraint extends Constraint {
     private final Comparison<Integer> comparison;
 
-    public CountsConstraint(String regex, int index, CompilePhase compilePhase, Comparison<Integer> comparison) {
-        super(regex, index, compilePhase);
+    public CountsConstraint(String regex, int index, CompilePhase compilePhase, Comparison<Integer> comparison,
+                            String compilationOutput) {
+        super(regex, index, compilePhase, compilationOutput);
         this.comparison = comparison;
     }
 
     public Comparison<Integer> getComparison() {
         return comparison;
+    }
+
+    @Override
+    public ConstraintFailure match() {
+        List<String> countsMatches = getMatchedNodes(compilationOutput);
+        if (!comparison.compare(countsMatches.size())) {
+            return new CountsConstraintFailure(this, countsMatches);
+        }
+        return null;
     }
 }

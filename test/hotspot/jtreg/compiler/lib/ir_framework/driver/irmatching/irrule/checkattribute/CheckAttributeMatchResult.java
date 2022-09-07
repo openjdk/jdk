@@ -21,11 +21,13 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,7 +36,7 @@ import java.util.List;
  * @see CheckAttribute
  */
 public class CheckAttributeMatchResult implements MatchResult {
-    private List<ConstraintFailure> constraintFailures = null;
+    private final List<ConstraintFailure> constraintFailures = new ArrayList<>();
     private final CheckAttributeKind checkAttributeKind;
 
     CheckAttributeMatchResult(CheckAttributeKind checkAttributeKind) {
@@ -47,11 +49,11 @@ public class CheckAttributeMatchResult implements MatchResult {
 
     @Override
     public boolean fail() {
-        return constraintFailures != null;
+        return !constraintFailures.isEmpty();
     }
 
-    public void setFailures(List<ConstraintFailure> constraintFailures) {
-        this.constraintFailures = constraintFailures;
+    public void addFailure(ConstraintFailure constraintFailure) {
+        constraintFailures.add(constraintFailure);
     }
 
     public void accept(MatchResultVisitor visitor) {

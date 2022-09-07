@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser;
 
 import compiler.lib.ir_framework.IR;
 

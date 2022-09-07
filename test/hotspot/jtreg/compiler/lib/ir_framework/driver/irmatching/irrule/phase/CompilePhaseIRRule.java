@@ -26,10 +26,10 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttribute;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -45,34 +45,24 @@ public class CompilePhaseIRRule implements Matchable {
     protected final CompilePhase compilePhase;
     protected final FailOn failOn;
     protected final Counts counts;
-    private final String compilationOutput;
 
-    public CompilePhaseIRRule(CompilePhase compilePhase, FailOn failOn, Counts counts, String compilationOutput) {
+    public CompilePhaseIRRule(CompilePhase compilePhase, FailOn failOn, Counts counts) {
         this.compilePhase = compilePhase;
         this.failOn = failOn;
         this.counts = counts;
-        this.compilationOutput = compilationOutput;
     }
 
     @Override
     public CompilePhaseIRRuleMatchResult match() {
-        if (compilationOutput.isEmpty()) {
-            return CompilePhaseIRRuleMatchResult.createNoCompilationOutput(compilePhase);
-        } else {
-            return matchOnCompilationOutput();
-        }
-    }
-
-    private CompilePhaseIRRuleMatchResult matchOnCompilationOutput() {
-        CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult = CompilePhaseIRRuleMatchResult.create(compilePhase);
+        CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult = new CompilePhaseIRRuleMatchResult(compilePhase);
         matchCheckAttribute(failOn, compilePhaseIRRuleMatchResult::setFailOnMatchResult);
         matchCheckAttribute(counts, compilePhaseIRRuleMatchResult::setCountsMatchResult);
         return compilePhaseIRRuleMatchResult;
     }
 
-    private void matchCheckAttribute(CheckAttribute<?> checkAttribute, Consumer<CheckAttributeMatchResult> consumer) {
+    private void matchCheckAttribute(CheckAttribute checkAttribute, Consumer<CheckAttributeMatchResult> consumer) {
         if (checkAttribute != null) {
-            CheckAttributeMatchResult matchResult = checkAttribute.check(compilationOutput);
+            CheckAttributeMatchResult matchResult = checkAttribute.match();
             if (matchResult.fail()) {
                 consumer.accept(matchResult);
             }

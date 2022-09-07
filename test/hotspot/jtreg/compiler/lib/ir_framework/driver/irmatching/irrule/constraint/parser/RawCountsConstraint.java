@@ -24,7 +24,15 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
+import compiler.lib.ir_framework.shared.Comparison;
+import compiler.lib.ir_framework.shared.ComparisonConstraintParser;
+import compiler.lib.ir_framework.shared.TestFormatException;
 
 /**
  * Class to store a single raw counts constraint (i.e. placeholder strings as defined in {@link IRNode} not replaced, yet).
@@ -37,7 +45,27 @@ public class RawCountsConstraint extends RawConstraint {
         this.countString = countString;
     }
 
-    public String getCountString() {
-        return countString;
+    public Constraint parse(CompilePhase compilePhase, IRMethod irMethod) {
+        compilePhase = getCompilePhase(compilePhase);
+        String regex = parseRegex(compilePhase);
+        Comparison<Integer> comparison = parseComparison();
+        return new CountsConstraint(regex, constraintIndex, compilePhase, comparison, irMethod.getOutput(compilePhase));
+    }
+
+    private Comparison<Integer> parseComparison() {
+        try {
+            return ComparisonConstraintParser.parse(countString, RawCountsConstraint::parsePositiveInt);
+        } catch (TestFormatException e) {
+            throw new TestFormatException(e.getMessage() + ", node \"" + rawNodeString
+                                          + "\", in count string");
+        }
+    }
+
+    public static int parsePositiveInt(String s) {
+        int result = Integer.parseInt(s);
+        if (result < 0) {
+            throw new NumberFormatException("cannot be negative");
+        }
+        return result;
     }
 }

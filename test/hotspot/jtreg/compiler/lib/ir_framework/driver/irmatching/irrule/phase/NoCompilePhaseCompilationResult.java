@@ -24,54 +24,27 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
  * This class represents an IR matching result of an IR rule applied on a compile phase.
  *
  * @see IRRule
  */
-public class CompilePhaseIRRuleMatchResult implements MatchResult {
-    private final CompilePhase compilePhase;
-    private CheckAttributeMatchResult failOnFailures = null;
-    private CheckAttributeMatchResult countsFailures = null;
+public class NoCompilePhaseCompilationResult extends CompilePhaseIRRuleMatchResult {
 
-    public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase) {
-        this.compilePhase = compilePhase;
+    public NoCompilePhaseCompilationResult(CompilePhase compilePhase) {
+        super(compilePhase);
     }
 
     @Override
     public boolean fail() {
-        return failOnFailures != null || countsFailures != null;
-    }
-
-    public CompilePhase getCompilePhase() {
-        return compilePhase;
-    }
-
-    public void setFailOnMatchResult(CheckAttributeMatchResult failOnFailures) {
-        this.failOnFailures = failOnFailures;
-    }
-
-    public void setCountsMatchResult(CheckAttributeMatchResult countsFailures) {
-        this.countsFailures = countsFailures;
+        return true;
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
-    }
-
-    @Override
-    public void acceptChildren(MatchResultVisitor visitor) {
-        if (failOnFailures != null) {
-            failOnFailures.accept(visitor);
-        }
-        if (countsFailures != null) {
-            countsFailures.accept(visitor);
-        }
     }
 }

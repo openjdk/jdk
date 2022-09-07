@@ -21,17 +21,20 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraintParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawFailOnConstraint;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * This class parses a {@link IR#failOn} attribute. It returns a list of {@link RawConstraint} which does not have
- * any default {@link IRNode} placeholders replaced, yet. This is done later in the {@link RawFailOnConstraintParser}.
+ * any default {@link IRNode} placeholders replaced, yet. This is done later in the {@link RawConstraintParser}.
  */
 public class FailOnAttributeParser extends CheckAttributeParser<RawConstraint> {
 
@@ -48,7 +51,7 @@ public class FailOnAttributeParser extends CheckAttributeParser<RawConstraint> {
                                        CheckAttributeIterator checkAttributeIterator) {
         String rawNodeString = checkAttributeIterator.getNextElement();
         String userProvidedPostfix = getUserProvidedPostfix(checkAttributeIterator);
-        rawConstraintResultList.add(new RawConstraint(rawNodeString, userProvidedPostfix,
-                                                      checkAttributeIterator.getCurrentConstraintIndex()));
+        rawConstraintResultList.add(new RawFailOnConstraint(rawNodeString, userProvidedPostfix,
+                                                            checkAttributeIterator.getCurrentConstraintIndex()));
     }
 }

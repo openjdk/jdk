@@ -21,30 +21,27 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
-
-import java.util.ArrayList;
-import java.util.List;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 
 /**
- * Base class to parse a raw constraint to replace the placeholder strings from {@link IRNode} by actual default
- * regexes depending on the compilation phase.
+ * This class represents an IR rule of an IR method for a specific compile phase. It contains a fully parsed (i.e.
+ * all placeholder strings of {@link IRNode} replaced and composite nodes merged) {@link FailOn} and {@link Counts}
+ * attribute which are ready to be IR matched against.
  *
- * @see RawConstraint
+ * @see CompilePhaseNoCompilationIRRule
  */
-public class RawConstraintParser {
-    public static List<Constraint> parse(List<? extends RawConstraint> rawConstraints, CompilePhase compilePhase,
-                                         IRMethod irMethod) {
-        List<Constraint> constraintResultList = new ArrayList<>();
-        for (RawConstraint rawConstraint : rawConstraints) {
-            constraintResultList.add(rawConstraint.parse(compilePhase, irMethod));
-        }
-        return constraintResultList;
+public class CompilePhaseNoCompilationIRRule extends CompilePhaseIRRule {
+    public CompilePhaseNoCompilationIRRule(CompilePhase compilePhase) {
+        super(compilePhase, null, null);
+    }
+
+    @Override
+    public NoCompilePhaseCompilationResult match() {
+        return new NoCompilePhaseCompilationResult(compilePhase);
     }
 }

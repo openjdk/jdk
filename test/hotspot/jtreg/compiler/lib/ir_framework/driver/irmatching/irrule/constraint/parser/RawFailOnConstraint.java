@@ -23,38 +23,25 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
 
 /**
  * Class to store a single raw constraint (i.e. placeholder strings as defined in {@link IRNode} not replaced, yet).
  * Can directly be used for failOn attributes while counts attributes use the subclass {@link RawCountsConstraint}.
  */
-public class RawConstraint {
-    private final String rawNodeString;
-    private final String userPostfixString; // For composite IR nodes
-    private final int constraintIndex;
-    private final boolean compositeNode;
+public class RawFailOnConstraint extends RawConstraint {
 
-    public RawConstraint(String rawNodeString, String userPostfixString, int constraintIndex) {
-        this.rawNodeString = rawNodeString;
-        this.userPostfixString = userPostfixString;
-        this.constraintIndex = constraintIndex;
-        this.compositeNode = userPostfixString != null;
+    public RawFailOnConstraint(String rawNodeString, String userPostfixString, int constraintIndex) {
+        super(rawNodeString, userPostfixString, constraintIndex);
     }
 
-    public String getRawNodeString() {
-        return rawNodeString;
-    }
-
-    public String getUserPostfixString() {
-        return userPostfixString;
-    }
-
-    public int getConstraintIndex() {
-        return constraintIndex;
-    }
-
-    public boolean hasCompositeNode() {
-        return compositeNode;
+    public FailOnConstraint parse(CompilePhase compilePhase, IRMethod irMethod) {
+        compilePhase = getCompilePhase(compilePhase);
+        String regex = parseRegex(compilePhase);
+        return new FailOnConstraint(regex, constraintIndex, compilePhase, irMethod.getOutput(compilePhase));
     }
 }

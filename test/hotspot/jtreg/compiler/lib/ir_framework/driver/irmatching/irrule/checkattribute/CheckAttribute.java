@@ -21,17 +21,14 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.MatchResult;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * Base class representing a parsed check attribute of an IR rule for a compile phase.
@@ -42,32 +39,13 @@ import java.util.stream.Collectors;
  *
  * @see IR
  */
-abstract public class CheckAttribute<C extends Constraint> {
-    private final List<C> constraints;
+abstract public class CheckAttribute implements Matchable {
+    protected final List<Constraint> constraints;
 
-    public CheckAttribute(List<C> constraints) {
+    public CheckAttribute(List<Constraint> constraints) {
         this.constraints = constraints;
     }
 
-    public CheckAttributeMatchResult check(String phaseCompilationOutput) {
-        CheckAttributeMatchResult matchResult = createMatchResult();
-        List<ConstraintFailure> constraintFailures = new ArrayList<>();
-        for (C constraint : constraints) {
-            checkConstraint(constraintFailures, constraint, phaseCompilationOutput);
-        }
-        if (!constraintFailures.isEmpty()) {
-            matchResult.setFailures(constraintFailures);
-        }
-        return matchResult;
-    }
-
-    abstract protected CheckAttributeMatchResult createMatchResult();
-
-    abstract void checkConstraint(List<ConstraintFailure> constraintFailures, C constraint, String phaseCompilationOutput);
-
-    protected List<String> getMatchedNodes(Constraint constraint, String phaseCompilationOutput) {
-        Pattern pattern = Pattern.compile(constraint.getRegex());
-        Matcher matcher = pattern.matcher(phaseCompilationOutput);
-        return matcher.results().map(MatchResult::group).collect(Collectors.toList());
-    }
+    @Override
+    abstract public CheckAttributeMatchResult match();
 }

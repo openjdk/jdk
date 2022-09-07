@@ -26,9 +26,9 @@ package compiler.lib.ir_framework.flag;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.CountsAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.FailOnAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CountsAttributeParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.FailOnAttributeParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
 import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
@@ -89,10 +89,11 @@ class MethodCompilePhaseCollector {
         }
     }
 
-    private void addDefaultPhasesForNonEmptyConstraint(String[] checkAttribute, Function<String[], List<? extends RawConstraint>> parseMethod) {
+    private void addDefaultPhasesForNonEmptyConstraint(String[] checkAttribute,
+                                                       Function<String[], List<? extends RawConstraint>> parseMethod) {
         List<? extends RawConstraint> constraints = parseMethod.apply(checkAttribute);
         for (RawConstraint constraint : constraints) {
-            compilePhases.add(IRNodeMappings.getDefaultPhaseForIRNode(constraint.getRawNodeString()));
+            compilePhases.add(constraint.getCompilePhaseForDefault());
         }
     }
 }

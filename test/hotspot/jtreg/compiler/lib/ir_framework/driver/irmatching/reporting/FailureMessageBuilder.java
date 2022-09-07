@@ -1,11 +1,12 @@
 package compiler.lib.ir_framework.driver.irmatching.reporting;
 
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
@@ -68,18 +69,22 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
 
     @Override
     public void doAction(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+        appendCompilePhaseIRRule(compilePhaseIRRuleMatchResult);
+    }
+
+    private void appendCompilePhaseIRRule(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
         msg.append(getIndentation(indentation + 2))
            .append("> Phase \"").append(compilePhaseIRRuleMatchResult.getCompilePhase().getName()).append("\":")
            .append(System.lineSeparator());
-        if (compilePhaseIRRuleMatchResult.hasNoCompilationOutput()) {
-            msg.append(buildNoCompilationOutputMessage());
-        }
     }
 
-    private String buildNoCompilationOutputMessage() {
-        return getIndentation(indentation + 4) + "- NO compilation output found for this phase! Make sure this "
-               + "phase is emitted or remove it from the list of compile phases in the @IR rule to match on."
-               + System.lineSeparator();
+    @Override
+    public void doAction(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
+        appendCompilePhaseIRRule(noCompilePhaseCompilationResult);
+        msg.append(getIndentation(indentation + 4))
+           .append("- NO compilation output found for this phase! Make sure this phase is emitted or remove it from ")
+           .append("the list of compile phases in the @IR rule to match on.")
+           .append(System.lineSeparator());
     }
 
     @Override

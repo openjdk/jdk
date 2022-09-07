@@ -21,30 +21,23 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
 
-import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Base class to parse a raw constraint to replace the placeholder strings from {@link IRNode} by actual default
- * regexes depending on the compilation phase.
- *
- * @see RawConstraint
- */
-public class RawConstraintParser {
-    public static List<Constraint> parse(List<? extends RawConstraint> rawConstraints, CompilePhase compilePhase,
-                                         IRMethod irMethod) {
-        List<Constraint> constraintResultList = new ArrayList<>();
-        for (RawConstraint rawConstraint : rawConstraints) {
-            constraintResultList.add(rawConstraint.parse(compilePhase, irMethod));
+public class FailOnConstraint extends Constraint {
+    public FailOnConstraint(String regex, int index, CompilePhase compilePhase, String compilationOutput) {
+        super(regex, index, compilePhase, compilationOutput);
+    }
+
+    @Override
+    public ConstraintFailure match() {
+        List<String> matchedNodes = getMatchedNodes(compilationOutput);
+        if (!matchedNodes.isEmpty()) {
+            return new FailOnConstraintFailure(this, matchedNodes);
         }
-        return constraintResultList;
+        return null;
     }
 }

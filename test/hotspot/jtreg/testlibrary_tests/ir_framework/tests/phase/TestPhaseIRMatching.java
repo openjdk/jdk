@@ -31,10 +31,11 @@ import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeKind;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeKind;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
 import compiler.lib.ir_framework.driver.irmatching.visitor.PreOrderMatchResultVisitor;
 import jdk.test.lib.Asserts;
@@ -95,7 +96,7 @@ public class TestPhaseIRMatching {
         } else {
             foundFailures.forEach(System.out::println);
         }
-        Asserts.fail( "did not find the same failures");
+        Asserts.fail("did not find the same failures");
     }
 
 }
@@ -363,7 +364,6 @@ class FailureBuilder implements MatchResultAction {
     private String methodName;
     private int ruleId;
     private CompilePhase compilePhase;
-    private boolean noCompilation = false;
 
     private final Set<Failure> failures = new HashSet<>();
 
@@ -392,18 +392,18 @@ class FailureBuilder implements MatchResultAction {
     @Override
     public void doAction(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
         compilePhase = compilePhaseIRRuleMatchResult.getCompilePhase();
-        noCompilation = compilePhaseIRRuleMatchResult.hasNoCompilationOutput();
-        if (noCompilation) {
-            failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeKind.FAIL_ON, -1));
-        }
+    }
+
+    @Override
+    public void doAction(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
+        CompilePhase compilePhase = noCompilePhaseCompilationResult.getCompilePhase();
+        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeKind.FAIL_ON, -1));
     }
 
     @Override
     public void doAction(FailOnConstraintFailure failOnConstraintFailure) {
-        if (!noCompilation) {
-            failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeKind.FAIL_ON,
-                                     failOnConstraintFailure.getConstraintIndex()));
-        }
+        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeKind.FAIL_ON,
+                                 failOnConstraintFailure.getConstraintIndex()));
     }
 
     @Override

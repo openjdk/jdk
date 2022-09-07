@@ -21,10 +21,12 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -37,37 +39,37 @@ import java.util.stream.Collectors;
  * @see IR#failOn()
  * @see CheckAttribute
  */
-public class FailOn extends CheckAttribute<Constraint> {
-    private final Pattern quickPattern;
+public class FailOn extends CheckAttribute {
+    private final Matcher quickMatcher;
 
-    public FailOn(List<Constraint> constraints) {
+    public FailOn(List<Constraint> constraints, String compilationOutput) {
         super(constraints);
         String patternString = constraints.stream().map(Constraint::getRegex).collect(Collectors.joining("|"));
-        this.quickPattern = Pattern.compile(String.join("|", patternString));
+        Pattern pattern = Pattern.compile(String.join("|", patternString));
+        this.quickMatcher = pattern.matcher(compilationOutput);
     }
 
     @Override
-    protected CheckAttributeMatchResult createMatchResult() {
-        return new CheckAttributeMatchResult(CheckAttributeKind.FAIL_ON);
-    }
-
-    @Override
-    public CheckAttributeMatchResult check(String phaseCompilationOutput) {
-        Matcher matcher = quickPattern.matcher(phaseCompilationOutput);
-        if (matcher.find()) {
-            CheckAttributeMatchResult failOnMatchResult = super.check(phaseCompilationOutput);
-            TestFramework.check(failOnMatchResult.fail(), "must fail (i.e. find at least one match)");
-            return failOnMatchResult;
+    public CheckAttributeMatchResult match() {
+        CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeKind.FAIL_ON);
+        if (hasNoMatch()) {
+            return checkAttributeMatchResult;
         }
-        return new CheckAttributeMatchResult(CheckAttributeKind.FAIL_ON);
+        match(checkAttributeMatchResult);
+        TestFramework.check(checkAttributeMatchResult.fail(), "must fail (i.e. find at least one match)");
+        return checkAttributeMatchResult;
     }
 
-    @Override
-    protected void checkConstraint(List<ConstraintFailure> constraintFailures, Constraint constraint,
-                                   String phaseCompilationOutput) {
-        List<String> matches = getMatchedNodes(constraint, phaseCompilationOutput);
-        if (!matches.isEmpty()) {
-            constraintFailures.add(new FailOnConstraintFailure(constraint, matches));
+    private boolean hasNoMatch() {
+        return !quickMatcher.find();
+    }
+
+    public void match(CheckAttributeMatchResult checkAttributeMatchResult) {
+        for (Constraint constraint : constraints) {
+            ConstraintFailure constraintFailure = constraint.match();
+            if (constraintFailure != null) {
+                checkAttributeMatchResult.addFailure(constraintFailure);
+            }
         }
     }
 }

@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework.driver.irmatching.reporting;
 
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.*;
 import compiler.lib.ir_framework.shared.Comparison;
 

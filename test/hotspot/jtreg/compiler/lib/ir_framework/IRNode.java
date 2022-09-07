@@ -247,7 +247,7 @@ public class IRNode {
         return node.startsWith(COMPOSITE_PREFIX);
     }
 
-    public static boolean isDefaultIRNode(String node) {
+    public static boolean isIRNode(String node) {
         return node.startsWith(PREFIX);
     }
 

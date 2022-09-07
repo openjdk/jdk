@@ -25,6 +25,16 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
+
+import java.util.List;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a single constraint of a {@link CheckAttribute} of an IR rule for a compile phase. It stores a
@@ -38,15 +48,17 @@ import compiler.lib.ir_framework.IRNode;
  * @see CheckAttribute
  * @see FailOn
  */
-public class Constraint {
+abstract public class Constraint implements Matchable {
     private final String regex;
     private final int index; // constraint indices start at 1.
     private final CompilePhase compilePhase;
+    protected final String compilationOutput;
 
-    public Constraint(String regex, int index, CompilePhase compilePhase) {
+    public Constraint(String regex, int index, CompilePhase compilePhase, String compilationOutput) {
         this.regex = regex;
         this.index = index;
         this.compilePhase = compilePhase;
+        this.compilationOutput = compilationOutput;
     }
 
     public String getRegex() {
@@ -60,4 +72,14 @@ public class Constraint {
     public CompilePhase getCompilePhase() {
         return compilePhase;
     }
+
+    protected List<String> getMatchedNodes(String compilationOutput) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(compilationOutput);
+        return matcher.results().map(MatchResult::group).collect(Collectors.toList());
+    }
+
+    @Override
+    abstract public ConstraintFailure match();
 }
+
