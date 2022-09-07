@@ -25,7 +25,6 @@ package com.sun.hotspot.igv.view.actions;
 
 import org.netbeans.api.visual.action.HoverProvider;
 import org.netbeans.api.visual.action.WidgetAction;
-import org.netbeans.api.visual.action.WidgetAction.State;
 import org.netbeans.api.visual.widget.Widget;
 
 /**

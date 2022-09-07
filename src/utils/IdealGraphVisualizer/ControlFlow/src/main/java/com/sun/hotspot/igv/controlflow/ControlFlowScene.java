@@ -23,11 +23,11 @@
  */
 package com.sun.hotspot.igv.controlflow;
 
-import com.sun.hotspot.igv.data.InputBlockEdge;
 import com.sun.hotspot.igv.data.InputBlock;
+import com.sun.hotspot.igv.data.InputBlockEdge;
 import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.Color;
 import java.awt.Point;
@@ -36,22 +36,17 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.BorderFactory;
-import org.netbeans.api.visual.action.ActionFactory;
-import org.netbeans.api.visual.action.MoveProvider;
-import org.netbeans.api.visual.action.RectangularSelectDecorator;
-import org.netbeans.api.visual.action.RectangularSelectProvider;
-import org.netbeans.api.visual.action.SelectProvider;
-import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.action.*;
 import org.netbeans.api.visual.anchor.AnchorFactory;
 import org.netbeans.api.visual.anchor.AnchorShape;
-import org.netbeans.api.visual.router.RouterFactory;
-import org.netbeans.api.visual.widget.LayerWidget;
-import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.api.visual.graph.GraphScene;
 import org.netbeans.api.visual.graph.layout.GraphLayout;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.layout.SceneLayout;
+import org.netbeans.api.visual.router.RouterFactory;
 import org.netbeans.api.visual.widget.ConnectionWidget;
+import org.netbeans.api.visual.widget.LayerWidget;
+import org.netbeans.api.visual.widget.Widget;
 
 /**
  *

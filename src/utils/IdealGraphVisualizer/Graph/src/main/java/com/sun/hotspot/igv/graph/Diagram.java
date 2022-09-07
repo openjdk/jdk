@@ -23,11 +23,7 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import com.sun.hotspot.igv.data.InputBlock;
-import com.sun.hotspot.igv.data.InputBlockEdge;
-import com.sun.hotspot.igv.data.InputEdge;
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.*;
 import java.awt.Font;
 import java.util.*;
 

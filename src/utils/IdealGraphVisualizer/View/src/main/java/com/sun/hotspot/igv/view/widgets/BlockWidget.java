@@ -25,12 +25,7 @@ package com.sun.hotspot.igv.view.widgets;
 
 import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.graph.Diagram;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.Stroke;
+import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;

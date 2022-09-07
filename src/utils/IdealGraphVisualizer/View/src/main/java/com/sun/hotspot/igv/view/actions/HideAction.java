@@ -28,8 +28,8 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.Utilities;
+import org.openide.util.actions.CallableSystemAction;
 
 /**
  *

@@ -23,17 +23,10 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.Canvas;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.util.*;
-import com.sun.hotspot.igv.layout.Cluster;
-import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.layout.LayoutManager;
-import com.sun.hotspot.igv.layout.Link;
-import com.sun.hotspot.igv.layout.Vertex;
+import com.sun.hotspot.igv.layout.*;
+import java.awt.*;
+import java.util.*;
 
 public class HierarchicalCFGLayoutManager implements LayoutManager {
 

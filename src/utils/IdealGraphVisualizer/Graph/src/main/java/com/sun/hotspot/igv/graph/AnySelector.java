@@ -23,8 +23,8 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 // Selects blocks where any node is selected.
 public class AnySelector implements BlockSelector {

@@ -28,8 +28,8 @@ import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
-import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.Utilities;
+import org.openide.util.actions.CallableSystemAction;
 
 /**
  *

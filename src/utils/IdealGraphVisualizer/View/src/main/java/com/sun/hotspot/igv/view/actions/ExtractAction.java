@@ -26,8 +26,8 @@ package com.sun.hotspot.igv.view.actions;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.Utilities;
+import org.openide.util.actions.CallableSystemAction;
 
 /**
  *

@@ -23,10 +23,10 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.graph.Connection;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.OutputSlot;
-import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;

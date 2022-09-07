@@ -26,12 +26,16 @@ package com.sun.hotspot.igv.util;
 
 import com.sun.hotspot.igv.data.ChangedListener;
 import java.awt.*;
-import java.awt.geom.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.util.List;
-import javax.swing.*;
+import javax.swing.JComponent;
+import javax.swing.JViewport;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
 
 /**
  *

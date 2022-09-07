@@ -23,20 +23,10 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import com.sun.hotspot.igv.layout.*;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.TreeSet;
-import com.sun.hotspot.igv.layout.Cluster;
-import com.sun.hotspot.igv.layout.LayoutGraph;
-import com.sun.hotspot.igv.layout.LayoutManager;
-import com.sun.hotspot.igv.layout.Link;
-import com.sun.hotspot.igv.layout.Port;
-import com.sun.hotspot.igv.layout.Vertex;
+import java.util.*;
 
 /**
  *

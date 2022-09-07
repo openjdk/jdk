@@ -23,9 +23,9 @@
  */
 package com.sun.hotspot.igv.data;
 
+import java.lang.ref.WeakReference;
 import java.util.Comparator;
 import java.util.WeakHashMap;
-import java.lang.ref.WeakReference;
 
 /**
  *

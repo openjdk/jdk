@@ -23,12 +23,11 @@
  */
 package com.sun.hotspot.igv.util;
 
-import org.netbeans.api.visual.widget.Widget;
-import org.netbeans.api.visual.action.WidgetAction;
-import org.netbeans.api.visual.action.SelectProvider;
-
+import java.awt.Point;
 import java.awt.event.MouseEvent;
-import java.awt.*;
+import org.netbeans.api.visual.action.SelectProvider;
+import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.widget.Widget;
 
 /**
  *

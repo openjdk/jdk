@@ -28,7 +28,10 @@ import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
-import org.openide.util.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
+import org.openide.util.NbBundle;
 
 public final class ExpandDiffAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
 

@@ -23,9 +23,9 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
-import com.sun.hotspot.igv.layout.Cluster;
 import java.awt.Point;
 import java.util.List;
 

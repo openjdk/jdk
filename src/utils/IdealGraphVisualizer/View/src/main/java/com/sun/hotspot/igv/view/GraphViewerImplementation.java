@@ -28,10 +28,10 @@ import com.sun.hotspot.igv.data.services.GraphViewer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-import org.openide.util.lookup.ServiceProvider;
 
 /**
  *

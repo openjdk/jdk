@@ -24,20 +24,10 @@
 package com.sun.hotspot.igv.controlflow;
 
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
-import com.sun.hotspot.igv.layout.Cluster;
-import com.sun.hotspot.igv.layout.LayoutGraph;
-import com.sun.hotspot.igv.layout.Link;
-import com.sun.hotspot.igv.layout.Port;
-import com.sun.hotspot.igv.layout.Vertex;
+import com.sun.hotspot.igv.layout.*;
 import java.awt.Dimension;
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import org.netbeans.api.visual.graph.layout.GraphLayout;
 import org.netbeans.api.visual.graph.layout.UniversalGraph;
 import org.netbeans.api.visual.widget.Widget;

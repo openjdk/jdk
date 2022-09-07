@@ -24,6 +24,9 @@
  */
 package com.sun.hotspot.igv.servercompiler;
 
+import com.ibm.wala.util.graph.Graph;
+import com.ibm.wala.util.graph.dominators.Dominators;
+import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
 import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputEdge;
 import com.sun.hotspot.igv.data.InputGraph;
@@ -33,9 +36,6 @@ import java.util.*;
 import java.util.function.Predicate;
 import org.openide.ErrorManager;
 import org.openide.util.lookup.ServiceProvider;
-import com.ibm.wala.util.graph.Graph;
-import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
-import com.ibm.wala.util.graph.dominators.Dominators;
 
 /**
  *
