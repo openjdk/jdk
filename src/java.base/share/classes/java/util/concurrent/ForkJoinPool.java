@@ -1817,7 +1817,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param w caller's WorkQueue
      * @param prevSrc the two previous queues (if nonzero) stolen from in current phase, packed as int
      * @param r random seed
-     * @return id of queue if taken, negative if none found, prevSrc for retry
+     * @return the next prevSrc value to use, or negative if none found
      */
     private int scan(WorkQueue w, int prevSrc, int r) {
         WorkQueue[] qs = queues;
