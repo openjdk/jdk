@@ -248,7 +248,7 @@ void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
 void PackageEntry::init_as_archived_entry() {
   Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_growable_array(_qualified_exports);
 
-  _name = ArchiveBuilder::get_relocated_symbol(_name);
+  _name = ArchiveBuilder::get_buffered_symbol(_name);
   _module = ModuleEntry::get_archived_entry(_module);
   _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;
