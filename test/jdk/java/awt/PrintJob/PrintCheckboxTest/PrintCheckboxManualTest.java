@@ -81,7 +81,7 @@ public class PrintCheckboxManualTest
         Supplier<TestResult> resultSupplier = ManualTestFrame.showUI(
                 "Tests PrintCheckboxManualTest",
                 "Wait until the Test UI is seen", testInstProvider);
-	 EventQueue.invokeAndWait(PrintCheckboxManualTest::createTestUI);
+	EventQueue.invokeAndWait(PrintCheckboxManualTest::createTestUI);
 
         //this will block until user decision to pass or fail the test
         TestResult  testResult = resultSupplier.get();
