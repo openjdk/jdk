@@ -365,7 +365,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         } else if (strcmp(token, "cpu") == 0) {
           any_cgroup_mounts_found = true;
           set_controller_mount_path(cg_infos, CPU_IDX, token, tmpmount);
-          cg_infos[CPU_IDX]._mount_path = os::strdup(tmpmount);
           cg_infos[CPU_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[CPU_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuacct") == 0) {
