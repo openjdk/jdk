@@ -181,7 +181,7 @@ public abstract class AbstractBorder implements Border, Serializable
      * @param c <code>Component</code> to return baseline resize behavior for
      * @return an enum indicating how the baseline changes as the border is
      *         resized
-     * @throws NullPointerException if passed in {@code Component} is {@code null}
+     * @throws NullPointerException if {@code Component} is {@code null}
      * @see java.awt.Component#getBaseline(int,int)
      * @see java.awt.Component#getBaselineResizeBehavior()
      * @since 1.6
