@@ -38,6 +38,7 @@
 
 import java.awt.Button;
 import java.awt.Checkbox;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridLayout;
@@ -80,7 +81,7 @@ public class PrintCheckboxManualTest
         Supplier<TestResult> resultSupplier = ManualTestFrame.showUI(
                 "Tests PrintCheckboxManualTest",
                 "Wait until the Test UI is seen", testInstProvider);
-        createTestUI();
+	 EventQueue.invokeAndWait(PrintCheckboxManualTest::createTestUI);
 
         //this will block until user decision to pass or fail the test
         TestResult  testResult = resultSupplier.get();
