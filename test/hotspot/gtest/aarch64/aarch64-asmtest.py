@@ -1009,9 +1009,11 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
+        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
+        elif name == "revb":
+            self._width = RegVariant(1, 3)
         else:
             self._width = RegVariant(0, 3)
 
@@ -1036,7 +1038,10 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        formatStr = "%s%s" + ''.join([", %s" for i in range(1, self.numRegs)])
+        if self._name == "eor3":
+            formatStr = "%s%s" + ''.join([", %s" for i in range(0, self.numRegs)])
+        else:
+            formatStr = "%s%s" + ''.join([", %s" for i in range(1, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
             dnReg = [str(self.reg[0]) + self._width.astr()]
@@ -1046,7 +1051,10 @@ class SVEVectorOp(Instruction):
         if self._isPredicated:
             restRegs = [str(self.reg[1]) + self._merge] + dnReg + [str(self.reg[i]) + self._width.astr() for i in range(2, self.numRegs)]
         else:
-            restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(1, self.numRegs)]
+            if self._name == "eor3":
+                restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(0, self.numRegs)]
+            else:
+                restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(1, self.numRegs)]
         return (formatStr
                 % tuple([Instruction.astr(self)] +
                         [str(self.reg[0]) + self._width.astr()] +
@@ -1922,6 +1930,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
+                       ["eor3", "ZZZ"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
