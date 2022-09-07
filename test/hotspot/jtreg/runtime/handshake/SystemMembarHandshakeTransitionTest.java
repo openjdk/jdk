@@ -29,7 +29,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /*
  * @test SystemMembarHandshakeTransitionTest
  * @summary This does a sanity test of the poll in the native wrapper.
- * @requires vm.debug & vm.flavor != "zero" & (os.arch=="x86_64" | os.arch=="aarch64") & (os.family == "linux" | os.family == "windows")
+ * @requires vm.debug & (os.family == "linux" | os.family == "windows")
  * @library /testlibrary /test/lib
  * @build HandshakeTransitionTest
  * @run main/othervm/native HandshakeTransitionTest -XX:+UnlockExperimentalVMOptions -XX:+UseSystemMemoryBarrier

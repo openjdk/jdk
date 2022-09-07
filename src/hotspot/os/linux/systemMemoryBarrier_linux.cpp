@@ -28,15 +28,18 @@
 #include "utilities/debug.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 
-#if defined(AMD64) || defined(AARCH64)
-
 #include <sys/syscall.h>
-// Syscall defined in kernel 4.3
-#if !defined(SYS_membarrier)
-#define SYS_membarrier 324
-#endif
 
-#ifdef MEMBARRIER_NOT_FOUND
+// Syscall defined in kernel 4.3
+// Oracle x64 builds may use old sysroot (pre 4.3)
+#ifndef SYS_membarrier
+  #if defined(AMD64)
+  #define SYS_membarrier 324
+  #else
+  #error define SYS_membarrier for the arch
+  #endif
+#endif // SYS_membarrier
+
 // Expedited defined in kernel 4.14
 // Therefore we define it here instead of including linux/membarrier.h
 enum membarrier_cmd {
@@ -44,9 +47,6 @@ enum membarrier_cmd {
   MEMBARRIER_CMD_PRIVATE_EXPEDITED          = (1 << 3),
   MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED = (1 << 4),
 };
-#else
-#include <linux/membarrier.h>
-#endif
 
 #define check_with_errno(check_type, cond, msg)                             \
   do {                                                                      \
@@ -82,13 +82,3 @@ void LinuxSystemMemoryBarrier::emit() {
   guarantee_with_errno(s >= 0, "MEMBARRIER_CMD_PRIVATE_EXPEDITED failed");
 }
 
-#else // Not AMD64 and not AARCH64
-bool LinuxSystemMemoryBarrier::initialize() {
-  log_error(os)("SystemMemoryBarrier not supported on this platform");
-  return false;
-}
-
-void LinuxSystemMemoryBarrier::emit() {
-  fatal("Trying to emit a system memory barrier in unsupported configuration");
-}
-#endif
