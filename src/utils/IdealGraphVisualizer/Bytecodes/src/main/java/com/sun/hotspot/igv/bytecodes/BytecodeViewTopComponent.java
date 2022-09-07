@@ -127,6 +127,7 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
         Lookup.Template<InputGraphProvider> tpl = new Lookup.Template<>(InputGraphProvider.class);
         result = Utilities.actionsGlobalContext().lookup(tpl);
         result.addLookupListener(this);
+        resultChanged(null);
     }
 
     @Override
@@ -169,23 +170,21 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
     }
 
     @Override
-    public void resultChanged(LookupEvent lookupEvent) {
-        final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);//)Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                if (p != null) {
-                    InputGraph graph = p.getGraph();
+    public void resultChanged(LookupEvent e) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
+                if (provider != null) {
+                    InputGraph graph = provider.getGraph();
                     if (graph != null) {
                         Group g = graph.getGroup();
                         rootNode.update(graph, g.getMethod());
                         return;
                     }
                 }
-                        rootNode.update(null, null);
-                    }
-            });
-
+                rootNode.update(null, null);
+            }
+        });
     }
 
     static final class ResolvableHelper implements Serializable {

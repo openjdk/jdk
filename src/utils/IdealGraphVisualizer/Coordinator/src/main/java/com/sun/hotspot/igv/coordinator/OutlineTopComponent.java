@@ -146,24 +146,30 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     // Fetch and select the latest active graph.
     private void updateGraphSelection() {
-        final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
-        if (p != null) {
-            try {
-                InputGraph graph = p.getGraph();
-                if (graph.isDiffGraph()) {
-                    EditorTopComponent editor = EditorTopComponent.getActive();
-                    if (editor != null) {
-                        InputGraph firstGraph = editor.getModel().getFirstGraph();
-                        InputGraph secondGraph = editor.getModel().getSecondGraph();
-                        manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)});
+        // Wait for LookupHistory to be updated with the last active graph
+        // before selecting it.
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
+                if (provider != null) {
+                    try {
+                        InputGraph graph = provider.getGraph();
+                        if (graph.isDiffGraph()) {
+                            EditorTopComponent editor = EditorTopComponent.getActive();
+                            if (editor != null) {
+                                InputGraph firstGraph = editor.getModel().getFirstGraph();
+                                InputGraph secondGraph = editor.getModel().getSecondGraph();
+                                manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)});
+                            }
+                        } else {
+                            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(graph)});
+                        }
+                    } catch (Exception e) {
+                        Exceptions.printStackTrace(e);
                     }
-                } else {
-                    manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(graph)});
                 }
-            } catch (Exception e) {
-                Exceptions.printStackTrace(e);
             }
-        }
+        });
     }
 
     public void clear() {
@@ -258,9 +264,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         if (result.allItems().isEmpty()) {
             return;
         }
-        // Wait for LookupHistory to be updated with the last active graph
-        // before selecting it.
-        SwingUtilities.invokeLater(() -> updateGraphSelection());
+        updateGraphSelection();
     }
 
     @Override

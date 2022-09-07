@@ -384,6 +384,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         }
 
         updateDisplayName();
+        getModel().getDiagramChangedEvent().fire();
     }
 
     public DiagramViewModel getDiagramModel() {
