@@ -23,25 +23,16 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 6447816
- * @summary Check that provider service matching/filtering is done correctly.
+ * @summary Check that provider service matching/filtering is done correctly
  * @run main/othervm ProviderFiltering
  */
-
+import jdk.test.lib.Utils;
 import java.util.*;
 import java.security.*;
 
 public class ProviderFiltering {
-
-    private static void testIPE(String s) {
-        // check against invalid filter for InvalidParameterException
-        try {
-            Security.getProviders(s);
-            throw new RuntimeException("Expected IPE not thrown: " + s);
-        } catch (InvalidParameterException ipe) {
-            System.out.println("Expected IPE thrown for " + s);
-        }
-    }
 
     private static void doit(Object filter, String... expectedPNs) {
         System.out.println("Filter: " + filter);
@@ -82,13 +73,16 @@ public class ProviderFiltering {
 
     public static void main(String[] args)
                 throws NoSuchAlgorithmException {
-        testIPE("");
-        testIPE("Cipher.");
-        testIPE(".RC2 ");
-        testIPE("Cipher.RC2 :");
-        testIPE("Cipher.RC2 a: ");
-        testIPE("Cipher.RC2 :b");
-        testIPE("Cipher.RC2 SupportedKeyClasses:a|b");
+        // test filter parsing
+        String[] invalidFilters = { "", "Cipher.", ".RC2 ", "Cipher.RC2 :",
+                 "Cipher.RC2 a: ", "Cipher.RC2 :b",
+                 "Cipher.RC2 SupportedKeyClasses:a|b"
+        };
+        for (String i : invalidFilters) {
+            System.out.println("Testing IPE for :" + i);
+            Utils.runAndCheckException(()-> Security.getProviders(i),
+                    InvalidParameterException.class);
+        }
 
         String p = "SUN";
 
@@ -105,10 +99,14 @@ public class ProviderFiltering {
         // test using String filter
         doit(key + ":" + valComp1, p);
         doit(key + ":" + valComp2, p);
+        // current impl does matching on individual attribute value for
+        // attributes with composite values; no partial match
         doit(key + ":" + valComp2CN);
 
         // repeat above tests using filter Map
         Map<String,String> filters = new HashMap<>();
+        // match existing behavior; return null if empty filter map
+        doit(filters);
         filters.put(key, valComp1);
         doit(filters, p);
         filters.put(key, valComp2);
@@ -142,7 +140,7 @@ public class ProviderFiltering {
         filters.put(sigService + "  " + customKey, customValue);
         doit(filters, pName);
 
-        // should find no proviser now that TestProv is removed
+        // should find no provider now that TestProv is removed
         Security.removeProvider(pName);
         doit(specAttr);
     }

@@ -599,10 +599,15 @@ public final class Security {
         Provider[] allProviders = Security.getProviders();
         Set<Map.Entry<String, String>> entries = filter.entrySet();
 
-        // Returns all installed providers
-        // if the selection criteria is null.
-        if (entries == null || entries.isEmpty() || allProviders == null) {
+        if (allProviders == null || allProviders.length == 0) {
+            return null;
+        } else if (entries == null) {
+            // return all installed providers if the selection criteria is null
             return allProviders;
+        } else if (entries.isEmpty()) {
+            // return null if the selection criteria is empty; this is to match
+            // earlier behavior
+            return null;
         }
 
         LinkedList<Provider> candidates =
@@ -610,18 +615,13 @@ public final class Security {
 
         // For each selection criterion, remove providers
         // which don't satisfy the criterion from the candidate set.
-        Iterator<Map.Entry<String, String>> iter = entries.iterator();
-        while (iter.hasNext()) {
-            Map.Entry<String, String> e = iter.next();
-            new Criteria(e.getKey(), e.getValue()).apply(candidates);
+        for (var e : entries) {
+            Criteria cr = new Criteria(e.getKey(), e.getValue());
+            candidates.removeIf(p -> !cr.isCriterionSatisfied(p));
             if (candidates.isEmpty()) {
-                // bail; no further filtering needed
-                break;
+                return null;
             }
         };
-
-        if (candidates.isEmpty())
-            return null;
 
         return candidates.toArray(new Provider[0]);
     }
@@ -818,14 +818,14 @@ public final class Security {
     }
 
     private static class Criteria {
-        private String serviceName;
-        private String algName;
-        private String attrName = null;
-        private String attrValue;
+        private final String serviceName;
+        private final String algName;
+        private final String attrName;
+        private final String attrValue;
 
         Criteria(String key, String value) throws InvalidParameterException {
-            int snEndIndex = key.indexOf('.');
 
+            int snEndIndex = key.indexOf('.');
             if (snEndIndex <= 0) {
                 // There must be a dot in the filter, and the dot
                 // shouldn't be at the beginning of this string.
@@ -839,37 +839,42 @@ public final class Security {
                 // value is empty. So the key should be in the format of
                 // <crypto_service>.<algorithm_or_type>.
                 algName = key.substring(snEndIndex + 1);
+                attrName = null;
             } else {
                 // value is non-empty. So the key must be in the format
                 // of <crypto_service>.<algorithm_or_type>(one or more
                 // spaces)<attribute_name>
                 int algEndIndex = key.indexOf(' ', snEndIndex);
-
                 if (algEndIndex == -1) {
-                    throw new InvalidParameterException("Invalid filter");
+                    throw new InvalidParameterException
+                            ("Invalid filter - need algorithm name");
                 }
                 algName = key.substring(snEndIndex + 1, algEndIndex);
                 attrName = key.substring(algEndIndex + 1).trim();
-                if (isKnownComposite(attrName) &&
-                        attrValue.indexOf('|') != -1) {
+                if (attrName.isEmpty()) {
                     throw new InvalidParameterException
-                        ("composite values unsupported for filtering");
+                            ("Invalid filter - need attribute name");
+                } else if (isCompositeValue() && attrValue.indexOf('|') != -1) {
+                    throw new InvalidParameterException
+                            ("Invalid filter - composite values unsupported");
                 }
             }
+
             // check required values
-            if (serviceName.isEmpty() || algName.isEmpty() ||
-                    (!attrValue.isEmpty() && attrName.isEmpty())) {
-                throw new InvalidParameterException("Invalid filter");
+            if (serviceName.isEmpty() || algName.isEmpty()) {
+                throw new InvalidParameterException
+                        ("Invalid filter - need service and algorithm");
             }
         }
-        void apply(LinkedList<Provider> candidates) {
-            Iterator<Provider> provs = candidates.iterator();
-            while (provs.hasNext()) {
-                Provider p = provs.next();
-                if (!isCriterionSatisfied(p)) {
-                    provs.remove();
-                }
-            }
+
+        // returns true when this criteria contains a standard attribute
+        // whose value may be composite, i.e. multiple values separated by "|"
+        private boolean isCompositeValue() {
+            return (attrName != null &&
+                    (attrName.equalsIgnoreCase("SupportedKeyClasses") ||
+                    attrName.equalsIgnoreCase("SupportedPaddings") ||
+                    attrName.equalsIgnoreCase("SupportedModes") ||
+                    attrName.equalsIgnoreCase("SupportedKeyFormats")));
         }
 
         /*
@@ -879,7 +884,7 @@ public final class Security {
         private boolean isCriterionSatisfied(Provider prov) {
             // Constructed key have ONLY 1 space between algName and attrName
             String key = serviceName + '.' + algName +
-                    (attrName != null ? ' ' + attrName : "");
+                    (attrName != null ? (' ' + attrName) : "");
 
             // Check whether the provider has a property
             // whose key is the same as the given key.
@@ -912,49 +917,33 @@ public final class Security {
 
             // If we get here, the key must be in the
             // format of <crypto_service>.<algorithm_or_type> <attribute_name>.
-            return isConstraintSatisfied(attrName, attrValue, propValue);
-        }
-    }
 
-    private static boolean isKnownComposite(String attr) {
-        return (attr.equalsIgnoreCase("SupportedKeyClasses") ||
-                attr.equalsIgnoreCase("SupportedPaddings") ||
-                attr.equalsIgnoreCase("SupportedModes") ||
-                attr.equalsIgnoreCase("SupportedKeyFormats"));
-    }
+            // Check the "Java Security Standard Algorithm Names" guide for the
+            // list of supported Service Attributes
 
-    /*
-     * Returns {@code true} if the requested attribute value is supported;
-     * otherwise, returns {@code false}.
-     */
-    private static boolean isConstraintSatisfied(String attribute,
-                                                 String value,
-                                                 String prop) {
-        // Check the "Java Security Standard Algorithm Names" guide for the
-        // name and value format of the supported Service Attributes
-
-        // For KeySize, prop is the max key size the provider supports
-        // for a specific <crypto_service>.<algorithm>.
-        if (attribute.equalsIgnoreCase("KeySize")) {
-            int requestedSize = Integer.parseInt(value);
-            int maxSize = Integer.parseInt(prop);
-            return requestedSize <= maxSize;
-        }
-
-        // Handle attributes with composite values
-        if (isKnownComposite(attribute)) {
-            value = value.toUpperCase();
-            prop = prop.toUpperCase();
-
-            // match value to the property components
-            String[] propComponents = prop.split("\\|");
-            for (String pc : propComponents) {
-                if (value.equals(pc)) return true;
+            // For KeySize, prop is the max key size the provider supports
+            // for a specific <crypto_service>.<algorithm>.
+            if (attrName.equalsIgnoreCase("KeySize")) {
+                int requestedSize = Integer.parseInt(attrValue);
+                int maxSize = Integer.parseInt(propValue);
+                return requestedSize <= maxSize;
             }
-            return false;
-        } else {
-            // direct string compare (ignore case)
-            return value.equalsIgnoreCase(prop);
+
+            // Handle attributes with composite values
+            if (isCompositeValue()) {
+                String attrValue2 = attrValue.toUpperCase(Locale.ENGLISH);
+                propValue = propValue.toUpperCase(Locale.ENGLISH);
+
+                // match value to the property components
+                String[] propComponents = propValue.split("\\|");
+                for (String pc : propComponents) {
+                    if (attrValue2.equals(pc)) return true;
+                }
+                return false;
+            } else {
+                // direct string compare (ignore case)
+                return attrValue.equalsIgnoreCase(propValue);
+            }
         }
     }
 
