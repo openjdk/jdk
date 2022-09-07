@@ -427,8 +427,13 @@ public class PushbackInputStream extends FilterInputStream {
     }
 
     private long implTransferTo(OutputStream out) throws IOException {
-        if (getClass() == PushbackInputStream.class && ((buf.length - pos) <= 0)) {
-            return in.transferTo(out);
+        if (getClass() == PushbackInputStream.class) {
+            int avail = buf.length - pos;
+            if (avail > 0) {
+                out.write(buf, pos, avail);
+                pos = buf.length;
+            }
+            return avail + in.transferTo(out);
         } else {
             return super.transferTo(out);
         }
