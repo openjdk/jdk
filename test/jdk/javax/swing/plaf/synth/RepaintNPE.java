@@ -31,7 +31,6 @@ import java.awt.Component;
 import java.awt.Robot;
 import java.awt.Point;
 import java.awt.event.InputEvent;
-import java.lang.reflect.Method;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -81,9 +80,7 @@ public class RepaintNPE
 
                     try
                     {
-                        Method method = jComp.getClass().getMethod ( "getUI" );
-                        ComponentUI compUI =
-                                 (ComponentUI)method.invoke ( jComp );
+                        ComponentUI compUI = jComp.getUI();
                         compUI.uninstallUI ( jComp );
                     } catch ( Throwable t ) {}
 
