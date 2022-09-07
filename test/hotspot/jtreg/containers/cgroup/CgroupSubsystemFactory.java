@@ -329,7 +329,7 @@ public class CgroupSubsystemFactory {
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
         String procSelfMountinfo = mountInfo.toString();
         int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
-        Asserts.assertEQ(CGROUPS_V1, retval, "Multiple controller controllers, but only one in /sys/fs/cgroup");
+        Asserts.assertEQ(CGROUPS_V1, retval, "Multiple controllers, but only one in /sys/fs/cgroup");
         Asserts.assertTrue(isValidCgroup(retval));
         System.out.println("testCgroupv1MultipleControllerMounts PASSED!");
     }
