@@ -59,14 +59,24 @@ public class GcProvoker{
      */
     public void provokeGc() {
         for (int i = 0; i < 3; i++) {
-            long edenSize = Pools.getEdenCommittedSize();
-            long heapSize = Pools.getHeapCommittedSize();
-            float targetPercent = ((float) edenSize) / (heapSize);
-            if ((targetPercent < 0) || (targetPercent > 1.0)) {
-                throw new RuntimeException("Error in the percent calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize + ", calculated eden percent: " + targetPercent + ")");
+            float targetFraction = 0;
+            for (int j = 0; j < 3; j++) {
+                long heapSize0 = Pools.getHeapCommittedSize();
+                long edenSize = Pools.getEdenCommittedSize();
+                long heapSize = Pools.getHeapCommittedSize();
+                if (heapSize < heapSize0) {
+                    System.out.println("provokeGc: Heap shrinking, retry. eden: " + edenSize + ", heap0: " + heapSize0 + ", heap: " + heapSize);
+                    System.gc();
+                    continue;
+                }
+                targetFraction = ((float) edenSize) / (heapSize);
+                if ((targetFraction < 0) || (targetFraction > 1.0)) {
+                    throw new RuntimeException("Error in fraction calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize
+                                               + ", calculated eden fraction: " + targetFraction + ")");
+                }
             }
-            allocateHeap(targetPercent);
-            allocateHeap(targetPercent);
+            allocateHeap(targetFraction);
+            allocateHeap(targetFraction);
             System.gc();
         }
     }
