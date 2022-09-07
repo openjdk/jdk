@@ -27,16 +27,9 @@
 
 
 // set by Agent_OnLoad
-static jvmtiEnv* jvmti = NULL;
+static jvmtiEnv* jvmti = nullptr;
 
 static const char testClassName[] = "RedefineRetransform$TestClass";
-
-// to redefine from ClassFileLoadHock callback
-// set by caller:
-static jbyteArray classLoadHookNewClassBytes = nullptr;
-// set by ClassFileLoadHock callback:
-static unsigned char* classLoadHookSavedClassBytes = nullptr;
-static jint classLoadHookSavedClassBytesLen = 0;
 
 extern "C" {
 
@@ -52,6 +45,133 @@ static bool isTestClass(const char* name) {
     return name != nullptr && strcmp(name, testClassName) == 0;
 }
 
+class ClassFileLoadHookHelper {
+    const char* mode;   // for logging only
+    bool eventEnabled;
+    JNIEnv* env;
+    jbyteArray classBytes = nullptr;
+
+    unsigned char* savedClassBytes = nullptr;
+    jint savedClassBytesLen = 0;
+
+    // single instance
+    static ClassFileLoadHookHelper *instance;
+public:
+    ClassFileLoadHookHelper(const char* mode, JNIEnv* jni_env, jbyteArray hookClassBytes)
+        : mode(mode), eventEnabled(false), env(jni_env), classBytes(nullptr),
+        savedClassBytes(nullptr), savedClassBytesLen(0)
+    {
+        _log(">>%s\n", mode);
+        if (hookClassBytes != nullptr) {
+            classBytes = (jbyteArray)env->NewGlobalRef(hookClassBytes);
+        }
+    }
+
+    ~ClassFileLoadHookHelper() {
+        // cleanup on error
+        stop();
+        if (classBytes != nullptr) {
+            env->DeleteGlobalRef(classBytes);
+        }
+        if (savedClassBytes != nullptr) {
+            jvmti->Deallocate(savedClassBytes);
+        }
+        _log("<<%s\n", mode);
+    }
+
+    bool start() {
+        instance = this;
+        jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
+        if (err != JVMTI_ERROR_NONE) {
+            _log("%s: SetEventNotificationMode(JVMTI_ENABLE) error %d\n", mode, err);
+            eventEnabled = true;
+            return false;
+        }
+        return true;
+    }
+
+    void stop() {
+        instance = nullptr;
+        if (eventEnabled) {
+            jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
+            if (err != JVMTI_ERROR_NONE) {
+                _log("%s: SetEventNotificationMode(JVMTI_DISABLE) error %d\n", mode, err);
+                return;
+            }
+            eventEnabled = false;
+        }
+    }
+
+    // valid only between start() and stop()
+    static ClassFileLoadHookHelper* getInstance() {
+        return instance;
+    }
+
+    bool getHookClassBytes(unsigned char** newClassBytes, jint* newLen) {
+        if (classBytes != nullptr) {
+            jsize len = env->GetArrayLength(classBytes);
+            unsigned char* buf = nullptr;
+            jvmtiError err = jvmti->Allocate(len, &buf);
+            if (err != JVMTI_ERROR_NONE) {
+                _log("ClassFileLoadHook: failed to allocate %ld bytes for new class bytes: %d", len, err);
+                return false;
+            }
+
+            jbyte* arrayPtr = env->GetByteArrayElements(classBytes, nullptr);
+            if (arrayPtr == nullptr) {
+                _log("ClassFileLoadHook: failed to get array elements\n");
+                jvmti->Deallocate(buf);
+                return false;
+            }
+
+            memcpy(buf, arrayPtr, len);
+
+            env->ReleaseByteArrayElements(classBytes, arrayPtr, JNI_ABORT);
+
+            *newClassBytes = buf;
+            *newLen = len;
+
+            _log("  ClassFileLoadHook: set new class bytes\n");
+        }
+        return true;
+    }
+
+    void setSavedHookClassBytes(const unsigned char* bytes, jint len) {
+        jvmtiError err = jvmti->Allocate(len, &savedClassBytes);
+        if (err != JVMTI_ERROR_NONE) {
+            _log("ClassFileLoadHook: failed to allocate %ld bytes for saved class bytes: %d", len, err);
+            return;
+        }
+        memcpy(savedClassBytes, bytes, len);
+        savedClassBytesLen = len;
+    }
+
+    jbyteArray getSavedHookClassBytes() {
+        if (savedClassBytes == nullptr) {
+            _log("%s: savedClassBytes is NULL\n", mode);
+            return nullptr;
+        }
+
+        jbyteArray result = env->NewByteArray(savedClassBytesLen);
+        if (result == nullptr) {
+            _log("%s: NewByteArray(%ld) failed\n", mode, savedClassBytesLen);
+        } else {
+            jbyte* arrayPtr = env->GetByteArrayElements(result, nullptr);
+            if (arrayPtr == nullptr) {
+                _log("%s: Failed to get array elements\n", mode);
+                result = nullptr;
+            } else {
+                memcpy(arrayPtr, savedClassBytes, savedClassBytesLen);
+                env->ReleaseByteArrayElements(result, arrayPtr, JNI_COMMIT);
+            }
+        }
+        return result;
+    }
+};
+
+ClassFileLoadHookHelper* ClassFileLoadHookHelper::instance = nullptr;
+
+
 JNIEXPORT void JNICALL
 callbackClassFileLoadHook(jvmtiEnv *jvmti_env,
         JNIEnv* jni_env,
@@ -66,41 +186,16 @@ callbackClassFileLoadHook(jvmtiEnv *jvmti_env,
     if (isTestClass(name)) {
         _log(">>ClassFileLoadHook: %s, %ld bytes, ptr = %p\n", name, class_data_len, class_data);
 
-        // save class bytes
-        jvmtiError err = jvmti->Allocate(class_data_len, &classLoadHookSavedClassBytes);
-        if (err != JVMTI_ERROR_NONE) {
-            _log("ClassFileLoadHook: failed to allocate %ld bytes for saved class bytes: %d", class_data_len, err);
+        ClassFileLoadHookHelper* helper = ClassFileLoadHookHelper::getInstance();
+        if (helper == nullptr) {
+            _log("ClassFileLoadHook ERROR: helper instance is not initialized\n");
             return;
         }
-        memcpy(classLoadHookSavedClassBytes, class_data, class_data_len);
-        classLoadHookSavedClassBytesLen = class_data_len;
-
+        // save class bytes
+        helper->setSavedHookClassBytes(class_data, class_data_len);
         // set new class bytes
-        if (classLoadHookNewClassBytes != nullptr) {
-            jsize len = jni_env->GetArrayLength(classLoadHookNewClassBytes);
-            unsigned char* buf = nullptr;
-            err = jvmti->Allocate(len, &buf);
-            if (err != JVMTI_ERROR_NONE) {
-                _log("ClassFileLoadHook: failed to allocate %ld bytes for new class bytes: %d", len, err);
-                return;
-            }
+        helper->getHookClassBytes(new_class_data, new_class_data_len);
 
-            jbyte* arrayPtr = jni_env->GetByteArrayElements(classLoadHookNewClassBytes, nullptr);
-            if (arrayPtr == nullptr) {
-                _log("ClassFileLoadHook: failed to get array elements\n");
-                jvmti->Deallocate(buf);
-                return;
-            }
-
-            memcpy(buf, arrayPtr, len);
-
-            jni_env->ReleaseByteArrayElements(classLoadHookNewClassBytes, arrayPtr, JNI_ABORT);
-
-            *new_class_data = buf;
-            *new_class_data_len = len;
-
-            _log("  ClassFileLoadHook: set new class bytes\n");
-        }
         _log("<<ClassFileLoadHook\n");
     }
 }
@@ -141,137 +236,49 @@ JNIEXPORT jbyteArray JNICALL
 Java_RedefineRetransform_nRedefine(JNIEnv* env, jclass klass,
                                    jclass testClass, jbyteArray classBytes, jbyteArray classLoadHookBytes) {
 
-    _log(">>nRedefine\n");
+    ClassFileLoadHookHelper helper("nRedefine", env, classLoadHookBytes);
+
     jsize len = env->GetArrayLength(classBytes);
     jbyte* arrayPtr = env->GetByteArrayElements(classBytes, nullptr);
     if (arrayPtr == nullptr) {
         _log("nRedefine: Failed to get array elements\n");
         return nullptr;
     }
-    if (classLoadHookBytes != nullptr) {
-        classLoadHookNewClassBytes = (jbyteArray)env->NewGlobalRef(classLoadHookBytes);
-    }
 
+    if (helper.start()) {
+        jvmtiClassDefinition classDef;
+        memset(&classDef, 0, sizeof(classDef));
+        classDef.klass = testClass;
+        classDef.class_byte_count = len;
+        classDef.class_bytes = (unsigned char*)arrayPtr;
 
-    jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
-    if (err != JVMTI_ERROR_NONE) {
-        env->ReleaseByteArrayElements(classBytes, arrayPtr, JNI_ABORT);
-        _log("nRedefine: SetEventNotificationMode(JVMTI_ENABLE) error %d\n", err);
-        return nullptr;
-    }
+        jvmtiError err = jvmti->RedefineClasses(1, &classDef);
 
-    jvmtiClassDefinition classDef;
-    memset(&classDef, 0, sizeof(classDef));
-    classDef.klass = testClass;
-    classDef.class_byte_count = len;
-    classDef.class_bytes = (unsigned char *)arrayPtr;
-
-    jvmtiError err2 = jvmti->RedefineClasses(1, &classDef);
-
-    if (err2 != JVMTI_ERROR_NONE) {
-        _log("nRedefine: RedefineClasses error %d", err2);
-        // don't exit here, need to cleanup
-    }
-
-    err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
-    if (err != JVMTI_ERROR_NONE) {
-        _log("nRedefine: SetEventNotificationMode(JVMTI_DISABLE) error %d\n", err);
+        if (err != JVMTI_ERROR_NONE) {
+            _log("nRedefine: RedefineClasses error %d", err);
+            // don't exit here, need to cleanup
+        }
+        helper.stop();
     }
 
     env->ReleaseByteArrayElements(classBytes, arrayPtr, JNI_ABORT);
 
-    if (classLoadHookBytes != nullptr) {
-        env->DeleteGlobalRef(classLoadHookNewClassBytes);
-        classLoadHookNewClassBytes = nullptr;
-    }
-
-    if (err != JVMTI_ERROR_NONE || err2 != JVMTI_ERROR_NONE) {
-        return nullptr;
-    }
-
-    if (classLoadHookSavedClassBytes == nullptr) {
-        _log("nRedefine: classLoadHookSavedClassBytes is NULL\n");
-        return nullptr;
-    }
-
-    jbyteArray result = env->NewByteArray(classLoadHookSavedClassBytesLen);
-    if (result == nullptr) {
-        _log("nRedefine: NewByteArray(%ld) failed\n", classLoadHookSavedClassBytesLen);
-    } else {
-        jbyte* arrayPtr = env->GetByteArrayElements(result, nullptr);
-        if (arrayPtr == nullptr) {
-            _log("nRedefine: Failed to get array elements\n");
-            result = nullptr;
-        } else {
-            memcpy(arrayPtr, classLoadHookSavedClassBytes, classLoadHookSavedClassBytesLen);
-            env->ReleaseByteArrayElements(result, arrayPtr, JNI_COMMIT);
-        }
-    }
-
-    jvmti->Deallocate(classLoadHookSavedClassBytes);
-    classLoadHookSavedClassBytes = nullptr;
-
-    return result;
+    return helper.getSavedHookClassBytes();
 }
 
 JNIEXPORT jbyteArray JNICALL
 Java_RedefineRetransform_nRetransform(JNIEnv* env, jclass klass, jclass testClass, jbyteArray classBytes) {
 
-    _log(">>nRetransform\n");
-    if (classBytes != nullptr) {
-        classLoadHookNewClassBytes = (jbyteArray)env->NewGlobalRef(classBytes);
-    }
-
-    jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
-    if (err != JVMTI_ERROR_NONE) {
-        _log("nRetransform: SetEventNotificationMode(JVMTI_ENABLE) error %d\n", err);
-        return nullptr;
-    }
-
-    jvmtiError err2 = jvmti->RetransformClasses(1, &testClass);
-    if (err2 != JVMTI_ERROR_NONE) {
-        _log("nRetransform: RetransformClasses error %d\n", err2);
-        // don't exit here, disable CFLH event
-    }
-
-    err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
-    if (err != JVMTI_ERROR_NONE) {
-        _log("nRetransform: SetEventNotificationMode(JVMTI_DISABLE) error %d\n", err);
-    }
-
-    if (classBytes != nullptr) {
-        env->DeleteGlobalRef(classLoadHookNewClassBytes);
-        classLoadHookNewClassBytes = nullptr;
-    }
-
-    if (err != JVMTI_ERROR_NONE || err2 != JVMTI_ERROR_NONE) {
-        return nullptr;
-    }
-
-    if (classLoadHookSavedClassBytes == nullptr) {
-        _log("nRetransform: classLoadHookSavedClassBytes is NULL\n");
-        return nullptr;
-    }
-
-    jbyteArray result = env->NewByteArray(classLoadHookSavedClassBytesLen);
-    if (result == nullptr) {
-        _log("nRetransform: NewByteArray(%ld) failed\n", classLoadHookSavedClassBytesLen);
-    } else {
-        jbyte* arrayPtr = env->GetByteArrayElements(result, nullptr);
-        if (arrayPtr == nullptr) {
-            _log("nRetransform: Failed to get array elements\n");
-            result = nullptr;
+    ClassFileLoadHookHelper helper("nRetransform", env, classBytes);
+    if (helper.start()) {
+        jvmtiError err = jvmti->RetransformClasses(1, &testClass);
+        if (err != JVMTI_ERROR_NONE) {
+            _log("nRetransform: RetransformClasses error %d\n", err);
+            // don't exit here, disable CFLH event
         }
-        else {
-            memcpy(arrayPtr, classLoadHookSavedClassBytes, classLoadHookSavedClassBytesLen);
-            env->ReleaseByteArrayElements(result, arrayPtr, JNI_COMMIT);
-        }
+        helper.stop();
     }
-
-    jvmti->Deallocate(classLoadHookSavedClassBytes);
-    classLoadHookSavedClassBytes = nullptr;
-
-    return result;
+    return helper.getSavedHookClassBytes();
 }
 
 }

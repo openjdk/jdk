@@ -50,6 +50,11 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 
+/*
+ * The test verifies that after interleaved RedefineClasses/RetransformClasses calls
+ * JVMTI passes correct class bytes to ClassFileLoadHook (as per JVMTI spec).
+ * To distinguish class version the test instruments test class overriding runtime-visible annotation.
+ */
 public class RedefineRetransform {
     static {
         System.loadLibrary("RedefineRetransform");
@@ -60,17 +65,20 @@ public class RedefineRetransform {
         int value();
     }
 
-    // Use runtime-visible annotation to specify class version
+    // Use runtime-visible annotation to specify class version.
     @ClassVersion(0)
     static class TestClass {
         public TestClass() { }
     }
 
-    // redefines testClass with classBytes, instrument with classLoadHookBytes (is != null)
+    // Redefines testClass with classBytes, instruments with classLoadHookBytes (if != null).
+    // Returns class bytes passed to ClassFileLoadHook or null on error.
     private static native byte[] nRedefine(Class testClass, byte[] classBytes, byte[] classLoadHookBytes);
-    // retransforms testClass with classBytes (if != null)
+    // Retransforms testClass, instruments with classBytes (if != null).
+    // Returns class bytes passed to ClassFileLoadHook or null on error.
     private static native byte[] nRetransform(Class testClass, byte[] classBytes);
 
+    // Class bytes for initial TestClass (ClassVersion == 0).
     private static byte[] initialClassBytes;
 
     private static class VersionScanner extends ClassVisitor {
@@ -117,6 +125,7 @@ public class RedefineRetransform {
         }
     }
 
+    // Generates TestClass class bytes with the specified ClassVersion value.
     private static byte[] getClassBytes(int ver) {
         if (ver < 0) {
             return null;
@@ -127,6 +136,7 @@ public class RedefineRetransform {
         return cw.toByteArray();
     }
 
+    // Extracts ClassVersion values from the provided class bytes.
     private static int getClassBytesVersion(byte[] classBytes) {
         ClassReader cr = new ClassReader(classBytes);
         VersionScanner scanner = new VersionScanner();
@@ -145,10 +155,14 @@ public class RedefineRetransform {
         }
     }
 
+    // Redefines TestClass to the version specified.
     static void redefine(int ver) {
         redefine(ver, -1);
     }
 
+    // Redefines TestClass to the version specified
+    // instrumenting (from ClassFileLoadHook) with 'classLoadHookVer' class bytes (if >= 0).
+    // Also verifies that class bytes passed to ClassFileLoadHook have correct version (ver).
     static void redefine(int ver, int classLoadHookVer) {
         byte[] classBytes = getClassBytes(ver);
         byte[] classLoadHookBytes = getClassBytes(classLoadHookVer);
@@ -165,6 +179,8 @@ public class RedefineRetransform {
         }
     }
 
+    // Retransforms TestClass instrumenting (from ClassFileLoadHook) with 'ver' class bytes (if >= 0).
+    // Verifies that class bytes passed to ClassFileLoadHook have correct version (expectedVer).
     static void retransform(int ver, int expectedVer) {
         byte[] classBytes = getClassBytes(ver);
         byte[] hookClassBytes = nRetransform(TestClass.class, classBytes);
@@ -186,54 +202,56 @@ public class RedefineRetransform {
         switch (testCase) {
         case 1:
             test("Redefine-Retransform-Retransform", () -> {
-                redefine(1);
-                retransform(2, 1);
-                retransform(3, 1);
+                redefine(1);        // cached class bytes are not set
+                retransform(2, 1);  // sets cached class bytes to ver 1
+                retransform(3, 1);  // uses existing cache
             });
             break;
 
         case 2:
             test("Redefine-Retransform-Redefine-Redefine", () -> {
-                redefine(1);
-                retransform(2, 1);
-                redefine(3);
-                redefine(4);
+                redefine(1);        // cached class bytes are not set
+                retransform(2, 1);  // sets cached class bytes to ver 1
+                redefine(3);        // resets cached class bytes
+                redefine(4);        // cached class bytes are not set
             });
             break;
 
         case 3:
             test("Redefine-Retransform-Redefine-Retransform", () -> {
-                redefine(1);
-                retransform(2, 1);    // sets cached class bytes
-                redefine(3);                    // resets cached class bytes
-                retransform(4, 3);
+                redefine(1);        // cached class bytes are not set
+                retransform(2, 1);  // sets cached class bytes to ver 1
+                redefine(3);        // resets cached class bytes
+                retransform(4, 3);  // sets cached class bytes to ver 3
             });
             break;
 
         case 4:
             test("Retransform-Redefine-Retransform-Retransform", () -> {
-                retransform(1, 0);    // sets cached class bytes
-                redefine(2);                    // reset cached class bytes
-                retransform(3, 2);    // sets cached class bytes
-                retransform(4, 2);
+                retransform(1, 0);  // sets cached class bytes to ver 0 (initially loaded)
+                redefine(2);        // resets cached class bytes
+                retransform(3, 2);  // sets cached class bytes to ver 2
+                retransform(4, 2);  // uses existing cache
             });
             break;
 
         case 5:
             test("Redefine-Retransform-Redefine-Retransform with CFLH", () -> {
-                redefine(1, 5);    // sets cached class bytes
-                retransform(2, 1);
-                redefine(3, 6);    // updates cached class bytes
-                retransform(4, 3);
+                redefine(1, 5);     // CFLH sets cached class bytes to ver 1
+                retransform(2, 1);  // uses existing cache
+                redefine(3, 6);     // resets cached class bytes,
+                                    // CFLH sets cached class bytes to ver 3
+                retransform(4, 3);  // uses existing cache
             });
             break;
 
         case 6:
             test("Retransform-Redefine-Retransform-Retransform with CFLH", () -> {
-                retransform(1, 0);    // sets cached class bytes
-                redefine(2, 5);    // updates cached class bytes
-                retransform(3, 2);
-                retransform(4, 2);
+                retransform(1, 0);  // sets cached class bytes to ver 0 (initially loaded)
+                redefine(2, 5);     // resets cached class bytes,
+                                    // CFLH sets cached class bytes to ver 2
+                retransform(3, 2);  // uses existing cache
+                retransform(4, 2);  // uses existing cache
             });
             break;
         }
