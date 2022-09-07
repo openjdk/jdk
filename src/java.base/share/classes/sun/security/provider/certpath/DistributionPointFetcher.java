@@ -334,8 +334,8 @@ public class DistributionPointFetcher {
         X500Name pointCrlIssuer = null;
         if (pointCrlIssuers != null) {
             if (idpExt == null ||
-                    idpExt.get (IssuingDistributionPointExtension.INDIRECT_CRL)
-                    == (Boolean.FALSE)) {
+                    idpExt.get(IssuingDistributionPointExtension.INDIRECT_CRL)
+                    == Boolean.FALSE) {
                 return false;
             }
             boolean match = false;

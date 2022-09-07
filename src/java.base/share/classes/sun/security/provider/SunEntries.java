@@ -366,7 +366,7 @@ public final class SunEntries {
     /*
      * Use a URI to access this File. Previous code used a URL
      * which is less strict on syntax. If we encounter a
-     * URISyntaxException we make the best efforts for backwards
+     * URISyntaxException we make a best effort for backwards
      * compatibility. e.g. space character in deviceName string.
      *
      * Method called within PrivilegedExceptionAction block.
@@ -389,7 +389,7 @@ public final class SunEntries {
             }
         } catch (URISyntaxException use) {
             /*
-             * Make the best effort to access this File.
+             * Make a best effort to access this File.
              * We can try using the URL path.
              */
             return new File(device.getPath());

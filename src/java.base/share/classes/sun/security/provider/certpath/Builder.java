@@ -59,7 +59,7 @@ abstract class Builder {
 
     /**
      * Flag indicating whether support for the caIssuers field of the
-     * Authority Information Access extension shall be enabled. Currently,
+     * Authority Information Access extension shall be enabled. Currently
      * disabled by default for compatibility reasons.
      */
     static final boolean USE_AIA = GetBooleanAction

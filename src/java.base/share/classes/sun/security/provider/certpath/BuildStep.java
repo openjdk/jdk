@@ -242,7 +242,7 @@ public class BuildStep {
         case SUCCEED:
             out = out + vertex.moreToString();
             break;
-            default:
+        default:
             break;
         }
         out = out + "Certificate contains:\n" + vertex.certToString();

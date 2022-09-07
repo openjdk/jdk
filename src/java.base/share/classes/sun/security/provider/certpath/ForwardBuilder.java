@@ -539,16 +539,13 @@ final class ForwardBuilder extends Builder {
                     debug.println(METHOD_NME +" distanceTto2: " + distanceTto2);
                 }
                 if (distanceTto1 > 0 || distanceTto2 > 0) {
-                    if (distanceTto1 == distanceTto2) {
+                    // at least one is positive
+                    if (distanceTto2 <= 0) {        // only d1 is positive
                         return -1;
-                    } else if (distanceTto1 > 0 && distanceTto2 <= 0) {
-                        return -1;
-                    } else if (distanceTto1 <= 0) {
+                    } else if (distanceTto1 <= 0) { // only d2 is positive
                         return 1;
-                    } else if (distanceTto1 < distanceTto2) {
-                        return -1;
-                    } else {    // distanceTto1 > distanceTto2
-                        return 1;
+                    } else {                        // all positive
+                        return distanceTto1 > distanceTto2 ? 1 : -1;
                     }
                 }
             }

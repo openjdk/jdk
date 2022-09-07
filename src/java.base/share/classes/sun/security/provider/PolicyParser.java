@@ -1161,8 +1161,6 @@ public class PolicyParser {
             } else {
                 return this.signedBy.equals(that.signedBy);
             }
-
-            // everything matched -- the 2 objects are equal
         }
 
         public void write(PrintWriter out) {

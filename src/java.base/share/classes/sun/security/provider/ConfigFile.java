@@ -164,8 +164,8 @@ public final class ConfigFile extends Configuration {
 
             // call in a doPrivileged
             //
-            // we have already passed the Configuration.getInstance
-            // security check.  also, this class is not freely accessible
+            // We have already passed the Configuration.getInstance
+            // security check.  Also, this class is not freely accessible
             // (it is in the "sun" package).
 
             try {

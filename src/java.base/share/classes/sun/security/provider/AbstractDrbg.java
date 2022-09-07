@@ -78,7 +78,7 @@ public abstract class AbstractDrbg {
      * after each random bits generation and reset it in reseed. A mechanism
      * does <em>not</em> need to compare it to {@link #reseedInterval}.
      *
-     * Volatile, will be used in a double-checked locking.
+     * Volatile, will be used in double-checked locking.
      */
     protected volatile int reseedCounter;
 
