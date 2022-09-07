@@ -55,16 +55,17 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
      * This method creates (or overrides, if exists) the JMOD file,
      * returning the output stream to write to the JMOD file.
      */
-    static JmodOutputStream newOutputStream(Path file, LocalDateTime date) throws IOException {
+    static JmodOutputStream newOutputStream(Path file, LocalDateTime date, int compLevel) throws IOException {
         OutputStream out = Files.newOutputStream(file);
         BufferedOutputStream bos = new BufferedOutputStream(out);
-        return new JmodOutputStream(bos, date);
+        return new JmodOutputStream(bos, date, compLevel);
     }
 
     private final ZipOutputStream zos;
     private final LocalDateTime date;
-    private JmodOutputStream(OutputStream out, LocalDateTime date) {
+    private JmodOutputStream(OutputStream out, LocalDateTime date, int compLevel) {
         this.zos = new ZipOutputStream(out);
+        this.zos.setLevel(compLevel);
         this.date = date;
         try {
             JmodFile.writeMagicNumber(out);

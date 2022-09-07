@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -167,6 +168,7 @@ public class JmodTask {
         List<PathMatcher> excludes;
         Path extractDir;
         LocalDateTime date;
+        int compLevel;
     }
 
     // Valid --date range
@@ -438,7 +440,7 @@ public class JmodTask {
         Path target = options.jmodFile;
         Path tempTarget = jmodTempFilePath(target);
         try {
-            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date)) {
+            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date, options.compLevel)) {
                 jmod.write(jos);
             }
             Files.move(tempTarget, target);
@@ -1024,7 +1026,7 @@ public class JmodTask {
         {
 
             try (JmodFile jf = new JmodFile(target);
-                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date))
+                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date, options.compLevel))
             {
                 jf.stream().forEach(e -> {
                     try (InputStream in = jf.getInputStream(e.section(), e.name())) {
@@ -1177,6 +1179,26 @@ public class JmodTask {
         @Override public Class<LocalDateTime> valueType() { return LocalDateTime.class; }
 
         @Override public String valuePattern() { return "date"; }
+    }
+
+    static class CompLevelConverter implements ValueConverter<Integer> {
+        @Override
+        public Integer convert(String value) {
+
+            try {
+                int level = Integer.parseInt(value);
+                if (level < 0 || level > 9) {
+                    throw new CommandException("err.compression.level.out.of.range", value);
+                }
+                return level;
+            } catch (NumberFormatException x) {
+                throw new CommandException("err.compression.level.out.of.range", value);
+            }
+        }
+
+        @Override public Class<Integer> valueType() { return Integer.class; }
+
+        @Override public String valuePattern() { return "compression level (0-9)"; }
     }
 
     static class WarnIfResolvedReasonConverter
@@ -1419,6 +1441,11 @@ public class JmodTask {
                         .withRequiredArg()
                         .withValuesConvertedBy(new DateConverter());
 
+        OptionSpec<Integer> compLevel
+                = parser.accepts("compression-level", getMessage("main.opt.compression-level"))
+                        .withRequiredArg()
+                        .withValuesConvertedBy(new CompLevelConverter());
+
         NonOptionArgumentSpec<String> nonOptions
                 = parser.nonOptions();
 
@@ -1487,6 +1514,12 @@ public class JmodTask {
                 if (options.moduleFinder == null)
                     throw new CommandException("err.modulepath.must.be.specified")
                             .showUsage(true);
+            }
+            if (opts.has(compLevel)) {
+                options.compLevel = getLastElement(opts.valuesOf(compLevel));
+            } else {
+                // Default to fast compression.
+                options.compLevel = Deflater.DEFAULT_COMPRESSION;
             }
 
             if (options.mode.equals(Mode.HASH)) {
