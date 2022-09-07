@@ -635,17 +635,12 @@ void CollectedHeap::reset_promotion_should_fail() {
 
 #endif  // #ifndef PRODUCT
 
-bool CollectedHeap::supports_object_pinning() const {
-  return false;
-}
-
-oop CollectedHeap::pin_object(JavaThread* thread, oop obj) {
-  ShouldNotReachHere();
-  return NULL;
+void CollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
 }
 
 void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
-  ShouldNotReachHere();
+  GCLocker::unlock_critical(thread);
 }
 
 bool CollectedHeap::is_archived_object(oop object) const {

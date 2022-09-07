@@ -503,10 +503,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual WorkerThreads* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
-  // and Release*Critical() family of functions. If supported, the GC
-  // must guarantee that pinned objects never move.
-  virtual bool supports_object_pinning() const;
-  virtual oop pin_object(JavaThread* thread, oop obj);
+  // and Release*Critical() family of functions. The GC must guarantee
+  // that pinned objects never move. GCs that do not implement this
+  // are locked out for the duration of the pin.
+  virtual void pin_object(JavaThread* thread, oop obj);
   virtual void unpin_object(JavaThread* thread, oop obj);
 
   // Is the given object inside a CDS archive area?
