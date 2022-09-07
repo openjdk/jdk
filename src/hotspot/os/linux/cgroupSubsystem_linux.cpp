@@ -123,6 +123,25 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
   return new CgroupV1Subsystem(cpuset, cpu, cpuacct, pids, memory);
 }
 
+void CgroupSubsystemFactory::set_controller_mount_path(CgroupInfo* cg_infos, int controller, char* mount_path) {
+  if (cg_infos[controller]._mount_path != NULL) {
+    // On some systems duplicate controllers get mounted in addition to
+    // the main cgroup controllers most likely under /sys/fs/cgroup. In that
+    // case pick the one under /sys/fs/cgroup and discard others.
+    if (strstr(cg_infos[controller]._mount_path, "/sys/fs/cgroup") != cg_infos[controller]._mount_path) {
+      log_warning(os, container)("Duplicate %s controllers detected. Picking %s, skipping %s.",
+                                 cg_infos[controller]._name, mount_path, cg_infos[controller]._mount_path);
+      os::free(cg_infos[controller]._mount_path);
+      cg_infos[controller]._mount_path = os::strdup(mount_path);
+    } else {
+      log_warning(os, container)("Duplicate %s controllers detected. Picking %s, skipping %s.",
+                                 cg_infos[controller]._name, cg_infos[controller]._mount_path, mount_path);
+    }
+  } else {
+    cg_infos[controller]._mount_path = os::strdup(mount_path);
+  }
+}
+
 bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
                                             const char* proc_cgroups,
                                             const char* proc_self_cgroup,
@@ -332,46 +351,28 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       while ((token = strsep(&cptr, ",")) != NULL) {
         if (strcmp(token, "memory") == 0) {
           any_cgroup_mounts_found = true;
-          assert(cg_infos[MEMORY_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[MEMORY_IDX]._mount_path = os::strdup(tmpmount);
+          set_controller_mount_path(cg_infos, MEMORY_IDX, tmpmount);
           cg_infos[MEMORY_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[MEMORY_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuset") == 0) {
           any_cgroup_mounts_found = true;
-          if (cg_infos[CPUSET_IDX]._mount_path != NULL) {
-            // On some systems duplicate cpuset controllers get mounted in addition to
-            // the main cgroup controllers most likely under /sys/fs/cgroup. In that
-            // case pick the one under /sys/fs/cgroup and discard others.
-            if (strstr(cg_infos[CPUSET_IDX]._mount_path, "/sys/fs/cgroup") != cg_infos[CPUSET_IDX]._mount_path) {
-              log_warning(os, container)("Duplicate cpuset controllers detected. Picking %s, skipping %s.",
-                                         tmpmount, cg_infos[CPUSET_IDX]._mount_path);
-              os::free(cg_infos[CPUSET_IDX]._mount_path);
-              cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
-            } else {
-              log_warning(os, container)("Duplicate cpuset controllers detected. Picking %s, skipping %s.",
-                                         cg_infos[CPUSET_IDX]._mount_path, tmpmount);
-            }
-          } else {
-            cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
-          }
+          set_controller_mount_path(cg_infos, CPUSET_IDX, tmpmount);
           cg_infos[CPUSET_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[CPUSET_IDX]._data_complete = true;
         } else if (strcmp(token, "cpu") == 0) {
           any_cgroup_mounts_found = true;
-          assert(cg_infos[CPU_IDX]._mount_path == NULL, "stomping of _mount_path");
+          set_controller_mount_path(cg_infos, CPU_IDX, tmpmount);
           cg_infos[CPU_IDX]._mount_path = os::strdup(tmpmount);
           cg_infos[CPU_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[CPU_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuacct") == 0) {
           any_cgroup_mounts_found = true;
-          assert(cg_infos[CPUACCT_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[CPUACCT_IDX]._mount_path = os::strdup(tmpmount);
+          set_controller_mount_path(cg_infos, CPUACCT_IDX, tmpmount);
           cg_infos[CPUACCT_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[CPUACCT_IDX]._data_complete = true;
         } else if (strcmp(token, "pids") == 0) {
           any_cgroup_mounts_found = true;
-          assert(cg_infos[PIDS_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[PIDS_IDX]._mount_path = os::strdup(tmpmount);
+          set_controller_mount_path(cg_infos, PIDS_IDX, tmpmount);
           cg_infos[PIDS_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[PIDS_IDX]._data_complete = true;
         }

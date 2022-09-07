@@ -311,6 +311,9 @@ class CgroupSubsystemFactory: AllStatic {
     }
 #endif
 
+    static void set_controller_mount_path(CgroupInfo* cg_infos,
+                                          int controller,
+                                          char* mount_path);
     // Determine the cgroup type (version 1 or version 2), given
     // relevant paths to files. Sets 'flags' accordingly.
     static bool determine_type(CgroupInfo* cg_infos,
