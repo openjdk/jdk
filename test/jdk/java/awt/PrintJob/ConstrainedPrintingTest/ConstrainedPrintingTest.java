@@ -41,6 +41,7 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -62,10 +63,10 @@ import lib.TestResult;
 public class ConstrainedPrintingTest {
 
     public static void createTestUI() {
-        final Frame frame = new Frame("PrintTest");
-        final Button button = new Button("Print");
-        final Panel panel = new Panel();
-        final Component testComponent = new Component() {
+        Frame frame = new Frame("PrintTest");
+        Button button = new Button("Print");
+        Panel panel = new Panel();
+        Component testComponent = new Component() {
             public void paint(Graphics g) {
                 ConstrainedPrintingTest.paintOutsideBounds(this, g, Color.green);
             }
@@ -74,7 +75,7 @@ public class ConstrainedPrintingTest {
             }
         };
 
-        final Canvas testCanvas = new Canvas() {
+        Canvas testCanvas = new Canvas() {
             public void paint(Graphics g) {
                 ConstrainedPrintingTest.paintOutsideBounds(this, g, Color.red);
                 // The frame is sized so that only the upper part of
@@ -173,7 +174,7 @@ public class ConstrainedPrintingTest {
         Supplier<TestResult> resultSupplier = ManualTestFrame.showUI(
                 "Tests ConstrainedPrintingTest",
                 "Wait until the Test UI is seen", testInstProvider);
-        createTestUI();
+        EventQueue.invokeAndWait(ConstrainedPrintingTest::createTestUI);
 
         //this will block until user decision to pass or fail the test
         TestResult  testResult = resultSupplier.get();
