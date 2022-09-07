@@ -63,7 +63,7 @@ public class Blocker {
 
     /**
      * Marks the beginning of a possibly blocking operation.
-     * @return the return value from the attempt to compensate
+     * @return the return value from the attempt to compensate or -1 if not attempted
      */
     public static long begin() {
         if (VM.isBooted()
@@ -87,8 +87,8 @@ public class Blocker {
     /**
      * Marks the beginning of a possibly blocking operation.
      * @param blocking true if the operation may block, otherwise false
-     * @return the return value from the attempt to compensate when blocking is true,
-     * another value when blocking is false
+     * @return the return value from the attempt to compensate, -1 if not attempted
+     * or blocking is false
      */
     public static long begin(boolean blocking) {
         return (blocking) ? begin() : -1;
