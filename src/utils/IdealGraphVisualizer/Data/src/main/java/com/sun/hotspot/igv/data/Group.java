@@ -95,9 +95,6 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     public String getName() {
         return getProperties().get("name");
     }
-    public void setName(String name) {
-        getProperties().setProperty("name", name);
-    }
 
     @Override
     public Folder getParent() {

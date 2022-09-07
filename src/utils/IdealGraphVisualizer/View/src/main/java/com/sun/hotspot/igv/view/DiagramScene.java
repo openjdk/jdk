@@ -924,7 +924,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
                 newPredecessor = w;
                 connectionLayer.addChild(w);
-                this.addObject(new ConnectionSet(connectionList), w);
                 w.getActions().addAction(hoverAction);
             }
 
@@ -937,19 +936,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         panAction.setEnabled(mode == InteractionMode.PANNING);
         // When panAction is not enabled, it does not consume the event
         // and the selection action handles it instead
-    }
-
-    private class ConnectionSet {
-
-        private Set<Connection> connections;
-
-        public ConnectionSet(Collection<Connection> connections) {
-            connections = new HashSet<>(connections);
-        }
-
-        public Set<Connection> getConnectionSet() {
-            return Collections.unmodifiableSet(connections);
-        }
     }
 
     @Override
@@ -1063,7 +1049,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         double factorY = (double) r2.height / (double) getScrollPane().getViewport().getViewRect().height;
         double factor = Math.max(factorX, factorY);
         if (factor >= 1.0) {
-            Point p = getScrollPane().getViewport().getViewPosition();
             setZoomFactor(getZoomFactor() / factor);
             r2.x /= factor;
             r2.y /= factor;

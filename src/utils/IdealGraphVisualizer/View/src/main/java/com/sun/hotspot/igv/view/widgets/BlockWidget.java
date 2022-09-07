@@ -41,17 +41,14 @@ import org.netbeans.api.visual.widget.Widget;
  */
 public class BlockWidget extends Widget {
 
-    public static final int BORDER = 20;
     public static final Color BACKGROUND_COLOR = new Color(235, 235, 255);
     private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
     public static final Color TITLE_COLOR = new Color(42, 42, 171);
     private InputBlock blockNode;
-    private Diagram diagram;
 
     public BlockWidget(Scene scene, Diagram d, InputBlock blockNode) {
         super(scene);
         this.blockNode = blockNode;
-        this.diagram = d;
         this.setBackground(BACKGROUND_COLOR);
         this.setOpaque(true);
         this.setCheckClipping(true);

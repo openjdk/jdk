@@ -56,7 +56,6 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     private State state;
     private Point startPoint;
     private boolean tempModel = false;
-    private int tempSize;
     private int tempFirstPos;
     private int tempSecondPos;
 

@@ -287,9 +287,6 @@ public class Difference {
     }
 
     private static InputGraph createDiff(InputGraph a, InputGraph b) {
-
-        Set<InputNode> matched = new HashSet<>();
-
         Set<NodePair> pairs = new HashSet<>();
         for (InputNode n : a.getNodes()) {
             String s = n.getProperties().get(MAIN_PROPERTY);

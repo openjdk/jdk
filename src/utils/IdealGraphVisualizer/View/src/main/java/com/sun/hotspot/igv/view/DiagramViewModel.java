@@ -341,14 +341,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return filterChain;
     }
 
-    public void setSequenceFilterChain(FilterChain chain) {
-        assert chain != null : "sequenceFilterChain must never be null";
-        sequenceFilterChain.getChangedEvent().removeListener(filterChainChangedListener);
-        sequenceFilterChain = chain;
-        sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
-        updateDiagram();
-    }
-
     private void updateDiagram() {
         // clear diagram
         InputGraph graph = getGraph();
@@ -377,14 +369,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public FilterChain getFilterChain() {
         return filterChain;
-    }
-
-    public void setFilterChain(FilterChain chain) {
-        assert chain != null : "filterChain must never be null";
-        filterChain.getChangedEvent().removeListener(filterChainChangedListener);
-        filterChain = chain;
-        filterChain.getChangedEvent().addListener(filterChainChangedListener);
-        updateDiagram();
     }
 
     /*

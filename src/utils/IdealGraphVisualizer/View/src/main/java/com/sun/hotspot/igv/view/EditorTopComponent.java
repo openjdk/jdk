@@ -89,7 +89,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private JComponent satelliteComponent;
     private JPanel centerPanel;
     private CardLayout cardLayout;
-    private RangeSlider rangeSlider;
     private JToggleButton overviewButton;
     private JPanel topPanel;
     private Toolbar quickSearchToolbar;

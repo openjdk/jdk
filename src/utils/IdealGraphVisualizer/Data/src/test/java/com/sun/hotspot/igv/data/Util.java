@@ -33,16 +33,6 @@ import static org.junit.Assert.*;
  */
 public class Util {
 
-    public static void assertGraphDocumentNotEquals(GraphDocument a, GraphDocument b) {
-        try {
-            assertGraphDocumentEquals(a, b);
-        } catch(AssertionError e) {
-            return;
-        }
-
-        fail("Graphs documents are equal!");
-    }
-
     public static void assertGraphDocumentEquals(GraphDocument a, GraphDocument b) {
 
         if (a.getElements().size() != b.getElements().size()) {
@@ -59,16 +49,6 @@ public class Util {
             z++;
             }
         }
-    }
-
-    public static void assertGroupNotEquals(Group a, Group b) {
-        try {
-            assertGroupEquals(a, b);
-        } catch(AssertionError e) {
-            return;
-        }
-
-        fail("Groups are equal!");
     }
 
     public static void assertGroupEquals(Group a, Group b) {
