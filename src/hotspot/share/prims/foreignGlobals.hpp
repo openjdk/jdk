@@ -26,6 +26,7 @@
 
 #include "code/vmreg.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "prims/vmstorage.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -34,52 +35,48 @@
 
 class CallingConventionClosure {
 public:
-  virtual int calling_convention(BasicType* sig_bt, VMRegPair* regs, int num_args) const = 0;
+  virtual int calling_convention(const BasicType* sig_bt, VMStorage* regs, int num_args) const = 0;
 };
 
 struct CallRegs {
-  GrowableArray<VMReg> _arg_regs;
-  GrowableArray<VMReg> _ret_regs;
+  GrowableArray<VMStorage> _arg_regs;
+  GrowableArray<VMStorage> _ret_regs;
 
   CallRegs(int num_args, int num_rets)
     : _arg_regs(num_args), _ret_regs(num_rets) {}
 };
 
+
 class ForeignGlobals {
 private:
-  template<typename T, typename Func>
-  static void parse_register_array(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter);
+  template<typename T>
+  static void parse_register_array(objArrayOop jarray, int type_index, GrowableArray<T>& array, T (*converter)(int));
 
 public:
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
   static const CallRegs parse_call_regs(jobject jconv);
-  static VMReg vmstorage_to_vmreg(int type, int index);
-  static VMReg parse_vmstorage(oop storage);
+  static VMStorage parse_vmstorage(oop storage);
 };
-
-
 
 class JavaCallingConvention : public CallingConventionClosure {
 public:
-  int calling_convention(BasicType* sig_bt, VMRegPair* regs, int num_args) const override {
-    return SharedRuntime::java_calling_convention(sig_bt, regs, num_args);
-  }
+  int calling_convention(const BasicType* sig_bt, VMStorage* regs, int num_args) const override;
 };
 
 class NativeCallingConvention : public CallingConventionClosure {
-  GrowableArray<VMReg> _input_regs;
+  GrowableArray<VMStorage> _input_regs;
 public:
-  NativeCallingConvention(const GrowableArray<VMReg>& input_regs)
+  NativeCallingConvention(const GrowableArray<VMStorage>& input_regs)
    : _input_regs(input_regs) {}
 
-  int calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const override;
+  int calling_convention(const BasicType* sig_bt, VMStorage* out_regs, int num_args) const override;
 };
 
 class RegSpiller {
-  GrowableArray<VMReg> _regs;
+  GrowableArray<VMStorage> _regs;
   int _spill_size_bytes;
 public:
-  RegSpiller(const GrowableArray<VMReg>& regs) : _regs(regs), _spill_size_bytes(compute_spill_area(regs)) {
+  RegSpiller(const GrowableArray<VMStorage>& regs) : _regs(regs), _spill_size_bytes(compute_spill_area(regs)) {
   }
 
   int spill_size_bytes() const { return _spill_size_bytes; }
@@ -87,39 +84,39 @@ public:
   void generate_fill(MacroAssembler* masm, int rsp_offset) const { return generate(masm, rsp_offset, false); }
 
 private:
-  static int compute_spill_area(const GrowableArray<VMReg>& regs);
+  static int compute_spill_area(const GrowableArray<VMStorage>& regs);
   void generate(MacroAssembler* masm, int rsp_offset, bool is_spill) const;
 
-  static int pd_reg_size(VMReg reg);
-  static void pd_store_reg(MacroAssembler* masm, int offset, VMReg reg);
-  static void pd_load_reg(MacroAssembler* masm, int offset, VMReg reg);
+  static int pd_reg_size(VMStorage reg);
+  static void pd_store_reg(MacroAssembler* masm, int offset, VMStorage reg);
+  static void pd_load_reg(MacroAssembler* masm, int offset, VMStorage reg);
 };
 
 struct Move {
   BasicType bt;
-  VMRegPair from;
-  VMRegPair to;
+  VMStorage from;
+  VMStorage to;
 };
 
 class ArgumentShuffle {
 private:
   GrowableArray<Move> _moves;
-  int _out_arg_stack_slots;
+  int _out_arg_bytes;
 public:
   ArgumentShuffle(
     BasicType* in_sig_bt, int num_in_args,
     BasicType* out_sig_bt, int num_out_args,
     const CallingConventionClosure* input_conv, const CallingConventionClosure* output_conv,
-    VMReg shuffle_temp);
+    VMStorage shuffle_temp);
 
-  int out_arg_stack_slots() const { return _out_arg_stack_slots; }
-  void generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
+  int out_arg_bytes() const { return _out_arg_bytes; }
+  void generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
     pd_generate(masm, tmp, in_stk_bias, out_stk_bias);
   }
 
   void print_on(outputStream* os) const;
 private:
-  void pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const;
+  void pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const;
 };
 
 #endif // SHARE_PRIMS_FOREIGN_GLOBALS

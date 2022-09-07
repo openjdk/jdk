@@ -1166,7 +1166,8 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
 
  private:
   static int _type_offset;
-  static int _index_offset;
+  static int _indexOrOffset_offset;
+  static int _segmentMaskOrSize_offset;
   static int _debugName_offset;
 
   static void compute_offsets();
@@ -1175,9 +1176,10 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static jint        type(oop entry);
-  static jint        index(oop entry);
-  static oop         debugName(oop entry);
+  static jbyte  type(oop entry);
+  static jint   index_or_offset(oop entry);
+  static jshort segment_mask_or_size(oop entry);
+  static oop    debugName(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {

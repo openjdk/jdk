@@ -27,23 +27,51 @@ package jdk.internal.foreign.abi;
 import java.util.Objects;
 
 public class VMStorage {
-    private final int type;
-    private final int index;
+    /**
+     * Type of storage. e.g. stack, or which register type (GP, FP, vector)
+     */
+    private final byte type;
+
+    /**
+     * The (on stack) size in bytes when type = stack, a register mask otherwise.
+     * The register mask indicates which segments of a register are used.
+     */
+    private final short segmentMaskOrSize;
+
+    /**
+     * The index is either a register number within a type, or
+     * a stack offset in bytes if type = stack.
+     * (a particular platform might add a bias to this in generate code)
+     */
+    private final int indexOrOffset;
 
     private final String debugName;
 
-    public VMStorage(int type, int index, String debugName) {
+    private VMStorage(byte type, short segmentMaskOrSize, int indexOrOffset, String debugName) {
         this.type = type;
-        this.index = index;
+        this.segmentMaskOrSize = segmentMaskOrSize;
+        this.indexOrOffset = indexOrOffset;
         this.debugName = debugName;
     }
 
-    public int type() {
+    public static VMStorage stackStorage(byte type, short size, int byteOffset) {
+        return new VMStorage(type, size, byteOffset, "Stack@" + byteOffset);
+    }
+
+    public static VMStorage regStorage(byte type, short segmentMask, int index, String debugName) {
+        return new VMStorage(type, segmentMask, index, debugName);
+    }
+
+    public byte type() {
         return type;
     }
 
-    public int index() {
-        return index;
+    public short segmentMaskOrSize() {
+        return segmentMaskOrSize;
+    }
+
+    public int indexOrOffset() {
+        return indexOrOffset;
     }
 
     public String name() {
@@ -53,22 +81,24 @@ public class VMStorage {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        VMStorage vmStorage = (VMStorage) o;
-        return type == vmStorage.type &&
-                index == vmStorage.index;
+        return (o instanceof VMStorage vmStorage)
+            && type == vmStorage.type
+            && segmentMaskOrSize == vmStorage.segmentMaskOrSize
+            && indexOrOffset == vmStorage.indexOrOffset
+            && Objects.equals(debugName, vmStorage.debugName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, index);
+        return Objects.hash(type, segmentMaskOrSize, indexOrOffset, debugName);
     }
 
     @Override
     public String toString() {
         return "VMStorage{" +
                 "type=" + type +
-                ", index=" + index +
+                ", segmentMaskOrSize=" + segmentMaskOrSize +
+                ", indexOrOffset=" + indexOrOffset +
                 ", debugName='" + debugName + '\'' +
                 '}';
     }

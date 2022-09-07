@@ -50,6 +50,7 @@ import java.util.Optional;
 
 import static jdk.internal.foreign.PlatformLayouts.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
+import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
 
 /**
  * For the AArch64 C ABI specifically, this class uses CallingSequenceBuilder
@@ -202,11 +203,12 @@ public abstract class CallArranger {
                     && !forVarArgs) // varargs are given a pass on all aarch64 ABIs
                 throw new UnsupportedOperationException("Call type not supported on this platform");
 
-            stackOffset = alignedStackOffset;
+            short encodedSize = (short) size;
+            assert (encodedSize & 0xFFFF) == size;
 
             VMStorage storage =
-                stackStorage((int)(stackOffset / STACK_SLOT_SIZE));
-            stackOffset += size;
+                AArch64Architecture.stackStorage(encodedSize, (int)alignedStackOffset);
+            stackOffset = alignedStackOffset + size;
             return storage;
         }
 

@@ -49,12 +49,15 @@ import static java.lang.foreign.ValueLayout.ADDRESS;
 import static jdk.internal.foreign.PlatformLayouts.AArch64.*;
 import static jdk.internal.foreign.abi.Binding.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
+import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class TestAarch64CallArranger extends CallArrangerTestBase {
+
+    private static final short STACK_SLOT_SIZE = 8;
 
     @Test
     public void testEmpty() {
@@ -101,8 +104,8 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
             { vmStore(r5, int.class) },
             { vmStore(r6, int.class) },
             { vmStore(r7, int.class) },
-            { vmStore(stackStorage(0), int.class) },
-            { vmStore(stackStorage(1), int.class) },
+            { vmStore(stackStorage((short) 4, 0), int.class) },
+            { vmStore(stackStorage((short) 4, 8), int.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -350,9 +353,9 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
             {
                 dup(),
                 bufferLoad(0, long.class),
-                vmStore(stackStorage(0), long.class),
+                vmStore(stackStorage((short) 8, 0), long.class),
                 bufferLoad(8, int.class),
-                vmStore(stackStorage(1), int.class),
+                vmStore(stackStorage((short) 4, 8), int.class),
             }
         });
 
@@ -389,8 +392,8 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
             { vmStore(r5, int.class) },
             { vmStore(r6, int.class) },
             { vmStore(r7, int.class) },
-            { copy(struct), unboxAddress(), vmStore(stackStorage(0), long.class) },
-            { vmStore(stackStorage(1), int.class) },
+            { copy(struct), unboxAddress(), vmStore(stackStorage((short) 8, 0), long.class) },
+            { vmStore(stackStorage((short) 4, 8), int.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -435,8 +438,8 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(r9, long.class) },
             { vmStore(r0, int.class) },
-            { vmStore(stackStorage(0), int.class) },
-            { vmStore(stackStorage(1), float.class) },
+            { vmStore(stackStorage((short) 4, 0), int.class) },
+            { vmStore(stackStorage((short) 4, 8), float.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020 SAP SE. All rights reserved.
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +21,26 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "prims/downcallLinker.hpp"
-#include "utilities/debug.hpp"
+#ifndef CPU_ZERO_VMSTORAGE_ZERO_INLINE_HPP
+#define CPU_ZERO_VMSTORAGE_ZERO_INLINE_HPP
 
-RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
-                                                int num_args,
-                                                BasicType ret_bt,
-                                                const ABIDescriptor& abi,
-                                                const GrowableArray<VMStorage>& input_registers,
-                                                const GrowableArray<VMStorage>& output_registers,
-                                                bool needs_return_buffer) {
-  Unimplemented();
-  return nullptr;
+#include <cstdint>
+
+#include "asm/register.hpp"
+#include "prims/vmstorageBase.inline.hpp"
+
+enum class RegType : int8_t {
+  STACK = 0
+};
+
+constexpr inline RegType VMStorage::stack_type() {
+  return RegType::STACK;
 }
+
+inline VMStorage as_VMStorage(VMReg reg) {
+  ShouldNotReachHere();
+  return VMStorage::invalid();
+}
+
+
+#endif // CPU_ZERO_VMSTORAGE_ZERO_INLINE_HPP

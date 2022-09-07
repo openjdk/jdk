@@ -47,7 +47,7 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
   int pslots = java_lang_invoke_MethodType::ptype_slot_count(type);
   BasicType* basic_type = NEW_RESOURCE_ARRAY(BasicType, pslots);
 
-  GrowableArray<VMReg> input_regs(pcount);
+  GrowableArray<VMStorage> input_regs(pcount);
   for (int i = 0, bt_idx = 0; i < pcount; i++) {
     oop type_oop = java_lang_invoke_MethodType::ptype(type, i);
     assert(java_lang_Class::is_primitive(type_oop), "Only primitives expected");
@@ -65,7 +65,7 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
 
 
   jint outs = ret_moves_oop->length();
-  GrowableArray<VMReg> output_regs(outs);
+  GrowableArray<VMStorage> output_regs(outs);
   oop type_oop = java_lang_invoke_MethodType::rtype(type);
   BasicType  ret_bt = java_lang_Class::primitive_type(type_oop);
   for (int i = 0; i < outs; i++) {

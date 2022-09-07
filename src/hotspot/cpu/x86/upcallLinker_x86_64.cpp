@@ -175,12 +175,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
   CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
 
-  Register shuffle_reg = rbx;
+  VMStorage shuffle_reg = VMS_RBX;
   JavaCallingConvention out_conv;
   NativeCallingConvention in_conv(call_regs._arg_regs);
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
-  int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
-  int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
+  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg);
+  int preserved_bytes = SharedRuntime::out_preserve_stack_slots() * VMRegImpl::stack_slot_size;
+  int stack_bytes = preserved_bytes + arg_shuffle.out_arg_bytes();
+  int out_arg_area = align_up(stack_bytes , StackAlignmentInBytes);
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
@@ -275,7 +276,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     assert(ret_buf_offset != -1, "no return buffer allocated");
     __ lea(abi._ret_buf_addr_reg, Address(rsp, ret_buf_offset));
   }
-  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), abi._shadow_space_bytes, 0);
+  arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
@@ -293,7 +294,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   if (!needs_return_buffer) {
 #ifdef ASSERT
     if (call_regs._ret_regs.length() == 1) { // 0 or 1
-      VMReg j_expected_result_reg;
+      VMStorage j_expected_result_reg;
       switch (ret_type) {
         case T_BOOLEAN:
         case T_BYTE:
@@ -301,19 +302,18 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
         case T_CHAR:
         case T_INT:
         case T_LONG:
-        j_expected_result_reg = rax->as_VMReg();
+        j_expected_result_reg = VMS_RAX;
         break;
         case T_FLOAT:
         case T_DOUBLE:
-          j_expected_result_reg = xmm0->as_VMReg();
+          j_expected_result_reg = VMS_XMM0;
           break;
         default:
           fatal("unexpected return type: %s", type2name(ret_type));
       }
       // No need to move for now, since CallArranger can pick a return type
       // that goes in the same reg for both CCs. But, at least assert they are the same
-      assert(call_regs._ret_regs.at(0) == j_expected_result_reg,
-        "unexpected result register: %s != %s", call_regs._ret_regs.at(0)->name(), j_expected_result_reg->name());
+      assert(call_regs._ret_regs.at(0) == j_expected_result_reg, "unexpected result register");
     }
 #endif
   } else {
@@ -321,12 +321,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     __ lea(rscratch1, Address(rsp, ret_buf_offset));
     int offset = 0;
     for (int i = 0; i < call_regs._ret_regs.length(); i++) {
-      VMReg reg = call_regs._ret_regs.at(i);
-      if (reg->is_Register()) {
-        __ movptr(reg->as_Register(), Address(rscratch1, offset));
+      VMStorage reg = call_regs._ret_regs.at(i);
+      if (reg.type() == RegType::INTEGER) {
+        __ movptr(as_Register(reg), Address(rscratch1, offset));
         offset += 8;
-      } else if (reg->is_XMMRegister()) {
-        __ movdqu(reg->as_XMMRegister(), Address(rscratch1, offset));
+      } else if (reg.type() == RegType::VECTOR) {
+        __ movdqu(as_XMMRegister(reg), Address(rscratch1, offset));
         offset += 16;
       } else {
         ShouldNotReachHere();

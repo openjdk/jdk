@@ -48,6 +48,7 @@ import java.util.Optional;
 
 import static jdk.internal.foreign.PlatformLayouts.Win64;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
 
 /**
  * For the Windowx x64 C ABI specifically, this class uses CallingSequenceBuilder
@@ -164,7 +165,7 @@ public class CallArranger {
                 // stack
                 assert stackOffset == Utils.alignUp(stackOffset, STACK_SLOT_SIZE); // should always be aligned
 
-                VMStorage storage = X86_64Architecture.stackStorage((int) (stackOffset / STACK_SLOT_SIZE));
+                VMStorage storage = X86_64Architecture.stackStorage((short) STACK_SLOT_SIZE, (int) stackOffset);
                 stackOffset += STACK_SLOT_SIZE;
                 return storage;
             }
