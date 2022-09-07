@@ -31,7 +31,6 @@
  * @bug 8293489
  * @summary Accept CAs with BasicConstraints without pathLenConstraint
  * @library /test/lib
- * @run main/othervm BasicConstraints12
  */
 
 import jdk.test.lib.SecurityTools;
@@ -45,7 +44,6 @@ import javax.net.ssl.*;
 public class BasicConstraints12 {
 
     public static void main(String[] args) throws Exception {
-        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
 
         genkey("-dname CN=TrustAnchor -alias anchor");
         genkey("-dname CN=IntermediateCA -alias ca -ext bc:critical -signer anchor");
@@ -56,7 +54,7 @@ public class BasicConstraints12 {
         X509Certificate ca = (X509Certificate) full.getCertificate("ca");
         X509Certificate server = (X509Certificate) full.getCertificate("server");
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
         ks.setCertificateEntry("anchor", anchor);
 
@@ -74,7 +72,7 @@ public class BasicConstraints12 {
     }
 
     static void genkey(String s) throws Exception {
-        SecurityTools.keytool("-storepass changeit -keystore ks -genkeypair -keyalg EC " + s)
+        SecurityTools.keytool("-storepass changeit -keystore ks -genkeypair -keyalg RSA " + s)
                 .shouldHaveExitValue(0);
     }
 }
