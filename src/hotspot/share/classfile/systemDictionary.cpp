@@ -1042,8 +1042,13 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
   assert(scp_index >= 0, "must be");
   SharedClassPathEntry* scp_entry = FileMapInfo::shared_path(scp_index);
   if (!Universe::is_module_initialized()) {
-    assert(scp_entry != NULL && scp_entry->is_modules_image(),
-           "Loading non-bootstrap classes before the module system is initialized");
+    assert(scp_entry != NULL, "must be");
+    // At this point, no modules have been defined yet. KlassSubGraphInfo::check_allowed_klass()
+    // has restricted the classes can be loaded at this step to be only:
+    // [1] scp_entry->is_modules_image(): classes in java.base, or,
+    // [2] HeapShared::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
+    assert(scp_entry->is_modules_image() || HeapShared::is_a_test_class_in_unnamed_module(ik),
+           "only these classes can be loaded before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
   }
