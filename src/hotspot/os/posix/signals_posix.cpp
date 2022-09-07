@@ -1416,7 +1416,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
 
   sigset_t thread_sig_mask;
   if (::pthread_sigmask(/* ignored */ SIG_BLOCK, NULL, &thread_sig_mask) == 0) {
-    st->print(", %s", sigismember(&thread_sig_mask, sig) ? "BLOCKED" : "UNBLOCKED");
+    st->print(", %s", sigismember(&thread_sig_mask, sig) ? "blocked" : "unblocked");
   }
   st->cr();
 
