@@ -25,9 +25,11 @@ package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -43,7 +45,15 @@ public class TestClass implements Matchable {
      */
     private final List<IRMethod> irMethods;
 
+    /**
+     * Constructor for classes without @IR annotations.
+     */
+    public TestClass() {
+        this.irMethods = new ArrayList<>();
+    }
+
     public TestClass(List<IRMethod> irMethods) {
+        TestFramework.check(!irMethods.isEmpty(), "must not be empty");
         this.irMethods = irMethods;
     }
 

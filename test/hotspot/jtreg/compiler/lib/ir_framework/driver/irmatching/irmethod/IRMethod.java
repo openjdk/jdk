@@ -47,16 +47,26 @@ import java.util.Map;
  */
 public class IRMethod implements Matchable {
     private final Method method;
+    /**
+     * Mapping from compile phase to compilation output found in hotspot_pid* file for that phase (if exist)
+     */
     private final Map<CompilePhase, String> compilationOutputMap;
-    private final boolean compiled;
     private final List<IRRule> irRules;
 
-    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Map<CompilePhase, String> compilationOutputMap,
-                    boolean compiled) {
+    protected IRMethod(Method method) {
+        this.method = method;
+        this.irRules = new ArrayList<>();
+        this.compilationOutputMap = null;
+    }
+
+    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Map<CompilePhase, String> compilationOutputMap) {
         this.method = method;
         this.irRules = new ArrayList<>();
         this.compilationOutputMap = compilationOutputMap;
-        this.compiled = compiled;
+        createIRRules(method, ruleIds, irAnnos);
+    }
+
+    private void createIRRules(Method method, int[] ruleIds, IR[] irAnnos) {
         for (int ruleId : ruleIds) {
             try {
                 irRules.add(new IRRule(this, ruleId, irAnnos[ruleId - 1]));
@@ -71,25 +81,22 @@ public class IRMethod implements Matchable {
         return method;
     }
 
+    /**
+     * Get the compilation output for non-default compile phase {@code phase} or an empty string if no output was found
+     * in the hotspot_pid* file for this compile phase.
+     */
     public String getOutput(CompilePhase phase) {
         TestFramework.check(phase != CompilePhase.DEFAULT, "cannot query for DEFAULT");
         return compilationOutputMap.getOrDefault(phase, "");
     }
 
     /**
-     * Apply all IR rules of this IR method on their specified compile phases.
+     * Apply all IR rules of this method for each of the specified (or implied in case of
+     * {@link CompilePhase#DEFAULT}) compile phases.
      */
     @Override
     public IRMethodMatchResult match() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
-        if (!compiled) {
-            return new NotCompiledResult(this, irRules.size());
-        } else {
-            return getMatchResult();
-        }
-    }
-
-    private IRMethodMatchResult getMatchResult() {
         List<IRRuleMatchResult> results = new ArrayList<>();
         for (IRRule irRule : irRules) {
             IRRuleMatchResult result = irRule.match();

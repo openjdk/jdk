@@ -45,6 +45,7 @@ class FailCountVisitor implements MatchResultVisitor {
 
     @Override
     public void visit(NotCompiledResult notCompiledResult) {
+        irMethodCount++;
         irRuleCount += notCompiledResult.getFailedIRRuleCount();
     }
 

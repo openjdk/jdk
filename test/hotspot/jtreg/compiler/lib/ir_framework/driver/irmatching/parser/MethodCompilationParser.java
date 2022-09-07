@@ -26,7 +26,6 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 import compiler.lib.ir_framework.driver.irmatching.TestClass;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 
-import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -44,7 +43,7 @@ public class MethodCompilationParser {
 
     /**
      * Parse the IR encoding and hotspot_pid* file to create a collection of {@link IRMethod} objects.
-     * Return null if there are no applicable @IR rules in any method of the test class.
+     * Return a default/empty TestClass object if there are no applicable @IR rules in any method of the test class.
      */
     public TestClass parse(String hotspotPidFileName, String irEncoding) {
         IREncodingParser irEncodingParser = new IREncodingParser(testClass);
@@ -53,6 +52,6 @@ public class MethodCompilationParser {
             HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethodMap);
             return hotSpotPidFileParser.parse(hotspotPidFileName);
         }
-        return new TestClass(new ArrayList<>());
+        return new TestClass();
     }
 }

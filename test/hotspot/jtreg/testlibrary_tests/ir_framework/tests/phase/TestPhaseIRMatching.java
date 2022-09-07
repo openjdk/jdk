@@ -364,7 +364,6 @@ class FailureBuilder implements MatchResultAction {
     private String methodName;
     private int ruleId;
     private CompilePhase compilePhase;
-
     private final Set<Failure> failures = new HashSet<>();
 
     public List<Failure> build(TestClassResult testClassResult) {

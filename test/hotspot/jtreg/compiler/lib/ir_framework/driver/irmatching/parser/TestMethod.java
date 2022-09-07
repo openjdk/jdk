@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledIRMethod;
 
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
@@ -62,7 +63,11 @@ public class TestMethod {
         IR[] irAnnos = method.getAnnotationsByType(IR.class);
         TestFramework.check(irAnnos.length > 0, "must have at least one IR rule");
         TestFramework.check(irRuleIds.length > 0, "must have at least one IR rule");
-        return new IRMethod(method, irRuleIds, irAnnos, compilationOutputMap, compiled);
+        if (compiled) {
+            return new IRMethod(method, irRuleIds, irAnnos, compilationOutputMap);
+        } else {
+            return new NotCompiledIRMethod(method, irRuleIds.length);
+        }
     }
 
     /**
