@@ -448,6 +448,15 @@ define SetupJavaCompilationBody
     # Create a file with all sources, to pass to javac in an @file.
     # $$($1_VARDEPS_FILE) is used as dependency to track changes in set of
     # list of files.
+    # Modified dependencies (either sources files or the $$($1_VARDEPS_FILE)) will
+    # be also added to a $$($1_MODFILELIST) file, which is then sent using a side-channel
+    # to the custom Depend plugin. The Depend plugin will check the provided list
+    # of modified files, and if none of the Java source files is changed in a way
+    # observable from outside of the file, and the list of modified files does
+    # not include a non-Java source file, it will only compile the modified files.
+    # Otherwise, all module's sources will be compiled. Note the inclusion of
+    # the $$($1_VARDEPS_FILE) will ensure full module rebuild when the set of
+    # list of files changes.
     $$($1_FILELIST): $$($1_SRCS) $$($1_VARDEPS_FILE)
 		$$(call MakeDir, $$(@D))
 		$$(call LogWarn, Compiling up to $$(words $$($1_SRCS)) files for $1)
