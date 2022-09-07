@@ -246,6 +246,15 @@ public class TestStableLambdaName {
         }
     }
 
+    private static void createMethodReferencesLambdas(Set<String> lambdaNames) {
+        Runnable lambda = TestStableLambdaName::foo;
+        lambdaNames.add(removeHashFromLambdaName(lambda.getClass().getName()));
+    }
+
+    private static void foo() {
+        System.out.println("Hello world!");
+    }
+
     private static void createLambdasWithDifferentParameters(Set<String> lambdaNames, MethodHandle[] methodHandles) throws Throwable {
         // All lambdas with flags 0
         createPlainLambdas(lambdaNames, lambdaType.NOT_SERIALIZABLE_NO_ALT_METHODS_NO_ALT_INTERFACES.index, methodHandles);
@@ -270,6 +279,9 @@ public class TestStableLambdaName {
 
         // All lambdas with flags 7
         createLambdasWithAltInterfacesAndAltMethods(lambdaNames, lambdaType.SERIALIZABLE_HAS_ALT_METHODS_HAS_ALT_INTERFACES.index, methodHandles);
+
+        // Method reference lambdas
+        createMethodReferencesLambdas(lambdaNames);
     }
 
     public static void main(String[] args) throws Throwable {

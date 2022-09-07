@@ -95,7 +95,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final boolean disableEagerInitialization;
 
     private static final boolean generateStableLambdaNames;
-    private static final char paddingCharacter = 'a';
+    private static final char paddingCharacter = '#';
 
     // Length of a single hash contained in the stable lambda name
     private static final int stableLambdaNameHashLength;
@@ -261,22 +261,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         return hash.toString();
     }
 
-    private String stableLambdaNameHash(String name) {
-        StringBuilder[] hashFragments = new StringBuilder[]{new StringBuilder(), new StringBuilder()};
-        int n = name.length();
-
-        for (int i = 0; i < n; i++) {
-            hashFragments[i % hashFragments.length].append(name.charAt(i));
-        }
-
-        StringBuilder stableNameHash = new StringBuilder();
-        for (StringBuilder sb : hashFragments) {
-            stableNameHash.append(fixedSizeStringHash(sb.toString()));
-        }
-
-        return stableNameHash.toString();
-    }
-
     /**
      * Creating stable name for lambda class.
      * Parameters that are used to create stable name
@@ -303,7 +287,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             hashData.append(getQualifiedSignature(method));
         }
 
-        name += stableLambdaNameHash(hashData.toString());
+        name += fixedSizeStringHash(hashData.toString());
 
         return name;
     }
