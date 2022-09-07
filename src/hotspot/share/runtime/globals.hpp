@@ -270,7 +270,7 @@ const int ObjectAlignmentInBytes = 8;
           "compilation")                                                    \
                                                                             \
   product(bool, MethodFlushing, true,                                       \
-          "Reclamation of zombie and not-entrant methods")                  \
+          "Reclamation of compiled methods")                                \
                                                                             \
   develop(bool, VerifyStack, false,                                         \
           "Verify stack of each thread when it is entering a runtime call") \
@@ -379,7 +379,7 @@ const int ObjectAlignmentInBytes = 8;
           "Deoptimize random frames on random exit from the runtime system")\
                                                                             \
   notproduct(bool, ZombieALot, false,                                       \
-          "Create zombies (non-entrant) at exit from the runtime system")   \
+          "Create non-entrant nmethods at exit from the runtime system")    \
                                                                             \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
@@ -510,6 +510,10 @@ const int ObjectAlignmentInBytes = 8;
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
+                                                                            \
+  develop(intx, TraceDwarfLevel, 0,                                         \
+          "Debug levels for the dwarf parser")                              \
+          range(0, 4)                                                       \
                                                                             \
   product(bool, SuppressFatalErrorMessage, false,                           \
           "Report NO fatal error message (avoid deadlock)")                 \
@@ -973,36 +977,16 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UsePopCountInstruction, false,                              \
           "Use population count instruction")                               \
                                                                             \
-  product(bool, LogTouchedMethods, false, DIAGNOSTIC,                       \
-          "Log methods which have been ever touched in runtime")            \
-                                                                            \
-  product(bool, PrintTouchedMethodsAtExit, false, DIAGNOSTIC,               \
-          "Print all methods that have been ever touched in runtime")       \
-                                                                            \
   develop(bool, TraceMethodReplacement, false,                              \
           "Print when methods are replaced do to recompilation")            \
                                                                             \
-  develop(bool, PrintMethodFlushing, false,                                 \
-          "Print the nmethods being flushed")                               \
-                                                                            \
   product(bool, PrintMethodFlushingStatistics, false, DIAGNOSTIC,           \
           "print statistics about method flushing")                         \
-                                                                            \
-  product(intx, HotMethodDetectionLimit, 100000, DIAGNOSTIC,                \
-          "Number of compiled code invocations after which "                \
-          "the method is considered as hot by the flusher")                 \
-          range(1, max_jint)                                                \
                                                                             \
   product(intx, MinPassesBeforeFlush, 10, DIAGNOSTIC,                       \
           "Minimum number of sweeper passes before an nmethod "             \
           "can be flushed")                                                 \
           range(0, max_intx)                                                \
-                                                                            \
-  product(bool, UseCodeAging, true,                                         \
-          "Insert counter to detect warm methods")                          \
-                                                                            \
-  product(bool, StressCodeAging, false, DIAGNOSTIC,                         \
-          "Start with counters compiled in")                                \
                                                                             \
   develop(bool, StressCodeBuffers, false,                                   \
           "Exercise code buffer expansion and other rare state changes")    \
@@ -1093,9 +1077,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
-                                                                            \
-  develop(bool, TraceCreateZombies, false,                                  \
-          "trace creation of zombie nmethods")                              \
                                                                             \
   product(bool, RangeCheckElimination, true,                                \
           "Eliminate range checks")                                         \
@@ -1313,16 +1294,10 @@ const int ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option SafepointTimeout")              \
           range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
                                                                             \
-  product(intx, NmethodSweepActivity, 10,                                   \
+  product(intx, NmethodSweepActivity, 4,                                    \
           "Removes cold nmethods from code cache if > 0. Higher values "    \
           "result in more aggressive sweeping")                             \
           range(0, 2000)                                                    \
-                                                                            \
-  notproduct(bool, LogSweeper, false,                                       \
-          "Keep a ring buffer of sweeper activity")                         \
-                                                                            \
-  notproduct(intx, SweeperLogEntries, 1024,                                 \
-          "Number of records in the ring buffer of sweeper activity")       \
                                                                             \
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
@@ -1364,6 +1339,16 @@ const int ObjectAlignmentInBytes = 8;
           "If non-zero, maximum number of words that malloc/realloc can "   \
           "allocate (for testing only)")                                    \
           range(0, max_uintx)                                               \
+                                                                            \
+  product(ccstr, MallocLimit, nullptr, DIAGNOSTIC,                          \
+          "Limit malloc allocation size from VM. Reaching the limit will "  \
+          "trigger a fatal error. This feature requires "                   \
+          "NativeMemoryTracking=summary or NativeMemoryTracking=detail."    \
+          "Usage:"                                                          \
+          "- MallocLimit=<size> to set a total limit. "                     \
+          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...] " \
+          "  to set one or more category-specific limits."                  \
+          "Example: -XX:MallocLimit=compiler:500m")                         \
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
@@ -1584,8 +1569,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Remove cold/old nmethods from the code cache")                   \
                                                                             \
-  product(double, SweeperThreshold, 0.5,                                    \
-          "Threshold controlling when code cache sweeper is invoked."       \
+  product(double, SweeperThreshold, 15.0,                                   \
+          "Threshold when a code cache unloading GC is invoked."            \
           "Value is percentage of ReservedCodeCacheSize.")                  \
           range(0.0, 100.0)                                                 \
                                                                             \
@@ -1797,39 +1782,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintConcurrentLocks, false, MANAGEABLE,                    \
           "Print java.util.concurrent locks in thread dump")                \
                                                                             \
-  /* Shared spaces */                                                       \
-                                                                            \
-  product(bool, VerifySharedSpaces, false,                                  \
-          "Verify integrity of shared spaces")                              \
-                                                                            \
-  product(bool, RecordDynamicDumpInfo, false,                               \
-          "Record class info for jcmd VM.cds dynamic_dump")                 \
-                                                                            \
-  product(bool, AutoCreateSharedArchive, false,                             \
-          "Create shared archive at exit if cds mapping failed")            \
-                                                                            \
-  product(bool, PrintSharedArchiveAndExit, false,                           \
-          "Print shared archive file contents")                             \
-                                                                            \
-  product(bool, PrintSharedDictionary, false,                               \
-          "If PrintSharedArchiveAndExit is true, also print the shared "    \
-          "dictionary")                                                     \
-                                                                            \
-  product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
-          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
-          "Address to allocate shared memory region for class data")        \
-          range(0, SIZE_MAX)                                                \
-                                                                            \
-  product(ccstr, SharedArchiveConfigFile, NULL,                             \
-          "Data to add to the CDS archive file")                            \
-                                                                            \
-  product(uint, SharedSymbolTableBucketSize, 4,                             \
-          "Average number of symbols per bucket in shared table")           \
-          range(2, 246)                                                     \
-                                                                            \
-  product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
-          "Allow Java agent to be run with CDS dumping")                    \
-                                                                            \
   product(bool, PrintMethodHandleStubs, false, DIAGNOSTIC,                  \
           "Print generated stub code for method handles")                   \
                                                                             \
@@ -1932,30 +1884,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
-                                                                            \
-  product(ccstr, DumpLoadedClassList, NULL,                                 \
-          "Dump the names all loaded classes, that could be stored into "   \
-          "the CDS archive, in the specified file")                         \
-                                                                            \
-  product(ccstr, SharedClassListFile, NULL,                                 \
-          "Override the default CDS class list")                            \
-                                                                            \
-  product(ccstr, SharedArchiveFile, NULL,                                   \
-          "Override the default location of the CDS archive file")          \
-                                                                            \
-  product(ccstr, ArchiveClassesAtExit, NULL,                                \
-          "The path and name of the dynamic archive file")                  \
-                                                                            \
-  product(ccstr, ExtraSharedClassListFile, NULL,                            \
-          "Extra classlist for building the CDS archive file")              \
-                                                                            \
-  product(int, ArchiveRelocationMode, 0, DIAGNOSTIC,                        \
-           "(0) first map at preferred address, and if "                    \
-           "unsuccessful, map at alternative address (default); "           \
-           "(1) always map at alternative address; "                        \
-           "(2) always map at preferred address, and if unsuccessful, "     \
-           "do not map the archive")                                        \
-           range(0, 2)                                                      \
                                                                             \
   product(size_t, ArrayAllocatorMallocLimit, (size_t)-1, EXPERIMENTAL,      \
           "Allocation less than this value will be allocated "              \

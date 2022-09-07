@@ -12629,7 +12629,7 @@ instruct jumpXtnd(rRegI switch_val) %{
   ins_encode %{
     // Jump to Address(table_base + switch_reg)
     Address index(noreg, $switch_val$$Register, Address::times_1);
-    __ jump(ArrayAddress($constantaddress, index));
+    __ jump(ArrayAddress($constantaddress, index), noreg);
   %}
   ins_pipe(pipe_jmp);
 %}

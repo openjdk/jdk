@@ -1255,12 +1255,12 @@ void Assembler::emit_operand(Register reg, Address adr,
 }
 
 void Assembler::emit_operand(XMMRegister reg, Address adr) {
-    if (adr.isxmmindex()) {
-       emit_operand(reg, adr._base, adr._xmmindex, adr._scale, adr._disp, adr._rspec);
-    } else {
-       emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
-       adr._rspec);
-    }
+  if (adr.isxmmindex()) {
+     emit_operand(reg, adr._base, adr._xmmindex, adr._scale, adr._disp, adr._rspec);
+  } else {
+     emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
+     adr._rspec);
+  }
 }
 
 // Now the Assembler instructions (identical for 32/64 bits)
@@ -5118,6 +5118,18 @@ void Assembler::pshufb(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_ssse3(), "");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x00, (0xC0 | encode));
+}
+
+void Assembler::evpshufb(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
+  assert(VM_Version::supports_avx512bw() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl()), "");
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_embedded_opmask_register_specifier(mask);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  int encode = simd_prefix_and_encode(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16(0x00, (0xC0 | encode));
 }
 
@@ -12153,81 +12165,99 @@ void Assembler::set_byte_if_not_zero(Register dst) {
 
 #else // LP64
 
+// 64bit only pieces of the assembler
+
 void Assembler::set_byte_if_not_zero(Register dst) {
   int enc = prefix_and_encode(dst->encoding(), true);
   emit_int24(0x0F, (unsigned char)0x95, (0xC0 | enc));
 }
 
-// 64bit only pieces of the assembler
 // This should only be used by 64bit instructions that can use rip-relative
 // it cannot be used by instructions that want an immediate value.
 
-bool Assembler::reachable(AddressLiteral adr) {
-  int64_t disp;
-  relocInfo::relocType relocType = adr.reloc();
-
-  // None will force a 64bit literal to the code stream. Likely a placeholder
-  // for something that will be patched later and we need to certain it will
-  // always be reachable.
-  if (relocType == relocInfo::none) {
-    return false;
-  }
-  if (relocType == relocInfo::internal_word_type) {
-    // This should be rip relative and easily reachable.
-    return true;
-  }
-  if (relocType == relocInfo::virtual_call_type ||
-      relocType == relocInfo::opt_virtual_call_type ||
-      relocType == relocInfo::static_call_type ||
-      relocType == relocInfo::static_stub_type ) {
-    // This should be rip relative within the code cache and easily
+// Determine whether an address is always reachable in rip-relative addressing mode
+// when accessed from the code cache.
+static bool is_always_reachable(address target, relocInfo::relocType reloc_type) {
+  switch (reloc_type) {
+    // This should be rip-relative and easily reachable.
+    case relocInfo::internal_word_type: {
+      return true;
+    }
+    // This should be rip-relative within the code cache and easily
     // reachable until we get huge code caches. (At which point
-    // ic code is going to have issues).
-    return true;
-  }
-  if (relocType != relocInfo::external_word_type &&
-      relocType != relocInfo::poll_return_type &&  // these are really external_word but need special
-      relocType != relocInfo::poll_type &&         // relocs to identify them
-      relocType != relocInfo::runtime_call_type ) {
-    return false;
-  }
-
-  // Stress the correction code
-  if (ForceUnreachable) {
-    // Must be runtimecall reloc, see if it is in the codecache
-    // Flipping stuff in the codecache to be unreachable causes issues
-    // with things like inline caches where the additional instructions
-    // are not handled.
-    if (CodeCache::find_blob(adr._target) == NULL) {
+    // IC code is going to have issues).
+    case relocInfo::virtual_call_type:
+    case relocInfo::opt_virtual_call_type:
+    case relocInfo::static_call_type:
+    case relocInfo::static_stub_type: {
+      return true;
+    }
+    case relocInfo::runtime_call_type:
+    case relocInfo::external_word_type:
+    case relocInfo::poll_return_type: // these are really external_word but need special
+    case relocInfo::poll_type: {      // relocs to identify them
+      return CodeCache::contains(target);
+    }
+    default: {
       return false;
     }
   }
-  // For external_word_type/runtime_call_type if it is reachable from where we
-  // are now (possibly a temp buffer) and where we might end up
-  // anywhere in the codeCache then we are always reachable.
-  // This would have to change if we ever save/restore shared code
-  // to be more pessimistic.
-  disp = (int64_t)adr._target - ((int64_t)CodeCache::low_bound() + sizeof(int));
-  if (!is_simm32(disp)) return false;
-  disp = (int64_t)adr._target - ((int64_t)CodeCache::high_bound() + sizeof(int));
-  if (!is_simm32(disp)) return false;
+}
 
-  disp = (int64_t)adr._target - ((int64_t)pc() + sizeof(int));
-
-  // Because rip relative is a disp + address_of_next_instruction and we
-  // don't know the value of address_of_next_instruction we apply a fudge factor
-  // to make sure we will be ok no matter the size of the instruction we get placed into.
-  // We don't have to fudge the checks above here because they are already worst case.
-
-  // 12 == override/rex byte, opcode byte, rm byte, sib byte, a 4-byte disp , 4-byte literal
-  // + 4 because better safe than sorry.
-  const int fudge = 12 + 4;
-  if (disp < 0) {
-    disp -= fudge;
-  } else {
-    disp += fudge;
+// Determine whether an address is reachable in rip-relative addressing mode from the code cache.
+static bool is_reachable(address target, relocInfo::relocType reloc_type) {
+  if (is_always_reachable(target, reloc_type)) {
+    return true;
   }
-  return is_simm32(disp);
+  switch (reloc_type) {
+    // None will force a 64bit literal to the code stream. Likely a placeholder
+    // for something that will be patched later and we need to certain it will
+    // always be reachable.
+    case relocInfo::none: {
+      return false;
+    }
+    case relocInfo::runtime_call_type:
+    case relocInfo::external_word_type:
+    case relocInfo::poll_return_type: // these are really external_word but need special
+    case relocInfo::poll_type: {      // relocs to identify them
+      assert(!CodeCache::contains(target), "always reachable");
+      if (ForceUnreachable) {
+        return false; // stress the correction code
+      }
+      // For external_word_type/runtime_call_type if it is reachable from where we
+      // are now (possibly a temp buffer) and where we might end up
+      // anywhere in the code cache then we are always reachable.
+      // This would have to change if we ever save/restore shared code to be more pessimistic.
+      // Code buffer has to be allocated in the code cache, so check against
+      // code cache boundaries cover that case.
+      //
+      // In rip-relative addressing mode, an effective address is formed by adding displacement
+      // to the 64-bit RIP of the next instruction which is not known yet. Considering target address
+      // is guaranteed to be outside of the code cache, checking against code cache boundaries is enough
+      // to account for that.
+      return Assembler::is_simm32(target - CodeCache::low_bound()) &&
+             Assembler::is_simm32(target - CodeCache::high_bound());
+    }
+    default: {
+      return false;
+    }
+  }
+}
+
+bool Assembler::reachable(AddressLiteral adr) {
+  assert(CodeCache::contains(pc()), "required");
+  if (adr.is_lval()) {
+    return false;
+  }
+  return is_reachable(adr.target(), adr.reloc());
+}
+
+bool Assembler::always_reachable(AddressLiteral adr) {
+  assert(CodeCache::contains(pc()), "required");
+  if (adr.is_lval()) {
+    return false;
+  }
+  return is_always_reachable(adr.target(), adr.reloc());
 }
 
 void Assembler::emit_data64(jlong data,
