@@ -418,7 +418,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
       increment_event_counter(info, step, bci, true);
     }
   }
-  void decrement_age(CodeEmitInfo* info);
   CodeEmitInfo* state_for(Instruction* x, ValueStack* state, bool ignore_xhandler = false);
   CodeEmitInfo* state_for(Instruction* x);
 

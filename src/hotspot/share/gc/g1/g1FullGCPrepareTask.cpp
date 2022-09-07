@@ -121,7 +121,7 @@ void G1FullGCPrepareTask::G1ResetMetadataClosure::reset_region_metadata(HeapRegi
   hr->clear_cardtable();
 
   G1HotCardCache* hcc = _g1h->hot_card_cache();
-  if (hcc->use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     hcc->reset_card_counts(hr);
   }
 }

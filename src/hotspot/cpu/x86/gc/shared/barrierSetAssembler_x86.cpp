@@ -117,12 +117,12 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
         assert(!is_not_null, "inconsistent access");
 #ifdef _LP64
         if (UseCompressedOops) {
-          __ movl(dst, (int32_t)NULL_WORD);
+          __ movl(dst, NULL_WORD);
         } else {
-          __ movslq(dst, (int32_t)NULL_WORD);
+          __ movslq(dst, NULL_WORD);
         }
 #else
-        __ movl(dst, (int32_t)NULL_WORD);
+        __ movl(dst, NULL_WORD);
 #endif
       } else {
 #ifdef _LP64
@@ -331,15 +331,12 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ cmpptr(rbx, 0); // rbx contains the incoming method for c2i adapters.
   __ jcc(Assembler::equal, bad_call);
 
-#ifdef _LP64
-  Register tmp1 = rscratch1;
-  Register tmp2 = rscratch2;
-#else
-  Register tmp1 = rax;
-  Register tmp2 = rcx;
+  Register tmp1 = LP64_ONLY( rscratch1 ) NOT_LP64( rax );
+  Register tmp2 = LP64_ONLY( rscratch2 ) NOT_LP64( rcx );
+#ifndef _LP64
   __ push(tmp1);
   __ push(tmp2);
-#endif // _LP64
+#endif // !_LP64
 
   // Pointer chase to the method holder to find out if the method is concurrently unloading.
   Label method_live;

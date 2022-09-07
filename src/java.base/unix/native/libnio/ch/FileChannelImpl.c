@@ -169,14 +169,41 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFDO,
                                             jlong position, jlong count,
-                                            jobject dstFDO)
+                                            jobject dstFDO, jboolean append)
 {
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);
 
 #if defined(__linux__)
+    // copy_file_range fails with EBADF when appending, and sendfile
+    // fails with EINVAL
+    if (append == JNI_TRUE)
+        return IOS_UNSUPPORTED_CASE;
+
     off64_t offset = (off64_t)position;
-    jlong n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
+    jlong n;
+    if (my_copy_file_range_func != NULL) {
+        size_t len = (size_t)count;
+        n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, len, 0);
+        if (n < 0) {
+            switch (errno) {
+                case EINTR:
+                    return IOS_INTERRUPTED;
+                case EINVAL:
+                case ENOSYS:
+                case EXDEV:
+                    // ignore and try sendfile()
+                    break;
+                default:
+                    JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
+                    return IOS_THROWN;
+            }
+        }
+        if (n >= 0)
+            return n;
+    }
+
+    n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
@@ -262,20 +289,27 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferFrom0(JNIEnv *env, jobject this,
                                               jobject srcFDO, jobject dstFDO,
-                                              jlong position, jlong count)
+                                              jlong position, jlong count,
+                                              jboolean append)
 {
 #if defined(__linux__)
     if (my_copy_file_range_func == NULL)
         return IOS_UNSUPPORTED;
+    // copy_file_range fails with EBADF when appending
+    if (append == JNI_TRUE)
+        return IOS_UNSUPPORTED_CASE;
 
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);
 
     off64_t offset = (off64_t)position;
-    jlong n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, count, 0);
+    size_t len = (size_t)count;
+    jlong n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, len, 0);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
+        if (errno == ENOSYS)
+            return IOS_UNSUPPORTED_CASE;
         if ((errno == EBADF || errno == EINVAL || errno == EXDEV) &&
             ((ssize_t)count >= 0))
             return IOS_UNSUPPORTED_CASE;

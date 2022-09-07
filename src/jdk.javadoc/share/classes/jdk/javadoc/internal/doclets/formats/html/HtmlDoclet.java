@@ -302,9 +302,6 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.X_IMG));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.X_IMG), true, false);
             copyJqueryFiles();
-
-            f = DocFile.createFileForOutput(configuration, DocPaths.JQUERY_OVERRIDES_CSS);
-            f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.JQUERY_OVERRIDES_CSS), true, true);
         }
 
         copyLegalFiles(options.createIndex());

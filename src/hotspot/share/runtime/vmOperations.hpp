@@ -30,6 +30,8 @@
 #include "runtime/vmOperation.hpp"
 #include "runtime/threadSMR.hpp"
 
+class ObjectMonitorsHashtable;
+
 // A hodge podge of commonly used VM Operations
 
 class VM_EmptyOperation : public VM_Operation {
