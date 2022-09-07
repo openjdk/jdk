@@ -33,8 +33,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.*;
-import org.openide.util.Exceptions;
-import org.xml.sax.InputSource;
 
 /**
  *

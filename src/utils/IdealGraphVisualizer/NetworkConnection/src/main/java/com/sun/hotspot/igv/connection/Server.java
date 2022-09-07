@@ -24,7 +24,6 @@
  */
 package com.sun.hotspot.igv.connection;
 
-import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.settings.Settings;
 import java.io.IOException;

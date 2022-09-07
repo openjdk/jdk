@@ -25,16 +25,12 @@ package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.view.ExportCookie;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import javax.swing.Action;
 import javax.swing.JFileChooser;
-import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
-import org.openide.util.Utilities;
 
 /**
  *

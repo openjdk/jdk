@@ -28,7 +28,6 @@ import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.action.SelectProvider;
 
 import java.awt.event.MouseEvent;
-import java.awt.event.KeyEvent;
 import java.awt.*;
 
 /**

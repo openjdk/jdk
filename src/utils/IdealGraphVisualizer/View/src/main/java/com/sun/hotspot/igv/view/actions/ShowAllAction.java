@@ -24,11 +24,8 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.util.HashSet;
 import javax.swing.Action;
-import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.Utilities;

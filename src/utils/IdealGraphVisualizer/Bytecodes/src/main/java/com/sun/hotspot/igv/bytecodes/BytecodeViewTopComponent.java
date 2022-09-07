@@ -28,7 +28,6 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.BorderLayout;
-import java.io.Serializable;
 import javax.swing.SwingUtilities;
 import org.openide.ErrorManager;
 import org.openide.explorer.ExplorerManager;

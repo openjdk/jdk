@@ -23,9 +23,7 @@
  */
 package com.sun.hotspot.igv.data;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 
 /**
  *

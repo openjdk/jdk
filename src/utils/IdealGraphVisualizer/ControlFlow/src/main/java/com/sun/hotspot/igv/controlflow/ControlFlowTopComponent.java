@@ -27,7 +27,6 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.BorderLayout;
-import java.io.Serializable;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import org.openide.ErrorManager;
