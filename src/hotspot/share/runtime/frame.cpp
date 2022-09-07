@@ -227,12 +227,12 @@ void frame::set_pc(address   newpc ) {
   // Unsafe to use the is_deoptimized tester after changing pc
   _deopt_state = unknown;
   _pc = newpc;
-  _cb = CodeCache::find_blob_unsafe(_pc);
+  _cb = CodeCache::find_blob(_pc);
 
 }
 
 void frame::set_pc_preserve_deopt(address newpc) {
-  set_pc_preserve_deopt(newpc, CodeCache::find_blob_unsafe(newpc));
+  set_pc_preserve_deopt(newpc, CodeCache::find_blob(newpc));
 }
 
 void frame::set_pc_preserve_deopt(address newpc, CodeBlob* cb) {

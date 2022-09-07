@@ -1342,7 +1342,24 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(&_masm);
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+      // Dummy labels for just measuring the code size
+      Label dummy_slow_path;
+      Label dummy_continuation;
+      Label dummy_guard;
+      Label* slow_path = &dummy_slow_path;
+      Label* continuation = &dummy_continuation;
+      Label* guard = &dummy_guard;
+      if (!Compile::current()->output()->in_scratch_emit_size()) {
+        // Use real labels from actual stub when not emitting code for purpose of measuring its size
+        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
+        slow_path = &stub->slow_path();
+        continuation = &stub->continuation();
+        guard = &stub->guard();
+      }
+      // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
+      bs->nmethod_entry_barrier(&_masm, slow_path, continuation, guard);
+    }
   }
 
   if (VerifyStackAtCalls) {
@@ -1452,19 +1469,19 @@ static enum RC rc_class(OptoReg::Name reg) {
 
   // we have 30 int registers * 2 halves
   // (t0 and t1 are omitted)
-  int slots_of_int_registers = RegisterImpl::max_slots_per_register * (RegisterImpl::number_of_registers - 2);
+  int slots_of_int_registers = Register::max_slots_per_register * (Register::number_of_registers - 2);
   if (reg < slots_of_int_registers) {
     return rc_int;
   }
 
   // we have 32 float register * 2 halves
-  int slots_of_float_registers = FloatRegisterImpl::max_slots_per_register * FloatRegisterImpl::number_of_registers;
+  int slots_of_float_registers = FloatRegister::max_slots_per_register * FloatRegister::number_of_registers;
   if (reg < slots_of_int_registers + slots_of_float_registers) {
     return rc_float;
   }
 
   // we have 32 vector register * 4 halves
-  int slots_of_vector_registers = VectorRegisterImpl::max_slots_per_register * VectorRegisterImpl::number_of_registers;
+  int slots_of_vector_registers = VectorRegister::max_slots_per_register * VectorRegister::number_of_registers;
   if (reg < slots_of_int_registers + slots_of_float_registers + slots_of_vector_registers) {
     return rc_vector;
   }
@@ -2097,7 +2114,7 @@ encode %{
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
       if (rtype == relocInfo::oop_type) {
-        __ movoop(dst_reg, (jobject)con, /*immediate*/true);
+        __ movoop(dst_reg, (jobject)con);
       } else if (rtype == relocInfo::metadata_type) {
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
@@ -2267,11 +2284,17 @@ encode %{
         return;
       }
 
-      // Emit stub for static call
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stub for static call
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
   %}
@@ -5650,14 +5673,13 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 
   format %{
     "cmpxchg_weak $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapB"
+    "# $res == 1 when success, #@weakCompareAndSwapB"
   %}
 
   ins_encode %{
     __ weak_cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
                                  /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5674,14 +5696,13 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 
   format %{
     "cmpxchg_weak $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapS"
+    "# $res == 1 when success, #@weakCompareAndSwapS"
   %}
 
   ins_encode %{
     __ weak_cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
                                  /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5695,13 +5716,12 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   format %{
     "cmpxchg_weak $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapI"
+    "# $res == 1 when success, #@weakCompareAndSwapI"
   %}
 
   ins_encode %{
     __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5715,13 +5735,12 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 
   format %{
     "cmpxchg_weak $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapL"
+    "# $res == 1 when success, #@weakCompareAndSwapL"
   %}
 
   ins_encode %{
     __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5735,13 +5754,12 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 
   format %{
     "cmpxchg_weak $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapN"
+    "# $res == 1 when success, #@weakCompareAndSwapN"
   %}
 
   ins_encode %{
     __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5756,13 +5774,12 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 
   format %{
     "cmpxchg_weak $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapP"
+    "# $res == 1 when success, #@weakCompareAndSwapP"
   %}
 
   ins_encode %{
     __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5781,14 +5798,13 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 
   format %{
     "cmpxchg_weak_acq $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapBAcq"
+    "# $res == 1 when success, #@weakCompareAndSwapBAcq"
   %}
 
   ins_encode %{
     __ weak_cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
                                  /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5807,14 +5823,13 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 
   format %{
     "cmpxchg_weak_acq $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapSAcq"
+    "# $res == 1 when success, #@weakCompareAndSwapSAcq"
   %}
 
   ins_encode %{
     __ weak_cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
                                  /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
                                  $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5830,13 +5845,12 @@ instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   format %{
     "cmpxchg_weak_acq $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapIAcq"
+    "# $res == 1 when success, #@weakCompareAndSwapIAcq"
   %}
 
   ins_encode %{
     __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5852,13 +5866,12 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
 
   format %{
     "cmpxchg_weak_acq $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapLAcq"
+    "# $res == 1 when success, #@weakCompareAndSwapLAcq"
   %}
 
   ins_encode %{
     __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5874,13 +5887,12 @@ instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN
 
   format %{
     "cmpxchg_weak_acq $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapNAcq"
+    "# $res == 1 when success, #@weakCompareAndSwapNAcq"
   %}
 
   ins_encode %{
     __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -5896,13 +5908,12 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
 
   format %{
     "cmpxchg_weak_acq $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "xori $res, $res, 1\t# $res == 1 when success, #@weakCompareAndSwapPAcq"
+    "\t# $res == 1 when success, #@weakCompareAndSwapPAcq"
   %}
 
   ins_encode %{
     __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
-    __ xori($res$$Register, $res$$Register, 1);
   %}
 
   ins_pipe(pipe_slow);
@@ -8842,7 +8853,7 @@ instruct cmpF_branch(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "float_b$cmp $op1, $op2 \t#@cmpF_branch"%}
+  format %{ "float_b$cmp $op1, $op2, $lbl \t#@cmpF_branch"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg), *($lbl$$label));
@@ -8859,7 +8870,7 @@ instruct cmpF_loop(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "float_b$cmp $op1, $op2\t#@cmpF_loop"%}
+  format %{ "float_b$cmp $op1, $op2, $lbl\t#@cmpF_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg), *($lbl$$label));
@@ -8877,7 +8888,7 @@ instruct cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "double_b$cmp $op1, $op2\t#@cmpD_branch"%}
+  format %{ "double_b$cmp $op1, $op2, $lbl\t#@cmpD_branch"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
@@ -8895,7 +8906,7 @@ instruct cmpD_loop(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "double_b$cmp $op1, $op2\t#@cmpD_loop"%}
+  format %{ "double_b$cmp $op1, $op2, $lbl\t#@cmpD_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
@@ -9170,7 +9181,7 @@ instruct far_cmpFlag_branch(cmpOp cmp, rFlagsReg cr, label lbl) %{
   effect(USE lbl);
 
   ins_cost(BRANCH_COST);
-  format %{ "far_b$cmp $cr, zr, L\t#@far_cmpFlag_branch"%}
+  format %{ "far_b$cmp $cr, zr, $lbl\t#@far_cmpFlag_branch"%}
 
   ins_encode %{
     __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($cr$$reg), *($lbl$$label), /* is_far */ true);
@@ -9379,7 +9390,7 @@ instruct far_cmpF_branch(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_float_b$cmp $op1, $op2\t#@far_cmpF_branch"%}
+  format %{ "far_float_b$cmp $op1, $op2, $lbl\t#@far_cmpF_branch"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
@@ -9395,7 +9406,7 @@ instruct far_cmpF_loop(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_float_b$cmp $op1, $op2\t#@far_cmpF_loop"%}
+  format %{ "far_float_b$cmp $op1, $op2, $lbl\t#@far_cmpF_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
@@ -9412,7 +9423,7 @@ instruct far_cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_double_b$cmp $op1, $op2\t#@far_cmpD_branch"%}
+  format %{ "far_double_b$cmp $op1, $op2, $lbl\t#@far_cmpD_branch"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
@@ -9428,7 +9439,7 @@ instruct far_cmpD_loop(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_double_b$cmp $op1, $op2\t#@far_cmpD_loop"%}
+  format %{ "far_double_b$cmp $op1, $op2, $lbl\t#@far_cmpD_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),

@@ -121,7 +121,6 @@ java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 gen
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
 java/awt/Focus/UnaccessibleChoice/AccessibleChoiceTest.java 8239801 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
-java/awt/Frame/FrameLocation/FrameLocation.java 8238436 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
@@ -139,7 +138,6 @@ java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
 java/awt/Frame/ExceptionOnSetExtendedStateTest/ExceptionOnSetExtendedStateTest.java 8198237 macosx-all
 java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
-java/awt/KeyboardFocusmanager/TypeAhead/SubMenuShowTest/SubMenuShowTest.java 8273520 macosx-all
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
@@ -495,7 +493,7 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
-java/lang/ProcessBuilder/PipelineLeaksFD.java                   8291760 linux-all
+jdk/internal/misc/TerminatingThreadLocal/TestTerminatingThreadLocal.java 8292051 generic-all
 
 ############################################################################
 
@@ -652,7 +650,7 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 80134
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
 # The next test below is an intermittent failure
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
-javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
+javax/swing/JTree/4633594/JTreeFocusTest.java 7105441 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
@@ -763,22 +761,23 @@ jdk/jfr/api/consumer/TestRecordingFileWrite.java                8287699 linux-x6
 ############################################################################
 # Client manual tests
 
+javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
+javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
+javax/swing/JTabbedPane/4666224/bug4666224.html 8144124  macosx-all
+javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
+
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,8022539 generic-all
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java 7187741 linux-all,macosx-all
 java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004031 generic-all
-javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
-javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
 java/awt/Modal/PrintDialogsTest/PrintDialogsTest.java 8068378 generic-all
 java/awt/dnd/DnDFileGroupDescriptor/DnDFileGroupDescriptor.html 8080185 macosx-all,linux-all
-javax/swing/JTabbedPane/4666224/bug4666224.html 8144124  macosx-all
 java/awt/event/MouseEvent/AltGraphModifierTest/AltGraphModifierTest.java 8162380 generic-all
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all
 java/awt/TrayIcon/DblClickActionEventTest/DblClickActionEventTest.html 8203867 macosx-all
 java/awt/Frame/FrameStateTest/FrameStateTest.html 8203920 macosx-all,linux-all
-javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
 java/awt/font/TextLayout/TestJustification.html 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all

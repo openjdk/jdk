@@ -34,7 +34,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
@@ -2341,10 +2340,6 @@ void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
   dependencies().add_dependent_nmethod(nm);
 }
 
-void InstanceKlass::remove_dependent_nmethod(nmethod* nm) {
-  dependencies().remove_dependent_nmethod(nm);
-}
-
 void InstanceKlass::clean_dependency_context() {
   dependencies().clean_unloading_dependents();
 }
@@ -2455,6 +2450,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_record_components);
 }
 
+#if INCLUDE_CDS
 void InstanceKlass::remove_unshareable_info() {
 
   if (is_linked()) {
@@ -2655,6 +2651,7 @@ void InstanceKlass::assign_class_loader_type() {
     set_shared_class_loader_type(ClassLoader::APP_LOADER);
   }
 }
+#endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
 static void clear_all_breakpoints(Method* m) {
