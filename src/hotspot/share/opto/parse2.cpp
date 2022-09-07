@@ -1222,6 +1222,16 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
     not_taken = 0;
     if (data->is_BranchData()) {
       not_taken = data->as_BranchData()->not_taken();
+      // Don't adjust the taken count if too few not_taken count to be meaningful.
+      if (taken == 0 && not_taken >= 40) {
+        int target_bci = iter().get_dest();
+        Block* branch_block = successor_for_bci(target_bci);
+        bool is_loop_exit = branch_block->flow()->ciblock()->is_loop_exit();
+        if (is_loop_exit) {
+          // If the branch target is a loop exit, we assume it would take at least once.
+          taken = 1;
+        }
+      }
     }
 
     // scale the counts to be commensurate with invocation counts:

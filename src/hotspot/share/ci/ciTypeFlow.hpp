@@ -549,7 +549,6 @@ public:
     // Loop info
     Loop*                            _loop;              // nearest loop
 
-    ciBlock*     ciblock() const     { return _ciblock; }
     StateVector* state() const     { return _state; }
 
     // Compute the exceptional successors and types for this Block.
@@ -567,6 +566,7 @@ public:
     bool has_trap()   const  { return _trap_bci != -1; }
     int  trap_bci()   const  { assert(has_trap(), ""); return _trap_bci; }
     int  trap_index() const  { assert(has_trap(), ""); return _trap_index; }
+    ciBlock* ciblock() const { return _ciblock; }
 
     // accessors
     ciTypeFlow* outer() const { return state()->outer(); }

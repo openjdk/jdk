@@ -158,10 +158,13 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_goto        :
       {
         cur_block->set_control_bci(bci);
-        if (s.next_bci() < limit_bci) {
-          (void) make_block_at(s.next_bci());
-        }
         int dest_bci = s.get_dest();
+        if (s.next_bci() < limit_bci) {
+          ciBlock *next_block = make_block_at(s.next_bci());
+          if (dest_bci < bci) {
+            next_block->set_is_loop_exit();
+          }
+        }
         ciBlock *dest = make_block_at(dest_bci);
         break;
       }
@@ -378,11 +381,12 @@ static const char *flagnames[] = {
   "Ret",
   "RetTarget",
   "HasHandler",
+  "LoopExit"
 };
 
 void ciBlock::dump() {
   tty->print(" [%d .. %d), {", _start_bci, _limit_bci);
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < 8; i++) {
     if ((_flags & (1 << i)) != 0) {
       tty->print(" %s", flagnames[i]);
     }
