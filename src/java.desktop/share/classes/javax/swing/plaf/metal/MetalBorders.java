@@ -25,22 +25,17 @@
 
 package javax.swing.plaf.metal;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.BasicBorders;
-import javax.swing.text.JTextComponent;
-
-import java.awt.Component;
-import java.awt.Insets;
-import java.awt.Color;
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.awt.Graphics;
-import java.awt.Window;
-
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
+
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicBorders;
+import javax.swing.text.JTextComponent;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
 
 
 /**
@@ -217,16 +212,27 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameBorder extends AbstractBorder implements UIResource {
-        private static final int corner = 14;
+        private static int corner = 14;
 
         /**
          * Constructs a {@code InternalFrameBorder}.
          */
         public InternalFrameBorder() {}
+        /**
+         * Round the double to nearest integer, make sure we round
+         * to lower integer value for 0.5
+         *
+         * @param d number to be rounded
+         * @return a {@code int} which is the rounded value of provided number
+         */
+        private static int roundDown(double d)
+        {
+            double decP = (Math.ceil(d) - d);
+            return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
+        }
 
         public void paintBorder(Component c, Graphics g, int x, int y,
-                          int w, int h) {
-
+                                int w, int h) {
             Color background;
             Color highlight;
             Color shadow;
@@ -241,41 +247,97 @@ public class MetalBorders {
                 shadow = MetalLookAndFeel.getControlInfo();
             }
 
-              g.setColor(background);
-              // Draw outermost lines
-              g.drawLine( 1, 0, w-2, 0);
-              g.drawLine( 0, 1, 0, h-2);
-              g.drawLine( w-1, 1, w-1, h-2);
-              g.drawLine( 1, h-1, w-2, h-1);
+            Graphics2D g2d = (Graphics2D) g;
+            AffineTransform at = g2d.getTransform();
+            Stroke oldStk = g2d.getStroke();
+            Color oldColor = g2d.getColor();
+            boolean resetTransform;
+            int stkWidth = 1;
 
-              // Draw the bulk of the border
-              for (int i = 1; i < 5; i++) {
-                  g.drawRect(x+i,y+i,w-(i*2)-1, h-(i*2)-1);
-              }
+            // if m01 or m10 is non-zero, then there is a rotation or shear
+            // skip resetting the transform
+            resetTransform = (at.getShearX() == 0) && (at.getShearY() == 0);
 
-              if (c instanceof JInternalFrame &&
-                               ((JInternalFrame)c).isResizable()) {
-                  g.setColor(highlight);
-                  // Draw the Long highlight lines
-                  g.drawLine( corner+1, 3, w-corner, 3);
-                  g.drawLine( 3, corner+1, 3, h-corner);
-                  g.drawLine( w-2, corner+1, w-2, h-corner);
-                  g.drawLine( corner+1, h-2, w-corner, h-2);
+            if (resetTransform) {
+                g2d.setTransform(new AffineTransform());
+                stkWidth = roundDown(Math.min(at.getScaleX(), at.getScaleY()));
+                g2d.setStroke(new BasicStroke((float) stkWidth));
+            }
 
-                  g.setColor(shadow);
-                  // Draw the Long shadow lines
-                  g.drawLine( corner, 2, w-corner-1, 2);
-                  g.drawLine( 2, corner, 2, h-corner-1);
-                  g.drawLine( w-3, corner, w-3, h-corner-1);
-                  g.drawLine( corner, h-3, w-corner-1, h-3);
-              }
+            int xtranslation = 0;
+            int ytranslation = 0;
+            int width = 0;
+            int height = 0;
 
-          }
+            if (resetTransform) {
+                width = roundDown(at.getScaleX() * w);
+                height = roundDown(at.getScaleY() * h);
+                xtranslation = roundDown(at.getScaleX() * x + at.getTranslateX());
+                ytranslation = roundDown(at.getScaleY() * y + at.getTranslateY());
+            } else {
+                width = w;
+                height = h;
+                xtranslation = x;
+                ytranslation = y;
+            }
+            g2d.translate(xtranslation, ytranslation);
 
-          public Insets getBorderInsets(Component c, Insets newInsets) {
-              newInsets.set(5, 5, 5, 5);
-              return newInsets;
-          }
+            // border and corner scaling
+            corner = (int) Math.round(corner * at.getScaleX());
+            // loop constraint for bulk of the border
+            int loopCount = (int) Math.round(5 * at.getScaleX());
+
+            // midpoint at which highlight & shadow lines
+            // are positioned on the border
+            int midPoint = loopCount/2;
+
+            g.setColor(background);
+            // Draw outermost lines
+            g.drawLine( 0, 0, width-1, 0);
+            g.drawLine( 0, 1, 0, height-1);
+            g.drawLine( width-1, 1, width-1, height-1);
+            g.drawLine( 1, height-1, width-1, height-1);
+
+            // Draw the bulk of the border
+            for (int i = 1; i <= loopCount; i++) {
+                g.drawRect(x+i,y+i,width-(i*2), height-(i*2));
+            }
+
+            if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
+                // Draw the Long highlight lines
+                g.setColor(highlight);
+                g.drawLine(corner+1, midPoint+stkWidth,
+                        width-corner, midPoint+stkWidth); //top
+                g.drawLine(midPoint+stkWidth, corner+1,
+                        midPoint+stkWidth, height-corner); //left
+                g.drawLine(width-(midPoint+stkWidth), corner+1,
+                        width-(midPoint+stkWidth), height-corner); //right
+                g.drawLine(corner+1, height-(midPoint+stkWidth),
+                        width-corner, height-(midPoint+stkWidth)); //bottom
+
+                // Draw the Long shadow lines
+                g.setColor(shadow);
+                g.drawLine(corner, midPoint, width-corner-1, midPoint);
+                g.drawLine(midPoint, corner, midPoint, height-corner-1);
+                g.drawLine(width-midPoint, corner,
+                        width-midPoint, height-corner-1);
+                g.drawLine(corner, height-midPoint,
+                        width-corner-1, height-midPoint);
+            }
+
+            // Undo the resetTransform setting from before
+            g2d.translate(-xtranslation, -ytranslation);
+            if (resetTransform) {
+                g2d.setColor(oldColor);
+                g2d.setTransform(at);
+                g2d.setStroke(oldStk);
+            }
+        }
+
+        public Insets getBorderInsets(Component c, Insets newInsets) {
+          newInsets.set(5, 5, 5, 5);
+          return newInsets;
+        }
     }
 
     /**
