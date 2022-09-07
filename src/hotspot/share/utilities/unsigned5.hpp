@@ -333,7 +333,7 @@ class UNSIGNED5 : AllStatic {
       // Writable array argument can be rewritten by accept_grow.
       // So we need a legitimate (non-zero) limit to work with.
       // As a result, a writer's initial buffer must not be empty.
-      assert(limit() != 0, "limit required");
+      assert(this->limit() != 0, "limit required");
     }
     void accept_uint(uint32_t value) {
       const OFF lim = has_limit() ? limit() : 0;
