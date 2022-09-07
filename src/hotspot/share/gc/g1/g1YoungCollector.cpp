@@ -383,7 +383,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
       uint index = hr->hrm_index();
       if (humongous_region_is_candidate(hr)) {
-        _g1h->register_humongous_region_with_region_attr(index);
+        _g1h->register_humongous_candidate_region_with_region_attr(index);
         _worker_humongous_candidates++;
         // We will later handle the remembered sets of these regions.
       } else {
@@ -808,7 +808,7 @@ public:
     assert(obj != NULL, "the caller should have filtered out NULL values");
 
     const G1HeapRegionAttr region_attr =_g1h->region_attr(obj);
-    if (!region_attr.is_in_cset_or_humongous()) {
+    if (!region_attr.is_in_cset_or_humongous_candidate()) {
       return;
     }
     if (region_attr.is_in_cset()) {
@@ -816,7 +816,7 @@ public:
       *p = obj->forwardee();
     } else {
       assert(!obj->is_forwarded(), "invariant" );
-      assert(region_attr.is_humongous(),
+      assert(region_attr.is_humongous_candidate(),
              "Only allowed G1HeapRegionAttr state is IsHumongous, but is %d", region_attr.type());
      _g1h->set_humongous_is_live(obj);
     }
@@ -844,7 +844,7 @@ public:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
 
-    if (_g1h->is_in_cset_or_humongous(obj)) {
+    if (_g1h->is_in_cset_or_humongous_candidate(obj)) {
       // If the referent object has been forwarded (either copied
       // to a new location or to itself in the event of an
       // evacuation failure) then we need to update the reference

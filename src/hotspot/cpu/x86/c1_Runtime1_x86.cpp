@@ -77,11 +77,11 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   int call_offset = -1;
   if (!align_stack) {
-    set_last_Java_frame(thread, noreg, rbp, NULL);
+    set_last_Java_frame(thread, noreg, rbp, NULL, rscratch1);
   } else {
     address the_pc = pc();
     call_offset = offset();
-    set_last_Java_frame(thread, noreg, rbp, the_pc);
+    set_last_Java_frame(thread, noreg, rbp, the_pc, rscratch1);
     andptr(rsp, -(StackAlignmentInBytes));    // Align stack
   }
 
@@ -886,7 +886,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   __ get_thread(thread);
   __ push(thread);
 #endif // _LP64
-  __ set_last_Java_frame(thread, noreg, rbp, NULL);
+  __ set_last_Java_frame(thread, noreg, rbp, NULL, rscratch1);
   // do the call
   __ call(RuntimeAddress(target));
   OopMapSet* oop_maps = new OopMapSet();
@@ -1147,9 +1147,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         // load the klass and check the has finalizer flag
         Label register_finalizer;
-        Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
         Register t = rsi;
-        __ load_klass(t, rax, tmp_load_klass);
+        __ load_klass(t, rax, rscratch1);
         __ movl(t, Address(t, Klass::access_flags_offset()));
         __ testl(t, JVM_ACC_HAS_FINALIZER);
         __ jcc(Assembler::notZero, register_finalizer);

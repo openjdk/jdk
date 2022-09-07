@@ -121,7 +121,7 @@ public:
   static bool contains_non_shared(const void* ptr);
 
   // Free empty virtualspaces
-  static void purge();
+  static void purge(bool classes_unloaded);
 
   static void report_metadata_oome(ClassLoaderData* loader_data, size_t word_size,
                                    MetaspaceObj::Type type, MetadataType mdtype, TRAPS);

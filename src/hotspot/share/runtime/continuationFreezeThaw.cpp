@@ -59,6 +59,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/smallRegisterMap.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackOverflow.hpp"
@@ -220,7 +221,7 @@ template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thr
 
 
 // Entry point to freeze. Transitions are handled manually
-// Called from generate_cont_doYield() in stubGenerator_<cpu>.cpp through Continuation::freeze_entry();
+// Called from gen_continuation_yield() in sharedRuntime_<cpu>.cpp through Continuation::freeze_entry();
 template<typename ConfigT>
 static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* sp))
   assert(sp == current->frame_anchor()->last_Java_sp(), "");
@@ -381,6 +382,10 @@ public:
 
   inline int size_if_fast_freeze_available();
 
+#ifdef ASSERT
+  bool interpreted_native_or_deoptimized_on_stack();
+#endif
+
 protected:
   inline void init_rest();
   void freeze_fast_init_cont_data(intptr_t* frame_sp);
@@ -480,7 +485,7 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
   assert(_cont.chunk_invariant(), "");
   assert(!Interpreter::contains(_cont.entryPC()), "");
   static const int doYield_stub_frame_size = frame::metadata_words;
-  assert(StubRoutines::cont_doYield_stub()->frame_size() == doYield_stub_frame_size, "");
+  assert(SharedRuntime::cont_doYield_stub()->frame_size() == doYield_stub_frame_size, "");
 
   // properties of the continuation on the stack; all sizes are in words
   _cont_stack_top    = frame_sp + doYield_stub_frame_size; // we don't freeze the doYield stub frame
@@ -554,7 +559,7 @@ int FreezeBase::size_if_fast_freeze_available() {
     return 0;
   }
 
-  assert(StubRoutines::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
+  assert(SharedRuntime::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
 
   int total_size_needed = cont_size();
 
@@ -745,7 +750,6 @@ NOINLINE freeze_result FreezeBase::freeze_slow() {
 frame FreezeBase::freeze_start_frame() {
   frame f = _thread->last_frame();
   if (LIKELY(!_preempt)) {
-    assert(StubRoutines::cont_doYield_stub()->contains(f.pc()), "");
     return freeze_start_frame_yield_stub(f);
   } else {
     return freeze_start_frame_safepoint_stub(f);
@@ -753,8 +757,9 @@ frame FreezeBase::freeze_start_frame() {
 }
 
 frame FreezeBase::freeze_start_frame_yield_stub(frame f) {
-  assert(StubRoutines::cont_doYield_stub()->contains(f.pc()), "must be");
-  f = sender<ContinuationHelper::StubFrame>(f);
+  assert(SharedRuntime::cont_doYield_stub()->contains(f.pc()), "must be");
+  f = sender<ContinuationHelper::NonInterpretedUnknownFrame>(f);
+  assert(Continuation::is_frame_in_continuation(_thread->last_continuation(), f), "");
   return f;
 }
 
@@ -772,6 +777,7 @@ frame FreezeBase::freeze_start_frame_safepoint_stub(frame f) {
       f = sender<ContinuationHelper::StubFrame>(f); // Safepoint stub in interpreter
     }
   }
+  assert(Continuation::is_frame_in_continuation(_thread->last_continuation(), f), "");
   return f;
 }
 
@@ -1356,14 +1362,14 @@ static bool monitors_on_stack(JavaThread* thread) {
   return false;
 }
 
-static bool interpreted_native_or_deoptimized_on_stack(JavaThread* thread) {
-  ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread,
+bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
+  ContinuationEntry* ce = _thread->last_continuation();
+  RegisterMap map(_thread,
                   RegisterMap::UpdateMap::skip,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
-  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
+  for (frame f = freeze_start_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
     if (f.is_interpreted_frame() || f.is_native_frame() || f.is_deoptimized_frame()) {
       return true;
     }
@@ -1434,7 +1440,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
   // adapter or called Deoptimization::unpack_frames. Calls from native frames also go through the interpreter
   // (see JavaCalls::call_helper).
   assert(!current->cont_fastpath()
-         || (current->cont_fastpath_thread_state() && !interpreted_native_or_deoptimized_on_stack(current)), "");
+         || (current->cont_fastpath_thread_state() && !freeze.interpreted_native_or_deoptimized_on_stack()), "");
   bool fast = UseContinuationFastPath && current->cont_fastpath();
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
@@ -2311,7 +2317,7 @@ static void do_deopt_after_thaw(JavaThread* thread) {
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->cb()->is_compiled()) {
       CompiledMethod* cm = fst.current()->cb()->as_compiled_method();
-      if (!cm->method()->is_continuation_enter_intrinsic()) {
+      if (!cm->method()->is_continuation_native_intrinsic()) {
         cm->make_deoptimized();
       }
     }
@@ -2501,10 +2507,10 @@ private:
   static void resolve() {
     typedef Config<use_compressed ? oop_kind::NARROW : oop_kind::WIDE, BarrierSetT> SelectedConfigT;
 
-    freeze_entry = (address)(void*)freeze<SelectedConfigT>;
+    freeze_entry = (address)freeze<SelectedConfigT>;
 
     // If we wanted, we could templatize by kind and have three different thaw entries
-    thaw_entry   = (address)(void*)thaw<SelectedConfigT>;
+    thaw_entry   = (address)thaw<SelectedConfigT>;
   }
 };
 

@@ -138,13 +138,6 @@ void ParmNode::dump_compact_spec(outputStream *st) const {
     bottom_type()->dump_on(st);
   }
 }
-
-// For a ParmNode, all immediate inputs and outputs are considered relevant
-// both in compact and standard representation.
-void ParmNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
 #endif
 
 uint ParmNode::ideal_reg() const {
@@ -1373,19 +1366,6 @@ void SafePointNode::dump_spec(outputStream *st) const {
   st->print(" SafePoint ");
   _replaced_nodes.dump(st);
 }
-
-// The related nodes of a SafepointNode are all data inputs, excluding the
-// control boundary, as well as all outputs till level 2 (to include projection
-// nodes and targets). In compact mode, just include inputs till level 1 and
-// outputs as before.
-void SafePointNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-  }
-  this->collect_nodes(out_rel, -2, false, false);
-}
 #endif
 
 const RegMask &SafePointNode::in_RegMask(uint idx) const {
@@ -2004,16 +1984,6 @@ void AbstractLockNode::dump_spec(outputStream* st) const {
 
 void AbstractLockNode::dump_compact_spec(outputStream* st) const {
   st->print("%s", _kind_names[_kind]);
-}
-
-// The related set of lock nodes includes the control boundary.
-void AbstractLockNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-      this->collect_nodes(in_rel, 1, false, false);
-    } else {
-      this->collect_nodes_in_all_data(in_rel, true);
-    }
-    this->collect_nodes(out_rel, -2, false, false);
 }
 #endif
 

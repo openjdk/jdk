@@ -64,7 +64,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -608,8 +607,8 @@ void GenCollectedHeap::do_collection(bool           full,
       increment_total_full_collections();
     }
 
-    Continuations::on_gc_marking_cycle_start();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_start();
+    CodeCache::arm_all_nmethods();
 
     collect_generation(_old_gen,
                        full,
@@ -618,8 +617,8 @@ void GenCollectedHeap::do_collection(bool           full,
                        run_verification && VerifyGCLevel <= 1,
                        do_clear_all_soft_refs);
 
-    Continuations::on_gc_marking_cycle_finish();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_finish();
+    CodeCache::arm_all_nmethods();
 
     // Adjust generation sizes.
     _old_gen->compute_new_size();
@@ -660,10 +659,6 @@ void GenCollectedHeap::unregister_nmethod(nmethod* nm) {
 
 void GenCollectedHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
-}
-
-void GenCollectedHeap::flush_nmethod(nmethod* nm) {
-  // Do nothing.
 }
 
 void GenCollectedHeap::prune_scavengable_nmethods() {
@@ -887,8 +882,8 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
   }
 }
 
-bool GenCollectedHeap::is_in_young(oop p) const {
-  bool result = cast_from_oop<HeapWord*>(p) < _old_gen->reserved().start();
+bool GenCollectedHeap::is_in_young(const void* p) const {
+  bool result = p < _old_gen->reserved().start();
   assert(result == _young_gen->is_in_reserved(p),
          "incorrect test - result=%d, p=" INTPTR_FORMAT, result, p2i((void*)p));
   return result;

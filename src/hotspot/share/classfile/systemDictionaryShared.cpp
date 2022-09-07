@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/archiveUtils.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -60,6 +60,7 @@
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -401,7 +402,6 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
         THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
       ClassLoaderData *loader_data = register_loader(class_loader);
       Dictionary* dictionary = loader_data->dictionary();
-      unsigned int d_hash = dictionary->compute_hash(name);
 
       // Note: currently, find_or_load_shared_class is called only from
       // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
@@ -409,7 +409,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       assert(get_loader_lock_or_null(class_loader) == NULL, "ObjectLocker not required");
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
-        InstanceKlass* check = dictionary->find_class(d_hash, name);
+        InstanceKlass* check = dictionary->find_class(THREAD, name);
         if (check != NULL) {
           return check;
         }
@@ -1600,7 +1600,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaPr
 }
 
 void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::are_archived_mirrors_available()) {
+  if (!ArchiveHeapLoader::are_archived_mirrors_available()) {
     return;
   }
   if (MetaspaceShared::relocation_delta() == 0) {
