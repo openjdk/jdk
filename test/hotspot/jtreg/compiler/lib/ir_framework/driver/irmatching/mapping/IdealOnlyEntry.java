@@ -24,8 +24,12 @@
 package compiler.lib.ir_framework.driver.irmatching.mapping;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.OutputType;
+import compiler.lib.ir_framework.RegexType;
 
+/**
+ * This class represents a mapping entry for an IR node that is only applied on ideal graph phases (i.e. before matching
+ * creates a Mach Graph). All compile phases on the ideal graph specify {@link RegexType#IDEAL} as regex type.
+ */
 class IdealOnlyEntry extends SingleRegexEntry {
 
     protected IdealOnlyEntry(CompilePhase defaultCompilePhase, String regex) {
@@ -33,8 +37,8 @@ class IdealOnlyEntry extends SingleRegexEntry {
     }
 
     @Override
-    public String getRegexForPhase(CompilePhase phase) {
-        if (phase.getOutputType() == OutputType.IDEAL) {
+    public String getRegexForPhase(CompilePhase compilePhase) {
+        if (compilePhase.getRegexType() == RegexType.IDEAL) {
             return regex;
         } else {
             return null;

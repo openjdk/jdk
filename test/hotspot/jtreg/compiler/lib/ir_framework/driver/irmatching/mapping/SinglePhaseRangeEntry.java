@@ -25,6 +25,13 @@ package compiler.lib.ir_framework.driver.irmatching.mapping;
 
 import compiler.lib.ir_framework.CompilePhase;
 
+/**
+ * This class represents a mapping entry for an IR node that maps to a single regexes to multiple continuous compile
+ * phases (i.e. follow each other immediately). This is done by providing a start and an end compile phase which is
+ * put into a {@link PhaseInterval}. An IR node mapping to different regexes should use {@link MultiPhaseRangeEntry}.
+ *
+ * @see PhaseInterval
+ */
 class SinglePhaseRangeEntry extends IRNodeMapEntry {
     private final String regex;
     private final PhaseInterval interval;
@@ -36,8 +43,8 @@ class SinglePhaseRangeEntry extends IRNodeMapEntry {
     }
 
     @Override
-    public String getRegexForPhase(CompilePhase phase) {
-        if (interval.includes(phase)) {
+    public String getRegexForPhase(CompilePhase compilePhase) {
+        if (interval.includes(compilePhase)) {
             // start <= phase <= end
             return regex;
         }

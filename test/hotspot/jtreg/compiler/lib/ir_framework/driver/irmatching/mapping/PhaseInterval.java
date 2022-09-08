@@ -42,11 +42,6 @@ class PhaseInterval {
         return end.ordinal();
     }
 
-    @Override
-    public String toString() {
-        return "[" + start + ", " + end + "]";
-    }
-
     public CompilePhase getStart() {
         return start;
     }
@@ -58,6 +53,11 @@ class PhaseInterval {
     public boolean includes(CompilePhase phase) {
         // start <= phase <= end
         return phase.compareTo(start) >= 0 && phase.compareTo(end) <= 0;
+    }
+
+    @Override
+    public String toString() {
+        return "[" + start + ", " + end + "]";
     }
 }
 

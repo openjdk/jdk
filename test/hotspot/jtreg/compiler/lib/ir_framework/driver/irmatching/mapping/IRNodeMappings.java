@@ -24,14 +24,35 @@
 package compiler.lib.ir_framework.driver.irmatching.mapping;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.regexes.IdealDefaultRegexes;
 import compiler.lib.ir_framework.driver.irmatching.regexes.OptoAssemblyDefaultRegexes;
 import compiler.lib.ir_framework.shared.TestFormat;
+import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This class defines in its constructor a mapping of each {@link IRNode} placeholder string to one or more default
+ * regexes found in {@link compiler.lib.ir_framework.driver.irmatching.regexes}. The IR framework will automatically
+ * replace each {@link IRNode} placeholder string in the user defined test with a default regex depending on the
+ * selected compile phases in {@link IR#phase}.
+ *
+ * <p>
+ * Each mapping must define a default compile phase which is applied when the user does not explicitly set the
+ * {@link IR#phase()} attribute or when directly using {@link CompilePhase#DEFAULT}. In this case, the IR framework
+ * falls back on the default compile phase of any {@link IRNodeMapEntry}.
+ *
+ * <p>
+ * Each newly entered {@link IRNode} entry must be accompanied by a corresponding mapping in this class. If a user test
+ * specifies a compile phase for which no mapping is defined in this class, a {@link TestFormatException} is thrown.
+ *
+ * @see IR
+ * @see IRNode
+ * @see IRNodeMapEntry
+ */
 public class IRNodeMappings {
     // Singleton
     private static final IRNodeMappings INSTANCE = new IRNodeMappings();

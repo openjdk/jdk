@@ -25,6 +25,11 @@ package compiler.lib.ir_framework.driver.irmatching.mapping;
 
 import compiler.lib.ir_framework.CompilePhase;
 
+/**
+ * A {@link PhaseInterval} that represents a singleton set (i.e. an interval that only contains one compile phase).
+ *
+ * @see PhaseInterval
+ */
 class PhaseSingletonSet extends PhaseInterval {
     public PhaseSingletonSet(CompilePhase phase) {
         super(phase, phase);

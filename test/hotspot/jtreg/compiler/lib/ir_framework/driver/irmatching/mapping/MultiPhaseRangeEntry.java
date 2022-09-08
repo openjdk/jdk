@@ -29,15 +29,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class represents a mapping entry for an IR node that maps to different regexes depending on the compile phase.
+ * This is done by providing a specific {@link PhaseInterval} (i.e. a continuous compile phase range) for each regex.
+ * If there is only one {@link PhaseInterval}, a {@link SinglePhaseRangeEntry} should be used.
+ *
+ * @see PhaseInterval
+ */
 class MultiPhaseRangeEntry extends IRNodeMapEntry {
     private final Map<PhaseInterval, String> intervalToRegex;
 
-    MultiPhaseRangeEntry(CompilePhase defaultCompilePhase, Map<PhaseInterval, String> intervalToRegex) {
+    public MultiPhaseRangeEntry(CompilePhase defaultCompilePhase, Map<PhaseInterval, String> intervalToRegex) {
         super(defaultCompilePhase);
         checkOverlap(new ArrayList<>(intervalToRegex.keySet()));
         this.intervalToRegex = intervalToRegex;
     }
 
+    /**
+     * Checks that there is no compile phase overlap of
+     */
     private void checkOverlap(List<PhaseInterval> phaseRanges) {
         // Sort ascending by start field of phase range.
         phaseRanges.sort((i1, i2) -> i1.getStart().ordinal() - i2.getEnd().ordinal());
@@ -50,10 +60,10 @@ class MultiPhaseRangeEntry extends IRNodeMapEntry {
     }
 
     @Override
-    public String getRegexForPhase(CompilePhase phase) {
+    public String getRegexForPhase(CompilePhase compilePhase) {
         for (var entry : intervalToRegex.entrySet()) {
             PhaseInterval interval = entry.getKey();
-            if (interval.includes(phase)) {
+            if (interval.includes(compilePhase)) {
                 return entry.getValue();
             }
         }

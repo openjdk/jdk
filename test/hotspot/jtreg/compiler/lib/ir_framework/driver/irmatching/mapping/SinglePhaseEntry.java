@@ -25,6 +25,10 @@ package compiler.lib.ir_framework.driver.irmatching.mapping;
 
 import compiler.lib.ir_framework.CompilePhase;
 
+/**
+ * This class represents a mapping entry for an IR node that is only applicable for a single compile phase. This phase
+ * also implicitly represents the default phase when the user specifies {@link CompilePhase#DEFAULT}.
+ */
 class SinglePhaseEntry extends SingleRegexEntry {
 
     SinglePhaseEntry(CompilePhase phase, String regex) {
@@ -32,10 +36,11 @@ class SinglePhaseEntry extends SingleRegexEntry {
     }
 
     @Override
-    public String getRegexForPhase(CompilePhase phase) {
-        if (phase == getDefaultCompilePhase()) {
+    public String getRegexForPhase(CompilePhase compilePhase) {
+        if (compilePhase == getDefaultCompilePhase()) {
             return regex;
+        } else {
+            return null;
         }
-        return null;
     }
 }

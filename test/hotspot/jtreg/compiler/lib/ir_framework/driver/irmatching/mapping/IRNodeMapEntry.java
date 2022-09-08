@@ -24,7 +24,16 @@
 package compiler.lib.ir_framework.driver.irmatching.mapping;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 
+/**
+ * Base class to represent an {@link IRNode} mapping entry in {@link IRNodeMappings}. Each entry must define a default
+ * compile phase to apply when a user test specifies {@link CompilePhase#DEFAULT} in {@link IR#phase}.
+ *
+ * @see IRNode
+ * @see IRNodeMappings
+ */
 abstract class IRNodeMapEntry {
     private final CompilePhase defaultCompilePhase;
 
@@ -32,10 +41,12 @@ abstract class IRNodeMapEntry {
         this.defaultCompilePhase = defaultCompilePhase;
     }
 
-    abstract public String getRegexForPhase(CompilePhase phase);
+    /**
+     * Get the regex string which shall be used by the IR framework when matching on {@code compilePhase}.
+     */
+    abstract public String getRegexForPhase(CompilePhase compilePhase);
 
     public CompilePhase getDefaultCompilePhase() {
         return defaultCompilePhase;
     }
 }
-

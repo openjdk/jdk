@@ -23,6 +23,11 @@
 
 package compiler.lib.ir_framework;
 
-public enum OutputType {
+/**
+ * Enum to denote the default regex type of the associated {@link CompilePhase}.
+ *
+ * @see CompilePhase
+ */
+public enum RegexType {
     IDEAL, MACH, OPTO_ASSEMBLY
 }

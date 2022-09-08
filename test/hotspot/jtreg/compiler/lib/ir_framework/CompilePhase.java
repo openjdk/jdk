@@ -53,7 +53,7 @@ public enum CompilePhase {
     BEFORE_BEAUTIFY_LOOPS("Before beautify loops"),
     AFTER_BEAUTIFY_LOOPS("After beautify loops"),
     // Match on very first BEFORE_CLOOPS phase (there could be multiple phases for multiple loops in the code).
-    BEFORE_CLOOPS("Before CountedLoop", OutputType.IDEAL, ActionOnRepeat.KEEP_FIRST),
+    BEFORE_CLOOPS("Before CountedLoop", RegexType.IDEAL, ActionOnRepeat.KEEP_FIRST),
     AFTER_CLOOPS("After CountedLoop"),
     PHASEIDEAL_BEFORE_EA("PhaseIdealLoop before EA"),
     AFTER_EA("After Escape Analysis"),
@@ -70,12 +70,12 @@ public enum CompilePhase {
     OPTIMIZE_FINISHED("Optimize finished"),
     PRINT_IDEAL("PrintIdeal"),
     BEFORE_MATCHING("Before matching"),
-    MATCHING("After matching", OutputType.MACH),
-    GLOBAL_CODE_MOTION("Global code motion", OutputType.MACH),
-    FINAL_CODE("Final Code", OutputType.MACH),
+    MATCHING("After matching", RegexType.MACH),
+    GLOBAL_CODE_MOTION("Global code motion", RegexType.MACH),
+    FINAL_CODE("Final Code", RegexType.MACH),
     END("End"),
 
-    PRINT_OPTO_ASSEMBLY("PrintOptoAssembly", OutputType.OPTO_ASSEMBLY),
+    PRINT_OPTO_ASSEMBLY("PrintOptoAssembly", RegexType.OPTO_ASSEMBLY),
     ;
 
     private static final Map<String, CompilePhase> PHASES_BY_PARSED_NAME = new HashMap<>();
@@ -94,24 +94,24 @@ public enum CompilePhase {
     }
 
     private final String name;
-    private final OutputType outputType;
+    private final RegexType regexType;
     private final ActionOnRepeat actionOnRepeat;
 
     CompilePhase(String name) {
         this.name = name;
-        this.outputType = OutputType.IDEAL;
+        this.regexType = RegexType.IDEAL;
         this.actionOnRepeat = ActionOnRepeat.KEEP_LAST;
     }
 
-    CompilePhase(String name, OutputType outputType) {
+    CompilePhase(String name, RegexType regexType) {
         this.name = name;
-        this.outputType = outputType;
+        this.regexType = regexType;
         this.actionOnRepeat = ActionOnRepeat.KEEP_LAST;
     }
 
-    CompilePhase(String name, OutputType outputType, ActionOnRepeat actionOnRepeat) {
+    CompilePhase(String name, RegexType regexType, ActionOnRepeat actionOnRepeat) {
         this.name = name;
-        this.outputType = outputType;
+        this.regexType = regexType;
         this.actionOnRepeat = actionOnRepeat;
     }
 
@@ -119,8 +119,8 @@ public enum CompilePhase {
         return name;
     }
 
-    public OutputType getOutputType() {
-        return outputType;
+    public RegexType getRegexType() {
+        return regexType;
     }
 
     public static CompilePhase forName(String phaseName) {
