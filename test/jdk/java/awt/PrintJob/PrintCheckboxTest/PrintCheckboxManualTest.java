@@ -60,18 +60,22 @@ public class PrintCheckboxManualTest
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException, IOException {
+
+        if (!isXToolkit()) {
+            throw new RuntimeException("XToolkit is not enabled, even though " +
+                    "test is executed on " + System.getProperty("os.name"));
+        }
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new SkippedException("Printer not configured or available."
                     + " Test cannot continue.");
         }
 
         String instruction = """
-               Linux or Solaris with XToolkit ONLY!
-               1. Click the 'Print' button on the frame,
-               2. Select a printer in the print dialog and proceed,
-               3. If the frame with checkbox and button on it is printed
-               successfully test PASSED else FAILED.
-               """;
+                1. Click the 'Print' button on the frame,
+                2. Select a printer in the print dialog and proceed,
+                3. If the frame with checkbox and button on it is printed
+                successfully test PASSED else FAILED.
+                """;
 
         Consumer<JEditorPane> testInstProvider = e -> {
             e.setContentType("text/plain");
@@ -84,8 +88,8 @@ public class PrintCheckboxManualTest
         EventQueue.invokeAndWait(PrintCheckboxManualTest::createTestUI);
 
         //this will block until user decision to pass or fail the test
-        TestResult  testResult = resultSupplier.get();
-        ManualTestFrame.handleResult(testResult,"PrintCheckboxManualTest");
+        TestResult testResult = resultSupplier.get();
+        ManualTestFrame.handleResult(testResult, "PrintCheckboxManualTest");
     }
 
     public static void createTestUI() {
@@ -129,6 +133,11 @@ public class PrintCheckboxManualTest
         f.add(b);
         f.setLocationRelativeTo(null);
         f.setVisible(true);
+    }
+
+    private static boolean isXToolkit() {
+        return Toolkit.getDefaultToolkit().getClass()
+                .getName().equals("sun.awt.X11.XToolkit");
     }
 }
 
