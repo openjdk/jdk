@@ -379,7 +379,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   // The length of the instruction sequence emitted should be independent
   // of the value of the local char buffer address so that the size of mach
   // nodes for scratch emit and normal emit matches.
-  mv(t0, (address)b);
+  movptr(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
   int32_t offset = 0;
@@ -418,7 +418,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   // The length of the instruction sequence emitted should be independent
   // of the value of the local char buffer address so that the size of mach
   // nodes for scratch emit and normal emit matches.
-  mv(t0, (address)b);
+  movptr(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
   int32_t offset = 0;
@@ -1361,12 +1361,6 @@ void MacroAssembler::mv(Register Rd, Address dest) {
   assert(dest.getMode() == Address::literal, "Address mode should be Address::literal");
   code_section()->relocate(pc(), dest.rspec());
   movptr(Rd, dest.target());
-}
-
-void MacroAssembler::mv(Register Rd, address addr) {
-  // Here in case of use with relocation, use fix length instruction
-  // movptr instead of li
-  movptr(Rd, addr);
 }
 
 void MacroAssembler::mv(Register Rd, RegisterOrConstant src) {
@@ -2687,11 +2681,10 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  int32_t offset = 0;
-  movptr_with_offset(ra, CAST_FROM_FN_PTR(address, Thread::current), offset);
-  jalr(ra, ra, offset);
-  if (thread != x10) {
-    mv(thread, x10);
+  mv(ra, CAST_FROM_FN_PTR(address, Thread::current));
+  jalr(ra);
+  if (thread != c_rarg0) {
+    mv(thread, c_rarg0);
   }
 
   // restore pushed registers
