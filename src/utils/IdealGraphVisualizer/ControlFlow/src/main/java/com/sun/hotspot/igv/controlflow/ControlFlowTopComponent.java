@@ -143,8 +143,10 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
                 InputGraph graph = provider.getGraph();
                 if (graph != null) {
                     scene.setGraph(graph);
+                    return;
                 }
             }
+            scene.setGraph(new InputGraph(""));
         });
     }
 

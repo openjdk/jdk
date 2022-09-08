@@ -429,7 +429,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public static EditorTopComponent getActive() {
-        return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
+        try {
+            return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** This method is called from within the constructor to

@@ -181,7 +181,8 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
                     return;
                 }
             }
-            rootNode.update(null, null);
+            rootNode = new MethodNode(null, null, "");
+            manager.setRootContext(rootNode);
         });
     }
 
