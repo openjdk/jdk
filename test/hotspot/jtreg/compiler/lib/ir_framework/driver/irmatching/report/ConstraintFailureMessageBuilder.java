@@ -21,33 +21,27 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.reporting;
+package compiler.lib.ir_framework.driver.irmatching.report;
 
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Base class representing a failure when applying a constraint (i.e. regex matching) on a compile phase output.
- *
- * @see Constraint
- * @see CheckAttribute
- * @see CheckAttributeMatchResult
+ * Base class to create a failure message for a failed constraint.
  */
-abstract public class ConstraintFailureMessageBuilder implements FailureMessage {
+abstract public class ConstraintFailureMessageBuilder {
     protected final int indentation;
 
     public ConstraintFailureMessageBuilder(int indentation) {
         this.indentation = indentation;
     }
 
+    abstract public String build();
+
     protected String buildConstraintHeader(ConstraintFailure constraintFailure) {
-        return getIndentation(indentation) + "* Constraint "
+        return ReportBuilder.getIndentation(indentation) + "* Constraint "
                + constraintFailure.getConstraintIndex() + ": \"" + constraintFailure.getNodeRegex() + "\""
                + System.lineSeparator();
     }
@@ -58,28 +52,23 @@ abstract public class ConstraintFailureMessageBuilder implements FailureMessage 
 
     private String buildMatchedNodesHeader(ConstraintFailure constraintFailure) {
         int matchCount = constraintFailure.getMatchedNodes().size();
-        return getIndentation(indentation + 2) + "- " + getMatchedPrefix(constraintFailure)
+        return ReportBuilder.getIndentation(indentation + 2) + "- " + getMatchedPrefix(constraintFailure)
                + " node" + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
     }
 
     abstract protected String getMatchedPrefix(ConstraintFailure constraintFailure);
 
-    /**
-     * Builds a failure message in a pretty format to be used by {@link IRMatcher} to report IR matching failures.
-     */
-    abstract public String build();
-
     private String buildMatchedNodesBody(ConstraintFailure constraintFailure) {
         StringBuilder builder = new StringBuilder();
         List<String> matches = addWhiteSpacePrefixForEachLine(constraintFailure.getMatchedNodes());
-        matches.forEach(match -> builder.append(getIndentation(indentation + 4))
+        matches.forEach(match -> builder.append(ReportBuilder.getIndentation(indentation + 4))
                                         .append("* ").append(match).append(System.lineSeparator()));
         return builder.toString();
     }
 
 
     private List<String> addWhiteSpacePrefixForEachLine(List<String> matches) {
-        String indentationString = getIndentation(indentation + 6);
+        String indentationString = ReportBuilder.getIndentation(indentation + 6);
         return matches.stream()
                       .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator() + indentationString))
                       .collect(Collectors.toList());

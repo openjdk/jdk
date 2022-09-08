@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.visitor;
 
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
@@ -33,8 +34,11 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConst
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
 
+/**
+ * This visitor visits the {@link MatchResult} elements in pre-order and calls the specified {@link MatchResultAction}
+ * for each visited element.
+ */
 public class PreOrderMatchResultVisitor implements MatchResultVisitor {
-
     private final MatchResultAction action;
 
     public PreOrderMatchResultVisitor(MatchResultAction action) {

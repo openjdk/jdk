@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.reporting;
+package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
@@ -35,8 +35,16 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRu
 import java.util.EnumSet;
 import java.util.stream.Collectors;
 
-public class CompilationOutputBuilder extends AbstractBuilder implements MatchResultVisitor {
+/**
+ * This class collects the compilation output of each compile phase that was part of an IR matching failure by visiting
+ * each match result element. Multiple compile phase compilation outputs for a single method are collected in the same
+ * order as specified in {@link CompilePhase}.
+ */
+public class CompilationOutputBuilder extends ReportBuilder implements MatchResultVisitor {
     private final EnumSet<CompilePhase> failedCompilePhases = EnumSet.noneOf(CompilePhase.class);
+    /**
+     * Number of collected distinct compile phases.
+     */
     private int compilePhaseCount = 0;
 
     public CompilationOutputBuilder(TestClassResult testClassResult) {
@@ -70,7 +78,7 @@ public class CompilationOutputBuilder extends AbstractBuilder implements MatchRe
     public void visit(IRMethodMatchResult irMethodMatchResult) {
         irMethodMatchResult.acceptChildren(this);
         appendIRMethodHeader(irMethodMatchResult);
-        appendMatchedCompileOutputOfPhases(irMethodMatchResult);
+        appendMatchedCompilationOutputOfPhases(irMethodMatchResult);
         failedCompilePhases.clear();
     }
 
@@ -84,7 +92,7 @@ public class CompilationOutputBuilder extends AbstractBuilder implements MatchRe
            .append(System.lineSeparator());
     }
 
-    private void appendMatchedCompileOutputOfPhases(IRMethodMatchResult irMethodMatchResult) {
+    private void appendMatchedCompilationOutputOfPhases(IRMethodMatchResult irMethodMatchResult) {
         IRMethod irMethod = irMethodMatchResult.getIRMethod();
         msg.append(failedCompilePhases.stream()
                                       .map(irMethod::getOutput)

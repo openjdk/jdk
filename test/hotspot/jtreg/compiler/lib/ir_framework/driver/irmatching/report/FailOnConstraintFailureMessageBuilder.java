@@ -21,24 +21,30 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.reporting;
+package compiler.lib.ir_framework.driver.irmatching.report;
 
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 
 /**
- * Interface used by all classes which represent a IR match result. A result should also provide a failure message
- * in a pretty format to be used by the {@link IRMatcher}.
+ * This class creates a failure message for a {@link IR#failOn} constraint failure.
  */
-public interface FailureMessage {
-    /**
-     * Builds a failure message in a pretty format to be used by {@link IRMatcher} to report IR matching failures.
-     */
-    String build();
+public class FailOnConstraintFailureMessageBuilder extends ConstraintFailureMessageBuilder {
+    private final FailOnConstraintFailure failOnConstraintFailure;
 
-    /**
-     * Return a string of {@code indentationSize} many whitespaces.
-     */
-    default String getIndentation(int indentationSize) {
-        return " ".repeat(indentationSize);
+    public FailOnConstraintFailureMessageBuilder(FailOnConstraintFailure failOnConstraintFailure, int indentation) {
+        super(indentation);
+        this.failOnConstraintFailure = failOnConstraintFailure;
+    }
+
+    @Override
+    protected String getMatchedPrefix(ConstraintFailure constraintFailure) {
+        return "Matched forbidden";
+    }
+
+    @Override
+    public String build() {
+        return buildConstraintHeader(failOnConstraintFailure) + buildMatchedNodesMessage(failOnConstraintFailure);
     }
 }

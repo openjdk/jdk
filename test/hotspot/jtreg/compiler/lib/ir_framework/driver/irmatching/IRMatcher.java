@@ -24,8 +24,8 @@
 package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
-import compiler.lib.ir_framework.driver.irmatching.reporting.CompilationOutputBuilder;
-import compiler.lib.ir_framework.driver.irmatching.reporting.FailureMessageBuilder;
+import compiler.lib.ir_framework.driver.irmatching.report.CompilationOutputBuilder;
+import compiler.lib.ir_framework.driver.irmatching.report.FailureMessageBuilder;
 
 /**
  * This class parses the hotspot_pid* file of the test VM to match all applicable @IR rules afterwards.

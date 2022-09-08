@@ -30,6 +30,7 @@ import java.util.Collection;
 /**
  * This interface is implemented by all classes that represent an IR match result of a {@link Matchable} class.
  * A match result class accepts a {@link MatchResultVisitor} to visit the result (i.e. for reporting etc.).
+ * By default, children of a match result are only visited if the failure happened in the child element.
  */
 public interface MatchResult {
     /**
@@ -46,6 +47,9 @@ public interface MatchResult {
      */
     default void acceptChildren(MatchResultVisitor visitor) {}
 
+    /**
+     * Call {@link #accept(MatchResultVisitor)} on all children which are port of an IR matching failure.
+     */
     default void acceptChildren(MatchResultVisitor visitor, Collection<? extends MatchResult> children) {
         for (var result : children) {
             if (result.fail()) {

@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.visitor;
 
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
@@ -33,6 +34,9 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConst
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
 
+/**
+ * This interface specifies default visit methods for each {@link MatchResult} class which can be overridden.
+ */
 public interface MatchResultVisitor {
     default void visit(TestClassResult testClassResult) {}
     default void visit(IRMethodMatchResult irMethodMatchResult) {}

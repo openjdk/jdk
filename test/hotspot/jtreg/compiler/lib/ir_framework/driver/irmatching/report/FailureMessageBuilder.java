@@ -1,7 +1,5 @@
-package compiler.lib.ir_framework.driver.irmatching.reporting;
+package compiler.lib.ir_framework.driver.irmatching.report;
 
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
@@ -10,10 +8,18 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAt
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
 import compiler.lib.ir_framework.driver.irmatching.visitor.PreOrderMatchResultVisitor;
 
-public class FailureMessageBuilder extends AbstractBuilder implements MatchResultAction, FailureMessage {
-    private int indentation;
+/**
+ * This class creates the complete failure message of each IR matching failure by visiting each match result element.
+ */
+public class FailureMessageBuilder extends ReportBuilder implements MatchResultAction {
+    /**
+     * Initial indentation for an IR rule match result message.
+     */
+    private int irRuleIndentation;
 
     public FailureMessageBuilder(TestClassResult testClassResult) {
         super(testClassResult);
@@ -46,7 +52,7 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
     private void appendIRMethodHeader(IRMethodMatchResult irMethodMatchResult) {
         appendIRMethodPrefix();
         int reportedMethodCountDigitCount = digitCount(getMethodNumber());
-        indentation = reportedMethodCountDigitCount + 2;
+        irRuleIndentation = reportedMethodCountDigitCount + 2;
         msg.append("Method \"").append(irMethodMatchResult.getIRMethod().getMethod())
            .append("\" - [Failed IR rules: ").append(irMethodMatchResult.getFailedIRRuleCount()).append("]:")
            .append(System.lineSeparator());
@@ -55,7 +61,7 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
     @Override
     public void doAction(NotCompiledResult notCompiledResult) {
         appendIRMethodHeader(notCompiledResult);
-        msg.append(getIndentation(indentation))
+        msg.append(getIndentation(irRuleIndentation))
            .append("* Method was not compiled. Did you specify a @Run method in STANDALONE mode? In this case, make " +
                    "sure to always trigger a C2 compilation by invoking the test enough times.")
            .append(System.lineSeparator());
@@ -63,7 +69,7 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
 
     @Override
     public void doAction(IRRuleMatchResult irRuleMatchResult) {
-        msg.append(getIndentation(indentation)).append("* @IR rule ").append(irRuleMatchResult.getRuleId()).append(": \"")
+        msg.append(getIndentation(irRuleIndentation)).append("* @IR rule ").append(irRuleMatchResult.getRuleId()).append(": \"")
            .append(irRuleMatchResult.getIRAnno()).append("\"").append(System.lineSeparator());
     }
 
@@ -73,7 +79,7 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
     }
 
     private void appendCompilePhaseIRRule(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
-        msg.append(getIndentation(indentation + 2))
+        msg.append(getIndentation(irRuleIndentation + 2))
            .append("> Phase \"").append(compilePhaseIRRuleMatchResult.getCompilePhase().getName()).append("\":")
            .append(System.lineSeparator());
     }
@@ -81,7 +87,7 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
     @Override
     public void doAction(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
         appendCompilePhaseIRRule(noCompilePhaseCompilationResult);
-        msg.append(getIndentation(indentation + 4))
+        msg.append(getIndentation(irRuleIndentation + 4))
            .append("- NO compilation output found for this phase! Make sure this phase is emitted or remove it from ")
            .append("the list of compile phases in the @IR rule to match on.")
            .append(System.lineSeparator());
@@ -96,18 +102,18 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
             default ->
                     throw new IllegalStateException("Unexpected value: " + checkAttributeMatchResult.getCheckAttributeKind());
         }
-        msg.append(getIndentation(indentation + 4)).append("- ").append(checkAttributeFailureMsg)
+        msg.append(getIndentation(irRuleIndentation + 4)).append("- ").append(checkAttributeFailureMsg)
            .append(":").append(System.lineSeparator());
     }
 
     @Override
     public void doAction(FailOnConstraintFailure failOnConstraintFailure) {
-        msg.append(new FailOnConstraintFailureMessageBuilder(failOnConstraintFailure, indentation + 6).build());
+        msg.append(new FailOnConstraintFailureMessageBuilder(failOnConstraintFailure, irRuleIndentation + 6).build());
     }
 
     @Override
     public void doAction(CountsConstraintFailure countsConstraintFailure) {
-        msg.append(new CountsConstraintFailureMessageBuilder(countsConstraintFailure, indentation + 6).build());
+        msg.append(new CountsConstraintFailureMessageBuilder(countsConstraintFailure, irRuleIndentation + 6).build());
     }
 
     @Override

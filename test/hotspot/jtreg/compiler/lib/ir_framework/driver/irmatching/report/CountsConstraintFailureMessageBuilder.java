@@ -21,19 +21,15 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.reporting;
+package compiler.lib.ir_framework.driver.irmatching.report;
 
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.*;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.shared.Comparison;
 
 /**
- * Base class representing a failure when applying a constraint (i.e. regex matching) on a compile phase output.
- *
- * @see Constraint
- * @see CheckAttribute
- * @see CheckAttributeMatchResult
+ * This class creates a failure message for a {@link IR#counts} constraint failure.
  */
 public class CountsConstraintFailureMessageBuilder extends ConstraintFailureMessageBuilder {
     private final CountsConstraintFailure constraintFailure;
@@ -59,7 +55,7 @@ public class CountsConstraintFailureMessageBuilder extends ConstraintFailureMess
         Comparison<Integer> comparison = constraintFailure.getComparison();
         String failedComparison = "[found] " + constraintFailure.getMatchedNodes().size() + " "
                                   + comparison.getComparator() + " " + comparison.getGivenValue() + " [given]";
-        return getIndentation(indentation + 2) + "- Failed comparison: " + failedComparison
+        return ReportBuilder.getIndentation(indentation + 2) + "- Failed comparison: " + failedComparison
                + System.lineSeparator();
     }
 
@@ -72,6 +68,6 @@ public class CountsConstraintFailureMessageBuilder extends ConstraintFailureMess
     }
 
     private String buildEmptyNodeMatchesMessage() {
-        return getIndentation(indentation + 2) + "- No nodes matched!" + System.lineSeparator();
+        return ReportBuilder.getIndentation(indentation + 2) + "- No nodes matched!" + System.lineSeparator();
     }
 }

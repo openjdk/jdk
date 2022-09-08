@@ -21,17 +21,22 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.reporting;
+package compiler.lib.ir_framework.driver.irmatching.report;
 
+import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-abstract class AbstractBuilder {
+/**
+ * Base class to build an IR matching failure report in text form that is eventually reported to the user by the
+ * {@link IRMatcher}.
+ */
+abstract class ReportBuilder {
     protected final StringBuilder msg = new StringBuilder();
     private int methodNumber = 0;
     private final TestClassResult testClassResult;
 
-    public AbstractBuilder(TestClassResult testClassResult) {
+    public ReportBuilder(TestClassResult testClassResult) {
         this.testClassResult = testClassResult;
     }
 
@@ -41,6 +46,9 @@ abstract class AbstractBuilder {
 
     abstract public String build();
 
+    /**
+     * Start visiting the IR matching results of the test class to build a report.
+     */
     protected void visitResults(MatchResultVisitor visitor) {
         testClassResult.accept(visitor);
     }
@@ -53,8 +61,17 @@ abstract class AbstractBuilder {
         msg.append(methodNumber).append(") ");
     }
 
-    protected static int digitCount(long digit) {
-        return String.valueOf(digit).length();
+    /**
+     * Return a string of {@code indentationSize} many whitespaces.
+     */
+    public static String getIndentation(int indentationSize) {
+        return " ".repeat(indentationSize);
     }
 
+    /**
+     * Return the number of digits of {@code digit}.
+     */
+    protected static int digitCount(int digit) {
+        return String.valueOf(digit).length();
+    }
 }
