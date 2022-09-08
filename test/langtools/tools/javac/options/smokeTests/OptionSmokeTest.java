@@ -149,11 +149,11 @@ public class OptionSmokeTest extends TestRunner {
                 String.format("-target %s", Source.MIN.name));
     }
 
-    @Test
-    public void profileNotValidForTarget(Path base) throws Exception {
-        doTest(base, String.format("warning: profile compact2 is not valid for target release %s", Source.MIN.name),
-                String.format("-profile compact2 -target %s -source %s", Source.MIN.name, Source.MIN.name));
-    }
+//     @Test
+//     public void profileNotValidForTarget(Path base) throws Exception {
+//         doTest(base, String.format("warning: profile compact2 is not valid for target release %s", Source.MIN.name),
+//                 String.format("-profile compact2 -target %s -source %s", Source.MIN.name, Source.MIN.name));
+//     }
 
     @Test
     public void fileNotFound(Path base) throws Exception {
