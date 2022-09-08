@@ -118,19 +118,20 @@ public class TransferTo {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(16384, 16384));
 
         // tests randomly chosen starting positions within source and
-        // target stream
+        // target stream and random buffer level
         for (int i = 0; i < ITERATIONS; i++) {
             byte[] inBytes = createRandomBytes(MIN_SIZE, MAX_SIZE_INCR);
             int posIn = RND.nextInt(inBytes.length);
             int posOut = RND.nextInt(MIN_SIZE);
-            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut);
+            int bufferBytes = RND.nextInt(inBytes.length - posIn);
+            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut, bufferBytes);
         }
 
         // tests reading beyond source EOF (must not transfer any bytes)
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0);
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0, 0);
 
         // tests writing beyond target EOF (must extend output stream)
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096, 0);
     }
 
     /*
@@ -140,7 +141,7 @@ public class TransferTo {
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider, byte[] inBytes) throws Exception {
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0);
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0, 0);
     }
 
     /*
@@ -149,7 +150,7 @@ public class TransferTo {
      * output streams before the transfer are provided by the caller.
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut) throws Exception {
+            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut, int bufferBytes) throws Exception {
         AtomicReference<Supplier<byte[]>> recorder = new AtomicReference<>();
         try (InputStream in = inputStreamProvider.input(inBytes);
             OutputStream out = outputStreamProvider.output(recorder::set)) {
@@ -157,10 +158,16 @@ public class TransferTo {
             in.skipNBytes(posIn);
             out.write(new byte[posOut]);
 
+            // fill buffer by reading some bytes before transformTo
+            byte[] bytes = new byte[bufferBytes];
+            in.read(bytes);
+            out.write(bytes);
+
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
+            int expected = count - bufferBytes;
 
-            assertEquals(reported, count, format("reported %d bytes but should report %d", reported, count));
+            assertEquals(reported, expected, format("reported %d bytes but should report %d", reported, expected));
 
             byte[] outBytes = recorder.get().get();
             assertTrue(Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count),
