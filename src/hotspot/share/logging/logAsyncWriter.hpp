@@ -32,35 +32,7 @@
 #include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
 
-// Forward declaration
 class LogFileStreamOutput;
-
-class AsyncLogMessage {
-  LogFileStreamOutput* _output;
-  const char* _message;
-  const LogDecorations _decorations;
-
-public:
-  AsyncLogMessage(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
-    : _output(output), _message(msg), _decorations(decorations) {}
-
-  size_t size() const {
-    constexpr size_t size = align_up(sizeof(*this), sizeof(void*));
-    return _message != nullptr ? align_up(size + strlen(_message) + 1, sizeof(void*)): size;
-  }
-
-  LogFileStreamOutput* output() const { return _output; }
-  const LogDecorations& decorations() const { return _decorations; }
-  void set_message(const char* msg) { _message = msg; }
-  const char* message() const { return _message; }
-};
-
-typedef ResourceHashtable<LogFileStreamOutput*,
-                          uint32_t,
-                          17, /*table_size*/
-                          ResourceObj::C_HEAP,
-                          mtLogging> AsyncLogMap;
-
 //
 // ASYNC LOGGING SUPPORT
 //
@@ -83,8 +55,39 @@ typedef ResourceHashtable<LogFileStreamOutput*,
 // change the logging configuration via jcmd, LogConfiguration::configure_output() calls flush() under the protection of the
 // ConfigurationLock. In addition flush() is called during JVM termination, via LogConfiguration::finalize.
 class AsyncLogWriter : public NonJavaThread {
-  class AsyncLogLocker;
   friend class AsyncLogTest;
+  class AsyncLogLocker;
+  using AsyncLogMap = ResourceHashtable<LogFileStreamOutput*,
+                          uint32_t,
+                          17, /*table_size*/
+                          ResourceObj::C_HEAP,
+                          mtLogging>;
+  class Message {
+    LogFileStreamOutput* const _output;
+    const LogDecorations _decorations;
+
+   public:
+    // only-valid for in-place new!
+    Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
+      : _output(output), _decorations(decorations) {
+      assert(msg != nullptr, "c-string message can not be null!");
+      PRAGMA_STRINGOP_OVERFLOW_IGNORED
+      strcpy(reinterpret_cast<char* >(this+1), msg);
+    }
+
+    size_t size() const {
+      size_t len = strlen(message()) + 1;
+      return align_up(sizeof(*this) + len, sizeof(void*));
+    }
+
+    bool is_token() const { return _output == nullptr; }
+    LogFileStreamOutput* output() const { return _output; }
+    const LogDecorations& decorations() const { return _decorations; }
+    const char* message() const { return reinterpret_cast<const char *>(this+1); }
+  };
+
+  // A flush TOKEN is Message(nullptr, None, "");
+  static const size_t TOKEN_SIZE = {align_up(sizeof(Message) + 1, sizeof(void*))};
 
   class Buffer : public CHeapObj<mtLogging> {
     size_t _pos;
@@ -95,9 +98,8 @@ class AsyncLogWriter : public NonJavaThread {
     Buffer(size_t capacity);
     ~Buffer();
 
-    bool is_valid() const;
-
-    bool push_back(const AsyncLogMessage& msg);
+    void push_flush_token();
+    bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
 
     // for testing-only!
     size_t set_capacity(size_t value) {
@@ -112,11 +114,6 @@ class AsyncLogWriter : public NonJavaThread {
       const Buffer& _buf;
       size_t _curr;
 
-      void* raw_ptr() const {
-        assert(_curr < _buf._pos, "sanity check");
-        return _buf._buf + _curr;
-      }
-
     public:
       Iterator(const Buffer& buffer): _buf(buffer), _curr(0) {}
 
@@ -124,7 +121,7 @@ class AsyncLogWriter : public NonJavaThread {
         return _curr >= _buf._pos;
       }
 
-      AsyncLogMessage* next();
+      Message* next();
     };
 
     Iterator iterator() const {
@@ -145,10 +142,9 @@ class AsyncLogWriter : public NonJavaThread {
   Buffer* _buffer_staging;
 
   static const LogDecorations& None;
-  static const AsyncLogMessage& Token;
 
   AsyncLogWriter();
-  void enqueue_locked(const AsyncLogMessage& msg);
+  void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
   void write();
   void run() override;
   void pre_run() override {
@@ -165,6 +161,7 @@ class AsyncLogWriter : public NonJavaThread {
 
   // for testing-only
   size_t throttle_buffers(size_t newsize);
+
  public:
   void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
   void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
@@ -172,7 +169,6 @@ class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* instance();
   static void initialize();
   static void flush();
-
 };
 
 #endif // SHARE_LOGGING_LOGASYNCWRITER_HPP
