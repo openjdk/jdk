@@ -124,14 +124,15 @@ public class TransferTo {
             int posIn = RND.nextInt(inBytes.length);
             int posOut = RND.nextInt(MIN_SIZE);
             int bufferBytes = RND.nextInt(inBytes.length - posIn);
-            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut, bufferBytes);
+            boolean mark = RND.nextBoolean();
+            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut, bufferBytes, mark);
         }
 
         // tests reading beyond source EOF (must not transfer any bytes)
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0, 0);
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0, 0, false);
 
         // tests writing beyond target EOF (must extend output stream)
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096, 0);
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096, 0, false);
     }
 
     /*
@@ -141,7 +142,7 @@ public class TransferTo {
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider, byte[] inBytes) throws Exception {
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0, 0);
+        checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0, 0, false);
     }
 
     /*
@@ -150,7 +151,7 @@ public class TransferTo {
      * output streams before the transfer are provided by the caller.
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut, int bufferBytes) throws Exception {
+            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut, int bufferBytes, boolean mark) throws Exception {
         AtomicReference<Supplier<byte[]>> recorder = new AtomicReference<>();
         try (InputStream in = inputStreamProvider.input(inBytes);
             OutputStream out = outputStreamProvider.output(recorder::set)) {
@@ -162,6 +163,11 @@ public class TransferTo {
             byte[] bytes = new byte[bufferBytes];
             in.read(bytes);
             out.write(bytes);
+
+            // set mark
+            if (mark) {
+              in.mark(1);
+            }
 
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
