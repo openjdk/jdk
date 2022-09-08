@@ -1991,11 +1991,7 @@ public class File
         // print out the error message for java.io.tmpdir setting
         static {
             if (tmpdir.isInvalid() || !fs.hasBooleanAttributes(tmpdir, FileSystem.BA_DIRECTORY)) {
-                String msg = "WARNING: java.io.tmpdir location does not exist";
-                if (SecurityProperties.includedInExceptions("fileInfo")) {
-                    msg += " (" + tmpdir.getPath() + ")";
-                }
-                System.err.println(msg);
+                System.err.println("WARNING: java.io.tmpdir location does not exist");
             }
         }
 

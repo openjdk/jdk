@@ -25,6 +25,8 @@
 
 package java.nio.file;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Set;
 import java.util.EnumSet;
 import java.security.SecureRandom;
@@ -39,12 +41,19 @@ import jdk.internal.util.StaticProperty;
  * Helper class to support creation of temporary files and directories with
  * initial attributes.
  */
-
+@SuppressWarnings("removal")
 class TempFileHelper {
     private TempFileHelper() { }
 
     // temporary directory location
     private static final Path tmpdir = Path.of(StaticProperty.javaIoTmpDir());
+
+    // print out the error message for java.io.tmpdir setting
+    static {
+        if (!Files.isDirectory(tmpdir)) {
+            System.err.println("WARNING: java.io.tmpdir location does not exist");
+        }
+    }
 
     private static final boolean isPosix =
         FileSystems.getDefault().supportedFileAttributeViews().contains("posix");

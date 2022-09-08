@@ -30,15 +30,15 @@
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
+import java.nio.file.Files;
 
 public class TempDirectoryNotExistingErrorMessage {
 
     public static void main(String ... args) throws Exception{
-
         String userDir = System.getProperty("user.home");
 
         if (args.length != 0) {
-            File tmpFile = File.createTempFile("prefix", ".suffix");
+            Files.createTempFile("prefix", ".suffix");
         } else {
 
             String timeStamp = System.currentTimeMillis() + "";

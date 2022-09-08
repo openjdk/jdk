@@ -125,8 +125,8 @@ public class SetDefaultProvider {
         String policyFile = System.getProperty("test.src", ".")
             + File.separator + "fs.policy";
         int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath,
-            "-Dtest.classes=" + testClasses, "-Djava.security.manager",
-            "-Djava.security.policy==" + policyFile, "p.Main");
+            "-Dtest.classes=" + testClasses, "-Djava.security.manager=allow",
+            "-Djava.security.policy=" + policyFile, "p.Main");
         assertEquals(exitValue, 0);
     }
 
