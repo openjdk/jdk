@@ -50,9 +50,9 @@ import sun.text.RuleBasedBreakIterator;
 public class BreakIteratorProviderImpl extends BreakIteratorProvider
                                        implements AvailableLanguageTags {
 
-    private static final int WORD_INDEX = 1;
-    private static final int LINE_INDEX = 2;
-    private static final int SENTENCE_INDEX = 3;
+    private static final int WORD_INDEX = 0;
+    private static final int LINE_INDEX = 1;
+    private static final int SENTENCE_INDEX = 2;
 
     private final LocaleProviderAdapter.Type type;
     private final Set<String> langtags;

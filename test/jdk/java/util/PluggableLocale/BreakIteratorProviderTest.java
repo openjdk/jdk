@@ -104,7 +104,7 @@ public class BreakIteratorProviderTest extends ProviderTest {
             if (jreSupportsLocale) {
                 jresResult[0] = "sun.util.locale.provider.BreakIteratorProviderImpl$GraphemeBreakIterator";
                 for (int i = 1; i < 4; i++) {
-                    jresResult[i] = "sun.text." + classNames[i];
+                    jresResult[i] = "sun.text." + classNames[i - 1];
                 }
             }
 
