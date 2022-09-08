@@ -72,6 +72,13 @@ class BsdFileSystem extends UnixFileSystem {
     }
 
     @Override
+    protected int directCopy(int dst, int src, long addressToPollForCancel)
+        throws UnixException
+    {
+        return directCopy0(dst, src, addressToPollForCancel);
+    }
+
+    @Override
     void copyNonPosixAttributes(int ofd, int nfd) {
         UnixUserDefinedFileAttributeView.copyExtendedAttributes(ofd, nfd);
     }
@@ -102,20 +109,9 @@ class BsdFileSystem extends UnixFileSystem {
         return entries;
     }
 
-
-
     @Override
     FileStore getFileStore(UnixMountEntry entry) throws IOException {
         return new BsdFileStore(this, entry);
-    }
-
-    // --- file copying ---
-
-    @Override
-    int directCopy(int dst, int src, long addressToPollForCancel)
-        throws UnixException
-    {
-        return directCopy0(dst, src, addressToPollForCancel);
     }
 
     // -- native methods --

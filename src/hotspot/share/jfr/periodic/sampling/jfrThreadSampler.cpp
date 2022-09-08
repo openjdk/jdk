@@ -328,7 +328,6 @@ class JfrThreadSampler : public NonJavaThread {
   int64_t _java_period_millis;
   int64_t _native_period_millis;
   const size_t _min_size; // for enqueue buffer monitoring
-  const size_t _renew_size;
   int _cur_index;
   const u4 _max_frames;
   volatile bool _disenrolled;
@@ -405,8 +404,7 @@ JfrThreadSampler::JfrThreadSampler(int64_t java_period_millis, int64_t native_pe
   _last_thread_native(NULL),
   _java_period_millis(java_period_millis),
   _native_period_millis(native_period_millis),
-  _min_size(JfrOptionSet::stackdepth() * sizeof(intptr_t)),
-  _renew_size(_min_size * 2),
+  _min_size(max_frames * 2 * wordSize), // each frame tags at most 2 words, min size is a full stacktrace
   _cur_index(-1),
   _max_frames(max_frames),
   _disenrolled(true) {
@@ -553,13 +551,13 @@ void JfrThreadSampler::post_run() {
 }
 
 const JfrBuffer* JfrThreadSampler::get_enqueue_buffer() {
-  const JfrBuffer* buffer = JfrTraceIdLoadBarrier::get_enqueue_buffer(this);
-  return buffer != nullptr ? renew_if_full(buffer) : JfrTraceIdLoadBarrier::renew_enqueue_buffer(_renew_size, this);
+  const JfrBuffer* buffer = JfrTraceIdLoadBarrier::get_sampler_enqueue_buffer(this);
+  return buffer != nullptr ? renew_if_full(buffer) : JfrTraceIdLoadBarrier::renew_sampler_enqueue_buffer(this);
 }
 
 const JfrBuffer* JfrThreadSampler::renew_if_full(const JfrBuffer* enqueue_buffer) {
   assert(enqueue_buffer != nullptr, "invariant");
-  return enqueue_buffer->free_size() < _min_size ? JfrTraceIdLoadBarrier::renew_enqueue_buffer(_renew_size, this) : enqueue_buffer;
+  return enqueue_buffer->free_size() < _min_size ? JfrTraceIdLoadBarrier::renew_sampler_enqueue_buffer(this) : enqueue_buffer;
 }
 
 void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thread) {
