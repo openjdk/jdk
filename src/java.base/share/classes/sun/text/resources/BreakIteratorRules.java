@@ -67,8 +67,6 @@ import java.util.ListResourceBundle;
 public class BreakIteratorRules extends ListResourceBundle {
     protected final Object[][] getContents() {
         return new Object[][] {
-            // rules describing how to break between logical characters
-
             // default rules for finding word boundaries
             { "WordBreakRules",
               // ignore non-spacing marks, enclosing marks, and format characters,
