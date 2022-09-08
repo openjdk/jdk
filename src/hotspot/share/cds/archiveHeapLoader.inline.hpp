@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,17 @@
  *
  */
 
-#ifndef SHARE_CDS_HEAPSHARED_INLINE_HPP
-#define SHARE_CDS_HEAPSHARED_INLINE_HPP
+#ifndef SHARE_CDS_ARCHIVEHEAPLOADER_INLINE_HPP
+#define SHARE_CDS_ARCHIVEHEAPLOADER_INLINE_HPP
 
-#include "cds/heapShared.hpp"
+#include "cds/archiveHeapLoader.hpp"
+
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/align.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 
-inline oop HeapShared::decode_from_archive(narrowOop v) {
+inline oop ArchiveHeapLoader::decode_from_archive(narrowOop v) {
   assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
   uintptr_t p = ((uintptr_t)_narrow_oop_base) + ((uintptr_t)v << _narrow_oop_shift);
   if (p >= _dumptime_base_0) {
@@ -54,4 +55,4 @@ inline oop HeapShared::decode_from_archive(narrowOop v) {
 
 #endif
 
-#endif // SHARE_CDS_HEAPSHARED_INLINE_HPP
+#endif // SHARE_CDS_ARCHIVEHEAPLOADER_INLINE_HPP

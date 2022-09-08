@@ -83,6 +83,7 @@ gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 gc/stress/TestStressG1Humongous.java 8286554 windows-x64
+gc/metaspace/TestMetaspacePerfCounters.java#Epsilon-64 8293503 generic-all
 
 #############################################################################
 
@@ -149,7 +150,6 @@ vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219
 vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8277812 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 
-vmTestbase/gc/lock/jni/jnilock001/TestDescription.java 8292946 generic-all
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all

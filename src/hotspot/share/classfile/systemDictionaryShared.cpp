@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/archiveUtils.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -60,6 +60,7 @@
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -1599,7 +1600,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaPr
 }
 
 void SystemDictionaryShared::update_archived_mirror_native_pointers() {
-  if (!HeapShared::are_archived_mirrors_available()) {
+  if (!ArchiveHeapLoader::are_archived_mirrors_available()) {
     return;
   }
   if (MetaspaceShared::relocation_delta() == 0) {
