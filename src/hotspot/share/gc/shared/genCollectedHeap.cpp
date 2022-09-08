@@ -885,7 +885,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
 bool GenCollectedHeap::is_in_young(const void* p) const {
   bool result = p < _old_gen->reserved().start();
   assert(result == _young_gen->is_in_reserved(p),
-         "incorrect test - result=%d, p=" PTR_FORMAT, result, p2i((void*)p));
+         "incorrect test - result=%d, p=" PTR_FORMAT, result, p2i(p));
   return result;
 }
 

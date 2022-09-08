@@ -429,7 +429,7 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
       // Pass through an Error, including BootstrapMethodError, any other form
       // of linkage error, or say ThreadDeath/OutOfMemoryError
       if (ls != NULL) {
-        ls->print_cr("bootstrap method invocation wraps BSME around " PTR_FORMAT, p2i((void *)exception));
+        ls->print_cr("bootstrap method invocation wraps BSME around " PTR_FORMAT, p2i(exception));
         exception->print_on(ls);
       }
       return;
@@ -437,7 +437,7 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
 
     // Otherwise wrap the exception in a BootstrapMethodError
     if (ls != NULL) {
-      ls->print_cr("%s throws BSME for " PTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i((void *)exception));
+      ls->print_cr("%s throws BSME for " PTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i(exception));
       exception->print_on(ls);
     }
     Handle nested_exception(THREAD, exception);

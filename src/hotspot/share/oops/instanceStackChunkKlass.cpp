@@ -240,9 +240,9 @@ void InstanceStackChunkKlass::print_chunk(const stackChunkOop c, bool verbose, o
   }
 
   st->print_cr("CHUNK " PTR_FORMAT " " PTR_FORMAT " - " PTR_FORMAT " :: " INTPTR_FORMAT,
-               p2i((oopDesc*)c), p2i(c->start_address()), p2i(c->end_address()), c->identity_hash());
+               p2i(c), p2i(c->start_address()), p2i(c->end_address()), c->identity_hash());
   st->print_cr("       barriers: %d gc_mode: %d bitmap: %d parent: " PTR_FORMAT,
-               c->requires_barriers(), c->is_gc_mode(), c->has_bitmap(), p2i((oopDesc*)c->parent()));
+               c->requires_barriers(), c->is_gc_mode(), c->has_bitmap(), p2i(c->parent()));
   st->print_cr("       flags mixed: %d", c->has_mixed_frames());
   st->print_cr("       size: %d argsize: %d max_size: %d sp: %d pc: " PTR_FORMAT,
                c->stack_size(), c->argsize(), c->max_thawing_size(), c->sp(), p2i(c->pc()));

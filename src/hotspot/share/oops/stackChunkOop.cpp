@@ -396,7 +396,7 @@ public:
   void do_oop(oop* p) override {
     assert(UseCompressedOops, "Only needed with compressed oops");
     oop obj = CompressedOops::decode(*(narrowOop*)p);
-    assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i((oopDesc*)obj));
+    assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i(obj));
     *p = obj;
   }
 
@@ -461,7 +461,7 @@ public:
   template <typename T> inline void do_oop_work(T* p) {
      _count++;
     oop obj = safe_load(p);
-    assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i((oopDesc*)obj));
+    assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i(obj));
     if (_chunk->has_bitmap()) {
       BitMap::idx_t index = _chunk->bit_index_for(p);
       assert(_chunk->bitmap().at(index), "Bit not set at index " SIZE_FORMAT " corresponding to " PTR_FORMAT, index, p2i(p));
