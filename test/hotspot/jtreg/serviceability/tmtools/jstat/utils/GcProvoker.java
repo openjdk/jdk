@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,8 @@ public class GcProvoker{
     public void provokeGc() {
         for (int i = 0; i < 3; i++) {
             float targetFraction = 0;
+            // Read sizes of eden and overall heap.
+            // Recognise if heap is changing size, and retry (heap is expected to initially shrink).
             for (int j = 0; j < 3; j++) {
                 long heapSize0 = Pools.getHeapCommittedSize();
                 long edenSize = Pools.getEdenCommittedSize();
