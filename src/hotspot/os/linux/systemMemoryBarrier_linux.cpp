@@ -35,6 +35,8 @@
 #ifndef SYS_membarrier
   #if defined(AMD64)
   #define SYS_membarrier 324
+  #elif defined(PPC64)
+  #define SYS_membarrier 365
   #else
   #error define SYS_membarrier for the arch
   #endif
