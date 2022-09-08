@@ -1751,25 +1751,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     }
 
     private void doMultiSelectionChanged(PropertyChangeEvent e) {
+        clearSelection();
         if (getFileChooser().isMultiSelectionEnabled()) {
             listSelectionModel.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
-            //Check if any files are selected before setting multi-Selection.
-            //If selected, retain them and update the selected files in FileChooser class.
-            File[] selectedFiles = null;
-            if (getFileChooser().getSelectedFiles().length != 0) {
-                selectedFiles = getFileChooser().getSelectedFiles();
-            } else if (getFileChooser().getSelectedFile() != null) {
-                selectedFiles = new File[1];
-                selectedFiles[0] = getFileChooser().getSelectedFile();
-            }
-
-            if (selectedFiles != null) {
-                getFileChooser().setSelectedFiles(selectedFiles);
-            }
+            getFileChooser().setSelectedFile(null);
         } else {
             listSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            clearSelection();
             getFileChooser().setSelectedFiles(null);
         }
     }

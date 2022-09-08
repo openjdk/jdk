@@ -32,6 +32,7 @@ import javax.swing.SwingUtilities;
  * @test
  * @bug 4834298
  * @key headful
+ * @requires (os.family == "windows" | os.family == "linux")
  * @summary Test to check if the getSelectedFiles of JFilesChooser
  *          returns selectedFiles when Multi-Selection is enabled.
  * @run main/manual MultiSelectionEnabledSelectedFilesTest
@@ -55,16 +56,15 @@ public class MultiSelectionEnabledSelectedFilesTest {
         //Initialize the components
         String INSTRUCTIONS
                 = "Instructions to Test:"+
-                "\n1. Select a valid file from mouse click on first "+
+                "\n1. Select a valid file using mouse double-click on first "+
                 "dialog."+
-                "\n2. After Selection, first dialog closes and second " +
-                "dialog opens where multi-Selection is enabled."+
-                "\n3. Select the same previously selected file without changing " +
-                "mouse position or selection."+
-                "\n4. If the selected file is updated in then getSelectedFiles "+
-                "returns the file selected and test is PASS."+
-                "\n5. If the selected file is not updated and getSelectedFiles "+
-                "returns empty array, then Test FAILS.";
+                "\n2. After Selection, first dialog will close and second " +
+                "dialog opens with multi-Selection enabled."+
+                "\n3. Select the same file using mouse double-click without " +
+                "moving mouse position or selection."+
+                "\n4. If the selected file is updated then getSelectedFiles "+
+                "returns the file selected and test will PASS otherwise test "+
+                "will FAIL";
 
         JFileChooser chooser = new JFileChooser();
         JTextArea textArea = new JTextArea();
@@ -84,7 +84,7 @@ public class MultiSelectionEnabledSelectedFilesTest {
         chooser.showOpenDialog(null);
         File[] files = chooser.getSelectedFiles();
 
-        if (files.length <= 0) {
+        if (files.length == 0) {
             throw new RuntimeException("Test Failed since selected files are empty!!");
         }
     }
