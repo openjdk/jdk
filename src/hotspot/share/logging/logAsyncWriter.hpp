@@ -70,7 +70,7 @@ class AsyncLogWriter : public NonJavaThread {
     // only-valid for in-place new!
     Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
       : _output(output), _decorations(decorations) {
-      assert(msg != nullptr, "c-string message can not be null!");
+      assert(msg != nullptr, "c-str message can not be null!");
       PRAGMA_STRINGOP_OVERFLOW_IGNORED
       strcpy(reinterpret_cast<char* >(this+1), msg);
     }

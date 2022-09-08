@@ -59,7 +59,7 @@ AsyncLogWriter::Buffer::~Buffer() {
 
 bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
   size_t len = strlen(msg) + 1; // including trailing zero
-  int sz = align_up(sizeof(Message) + len, sizeof(void*));
+  size_t sz = align_up(sizeof(Message) + len, sizeof(void*));
 
   if (_pos + sz <= _capacity || output == nullptr/*token*/) {
     new(_buf + _pos) Message(output, decorations, msg);
@@ -147,7 +147,7 @@ void AsyncLogWriter::write() {
     _buffer_staging->reset();
     swap(_buffer, _buffer_staging);
 
-    // move counters to snapshot, and reset them.
+    // move counters to snapshot and reset them.
     _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
       if (counter > 0) {
         bool created = snapshot.put(output, counter);
