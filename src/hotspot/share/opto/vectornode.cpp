@@ -1889,8 +1889,8 @@ static Node* redundant_logical_identity(Node* n) {
   // (OperationV (OperationV src1 src2 m1) src2 m1) => (OperationV src1 src2 m1)
   if (n->Opcode() == n1->Opcode()) {
     if (((!n->is_predicated_vector() && !n1->is_predicated_vector()) ||
-       (n->is_predicated_vector() && n1->is_predicated_vector() &&
-       n->in(3) == n1->in(3))) && (n->in(2) == n1->in(1) || n->in(2) == n1->in(2))) {
+         ( n->is_predicated_vector() &&  n1->is_predicated_vector() && n->in(3) == n1->in(3))) &&
+         ( n->in(2) == n1->in(1) || n->in(2) == n1->in(2))) {
       return n1;
     }
   }
@@ -1899,12 +1899,13 @@ static Node* redundant_logical_identity(Node* n) {
   if (n->Opcode() == n2->Opcode()) {
     // (OperationV src1 (OperationV src1 src2)) => OperationV(src1, src2)
     // (OperationV src2 (OperationV src1 src2)) => OperationV(src1, src2)
-    if (!n->is_predicated_vector() && !n2->is_predicated_vector() &&
-       (n->in(1) == n2->in(1) || n->in(1) == n2->in(2))) {
-      return n2;
     // (OperationV src1 (OperationV src1 src2 m1) m1) => OperationV(src1 src2 m1)
-    } else if (n->is_predicated_vector() && n2->is_predicated_vector() &&
-               n->in(3) == n2->in(3) && n->in(1) == n2->in(1)) {
+    // It is not possible to optimize - (OperationV src2 (OperationV src1 src2 m1) m1) as the
+    // results of both "OperationV" nodes are different for unmasked lanes
+    if ((!n->is_predicated_vector() && !n2->is_predicated_vector() &&
+         (n->in(1) == n2->in(1) || n->in(1) == n2->in(2))) ||
+         (n->is_predicated_vector() && n2->is_predicated_vector() && n->in(3) == n2->in(3) &&
+         n->in(1) == n2->in(1))) {
       return n2;
     }
   }
