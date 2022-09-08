@@ -342,7 +342,7 @@ static const struct {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// sun.misc.Signal support
+// sun.misc.Signal and BREAK_SIGNAL support
 
 void jdk_misc_signal_init() {
   // Initialize signal structures
@@ -350,21 +350,6 @@ void jdk_misc_signal_init() {
 
   // Initialize signal semaphore
   sig_semaphore = new Semaphore();
-
-  // Install BREAK_SIGNAL's handler in early initialization phase, in
-  // order to reduce the risk that an attach client accidentally forces
-  // HotSpot to quit prematurely.
-  // The actual work for handling BREAK_SIGNAL is performed by the Signal
-  // Dispatcher thread, which is created and started at a much later point,
-  // see os::initialize_jdk_signal_support(). Any BREAK_SIGNAL received
-  // before the Signal Dispatcher thread is started is queued up via the
-  // pending_signals[BREAK_SIGNAL] counter, and will be processed by the
-  // Signal Dispatcher thread in a delayed fashion.
-  //
-  // Also note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
-  // Applications that require a custom BREAK_SIGNAL handler should run with
-  // -XX:+ReduceSignalUsage.
-  os::signal(BREAK_SIGNAL, os::user_handler());
 }
 
 void os::signal_notify(int sig) {
@@ -1318,6 +1303,25 @@ void install_signal_handlers() {
   set_signal_handler(SIGFPE);
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
+  if (!ReduceSignalUsage) {
+    // Install BREAK_SIGNAL's handler in early initialization phase, in
+    // order to reduce the risk that an attach client accidentally forces
+    // HotSpot to quit prematurely.
+    // The actual work for handling BREAK_SIGNAL is performed by the Signal
+    // Dispatcher thread, which is created and started at a much later point,
+    // see os::initialize_jdk_signal_support(). Any BREAK_SIGNAL received
+    // before the Signal Dispatcher thread is started is queued up via the
+    // pending_signals[BREAK_SIGNAL] counter, and will be processed by the
+    // Signal Dispatcher thread in a delayed fashion.
+    //
+    // Also note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
+    // Applications that require a custom BREAK_SIGNAL handler should run with
+    // -XX:+ReduceSignalUsage. Otherwise if libjsig is used together with
+    // -XX:+ReduceSignalUsage, libjsig will prevent changing BREAK_SIGNAL's
+    // handler to a custom handler.
+    os::signal(BREAK_SIGNAL, os::user_handler());
+  }
+
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
   // handlers. By replacing the existing task exception handler, we disable lldb's mach
@@ -1822,12 +1826,12 @@ int PosixSignals::init() {
 
   signal_sets_init();
 
-  install_signal_handlers();
-
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal and BREAK_SIGNAL's handler.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
+
+  install_signal_handlers();
 
   return JNI_OK;
 }

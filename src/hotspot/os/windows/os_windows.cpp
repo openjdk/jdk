@@ -2243,7 +2243,7 @@ static void jdk_misc_signal_init() {
   // Add a CTRL-C handler
   SetConsoleCtrlHandler(consoleHandler, TRUE);
 
-  // Add a CTRL-BREAK handler.
+  // Initialize sigbreakHandler.
   // The actual work for handling CTRL-BREAK is performed by the Signal
   // Dispatcher thread, which is created and started at a much later point,
   // see os::initialize_jdk_signal_support(). Any CTRL-BREAK received
@@ -4330,7 +4330,8 @@ jint os::init_2(void) {
 
   SymbolEngine::recalc_search_path();
 
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal, and install CTRL-C and
+  // CTRL-BREAK handlers.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
