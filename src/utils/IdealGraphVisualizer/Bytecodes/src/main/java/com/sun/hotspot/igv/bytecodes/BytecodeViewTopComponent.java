@@ -171,19 +171,17 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
 
     @Override
     public void resultChanged(LookupEvent e) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
-                if (provider != null) {
-                    InputGraph graph = provider.getGraph();
-                    if (graph != null) {
-                        Group g = graph.getGroup();
-                        rootNode.update(graph, g.getMethod());
-                        return;
-                    }
+        SwingUtilities.invokeLater(() -> {
+            final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
+            if (provider != null) {
+                InputGraph graph = provider.getGraph();
+                if (graph != null) {
+                    Group g = graph.getGroup();
+                    rootNode.update(graph, g.getMethod());
+                    return;
                 }
-                rootNode.update(null, null);
             }
+            rootNode.update(null, null);
         });
     }
 

@@ -148,25 +148,23 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private void updateGraphSelection() {
         // Wait for LookupHistory to be updated with the last active graph
         // before selecting it.
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
-                if (provider != null) {
-                    try {
-                        InputGraph graph = provider.getGraph();
-                        if (graph.isDiffGraph()) {
-                            EditorTopComponent editor = EditorTopComponent.getActive();
-                            if (editor != null) {
-                                InputGraph firstGraph = editor.getModel().getFirstGraph();
-                                InputGraph secondGraph = editor.getModel().getSecondGraph();
-                                manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)});
-                            }
-                        } else {
-                            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(graph)});
+        SwingUtilities.invokeLater(() -> {
+            final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
+            if (provider != null) {
+                try {
+                    InputGraph graph = provider.getGraph();
+                    if (graph.isDiffGraph()) {
+                        EditorTopComponent editor = EditorTopComponent.getActive();
+                        if (editor != null) {
+                            InputGraph firstGraph = editor.getModel().getFirstGraph();
+                            InputGraph secondGraph = editor.getModel().getSecondGraph();
+                            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)});
                         }
-                    } catch (Exception e) {
-                        Exceptions.printStackTrace(e);
+                    } else {
+                        manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(graph)});
                     }
+                } catch (Exception e) {
+                    Exceptions.printStackTrace(e);
                 }
             }
         });

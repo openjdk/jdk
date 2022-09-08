@@ -137,14 +137,12 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
 
     @Override
     public void resultChanged(LookupEvent e) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
-                if (provider != null) {
-                    InputGraph graph = provider.getGraph();
-                    if (graph != null) {
-                        scene.setGraph(graph);
-                    }
+        SwingUtilities.invokeLater(() -> {
+            final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
+            if (provider != null) {
+                InputGraph graph = provider.getGraph();
+                if (graph != null) {
+                    scene.setGraph(graph);
                 }
             }
         });
