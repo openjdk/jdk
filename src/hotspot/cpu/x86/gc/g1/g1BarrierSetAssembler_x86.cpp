@@ -468,6 +468,15 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   Label done;
   Label runtime;
 
+  // Is marking still active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    __ cmpl(queue_active, 0);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ cmpb(queue_active, 0);
+  }
+  __ jcc(Assembler::equal, done);
+
   // Can we store original value in the thread's buffer?
 
   __ movptr(tmp, queue_index);

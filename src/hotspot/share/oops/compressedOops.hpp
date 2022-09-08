@@ -94,7 +94,7 @@ public:
   static int      shift()                    { return _narrow_oop._shift; }
   static bool     use_implicit_null_checks() { return _narrow_oop._use_implicit_null_checks; }
 
-  static address* ptrs_base_addr()           { return &_narrow_oop._base; }
+  static address  ptrs_base_addr()           { return (address)&_narrow_oop._base; }
   static address  ptrs_base()                { return _narrow_oop._base; }
 
   static bool is_in(void* addr);

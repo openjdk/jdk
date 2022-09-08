@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/cds_globals.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "logging/logMessage.hpp"

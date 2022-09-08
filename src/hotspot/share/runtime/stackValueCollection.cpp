@@ -141,7 +141,7 @@ void StackValueCollection::print() {
       tty->print("  " INT64_FORMAT " (long)", (int64_t)long_at(index));
       tty->cr();
       tty->print("\t     %.15e (double)", double_at(index));
-      tty->print("  " PTR64_FORMAT " (longhex)", (int64_t)long_at(index));
+      tty->print("  " INT64_FORMAT_X_0 " (longhex)", (int64_t)long_at(index));
     }
     tty->cr();
   }
