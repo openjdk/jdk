@@ -27,8 +27,8 @@ name: 'OpenJDK Downstreaming'
 
 on:
   schedule:
-    # Trigger on every Mondays at 07:00 UTC (09:00 CET, 00:00 PT)
-    - cron: '0 6 * * 1'
+    # Trigger on every day at 07:00 UTC (09:00 CET, 00:00 PT)
+    - cron: '0 6 * * 1-5'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
