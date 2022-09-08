@@ -153,7 +153,7 @@ void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* mes
                   _records[index].data.size());
   st.print("Exception <");
   h_exception->print_value_on(&st);
-  st.print("%s%s> (" INTPTR_FORMAT ") \n"
+  st.print("%s%s> (" PTR_FORMAT ") \n"
            "thrown [%s, line %d]",
            message ? ": " : "", message ? message : "",
            p2i(h_exception()), file, line);
