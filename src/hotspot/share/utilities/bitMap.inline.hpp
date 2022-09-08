@@ -66,38 +66,50 @@ inline bool BitMap::par_set_bit(idx_t bit, atomic_memory_order memory_order) {
   verify_index(bit);
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask = bit_mask(bit);
-  bm_word_t old_val = load_word_ordered(addr, memory_order);
+  bm_word_t cur_val = load_word_ordered(addr, memory_order);
 
-  do {
-    const bm_word_t new_val = old_val | mask;
-    if (new_val == old_val) {
-      return false;     // Someone else beat us to it.
-    }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
-    if (cur_val == old_val) {
-      return true;      // Success.
-    }
-    old_val = cur_val;  // The value changed, try again.
-  } while (true);
+  // Fast path
+  bm_word_t new_val = cur_val | mask;
+  if (new_val == cur_val) {
+    // Someone else beat us to it.
+    return false;
+  }
+
+  // Slow path
+  cur_val = Atomic::fetch_and_or(addr, mask, memory_order);
+  new_val = cur_val | mask;
+  if (new_val == cur_val) {
+    // Someone else beat us to it.
+    return false;
+  }
+
+  // Success
+  return true;
 }
 
 inline bool BitMap::par_clear_bit(idx_t bit, atomic_memory_order memory_order) {
   verify_index(bit);
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask = ~bit_mask(bit);
-  bm_word_t old_val = load_word_ordered(addr, memory_order);
+  bm_word_t cur_val = load_word_ordered(addr, memory_order);
 
-  do {
-    const bm_word_t new_val = old_val & mask;
-    if (new_val == old_val) {
-      return false;     // Someone else beat us to it.
-    }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
-    if (cur_val == old_val) {
-      return true;      // Success.
-    }
-    old_val = cur_val;  // The value changed, try again.
-  } while (true);
+  // Fast path
+  bm_word_t new_val = cur_val & mask;
+  if (new_val == cur_val) {
+    // Someone else beat us to it.
+    return false;
+  }
+
+  // Slow path
+  cur_val = Atomic::fetch_and_and(addr, mask, memory_order);
+  new_val = cur_val & mask;
+  if (new_val == cur_val) {
+    // Someone else beat us to it.
+    return false;
+  }
+
+  // Success
+  return true;
 }
 
 inline void BitMap::set_range(idx_t beg, idx_t end, RangeSizeHint hint) {
