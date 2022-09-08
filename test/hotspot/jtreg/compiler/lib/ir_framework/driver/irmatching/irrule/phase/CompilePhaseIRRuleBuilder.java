@@ -39,7 +39,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Base builder class to create a list of {@link CompilePhaseIRRule} for an IR rule to apply IR matching on.
+ * This class creates a list of {@link CompilePhaseIRRule} for each specified compile phase in {@link IR#phase()} of an
+ * IR rule.
  *
  * @see CompilePhaseIRRule
  */

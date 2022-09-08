@@ -33,8 +33,9 @@ import java.util.Comparator;
 import java.util.TreeSet;
 
 /**
- * This class represents an IR matching result of all compile phases on an IR rule. The compile phase results are
- * ordered by the {@link CompilePhase} enum definition order.
+ * This class represents an IR matching result of an {@link IRRule} (applied to all compile phases specified in
+ * {@link IR#phase()}). The {@link CompilePhaseIRRuleMatchResult} are kept in definition order as defined in
+ * {@link CompilePhase}.
  *
  * @see IRRule
  */

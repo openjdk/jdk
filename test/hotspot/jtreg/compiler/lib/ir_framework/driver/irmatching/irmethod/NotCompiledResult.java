@@ -24,7 +24,6 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.ArrayList;
 
@@ -32,8 +31,8 @@ import java.util.ArrayList;
  * This class represents a special IR matching result of an {@link IRMethod} where the compilation output of a the
  * method was empty.
  *
- * @see IRRuleMatchResult
  * @see IRMethod
+ * @see IRMethodMatchResult
  */
 public class NotCompiledResult extends IRMethodMatchResult {
     private final int failedIRRules;

@@ -25,14 +25,13 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
  * This class represents an IR matching result of an IR rule applied on a compile phase.
  *
- * @see IRRule
+ * @see CompilePhaseIRRule
  */
 public class CompilePhaseIRRuleMatchResult implements MatchResult {
     private final CompilePhase compilePhase;

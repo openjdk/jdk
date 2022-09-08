@@ -28,12 +28,18 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Utility class to hold the parsed failOn and counts constraint lists.
+ *
+ * @see Constraint
+ */
 class ConstraintLists {
+    private static final List<Constraint> EMPTY_LIST = new ArrayList<>();
     private List<Constraint> failOnConstraints;
     private List<Constraint> countsConstraints;
 
     public List<Constraint> getFailOnConstraints() {
-        return failOnConstraints == null ? new ArrayList<>() : failOnConstraints;
+        return failOnConstraints == null ? EMPTY_LIST : failOnConstraints;
     }
 
     public void setFailOnConstraints(List<Constraint> failOnConstraints) {
@@ -41,7 +47,7 @@ class ConstraintLists {
     }
 
     public List<Constraint> getCountsConstraints() {
-        return countsConstraints == null ? new ArrayList<>() : countsConstraints;
+        return countsConstraints == null ? EMPTY_LIST : countsConstraints;
     }
 
     public void setCountsConstraints(List<Constraint> countsConstraints) {

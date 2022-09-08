@@ -35,11 +35,11 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * This class represents an IR rule of an IR method for a specific compile phase. It contains a fully parsed (i.e.
+ * This class represents an IR rule of an IR method for a specific compile phase. It contains fully parsed (i.e.
  * all placeholder strings of {@link IRNode} replaced and composite nodes merged) {@link FailOn} and {@link Counts}
- * attribute which are ready to be IR matched against.
+ * attributes which are ready to be IR matched against.
  *
- * @see CompilePhaseIRRule
+ * @see CompilePhaseNoCompilationIRRule
  */
 public class CompilePhaseIRRule implements Matchable {
     protected final CompilePhase compilePhase;

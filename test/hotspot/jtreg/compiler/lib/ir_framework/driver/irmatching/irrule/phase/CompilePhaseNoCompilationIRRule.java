@@ -24,16 +24,14 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 
 /**
- * This class represents an IR rule of an IR method for a specific compile phase. It contains a fully parsed (i.e.
- * all placeholder strings of {@link IRNode} replaced and composite nodes merged) {@link FailOn} and {@link Counts}
- * attribute which are ready to be IR matched against.
+ * This class represents a special {@link CompilePhaseIRRule} where no compilation output was found for the associated
+ * compile phase. This could happen, if the user defined test code does not exercise the code path that emits this
+ * compile phase.
  *
- * @see CompilePhaseNoCompilationIRRule
+ * @see CompilePhaseIRRule
+ * @see NoCompilePhaseCompilationResult
  */
 public class CompilePhaseNoCompilationIRRule extends CompilePhaseIRRule {
     public CompilePhaseNoCompilationIRRule(CompilePhase compilePhase) {

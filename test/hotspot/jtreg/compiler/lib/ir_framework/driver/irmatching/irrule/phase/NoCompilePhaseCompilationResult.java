@@ -24,13 +24,14 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
- * This class represents an IR matching result of an IR rule applied on a compile phase.
+ * This class represents a special IR matching result of {@link CompilePhaseIRRule} where the compilation output for
+ * the compile phase was empty.
  *
- * @see IRRule
+ * @see CompilePhaseIRRule
+ * @see CompilePhaseIRRuleMatchResult
  */
 public class NoCompilePhaseCompilationResult extends CompilePhaseIRRuleMatchResult {
 
