@@ -1115,21 +1115,11 @@ SDRenderType SetUpPaint(JNIEnv *env, QuartzSDOps *qsdo, SDRenderType renderType)
 SDRenderType DoShapeUsingCG(CGContextRef cgRef, jint *types, jfloat *coords, jint numtypes, BOOL fill, CGFloat offsetX, CGFloat offsetY)
 {
 //fprintf(stderr, "DoShapeUsingCG fill=%d\n", (jint)fill);
-    SDRenderType renderType = SD_Nothing;
 
     if (gAdjustForJavaDrawing != YES)
     {
         offsetX = 0.0f;
         offsetY = 0.0f;
-    }
-
-    if (fill == YES)
-    {
-        renderType = SD_Fill;
-    }
-    else
-    {
-        renderType = SD_Stroke;
     }
 
     if (numtypes > 0)
@@ -1206,7 +1196,7 @@ SDRenderType DoShapeUsingCG(CGContextRef cgRef, jint *types, jfloat *coords, jin
         }
     }
 
-    return renderType;
+    return fill ? SD_Fill : SD_Stroke;
 }
 
 void CompleteCGContext(JNIEnv *env, QuartzSDOps *qsdo)
