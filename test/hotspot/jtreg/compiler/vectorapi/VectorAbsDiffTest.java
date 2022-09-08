@@ -94,7 +94,7 @@ public class VectorAbsDiffTest {
     @Run(test = "testFloatAbsDiff")
     public static void testFloatAbsDiff_runner() {
         testFloatAbsDiff();
-        for (int i = 0; i < F_SPECIES.length(); i++) {
+        for (int i = 0; i < LENGTH; i++) {
             Asserts.assertEquals(Math.abs(fa[i] - fb[i]), fr[i]);
         }
     }
@@ -102,10 +102,10 @@ public class VectorAbsDiffTest {
     @Test
     @IR(counts = {"vfabd_masked", "> 0"}, applyIf = {"UseSVE", "> 0"})
     public static void testFloatAbsDiffMasked() {
-        VectorMask<Float> mask = VectorMask.fromArray(F_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
             FloatVector av = FloatVector.fromArray(F_SPECIES, fa, i);
             FloatVector bv = FloatVector.fromArray(F_SPECIES, fb, i);
+            VectorMask<Float> mask = VectorMask.fromArray(F_SPECIES, m, i);
             av.lanewise(VectorOperators.SUB, bv, mask).lanewise(VectorOperators.ABS, mask).intoArray(fr, i);
         }
     }
@@ -113,7 +113,7 @@ public class VectorAbsDiffTest {
     @Run(test = "testFloatAbsDiffMasked")
     public static void testFloatAbsDiffMasked_runner() {
         testFloatAbsDiffMasked();
-        for (int i = 0; i < F_SPECIES.length(); i++) {
+        for (int i = 0; i < LENGTH; i++) {
             if (m[i]) {
                 Asserts.assertEquals(Math.abs(fa[i] - fb[i]), fr[i]);
             } else {
@@ -135,7 +135,7 @@ public class VectorAbsDiffTest {
     @Run(test = "testDoubleAbsDiff")
     public static void testDoubleAbsDiff_runner() {
         testDoubleAbsDiff();
-        for (int i = 0; i < D_SPECIES.length(); i++) {
+        for (int i = 0; i < LENGTH; i++) {
             Asserts.assertEquals(Math.abs(da[i] - db[i]), dr[i]);
         }
     }
@@ -143,10 +143,10 @@ public class VectorAbsDiffTest {
     @Test
     @IR(counts = {"vfabd_masked", "> 0"}, applyIf = {"UseSVE", "> 0"})
     public static void testDoubleAbsDiffMasked() {
-        VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {
             DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, i);
             DoubleVector bv = DoubleVector.fromArray(D_SPECIES, db, i);
+            VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, i);
             av.lanewise(VectorOperators.SUB, bv, mask).lanewise(VectorOperators.ABS, mask).intoArray(dr, i);
         }
     }
@@ -154,7 +154,7 @@ public class VectorAbsDiffTest {
     @Run(test = "testDoubleAbsDiffMasked")
     public static void testDoubleAbsDiffMasked_runner() {
         testDoubleAbsDiffMasked();
-        for (int i = 0; i < D_SPECIES.length(); i++) {
+        for (int i = 0; i < LENGTH; i++) {
             if (m[i]) {
                 Asserts.assertEquals(Math.abs(da[i] - db[i]), dr[i]);
             } else {
