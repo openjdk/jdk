@@ -28,7 +28,7 @@
  */
 /*
  * @test
- * @bug 8266310 8289919
+ * @bug 8266310 8289919 8293282
  * @summary Checks that JNI_OnLoad is invoked only once when multiple threads
  *          call System.loadLibrary concurrently, and JNI_OnUnload is invoked
  *          when the native library is loaded from a custom class loader.
