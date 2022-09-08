@@ -82,6 +82,24 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
                                          int flags);
 
     /**
+     * int getattrlist(const char* path, struct attrlist* attrList,
+     *                 void* attrBuf, size_t attrBufSize,
+     *                 unsigned long options);
+     */
+    static int getattrlist(UnixPath path, long options)
+    {
+        try (NativeBuffer pathBuffer = copyToNativeBuffer(path)) {
+            long comp = Blocker.begin();
+            try {
+                return getattrlist0(pathBuffer.address(), options);
+            } finally {
+                Blocker.end(comp);
+            }
+        }
+    }
+    private static native int getattrlist0(long pathAddress, long options);
+
+    /**
      * setattrlist(const char* path, struct attrlist* attrList, void* attrBuf,
      *             size_t attrBufSize, unsigned long options)
      */

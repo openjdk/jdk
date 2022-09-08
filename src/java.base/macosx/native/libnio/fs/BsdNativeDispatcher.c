@@ -39,6 +39,7 @@
 #define ISREADONLY MNT_RDONLY
 #endif
 #include <sys/attr.h>
+#include <unistd.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -238,6 +239,35 @@ Java_sun_nio_fs_BsdNativeDispatcher_clonefile0(JNIEnv* env, jclass this,
     if (ret != 0) {
         throwUnixException(env, errno);
         return ret;
+    }
+
+    return 0;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_getattrlist0(JNIEnv* env, jclass this,
+    jlong pathAddress, jlong options)
+{
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    struct attrlist alist;
+    bzero(&alist, sizeof(alist));
+    alist.bitmapcount = ATTR_BIT_MAP_COUNT;
+    alist.volattr     = ATTR_VOL_INFO | ATTR_VOL_CAPABILITIES;
+
+    struct volAttrsBuf {
+        u_int32_t length;
+        vol_capabilities_attr_t capabilities;
+    } __attribute__((aligned(4), packed));
+    struct volAttrsBuf volAttrs;
+    bzero(&volAttrs, sizeof(volAttrs));
+
+    if (getattrlist(path, &alist, &volAttrs, sizeof(volAttrs), options) == 0) {
+        vol_capabilities_attr_t volCaps = volAttrs.capabilities;
+        int index = VOL_CAPABILITIES_INTERFACES;
+        int caps = volCaps.valid[index] & volCaps.capabilities[index];
+        if (caps & VOL_CAP_INT_ATTRLIST)
+            return caps;
     }
 
     return 0;

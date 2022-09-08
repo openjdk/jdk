@@ -94,11 +94,10 @@ class BsdFileSystem extends UnixFileSystem {
     private int clone(UnixPath src, UnixPath dst, boolean followLinks)
         throws IOException
     {
-        // Do not clone unless both files are on the same volume and that
-        // volume is indicated as supporting file cloning
-        BsdFileStore bfs = (BsdFileStore)provider().getFileStore(src);
-        if (!bfs.equals(provider().getFileStore(dst.getParent())) ||
-            !bfs.supportsCloning())
+        // Do not attempt cloning if the source volume does not support it
+        long options = followLinks ? 0 : FSOPT_NOFOLLOW;
+        if ((BsdNativeDispatcher.getattrlist(src, options) &
+            VOL_CAP_INT_CLONE) == 0)
             return IOStatus.UNSUPPORTED_CASE;
 
         int flags = followLinks ? 0 : CLONE_NOFOLLOW;
