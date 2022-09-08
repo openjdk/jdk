@@ -1056,13 +1056,11 @@ instruct vmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (AddVB dst_src1 (MulVB src2 src3)));
   match(Set dst_src1 (AddVS dst_src1 (MulVS src2 src3)));
   match(Set dst_src1 (AddVI dst_src1 (MulVI src2 src3)));
-  match(Set dst_src1 (AddVL dst_src1 (MulVL src2 src3)));
-  format %{ "vmla $dst_src1, src2, src3" %}
+  format %{ "vmla $dst_src1, $src2, $src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    if (VM_Version::use_neon_for_vector(length_in_bytes) && bt != T_LONG) {
-      // NEON mlav does not accept T2D arrangement.
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
       __ mlav($dst_src1$$FloatRegister, get_arrangement(this),
               $src2$$FloatRegister, $src3$$FloatRegister);
     } else {
@@ -1074,13 +1072,25 @@ instruct vmla(vReg dst_src1, vReg src2, vReg src3) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vmlaL(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (AddVL dst_src1 (MulVL src2 src3)));
+  format %{ "vmlaL $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_mla($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+               ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmla_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst_src1 (AddVB (Binary dst_src1 (MulVB src2 src3)) pg));
   match(Set dst_src1 (AddVS (Binary dst_src1 (MulVS src2 src3)) pg));
   match(Set dst_src1 (AddVI (Binary dst_src1 (MulVI src2 src3)) pg));
   match(Set dst_src1 (AddVL (Binary dst_src1 (MulVL src2 src3)) pg));
-  format %{ "vmla_masked $dst_src1, $pg, src2, src3" %}
+  format %{ "vmla_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_mla($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
@@ -1135,13 +1145,11 @@ instruct vmls(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (SubVB dst_src1 (MulVB src2 src3)));
   match(Set dst_src1 (SubVS dst_src1 (MulVS src2 src3)));
   match(Set dst_src1 (SubVI dst_src1 (MulVI src2 src3)));
-  match(Set dst_src1 (SubVL dst_src1 (MulVL src2 src3)));
-  format %{ "vmls $dst_src1, src2, src3" %}
+  format %{ "vmls $dst_src1, $src2, $src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    if (VM_Version::use_neon_for_vector(length_in_bytes) && bt != T_LONG) {
-      // NEON mlsv does not accept T2D arrangement.
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
       __ mlsv($dst_src1$$FloatRegister, get_arrangement(this),
               $src2$$FloatRegister, $src3$$FloatRegister);
     } else {
@@ -1153,13 +1161,25 @@ instruct vmls(vReg dst_src1, vReg src2, vReg src3) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vmlsL(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (SubVL dst_src1 (MulVL src2 src3)));
+  format %{ "vmlsL $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_mls($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                 ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmls_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst_src1 (SubVB (Binary dst_src1 (MulVB src2 src3)) pg));
   match(Set dst_src1 (SubVS (Binary dst_src1 (MulVS src2 src3)) pg));
   match(Set dst_src1 (SubVI (Binary dst_src1 (MulVI src2 src3)) pg));
   match(Set dst_src1 (SubVL (Binary dst_src1 (MulVL src2 src3)) pg));
-  format %{ "vmls_masked $dst_src1, $pg, src2, src3" %}
+  format %{ "vmls_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_mls($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
