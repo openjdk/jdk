@@ -381,13 +381,6 @@ class StubGenerator: public StubCodeGenerator {
   address ghash_long_swap_mask_addr(); // byte swap x86 long
   address ghash_byte_swap_mask_addr(); // byte swap x86 byte array
 
-  // Single and multi-block ghash operations
-  address generate_ghash_processBlocks();
-
-  // Ghash single and multi block operations using AVX instructions
-  address generate_avx_ghash_processBlocks();
-
-
   // BASE64 stubs
 
   address base64_shuffle_addr();

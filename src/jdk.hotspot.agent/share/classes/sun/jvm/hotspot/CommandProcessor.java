@@ -1726,7 +1726,7 @@ public class CommandProcessor {
                         }
                     }
                     if (!all) {
-                        out.println("Couldn't find thread " + name);
+                        out.println("Couldn't find thread " + id);
                     }
                 }
             }

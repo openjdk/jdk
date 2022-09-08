@@ -1119,7 +1119,7 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   const Register rvec        = c_rarg3;  // r byte array initialized from initvector array address
                                          // and left with the results of the last encryption block
 #ifdef _WIN64
-  const Address  len_mem(rbp, 6 * wordSize);  // length is on stack on Win64
+  const Address  len_mem(rbp, 6 * wordSize); // length is on stack on Win64
   const Register len_reg     = r11;      // pick the volatile windows register
 #else
   const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
