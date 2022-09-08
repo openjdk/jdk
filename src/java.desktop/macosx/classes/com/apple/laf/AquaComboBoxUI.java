@@ -455,6 +455,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     }
 
     class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
+
         public void layoutContainer(final Container parent) {
             if (arrowButton != null && !comboBox.isEditable()) {
                 final Insets insets = comboBox.getInsets();
@@ -584,31 +585,23 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     };
 
     @SuppressWarnings("serial") // anonymous class
-    private final Action openPopupOrHighlightLast = new AbstractAction() {
+    private final Action openPopupOrHighlightLast = new ComboBoxAction() {
         @Override
-        public void actionPerformed(final ActionEvent e) {
-            final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
-            if (!comboBox.isPopupVisible()) {
-                comboBox.setPopupVisible(true);
-            } else {
-                final int size = listBox.getModel().getSize();
-                listBox.setSelectedIndex(size - 1);
-                listBox.ensureIndexIsVisible(size - 1);
-            }
+        void performComboBoxAction(final AquaComboBoxUI ui) {
+            final int size = listBox.getModel().getSize();
+            listBox.setSelectedIndex(size - 1);
+            listBox.ensureIndexIsVisible(size - 1);
+            comboBox.setSelectedIndex(ui.getPopup().getList().getSelectedIndex());
         }
     };
 
     @SuppressWarnings("serial") // anonymous class
-    private final Action openPopupOrHighlightFirst = new AbstractAction() {
+    private final Action openPopupOrHighlightFirst = new ComboBoxAction() {
         @Override
-        public void actionPerformed(final ActionEvent e) {
-            final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
-            if (!comboBox.isPopupVisible()) {
-                comboBox.setPopupVisible(true);
-            } else {
-                listBox.setSelectedIndex(0);
-                listBox.ensureIndexIsVisible(0);
-            }
+        void performComboBoxAction(final AquaComboBoxUI ui) {
+           listBox.setSelectedIndex(0);
+           listBox.ensureIndexIsVisible(0);
+           comboBox.setSelectedIndex(ui.getPopup().getList().getSelectedIndex());
         }
     };
 
