@@ -830,7 +830,7 @@ public class ArrayType<T> extends OpenType<T> {
      */
     public static <E> ArrayType<E[]> getArrayType(OpenType<E> elementType)
         throws OpenDataException {
-        return new ArrayType<E[]>(1, elementType);
+        return new ArrayType<>(1, elementType);
     }
 
     /**
@@ -976,7 +976,7 @@ public class ArrayType<T> extends OpenType<T> {
                 break;
             }
         }
-        return new ArrayType<T>(cn, tn, d,
+        return new ArrayType<>(cn, tn, d,
                                 dimension, elementType, primitiveArray);
     }
 
@@ -1044,7 +1044,7 @@ public class ArrayType<T> extends OpenType<T> {
                 break;
             }
         }
-        return new ArrayType<T>(cn, tn, d,
+        return new ArrayType<>(cn, tn, d,
                                 dimension, elementType, primitiveArray);
     }
 }
