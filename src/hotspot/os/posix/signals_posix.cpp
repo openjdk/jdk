@@ -350,6 +350,21 @@ void jdk_misc_signal_init() {
 
   // Initialize signal semaphore
   sig_semaphore = new Semaphore();
+
+  // Install BREAK_SIGNAL's handler in early initialization phase, in
+  // order to reduce the risk that an attach client accidentally forces
+  // HotSpot to quit prematurely.
+  // The actual work for handling BREAK_SIGNAL is performed by the Signal
+  // Dispatcher thread, which is created and started at a much later point,
+  // see os::initialize_jdk_signal_support(). Any BREAK_SIGNAL received
+  // before the Signal Dispatcher thread is started is queued up via the
+  // pending_signals[BREAK_SIGNAL] counter, and will be processed by the
+  // Signal Dispatcher thread in a delayed fashion.
+  //
+  // Also note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
+  // Applications that require a custom BREAK_SIGNAL handler should run with
+  // -XX:+ReduceSignalUsage.
+  os::signal(BREAK_SIGNAL, os::user_handler());
 }
 
 void os::signal_notify(int sig) {
@@ -681,12 +696,6 @@ static void javaSignalHandler(int sig, siginfo_t* info, void* ucVoid) {
   // Do not add any code here!
   // Only add code to either JVM_HANDLE_XXX_SIGNAL or PosixSignals::pd_hotspot_signal_handler.
   (void)JVM_HANDLE_XXX_SIGNAL(sig, info, ucVoid, true);
-}
-
-// Signal handler for BREAK_SIGNAL during early initialization phase.
-// Late initialization will overwrite BREAK_SIGNAL's handler to UserHandler.
-static void DummySIGBREAKHandler(int sig, void *siginfo, void *context) {
-  assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
 }
 
 static void UserHandler(int sig, void *siginfo, void *context) {
@@ -1331,21 +1340,6 @@ void install_signal_handlers() {
   if (libjsig_is_loaded) {
     // Tell libjsig jvm finishes setting signal handlers
     (*end_signal_setting)();
-  }
-
-  if (!ReduceSignalUsage) {
-    // This is just for early initialization phase. Intercepting the signal here
-    // reduces the risk that an attach client accidentally forces HotSpot to quit
-    // prematurely. Late initialization will overwrite BREAK_SIGNAL's handler to
-    // UserHandler.
-    // Note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
-    // We have to set it outside the window bounded by libjsig's
-    // JVM_begin_signal_setting and JVM_end_signal_setting above, because the
-    // window is intended for signals that support chaining. Otherwise libjsig
-    // would prevent us from overwriting BREAK_SIGNAL's handler to UserHandler.
-    // We also use os::signal() and a dummy handler to avoid special-casing
-    // set_signal_handler() and JVM_HANDLE_XXX_SIGNAL().
-    os::signal(BREAK_SIGNAL, CAST_FROM_FN_PTR(void*, DummySIGBREAKHandler));
   }
 
   // We don't activate signal checker if libjsig is in place, we trust ourselves
