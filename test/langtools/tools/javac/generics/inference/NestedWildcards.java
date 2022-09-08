@@ -26,7 +26,6 @@
  * @bug 8039214
  * @summary Nested generic methods that work on wildcard-parameterized types
  * @compile NestedWildcards.java
- * @compile --release 7 NestedWildcards.java
  */
 
 public class NestedWildcards {

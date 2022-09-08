@@ -139,9 +139,6 @@ class x86 {
   static juint    _crc_table_avx512[];
   static juint    _crc32c_table_avx512[];
   static juint    _shuf_table_crc32_avx512[];
-  static juint    _adler32_shuf0_table[];
-  static juint    _adler32_shuf1_table[];
-  static juint    _adler32_ascale_table[];
 #endif // _LP64
   // table for CRC32C
   static juint* _crc32c_table;

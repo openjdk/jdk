@@ -83,20 +83,18 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 
       AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
       if test "x$TARGET_CPU" = xx86; then
-        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
+        VCVARSFILES="vcvars32.bat vcvarsamd64_x86.bat"
       elif test "x$TARGET_CPU" = xx86_64; then
-        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
-            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+        VCVARSFILES="vcvars64.bat vcvarsx86_amd64.bat"
       elif test "x$TARGET_CPU" = xaarch64; then
         # for host x86-64, target aarch64
         # aarch64 requires Visual Studio 16.8 or higher
-        VCVARSFILES="vc/auxiliary/build/vcvarsamd64_arm64.bat \
-            vc/auxiliary/build/vcvarsx86_arm64.bat"
+        VCVARSFILES="vcvarsamd64_arm64.bat vcvarsx86_arm64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do
-        if test -f "$VS_BASE/$VCVARSFILE"; then
-          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+        if test -f "$VS_BASE/vc/auxiliary/build/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/vc/auxiliary/build/$VCVARSFILE"
           break
         fi
       done
