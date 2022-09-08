@@ -91,6 +91,9 @@ public:
   template <typename D, typename T>
   inline static void release_store_fence(volatile D* dest, T store_value);
 
+  template<typename D, typename T>
+  inline static void store(volatile D* dest, T store_value, atomic_memory_order order);
+
   // Atomically load from a location
   // The type T must be either a pointer type, an integral/enum type,
   // or a type that is primitive convertible using PrimitiveConversions.
@@ -99,6 +102,9 @@ public:
 
   template <typename T>
   inline static T load_acquire(const volatile T* dest);
+
+  template<typename T>
+  inline static T load(const volatile T* dest, atomic_memory_order order);
 
   // Atomically add to a location. *add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
@@ -134,6 +140,30 @@ public:
   template<typename D>
   inline static void dec(D volatile* dest,
                          atomic_memory_order order = memory_order_conservative);
+
+  // Atomically bit-or to a location. *or*() provide:
+  // <fence> bit-or-value-to-dest <membar StoreLoad|StoreStore>
+
+  // Returns previous value.
+  template<typename D>
+  inline static D fetch_and_or(D volatile* dest, D set_value,
+                               atomic_memory_order order = memory_order_conservative);
+
+  // Atomically bit-and to a location. *or*() provide:
+  // <fence> bit-and-value-to-dest <membar StoreLoad|StoreStore>
+
+  // Returns previous value.
+  template<typename D>
+  inline static D fetch_and_and(D volatile* dest, D set_value,
+                                atomic_memory_order order = memory_order_conservative);
+
+  // Atomically bit-xor to a location. *or*() provide:
+  // <fence> bit-xor-value-to-dest <membar StoreLoad|StoreStore>
+
+  // Returns previous value.
+  template<typename D>
+  inline static D fetch_and_xor(D volatile* dest, D set_value,
+                                atomic_memory_order order = memory_order_conservative);
 
   // Performs atomic exchange of *dest with exchange_value. Returns old
   // prior value of *dest. xchg*() provide:
@@ -276,6 +306,40 @@ private:
   // required by AddAndFetch.
   template<typename Type, typename Fn, typename D, typename I>
   static D add_using_helper(Fn fn, D volatile* dest, I add_value);
+
+  // Dispatch handler for bitop.  Provides type-based validity checking
+  // and limited conversions around calls to the platform-specific
+  // implementation layer provided by PlatformBitOp.
+  template<typename D, typename Enable = void>
+  struct BitOpImpl;
+
+  // Platform-specific implementation of bitop.  Support for sizes of 4
+  // bytes and (if different) pointer size bytes are required.  The
+  // class must be default constructable, with these requirements:
+  //
+  // - dest is of type D*, an integral or pointer type.
+  // - set_value is of type D, an integral type.
+  // - order is of type atomic_memory_order.
+  // - platform_bitop is an object of type PlatformBitOp<sizeof(D)>.
+  //
+  // Then
+  //   platform_bitop.fetch_and_or(dest, set_value, order)
+  //   platform_bitop.fetch_and_and(dest, set_value, order)
+  //   platform_bitop.fetch_and_xor(dest, set_value, order)
+  // must be valid expressions returning a result convertible to D.
+  //
+  // fetch_and_or atomically bit-or set_value to the value of dest,
+  // returning the old value.
+  //
+  // fetch_and_and atomically bit-and set_value to the value of dest,
+  // returning the old value.
+  //
+  // fetch_and_xor atomically bit-xor set_value to the value of dest,
+  // returning the old value.
+  //
+  // No definition is provided; all platforms must explicitly define
+  // this class and any needed specializations.
+  template<size_t byte_size> struct PlatformBitOp;
 
   // Dispatch handler for cmpxchg.  Provides type-based validity
   // checking and limited conversions around calls to the
@@ -628,6 +692,17 @@ inline T Atomic::load_acquire(const volatile T* p) {
   return LoadImpl<T, PlatformOrderedLoad<sizeof(T), X_ACQUIRE> >()(p);
 }
 
+template<typename T>
+inline T Atomic::load(const volatile T* dest, atomic_memory_order order) {
+  switch (order) {
+  case memory_order_relaxed:
+  case memory_order_release:
+    return load(dest);
+  default:
+    return load_acquire(dest);
+  }
+}
+
 template<typename D, typename T>
 inline void Atomic::store(volatile D* dest, T store_value) {
   StoreImpl<D, T, PlatformStore<sizeof(D)> >()(dest, store_value);
@@ -650,6 +725,24 @@ inline void Atomic::release_store(volatile D* p, T v) {
 template <typename D, typename T>
 inline void Atomic::release_store_fence(volatile D* p, T v) {
   StoreImpl<D, T, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(p, v);
+}
+
+template<typename D, typename T>
+inline void Atomic::store(volatile D* dest, T store_value, atomic_memory_order order) {
+  switch (order) {
+  case memory_order_relaxed:
+  case memory_order_acquire:
+    store(dest, store_value);
+    break;
+  case memory_order_acq_rel:
+  case memory_order_release:
+    release_store(dest, store_value);
+    break;
+  case memory_order_seq_cst:
+  case memory_order_conservative:
+    release_store_fence(dest, store_value);
+    break;
+  }
 }
 
 template<typename D, typename I>
@@ -713,6 +806,40 @@ inline D Atomic::add_using_helper(Fn fn, D volatile* dest, I add_value) {
     fn(PrimitiveConversions::cast<Type>(add_value),
        reinterpret_cast<Type volatile*>(dest)));
 }
+
+template<typename D>
+inline D Atomic::fetch_and_or(D volatile* dest, D set_value,
+                              atomic_memory_order order) {
+  return BitOpImpl<D>::fetch_and_or(dest, set_value, order);
+}
+
+template<typename D>
+inline D Atomic::fetch_and_and(D volatile* dest, D set_value,
+                               atomic_memory_order order) {
+  return BitOpImpl<D>::fetch_and_and(dest, set_value, order);
+}
+
+template<typename D>
+inline D Atomic::fetch_and_xor(D volatile* dest, D set_value,
+                               atomic_memory_order order) {
+  return BitOpImpl<D>::fetch_and_xor(dest, set_value, order);
+}
+
+template<typename D>
+struct Atomic::BitOpImpl<
+  D,
+  typename EnableIf<IsIntegral<D>::value || IsPointer<D>::value>::type>
+{
+  static D fetch_and_or(D volatile* dest, D set_value, atomic_memory_order order) {
+    return PlatformBitOp<sizeof(D)>().fetch_and_or(dest, set_value, order);
+  }
+  static D fetch_and_and(D volatile* dest, D set_value, atomic_memory_order order) {
+    return PlatformBitOp<sizeof(D)>().fetch_and_and(dest, set_value, order);
+  }
+  static D fetch_and_xor(D volatile* dest, D set_value, atomic_memory_order order) {
+    return PlatformBitOp<sizeof(D)>().fetch_and_xor(dest, set_value, order);
+  }
+};
 
 template<typename D, typename U, typename T>
 inline D Atomic::cmpxchg(D volatile* dest,
