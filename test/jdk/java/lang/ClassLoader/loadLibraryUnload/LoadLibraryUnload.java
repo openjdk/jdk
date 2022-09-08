@@ -162,14 +162,14 @@ public class LoadLibraryUnload {
         exceptions.clear();
         // Wait for the canary for each of the libraries to be GC'd
         // before exiting the test.
+        int dequeueCount = 0;
         for (int i = 0; i < LOADER_COUNT; i++) {
             System.gc();
-            var res = refQueue.remove(Utils.adjustTimeout(30 * 1000L));
-            System.out.println(i + " dequeued: " + res);
-            if (res == null) {
-                Asserts.fail("Too few cleared WeakReferences");
-            }
+            if (refQueue.remove(Utils.adjustTimeout(10 * 1000L)) != null)
+                dequeueCount++;
         }
+        Asserts.assertEquals(dequeueCount, LOADER_COUNT, "Too few cleared WeakReferences");
+
         // Ensure the WeakReferences are strongly referenced until they can be dequeued
         Reference.reachabilityFence(wCanary);
     }
