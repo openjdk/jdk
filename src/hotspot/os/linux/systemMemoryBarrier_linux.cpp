@@ -80,7 +80,7 @@ bool LinuxSystemMemoryBarrier::initialize() {
 }
 
 void LinuxSystemMemoryBarrier::emit() {
-  int s =  membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0, 0);
+  int s = membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0, 0);
   guarantee_with_errno(s >= 0, "MEMBARRIER_CMD_PRIVATE_EXPEDITED failed");
 }
 
