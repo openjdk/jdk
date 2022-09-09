@@ -500,13 +500,13 @@ final class Exchange<T> {
         final int statusCode = rsp.statusCode();
         // we ignore any response code which is 1xx.
         // For 100 (with the request configured to expect-continue) and 101, we handle it
-        // specifically as defined in the RFC-2616 (HTTP 1.1 spec), outside of this method.
-        // As noted in RFC-7231, section 6.2.1, if response code is 100 and if the request wasn't
+        // specifically as defined in the RFC-9110, outside of this method.
+        // As noted in RFC-9110, section 15.2.1, if response code is 100 and if the request wasn't
         // configured with expectContinue, then we ignore the 100 response and wait for the final
         // response (just like any other 1xx response)
         // Any other response code between 102 and 199 (both inclusive) aren't specified in the
-        // HTTP 1.1 spec. The spec states that these 1xx response codes are informational and
-        // interim and the client will ignore them and will continue to wait to receive the
+        // "HTTP semantics" RFC-9110. The spec states that these 1xx response codes are informational
+        // and interim and the client will ignore them and will continue to wait to receive the
         // final response (headers)
         if ((statusCode >= 102 && statusCode <= 199)
                 || (statusCode == 100 && !request.expectContinue)) {
