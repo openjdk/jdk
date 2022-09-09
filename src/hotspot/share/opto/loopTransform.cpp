@@ -1411,7 +1411,7 @@ bool PhaseIdealLoop::subgraph_has_opaque(Node* n) {
   }
   uint init;
   uint stride;
-  skeleton_predicate_opaque_helper(n, init, stride);
+  count_opaque_loop_nodes(n, init, stride);
   return init != 0 || stride != 0;
 }
 
@@ -1419,7 +1419,7 @@ bool PhaseIdealLoop::subgraph_has_opaque(Node* n) {
 bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
   uint init;
   uint stride;
-  skeleton_predicate_opaque_helper(iff->in(1)->in(1), init, stride);
+  count_opaque_loop_nodes(iff->in(1)->in(1), init, stride);
 #ifdef ASSERT
   ResourceMark rm;
   Unique_Node_List wq;
@@ -1451,7 +1451,7 @@ bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
   return init != 0;
 }
 
-void PhaseIdealLoop::skeleton_predicate_opaque_helper(Node* n, uint& init, uint& stride) {
+void PhaseIdealLoop::count_opaque_loop_nodes(Node* n, uint& init, uint& stride) {
   init = 0;
   stride = 0;
   ResourceMark rm;
