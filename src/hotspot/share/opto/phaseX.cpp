@@ -1850,7 +1850,7 @@ void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
 
 // If we changed the receiver type to a call, we need to revisit the Catch node following the call. It's looking for a
 // non-NULL receiver to know when to enable the regular fall-through path in addition to the NullPtrException path.
-// Same if true if the type of a ValidLengthTest input to an AllocateArrayNode changes
+// Same is true if the type of a ValidLengthTest input to an AllocateArrayNode changes.
 void PhaseCCP::push_catch(Unique_Node_List& worklist, const Node* use) {
   if (use->is_Call()) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
