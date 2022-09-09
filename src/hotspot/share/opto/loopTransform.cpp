@@ -1452,8 +1452,8 @@ bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
 }
 
 void PhaseIdealLoop::skeleton_predicate_opaque_helper(Node* n, uint& init, uint& stride) {
-  init= 0;
-  stride= 0;
+  init = 0;
+  stride = 0;
   ResourceMark rm;
   Unique_Node_List wq;
   wq.push(n);
