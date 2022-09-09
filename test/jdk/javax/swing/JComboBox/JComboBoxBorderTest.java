@@ -26,8 +26,7 @@
  * @bug 8054572
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @summary Test if JComboBox displays correctly on MacOS when
- *      editable/non-editable
+ * @summary Tests if JComboBox displays correctly when editable/non-editable
  * @run main/manual JComboBoxBorderTest
  */
 
@@ -44,7 +43,7 @@ import javax.swing.UIManager;
 public class JComboBoxBorderTest {
     private static final String instructionsText = "Pass if you can see both " +
             "an editable and non-editable JComboBox and if they display " +
-            "reasonably on MacOS. Fail if they do not appear or are misaligned.";
+            "reasonably. Fail if they do not appear or are misaligned.";
 
     private static JFrame frame;
 
@@ -71,13 +70,14 @@ public class JComboBoxBorderTest {
 
             frame = new JFrame();
             frame.getContentPane().add(panel);
-            frame.setVisible(true);
             frame.pack();
             frame.setLocationRelativeTo(null);
 
             PassFailJFrame.addTestWindow(frame);
             PassFailJFrame.positionTestWindow(frame,
                     PassFailJFrame.Position.HORIZONTAL);
+
+            frame.setVisible(true);
         });
     }
 
