@@ -295,23 +295,26 @@ void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) c
 
 class ZRememberedScanForwardingTask : public ZRestartableTask {
 private:
-  ZForwardingTableParallelIterator _iterator;
-  const ZRemembered&               _remembered;
+  ZRelocationSetParallelIterator _iterator;
+  const ZRemembered&             _remembered;
 
 public:
   ZRememberedScanForwardingTask(const ZRemembered& remembered) :
       ZRestartableTask("ZRememberedScanForwardingTask"),
-      _iterator(ZGeneration::old()->forwarding_table()),
+      _iterator(ZGeneration::old()->relocation_set_parallel_iterator()),
       _remembered(remembered) {}
 
   virtual void work() {
     ZRememberedScanForwardingContext context;
 
-    _iterator.do_forwardings([&](ZForwarding* forwarding) {
+    for (ZForwarding* forwarding; _iterator.next(&forwarding);) {
       _remembered.scan_forwarding(forwarding, &context);
       ZVerify::after_scan(forwarding);
-      return !ZGeneration::young()->should_worker_stop();
-    });
+
+      if (ZGeneration::young()->should_worker_stop()) {
+        break;
+      }
+    };
 
     context.print();
   }

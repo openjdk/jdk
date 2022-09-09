@@ -155,6 +155,8 @@ public:
   const ZForwardingTable* forwarding_table() const;
   ZForwarding* forwarding(zaddress_unsafe addr) const;
 
+  ZRelocationSetParallelIterator relocation_set_parallel_iterator();
+
   // Marking
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object(zaddress addr);

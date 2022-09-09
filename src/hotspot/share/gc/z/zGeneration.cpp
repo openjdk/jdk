@@ -263,6 +263,10 @@ void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_a
   stat_heap()->at_select_relocation_set(selector.stats());
 }
 
+ZRelocationSetParallelIterator ZGeneration::relocation_set_parallel_iterator() {
+  return ZRelocationSetParallelIterator(&_relocation_set);
+}
+
 void ZGeneration::reset_relocation_set() {
   // Reset forwarding table
   ZRelocationSetIterator iter(&_relocation_set);
