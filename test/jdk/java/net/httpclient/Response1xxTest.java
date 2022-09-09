@@ -36,7 +36,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import jdk.test.lib.net.URIBuilder;
-
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -115,6 +114,7 @@ public class Response1xxTest {
         private static final String REQ_LINE_FOO = "GET /test/foo HTTP/1.1\r\n";
         private static final String REQ_LINE_BAR = "GET /test/bar HTTP/1.1\r\n";
         private static final String REQ_LINE_HELLO = "GET /test/hello HTTP/1.1\r\n";
+        private static final String REQ_LINE_BYE = "GET /test/bye HTTP/1.1\r\n";
 
 
         private final ServerSocket serverSocket;
@@ -157,6 +157,9 @@ public class Response1xxTest {
                     } else if (requestLine.startsWith(REQ_LINE_HELLO)) {
                         // we will send intermediate/informational 100 response
                         informationalResponseCode = 100;
+                    }  else if (requestLine.startsWith(REQ_LINE_BYE)) {
+                        // we will send intermediate/informational 101 response
+                        informationalResponseCode = 101;
                     } else {
                         // unexpected client. ignore and close the client
                         System.err.println("Ignoring unexpected request from client " + socket);
@@ -168,8 +171,15 @@ public class Response1xxTest {
                         // be sent multiple times)
                         for (int i = 0; i < 3; i++) {
                             // send 1xx response header
-                            os.write(("HTTP/1.1 " + informationalResponseCode + "\r\n\r\n")
-                                    .getBytes(StandardCharsets.UTF_8));
+                            if (informationalResponseCode == 101) {
+                                os.write(("HTTP/1.1 " + informationalResponseCode + "\r\n" +
+                                        "Connection: upgrade\r\n" +
+                                        "Upgrade: websocket\r\n\r\n")
+                                        .getBytes(StandardCharsets.UTF_8));
+                            } else {
+                                os.write(("HTTP/1.1 " + informationalResponseCode + "\r\n\r\n")
+                                        .getBytes(StandardCharsets.UTF_8));
+                            }
                             os.flush();
                             System.out.println("Sent response code " + informationalResponseCode
                                     + " to client " + socket);
@@ -285,7 +295,8 @@ public class Response1xxTest {
         final URI[] requestURIs = new URI[]{
                 new URI(http1RequestURIBase + "/test/foo"),
                 new URI(http1RequestURIBase + "/test/bar"),
-                new URI(http1RequestURIBase + "/test/hello")};
+                new URI(http1RequestURIBase + "/test/hello"),
+                new URI(http1RequestURIBase + "/test/bye")};
         for (final URI requestURI : requestURIs) {
             final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
             System.out.println("Issuing request to " + requestURI);
