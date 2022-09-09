@@ -59,9 +59,13 @@ public class GcProvoker{
      */
     public void provokeGc() {
         float targetFraction = 0;
-        // Read sizes of eden and overall heap.
+        // Read sizes of eden and overall heap, to find eden size as a fraction of heap.
         // Recognise if heap is changing size, and retry (heap is expected to initially shrink).
-        for (int j = 0; j < 3; j++) {
+        for (int i = 0; i < 3; i++) {
+            // One retry is expected occasionally.  More "should not happen":
+            if (i == 2) {
+                throw new RuntimeException("Cannot calculate targetFraction.  Heap size not stable.");
+            }
             long heapSize0 = Pools.getHeapCommittedSize();
             long edenSize = Pools.getEdenCommittedSize();
             long heapSize = Pools.getHeapCommittedSize();
@@ -69,11 +73,13 @@ public class GcProvoker{
                 System.out.println("provokeGc: Heap shrinking, retry. eden: " + edenSize + ", heap0: " + heapSize0 + ", heap: " + heapSize);
                 System.gc();
                 continue;
-            }
-            targetFraction = ((float) edenSize) / (heapSize);
-            if ((targetFraction < 0) || (targetFraction > 1.0)) {
-                throw new RuntimeException("Error in fraction calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize
-                                           + ", calculated eden fraction: " + targetFraction + ")");
+            } else {
+                targetFraction = ((float) edenSize) / (heapSize);
+                if ((targetFraction < 0) || (targetFraction > 1.0)) {
+                    throw new RuntimeException("Error in fraction calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize
+                                               + ", calculated eden fraction: " + targetFraction + ")");
+                }
+                break;
             }
         }
         allocateHeap(targetFraction);
