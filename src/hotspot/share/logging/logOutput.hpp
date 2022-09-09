@@ -48,6 +48,7 @@ class LogOutput : public CHeapObj<mtLogging> {
   // Track if the output has been reconfigured dynamically during runtime.
   // The status is set each time the configuration of the output is modified,
   // and is reset once after logging initialization is complete.
+  // This is only used during logging of the configuration.
   bool _reconfigured;
 
   char* _config_string;

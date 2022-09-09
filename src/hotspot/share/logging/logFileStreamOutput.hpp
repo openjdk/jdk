@@ -31,14 +31,6 @@
 
 class LogDecorations;
 
-class LogFileStreamInitializer {
- public:
-  LogFileStreamInitializer();
-};
-
-// Ensure the default log streams have been initialized (stdout, stderr) using the static initializer below
-static LogFileStreamInitializer log_stream_initializer;
-
 // Base class for all FileStream-based log outputs.
 class LogFileStreamOutput : public LogOutput {
  private:
@@ -72,13 +64,11 @@ class LogFileStreamOutput : public LogOutput {
 class LogStdoutOutput : public LogFileStreamOutput {
   friend class LogFileStreamInitializer;
  private:
-  LogStdoutOutput() : LogFileStreamOutput(stdout) {
-    set_config_string("all=warning");
-  }
   virtual bool initialize(const char* options, outputStream* errstream) {
     return false;
   }
  public:
+  LogStdoutOutput() : LogFileStreamOutput(stdout) {}
   virtual const char* name() const {
     return "stdout";
   }
@@ -87,19 +77,17 @@ class LogStdoutOutput : public LogFileStreamOutput {
 class LogStderrOutput : public LogFileStreamOutput {
   friend class LogFileStreamInitializer;
  private:
-  LogStderrOutput() : LogFileStreamOutput(stderr) {
-    set_config_string("all=off");
-  }
   virtual bool initialize(const char* options, outputStream* errstream) {
     return false;
   }
  public:
+  LogStderrOutput() : LogFileStreamOutput(stderr) {}
   virtual const char* name() const {
     return "stderr";
   }
 };
 
-extern LogStderrOutput &StderrLog;
-extern LogStdoutOutput &StdoutLog;
+extern LogStderrOutput* StderrLog;
+extern LogStdoutOutput* StdoutLog;
 
 #endif // SHARE_LOGGING_LOGFILESTREAMOUTPUT_HPP

@@ -51,9 +51,6 @@ LogTagSet::LogTagSet(PrefixWriter prefix_writer, LogTagType t0, LogTagType t1, L
   }
   _list = this;
   _ntagsets++;
-
-  // Set the default output to warning and error level for all new tagsets.
-  _output_list.set_output_level(&StdoutLog, LogLevel::Default);
 }
 
 void LogTagSet::update_decorators(const LogDecorators& decorator) {

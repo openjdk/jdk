@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
