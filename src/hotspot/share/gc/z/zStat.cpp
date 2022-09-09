@@ -679,11 +679,12 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
 
   const size_t used_at_end = ZHeap::heap()->used();
 
-  log_info(gc)("%s (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
+  log_info(gc)("%s (%s) " ZSIZE_FMT "->" ZSIZE_FMT " %.3fs",
                name(),
                GCCause::to_string(cause),
                ZSIZE_ARGS(used_at_start()),
-               ZSIZE_ARGS(used_at_end));
+               ZSIZE_ARGS(used_at_end),
+               duration.seconds());
 }
 
 ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
@@ -720,10 +721,11 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
   generation->stat_relocation()->print();
   generation->stat_heap()->print(generation);
 
-  log_info(gc, phases)("%s " ZSIZE_FMT "->" ZSIZE_FMT,
-               name(),
-               ZSIZE_ARGS(generation->stat_heap()->used_at_collection_start()),
-               ZSIZE_ARGS(generation->stat_heap()->used_at_collection_end()));
+  log_info(gc, phases)("%s " ZSIZE_FMT "->" ZSIZE_FMT " %.3fs",
+                       name(),
+                       ZSIZE_ARGS(generation->stat_heap()->used_at_collection_start()),
+                       ZSIZE_ARGS(generation->stat_heap()->used_at_collection_end()),
+                       duration.seconds());
 }
 
 Tickspan ZStatPhasePause::_max;
