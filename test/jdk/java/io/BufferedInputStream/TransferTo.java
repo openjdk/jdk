@@ -124,8 +124,8 @@ public class TransferTo {
             int posIn = RND.nextInt(inBytes.length);
             int posOut = RND.nextInt(MIN_SIZE);
             int bufferBytes = RND.nextInt(inBytes.length - posIn);
-            boolean mark = RND.nextBoolean();
-            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut, bufferBytes, mark);
+            boolean markAndReset = RND.nextBoolean();
+            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut, bufferBytes, markAndReset);
         }
 
         // tests reading beyond source EOF (must not transfer any bytes)
@@ -151,7 +151,7 @@ public class TransferTo {
      * output streams before the transfer are provided by the caller.
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut, int bufferBytes, boolean mark) throws Exception {
+            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut, int bufferBytes, boolean markAndReset) throws Exception {
         AtomicReference<Supplier<byte[]>> recorder = new AtomicReference<>();
         try (InputStream in = inputStreamProvider.input(inBytes);
             OutputStream out = outputStreamProvider.output(recorder::set)) {
@@ -164,20 +164,34 @@ public class TransferTo {
             in.read(bytes);
             out.write(bytes);
 
-            // set mark
-            if (mark) {
-              in.mark(1);
+            // set mark at current position for later replay
+            if (markAndReset) {
+                in.mark(Integer.MAX_VALUE);
             }
 
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
             int expected = count - bufferBytes;
 
-            assertEquals(reported, expected, format("reported %d bytes but should report %d", reported, expected));
+            assertEquals(reported, expected, format("transferred %d bytes but should report %d", reported, expected));
 
             byte[] outBytes = recorder.get().get();
             assertTrue(Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count),
                 format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
+
+            // replay from marked position
+            if (markAndReset) {
+                in.reset();
+
+                reported = in.transferTo(out);
+                expected = count - bufferBytes;
+
+                assertEquals(reported, expected, format("replayed %d bytes but should report %d", reported, expected));
+
+                outBytes = recorder.get().get();
+                assertTrue(Arrays.equals(inBytes, posIn + bufferBytes, inBytes.length, outBytes, posOut + count, outBytes.length),
+                    format("inBytes.length=%d, outBytes.length=%d", inBytes.length - posIn - bufferBytes, outBytes.length - posOut - count));
+            }
         }
     }
 
