@@ -54,7 +54,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _requested_gc_cause(GCCause::_no_cause_specified),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _allocs_seen(0) {
-
+  set_name("Shenandoah Control Thread");
   reset_gc_id();
   create_and_start();
   _periodic_task.enroll();
@@ -624,16 +624,6 @@ void ShenandoahControlThread::update_gc_id() {
 
 size_t ShenandoahControlThread::get_gc_id() {
   return Atomic::load(&_gc_id);
-}
-
-void ShenandoahControlThread::print() const {
-  print_on(tty);
-}
-
-void ShenandoahControlThread::print_on(outputStream* st) const {
-  st->print("Shenandoah Concurrent Thread");
-  Thread::print_on(st);
-  st->cr();
 }
 
 void ShenandoahControlThread::start() {

@@ -379,7 +379,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   // The length of the instruction sequence emitted should be independent
   // of the value of the local char buffer address so that the size of mach
   // nodes for scratch emit and normal emit matches.
-  mv(t0, (address)b);
+  movptr(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
   int32_t offset = 0;
@@ -418,7 +418,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   // The length of the instruction sequence emitted should be independent
   // of the value of the local char buffer address so that the size of mach
   // nodes for scratch emit and normal emit matches.
-  mv(t0, (address)b);
+  movptr(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
   int32_t offset = 0;
@@ -738,7 +738,7 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
   switch (adr.getMode()) {
     case Address::literal: {
       if (rtype == relocInfo::none) {
-        li(Rd, (intptr_t)(adr.target()));
+        mv(Rd, (intptr_t)(adr.target()));
       } else {
         movptr(Rd, adr.target());
       }
@@ -1363,12 +1363,6 @@ void MacroAssembler::mv(Register Rd, Address dest) {
   movptr(Rd, dest.target());
 }
 
-void MacroAssembler::mv(Register Rd, address addr) {
-  // Here in case of use with relocation, use fix length instruction
-  // movptr instead of li
-  movptr(Rd, addr);
-}
-
 void MacroAssembler::mv(Register Rd, RegisterOrConstant src) {
   if (src.is_register()) {
     mv(Rd, src.as_register());
@@ -1608,7 +1602,7 @@ void MacroAssembler::andi(Register Rd, Register Rn, int64_t imm, Register tmp) {
     and_imm12(Rd, Rn, imm);
   } else {
     assert_different_registers(Rn, tmp);
-    li(tmp, imm);
+    mv(tmp, imm);
     andr(Rd, Rn, tmp);
   }
 }
@@ -1622,7 +1616,7 @@ void MacroAssembler::orptr(Address adr, RegisterOrConstant src, Register tmp1, R
       ori(tmp1, tmp1, src.as_constant());
     } else {
       assert_different_registers(tmp1, tmp2);
-      li(tmp2, src.as_constant());
+      mv(tmp2, src.as_constant());
       orr(tmp1, tmp1, tmp2);
     }
   }
@@ -1780,14 +1774,14 @@ void MacroAssembler::null_check(Register reg, int offset) {
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address dst, Register src,
-                                     Register tmp1, Register thread_tmp) {
+                                     Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   }
 }
 
@@ -1864,7 +1858,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
   }
 
   assert_different_registers(src, xbase);
-  li(xbase, (uintptr_t)CompressedKlassPointers::base());
+  mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
     assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
@@ -1906,7 +1900,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
   }
 
   assert_different_registers(src, xbase);
-  li(xbase, (intptr_t)CompressedKlassPointers::base());
+  mv(xbase, (intptr_t)CompressedKlassPointers::base());
   sub(dst, src, xbase);
   if (CompressedKlassPointers::shift() != 0) {
     assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
@@ -1955,8 +1949,8 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
 }
 
 void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
-                                    Register thread_tmp, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+                                    Register tmp2, Register tmp3, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
@@ -1971,7 +1965,7 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
 
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
-  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg);
+  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg, noreg);
 }
 
 int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
@@ -2059,7 +2053,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
     if (itable_index.is_register()) {
       slli(t0, itable_index.as_register(), 3);
     } else {
-      li(t0, itable_index.as_constant() << 3);
+      mv(t0, itable_index.as_constant() << 3);
     }
     add(recv_klass, recv_klass, t0);
     if (itentry_off) {
@@ -2249,10 +2243,10 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
   andi(aligned_addr, addr, ~3);
 
   if (size == int8) {
-    addi(mask, zr, 0xff);
+    mv(mask, 0xff);
   } else {
     // size == int16 case
-    addi(mask, zr, -1);
+    mv(mask, -1);
     zero_extend(mask, mask, 16);
   }
   sll(mask, mask, shift);
@@ -2292,7 +2286,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   bnez(tmp, retry);
 
   if (result_as_bool) {
-    li(result, 1);
+    mv(result, 1);
     j(done);
 
     bind(fail);
@@ -2339,7 +2333,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   bnez(tmp, fail);
 
   // Success
-  li(result, 1);
+  mv(result, 1);
   j(done);
 
   // Fail
@@ -2365,7 +2359,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
 
   // equal, succeed
   if (result_as_bool) {
-    li(result, 1);
+    mv(result, 1);
   } else {
     mv(result, expected);
   }
@@ -2394,7 +2388,7 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
   bnez(t0, fail);
 
   // Success
-  li(result, 1);
+  mv(result, 1);
   j(done);
 
   // Fail
@@ -2642,7 +2636,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   add(x15, x15, Array<Klass*>::base_offset_in_bytes());
 
   // Set t0 to an obvious invalid value, falling through by default
-  li(t0, -1);
+  mv(t0, -1);
   // Scan X12 words at [X15] for an occurrence of X10.
   repne_scan(x15, x10, x12, t0);
 
@@ -2687,11 +2681,10 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  int32_t offset = 0;
-  movptr_with_offset(ra, CAST_FROM_FN_PTR(address, Thread::current), offset);
-  jalr(ra, ra, offset);
-  if (thread != x10) {
-    mv(thread, x10);
+  mv(ra, CAST_FROM_FN_PTR(address, Thread::current));
+  jalr(ra);
+  if (thread != c_rarg0) {
+    mv(thread, c_rarg0);
   }
 
   // restore pushed registers
@@ -2701,7 +2694,7 @@ void MacroAssembler::get_thread(Register thread) {
 void MacroAssembler::load_byte_map_base(Register reg) {
   CardTable::CardValue* byte_map_base =
     ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
-  li(reg, (uint64_t)byte_map_base);
+  mv(reg, (uint64_t)byte_map_base);
 }
 
 void MacroAssembler::la_patchable(Register reg1, const Address &dest, int32_t &offset) {
@@ -3063,7 +3056,7 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   add(in, in, t0);
 
   const int unroll = 8;
-  li(tmp, unroll);
+  mv(tmp, unroll);
   blt(len, tmp, L_tail_loop);
   bind(L_unroll);
   for (int i = 0; i < unroll; i++) {
@@ -3553,7 +3546,7 @@ void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1
   assert_different_registers(Rd, Rs, tmp1, tmp2);
   Label Loop;
   int step = isLL ? 8 : 16;
-  li(Rd, -step);
+  mv(Rd, -step);
   mv(tmp2, Rs);
 
   bind(Loop);
@@ -3570,7 +3563,7 @@ void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1
 void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Register tmp2)
 {
   assert_different_registers(Rd, Rs, tmp1, tmp2);
-  li(tmp1, 0xFF);
+  mv(tmp1, 0xFF);
   mv(Rd, zr);
   for (int i = 0; i <= 3; i++)
   {
@@ -3592,7 +3585,7 @@ void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Regis
 void MacroAssembler::inflate_hi32(Register Rd, Register Rs, Register tmp1, Register tmp2)
 {
   assert_different_registers(Rd, Rs, tmp1, tmp2);
-  li(tmp1, 0xFF00000000);
+  mv(tmp1, 0xFF00000000);
   mv(Rd, zr);
   for (int i = 0; i <= 3; i++)
   {
@@ -3690,7 +3683,7 @@ void MacroAssembler::zero_words(Register base, u_int64_t cnt)
     Register cnt_reg = t0;
     Register loop_base = t1;
     cnt = cnt - remainder;
-    li(cnt_reg, cnt);
+    mv(cnt_reg, cnt);
     add(loop_base, base, remainder * wordSize);
     bind(loop);
     sub(cnt_reg, cnt_reg, unroll);
