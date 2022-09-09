@@ -1182,6 +1182,8 @@ JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list)
 jvmtiError
 JvmtiEnv::StopThread(jthread thread, jobject exception) {
   JavaThread* current_thread = JavaThread::current();
+
+  JvmtiVTMSTransitionDisabler disabler;
   ThreadsListHandle tlh(current_thread);
   JavaThread* java_thread = NULL;
   oop thread_oop = NULL;
