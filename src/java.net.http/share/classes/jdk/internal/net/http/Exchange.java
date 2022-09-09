@@ -506,7 +506,7 @@ final class Exchange<T> {
         // response (just like any other 1xx response)
         // Any other response code between 102 and 199 (both inclusive) aren't specified in the
         // "HTTP semantics" RFC-9110. The spec states that these 1xx response codes are informational
-        // and interim and the client will ignore them and will continue to wait to receive the
+        // and interim and the client can choose to ignore them and continue to wait for the
         // final response (headers)
         if ((statusCode >= 102 && statusCode <= 199)
                 || (statusCode == 100 && !request.expectContinue)) {
