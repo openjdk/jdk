@@ -79,7 +79,7 @@
  * <ul>
  *     <li>{@systemProperty com.sun.jndi.ldap.object.trustSerialData}:
  *          <br>The value of this system property is the string representation of a boolean value
- *          which allows to control the deserialization of java objects from the {@code javaSerializedData} LDAP
+ *          that controls the deserialization of java objects from the {@code javaSerializedData} LDAP
  *          attribute, reconstruction of RMI references from the {@code javaRemoteLocation} LDAP attribute, and
  *          reconstruction of {@linkplain javax.naming.BinaryRefAddr binary reference addresses} from
  *          the {@code javaReferenceAddress} LDAP attribute.

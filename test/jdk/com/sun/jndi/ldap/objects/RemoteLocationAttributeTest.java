@@ -37,17 +37,19 @@ import jdk.test.lib.net.URIBuilder;
 /**
  * @test
  * @bug 8290367
- * @summary Check if com.sun.jndi.ldap.object.trustSerialData covers the creation of RMI
- * remote objects from the 'javaRemoteLocation' LDAP attribute
+ * @summary Check if com.sun.jndi.ldap.object.trustSerialData covers the creation
+ *          of RMI remote objects from the 'javaRemoteLocation' LDAP attribute.
  * @modules java.naming/com.sun.jndi.ldap
  * @library /test/lib ../lib /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils
  *
  * @run main/othervm RemoteLocationAttributeTest
+ * @run main/othervm -Dcom.sun.jndi.ldap.object.trustSerialData
+ *                   RemoteLocationAttributeTest
  * @run main/othervm -Dcom.sun.jndi.ldap.object.trustSerialData=false
- * RemoteLocationAttributeTest
+ *                   RemoteLocationAttributeTest
  * @run main/othervm -Dcom.sun.jndi.ldap.object.trustSerialData=true
- * RemoteLocationAttributeTest
+ *                   RemoteLocationAttributeTest
  */
 
 public class RemoteLocationAttributeTest {
