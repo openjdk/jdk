@@ -94,7 +94,7 @@ void LeakProfiler::sample(HeapWord* object, size_t size, JavaThread* thread) {
   assert(thread != NULL, "invariant");
   assert(thread->thread_state() == _thread_in_vm, "invariant");
 
-  // exclude compiler threads and code sweeper thread
+  // exclude compiler threads
   if (thread->is_hidden_from_external_view()) {
     return;
   }

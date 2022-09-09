@@ -363,22 +363,16 @@ public:
     nmethod* nm = (cb == NULL) ? NULL : cb->as_compiled_method()->as_nmethod_or_null();
     if (nm != NULL) {
       // Verify that the nemthod is live
-      if (!nm->is_alive()) {
-        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has dead nmethod " PTR_FORMAT " in its code roots",
+      VerifyCodeRootOopClosure oop_cl(_hr);
+      nm->oops_do(&oop_cl);
+      if (!oop_cl.has_oops_in_region()) {
+        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
                               p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
         _failures = true;
-      } else {
-        VerifyCodeRootOopClosure oop_cl(_hr);
-        nm->oops_do(&oop_cl);
-        if (!oop_cl.has_oops_in_region()) {
-          log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
-                                p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
-          _failures = true;
-        } else if (oop_cl.failures()) {
-          log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has other failures for nmethod " PTR_FORMAT,
-                                p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
-          _failures = true;
-        }
+      } else if (oop_cl.failures()) {
+        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has other failures for nmethod " PTR_FORMAT,
+                              p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
+        _failures = true;
       }
     }
   }
