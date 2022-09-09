@@ -827,17 +827,17 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 
   // Special case: pow(x, 2.0) => x * x
   movdq(tmp1, xmm1);
-  cmp64(tmp1, ExternalAddress(DOUBLE2));
+  cmp64(tmp1, ExternalAddress(DOUBLE2), tmp2 /*rscratch*/);
   jccb(Assembler::notEqual, B1_2);
   mulsd(xmm0, xmm0);
   jmp(B1_5);
 
   // Special case: pow(x, 0.5) => sqrt(x)
   bind(B1_2);
-  cmp64(tmp1, ExternalAddress(DOUBLE0DOT5));
+  cmp64(tmp1, ExternalAddress(DOUBLE0DOT5), tmp2 /*rscratch*/);
   jccb(Assembler::notEqual, L_POW); // For pow(x, y), check whether y == 0.5
   movdq(tmp2, xmm0);
-  cmp64(tmp2, ExternalAddress(DOUBLE0));
+  cmp64(tmp2, ExternalAddress(DOUBLE0), tmp3 /*rscratch*/);
   jccb(Assembler::less, L_POW); // pow(x, 0.5) => sqrt(x) only for x >= 0.0 or x is +inf/NaN
   sqrtsd(xmm0, xmm0);
   jmp(B1_5);
@@ -861,9 +861,9 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   addl(ecx, edx);
   xorl(ecx, edx);
   por(xmm0, xmm2);
-  movdqu(xmm6, ExternalAddress(HIGHSIGMASK));    //0x00000000UL, 0xfffff800UL, 0x00000000UL, 0xfffff800UL
+  movdqu(xmm6, ExternalAddress(HIGHSIGMASK), tmp2 /*rscratch*/);    //0x00000000UL, 0xfffff800UL, 0x00000000UL, 0xfffff800UL
   psrlq(xmm0, 27);
-  movq(xmm2, ExternalAddress(LOG2_E));    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
+  movq(xmm2, ExternalAddress(LOG2_E), tmp2 /*rscratch*/);    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
   psrld(xmm0, 2);
   addl(ecx, 16);
   bsrl(ecx, ecx);
@@ -903,10 +903,10 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 
   bind(L_2TAG_PACKET_4_0_2);
   mulsd(xmm3, xmm0);
-  movdqu(xmm1, ExternalAddress(coeff));    //0x6dc96112UL, 0xbf836578UL, 0xee241472UL, 0xbf9b0301UL
+  movdqu(xmm1, ExternalAddress(coeff), tmp2 /*rscratch*/);    //0x6dc96112UL, 0xbf836578UL, 0xee241472UL, 0xbf9b0301UL
   lea(tmp4, ExternalAddress(L_tbl));
   subsd(xmm5, xmm2);
-  movdqu(xmm4, ExternalAddress(16 + coeff));    //0x9f95985aUL, 0xbfb528dbUL, 0xb3841d2aUL, 0xbfd619b6UL
+  movdqu(xmm4, ExternalAddress(coeff + 16), tmp2 /*rscratch*/);    //0x9f95985aUL, 0xbfb528dbUL, 0xb3841d2aUL, 0xbfd619b6UL
   movl(ecx, eax);
   sarl(eax, 31);
   addl(ecx, eax);
@@ -914,12 +914,12 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   addl(eax, 1);
   bsrl(eax, eax);
   unpcklpd(xmm5, xmm3);
-  movdqu(xmm6, ExternalAddress(32 + coeff));    //0x518775e3UL, 0x3f9004f2UL, 0xac8349bbUL, 0x3fa76c9bUL
+  movdqu(xmm6, ExternalAddress(coeff + 32), tmp2 /*rscratch*/);    //0x518775e3UL, 0x3f9004f2UL, 0xac8349bbUL, 0x3fa76c9bUL
   addsd(xmm3, xmm5);
   andl(edx, 16760832);
   shrl(edx, 10);
   addpd(xmm5, Address(tmp4, edx, Address::times_1, -3648));
-  movdqu(xmm0, ExternalAddress(48 + coeff));    //0x486ececcUL, 0x3fc4635eUL, 0x161bb241UL, 0xbf5dabe1UL
+  movdqu(xmm0, ExternalAddress(coeff + 48), tmp2 /*rscratch*/);    //0x486ececcUL, 0x3fc4635eUL, 0x161bb241UL, 0xbf5dabe1UL
   pshufd(xmm2, xmm3, 68);
   mulsd(xmm3, xmm3);
   mulpd(xmm1, xmm2);
@@ -932,7 +932,7 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   movq(xmm1, Address(rsp, 16));
   movw(ecx, Address(rsp, 22));
   pshufd(xmm7, xmm5, 238);
-  movq(xmm4, ExternalAddress(HIGHMASK_Y));    //0x00000000UL, 0xfffffff8UL, 0x00000000UL, 0xffffffffUL
+  movq(xmm4, ExternalAddress(HIGHMASK_Y), tmp2 /*rscratch*/);    //0x00000000UL, 0xfffffff8UL, 0x00000000UL, 0xffffffffUL
   mulpd(xmm6, xmm2);
   pshufd(xmm3, xmm3, 68);
   mulpd(xmm0, xmm2);
@@ -967,8 +967,8 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   movdqu(xmm5, Address(tmp4, edx, Address::times_8, 0));
   addsd(xmm4, xmm1);
   mulsd(xmm2, xmm0);
-  movdqu(xmm7, ExternalAddress(e_coeff));    //0xe78a6731UL, 0x3f55d87fUL, 0xd704a0c0UL, 0x3fac6b08UL
-  movdqu(xmm3, ExternalAddress(16 + e_coeff));    //0x6fba4e77UL, 0x3f83b2abUL, 0xff82c58fUL, 0x3fcebfbdUL
+  movdqu(xmm7, ExternalAddress(e_coeff),      tmp2 /*rscratch*/);    //0xe78a6731UL, 0x3f55d87fUL, 0xd704a0c0UL, 0x3fac6b08UL
+  movdqu(xmm3, ExternalAddress(e_coeff + 16), tmp2 /*rscratch*/);    //0x6fba4e77UL, 0x3f83b2abUL, 0xff82c58fUL, 0x3fcebfbdUL
   shll(ecx, 12);
   xorl(ecx, tmp1);
   andl(rcx, -1048576);
@@ -1027,11 +1027,11 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   por(xmm0, xmm2);
   movl(ecx, 18416);
   psrlq(xmm0, 27);
-  movq(xmm2, ExternalAddress(LOG2_E));    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
+  movq(xmm2, ExternalAddress(LOG2_E), tmp2 /*rscratch*/);    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
   psrld(xmm0, 2);
   rcpps(xmm0, xmm0);
   psllq(xmm3, 12);
-  movdqu(xmm6, ExternalAddress(HIGHSIGMASK));    //0x00000000UL, 0xfffff800UL, 0x00000000UL, 0xfffff800UL
+  movdqu(xmm6, ExternalAddress(HIGHSIGMASK), tmp2 /*rscratch*/);    //0x00000000UL, 0xfffff800UL, 0x00000000UL, 0xfffff800UL
   psrlq(xmm3, 12);
   mulss(xmm0, xmm7);
   movl(edx, -1024);
@@ -1073,11 +1073,11 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   por(xmm0, xmm2);
   movl(ecx, 18416);
   psrlq(xmm0, 27);
-  movq(xmm2, ExternalAddress(LOG2_E));    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
+  movq(xmm2, ExternalAddress(LOG2_E), tmp2 /*rscratch*/);    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
   psrld(xmm0, 2);
   rcpps(xmm0, xmm0);
   psllq(xmm3, 12);
-  movdqu(xmm6, ExternalAddress(HIGHSIGMASK));    //0x00000000UL, 0xfffff800UL, 0x00000000UL, 0xfffff800UL
+  movdqu(xmm6, ExternalAddress(HIGHSIGMASK), tmp2 /*rscratch*/);    //0x00000000UL, 0xfffff800UL, 0x00000000UL, 0xfffff800UL
   psrlq(xmm3, 12);
   mulss(xmm0, xmm7);
   movl(edx, -1024);
@@ -1104,7 +1104,7 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   cmpl(eax, 752);
   jcc(Assembler::aboveEqual, L_2TAG_PACKET_12_0_2);
   addsd(xmm0, xmm7);
-  movq(xmm2, ExternalAddress(HALFMASK));    //0xf8000000UL, 0xffffffffUL, 0xf8000000UL, 0xffffffffUL
+  movq(xmm2, ExternalAddress(HALFMASK), tmp2 /*rscratch*/);    //0xf8000000UL, 0xffffffffUL, 0xf8000000UL, 0xffffffffUL
   addpd(xmm3, xmm0);
   xorpd(xmm6, xmm6);
   movl(eax, 17080);
@@ -1132,8 +1132,8 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   subsd(xmm6, xmm7);
   lea(tmp4, ExternalAddress(T_exp));
   addsd(xmm2, xmm1);
-  movdqu(xmm7, ExternalAddress(e_coeff));    //0xe78a6731UL, 0x3f55d87fUL, 0xd704a0c0UL, 0x3fac6b08UL
-  movdqu(xmm3, ExternalAddress(16 + e_coeff));    //0x6fba4e77UL, 0x3f83b2abUL, 0xff82c58fUL, 0x3fcebfbdUL
+  movdqu(xmm7, ExternalAddress(e_coeff +  0), tmp2 /*rscratch*/);    //0xe78a6731UL, 0x3f55d87fUL, 0xd704a0c0UL, 0x3fac6b08UL
+  movdqu(xmm3, ExternalAddress(e_coeff + 16), tmp2 /*rscratch*/);    //0x6fba4e77UL, 0x3f83b2abUL, 0xff82c58fUL, 0x3fcebfbdUL
   subsd(xmm4, xmm6);
   pextrw(edx, xmm6, 3);
   movl(ecx, eax);
@@ -1148,7 +1148,7 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   shll(ecx, 20);
   xorl(ecx, tmp1);
   movdl(xmm6, ecx);
-  movq(xmm1, ExternalAddress(32 + e_coeff));    //0xfefa39efUL, 0x3fe62e42UL, 0x00000000UL, 0x00000000UL
+  movq(xmm1, ExternalAddress(e_coeff + 32), tmp2 /*rscratch*/);    //0xfefa39efUL, 0x3fe62e42UL, 0x00000000UL, 0x00000000UL
   andl(edx, 32767);
   cmpl(edx, 16529);
   jcc(Assembler::above, L_2TAG_PACKET_12_0_2);
@@ -1405,7 +1405,7 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   xorpd(xmm1, xmm1);
   movl(edx, 30704);
   pinsrw(xmm1, edx, 3);
-  movq(xmm2, ExternalAddress(LOG2_E));    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
+  movq(xmm2, ExternalAddress(LOG2_E), tmp2 /*rscratch*/);    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
   movq(xmm4, Address(rsp, 8));
   pextrw(eax, xmm4, 3);
   movl(edx, 8192);
@@ -1438,7 +1438,7 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   xorpd(xmm1, xmm1);
   movl(edx, 30704);
   pinsrw(xmm1, edx, 3);
-  movq(xmm2, ExternalAddress(LOG2_E));    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
+  movq(xmm2, ExternalAddress(LOG2_E), tmp2 /*rscratch*/);    //0x00000000UL, 0x3ff72000UL, 0x161bb241UL, 0xbf5dabe1UL
   movq(xmm4, Address(rsp, 8));
   pextrw(eax, xmm4, 3);
   movl(edx, 8192);
@@ -1665,15 +1665,15 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   cvtsi2sdl(xmm7, eax);
   mulpd(xmm5, xmm0);
   lea(r11, ExternalAddress(L_tbl));
-  movq(xmm4, ExternalAddress(coeff_h));    //0x00000000UL, 0xbfd61a00UL, 0x00000000UL, 0xbf5dabe1UL
+  movq(xmm4, ExternalAddress(coeff_h), tmp2 /*rscratch*/);    //0x00000000UL, 0xbfd61a00UL, 0x00000000UL, 0xbf5dabe1UL
   mulsd(xmm3, xmm0);
-  movq(xmm6, ExternalAddress(coeff_h));    //0x00000000UL, 0xbfd61a00UL, 0x00000000UL, 0xbf5dabe1UL
+  movq(xmm6, ExternalAddress(coeff_h), tmp2 /*rscratch*/);    //0x00000000UL, 0xbfd61a00UL, 0x00000000UL, 0xbf5dabe1UL
   subsd(xmm5, xmm2);
-  movq(xmm1, ExternalAddress(8 + coeff_h));    //0x00000000UL, 0xbf5dabe1UL
+  movq(xmm1, ExternalAddress(coeff_h + 8), tmp2 /*rscratch*/);    //0x00000000UL, 0xbf5dabe1UL
   pshufd(xmm2, xmm3, 68);
   unpcklpd(xmm5, xmm3);
   addsd(xmm3, xmm5);
-  movq(xmm0, ExternalAddress(8 + coeff_h));    //0x00000000UL, 0xbf5dabe1UL
+  movq(xmm0, ExternalAddress(coeff_h + 8), tmp2 /*rscratch*/);    //0x00000000UL, 0xbf5dabe1UL
   andl(edx, 16760832);
   shrl(edx, 10);
   addpd(xmm7, Address(tmp4, edx, Address::times_1, -3648));
@@ -1698,13 +1698,13 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   movdqu(xmm5, xmm7);
   addsd(xmm7, xmm2);
   addsd(xmm4, xmm0);
-  movdqu(xmm0, ExternalAddress(coeff));    //0x6dc96112UL, 0xbf836578UL, 0xee241472UL, 0xbf9b0301UL
+  movdqu(xmm0, ExternalAddress(coeff), tmp2 /*rscratch*/);    //0x6dc96112UL, 0xbf836578UL, 0xee241472UL, 0xbf9b0301UL
   subsd(xmm5, xmm7);
   addsd(xmm6, xmm4);
   movdqu(xmm4, xmm7);
   addsd(xmm5, xmm2);
   addsd(xmm7, xmm1);
-  movdqu(xmm2, ExternalAddress(64 + coeff));    //0x486ececcUL, 0x3fc4635eUL, 0x161bb241UL, 0xbf5dabe1UL
+  movdqu(xmm2, ExternalAddress(coeff + 64), tmp2 /*rscratch*/);    //0x486ececcUL, 0x3fc4635eUL, 0x161bb241UL, 0xbf5dabe1UL
   subsd(xmm4, xmm7);
   addsd(xmm6, xmm5);
   addsd(xmm4, xmm1);
@@ -1713,11 +1713,11 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   addsd(xmm7, xmm5);
   subsd(xmm1, xmm7);
   addsd(xmm1, xmm5);
-  movdqu(xmm5, ExternalAddress(80 + coeff));    //0x9f95985aUL, 0xbfb528dbUL, 0xf8b5787dUL, 0x3ef2531eUL
+  movdqu(xmm5, ExternalAddress(coeff + 80), tmp2 /*rscratch*/);    //0x9f95985aUL, 0xbfb528dbUL, 0xf8b5787dUL, 0x3ef2531eUL
   pshufd(xmm3, xmm3, 68);
   addsd(xmm6, xmm4);
   addsd(xmm6, xmm1);
-  movdqu(xmm1, ExternalAddress(32 + coeff));    //0x9f95985aUL, 0xbfb528dbUL, 0xb3841d2aUL, 0xbfd619b6UL
+  movdqu(xmm1, ExternalAddress(coeff + 32), tmp2 /*rscratch*/);    //0x9f95985aUL, 0xbfb528dbUL, 0xb3841d2aUL, 0xbfd619b6UL
   mulpd(xmm0, xmm3);
   mulpd(xmm2, xmm3);
   pshufd(xmm4, xmm3, 68);
@@ -1725,7 +1725,7 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   addpd(xmm0, xmm1);
   addpd(xmm5, xmm2);
   mulsd(xmm4, xmm3);
-  movq(xmm2, ExternalAddress(HIGHMASK_LOG_X));    //0xf8000000UL, 0xffffffffUL, 0x00000000UL, 0xfffff800UL
+  movq(xmm2, ExternalAddress(HIGHMASK_LOG_X), tmp2 /*rscratch*/);    //0xf8000000UL, 0xffffffffUL, 0x00000000UL, 0xfffff800UL
   mulpd(xmm3, xmm3);
   movq(xmm1, Address(rsp, 16));
   movw(ecx, Address(rsp, 22));
@@ -1733,7 +1733,7 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   pextrw(eax, xmm7, 3);
   mulpd(xmm5, xmm4);
   mulpd(xmm0, xmm3);
-  movq(xmm4, ExternalAddress(8 + HIGHMASK_Y));    //0x00000000UL, 0xffffffffUL
+  movq(xmm4, ExternalAddress(HIGHMASK_Y + 8), tmp2 /*rscratch*/);    //0x00000000UL, 0xffffffffUL
   pand(xmm2, xmm7);
   addsd(xmm5, xmm6);
   subsd(xmm7, xmm2);
@@ -1761,12 +1761,12 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   mulsd(xmm3, xmm7);
   addsd(xmm6, xmm4);
   addsd(xmm1, xmm3);
-  movdqu(xmm7, ExternalAddress(e_coeff));    //0xe78a6731UL, 0x3f55d87fUL, 0xd704a0c0UL, 0x3fac6b08UL
+  movdqu(xmm7, ExternalAddress(e_coeff), tmp2 /*rscratch*/);    //0xe78a6731UL, 0x3f55d87fUL, 0xd704a0c0UL, 0x3fac6b08UL
   movdl(edx, xmm6);
   subsd(xmm6, xmm5);
   lea(tmp4, ExternalAddress(T_exp));
-  movdqu(xmm3, ExternalAddress(16 + e_coeff));    //0x6fba4e77UL, 0x3f83b2abUL, 0xff82c58fUL, 0x3fcebfbdUL
-  movq(xmm2, ExternalAddress(32 + e_coeff));    //0xfefa39efUL, 0x3fe62e42UL, 0x00000000UL, 0x00000000UL
+  movdqu(xmm3, ExternalAddress(e_coeff + 16), tmp2 /*rscratch*/);    //0x6fba4e77UL, 0x3f83b2abUL, 0xff82c58fUL, 0x3fcebfbdUL
+  movq(xmm2, ExternalAddress(e_coeff + 32), tmp2 /*rscratch*/);    //0xfefa39efUL, 0x3fe62e42UL, 0x00000000UL, 0x00000000UL
   subsd(xmm4, xmm6);
   movl(ecx, edx);
   andl(edx, 255);

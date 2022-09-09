@@ -38,7 +38,6 @@
 #endif
 
 class nmethod;
-class nmethodLocker;
 
 // CompilerCounters
 //
@@ -230,13 +229,12 @@ class CompileBroker: AllStatic {
 
   enum ThreadType {
     compiler_t,
-    sweeper_t,
     deoptimizer_t
   };
 
   static Handle create_thread_oop(const char* name, TRAPS);
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
-  static void init_compiler_sweeper_threads();
+  static void init_compiler_threads();
   static void possibly_add_compiler_threads(JavaThread* THREAD);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
 
@@ -255,8 +253,8 @@ class CompileBroker: AllStatic {
 #endif
 
   static void invoke_compiler_on_method(CompileTask* task);
-  static void post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env,
-                           int compilable, const char* failure_reason);
+  static void handle_compile_error(CompilerThread* thread, CompileTask* task, ciEnv* ci_env,
+                                   int compilable, const char* failure_reason);
   static void update_compile_perf_data(CompilerThread *thread, const methodHandle& method, bool is_osr);
 
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
