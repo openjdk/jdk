@@ -191,6 +191,7 @@ ciKlass* ciBytecodeStream::get_klass(bool& will_link) {
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
   return CURRENT_ENV->get_klass_by_index(cpool, get_klass_index(), will_link, _holder);
 }
+
 // ciBytecodeStream::get_klass
 //
 // If this bytecode is a new, newarray, multianewarray, instanceof,
