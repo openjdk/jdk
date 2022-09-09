@@ -156,7 +156,7 @@ void JVMCIEnv::copy_saved_properties() {
   }
 }
 
-void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
+void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool attach_OOME_is_fatal) {
   assert(thread != NULL, "npe");
   _env = NULL;
   _pop_frame_on_close = false;
@@ -208,10 +208,16 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
       attach_args.version = JNI_VERSION_1_2;
       attach_args.name = const_cast<char*>(thread->name());
       attach_args.group = NULL;
-      if (_runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args) != JNI_OK) {
+      jint attach_result = _runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args);
+      if (attach_result == JNI_OK) {
+        _detach_on_close = true;
+      } else if (!attach_OOME_is_fatal && attach_result == JNI_ENOMEM) {
+        _env = NULL;
+        _attach_threw_OOME = true;
+        return;
+      } else {
         fatal("Error attaching current thread (%s) to JVMCI shared library JNI interface", attach_args.name);
       }
-      _detach_on_close = true;
     }
   }
 
@@ -229,17 +235,22 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JVMCICompileState* compile_state, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _compile_state(compile_state) {
-  init_env_mode_runtime(thread, NULL);
+    _throw_to_caller(false), _file(file), _line(line), _attach_threw_OOME(false), _compile_state(compile_state) {
+  // In case of OOME, there's a good chance a subsequent attempt to attach might succeed.
+  // Other errors most likely indicate a non-recoverable error in the JVMCI runtime.
+  init_env_mode_runtime(thread, NULL, false);
+  if (_attach_threw_OOME) {
+    compile_state->set_failure(true, "Out of memory while attaching JVMCI compiler to current thread");
+  }
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _compile_state(NULL) {
+    _throw_to_caller(false), _file(file), _line(line), _attach_threw_OOME(false), _compile_state(NULL) {
   init_env_mode_runtime(thread, NULL);
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JNIEnv* parent_env, const char* file, int line):
-    _throw_to_caller(true), _file(file), _line(line), _compile_state(NULL) {
+    _throw_to_caller(true), _file(file), _line(line), _attach_threw_OOME(false), _compile_state(NULL) {
   init_env_mode_runtime(thread, parent_env);
   assert(_env == NULL || parent_env == _env, "mismatched JNIEnvironment");
 }
@@ -249,6 +260,7 @@ void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, const char* file, int l
   _throw_to_caller = false;
   _file = file;
   _line = line;
+  _attach_threw_OOME = false;
   if (is_hotspot) {
     _env = NULL;
     _pop_frame_on_close = false;
@@ -415,6 +427,9 @@ jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer
 
 
 JVMCIEnv::~JVMCIEnv() {
+  if (_attach_threw_OOME) {
+    return;
+  }
   if (_throw_to_caller) {
     if (is_hotspot()) {
       // Nothing to do
@@ -1497,9 +1512,6 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
   // Ignore the version which can stay at 0
   if (cb->is_nmethod()) {
     nmethod* nm = cb->as_nmethod_or_null();
-    if (!nm->is_alive()) {
-      JVMCI_THROW_MSG(InternalError, "nmethod has been reclaimed");
-    }
     if (nm->is_in_use()) {
       set_InstalledCode_entryPoint(installed_code, (jlong) nm->verified_entry_point());
     }
@@ -1513,13 +1525,12 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
 }
 
 
-void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS) {
+void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JVMCI_TRAPS) {
   if (mirror.is_null()) {
     JVMCI_THROW(NullPointerException);
   }
 
-  nmethodLocker locker;
-  nmethod* nm = JVMCIENV->get_nmethod(mirror, locker);
+  nmethod* nm = JVMCIENV->get_nmethod(mirror);
   if (nm == NULL) {
     // Nothing to do
     return;
@@ -1533,9 +1544,11 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS) {
                     "Cannot invalidate HotSpotNmethod object in shared library VM heap from non-JavaThread");
   }
 
-  nmethodLocker nml(nm);
-  if (nm->is_alive()) {
-    // Invalidating the HotSpotNmethod means we want the nmethod to be deoptimized.
+  if (!deoptimize) {
+    // Prevent future executions of the nmethod but let current executions complete.
+    nm->make_not_entrant();
+} else {
+    // We want the nmethod to be deoptimized immediately.
     Deoptimization::deoptimize_all_marked(nm);
   }
 
@@ -1558,57 +1571,39 @@ ConstantPool* JVMCIEnv::asConstantPool(JVMCIObject obj) {
   return *constantPoolHandle;
 }
 
-CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj, nmethodLocker& locker) {
+
+// Lookup an nmethod with a matching base and compile id
+nmethod* JVMCIEnv::lookup_nmethod(address code, jlong compile_id_snapshot) {
+  if (code == NULL) {
+    return NULL;
+  }
+
+  CodeBlob* cb = CodeCache::find_blob(code);
+  if (cb == (CodeBlob*) code) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL && (compile_id_snapshot == 0 || nm->compile_id() == compile_id_snapshot)) {
+      return nm;
+    }
+  }
+  return NULL;
+}
+
+
+CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
   address code = (address) get_InstalledCode_address(obj);
   if (code == NULL) {
     return NULL;
   }
   if (isa_HotSpotNmethod(obj)) {
-    nmethod* nm = NULL;
-    {
-      // Lookup the CodeBlob while holding the CodeCache_lock to ensure the nmethod can't be freed
-      // by nmethod::flush while we're interrogating it.
-      MutexLocker cm_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CodeBlob* cb = CodeCache::find_blob_unsafe(code);
-      if (cb == (CodeBlob*) code) {
-        nmethod* the_nm = cb->as_nmethod_or_null();
-        if (the_nm != NULL && the_nm->is_alive()) {
-          // Lock the nmethod to stop any further transitions by the sweeper.  It's still possible
-          // for this code to execute in the middle of the sweeping of the nmethod but that will be
-          // handled below.
-          locker.set_code(nm, true);
-          nm = the_nm;
-        }
-      }
-    }
-
-    if (nm != NULL) {
-      // We found the nmethod but it could be in the process of being freed.  Check the state of the
-      // nmethod while holding the CompiledMethod_lock.  This ensures that any transitions by other
-      // threads have seen the is_locked_by_vm() update above.
-      MutexLocker cm_lock(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-      if (!nm->is_alive()) {
-        //  It was alive when we looked it up but it's no longer alive so release it.
-        locker.set_code(NULL);
-        nm = NULL;
-      }
-    }
-
     jlong compile_id_snapshot = get_HotSpotNmethod_compileIdSnapshot(obj);
-    if (compile_id_snapshot != 0L) {
-      // Found a live nmethod with the same address, make sure it's the same nmethod
-      if (nm == (nmethod*) code && nm->compile_id() == compile_id_snapshot && nm->is_alive()) {
-        if (nm->is_not_entrant()) {
-          // Zero the entry point so that the nmethod
-          // cannot be invoked by the mirror but can
-          // still be deoptimized.
-          set_InstalledCode_entryPoint(obj, 0);
-        }
-        return nm;
-      }
-      // The HotSpotNmethod no longer refers to a valid nmethod so clear the state
-      locker.set_code(NULL);
-      nm = NULL;
+    nmethod* nm = lookup_nmethod(code, compile_id_snapshot);
+    if (nm != NULL && compile_id_snapshot != 0L && nm->is_not_entrant()) {
+      // Zero the entry point so that the nmethod
+      // cannot be invoked by the mirror but can
+      // still be deoptimized.
+      set_InstalledCode_entryPoint(obj, 0);
+      // Refetch the nmethod since the previous call will be a safepoint in libjvmci
+      nm = lookup_nmethod(code, compile_id_snapshot);
     }
 
     if (nm == NULL) {
@@ -1626,8 +1621,8 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj, nmethodLocker& locker) {
   return cb;
 }
 
-nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, nmethodLocker& locker) {
-  CodeBlob* cb = get_code_blob(obj, locker);
+nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
+  CodeBlob* cb = get_code_blob(obj);
   if (cb != NULL) {
     return cb->as_nmethod_or_null();
   }

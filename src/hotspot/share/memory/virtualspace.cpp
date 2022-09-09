@@ -194,7 +194,7 @@ static char* reserve_memory_special(char* requested_address, const size_t size,
     // Check alignment constraints.
     assert(is_aligned(base, alignment),
            "reserve_memory_special() returned an unaligned address, base: " PTR_FORMAT
-           " alignment: " SIZE_FORMAT_HEX,
+           " alignment: " SIZE_FORMAT_X,
            p2i(base), alignment);
   }
   return base;
@@ -404,7 +404,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
 
   // Try to reserve the memory for the heap.
   log_trace(gc, heap, coops)("Trying to allocate at address " PTR_FORMAT
-                             " heap of size " SIZE_FORMAT_HEX,
+                             " heap of size " SIZE_FORMAT_X,
                              p2i(requested_address),
                              size);
 
@@ -597,7 +597,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
     // Last, desperate try without any placement.
     if (_base == NULL) {
-      log_trace(gc, heap, coops)("Trying to allocate at address NULL heap of size " SIZE_FORMAT_HEX, size + noaccess_prefix);
+      log_trace(gc, heap, coops)("Trying to allocate at address NULL heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
       initialize(size + noaccess_prefix, alignment, page_size, NULL, false);
     }
   }
