@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,7 +327,7 @@ public class MetalBorders {
 
             // Draw the bulk of the border
             for (int i = 1; i <= loopCount; i++) {
-                g.drawRect(x+i,y+i,width-(i*2), height-(i*2));
+                g.drawRect(x+i,y+i,width-(i*2)-1, height-(i*2)-1);
             }
 
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
@@ -337,19 +337,19 @@ public class MetalBorders {
                         width-corner, midPoint+stkWidth); //top
                 g.drawLine(midPoint+stkWidth, corner+1,
                         midPoint+stkWidth, height-corner); //left
-                g.drawLine(width-(midPoint+stkWidth), corner+1,
-                        width-(midPoint+stkWidth), height-corner); //right
-                g.drawLine(corner+1, height-(midPoint+stkWidth),
-                        width-corner, height-(midPoint+stkWidth)); //bottom
+                g.drawLine(width-midPoint, corner+1,
+                        width-midPoint, height-corner); //right
+                g.drawLine(corner+1, height-midPoint,
+                        width-corner, height-midPoint); //bottom
 
                 // Draw the Long shadow lines
                 g.setColor(shadow);
                 g.drawLine(corner, midPoint, width-corner-1, midPoint);
                 g.drawLine(midPoint, corner, midPoint, height-corner-1);
-                g.drawLine(width-midPoint, corner,
-                        width-midPoint, height-corner-1);
-                g.drawLine(corner, height-midPoint,
-                        width-corner-1, height-midPoint);
+                g.drawLine(width-(midPoint+stkWidth), corner,
+                        width-(midPoint+stkWidth), height-corner-1);
+                g.drawLine(corner, height-(midPoint+stkWidth),
+                        width-corner-1, height-(midPoint+stkWidth));
             }
 
             // Undo the resetTransform setting from before
