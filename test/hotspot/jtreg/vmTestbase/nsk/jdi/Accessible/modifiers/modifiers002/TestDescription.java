@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@
  *  as from following flags for any mirrored enum type:
  *    - ACC_FINAL (0x0010) for any enum type because each enum types
  *      is final,
- *    - ACC_SUPER (0x0020 for any enum type due to
- *      JVMS 4.1 The ClassFile Structure
  *    - ACC_PUBLIC (0x0001) if public modifier is declared,
  *    - ACC_ABSTRACT (0x0400) if abstract modifier is declared.
  *  The test consists of a debugger program (modifiers002.java)

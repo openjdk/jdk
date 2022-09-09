@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class FinalStatic {
             MethodVisitor mv;
             switch (name) {
                case CLASS_NAME_A:
-                    cw.visit(52, ACC_SUPER | ACC_PUBLIC, CLASS_NAME_A, null, "java/lang/Object", null);
+                    cw.visit(52, ACC_PUBLIC, CLASS_NAME_A, null, "java/lang/Object", null);
                     {
                         mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                         mv.visitCode();
@@ -89,7 +89,7 @@ public class FinalStatic {
                     }
                     break;
                 case CLASS_NAME_B:
-                    cw.visit(52, ACC_SUPER | ACC_PUBLIC, CLASS_NAME_B, null, CLASS_NAME_A, null);
+                    cw.visit(52, ACC_PUBLIC, CLASS_NAME_B, null, CLASS_NAME_A, null);
                     {
                         mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                         mv.visitCode();

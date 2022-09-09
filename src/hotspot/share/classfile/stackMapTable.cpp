@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/oop.inline.hpp"
@@ -433,4 +434,13 @@ StackMapFrame* StackMapReader::next(
   _stream->stackmap_format_error(
     "reserved frame type", CHECK_VERIFY_(pre_frame->verifier(), NULL));
   return NULL;
+}
+
+void StackMapStream::stackmap_format_error(const char* msg, TRAPS) {
+  ResourceMark rm(THREAD);
+  Exceptions::fthrow(
+    THREAD_AND_LOCATION,
+    vmSymbols::java_lang_VerifyError(),
+    "StackMapTable format error: %s", msg
+  );
 }

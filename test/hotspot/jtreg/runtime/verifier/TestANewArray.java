@@ -107,7 +107,7 @@ public class TestANewArray {
 
         classCName = "classCName_" + cfv + "_" + testDimension264;
 
-        cw.visit(cfv, ACC_PUBLIC + ACC_SUPER, classCName, null, "java/lang/Object", null);
+        cw.visit(cfv, ACC_PUBLIC, classCName, null, "java/lang/Object", null);
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
             mv.visitCode();

@@ -60,7 +60,7 @@ public class OverriderMsg {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "HasFinal", null, "java/lang/Object", null);
+        cw.visit(V1_7, ACC_PUBLIC, "HasFinal", null, "java/lang/Object", null);
 
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -89,7 +89,7 @@ public class OverriderMsg {
 
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
-        cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "Overrider", null, "HasFinal", null);
+        cw.visit(V1_7, ACC_PUBLIC, "Overrider", null, "HasFinal", null);
 
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

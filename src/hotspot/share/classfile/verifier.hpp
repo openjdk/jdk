@@ -155,6 +155,7 @@ class ErrorContext {
     STACK_UNDERFLOW,      // Attempt to pop and empty expression stack
     MISSING_STACKMAP,     // No stackmap for this location and there should be
     BAD_STACKMAP,         // Format error in stackmap
+    BAD_EXCEPTION_TABLE,  // Bad pc in exception table
     NO_FAULT,             // No error
     UNKNOWN
   } FaultType;
@@ -217,6 +218,10 @@ class ErrorContext {
   }
   static ErrorContext bad_stackmap(int index, StackMapFrame* frame) {
     return ErrorContext(0, BAD_STACKMAP, TypeOrigin::frame(frame));
+  }
+
+  static ErrorContext bad_exception_table(u2 exception_pc) {
+    return ErrorContext(exception_pc, BAD_EXCEPTION_TABLE);
   }
 
   bool is_valid() const { return _fault != NO_FAULT; }

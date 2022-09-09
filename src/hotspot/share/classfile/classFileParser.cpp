@@ -715,6 +715,17 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             } else if (!Signature::is_void_method(signature)) { // must have void signature.
               throwIllegalSignature("Method", name, signature, CHECK);
             }
+          } else if (tag == JVM_CONSTANT_InvokeDynamic && name_len != 0 &&
+                     name == vmSymbols::object_initializer_name() &&
+                     !Signature::is_void_method(signature)) {
+            throwIllegalSignature("Method", name, signature, CHECK);
+          }
+          if (tag == JVM_CONSTANT_InvokeDynamic &&
+              name == vmSymbols::object_initializer_name()) {
+            classfile_parse_error(
+              "Bad call site name <init> at constant pool index %u in class file %s",
+              index, THREAD);
+            return;
           }
         }
         break;
@@ -1205,8 +1216,9 @@ static void parse_annotations(const ConstantPool* const cp,
 
 // Parse attributes for a field.
 void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
+                                             const Symbol* name,
                                              u2 attributes_count,
-                                             bool is_static, u2 signature_index,
+                                             bool is_static, bool is_final, u2 signature_index,
                                              u2* const constantvalue_index_addr,
                                              bool* const is_synthetic_addr,
                                              u2* const generic_signature_index_addr,
@@ -1244,10 +1256,17 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
                    CHECK);
 
     const Symbol* const attribute_name = cp->symbol_at(attribute_name_index);
-    if (is_static && attribute_name == vmSymbols::tag_constant_value()) {
-      // ignore if non-static
+    if (attribute_name == vmSymbols::tag_constant_value()) {
+      if (!is_final && !is_static) { // TBD: remove !is_final. Can't remove it now or build will break.
+        classfile_parse_error(
+          "Non-static field %s in class file %s cannot have a ConstantValue attribute",
+          name->as_C_string(), THREAD);
+        return;
+      }
+
       if (constantvalue_index != 0) {
-        classfile_parse_error("Duplicate ConstantValue attribute in class file %s", THREAD);
+        classfile_parse_error("Duplicate ConstantValue attribute for field %s in class file %s",
+                              name->as_C_string(), THREAD);
         return;
       }
       check_property(
@@ -1539,13 +1558,16 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     bool is_synthetic = false;
     u2 generic_signature_index = 0;
     const bool is_static = access_flags.is_static();
+    const bool is_final = access_flags.is_final();
     FieldAnnotationCollector parsed_annotations(_loader_data);
 
     const u2 attributes_count = cfs->get_u2_fast();
     if (attributes_count > 0) {
       parse_field_attributes(cfs,
+                             name,
                              attributes_count,
                              is_static,
+                             is_final,
                              signature_index,
                              &constantvalue_index,
                              &is_synthetic,
@@ -1707,27 +1729,8 @@ const ClassFileParser::unsafe_u2* ClassFileParser::parse_exception_table(const C
                                                                // handler_pc,
                                                                // catch_type_index
 
-  // Will check legal target after parsing code array in verifier.
-  if (_need_verify) {
-    for (unsigned int i = 0; i < exception_table_length; i++) {
-      const u2 start_pc = cfs->get_u2_fast();
-      const u2 end_pc = cfs->get_u2_fast();
-      const u2 handler_pc = cfs->get_u2_fast();
-      const u2 catch_type_index = cfs->get_u2_fast();
-      guarantee_property((start_pc < end_pc) && (end_pc <= code_length),
-                         "Illegal exception table range in class file %s",
-                         CHECK_NULL);
-      guarantee_property(handler_pc < code_length,
-                         "Illegal exception table handler in class file %s",
-                         CHECK_NULL);
-      if (catch_type_index != 0) {
-        guarantee_property(valid_klass_reference_at(catch_type_index),
-                           "Catch type in exception table has bad constant type in class file %s", CHECK_NULL);
-      }
-    }
-  } else {
-    cfs->skip_u2_fast(exception_table_length * 4);
-  }
+  // Will check legality after parsing code array in verifier.
+  cfs->skip_u2_fast(exception_table_length * 4);
   return exception_table_start;
 }
 
@@ -3777,6 +3780,12 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
           assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
         }
         cfs->skip_u1(attribute_length, CHECK);
+      } else if ((tag == vmSymbols::tag_module() || tag == vmSymbols::tag_module_packages() ||
+                  tag == vmSymbols::tag_module_main_class()) &&
+                 _major_version >= JAVA_9_VERSION) {
+        ResourceMark rm(THREAD);
+        classfile_parse_error("Unexpected %s attribute in class file %s", tag->as_C_string(), THREAD);
+        return;
       } else if (_major_version >= JAVA_11_VERSION) {
         if (tag == vmSymbols::tag_nest_members()) {
           // Check for NestMembers tag
@@ -4545,14 +4554,13 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
   const bool is_interface  = (flags & JVM_ACC_INTERFACE)  != 0;
   const bool is_abstract   = (flags & JVM_ACC_ABSTRACT)   != 0;
   const bool is_final      = (flags & JVM_ACC_FINAL)      != 0;
-  const bool is_super      = (flags & JVM_ACC_SUPER)      != 0;
   const bool is_enum       = (flags & JVM_ACC_ENUM)       != 0;
   const bool is_annotation = (flags & JVM_ACC_ANNOTATION) != 0;
   const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
 
   if ((is_abstract && is_final) ||
       (is_interface && !is_abstract) ||
-      (is_interface && major_gte_1_5 && (is_super || is_enum)) ||
+      (is_interface && major_gte_1_5 && is_enum) ||
       (!is_interface && major_gte_1_5 && is_annotation)) {
     ResourceMark rm(THREAD);
     Exceptions::fthrow(
@@ -5086,10 +5094,9 @@ void ClassFileParser::verify_legal_name_with_signature(const Symbol* name,
     return;
   }
 
-  // Class initializers cannot have args for class format version >= 51.
+  // Class initializers cannot have args.
   if (name == vmSymbols::class_initializer_name() &&
-      signature != vmSymbols::void_method_signature() &&
-      _major_version >= JAVA_7_VERSION) {
+      signature != vmSymbols::void_method_signature()) {
     throwIllegalSignature("Method", name, signature, THREAD);
     return;
   }

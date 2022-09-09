@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class ExecutorGenerator {
     public byte[] generateExecutor(String[] callSites) {
         ClassWriter cw = new ClassWriter(COMPUTE_MAXS);
 
-        cw.visit(Utils.version, ACC_PUBLIC | (Utils.isACC_SUPER ? ACC_SUPER : 0), className, null, "java/lang/Object", null);
+        cw.visit(Utils.version, ACC_PUBLIC, className, null, "java/lang/Object", null);
 
         // Generate constructor
         {

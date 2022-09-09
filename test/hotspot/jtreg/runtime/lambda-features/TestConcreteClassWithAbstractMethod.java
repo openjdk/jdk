@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class TestConcreteClassWithAbstractMethod {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER, "p1/T1", null, "java/lang/Object", null);
+        cw.visit(52, ACC_PUBLIC, "p1/T1", null, "java/lang/Object", null);
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
             mv.visitCode();
@@ -118,7 +118,7 @@ public class TestConcreteClassWithAbstractMethod {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER, "p1/T2", null, "p1/T1", null);
+        cw.visit(52, ACC_PUBLIC, "p1/T2", null, "p1/T1", null);
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
             mv.visitCode();
@@ -141,7 +141,7 @@ public class TestConcreteClassWithAbstractMethod {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(52, ACC_PUBLIC + ACC_SUPER, "p1/T3", null, "p1/T2", null);
+        cw.visit(52, ACC_PUBLIC, "p1/T3", null, "p1/T2", null);
 
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

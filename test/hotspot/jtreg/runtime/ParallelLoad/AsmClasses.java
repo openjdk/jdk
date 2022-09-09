@@ -36,7 +36,7 @@ public class AsmClasses implements Opcodes {
         MethodVisitor methodVisitor;
         AnnotationVisitor annotationVisitor0;
 
-        classWriter.visit(61, ACC_PUBLIC | ACC_SUPER, "B", null, "A", null);
+        classWriter.visit(61, ACC_PUBLIC, "B", null, "A", null);
 
         classWriter.visitSource("B.java", null);
         methodVisitor = classWriter.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

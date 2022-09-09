@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 public class IntfMethod {
     static byte[] dumpC() {
         ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER, "C", null, "java/lang/Object", new String[]{"I"});
+        cw.visit(52, ACC_PUBLIC, "C", null, "java/lang/Object", new String[]{"I"});
         {
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
             mv.visitCode();

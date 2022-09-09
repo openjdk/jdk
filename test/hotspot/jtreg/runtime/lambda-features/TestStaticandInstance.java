@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ public class D {
     MethodVisitor mv;
     AnnotationVisitor av0;
 
-    cw.visit(52, ACC_SUPER, "C", null, "java/lang/Object", new String[] { "I" });
+    cw.visit(52, 0, "C", null, "java/lang/Object", new String[] { "I" });
 
     {
       mv = cw.visitMethod(0, "<init>", "()V", null, null);
@@ -170,7 +170,7 @@ public class D {
     MethodVisitor mv;
     AnnotationVisitor av0;
 
-    cw.visit(52, ACC_PUBLIC + ACC_SUPER, "D", null, "java/lang/Object", null);
+    cw.visit(52, ACC_PUBLIC, "D", null, "java/lang/Object", null);
 
     {
       mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ java jdk.internal.org.objectweb.asm.util.ASMifier Hello.class
     MethodVisitor mv;
     AnnotationVisitor av0;
 
-      cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, "Hello", null, "java/lang/Object", null);
+      cw.visit(V1_5, ACC_PUBLIC, "Hello", null, "java/lang/Object", null);
 
     {
       mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

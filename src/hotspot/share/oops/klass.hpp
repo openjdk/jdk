@@ -644,7 +644,6 @@ protected:
   bool is_final() const                 { return _access_flags.is_final(); }
   bool is_interface() const             { return _access_flags.is_interface(); }
   bool is_abstract() const              { return _access_flags.is_abstract(); }
-  bool is_super() const                 { return _access_flags.is_super(); }
   bool is_synthetic() const             { return _access_flags.is_synthetic(); }
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
   bool has_finalizer() const            { return _access_flags.has_finalizer(); }

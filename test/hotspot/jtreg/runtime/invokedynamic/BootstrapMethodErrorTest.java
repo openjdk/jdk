@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class BootstrapMethodErrorTest {
         }
 
         void defineIndyCallingClass(ClassWriter cw) {
-            cw.visit(52, ACC_SUPER | ACC_PUBLIC, INDY_CALLER_CLASS_NAME, null, "java/lang/Object", null);
+            cw.visit(52, ACC_PUBLIC, INDY_CALLER_CLASS_NAME, null, "java/lang/Object", null);
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "invoke", "()V", null, null);
             mv.visitCode();
             Handle h = new Handle(H_INVOKESTATIC,
@@ -102,7 +102,7 @@ public class BootstrapMethodErrorTest {
         }
 
         void defineIndyBootstrapMethodClass(ClassWriter cw) {
-            cw.visit(52, ACC_SUPER | ACC_PUBLIC,
+            cw.visit(52, ACC_PUBLIC,
                      BOOTSTRAP_METHOD_CLASS_NAME, null, "java/lang/Object", null);
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC,
                                               BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_DESC, null, null);
@@ -189,7 +189,7 @@ public class BootstrapMethodErrorTest {
     static class InaccessibleBootstrapMethod extends IndyClassloader {
 
         void defineIndyBootstrapMethodClass(ClassWriter cw) {
-            cw.visit(52, ACC_SUPER | ACC_PUBLIC,
+            cw.visit(52, ACC_PUBLIC,
                      BOOTSTRAP_METHOD_CLASS_NAME, null, "java/lang/Object", null);
             // Bootstrap method is declared to be private
             MethodVisitor mv = cw.visitMethod(ACC_PRIVATE | ACC_STATIC,

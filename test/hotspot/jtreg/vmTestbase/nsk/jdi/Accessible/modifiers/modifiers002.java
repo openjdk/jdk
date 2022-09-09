@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,13 +123,6 @@ public class modifiers002 {
                     complain("Accessible.modifiers() did not return ACC_FINAL flag for type: " + className);
                     exitStatus = Consts.TEST_FAILED;
                 }
-            }
-
-            if ((0x0020 & modifiers) == 0x0020 /* ACC_SUPER */) {
-                display("Accessible.modifiers() returned expected ACC_SUPER flag for type: " + className);
-            } else {
-                complain("Accessible.modifiers() did not return ACC_SUPER flag for type: " + className);
-                exitStatus = Consts.TEST_FAILED;
             }
 
             if (fieldName.equals("f2")) {

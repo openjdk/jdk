@@ -462,7 +462,6 @@ static char signature_to_fieldtype(context_type *context,
                                    const char **signature_p, fullinfo_type *info);
 
 static void CCerror (context_type *, char *format, ...);
-static void CFerror (context_type *, char *format, ...);
 static void CCout_of_memory (context_type *);
 
 /* Because we can longjmp any time, we need to be very careful about
@@ -763,7 +762,6 @@ make_class_info_from_name(context_type *context, const char *name)
 #define CC_OK 1
 #define CC_VerifyError 0
 #define CC_OutOfMemory 2
-#define CC_ClassFormatError 3
 
 JNIEXPORT jboolean
 VerifyClassForMajorVersion(JNIEnv *env, jclass cb, char *buffer, jint len,
@@ -1632,11 +1630,11 @@ initialize_exception_table(context_type *context)
               isLegalTarget(context, einfo.start_pc) &&
               (einfo.end_pc ==  code_length ||
                isLegalTarget(context, einfo.end_pc)))) {
-            CFerror(context, "Illegal exception table range");
+            CCerror(context, "Illegal exception table range");
         }
         if (!((einfo.handler_pc > 0) &&
               isLegalTarget(context, einfo.handler_pc))) {
-            CFerror(context, "Illegal exception table handler");
+            CCerror(context, "Illegal exception table handler");
         }
 
         handler_info->start = code_data[einfo.start_pc];
@@ -1653,6 +1651,9 @@ initialize_exception_table(context_type *context)
             classname = JVM_GetCPClassNameUTF(env,
                                               context->class,
                                               einfo.catchType);
+            if (classname == NULL) {
+                CCerror(context, "catch_type has bad constant type");
+            }
             check_and_push_string_utf(context, classname);
             stack_item->item = make_class_info_from_name(context, classname);
             if (!isAssignableTo(context,
@@ -3687,21 +3688,6 @@ CCout_of_memory(context_type *context)
 {
     int n = print_CCerror_info(context);
     context->err_code = CC_OutOfMemory;
-    longjmp(context->jump_buffer, 1);
-}
-
-static void
-CFerror(context_type *context, char *format, ...)
-{
-    int n = print_CCerror_info(context);
-    va_list args;
-    if (n >= 0 && n < context->message_buf_len) {
-        va_start(args, format);
-        jio_vsnprintf(context->message + n, context->message_buf_len - n,
-                      format, args);
-        va_end(args);
-    }
-    context->err_code = CC_ClassFormatError;
     longjmp(context->jump_buffer, 1);
 }
 

@@ -251,7 +251,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     while (kls != NULL) {
       if (kls == klass) {
         // If the class being verified is the exception we're creating
-        // or one of it's superclasses, we're in trouble and are going
+        // or one of its superclasses, we're in trouble and are going
         // to infinitely recurse when we try to initialize the exception.
         // So bail out here by throwing the preallocated VM error.
         THROW_OOP_(Universe::virtual_machine_error_instance(), false);
@@ -497,6 +497,9 @@ void ErrorContext::reason_details(outputStream* ss) const {
       break;
     case BAD_STACKMAP:
       ss->print("Invalid stackmap specification.");
+      break;
+    case BAD_EXCEPTION_TABLE:
+      ss->print("Illegal pc in exception table.");
       break;
     case UNKNOWN:
     default:
@@ -1865,23 +1868,33 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
   for(int i = 0; i < exlength; i++) {
     u2 start_pc = exhandlers.start_pc(i);
     u2 end_pc = exhandlers.end_pc(i);
-    u2 handler_pc = exhandlers.handler_pc(i);
+    if (start_pc >= end_pc) {
+      verify_error(ErrorContext::bad_exception_table(start_pc), "Illegal exception table range");
+      return;
+    }
     if (start_pc >= code_length || code_data[start_pc] == 0) {
-      class_format_error("Illegal exception table start_pc %d", start_pc);
+      verify_error(ErrorContext::bad_exception_table(start_pc), "Illegal exception table start_pc");
       return;
     }
     if (end_pc != code_length) {   // special case: end_pc == code_length
       if (end_pc > code_length || code_data[end_pc] == 0) {
-        class_format_error("Illegal exception table end_pc %d", end_pc);
+        verify_error(ErrorContext::bad_exception_table(end_pc), "Illegal exception table end_pc");
         return;
       }
     }
+    u2 handler_pc = exhandlers.handler_pc(i);
     if (handler_pc >= code_length || code_data[handler_pc] == 0) {
-      class_format_error("Illegal exception table handler_pc %d", handler_pc);
+      verify_error(ErrorContext::bad_exception_table(end_pc), "Illegal exception table handler_pc");
       return;
     }
     int catch_type_index = exhandlers.catch_type_index(i);
     if (catch_type_index != 0) {
+      if (!cp->is_within_bounds(catch_type_index) ||
+          !cp->tag_at(catch_type_index).is_klass_or_reference()) {
+        verify_error(ErrorContext::bad_cp_index(0, catch_type_index),
+                     "Catch type in exception table has bad constant type");
+        return;
+      }
       VerificationType catch_type = cp_index_to_type(
         catch_type_index, cp, CHECK_VERIFY(this));
       VerificationType throwable =
@@ -2651,7 +2664,7 @@ void ClassVerifier::verify_invoke_init(
     Klass* superk = current_class()->super();
     if (ref_class_type.name() != current_class()->name() &&
         ref_class_type.name() != superk->name()) {
-      verify_error(ErrorContext::bad_type(bci,
+      verify_error(ErrorContext::bad_type(bci,  // TBD: should this error allow fallback??
           TypeOrigin::implicit(ref_class_type),
           TypeOrigin::implicit(current_type())),
           "Bad <init> method call");
@@ -2774,6 +2787,14 @@ bool ClassVerifier::is_same_or_direct_interface(
       }
     }
   }
+  // Also, search through super classes because interface method could be in a cp Methodref.
+  InstanceKlass* super = klass->java_super();
+  while (super != NULL) {
+    if (ref_class_type.equals(VerificationType::reference_type(super->name()))) {
+      return true;
+    }
+    super = super->java_super();
+  }
   return false;
 }
 
@@ -2815,7 +2836,8 @@ void ClassVerifier::verify_invoke_instructions(
   VerificationType ref_class_type;
   if (opcode == Bytecodes::_invokedynamic) {
     if (_klass->major_version() < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
-      class_format_error(
+      ResourceMark rm(THREAD);
+      Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_ClassFormatError(),
         "invokedynamic instructions not supported by this class file version (%d), class %s",
         _klass->major_version(), _klass->external_name());
       return;
@@ -2889,7 +2911,6 @@ void ClassVerifier::verify_invoke_instructions(
              && !ref_class_type.equals(VerificationType::reference_type(
                   current_class()->super()->name()))) {
     bool subtype = false;
-    bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
     subtype = ref_class_type.is_assignable_from(
                current_type(), this, false, CHECK_VERIFY(this));
     if (!subtype) {
@@ -2897,7 +2918,7 @@ void ClassVerifier::verify_invoke_instructions(
           "Bad invokespecial instruction: "
           "current class isn't assignable to reference class.");
        return;
-    } else if (have_imr_indirect) {
+    } else {
       verify_error(ErrorContext::bad_code(bci),
           "Bad invokespecial instruction: "
           "interface method reference is in an indirect superinterface.");

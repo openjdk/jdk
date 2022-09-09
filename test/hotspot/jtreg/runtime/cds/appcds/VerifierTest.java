@@ -335,7 +335,7 @@ public class VerifierTest implements Opcodes {
         MethodVisitor mv;
         AnnotationVisitor av0;
 
-        cw.visit(V1_8, ACC_SUPER, "UnverifiableBase", null, "java/lang/Object", null);
+        cw.visit(V1_8, 0, "UnverifiableBase", null, "java/lang/Object", null);
         {
             fv = cw.visitField(ACC_FINAL + ACC_STATIC, "x", "LVerifierTest;", null, null);
             fv.visitEnd();

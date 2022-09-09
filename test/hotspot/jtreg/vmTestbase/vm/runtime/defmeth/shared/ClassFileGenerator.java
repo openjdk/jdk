@@ -143,7 +143,7 @@ public class ClassFileGenerator implements Visitor {
         className = clz.intlName();
 
         cw.visit((ver != 0) ? ver : defaultMajorVer,
-                ACC_SUPER | ((flags != -1) ? flags : defaultClassAccFlags),
+                ((flags != -1) ? flags : defaultClassAccFlags),
                 className,
                 /* signature */ clz.sig(),
                 clz.parent().intlName(),
@@ -524,7 +524,7 @@ public class ClassFileGenerator implements Visitor {
 
         className = tester.intlName();
 
-        cw.visit(testMajorVer, ACC_PUBLIC | ACC_SUPER, className, null, "java/lang/Object", null);
+        cw.visit(testMajorVer, ACC_PUBLIC, className, null, "java/lang/Object", null);
 
         { // Test.<init>
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

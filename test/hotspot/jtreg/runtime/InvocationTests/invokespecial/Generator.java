@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
  *
  * Next, the resolved method is selected for invocation unless all of the
  * following conditions are true:
- *     * The ACC_SUPER flag (see Table 4.1, "Class access and property modifiers") is set for the current class.
  *     * The class of the resolved method is a superclass of the current class.
  *     * The resolved method is not an instance initialization method (3.9).
  *
@@ -87,21 +86,6 @@
  * (3.9) as well as private methods and methods of a superclass of the current
  * class.
  *
- * ACC_SUPER:
- *
- * The setting of the ACC_SUPER flag indicates which of two alternative semantics
- * for its invokespecial instruction the Java virtual machine is to express; the
- * ACC_SUPER flag exists for backward compatibility for code compiled by Sun's
- * older compilers for the Java programming language. All new implementations of
- * the Java virtual machine should implement the semantics for invokespecial
- * documented in this specification. All new compilers to the instruction set of
- * the Java virtual machine should set the ACC_SUPER flag. Sun's older compilers
- * generated ClassFile? flags with ACC_SUPER unset. Sun's older Java virtual
- * machine implementations ignore the flag if it is set.
- *
- * ACC_SUPER 0x0020 Treat superclass methods specially when invoked by the
- * invokespecial instruction.
- *
  * My Translation:
  *     1. compile-time resolved class B
  *     2. A,B,C direct superclass relationships
@@ -113,14 +97,12 @@
  *     TODO: otherwise what is thrown? <noWikiWord>AbstractMethodError?
  *     4. If B.m is an instance initialization method,
  *          invoke B.m
- *     5. If backward compatible caller does not set ACC_SUPER,
- *          invoke B.m
- *     6. If B is not a superclass of the caller, e.g. A is caller, or unrelated X
+ *     5. If B is not a superclass of the caller, e.g. A is caller, or unrelated X
  *        is the caller, invoke B.m
- *     7. Otherwise:
+ *     6. Otherwise:
  *        If superclass of caller contains name/sig match, use it
  *        Else, recursively through that superclass
- *     8. If none found, throw AbstractMethodError
+ *     7. If none found, throw AbstractMethodError
  *
  * Note: there is NO mention of overriding or accessibility in determining
  * resolved method, except for if the compile-time type is protected.
@@ -130,17 +112,14 @@
  *         Caller in B: if runtime resolved class in A.m, AbstractMethodError
  * Case 2: B.m is an instance initialization method
  *         Always invoke B.m
- * Case 3: older javac, caller does not set ACC_SUPER
- *         Always invoke B.m
- * Case 4: A or X (not in hierarchy) calls invokespecial on B.m, invoke B.m
- * Case 5: Caller in B:
+ * Case 3: A or X (not in hierarchy) calls invokespecial on B.m, invoke B.m
+ * Case 4: Caller in B:
  *           if A.m exists, call it, else <noWikiWord>AbstractMethodError
  *         Caller in C:
  *           if B.m exists, call it
  *           if B.m does not exist, and A.m exists, call it
  */
 
-//   TODO: classes without ACC_SUPER attribute
 //   TODO: B.m is an instance initialization method
 
 /*
@@ -228,12 +207,7 @@
  * 1. In Java Virtual Machine implementations prior to version JDK 1.02, this
  * instruction was called invokenonvirtual, and was less restrictive than
  * invokespecial - it wasn't limited to invoking only superclass, private or
- * <init> methods. The class access flag ACC_SUPER (see Chapter 4) is used to
- * indicate which semantics are used by a class. In older class files, the
- * ACC_SUPER flag is unset. In all new classes, the ACC_SUPER flag should be set,
- * indicating that the restrictions enforced by invokespecial are obeyed. (In
- * practice, all the common uses of invokenonvirtual continue to be supported
- * by invokespecial, so this change should have little impact on JVM users).
+ * <init> methods.
  *
  */
 

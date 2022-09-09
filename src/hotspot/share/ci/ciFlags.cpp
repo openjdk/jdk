@@ -41,9 +41,6 @@ void ciFlags::print_klass_flags(outputStream* st) {
   if (is_final()) {
     st->print(",final");
   }
-  if (is_super()) {
-    st->print(",super");
-  }
   if (is_interface()) {
     st->print(",interface");
   }

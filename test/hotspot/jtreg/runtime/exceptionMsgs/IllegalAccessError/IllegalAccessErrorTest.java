@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -111,7 +111,7 @@ abstract public class IllegalAccessErrorTest {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
                                          + ClassWriter.COMPUTE_FRAMES);
         cw.visit(V9,
-                ACC_PUBLIC + ACC_SUPER,
+                ACC_PUBLIC,
                 className.replace(".", "/"),
                 null,
                 "java/lang/Object",
@@ -178,7 +178,7 @@ abstract public class IllegalAccessErrorTest {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
                                          + ClassWriter.COMPUTE_FRAMES);
         cw.visit(V9,
-                 ACC_PUBLIC + ACC_SUPER,
+                 ACC_PUBLIC,
                  className.replace(".", "/"),
                  null,
                  "java/lang/Object",

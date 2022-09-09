@@ -87,7 +87,7 @@ enum {
   JVM_ACC_FIELD_ACCESS_WATCHED            = 0x00002000, // field access is watched by JVMTI
   JVM_ACC_FIELD_MODIFICATION_WATCHED      = 0x00008000, // field modification is watched by JVMTI
   JVM_ACC_FIELD_INTERNAL                  = 0x00000400, // internal field, same as JVM_ACC_ABSTRACT
-  JVM_ACC_FIELD_STABLE                    = 0x00000020, // @Stable field, same as JVM_ACC_SYNCHRONIZED and JVM_ACC_SUPER
+  JVM_ACC_FIELD_STABLE                    = 0x00000020, // @Stable field, same as JVM_ACC_SYNCHRONIZED
   JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE  = 0x00000100, // (static) final field updated outside (class) initializer, same as JVM_ACC_NATIVE
   JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE     = 0x00000800, // field has generic signature
 
@@ -119,7 +119,6 @@ class AccessFlags {
   bool is_static      () const         { return (_flags & JVM_ACC_STATIC      ) != 0; }
   bool is_final       () const         { return (_flags & JVM_ACC_FINAL       ) != 0; }
   bool is_synchronized() const         { return (_flags & JVM_ACC_SYNCHRONIZED) != 0; }
-  bool is_super       () const         { return (_flags & JVM_ACC_SUPER       ) != 0; }
   bool is_volatile    () const         { return (_flags & JVM_ACC_VOLATILE    ) != 0; }
   bool is_transient   () const         { return (_flags & JVM_ACC_TRANSIENT   ) != 0; }
   bool is_native      () const         { return (_flags & JVM_ACC_NATIVE      ) != 0; }

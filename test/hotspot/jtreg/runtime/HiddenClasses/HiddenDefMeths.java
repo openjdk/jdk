@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ARETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.DUP;
@@ -97,7 +96,7 @@ public class HiddenDefMeths {
         String ifaceTypeName = Type.getInternalName(iface);
         String proxyClassName = ifaceTypeName + IMPL_PREFIX;
         // class definition
-        cw.visit(V1_8, ACC_PUBLIC + ACC_SUPER, proxyClassName,
+        cw.visit(V1_8, ACC_PUBLIC, proxyClassName,
                 desc(Object.class) + desc(ifaceTypeName) + desc(Struct.class),
                 name(Object.class),
                 new String[] { ifaceTypeName, name(Struct.class) });

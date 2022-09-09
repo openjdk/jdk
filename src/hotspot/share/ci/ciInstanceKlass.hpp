@@ -242,7 +242,6 @@ public:
   // Java access flags
   bool is_public      () { return flags().is_public(); }
   bool is_final       () { return flags().is_final(); }
-  bool is_super       () { return flags().is_super(); }
   bool is_interface   () { return flags().is_interface(); }
   bool is_abstract    () { return flags().is_abstract(); }
 

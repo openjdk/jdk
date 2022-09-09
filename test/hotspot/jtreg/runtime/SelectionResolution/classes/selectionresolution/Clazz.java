@@ -24,7 +24,6 @@
 package selectionresolution;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.V1_8;
 
 
@@ -69,7 +68,7 @@ class Clazz extends ClassConstruct {
      * @param implementing Interfaces implemented
      */
     public Clazz(String name, String extending, int access, int classFileVersion, int index, String... implementing) {
-        super(name, extending == null ? "java/lang/Object" : extending, access | ACC_SUPER, classFileVersion, index, implementing);
+        super(name, extending == null ? "java/lang/Object" : extending, access, classFileVersion, index, implementing);
         // Add the default constructor
         addMethod("<init>", "()V", ACC_PUBLIC).makeConstructor(extending, false);
     }

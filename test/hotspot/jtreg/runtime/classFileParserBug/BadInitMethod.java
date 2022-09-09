@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,13 @@ public class BadInitMethod {
             System.out.println("Test BadInitMethod passed for non-static <clinit>");
         }
 
-        // <clinit> with args is allowed in class file version < 51.
+        // <clinit> with args is not allowed with old class file version.
         try {
             Class newClass = Class.forName("clinitArg");
-        } catch (java.lang.ClassFormatError e) {
             throw new RuntimeException(
-                "Unexpected ClassFormatError exception for <clinit> with argument in class file < 51");
+                "Expected ClassFormatError exception for <clinit> with args");
+        } catch (java.lang.ClassFormatError e) {
+            System.out.println("Test clinitArg passed for <clinit> with args");
         }
 
         // <clinit> with args is not allowed in class file version >= 51.

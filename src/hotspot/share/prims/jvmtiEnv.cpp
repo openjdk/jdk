@@ -2878,10 +2878,6 @@ JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
     result = k->compute_modifier_flags();
 
-    // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
-    if (k->is_super()) {
-      result |= JVM_ACC_SUPER;
-    }
   } else {
     result = (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
   }

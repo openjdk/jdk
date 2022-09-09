@@ -200,6 +200,9 @@
   template(tag_enclosing_method,                      "EnclosingMethod")                          \
   template(tag_bootstrap_methods,                     "BootstrapMethods")                         \
   template(tag_permitted_subclasses,                  "PermittedSubclasses")                      \
+  template(tag_module,                                "Module")                                   \
+  template(tag_module_packages,                       "ModulePackages")                           \
+  template(tag_module_main_class,                     "ModuleMainClass")                          \
                                                                                                   \
   /* exception klasses: at least all exceptions thrown by the VM have entries here */             \
   template(java_lang_ArithmeticException,             "java/lang/ArithmeticException")            \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,7 +65,6 @@ import jdk.test.lib.Utils;
 
 import static java.lang.invoke.MethodHandles.lookup;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACONST_NULL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ASTORE;
@@ -1600,7 +1599,7 @@ public class NullPointerExceptionTest {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(50, ACC_SUPER, "E", null, "java/lang/Object", new String[] { "E0" });
+        cw.visit(50, 0, "E", null, "java/lang/Object", new String[] { "E0" });
 
         {
             mv = cw.visitMethod(0, "<init>", "()V", null, null);
@@ -1822,7 +1821,7 @@ class G {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(50, ACC_SUPER, "Sub2G", null, "G", null);
+        cw.visit(50, 0, "Sub2G", null, "G", null);
 
         {
             mv = cw.visitMethod(0, "<init>", "()V", null, null);

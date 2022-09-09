@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ public class Utils {
     public static final String TARGET_METHOD_NAME = "m";
     public static int version = 50;
 
-    public static boolean isACC_SUPER = false;
-
     public static void init(List<String> args) {
         for (String param : args) {
             String name = "classfile_version";
@@ -66,15 +64,6 @@ public class Utils {
 
                 System.out.printf("INFO: Class file version: major: %d; minor: %d\n", majorVersion, minorVersion);
 
-                if (majorVersion < 49 && !args.contains("--no_acc_super")) {
-                    isACC_SUPER = true;
-                    System.out.printf("INFO: Enabling ACC_SUPER flag for major: %d\nTo disable it, specify --no_acc_super option.\n", majorVersion, minorVersion);
-                }
-            } else if (param.equals("--no_acc_super")){
-                System.out.println("INFO: ACC_SUPER flag is disabled");
-                isACC_SUPER = false;
-            } else if (param.equals("--acc_super")){
-                isACC_SUPER = true;
             } else {
                 System.out.println("ERROR: Unknown option: "+param);
                 printHelp();
@@ -88,10 +77,6 @@ public class Utils {
                  "Supported parameters:\n"
                + "\t--classfile_version=major_version[:minor_version]\n"
                + "\t\t- specify class file version for generated classes\n"
-               + "\t--no_acc_super\n"
-               + "\t\t- don't add ACC_SUPER flag into generated classes\n"
-               + "\t--acc_super\n"
-               + "\t\t- force ACC_SUPER flag in generated classes\n"
                + "\t--dump\n"
                + "\t\t- dump generated classes\n"
                + "\t--noexecute\n"

@@ -58,7 +58,7 @@ public class TestMultiANewArray {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(cfv, ACC_PUBLIC + ACC_SUPER, "ClassFile", null, "java/lang/Object", null);
+        cw.visit(cfv, ACC_PUBLIC, "ClassFile", null, "java/lang/Object", null);
         mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);

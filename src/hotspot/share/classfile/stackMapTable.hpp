@@ -121,8 +121,8 @@ class StackMapReader : StackObj {
 
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
   VerificationType parse_verification_type(u1* flags, TRAPS);
-  void check_verification_type_array_size(
-      int32_t size, int32_t max_size, TRAPS) {
+
+  void check_verification_type_array_size(int32_t size, int32_t max_size, TRAPS) {
     if (size < 0 || size > max_size) {
       // Since this error could be caused someone rewriting the method
       // but not knowing to update the stackmap data, we call the

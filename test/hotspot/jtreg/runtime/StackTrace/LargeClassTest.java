@@ -58,7 +58,7 @@ public class LargeClassTest implements Opcodes {
         MethodVisitor mv;
         AnnotationVisitor av0;
 
-        cw.visit(55, ACC_PUBLIC + ACC_SUPER, "Large", null, "java/lang/Object", null);
+        cw.visit(55, ACC_PUBLIC, "Large", null, "java/lang/Object", null);
 
         {
           mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

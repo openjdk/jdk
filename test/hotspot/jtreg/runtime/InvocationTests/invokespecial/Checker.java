@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,6 @@ public class Checker extends shared.Checker {
        /*
         * The resolved method is selected for invocation unless all of
         * the following conditions are true:
-        *     * TODO: The ACC_SUPER flag (see Table 4.1, "Class access and property
-        *       modifiers") is set for the current class.
         *     * The class of the resolved method is a superclass of the
         *       current class - assumed by construction procedure
         *

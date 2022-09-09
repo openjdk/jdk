@@ -129,7 +129,7 @@ public class BSMCalledTwice implements Opcodes {
         MethodVisitor mv;
         AnnotationVisitor av0;
 
-        cw.visit(53, ACC_PUBLIC + ACC_SUPER, classTestCName, null, "java/lang/Object", null);
+        cw.visit(53, ACC_PUBLIC, classTestCName, null, "java/lang/Object", null);
 
         cw.visitInnerClass("java/lang/invoke/MethodHandles$Lookup",
                            "java/lang/invoke/MethodHandles", "Lookup",

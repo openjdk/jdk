@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class TransitiveOverrideCFV50 implements Opcodes{
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, "P1/A", null, "java/lang/Object", null);
+        cw.visit(V1_7, ACC_PUBLIC, "P1/A", null, "java/lang/Object", null);
 
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -128,7 +128,7 @@ public class TransitiveOverrideCFV50 implements Opcodes{
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(V1_8, ACC_PUBLIC + ACC_SUPER, "P1/B", null, "P1/A", null);
+        cw.visit(V1_8, ACC_PUBLIC, "P1/B", null, "P1/A", null);
 
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -159,7 +159,7 @@ public class TransitiveOverrideCFV50 implements Opcodes{
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "P2/C", null, "P1/B", null);
+        cw.visit(V1_6, ACC_PUBLIC, "P2/C", null, "P1/B", null);
 
         {
             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

@@ -2678,6 +2678,13 @@ JVM_ENTRY(const char*, JVM_GetCPClassNameUTF(JNIEnv *env, jclass cls, jint cp_in
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   ConstantPool* cp = InstanceKlass::cast(k)->constants();
+
+  // this check is needed for the old verifier.
+  if (!cp->is_within_bounds(cp_index) ||
+      !cp->tag_at(cp_index).is_klass_or_reference()) {
+    return NULL;
+  }
+
   Symbol* classname = cp->klass_name_at(cp_index);
   return classname->as_utf8();
 JVM_END

@@ -246,8 +246,10 @@ class ClassFileParser {
 
   // Field parsing
   void parse_field_attributes(const ClassFileStream* const cfs,
+                              const Symbol* name,
                               u2 attributes_count,
                               bool is_static,
+                              bool is_final,
                               u2 signature_index,
                               u2* const constantvalue_index_addr,
                               bool* const is_synthetic_addr,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class BadMethodHandles {
 
     static byte[] dumpBadInterfaceMethodref() {
         ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER, "BadInterfaceMethodref", null, "java/lang/Object", null);
+        cw.visit(52, ACC_PUBLIC, "BadInterfaceMethodref", null, "java/lang/Object", null);
         Handle handle1 =
             new Handle(Opcodes.H_INVOKEINTERFACE, "BadInterfaceMethodref", "m", "()V", true);
         Handle handle2 =
@@ -135,7 +135,7 @@ public class BadMethodHandles {
 
     static byte[] dumpBadMethodref() {
         ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER,  "BadMethodref", null, "java/lang/Object", new String[]{"IBad"});
+        cw.visit(52, ACC_PUBLIC,  "BadMethodref", null, "java/lang/Object", new String[]{"IBad"});
         Handle handle1 =
             new Handle(Opcodes.H_INVOKEINTERFACE, "BadMethodref", "m", "()V", true);
         Handle handle2 =
@@ -179,7 +179,7 @@ public class BadMethodHandles {
 
     static byte[] dumpInvokeBasic() {
         ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER,  "InvokeBasicref", null, "java/lang/Object", null);
+        cw.visit(52, ACC_PUBLIC,  "InvokeBasicref", null, "java/lang/Object", null);
         Handle handle =
                 new Handle(Opcodes.H_INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeBasic", "([Ljava/lang/Object;)Ljava/lang/Object;", false);
 
