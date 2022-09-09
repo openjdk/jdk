@@ -85,7 +85,7 @@ public class TestAltUpDownComboBox {
             robot.keyRelease(KeyEvent.VK_UP);
             robot.keyRelease(KeyEvent.VK_ALT);
             robot.delay(1000);
-            
+
             if (combo.getSelectedIndex() != 0) {
                 System.out.println(combo.getSelectedIndex());
                 throw new RuntimeException("Alt+Up did not select first entry");
