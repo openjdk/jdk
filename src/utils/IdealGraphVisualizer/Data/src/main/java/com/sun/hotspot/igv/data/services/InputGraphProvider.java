@@ -24,6 +24,7 @@
  */
 package com.sun.hotspot.igv.data.services;
 
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import java.util.Set;
@@ -33,6 +34,8 @@ import java.util.Set;
  * @author Thomas Wuerthinger
  */
 public interface InputGraphProvider {
+
+    ChangedEvent<InputGraphProvider> getChangedEvent();
 
     InputGraph getGraph();
 

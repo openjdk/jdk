@@ -24,6 +24,7 @@
  */
 package com.sun.hotspot.igv.view;
 
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
@@ -43,6 +44,14 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     public EditorInputGraphProvider(EditorTopComponent editor) {
         this.editor = editor;
+        this.changedEvent = new ChangedEvent<>(this);
+    }
+
+    private ChangedEvent<InputGraphProvider> changedEvent;
+
+    @Override
+    public ChangedEvent<InputGraphProvider> getChangedEvent() {
+        return changedEvent;
     }
 
     @Override
@@ -68,4 +77,6 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     public Iterable<InputGraph> searchForward() {
         return editor.getDiagramModel().getGraphsForward();
     }
+
+
 }

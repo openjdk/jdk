@@ -238,11 +238,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             GraphNode[] selection = new  GraphNode[]{};
             final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
             if (provider != null) {
-                System.out.println("updateGraphSelection provider");
                 // Try to fetch and select the latest active graph.
                 InputGraph graph = provider.getGraph();
                 if (graph != null) {
-                    System.out.println("updateGraphSelection graph");
                     if (graph.isDiffGraph()) {
                         EditorTopComponent editor = EditorTopComponent.getActive();
                         if (editor != null) {
@@ -256,8 +254,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                 }
             }
             try {
-                System.out.println("updateGraphSelection selection " + selection);
-
                 manager.setSelectedNodes(selection);
             } catch (Exception e) {
                 Exceptions.printStackTrace(e);
