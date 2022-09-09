@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/os.hpp"
 #include "logging/log.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 
@@ -60,7 +60,7 @@ enum membarrier_cmd {
 #define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 static int membarrier(int cmd, unsigned int flags, int cpu_id) {
-  return syscall(SYS_membarrier, cmd, flags, cpu_id); // cpu_id only on >=5.10
+  return syscall(SYS_membarrier, cmd, flags, cpu_id); // cpu_id only on >= 5.10
 }
 
 bool LinuxSystemMemoryBarrier::initialize() {

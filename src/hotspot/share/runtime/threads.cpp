@@ -556,8 +556,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (UseSystemMemoryBarrier) {
     if (!SystemMemoryBarrier::initialize()) {
-      // UseSystemMemoryBarrier = false;
-      vm_shutdown_during_initialization("Failed to initialize request system memory barrier synchronization.");
+      vm_shutdown_during_initialization("Failed to initialize the requested system memory barrier synchronization.");
       return JNI_EINVAL;
     }
     log_debug(os)("Using experimental system memory barrier synchronization");

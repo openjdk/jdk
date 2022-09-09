@@ -1082,8 +1082,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ movl(Address(thread, JavaThread::thread_state_offset()),
           _thread_in_native_trans);
 
+  // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
-    // Force this write out before the read below
     __ membar(Assembler::Membar_mask_bits(
                 Assembler::LoadLoad | Assembler::LoadStore |
                 Assembler::StoreLoad | Assembler::StoreStore));

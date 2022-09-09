@@ -1295,7 +1295,7 @@ const int ObjectAlignmentInBytes = 8;
           range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
                                                                             \
   product(bool, UseSystemMemoryBarrier, false, EXPERIMENTAL,                \
-          "Try enable system memory barrier")                               \
+          "Try to enable system memory barrier")                            \
                                                                             \
   product(intx, NmethodSweepActivity, 4,                                    \
           "Removes cold nmethods from code cache if > 0. Higher values "    \

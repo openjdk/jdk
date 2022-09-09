@@ -23,8 +23,8 @@
  */
 
 import jdk.test.lib.Utils;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
