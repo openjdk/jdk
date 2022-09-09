@@ -946,59 +946,53 @@ int MacroAssembler::bitset_to_regs(unsigned int bitset, unsigned char* regs) {
   return count;
 }
 
-// Push lots of registers in the bit set supplied.  Don't push sp.
-// Return the number of words pushed
-int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
+// Push lots of registers in the regset supplied.  Don't push sp.
+void MacroAssembler::push_reg(RegSet regset, Register stack) {
   DEBUG_ONLY(int words_pushed = 0;)
   CompressibleRegion cr(this);
 
   unsigned char regs[32];
-  int count = bitset_to_regs(bitset, regs);
+  int count = bitset_to_regs(regset.bits(), regs);
   // reserve one slot to align for odd count
   int offset = is_even(count) ? 0 : wordSize;
 
   if (count) {
-    addi(stack, stack, - count * wordSize - offset);
+    addi(stack, stack, -count * wordSize - offset);
   }
   for (int i = count - 1; i >= 0; i--) {
     sd(as_Register(regs[i]), Address(stack, (count - 1 - i) * wordSize + offset));
-    DEBUG_ONLY(words_pushed ++;)
+    DEBUG_ONLY(words_pushed++;)
   }
 
   assert(words_pushed == count, "oops, pushed != count");
-
-  return count;
 }
 
-int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
+void MacroAssembler::pop_reg(RegSet regset, Register stack) {
   DEBUG_ONLY(int words_popped = 0;)
   CompressibleRegion cr(this);
 
   unsigned char regs[32];
-  int count = bitset_to_regs(bitset, regs);
+  int count = bitset_to_regs(regset.bits(), regs);
   // reserve one slot to align for odd count
   int offset = is_even(count) ? 0 : wordSize;
 
   for (int i = count - 1; i >= 0; i--) {
     ld(as_Register(regs[i]), Address(stack, (count - 1 - i) * wordSize + offset));
-    DEBUG_ONLY(words_popped ++;)
+    DEBUG_ONLY(words_popped++;)
   }
 
   if (count) {
     addi(stack, stack, count * wordSize + offset);
   }
   assert(words_popped == count, "oops, popped != count");
-
-  return count;
 }
 
-// Push float registers in the bitset, except sp.
-// Return the number of heapwords pushed.
-int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
+// Push float registers in the regset
+void MacroAssembler::push_fp(FloatRegSet regset, Register stack) {
   CompressibleRegion cr(this);
-  int words_pushed = 0;
+  DEBUG_ONLY(int words_pushed = 0;)
   unsigned char regs[32];
-  int count = bitset_to_regs(bitset, regs);
+  int count = bitset_to_regs(regset.bits(), regs);
   int push_slots = count + (count & 1);
 
   if (count) {
@@ -1007,23 +1001,22 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
 
   for (int i = count - 1; i >= 0; i--) {
     fsd(as_FloatRegister(regs[i]), Address(stack, (push_slots - 1 - i) * wordSize));
-    words_pushed++;
+    DEBUG_ONLY(words_pushed++;)
   }
 
   assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
-  return count;
 }
 
-int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
+void MacroAssembler::pop_fp(FloatRegSet regset, Register stack) {
   CompressibleRegion cr(this);
-  int words_popped = 0;
+  DEBUG_ONLY(int words_popped = 0;)
   unsigned char regs[32];
-  int count = bitset_to_regs(bitset, regs);
+  int count = bitset_to_regs(regset.bits(), regs);
   int pop_slots = count + (count & 1);
 
   for (int i = count - 1; i >= 0; i--) {
     fld(as_FloatRegister(regs[i]), Address(stack, (pop_slots - 1 - i) * wordSize));
-    words_popped++;
+    DEBUG_ONLY(words_popped++;)
   }
 
   if (count) {
@@ -1031,52 +1024,35 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
   }
 
   assert(words_popped == count, "oops, popped(%d) != count(%d)", words_popped, count);
-  return count;
 }
 
 #ifdef COMPILER2
-int MacroAssembler::push_vp(unsigned int bitset, Register stack) {
+void MacroAssembler::push_vp(VectorRegSet regset, Register stack) {
   CompressibleRegion cr(this);
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
   unsigned char regs[32];
-  int count = 0;
-  for (int reg = 31; reg >= 0; reg--) {
-    if ((1U << 31) & bitset) {
-      regs[count++] = reg;
-    }
-    bitset <<= 1;
-  }
+  int count = bitset_to_regs(regset.bits(), regs);
 
   for (int i = 0; i < count; i++) {
     sub(stack, stack, vector_size_in_bytes);
     vs1r_v(as_VectorRegister(regs[i]), stack);
   }
-
-  return count * vector_size_in_bytes / wordSize;
 }
 
-int MacroAssembler::pop_vp(unsigned int bitset, Register stack) {
+void MacroAssembler::pop_vp(VectorRegSet regset, Register stack) {
   CompressibleRegion cr(this);
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
   unsigned char regs[32];
-  int count = 0;
-  for (int reg = 31; reg >= 0; reg--) {
-    if ((1U << 31) & bitset) {
-      regs[count++] = reg;
-    }
-    bitset <<= 1;
-  }
+  int count = bitset_to_regs(regset.bits(), regs);
 
   for (int i = count - 1; i >= 0; i--) {
     vl1r_v(as_VectorRegister(regs[i]), stack);
     add(stack, stack, vector_size_in_bytes);
   }
-
-  return count * vector_size_in_bytes / wordSize;
 }
 #endif // COMPILER2
 
@@ -1090,7 +1066,7 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
   int offset = 0;
   for (int i = 0; i < 32; i++) {
     if (i <= f7->encoding() || i >= f28->encoding() || (i >= f10->encoding() && i <= f17->encoding())) {
-      fsd(as_FloatRegister(i), Address(sp, wordSize * (offset ++)));
+      fsd(as_FloatRegister(i), Address(sp, wordSize * (offset++)));
     }
   }
 }
@@ -1100,7 +1076,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
   int offset = 0;
   for (int i = 0; i < 32; i++) {
     if (i <= f7->encoding() || i >= f28->encoding() || (i >= f10->encoding() && i <= f17->encoding())) {
-      fld(as_FloatRegister(i), Address(sp, wordSize * (offset ++)));
+      fld(as_FloatRegister(i), Address(sp, wordSize * (offset++)));
     }
   }
   addi(sp, sp, wordSize * 20);
@@ -1111,7 +1087,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
 void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes) {
   CompressibleRegion cr(this);
   // integer registers, except zr(x0) & ra(x1) & sp(x2) & gp(x3) & tp(x4)
-  push_reg(0xffffffe0, sp);
+  push_reg(RegSet::range(x5, x31), sp);
 
   // float registers
   addi(sp, sp, - 32 * wordSize);
@@ -1148,7 +1124,7 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_byte
   addi(sp, sp, 32 * wordSize);
 
   // integer registers, except zr(x0) & ra(x1) & sp(x2) & gp(x3) & tp(x4)
-  pop_reg(0xffffffe0, sp);
+  pop_reg(RegSet::range(x5, x31), sp);
 }
 
 static int patch_offset_in_jal(address branch, int64_t offset) {
