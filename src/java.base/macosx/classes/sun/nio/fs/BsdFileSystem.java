@@ -38,16 +38,13 @@ import sun.security.action.GetPropertyAction;
 
 import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.chown;
+import static sun.nio.fs.UnixNativeDispatcher.unlink;
 
 /**
  * Bsd implementation of FileSystem
  */
 
 class BsdFileSystem extends UnixFileSystem {
-
-    // whether file cloning is supported on this platform
-    private static volatile boolean cloneFileNotSupported;
-
 
     BsdFileSystem(UnixFileSystemProvider provider, String dir) {
         super(provider, dir);
@@ -87,26 +84,23 @@ class BsdFileSystem extends UnixFileSystem {
      * @param dst the path of the destination file (clone)
      * @param followLinks whether to follow links
      *
-     * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
-     *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
-     *         not supported on this platform
+     * @return 0 on success, or IOStatus.UNSUPPORTED_CASE if the call
+     *         does not work with the given parameters
      */
     private int clone(UnixPath src, UnixPath dst, boolean followLinks)
         throws IOException
     {
-        // Do not attempt cloning if the source volume does not support it
-        long options = followLinks ? 0 : FSOPT_NOFOLLOW;
-        if ((BsdNativeDispatcher.getattrlist(src, options) &
-            VOL_CAP_INT_CLONE) == 0)
-            return IOStatus.UNSUPPORTED_CASE;
-
         int flags = followLinks ? 0 : CLONE_NOFOLLOW;
         try {
             BsdNativeDispatcher.clonefile(src, dst, flags);
         } catch (UnixException x) {
+            // clone failed so roll back
+            try {
+                unlink(dst);
+            } catch (UnixException ignore) { }
+
             switch (x.errno()) {
                 case ENOTSUP: // cloning not supported by filesystem
-                    return IOStatus.UNSUPPORTED;
                 case EXDEV:   // src and dst on different filesystems
                 case ENOTDIR: // problematic path parameter(s)
                     return IOStatus.UNSUPPORTED_CASE;
@@ -134,10 +128,9 @@ class BsdFileSystem extends UnixFileSystem {
                             long addressToPollForCancel)
         throws IOException
     {
-        // Attempt to clone the source unless cloning is not supported,
-        // cancellation is not possible, or attributes are not to be copied
-        if (!cloneFileNotSupported && addressToPollForCancel == 0 &&
-            flags.copyPosixAttributes) {
+        // Attempt to clone the source unless cancellation is not possible,
+        // or attributes are not to be copied
+        if (addressToPollForCancel == 0 && flags.copyPosixAttributes) {
             int res = clone(source, target, flags.followLinks);
 
             if (res == 0) {
@@ -149,10 +142,6 @@ class BsdFileSystem extends UnixFileSystem {
                         x.rethrowAsIOException(target);
                 }
                 return;
-            }
-
-            if (res == IOStatus.UNSUPPORTED) {
-                cloneFileNotSupported = true;
             }
 
             // fall through to superclass method

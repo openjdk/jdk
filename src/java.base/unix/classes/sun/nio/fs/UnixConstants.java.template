@@ -153,10 +153,6 @@ class UnixConstants {
     static final int PREFIX_CLONE_NOFOLLOW = CLONE_NOFOLLOW;
     static final int PREFIX_CLONE_NOOWNERCOPY = CLONE_NOOWNERCOPY;
 
-    // flags used with getattrlist
-    static final int PREFIX_VOL_CAPABILITIES_INTERFACES = VOL_CAPABILITIES_INTERFACES;
-    static final int PREFIX_VOL_CAP_INT_CLONE = VOL_CAP_INT_CLONE;
-
     // flags used with setattrlist
     static final int PREFIX_ATTR_CMN_CRTIME = ATTR_CMN_CRTIME;
     static final int PREFIX_ATTR_CMN_MODTIME = ATTR_CMN_MODTIME;
