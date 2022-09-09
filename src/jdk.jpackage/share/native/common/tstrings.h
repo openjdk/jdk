@@ -377,15 +377,15 @@ namespace tstrings {
 
         // need this specialization instead std::wstring::pointer,
         // otherwise LPWSTR is handled as abstract pointer (void*)
-        any& operator << (LPWSTR v) {
-            data << (v ? v : L"NULL");
+        any& operator << (LPWSTR msg) {
+            data << (msg ? msg : L"NULL");
             return *this;
         }
 
         // need this specialization instead std::wstring::const_pointer,
         // otherwise LPCWSTR is handled as abstract pointer (const void*)
-        any& operator << (LPCWSTR v) {
-            data << (v ? v : L"NULL");
+        any& operator << (LPCWSTR msg) {
+            data << (msg ? msg : L"NULL");
             return *this;
         }
 
