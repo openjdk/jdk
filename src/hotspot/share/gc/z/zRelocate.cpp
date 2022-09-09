@@ -1254,24 +1254,29 @@ public:
 
 class ZRelocateAddRemsetForNormalPromoted : public ZRestartableTask {
 private:
-  ZStatTimerYoung                  _timer;
-  ZForwardingTableParallelIterator _iter;
+  ZStatTimerYoung                _timer;
+  ZRelocationSetParallelIterator _iter;
 
 public:
   ZRelocateAddRemsetForNormalPromoted() :
       ZRestartableTask("ZRelocateAddRemsetForNormalPromoted"),
       _timer(ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung),
-      _iter(ZGeneration::young()->forwarding_table()) {}
+      _iter(ZGeneration::young()->relocation_set_parallel_iterator()) {}
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
 
-    _iter.do_forwardings([](ZForwarding* forwarding) {
-      forwarding->oops_do_in_forwarded_via_table(remap_and_maybe_add_remset);
+    for (ZForwarding* forwarding; _iter.next(&forwarding);) {
+      if (forwarding->to_age() == ZPageAge::old) {
+        forwarding->oops_do_in_forwarded_via_table(remap_and_maybe_add_remset);
+      }
+
+      if (ZGeneration::young()->should_worker_stop()) {
+        break;
+      }
 
       SuspendibleThreadSet::yield();
-      return !ZGeneration::young()->should_worker_stop();
-    });
+    }
   }
 };
 
