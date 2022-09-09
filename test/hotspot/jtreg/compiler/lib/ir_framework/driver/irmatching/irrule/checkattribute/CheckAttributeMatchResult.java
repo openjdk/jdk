@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
@@ -31,20 +32,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base class representing a result of an applied check attribute of an IR rule on a compile phase.
+ * This class represents an IR matching result of a {@link CheckAttribute} (i.e. either {@link IR#failOn} or
+ * {@link IR#counts}). The type of check attribute is defined by {@link CheckAttributeType}.
  *
  * @see CheckAttribute
+ * @see CheckAttributeType
  */
 public class CheckAttributeMatchResult implements MatchResult {
     private final List<ConstraintFailure> constraintFailures = new ArrayList<>();
-    private final CheckAttributeKind checkAttributeKind;
+    private final CheckAttributeType checkAttributeType;
 
-    CheckAttributeMatchResult(CheckAttributeKind checkAttributeKind) {
-        this.checkAttributeKind = checkAttributeKind;
+    CheckAttributeMatchResult(CheckAttributeType checkAttributeType) {
+        this.checkAttributeType = checkAttributeType;
     }
 
-    public CheckAttributeKind getCheckAttributeKind() {
-        return checkAttributeKind;
+    public CheckAttributeType getCheckAttributeKind() {
+        return checkAttributeType;
     }
 
     @Override

@@ -24,34 +24,27 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraintParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawFailOnConstraint;
-
-import java.util.ArrayList;
-import java.util.List;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawFailOnConstraint;
 
 /**
- * This class parses a {@link IR#failOn} attribute. It returns a list of {@link RawConstraint} which does not have
- * any default {@link IRNode} placeholders replaced, yet. This is done later in the {@link RawConstraintParser}.
+ * This class parses a the {@link IR#failOn()}) check attribute as found in a {@link IR @IR} annotation. It returns a
+ * list of {@link RawConstraint} containing {@link RawFailOnConstraint} objects.
+ *
+ * @see IR#counts()
+ * @see RawFailOnConstraint
  */
-public class FailOnAttributeParser extends CheckAttributeParser<RawConstraint> {
+public class FailOnAttributeParser extends CheckAttributeParser {
 
-    private FailOnAttributeParser() {}
-
-    public static List<RawConstraint> parse(String[] failOnAttribute) {
-        List<RawConstraint> rawConstraintResultList = new ArrayList<>();
-        new FailOnAttributeParser().parseCheckAttribute(rawConstraintResultList, failOnAttribute);
-        return rawConstraintResultList;
+    public FailOnAttributeParser(String[] failOnAttribute) {
+        super(failOnAttribute);
     }
 
     @Override
-    protected void parseNextConstraint(List<RawConstraint> rawConstraintResultList,
-                                       CheckAttributeIterator checkAttributeIterator) {
+    protected RawConstraint parseNextConstraint() {
         String rawNodeString = checkAttributeIterator.getNextElement();
-        String userProvidedPostfix = getUserProvidedPostfix(checkAttributeIterator);
-        rawConstraintResultList.add(new RawFailOnConstraint(rawNodeString, userProvidedPostfix,
-                                                            checkAttributeIterator.getCurrentConstraintIndex()));
+        String userProvidedPostfix = getUserProvidedPostfix();
+        return new RawFailOnConstraint(rawNodeString, userProvidedPostfix,
+                                       checkAttributeIterator.getCurrentConstraintIndex());
     }
 }

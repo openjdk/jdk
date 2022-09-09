@@ -23,14 +23,11 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
-import compiler.lib.ir_framework.IR;
-
 /**
- * This class represents a result of an applied {@link Counts} attribute of an IR rule on a compile phase.
+ * This enum denotes the check attribute type of {@link CheckAttributeMatchResult}.
  *
- * @see Counts
- * @see IR#counts()
+ * @see CheckAttributeMatchResult
  */
-public enum CheckAttributeKind {
+public enum CheckAttributeType {
     FAIL_ON, COUNTS
 }

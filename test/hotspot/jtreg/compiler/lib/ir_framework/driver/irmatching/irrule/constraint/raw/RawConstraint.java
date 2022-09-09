@@ -21,19 +21,24 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
 import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants;
 import compiler.lib.ir_framework.shared.TestFormat;
 
 /**
- * Class to store a single raw constraint (i.e. placeholder strings as defined in {@link IRNode} not replaced, yet).
- * Can directly be used for failOn attributes while counts attributes use the subclass {@link RawCountsConstraint}.
+ * Base class to represent a single raw constraint as found in the {@link IR @IR} annotation(i.e. {@link IRNode}
+ * placeholder strings are not replaced by default regexes, yet). A raw constraint can be parsed into a
+ * {@link Constraint} by calling {@link #parse(CompilePhase, IRMethod)}. This replaces the IR node placeholder strings
+ * by actual regexes and merge composite nodes together.
+ *
+ * @see Constraint
  */
 abstract public class RawConstraint {
     protected final String rawNodeString;

@@ -31,11 +31,9 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import java.util.List;
 
 /**
- * Base class representing a parsed check attribute of an IR rule for a compile phase.
- * <p>
- *
- * Placeholder strings from {@link IRNode} are replaced by default regexes for this compile phase and composite IR nodes
- * are merged together.
+ * Base class representing a parsed check attribute ({@link IR#failOn()} or {@link IR#counts()}) of an IR rule for a
+ * compile phase. This means that all {@link IRNode} placeholder strings are replaced by compile phase specific regexes
+ * and all composite IR nodes are merged to a single regex. The constraints are ready to be IR matched against.
  *
  * @see IR
  */

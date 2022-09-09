@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeKind;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
@@ -380,7 +380,7 @@ class FailureBuilder implements MatchResultAction {
     @Override
     public void doAction(NotCompiledResult notCompiledResult) {
         methodName = notCompiledResult.getIRMethod().getMethod().getName();
-        failures.add(new Failure(methodName, -1, CompilePhase.DEFAULT, CheckAttributeKind.FAIL_ON, -1));
+        failures.add(new Failure(methodName, -1, CompilePhase.DEFAULT, CheckAttributeType.FAIL_ON, -1));
     }
 
     @Override
@@ -396,18 +396,18 @@ class FailureBuilder implements MatchResultAction {
     @Override
     public void doAction(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
         CompilePhase compilePhase = noCompilePhaseCompilationResult.getCompilePhase();
-        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeKind.FAIL_ON, -1));
+        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.FAIL_ON, -1));
     }
 
     @Override
     public void doAction(FailOnConstraintFailure failOnConstraintFailure) {
-        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeKind.FAIL_ON,
+        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.FAIL_ON,
                                  failOnConstraintFailure.getConstraintIndex()));
     }
 
     @Override
     public void doAction(CountsConstraintFailure countsConstraintFailure) {
-        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeKind.COUNTS,
+        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.COUNTS,
                                  countsConstraintFailure.getConstraintIndex()));
     }
 }
@@ -431,7 +431,7 @@ class ExpectedFailsBuilder {
         ExpectedFailure[] expectedFailures = method.getAnnotationsByType(ExpectedFailure.class);
         for (ExpectedFailure expectedFailure : expectedFailures) {
             if (expectedFailure.ruleId() == -1) {
-                expectedFails.add(new Failure(method.getName(), -1, CompilePhase.DEFAULT, CheckAttributeKind.FAIL_ON,-1));
+                expectedFails.add(new Failure(method.getName(), -1, CompilePhase.DEFAULT, CheckAttributeType.FAIL_ON, -1));
             } else {
                 processFail(method, expectedFailure);
             }
@@ -450,29 +450,29 @@ class ExpectedFailsBuilder {
 
     private void addFailureWithCompilation(Method method, ExpectedFailure expectedFailure, CompilePhase phase) {
         if (expectedFailure.failOn().length > 0) {
-            addFailure(method.getName(), expectedFailure.ruleId(), phase, CheckAttributeKind.FAIL_ON,
+            addFailure(method.getName(), expectedFailure.ruleId(), phase, CheckAttributeType.FAIL_ON,
                        expectedFailure.failOn());
         }
         if (expectedFailure.counts().length > 0) {
-            addFailure(method.getName(), expectedFailure.ruleId(), phase, CheckAttributeKind.COUNTS,
+            addFailure(method.getName(), expectedFailure.ruleId(), phase, CheckAttributeType.COUNTS,
                        expectedFailure.counts());
         }
     }
 
     private void addFailureWithoutCompilation(Method method, ExpectedFailure expectedFailure, CompilePhase phase) {
-        expectedFails.add(new Failure(method.getName(), expectedFailure.ruleId(), phase, CheckAttributeKind.FAIL_ON, -1));
+        expectedFails.add(new Failure(method.getName(), expectedFailure.ruleId(), phase, CheckAttributeType.FAIL_ON, -1));
     }
 
-    private void addFailure(String methodName, int ruleId, CompilePhase phase, CheckAttributeKind checkAttributeKind,
+    private void addFailure(String methodName, int ruleId, CompilePhase phase, CheckAttributeType checkAttributeType,
                             int[] constraintIds) {
         for (int constraintId : constraintIds) {
-            expectedFails.add(new Failure(methodName, ruleId, phase, checkAttributeKind,
+            expectedFails.add(new Failure(methodName, ruleId, phase, checkAttributeType,
                                           constraintId));
         }
     }
 }
 
-record Failure(String methodName, int irRuleId, CompilePhase compilePhase, CheckAttributeKind checkAttributeKind,
+record Failure(String methodName, int irRuleId, CompilePhase compilePhase, CheckAttributeType checkAttributeType,
                int constraintId) {
 
     @Override
@@ -487,14 +487,14 @@ record Failure(String methodName, int irRuleId, CompilePhase compilePhase, Check
         return methodName.equals(that.methodName)
                && irRuleId == that.irRuleId
                && compilePhase == that.compilePhase
-               && checkAttributeKind == that.checkAttributeKind
+               && checkAttributeType == that.checkAttributeType
                && constraintId == that.constraintId;
     }
 
     public static List<Failure> sort(Set<Failure> failures) {
         return failures.stream().sorted(Comparator.comparing(Failure::irRuleId)
                                                   .thenComparing(Failure::compilePhase)
-                                                  .thenComparing(Failure::checkAttributeKind)
+                                                  .thenComparing(Failure::checkAttributeType)
                                                   .thenComparing(Failure::constraintId)).collect(Collectors.toList());
     }
 }

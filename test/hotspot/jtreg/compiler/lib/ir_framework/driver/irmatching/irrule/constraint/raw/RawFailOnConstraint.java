@@ -21,30 +21,27 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
-
-import java.util.ArrayList;
-import java.util.List;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraint;
 
 /**
- * Base class to parse a raw constraint to replace the placeholder strings from {@link IRNode} by actual default
- * regexes depending on the compilation phase.
+ * This class represents a raw constraint of a {@link IR#failOn()} attribute.
  *
- * @see RawConstraint
+ * @see IR#failOn()
  */
-public class RawConstraintParser {
-    public static List<Constraint> parse(List<? extends RawConstraint> rawConstraints, CompilePhase compilePhase,
-                                         IRMethod irMethod) {
-        List<Constraint> constraintResultList = new ArrayList<>();
-        for (RawConstraint rawConstraint : rawConstraints) {
-            constraintResultList.add(rawConstraint.parse(compilePhase, irMethod));
-        }
-        return constraintResultList;
+public class RawFailOnConstraint extends RawConstraint {
+
+    public RawFailOnConstraint(String rawNodeString, String userPostfixString, int constraintIndex) {
+        super(rawNodeString, userPostfixString, constraintIndex);
+    }
+
+    public FailOnConstraint parse(CompilePhase compilePhase, IRMethod irMethod) {
+        compilePhase = getCompilePhase(compilePhase);
+        String regex = parseRegex(compilePhase);
+        return new FailOnConstraint(regex, constraintIndex, compilePhase, irMethod.getOutput(compilePhase));
     }
 }

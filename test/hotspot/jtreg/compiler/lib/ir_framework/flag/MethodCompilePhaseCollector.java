@@ -26,9 +26,10 @@ package compiler.lib.ir_framework.flag;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CheckAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CountsAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.FailOnAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
@@ -36,10 +37,9 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
- * Class that collects the compile phases of a method by parsing all {@link IR @IR} annotations.
+ * This class collects the compile phases of a method by parsing all {@link IR @IR} annotations.
  *
  * @see CompilePhaseCollector
  */
@@ -66,34 +66,17 @@ class MethodCompilePhaseCollector {
     public void collectCompilePhases(IR irAnno) {
         for (CompilePhase compilePhase : irAnno.phase()) {
             if (compilePhase == CompilePhase.DEFAULT) {
-                addDefaultPhasesForFailOn(irAnno);
-                addDefaultPhasesForCounts(irAnno);
+                addDefaultPhasesForConstraint(new FailOnAttributeParser(irAnno.failOn()));
+                addDefaultPhasesForConstraint(new CountsAttributeParser(irAnno.counts()));
             } else {
-                this.compilePhases.add(compilePhase);
+                compilePhases.add(compilePhase);
             }
         }
     }
 
-    private void addDefaultPhasesForFailOn(IR irAnno) {
-        addDefaultPhasesForConstraint(irAnno.failOn(), FailOnAttributeParser::parse);
-    }
-
-    private void addDefaultPhasesForCounts(IR irAnno) {
-        addDefaultPhasesForConstraint(irAnno.counts(), CountsAttributeParser::parse);
-    }
-
-    private void addDefaultPhasesForConstraint(String[] checkAttribute,
-                                               Function<String[], List<? extends RawConstraint>> parseMethod) {
-        if (checkAttribute.length > 0) {
-            addDefaultPhasesForNonEmptyConstraint(checkAttribute, parseMethod);
-        }
-    }
-
-    private void addDefaultPhasesForNonEmptyConstraint(String[] checkAttribute,
-                                                       Function<String[], List<? extends RawConstraint>> parseMethod) {
-        List<? extends RawConstraint> constraints = parseMethod.apply(checkAttribute);
-        for (RawConstraint constraint : constraints) {
-            compilePhases.add(constraint.getCompilePhaseForDefault());
-        }
+    private void addDefaultPhasesForConstraint(CheckAttributeParser checkAttributeParser) {
+        checkAttributeParser.parse();
+        List<RawConstraint> rawConstraints = checkAttributeParser.parse();
+        rawConstraints.forEach(rawConstraint -> compilePhases.add(rawConstraint.getCompilePhaseForDefault()));
     }
 }

@@ -24,39 +24,33 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraintParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawCountsConstraint;
 import compiler.lib.ir_framework.shared.TestFormat;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * This class parses a {@link IR#counts()} attribute. It returns a list of {@link RawCountsConstraint} which does not have
- * any default regexes defined in {@link IRNode} replaced, yet. This is done later in the {@link RawConstraintParser}.
+ * This class parses a the {@link IR#counts()}) check attribute as found in a {@link IR @IR} annotation. It returns a
+ * list of {@link RawConstraint} containing {@link RawCountsConstraint} objects.
+ *
+ * @see IR#counts()
+ * @see RawCountsConstraint
  */
-public class CountsAttributeParser extends CheckAttributeParser<RawCountsConstraint> {
+public class CountsAttributeParser extends CheckAttributeParser {
 
-    private CountsAttributeParser() {}
-
-    public static List<RawCountsConstraint> parse(String[] countsAttribute) {
-        List<RawCountsConstraint> rawCountsConstraintResultList = new ArrayList<>();
-        new CountsAttributeParser().parseCheckAttribute(rawCountsConstraintResultList, countsAttribute);
-        return rawCountsConstraintResultList;
+    public CountsAttributeParser(String[] countsAttribute) {
+        super(countsAttribute);
     }
 
     @Override
-    protected void parseNextConstraint(List<RawCountsConstraint> rawConstraintResultList,
-                                       CheckAttributeIterator checkAttributeIterator) {
+    protected RawConstraint parseNextConstraint() {
         String rawNodeString = checkAttributeIterator.getNextElement();
-        String userProvidedPostfix = getUserProvidedPostfix(checkAttributeIterator);
-        String countString = getCountString(rawNodeString, checkAttributeIterator);
-        rawConstraintResultList.add(new RawCountsConstraint(rawNodeString, userProvidedPostfix, countString,
-                                                            checkAttributeIterator.getCurrentConstraintIndex()));
+        String userProvidedPostfix = getUserProvidedPostfix();
+        String countString = getCountString(rawNodeString);
+        return new RawCountsConstraint(rawNodeString, userProvidedPostfix, countString,
+                                       checkAttributeIterator.getCurrentConstraintIndex());
     }
 
-    private static String getCountString(String rawNodeString, CheckAttributeIterator checkAttributeIterator) {
+    private String getCountString(String rawNodeString) {
         TestFormat.checkNoReport(checkAttributeIterator.hasConstraintsLeft(), "Missing count for node " + rawNodeString);
         return checkAttributeIterator.nextElement();
     }

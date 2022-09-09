@@ -21,21 +21,22 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
 
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
 import compiler.lib.ir_framework.shared.Comparison;
 import compiler.lib.ir_framework.shared.ComparisonConstraintParser;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
 /**
- * Class to store a single raw counts constraint (i.e. placeholder strings as defined in {@link IRNode} not replaced, yet).
+ * This class represents a raw constraint of a {@link IR#counts()} attribute.
+ *
+ * @see IR#counts()
  */
 public class RawCountsConstraint extends RawConstraint {
     private final String countString;

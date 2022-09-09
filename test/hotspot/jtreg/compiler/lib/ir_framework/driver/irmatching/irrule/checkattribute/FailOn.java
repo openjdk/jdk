@@ -34,12 +34,21 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * This class represents a fully parsed {@link IR#failOn()} attribute of an IR rule for a compile phase.
+ * This class represents a fully parsed {@link IR#failOn()} attribute of an IR rule for a compile phase that is ready
+ * to be IR matched on.
+ *
+ * <p>
+ * This class provides a quick check regex by simply looking for any occurrence of any constraint regex. Only if that
+ * fails, we need to check each constraint individually to report which one failed.
  *
  * @see IR#failOn()
  * @see CheckAttribute
  */
 public class FailOn extends CheckAttribute {
+    /**
+     * Quick check: Look for any occurrence of any regex by creating the following pattern to match against:
+     * "regex_1|regex_2|...|regex_n"
+     */
     private final Matcher quickMatcher;
 
     public FailOn(List<Constraint> constraints, String compilationOutput) {
@@ -51,12 +60,12 @@ public class FailOn extends CheckAttribute {
 
     @Override
     public CheckAttributeMatchResult match() {
-        CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeKind.FAIL_ON);
+        CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeType.FAIL_ON);
         if (hasNoMatch()) {
             return checkAttributeMatchResult;
         }
         match(checkAttributeMatchResult);
-        TestFramework.check(checkAttributeMatchResult.fail(), "must fail (i.e. find at least one match)");
+        TestFramework.check(checkAttributeMatchResult.fail(), "at that point, we must find at least one match");
         return checkAttributeMatchResult;
     }
 

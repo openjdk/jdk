@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAt
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
- * This class represents an IR matching result of an IR rule applied on a compile phase.
+ * This class represents an IR matching result of a {@link CompilePhaseIRRule} (i.e. an IR rule applied on a compile phase).
  *
  * @see CompilePhaseIRRule
  */

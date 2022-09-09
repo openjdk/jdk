@@ -30,7 +30,8 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintF
 import java.util.List;
 
 /**
- * This class represents a fully parsed {@link IR#counts()} attribute of an IR rule for a compile phase.
+ * This class represents a fully parsed {@link IR#counts()} attribute of an IR rule for a compile phase that is ready
+ * to be IR matched on.
  *
  * @see IR#counts()
  * @see CheckAttribute
@@ -44,7 +45,7 @@ public class Counts extends CheckAttribute {
 
     @Override
     public CheckAttributeMatchResult match() {
-        CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeKind.COUNTS);
+        CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeType.COUNTS);
         for (Constraint constraint : constraints) {
             ConstraintFailure constraintFailure = constraint.match();
             if (constraintFailure != null) {

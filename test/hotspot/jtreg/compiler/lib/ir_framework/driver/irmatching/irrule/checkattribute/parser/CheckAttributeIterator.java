@@ -29,7 +29,8 @@ import java.util.Arrays;
 import java.util.ListIterator;
 
 /**
- * This class represents an iterator on a check attribute as found in an IR annotation.
+ * This class represents an iterator on a check attribute ({@link IR#failOn()} or {@link IR#counts()}) as found in a
+ * {@link IR @IR} annotation.
  *
  * @see IR
  */

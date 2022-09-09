@@ -25,43 +25,52 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base class to parse a check attribute as found in an IR annotation.
+ * Base class to parse a check attribute ({@link IR#failOn()} or {@link IR#counts()}) as found in a {@link IR @IR}
+ * annotation.
  *
- * @see IR
+ * @see IR#failOn()
+ * @see IR#counts()
  */
-abstract class CheckAttributeParser<T extends RawConstraint> {
+abstract public class CheckAttributeParser {
+    private final List<RawConstraint> rawConstraints = new ArrayList<>();
+    protected final CheckAttributeIterator checkAttributeIterator;
 
-    protected void parseCheckAttribute(List<T> rawConstraintResultList, String[] checkAttribute) {
-        CheckAttributeIterator checkAttributeIterator = new CheckAttributeIterator(checkAttribute);
-        while (checkAttributeIterator.hasConstraintsLeft()) {
-            parseNextConstraint(rawConstraintResultList, checkAttributeIterator);
-        }
+    public CheckAttributeParser(String[] checkAttribute) {
+        this.checkAttributeIterator = new CheckAttributeIterator(checkAttribute);
     }
 
-    abstract protected void parseNextConstraint(List<T> rawConstraintResultList, CheckAttributeIterator checkAttributeIterator);
+    public List<RawConstraint> parse() {
+        while (checkAttributeIterator.hasConstraintsLeft()) {
+            rawConstraints.add(parseNextConstraint());
+        }
+        return rawConstraints;
+    }
 
-    protected String getUserProvidedPostfix(CheckAttributeIterator checkAttributeIterator) {
+    abstract protected RawConstraint parseNextConstraint();
+
+    protected String getUserProvidedPostfix() {
         if (IRNode.isCompositeIRNode(checkAttributeIterator.getCurrentElement())) {
-            return parseUserProvidedPostfix(checkAttributeIterator);
+            return parseUserProvidedPostfix();
         } else {
             return null;
         }
     }
 
-    private String parseUserProvidedPostfix(CheckAttributeIterator checkAttributeIterator) {
+    private String parseUserProvidedPostfix() {
         if (!checkAttributeIterator.hasConstraintsLeft()) {
-            reportMissingCompositeValue(checkAttributeIterator);
+            reportMissingCompositeValue();
         }
         return checkAttributeIterator.nextElement();
     }
 
-    private static void reportMissingCompositeValue(CheckAttributeIterator checkAttributeIterator) {
+    private void reportMissingCompositeValue() {
         String nodeName = IRNode.getCompositeNodeName(checkAttributeIterator.getCurrentElement());
         throw new TestFormatException("Must provide additional value at index " + checkAttributeIterator.getCurrentIndex()
                                       + " right after IRNode." + nodeName);

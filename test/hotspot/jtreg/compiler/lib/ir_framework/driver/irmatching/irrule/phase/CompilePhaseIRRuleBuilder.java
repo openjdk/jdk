@@ -26,13 +26,12 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CountsAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.FailOnAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.RawConstraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.*;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 import compiler.lib.ir_framework.shared.TestFormat;
 
 import java.util.*;
@@ -46,7 +45,7 @@ import java.util.stream.Collectors;
  */
 public class CompilePhaseIRRuleBuilder {
     private final List<RawConstraint> rawFailOnConstraints;
-    private final List<RawCountsConstraint> rawCountsConstraints;
+    private final List<RawConstraint> rawCountsConstraints;
     private final IRMethod irMethod;
     private final IR irAnno;
 
@@ -55,8 +54,8 @@ public class CompilePhaseIRRuleBuilder {
     private CompilePhaseIRRuleBuilder(IRMethod irMethod, IR irAnno) {
         this.irMethod = irMethod;
         this.irAnno = irAnno;
-        this.rawFailOnConstraints = FailOnAttributeParser.parse(irAnno.failOn());
-        this.rawCountsConstraints = CountsAttributeParser.parse(irAnno.counts());
+        this.rawFailOnConstraints = new FailOnAttributeParser(irAnno.failOn()).parse();
+        this.rawCountsConstraints = new CountsAttributeParser(irAnno.counts()).parse();
     }
 
     /**
@@ -89,8 +88,8 @@ public class CompilePhaseIRRuleBuilder {
     }
 
     private Map<CompilePhase, ConstraintLists> collectConstraintsForPhases() {
-        List<Constraint> failOnConstraints = RawConstraintParser.parse(rawFailOnConstraints, CompilePhase.DEFAULT, irMethod);
-        List<Constraint> countsConstraints = RawConstraintParser.parse(rawCountsConstraints, CompilePhase.DEFAULT, irMethod);
+        List<Constraint> failOnConstraints = parseRawConstraints(rawFailOnConstraints, CompilePhase.DEFAULT);
+        List<Constraint> countsConstraints = parseRawConstraints(rawCountsConstraints, CompilePhase.DEFAULT);
         Map<CompilePhase, ConstraintLists> constraintsMap = new HashMap<>();
         createConstraintLists(constraintsMap, failOnConstraints, true);
         createConstraintLists(constraintsMap, countsConstraints, false);
@@ -116,8 +115,8 @@ public class CompilePhaseIRRuleBuilder {
     }
 
     private void createCompilePhaseIRRule(CompilePhase compilePhase) {
-        List<Constraint> failOnConstraints = RawConstraintParser.parse(rawFailOnConstraints, compilePhase, irMethod);
-        List<Constraint> countsConstraints = RawConstraintParser.parse(rawCountsConstraints, compilePhase, irMethod);
+        List<Constraint> failOnConstraints = parseRawConstraints(rawFailOnConstraints, compilePhase);
+        List<Constraint> countsConstraints = parseRawConstraints(rawCountsConstraints, compilePhase);
         createCompilePhaseIRRule(failOnConstraints, countsConstraints, compilePhase);
     }
 
@@ -131,6 +130,15 @@ public class CompilePhaseIRRuleBuilder {
             Counts counts = countsConstraints.isEmpty() ? null : new Counts(countsConstraints);
             compilePhaseIRRules.add(new CompilePhaseIRRule(compilePhase, failOn, counts));
         }
+    }
+
+    private List<Constraint> parseRawConstraints(List<RawConstraint> rawConstraints,
+                                                        CompilePhase compilePhase) {
+        List<Constraint> constraintResultList = new ArrayList<>();
+        for (RawConstraint rawConstraint : rawConstraints) {
+            constraintResultList.add(rawConstraint.parse(compilePhase, irMethod));
+        }
+        return constraintResultList;
     }
 }
 
