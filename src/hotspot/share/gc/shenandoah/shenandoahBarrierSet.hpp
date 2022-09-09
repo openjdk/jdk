@@ -175,6 +175,8 @@ public:
     template <typename T>
     static oop oop_atomic_xchg_not_in_heap(T* addr, oop new_value);
 
+    template <typename T>
+    static void oop_store_common(T* addr, oop value);
   };
 
 };
