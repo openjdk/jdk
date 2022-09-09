@@ -1640,6 +1640,9 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         if (imem != NULL)  add_users_to_worklist0(imem);
       }
     }
+    // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
+    // CatchNode::Value() is responsible for killing that path. The CatchNode has to be explicitly enqueued for igvn
+    // to guarantee the change is not missed.
     if (use_op == Op_AllocateArray && n == use->in(AllocateNode::ValidLengthTest)) {
       Node* p = use->as_AllocateArray()->proj_out_or_null(TypeFunc::Control);
       if (p != NULL) {

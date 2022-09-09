@@ -2037,6 +2037,11 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // in the loop to break the loop, then test is again outside of the
       // loop to determine which way the loop exited.
       // Loop predicate If node connects to Bool node through Opaque1 node.
+      //
+      // If the use is an AllocateArray through its ValidLengthTest input,
+      // make sure the Bool/Cmp input is cloned down to avoid a Phi between
+      // the AllocateArray node and its ValidLengthTest input that could cause
+      // split if to break.
       if (use->is_If() || use->is_CMove() || C->is_predicate_opaq(use) || use->Opcode() == Op_Opaque4 ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
