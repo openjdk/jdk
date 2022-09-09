@@ -968,7 +968,8 @@ public class HttpClient extends NetworkClient {
             code = Integer.parseInt(resp, ind, ind + 3, 10);
         } catch (Exception e) {}
 
-        if (code == HTTP_CONTINUE && ignoreContinue) {
+        // ignore interim informational responses and continue to wait for final response
+        if ((code == HTTP_CONTINUE && ignoreContinue) || (code >= 102 && code <= 199)) {
             responses.reset();
             return parseHTTPHeader(responses, pi, httpuc);
         }
