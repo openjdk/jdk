@@ -1290,7 +1290,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
 
     InstanceKlass* spec_klass = vmClasses::ClassLoader_klass();
 
-    // Call public unsynchronized loadClassInternal(String) directly for all class loaders.
+    // Call private unsynchronized loadClassInternal(String) directly for all class loaders.
     JavaCalls::call_virtual(&result,
                             class_loader,
                             spec_klass,
