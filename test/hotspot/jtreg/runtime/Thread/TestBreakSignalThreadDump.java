@@ -35,7 +35,7 @@
  * @test id=with_jsig
  * @bug 8292695
  * @summary Check that Ctrl-\ causes HotSpot VM to print a full thread dump when signal chaining is used.
- * @requires os.family == "linux" | os.family == "mac"
+ * @requires os.family != "windows" & os.family != "aix"
  * @library /vmTestbase
  *          /test/lib
  * @run driver TestBreakSignalThreadDump load_libjsig
@@ -59,6 +59,8 @@ public class TestBreakSignalThreadDump {
 
         public static void main(String[] argv) throws Exception {
             ProcessUtils.sendCtrlBreak();
+            // Wait a bit, as JVM processes the break signal asynchronously.
+            Thread.sleep(1000);
             System.out.println("Done!");
         }
     }
