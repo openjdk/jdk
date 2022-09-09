@@ -21,7 +21,7 @@
  * questions.
  */
 
-package ir_framework.tests.phase;
+package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.FlagVMProcess;
@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=240 -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                               -XX:+WhiteBoxAPI ir_framework.tests.phase.TestPhaseIRMatching
+ *                               -XX:+WhiteBoxAPI ir_framework.tests.TestPhaseIRMatching
  */
 public class TestPhaseIRMatching {
 

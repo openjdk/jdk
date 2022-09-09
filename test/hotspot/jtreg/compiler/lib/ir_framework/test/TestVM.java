@@ -363,7 +363,9 @@ public class TestVM {
             TestFormat.checkNoThrow(WHITE_BOX.enqueueInitializerForCompilation(c, level.getValue()),
                                     "Failed to enqueue <clinit> of " + c + " for compilation. Did you specify "
                                     + "@ForceCompileClassInitializer without providing a static class initialization? "
-                                    + "Make sure to provide any form of static initialization or remove the annotation.");
+                                    + "Make sure to provide any form of static initialization or remove the annotation. "
+                                    + "For debugging purposes, -DIgnoreCompilerControls=true can be used to temporarly "
+                                    + "ignore @ForceCompileClassInitializer annotations.");
         }
     }
 
