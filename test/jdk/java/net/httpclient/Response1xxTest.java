@@ -77,6 +77,7 @@ public class Response1xxTest {
         http2Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost", false, 0));
         http2Server.addHandler(new Http2Handler(), "/http2/102");
         http2Server.addHandler(new Http2Handler(), "/http2/103");
+        http2Server.addHandler(new Http2Handler(), "/http2/100");
         http2Server.addHandler(new OnlyInformationalHandler(), "/http2/only-informational");
         http2RequestURIBase = "http://" + http2Server.serverAuthority() + "/http2";
         http2Server.start();
@@ -108,6 +109,7 @@ public class Response1xxTest {
 
         private static final String REQ_LINE_FOO = "GET /test/foo HTTP/1.1\r\n";
         private static final String REQ_LINE_BAR = "GET /test/bar HTTP/1.1\r\n";
+        private static final String REQ_LINE_HELLO = "GET /test/hello HTTP/1.1\r\n";
 
 
         private final ServerSocket serverSocket;
@@ -142,13 +144,14 @@ public class Response1xxTest {
                             + " :\n" + requestLine);
                     final int informationalResponseCode;
                     if (requestLine.startsWith(REQ_LINE_FOO)) {
-                        // handle /test/foo request (we will send intermediate/informational 102
-                        // response in this case)
+                        // we will send intermediate/informational 102 response
                         informationalResponseCode = 102;
                     } else if (requestLine.startsWith(REQ_LINE_BAR)) {
-                        // handle /test/bar request (we will send intermediate/informational 103
-                        // response in this case)
+                        // we will send intermediate/informational 103 response
                         informationalResponseCode = 103;
+                    } else if (requestLine.startsWith(REQ_LINE_HELLO)) {
+                        // we will send intermediate/informational 100 response
+                        informationalResponseCode = 100;
                     } else {
                         // unexpected client. ignore and close the client
                         System.err.println("Ignoring unexpected request from client " + socket);
@@ -208,7 +211,20 @@ public class Response1xxTest {
         @Override
         public void handle(final HttpServerAdapters.HttpTestExchange exchange) throws IOException {
             final URI requestURI = exchange.getRequestURI();
-            final int informationResponseCode = requestURI.getPath().endsWith("/102") ? 102 : 103;
+            final int informationResponseCode;
+            if (requestURI.getPath().endsWith("/102")) {
+                informationResponseCode = 102;
+            } else if (requestURI.getPath().endsWith("/103")) {
+                informationResponseCode = 103;
+            } else if (requestURI.getPath().endsWith("/100")) {
+                informationResponseCode = 100;
+            } else {
+                // unexpected request
+                System.err.println("Unexpected request " + requestURI + " from client "
+                        + exchange.getRemoteAddress());
+                exchange.sendResponseHeaders(400, -1);
+                return;
+            }
             // send informational response headers a few times (spec allows them to
             // be sent multiple times)
             for (int i = 0; i < 3; i++) {
@@ -263,7 +279,8 @@ public class Response1xxTest {
                 .proxy(HttpClient.Builder.NO_PROXY).build();
         final URI[] requestURIs = new URI[]{
                 new URI(http1RequestURIBase + "/test/foo"),
-                new URI(http1RequestURIBase + "/test/bar")};
+                new URI(http1RequestURIBase + "/test/bar"),
+                new URI(http1RequestURIBase + "/test/hello")};
         for (final URI requestURI : requestURIs) {
             final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
             System.out.println("Issuing request to " + requestURI);
@@ -288,7 +305,8 @@ public class Response1xxTest {
                 .proxy(HttpClient.Builder.NO_PROXY).build();
         final URI[] requestURIs = new URI[]{
                 new URI(http2RequestURIBase + "/102"),
-                new URI(http2RequestURIBase + "/103")};
+                new URI(http2RequestURIBase + "/103"),
+                new URI(http2RequestURIBase + "/100")};
         for (final URI requestURI : requestURIs) {
             final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
             System.out.println("Issuing request to " + requestURI);

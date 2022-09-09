@@ -498,13 +498,18 @@ final class Exchange<T> {
      */
     private CompletableFuture<Response> ignore1xxResponse(final Response rsp) {
         final int statusCode = rsp.statusCode();
-        // we ignore any response code which is 1xx, but not 100 or 101. For 100 and 101,
-        // we handle it specifically as defined in the RFC-2616 (HTTP 1.1 spec). Any other
-        // 1xx response code isn't part of the HTTP 1.1 spec and the spec states that
-        // these 1xx response codes are informational and ignored and the clients are
-        // expected to wait for the actual response (headers) to be sent back at a later
-        // time.
-        if (statusCode >= 102 && statusCode <= 199) {
+        // we ignore any response code which is 1xx.
+        // For 100 (with the request configured to expect-continue) and 101, we handle it
+        // specifically as defined in the RFC-2616 (HTTP 1.1 spec), outside of this method.
+        // As noted in RFC-7231, section 6.2.1, if response code is 100 and if the request wasn't
+        // configured with expectContinue, then we ignore the 100 response and wait for the final
+        // response (just like any other 1xx response)
+        // Any other response code between 102 and 199 (both inclusive) aren't specified in the
+        // HTTP 1.1 spec. The spec states that these 1xx response codes are informational and
+        // interim and the client will ignore them and will continue to wait to receive the
+        // final response (headers)
+        if ((statusCode >= 102 && statusCode <= 199)
+                || (statusCode == 100 && !request.expectContinue)) {
             Log.logTrace("Ignoring (1xx informational) response code {0}", rsp.statusCode());
             if (debug.on()) {
                 debug.log("Ignoring (1xx informational) response code "
