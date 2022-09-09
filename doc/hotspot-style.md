@@ -1070,8 +1070,6 @@ and other supported compilers may not have anything similar.
 * Unrestricted Unions
 ([n2544](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf))
 
-* Covariant return types
-
 ### Excluded Features
 
 * New string and character literals

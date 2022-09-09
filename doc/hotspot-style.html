@@ -429,7 +429,6 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p><code>override</code> virtual specifiers for virtual functions (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">n2928</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">n3206</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">n3272</a>)</p></li>
 <li><p>Range-based <code>for</code> loops (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html">n2930</a>) (<a href="https://en.cppreference.com/w/cpp/language/range-for">range-for</a>)</p></li>
 <li><p>Unrestricted Unions (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf">n2544</a>)</p></li>
-<li><p>Covariant return types</p></li>
 </ul>
 <h3 id="excluded-features">Excluded Features</h3>
 <ul>
@@ -448,7 +447,7 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p>Avoid non-local variables with non-constexpr initialization. In particular, avoid variables with types requiring non-trivial initialization or destruction. Initialization order problems can be difficult to deal with and lead to surprises, as can destruction ordering. HotSpot doesn't generally try to cleanup on exit, and running destructors at exit can also lead to problems.</p></li>
 <li><p><code>[[deprecated]]</code> attribute (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3760.html">n3760</a>) — Not relevant in HotSpot code.</p></li>
 <li><p>Avoid most operator overloading, preferring named functions. When operator overloading is used, ensure the semantics conform to the normal expected behavior of the operation.</p></li>
-<li><p>Avoid most implicit conversion constructors and (implicit or explicit) conversion operators. (Note that conversion to <code>bool</code> isn't needed in HotSpot code because of the "no implicit boolean" guideline.)</p></li>
+<li><p>Avoid most implicit conversion constructors and (implicit or explicit) conversion operators. (Note that conversion to <code>bool</code> isn't needed in HotSpot code because of the &quot;no implicit boolean&quot; guideline.)</p></li>
 <li><p>Avoid <code>goto</code> statements.</p></li>
 </ul>
 <h3 id="undecided-features">Undecided Features</h3>
