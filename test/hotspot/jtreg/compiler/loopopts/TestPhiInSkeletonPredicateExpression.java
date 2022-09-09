@@ -23,7 +23,7 @@
 
 /*
  * @test
- * bug 8291599
+ * @bug 8291599
  * @summary Assertion in PhaseIdealLoop::skeleton_predicate_has_opaque after JDK-8289127
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:LoopMaxUnroll=0 TestPhiInSkeletonPredicateExpression
  */
