@@ -968,8 +968,14 @@ public class HttpClient extends NetworkClient {
             code = Integer.parseInt(resp, ind, ind + 3, 10);
         } catch (Exception e) {}
 
-        // ignore interim informational responses and continue to wait for final response
-        if ((code == HTTP_CONTINUE && ignoreContinue) || (code >= 102 && code <= 199)) {
+        // ignore interim informational responses and continue to wait for final response.
+        // A note about 101 response - we don't support protocol upgrade through
+        // the request "Upgrade:" header, so if a server still unexpectedly sends a 101 response,
+        // we just ignore it. The client is allowed to do this, RFC-9110 section 15.2 says:
+        // "A user agent MAY ignore unexpected 1xx responses"
+        if ((code == HTTP_CONTINUE && ignoreContinue)
+                || (code >= 102 && code <= 199)
+                || code == 101 /* 101 Upgrade is not supported by the client */) {
             responses.reset();
             return parseHTTPHeader(responses, pi, httpuc);
         }
