@@ -32,7 +32,6 @@ class ZForwarding;
 class ZForwardingTable {
   friend class VMStructs;
   friend class ZOldGenerationPagesSafeIterator;
-  friend class ZForwardingTableParallelIterator;
 
 private:
   ZGranuleMap<ZForwarding*> _map;
@@ -46,18 +45,6 @@ public:
 
   void insert(ZForwarding* forwarding);
   void remove(ZForwarding* forwarding);
-};
-
-class ZForwardingTableParallelIterator : public StackObj {
-private:
-  const ZForwardingTable* _table;
-  ZIndexDistributor       _index_distributor;
-
-public:
-  ZForwardingTableParallelIterator(const ZForwardingTable* table);
-
-  template <typename Function>
-  void do_forwardings(Function function);
 };
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_HPP

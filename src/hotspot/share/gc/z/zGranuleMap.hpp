@@ -34,7 +34,6 @@ class ZGranuleMap {
   template <typename, bool> friend class ZGranuleMapIterator;
   friend class ZForwardingTable;
   friend class ZPageTable;
-  friend class ZForwardingTableParallelIterator;
   friend class ZOldGenerationPagesSafeIterator;
 
 private:
