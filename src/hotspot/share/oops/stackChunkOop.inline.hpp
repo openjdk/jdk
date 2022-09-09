@@ -133,7 +133,7 @@ inline bool stackChunkOopDesc::is_in_chunk(void* p) const {
 bool stackChunkOopDesc::is_usable_in_chunk(void* p) const {
 #if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
   HeapWord* start = (HeapWord*)start_address() + sp() - frame::sender_sp_offset;
-#elif defined(RISCV64)
+#elif defined(RISCV64) && !defined(ZERO)
   HeapWord* start = (HeapWord*)start_address() + sp() - 2;
 #else
   Unimplemented();
