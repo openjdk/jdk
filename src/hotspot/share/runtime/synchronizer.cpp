@@ -524,9 +524,7 @@ void ObjectSynchronizer::exit(oop object, JavaThread* current) {
       monitor->exit(current);
     }
     LockStack& lock_stack = current->lock_stack();
-    oop top_lock = lock_stack.pop();
-    assert(top_lock == object, "unbalanced monitorenter/exit: top_lock: " PTR_FORMAT ", object: " PTR_FORMAT,
-           p2i(top_lock), p2i(object));
+    lock_stack.remove(object);
     return;
   }
 

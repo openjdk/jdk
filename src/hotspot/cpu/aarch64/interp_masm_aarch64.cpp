@@ -809,6 +809,12 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     save_bcp(); // Save in case of exception
 
+    // Check for non-symmetric locking. This is allowed by the spec and the interpreter
+    // must handle it.
+    ldr(header_reg, Address(rthread, Thread::lock_stack_current_offset()));
+    cmpoop(header_reg, obj_reg);
+    br(Assembler::NE, slow_case);
+
     ldr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     fast_unlock(obj_reg, header_reg, swap_reg, rscratch1, slow_case);
     b(count);
