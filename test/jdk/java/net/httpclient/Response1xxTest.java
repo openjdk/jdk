@@ -35,6 +35,8 @@ import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import jdk.test.lib.net.URIBuilder;
+
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -45,12 +47,12 @@ import org.testng.annotations.Test;
  * @bug 8292044
  * @summary Tests behaviour of HttpClient when server responds with 102 or 103 status codes
  * @modules java.base/sun.net.www.http
- * java.net.http/jdk.internal.net.http.common
- * java.net.http/jdk.internal.net.http.frame
- * java.net.http/jdk.internal.net.http.hpack
- * java.logging
- * jdk.httpserver
- * @library http2/server
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ *          java.logging
+ *          jdk.httpserver
+ * @library /test/lib http2/server
  * @build Http2TestServer HttpServerAdapters
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  * *                   -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
@@ -71,15 +73,18 @@ public class Response1xxTest {
         serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         server = new Http11Server(serverSocket);
         new Thread(server).start();
-        http1RequestURIBase = "http://" + serverSocket.getInetAddress().getHostAddress()
-                + ":" + serverSocket.getLocalPort();
+        http1RequestURIBase = URIBuilder.newBuilder().scheme("http").loopback()
+                .port(serverSocket.getLocalPort()).build().toString();
 
         http2Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost", false, 0));
         http2Server.addHandler(new Http2Handler(), "/http2/102");
         http2Server.addHandler(new Http2Handler(), "/http2/103");
         http2Server.addHandler(new Http2Handler(), "/http2/100");
         http2Server.addHandler(new OnlyInformationalHandler(), "/http2/only-informational");
-        http2RequestURIBase = "http://" + http2Server.serverAuthority() + "/http2";
+        http2RequestURIBase = URIBuilder.newBuilder().scheme("http").loopback()
+                .port(http2Server.getAddress().getPort())
+                .path("/http2").build().toString();
+
         http2Server.start();
         System.out.println("Started HTTP2 server at " + http2Server.getAddress());
     }
