@@ -29,6 +29,9 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  private:
+  // Return true if the phase output is in the scratch emit size mode.
+  virtual bool in_scratch_emit_size() override;
+
   void element_compare(Register r1, Register r2,
                        Register result, Register cnt,
                        Register tmp1, Register tmp2,

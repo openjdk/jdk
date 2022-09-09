@@ -49,6 +49,9 @@ class MacroAssembler: public Assembler {
   // Alignment
   int align(int modulus, int extra_offset = 0);
 
+  // nop
+  void post_call_nop();
+
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP
   // because signal based thread suspend/resume could happen asynchronously.
@@ -378,6 +381,12 @@ class MacroAssembler: public Assembler {
   }
 
   static int patch_oop(address insn_addr, address o);
+
+  // Return whether code is emitted to a scratch blob.
+  virtual bool in_scratch_emit_size() {
+    return false;
+  }
+
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
   void emit_static_call_stub();
 
@@ -502,6 +511,9 @@ class MacroAssembler: public Assembler {
 
   void push_CPU_state(bool save_vectors = false, int vector_size_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, int vector_size_in_bytes = 0);
+
+  void push_cont_fastpath(Register java_thread);
+  void pop_cont_fastpath(Register java_thread);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();

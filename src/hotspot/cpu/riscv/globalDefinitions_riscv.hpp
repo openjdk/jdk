@@ -43,6 +43,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#define SUPPORT_MONITOR_COUNT
+
 #define SUPPORT_RESERVED_STACK_AREA
 
 #define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false

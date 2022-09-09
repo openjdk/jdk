@@ -783,7 +783,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg = x10;
     const Register tmp = c_rarg2;
@@ -816,7 +816,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     assert(lock_offset == 0,
            "displached header must be first word in BasicObjectLock");
 
-    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
     // Test if the oopMark is an obvious stack pointer, i.e.,
     //  1) (mark & 7) == 0, and
@@ -833,7 +833,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     // Save the test result, for recursive case, the result is zero
     sd(swap_reg, Address(lock_reg, mark_offset));
-    beqz(swap_reg, done);
+    beqz(swap_reg, count);
 
     bind(slow_case);
 
@@ -841,6 +841,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
+
+    j(done);
+
+    bind(count);
+    increment(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
   }
@@ -865,7 +870,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg   = x10;
     const Register header_reg = c_rarg2;  // Will contain the old oopMark
@@ -888,14 +893,19 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
                            BasicLock::displaced_header_offset_in_bytes()));
 
     // Test for recursion
-    beqz(header_reg, done);
+    beqz(header_reg, count);
 
     // Atomic swap back the old header
-    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
     // Call the runtime routine for slow case.
     sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
+
+    j(done);
+
+    bind(count);
+    decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
 

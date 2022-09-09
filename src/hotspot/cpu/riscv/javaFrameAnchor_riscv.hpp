@@ -83,4 +83,6 @@ public:
 
   intptr_t* last_Java_fp(void)                   { return _last_Java_fp; }
 
+  void set_last_Java_fp(intptr_t* fp)            { _last_Java_fp = fp; }
+
 #endif // CPU_RISCV_JAVAFRAMEANCHOR_RISCV_HPP

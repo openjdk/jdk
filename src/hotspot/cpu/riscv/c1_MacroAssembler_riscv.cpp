@@ -104,7 +104,9 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   sd(hdr, Address(disp_hdr, 0));
   // otherwise we don't care about the result and handle locking via runtime call
   bnez(hdr, slow_case, /* is_far */ true);
+  // done
   bind(done);
+  increment(Address(xthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
 
@@ -133,7 +135,9 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   } else {
     cmpxchgptr(disp_hdr, hdr, obj, t1, done, &slow_case);
   }
+  // done
   bind(done);
+  decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 }
 
 // Defines obj, preserves var_size_in_bytes
