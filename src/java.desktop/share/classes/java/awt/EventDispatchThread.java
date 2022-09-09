@@ -202,10 +202,6 @@ class EventDispatchThread extends Thread {
 
             eq.dispatchEvent(event);
         }
-        catch (ThreadDeath death) {
-            doDispatch = false;
-            throw death;
-        }
         catch (InterruptedException interruptedException) {
             doDispatch = false; // AppContext.dispose() interrupts all
                                 // Threads in the AppContext

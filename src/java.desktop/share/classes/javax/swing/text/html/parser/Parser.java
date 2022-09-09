@@ -2386,11 +2386,6 @@ class Parser implements DTDConstants {
             errorContext();
             error("exception", e.getClass().getName(), e.getMessage());
             e.printStackTrace();
-        } catch (ThreadDeath e) {
-            errorContext();
-            error("terminated");
-            e.printStackTrace();
-            throw e;
         } finally {
             for (; stack != null ; stack = stack.next) {
                 handleEndTag(stack.tag);

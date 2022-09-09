@@ -167,11 +167,6 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
                         break;
                     }
                 }
-            } catch (ThreadDeath td) {
-                //XXX: if there isn't native code on the stack, the VM just
-                //kills the thread right away. Do we expect to catch it
-                //nevertheless?
-                break;
             } catch (Throwable t) {
                 // TODO: log
                 System.err.println("Exception on the toolkit thread");

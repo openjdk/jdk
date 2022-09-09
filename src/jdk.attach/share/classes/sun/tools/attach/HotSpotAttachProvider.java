@@ -75,9 +75,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
             if (t instanceof ExceptionInInitializerError) {
                 t = t.getCause();
             }
-            if (t instanceof ThreadDeath) {
-                throw (ThreadDeath)t;
-            }
             if (t instanceof SecurityException) {
                 return result;
             }
@@ -101,9 +98,7 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
                     result.add(new HotSpotVirtualMachineDescriptor(this, pid, name));
                 }
             } catch (Throwable t) {
-                if (t instanceof ThreadDeath) {
-                    throw (ThreadDeath)t;
-                }
+                // ignore
             } finally {
                 if (mvm != null) {
                     mvm.detach();
@@ -138,10 +133,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
                 return;
             }
         } catch (Throwable t) {
-            if (t instanceof ThreadDeath) {
-                ThreadDeath td = (ThreadDeath)t;
-                throw td;
-            }
             // we do not know what this id is
             return;
         } finally {

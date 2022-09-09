@@ -261,10 +261,6 @@ public abstract class AttachProvider {
                     try {
                         providers.add(i.next());
                     } catch (Throwable t) {
-                        if (t instanceof ThreadDeath) {
-                            ThreadDeath td = (ThreadDeath)t;
-                            throw td;
-                        }
                         // Log errors and exceptions since we cannot return them
                         t.printStackTrace();
                     }

@@ -99,12 +99,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
 
             try {
                 connector = connectors.next();
-            } catch (ThreadDeath x) {
-                throw x;
-            } catch (Exception x) {
-                System.err.println(x);
-                continue;
-            } catch (Error x) {
+            } catch (Exception | Error x) {
                 System.err.println(x);
                 continue;
             }
@@ -128,12 +123,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
 
             try {
                 transportService = transportServices.next();
-            } catch (ThreadDeath x) {
-                throw x;
-            } catch (Exception x) {
-                System.err.println(x);
-                continue;
-            } catch (Error x) {
+            } catch (Exception | Error x) {
                 System.err.println(x);
                 continue;
             }
