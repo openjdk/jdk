@@ -32,7 +32,6 @@ import java.util.List;
 /*
  * @test HandshakeTransitionTest
  * @summary This does a sanity test of the poll in the native wrapper.
- * @requires vm.debug
  * @library /testlibrary /test/lib
  * @build HandshakeTransitionTest
  * @run main/native HandshakeTransitionTest
@@ -44,6 +43,7 @@ public class HandshakeTransitionTest {
     public static void main(String[] args) throws Exception {
         List<String> commands = new ArrayList<>();
         commands.add("-Djava.library.path=" + Utils.TEST_NATIVE_PATH);
+        commands.add("-XX:+UnlockDiagnosticVMOptions");
         commands.add("-XX:+SafepointALot");
         commands.add("-XX:+HandshakeALot");
         commands.add("-XX:GuaranteedSafepointInterval=20");
