@@ -356,6 +356,11 @@ namespace tstrings {
             data << fromUtf8(msg);
         }
 
+        any& operator << (const std::string& msg) {
+            data << fromUtf8(msg);
+            return *this;
+        }
+
 #ifdef TSTRINGS_WITH_WCHAR
         any(std::wstring::const_pointer msg) {
             data << msg;
@@ -365,8 +370,8 @@ namespace tstrings {
             data << msg;
         }
 
-        any& operator << (const std::wstring& v) {
-            data << v;
+        any& operator << (const std::wstring& msg) {
+            data << msg;
             return *this;
         }
 
