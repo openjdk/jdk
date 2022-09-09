@@ -1173,7 +1173,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
   // for real runtime callouts it will be 11 instructions
   // see riscv_enc_java_to_runtime
   //   la(t1, retaddr)                ->  auipc + addi
-  //   la(t0, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi
+  //   la(t0, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi + slli + addi
   //   addi(sp, sp, -2 * wordSize)    ->  addi
   //   sd(t1, Address(sp, wordSize))  ->  sd
   //   jalr(t0)                       ->  jalr
@@ -1181,7 +1181,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
   if (cb != NULL) {
     return 1 * NativeInstruction::instruction_size;
   } else {
-    return 11 * NativeInstruction::instruction_size;
+    return 13 * NativeInstruction::instruction_size;
   }
 }
 
