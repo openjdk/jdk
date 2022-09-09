@@ -2102,7 +2102,7 @@ encode %{
     Assembler::CompressibleRegion cr(&_masm);
     int64_t con = (int64_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
-    __ li(dst_reg, con);
+    __ mv(dst_reg, con);
   %}
 
   enc_class riscv_enc_mov_p(iRegP dst, immP src) %{
@@ -2119,7 +2119,7 @@ encode %{
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
         assert(rtype == relocInfo::none, "unexpected reloc type");
-        __ li(dst_reg, $src$$constant);
+        __ mv(dst_reg, $src$$constant);
       }
     }
   %}
@@ -2128,7 +2128,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Assembler::CompressibleRegion cr(&_masm);
     Register dst_reg = as_Register($dst$$reg);
-    __ li(dst_reg, 1);
+    __ mv(dst_reg, 1);
   %}
 
   enc_class riscv_enc_mov_byte_map_base(iRegP dst) %{
@@ -2255,7 +2255,7 @@ encode %{
 
     __ bind(miss);
     if (!$primary) {
-      __ li(cr_reg, 1);
+      __ mv(cr_reg, 1);
     }
 
     __ bind(done);
@@ -2396,7 +2396,7 @@ encode %{
       // Check if the owner is self by comparing the value in the
       // markWord of object (disp_hdr) with the stack pointer.
       __ sub(disp_hdr, disp_hdr, sp);
-      __ li(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
+      __ mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
       // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto cont,
       // hence we can store 0 as the displaced header in the box, which indicates that it is a
       // recursive lock.
