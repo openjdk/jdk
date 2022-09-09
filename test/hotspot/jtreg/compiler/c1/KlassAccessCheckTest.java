@@ -27,9 +27,7 @@
  * @requires vm.compiler1.enabled
  * @compile KlassAccessCheckPackagePrivate.jasm
  * @compile KlassAccessCheck.jasm
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1
- *                   -XX:+PrintCompilation -XX:CompileCommand=dontinline,KlassAccessCheck.test*
- *                     compiler.c1.KlassAccessCheckTest
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 compiler.c1.KlassAccessCheckTest
  */
 
 package compiler.c1;
