@@ -522,7 +522,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   if (is_cae) {
     __ mv(result, expected);
   } else {
-    __ addi(result, zr, 1);
+    __ mv(result, 1);
   }
   __ j(done);
 

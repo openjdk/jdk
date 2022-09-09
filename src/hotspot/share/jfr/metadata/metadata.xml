@@ -497,6 +497,14 @@
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
   </Event>
 
+  <Event name="GCCPUTime" category="Java Virtual Machine, GC, Detailed" label="GC CPU Time" description="GC CPU Time information. Supported: G1GC, ParallelGC and SerialGC"
+    stackTrace="false" startTime="false">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="ulong" contentType="nanos" name="userTime" label="User Time" />
+    <Field type="ulong" contentType="nanos" name="systemTime" label="System Time" />
+    <Field type="ulong" contentType="nanos" name="realTime" label="Real Time" />
+  </Event>
+
   <Event name="GCPhasePause" category="Java Virtual Machine, GC, Phases" label="GC Phase Pause" thread="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="string" name="name" label="Name" />
