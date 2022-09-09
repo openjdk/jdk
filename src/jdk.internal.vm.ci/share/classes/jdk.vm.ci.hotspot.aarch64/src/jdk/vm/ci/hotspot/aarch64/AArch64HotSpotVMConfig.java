@@ -38,6 +38,7 @@ class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
     }
 
     final boolean linuxOs = Services.getSavedProperty("os.name", "").startsWith("Linux");
+    final boolean macOs = Services.getSavedProperty("os.name", "").startsWith("Mac");
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 
