@@ -62,6 +62,8 @@ public class CgroupSubsystemFactory {
     private Path cgroupv1MntInfoZeroHierarchy;
     private Path cgroupv2CgInfoZeroHierarchy;
     private Path cgroupv2MntInfoZeroHierarchy;
+    private Path cgroupv2MntInfoDouble;
+    private Path cgroupv2MntInfoDouble2;
     private Path cgroupv1CgInfoNonZeroHierarchy;
     private Path cgroupv1MntInfoNonZeroHierarchyOtherOrder;
     private Path cgroupv1MntInfoNonZeroHierarchy;
@@ -190,7 +192,11 @@ public class CgroupSubsystemFactory {
             "hugetlb 6   1   1\n" +
             "pids    9   80  1";  // hierarchy has to match procSelfCgroupHybridContent
     private String mntInfoCgroupsV2Only =
-            "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 none rw,seclabel,nsdelegate";
+            "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 none rw,seclabel,nsdelegate\n";
+    private String mntInfoCgroupsV2MoreLine =
+            "240 232 0:24 /../.. /cgroup-in ro,relatime - cgroup2 cgroup2 rw,nsdelegate\n";
+    private String mntInfoCgroupsV2Double = mntInfoCgroupsV2MoreLine + mntInfoCgroupsV2Only;
+    private String mntInfoCgroupsV2Double2 = mntInfoCgroupsV2Only + mntInfoCgroupsV2MoreLine;
     private String mntInfoCgroupsV1SystemdOnly =
             "35 26 0:26 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime - cgroup systemd rw,name=systemd\n" +
             "26 18 0:19 / /sys/fs/cgroup rw,relatime - tmpfs none rw,size=4k,mode=755\n";
@@ -231,6 +237,12 @@ public class CgroupSubsystemFactory {
 
             cgroupv2MntInfoZeroHierarchy = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv2");
             Files.writeString(cgroupv2MntInfoZeroHierarchy, mntInfoCgroupsV2Only);
+
+            cgroupv2MntInfoDouble = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv2_double");
+            Files.writeString(cgroupv2MntInfoDouble, mntInfoCgroupsV2Double);
+
+            cgroupv2MntInfoDouble2 = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv2_double2");
+            Files.writeString(cgroupv2MntInfoDouble2, mntInfoCgroupsV2Double2);
 
             cgroupv1CgInfoNonZeroHierarchy = Paths.get(existingDirectory.toString(), "cgroups_non_zero");
             Files.writeString(cgroupv1CgInfoNonZeroHierarchy, cgroupsNonZeroHierarchy);
@@ -374,10 +386,10 @@ public class CgroupSubsystemFactory {
         System.out.println("testCgroupv1MissingMemoryController PASSED!");
     }
 
-    public void testCgroupv2(WhiteBox wb) {
+    public void testCgroupv2(WhiteBox wb, Path mountInfo) {
         String procCgroups = cgroupv2CgInfoZeroHierarchy.toString();
         String procSelfCgroup = cgroupV2SelfCgroup.toString();
-        String procSelfMountinfo = cgroupv2MntInfoZeroHierarchy.toString();
+        String procSelfMountinfo = mountInfo.toString();
         int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(CGROUPS_V2, retval, "Expected");
         Asserts.assertTrue(isValidCgroup(retval));
@@ -421,7 +433,9 @@ public class CgroupSubsystemFactory {
         try {
             test.testCgroupv1SystemdOnly(wb);
             test.testCgroupv1NoMounts(wb);
-            test.testCgroupv2(wb);
+            test.testCgroupv2(wb, test.cgroupv2MntInfoZeroHierarchy);
+            test.testCgroupv2(wb, test.cgroupv2MntInfoDouble);
+            test.testCgroupv2(wb, test.cgroupv2MntInfoDouble2);
             test.testCgroupV1Hybrid(wb);
             test.testCgroupV1HybridMntInfoOrder(wb);
             test.testCgroupv1MissingMemoryController(wb);

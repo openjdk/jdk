@@ -87,18 +87,10 @@ public class DockerBasicTest {
     private static void testJavaVersionWithCgMounts() throws Exception {
         DockerRunOptions opts =
             new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version")
-            .addJavaOpts("-Xlog:os+container=trace")
             .addDockerOpts("-v", "/sys/fs/cgroup:/cgroups-in:ro");
 
         DockerTestUtils.dockerRunJava(opts)
             .shouldHaveExitValue(0)
-            .shouldContain("[debug][os,container] Duplicate memory controllers detected. Picking /sys/fs/cgroup/memory, skipping /cgroups-in/memory")
-            .shouldContain("[debug][os,container] Duplicate cpu controllers detected. Picking /sys/fs/cgroup/cpu,cpuacct, skipping /cgroups-in/cpu,cpuacct")
-            .shouldContain("[debug][os,container] Duplicate cpuacct controllers detected. Picking /sys/fs/cgroup/cpu,cpuacct, skipping /cgroups-in/cpu,cpuacct")
-            .shouldContain("[debug][os,container] Duplicate cpuset controllers detected. Picking /sys/fs/cgroup/cpuset, skipping /cgroups-in/cpuset")
-            .shouldContain("[debug][os,container] Duplicate pids controllers detected. Picking /sys/fs/cgroup/pids, skipping /cgroups-in/pids")
-            .shouldContain("Path to /cpu.cfs_quota_us is /sys/fs/cgroup/cpu,cpuacct/cpu.cfs_quota_us")
-            .shouldContain("Path to /cpu.cfs_period_us is /sys/fs/cgroup/cpu,cpuacct/cpu.cfs_period_us")
-            .shouldContain("Path to /memory.limit_in_bytes is /sys/fs/cgroup/memory/memory.limit_in_bytes");
+            .shouldNotContain("[os,container]");
     }
 }

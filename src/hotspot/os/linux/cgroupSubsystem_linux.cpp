@@ -134,14 +134,14 @@ void CgroupSubsystemFactory::set_controller_pathes(CgroupInfo* cg_infos,
     // case pick the one under /sys/fs/cgroup and discard others.
     if (strstr(cg_infos[controller]._mount_path, "/sys/fs/cgroup") != cg_infos[controller]._mount_path) {
       log_debug(os, container)("Duplicate %s controllers detected. Picking %s, skipping %s.",
-                                 name, mount_path, cg_infos[controller]._mount_path);
+                               name, mount_path, cg_infos[controller]._mount_path);
       os::free(cg_infos[controller]._mount_path);
       os::free(cg_infos[controller]._root_mount_path);
       cg_infos[controller]._mount_path = os::strdup(mount_path);
       cg_infos[controller]._root_mount_path = os::strdup(root_path);
     } else {
       log_debug(os, container)("Duplicate %s controllers detected. Picking %s, skipping %s.",
-                                 name, cg_infos[controller]._mount_path, mount_path);
+                               name, cg_infos[controller]._mount_path, mount_path);
     }
   } else {
     cg_infos[controller]._mount_path = os::strdup(mount_path);
@@ -327,6 +327,23 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     // block in the hybrid case.
     //
     if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %*s %s %*[^-]- %s %*s %*s", tmp_mount_point, tmp_fs_type) == 2) {
+      // On some systems duplicate controllers get mounted in addition to
+      // the main cgroup controllers most likely under /sys/fs/cgroup. In that
+      // case pick the first one under /sys/fs/cgroup and discard others.
+      if (cgroupv2_mount_point_found && strcmp("cgroup2", tmp_fs_type) == 0) {
+        if (strstr(cg_infos[0]._mount_path, "/sys/fs/cgroup") != cg_infos[0]._mount_path &&
+            strstr(tmp_mount_point, "/sys/fs/cgroup") == tmp_mount_point) {
+          log_debug(os, container)("Duplicate cgroupv2 controllers detected. Picking %s, skipping %s.",
+                                   tmp_mount_point, cg_infos[0]._mount_path);
+          for (int i = 0; i < CG_INFO_LENGTH; i++) {
+            os::free(cg_infos[i]._mount_path);
+            cg_infos[i]._mount_path = os::strdup(tmp_mount_point);
+          }
+        } else {
+          log_debug(os, container)("Duplicate cgroupv2 controllers detected. Picking %s, skipping %s.",
+                                   cg_infos[0]._mount_path, tmp_mount_point);
+        }
+      }
       // we likely have an early match return (e.g. cgroup fs match), be sure we have cgroup2 as fstype
       if (!cgroupv2_mount_point_found && strcmp("cgroup2", tmp_fs_type) == 0) {
         cgroupv2_mount_point_found = true;
