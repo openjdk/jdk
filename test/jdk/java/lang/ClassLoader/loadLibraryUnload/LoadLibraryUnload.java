@@ -113,13 +113,12 @@ public class LoadLibraryUnload {
         List<Thread> threads = new ArrayList<>();
         Object[] canary = new Object[LOADER_COUNT];
         final WeakReference<Object> wCanary[] = new WeakReference[LOADER_COUNT];
-        ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
 
         for (int i = 0 ; i < LOADER_COUNT ; i++) {
             // LOADER_COUNT loaders and 2X threads in total.
             // winner loads the library in 2 threads
             canary[i] = new Object();
-            wCanary[i] = new WeakReference<>(canary[i], refQueue);
+            wCanary[i] = new WeakReference<>(canary[i], null);
 
             Class<?> clazz = new TestLoader().loadClass("p.Class1");
             threads.add(new Thread(new LoadLibraryFromClass(clazz, canary[i])));
