@@ -4580,7 +4580,7 @@ void Compile::dump_inline_data_reduced(outputStream* out) {
   if (inl_tree == NULL) {
     return;
   }
-  // Enable interative replay file reduction
+  // Enable iterative replay file reduction
   // Output "compile" lines for depth 1 subtrees,
   // simulating that those trees were compiled
   // instead of inlined.
