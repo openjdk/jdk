@@ -1073,7 +1073,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        }
 
        if (Universe::is_fully_initialized()) {
-         st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+         st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
          st->cr();
        }
      }
@@ -1290,7 +1290,7 @@ void VMError::print_vm_info(outputStream* st) {
     GCLogPrecious::print_on_error(st);
     Universe::heap()->print_on_error(st);
     st->cr();
-    st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+    st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
     st->cr();
   }
 
@@ -1698,7 +1698,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     MemTracker::final_report(&fds);
   }
 
-  static bool skip_replay = ReplayCompiles; // Do not overwrite file during replay
+  static bool skip_replay = ReplayCompiles && !ReplayReduce; // Do not overwrite file during replay
   if (DumpReplayDataOnError && _thread && _thread->is_Compiler_thread() && !skip_replay) {
     skip_replay = true;
     ciEnv* env = ciEnv::current();

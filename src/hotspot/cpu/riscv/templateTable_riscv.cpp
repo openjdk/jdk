@@ -230,13 +230,13 @@ void TemplateTable::aconst_null()
 void TemplateTable::iconst(int value)
 {
   transition(vtos, itos);
-  __ li(x10, value);
+  __ mv(x10, value);
 }
 
 void TemplateTable::lconst(int value)
 {
   transition(vtos, ltos);
-  __ li(x10, value);
+  __ mv(x10, value);
 }
 
 void TemplateTable::fconst(int value)
@@ -3685,7 +3685,7 @@ void TemplateTable::instanceof() {
   __ j(done);
   // Come here on success
   __ bind(ok_is_subtype);
-  __ li(x10, 1);
+  __ mv(x10, 1);
 
   // Collect counts on whether this test sees NULLs a lot or not.
   if (ProfileInterpreter) {
