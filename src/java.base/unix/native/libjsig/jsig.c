@@ -258,7 +258,7 @@ JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *
      * calls, but they will only return the expected preexisting handler if executed before the modifying call.
      */
     res = call_os_sigaction(sig, act, &oldAct);
-    if (res == 0)
+    if (res == 0) {
       if (act != NULL) {
         /* store pre-existing handler as chained handler */
         sact[sig] = oldAct;
