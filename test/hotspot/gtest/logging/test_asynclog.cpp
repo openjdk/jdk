@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
+#include "logging/logFileOutput.hpp"
 #include "logging/logMessage.hpp"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
@@ -157,6 +158,90 @@ TEST_VM_F(AsyncLogTest, logMessage) {
   // check nonbreakable log messages are consecutive
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, strs));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "a noisy message from other logger"));
+}
+
+TEST_VM_F(AsyncLogTest, logBuffer) {
+  const auto Default = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
+                                      LogDecorators());
+  size_t len = strlen(TestLogFileName) + strlen(LogFileOutput::Prefix) + 1;
+  char name[len];
+  snprintf(name, len, "%s%s", LogFileOutput::Prefix, TestLogFileName);
+
+  LogFileStreamOutput* output = new LogFileOutput(name);
+  output->initialize(nullptr, nullptr);
+  auto buffer = new AsyncLogWriter::Buffer(1024);
+
+  int line = 0;
+  int written;
+  uintptr_t addr;
+  const uintptr_t mask = (uintptr_t)(sizeof(void*) - 1);
+  bool res;
+
+  res = buffer->push_back(output, Default, "a log line");
+  EXPECT_TRUE(res) << "first message should succeed.";
+  line++;
+  res = buffer->push_back(output, Default, "yet another");
+  EXPECT_TRUE(res) << "second message should succeed.";
+  line++;
+
+  auto it = buffer->iterator();
+  EXPECT_TRUE(it.hasNext());
+  const AsyncLogWriter::Message* e = it.next();
+  addr = reinterpret_cast<uintptr_t>(e);
+  EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1))); // returned vaue aligns on sizeof(pointer)
+  EXPECT_EQ(output, e->output());
+  EXPECT_EQ(0, memcmp(&Default, &e->decorations(), sizeof(LogDecorations)));
+  EXPECT_STREQ("a log line", e->message());
+  written = e->output()->write_blocking(e->decorations(), e->message());
+  EXPECT_GT(written, 0);
+
+  EXPECT_TRUE(it.hasNext());
+  e = it.next();
+  addr = reinterpret_cast<uintptr_t>(e);
+  EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1)));
+  EXPECT_EQ(output, e->output());
+  EXPECT_EQ(0, memcmp(&Default, &e->decorations(), sizeof(LogDecorations)));
+  EXPECT_STREQ("yet another", e->message());
+  written = e->output()->write_blocking(e->decorations(), e->message());
+  EXPECT_GT(written, 0);
+
+  while (buffer->push_back(output, Default, "0123456789abcdef")) {
+    line++;
+  }
+
+  EXPECT_GT(line, 2);
+  while (it.hasNext()) {
+    e = it.next();
+    addr = reinterpret_cast<uintptr_t>(e);
+    EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1)));
+    EXPECT_EQ(output, e->output());
+    EXPECT_STREQ("0123456789abcdef", e->message());
+    written = e->output()->write_blocking(e->decorations(), e->message());
+    EXPECT_GT(written, 0);
+    line--;
+  }
+  EXPECT_EQ(line, 2);
+
+  // last one, flush token. expect to succeed even buffer has been full.
+  buffer->push_flush_token();
+  EXPECT_TRUE(it.hasNext());
+  e = it.next();
+  EXPECT_EQ(e->output(), nullptr);
+  EXPECT_TRUE(e->is_token());
+  EXPECT_STREQ("", e->message());
+  EXPECT_FALSE(it.hasNext());
+
+  // reset buffer
+  buffer->reset();
+  EXPECT_FALSE(buffer->iterator().hasNext());
+
+  delete output; // close file
+  const char* strs[4];
+  strs[0] = "a log line";
+  strs[1] = "yet another";
+  strs[2] = "0123456789abcdef";
+  strs[3] = nullptr; // sentinel!
+  EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, strs));
 }
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {

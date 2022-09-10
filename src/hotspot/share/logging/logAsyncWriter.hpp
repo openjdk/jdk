@@ -56,18 +56,32 @@ class LogFileStreamOutput;
 // ConfigurationLock. In addition flush() is called during JVM termination, via LogConfiguration::finalize.
 class AsyncLogWriter : public NonJavaThread {
   friend class AsyncLogTest;
+  friend class AsyncLogTest_logBuffer_vm_Test;
   class AsyncLogLocker;
   using AsyncLogMap = ResourceHashtable<LogFileStreamOutput*,
                           uint32_t,
                           17, /*table_size*/
                           ResourceObj::C_HEAP,
                           mtLogging>;
+
+  // Messsage is the envelop of a log line and its associative data.
+  // The size is variety-length with zero-terminated c-str. It is only valid when we create it using placement new
+  // within a buffer.
+  //
+  // Example layout:
+  // ---------------------------------------------
+  // |_output|_decorations|"a log line", |pad| <- pointer aligned.
+  // |_output|_decorations|"yet another",|pad|
+  // ...
+  // |nullptr|_decorations|"",|pad| <- flush token
+  // |<- _pos
+  // ---------------------------------------------
   class Message {
+    NONCOPYABLE(Message);
+    ~Message() = delete;
     LogFileStreamOutput* const _output;
     const LogDecorations _decorations;
-
    public:
-    // only-valid for in-place new!
     Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
       : _output(output), _decorations(decorations) {
       assert(msg != nullptr, "c-str message can not be null!");
@@ -90,13 +104,12 @@ class AsyncLogWriter : public NonJavaThread {
   static const size_t TOKEN_SIZE = {align_up(sizeof(Message) + 1, sizeof(void*))};
 
   class Buffer : public CHeapObj<mtLogging> {
-    size_t _pos;
     char* _buf;
+    size_t _pos;
     size_t _capacity;
 
    public:
     Buffer(size_t capacity);
-    ~Buffer();
 
     void push_flush_token();
     bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
@@ -117,11 +130,16 @@ class AsyncLogWriter : public NonJavaThread {
     public:
       Iterator(const Buffer& buffer): _buf(buffer), _curr(0) {}
 
-      bool is_empty() const {
-        return _curr >= _buf._pos;
+      bool hasNext() const {
+        return _curr < _buf._pos;
       }
 
-      Message* next();
+      const Message* next() {
+        assert(hasNext(), "sanity check");
+        auto msg = reinterpret_cast<Message*>(_buf._buf + _curr);
+        _curr = MIN2(_curr + msg->size(), _buf._pos);
+        return msg;
+      }
     };
 
     Iterator iterator() const {

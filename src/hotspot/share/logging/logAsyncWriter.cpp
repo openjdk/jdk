@@ -53,10 +53,6 @@ AsyncLogWriter::Buffer::Buffer(size_t capacity) : _pos(0) {
   _capacity = capacity - AsyncLogWriter::TOKEN_SIZE;
 }
 
-AsyncLogWriter::Buffer::~Buffer() {
-  FREE_C_HEAP_ARRAY(char, _buf);
-}
-
 bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
   size_t len = strlen(msg) + 1; // including trailing zero
   size_t sz = align_up(sizeof(Message) + len, sizeof(void*));
@@ -72,15 +68,7 @@ bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDec
 
 void AsyncLogWriter::Buffer::push_flush_token() {
   bool result = push_back(nullptr, AsyncLogWriter::None, "");
-  assert(result, "fail to enqueue the flush token");
-}
-
-AsyncLogWriter::Message* AsyncLogWriter::Buffer::Iterator::next() {
-  assert(_curr < _buf._pos, "sanity check");
-  auto msg = reinterpret_cast<Message*>(_buf._buf + _curr);
-  _curr += msg->size();
-  _curr = MIN2(_curr, _buf._pos);
-  return msg;
+  assert(result, "fail to enqueue the flush token.");
 }
 
 void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
@@ -119,12 +107,9 @@ AsyncLogWriter::AsyncLogWriter()
     _initialized(false),
     _stats() {
 
-  size_t page_size = os::vm_page_size();
-  size_t size = align_up(AsyncLogBufferSize / 2, page_size);
-
+  size_t size = AsyncLogBufferSize / 2;
   _buffer = new Buffer(size);
   _buffer_staging = new Buffer(size);
-
   log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
   if (os::create_thread(this, os::asynclog_thread)) {
     _initialized = true;
@@ -159,10 +144,10 @@ void AsyncLogWriter::write() {
     _data_available = false;
   }
 
-  auto it = _buffer_staging->iterator();
   int req = 0;
-  while (!it.is_empty()) {
-    Message* e = it.next();
+  auto it = _buffer_staging->iterator();
+  while (it.hasNext()) {
+    const Message* e = it.next();
 
     if (!e->is_token()){
       e->output()->write_blocking(e->decorations(), e->message());
@@ -185,7 +170,7 @@ void AsyncLogWriter::write() {
   });
 
   if (req > 0) {
-    assert(req == 1, "AsyncLogWriter::flush() is NOT MT-safe!");
+    assert(req == 1, "Only one token is allowed in queue. AsyncLogWriter::flush() is NOT MT-safe!");
     _flush_sem.signal(req);
   }
 }
