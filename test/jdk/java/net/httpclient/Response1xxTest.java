@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.ProtocolException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
@@ -35,6 +36,9 @@ import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import javax.net.ssl.SSLContext;
+
+import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -52,7 +56,7 @@ import org.testng.annotations.Test;
  *          java.logging
  *          jdk.httpserver
  * @library /test/lib http2/server
- * @build Http2TestServer HttpServerAdapters
+ * @build Http2TestServer HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  * *                   -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
  */
@@ -64,8 +68,13 @@ public class Response1xxTest {
     private String http1RequestURIBase;
 
 
-    private HttpServerAdapters.HttpTestServer http2Server;
+    private HttpServerAdapters.HttpTestServer http2Server; // h2c
     private String http2RequestURIBase;
+
+
+    private SSLContext sslContext;
+    private HttpServerAdapters.HttpTestServer https2Server;  // h2
+    private String https2RequestURIBase;
 
     @BeforeClass
     public void setup() throws Exception {
@@ -79,6 +88,8 @@ public class Response1xxTest {
         http2Server.addHandler(new Http2Handler(), "/http2/102");
         http2Server.addHandler(new Http2Handler(), "/http2/103");
         http2Server.addHandler(new Http2Handler(), "/http2/100");
+        http2Server.addHandler(new Http2Handler(), "/http2/101");
+        http2Server.addHandler(new OKHandler(), "/http2/200");
         http2Server.addHandler(new OnlyInformationalHandler(), "/http2/only-informational");
         http2RequestURIBase = URIBuilder.newBuilder().scheme("http").loopback()
                 .port(http2Server.getAddress().getPort())
@@ -86,6 +97,20 @@ public class Response1xxTest {
 
         http2Server.start();
         System.out.println("Started HTTP2 server at " + http2Server.getAddress());
+
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null) {
+            throw new AssertionError("Unexpected null sslContext");
+        }
+        https2Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost",
+                true, sslContext));
+        https2Server.addHandler(new Http2Handler(), "/http2/101");
+        https2RequestURIBase = URIBuilder.newBuilder().scheme("https").loopback()
+                .port(https2Server.getAddress().getPort())
+                .path("/http2").build().toString();
+        https2Server.start();
+        System.out.println("Started (https) HTTP2 server at " + https2Server.getAddress());
+
     }
 
     @AfterClass
@@ -101,6 +126,10 @@ public class Response1xxTest {
         if (http2Server != null) {
             http2Server.stop();
             System.out.println("Stopped HTTP2 server");
+        }
+        if (https2Server != null) {
+            https2Server.stop();
+            System.out.println("Stopped (https) HTTP2 server");
         }
     }
 
@@ -126,11 +155,12 @@ public class Response1xxTest {
 
         @Override
         public void run() {
-            try {
-                System.out.println("Server running at " + serverSocket);
-                while (!stop) {
+            System.out.println("Server running at " + serverSocket);
+            while (!stop) {
+                Socket socket = null;
+                try {
                     // accept a connection
-                    final Socket socket = serverSocket.accept();
+                    socket = serverSocket.accept();
                     System.out.println("Accepted connection from client " + socket);
                     // read request
                     final String requestLine;
@@ -157,7 +187,7 @@ public class Response1xxTest {
                     } else if (requestLine.startsWith(REQ_LINE_HELLO)) {
                         // we will send intermediate/informational 100 response
                         informationalResponseCode = 100;
-                    }  else if (requestLine.startsWith(REQ_LINE_BYE)) {
+                    } else if (requestLine.startsWith(REQ_LINE_BYE)) {
                         // we will send intermediate/informational 101 response
                         informationalResponseCode = 101;
                     } else {
@@ -190,10 +220,13 @@ public class Response1xxTest {
                         os.flush();
                         System.out.println("Sent 200 response code to client " + socket);
                     }
+                } catch (Throwable t) {
+                    // close the client connection
+                    safeClose(socket);
+                    // continue accepting any other client connections until we are asked to stop
+                    System.err.println("Ignoring exception in server:");
+                    t.printStackTrace();
                 }
-            } catch (Throwable t) {
-                System.err.println("Stopping server due to exception");
-                t.printStackTrace();
             }
         }
 
@@ -233,6 +266,8 @@ public class Response1xxTest {
                 informationResponseCode = 103;
             } else if (requestURI.getPath().endsWith("/100")) {
                 informationResponseCode = 100;
+            } else if (requestURI.getPath().endsWith("/101")) {
+                informationResponseCode = 101;
             } else {
                 // unexpected request
                 System.err.println("Unexpected request " + requestURI + " from client "
@@ -282,6 +317,14 @@ public class Response1xxTest {
         }
     }
 
+    private static class OKHandler implements HttpServerAdapters.HttpTestHandler {
+
+        @Override
+        public void handle(final HttpServerAdapters.HttpTestExchange exchange) throws IOException {
+            exchange.sendResponseHeaders(200, -1);
+        }
+    }
+
     /**
      * Tests that when a HTTP/1.1 server sends intermediate 1xx response codes and then the final
      * response, the client (internally) will ignore those intermediate informational response codes
@@ -295,8 +338,7 @@ public class Response1xxTest {
         final URI[] requestURIs = new URI[]{
                 new URI(http1RequestURIBase + "/test/foo"),
                 new URI(http1RequestURIBase + "/test/bar"),
-                new URI(http1RequestURIBase + "/test/hello"),
-                new URI(http1RequestURIBase + "/test/bye")};
+                new URI(http1RequestURIBase + "/test/hello")};
         for (final URI requestURI : requestURIs) {
             final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
             System.out.println("Issuing request to " + requestURI);
@@ -355,5 +397,77 @@ public class Response1xxTest {
         Assert.assertThrows(HttpTimeoutException.class, () -> {
             client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         });
+    }
+
+    /**
+     * Tests that when the HTTP/1.1 server sends a 101 response when the request hasn't asked
+     * for an "Upgrade" then the request fails.
+     */
+    @Test
+    public void testHTTP11Unexpected101() throws Exception {
+        final HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .proxy(HttpClient.Builder.NO_PROXY).build();
+        final URI requestURI = new URI(http1RequestURIBase + "/test/bye");
+        final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
+        System.out.println("Issuing request to " + requestURI);
+        // we expect the request to fail because the server sent an unexpected 101
+        Assert.assertThrows(ProtocolException.class,
+                () -> client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)));
+    }
+
+
+    /**
+     * Tests that when the HTTP2 server (over HTTPS) sends a 101 response when the request
+     * hasn't asked for an "Upgrade" then the request fails.
+     */
+    @Test
+    public void testSecureHTTP2Unexpected101() throws Exception {
+        final HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .sslContext(sslContext)
+                .proxy(HttpClient.Builder.NO_PROXY).build();
+        final URI requestURI = new URI(https2RequestURIBase + "/101");
+        final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
+        System.out.println("Issuing request to " + requestURI);
+        // we expect the request to fail because the server sent an unexpected 101
+        Assert.assertThrows(ProtocolException.class,
+                () -> client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)));
+    }
+
+    /**
+     * Tests that when the HTTP2 server (over plain HTTP) sends a 101 response when the request
+     * hasn't asked for an "Upgrade" then the request fails.
+     */
+    @Test
+    public void testPlainHTTP2Unexpected101() throws Exception {
+        final HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .proxy(HttpClient.Builder.NO_PROXY).build();
+        // when using HTTP2 version against a "http://" (non-secure) URI
+        // the HTTP client (implementation) internally initiates a HTTP/1.1 connection
+        // and then does an "Upgrade:" to "h2c". This it does when there isn't already a
+        // H2 connection against the target/destination server. So here we initiate a dummy request
+        // using the client instance against the same target server and just expect it to return
+        // back successfully. Once that connection is established (and internally pooled), the client
+        // will then reuse that connection and won't issue an "Upgrade:" and thus we can then
+        // start our testing
+        warmupH2Client(client);
+        // start the actual testing
+        final URI requestURI = new URI(http2RequestURIBase + "/101");
+        final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
+        System.out.println("Issuing request to " + requestURI);
+        // we expect the request to fail because the server sent an unexpected 101
+        Assert.assertThrows(ProtocolException.class,
+                () -> client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)));
+    }
+
+    // sends a request and expects a 200 response back
+    private void warmupH2Client(final HttpClient client) throws Exception {
+        final URI requestURI = new URI(http2RequestURIBase + "/200");
+        final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
+        System.out.println("Issuing (warmup) request to " + requestURI);
+        final HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+        Assert.assertEquals(response.statusCode(), 200, "Unexpected response code");
     }
 }

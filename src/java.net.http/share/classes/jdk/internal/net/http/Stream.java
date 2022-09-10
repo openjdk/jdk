@@ -1238,6 +1238,16 @@ class Stream<T> extends ExchangeImpl<T> {
         cancelImpl(cause);
     }
 
+    @Override
+    void onProtocolError(final String errorMessage) {
+        if (debug.on()) {
+            debug.log("closing stream %d due to protocol error: %s", streamid, errorMessage);
+        }
+        Log.logError("closing stream {0} due to protocol error: {1}\n", streamid, errorMessage);
+        // send a RESET frame and close the stream
+        connection.resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
+    }
+
     void connectionClosing(Throwable cause) {
         Flow.Subscriber<?> subscriber =
                 responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;

@@ -502,6 +502,16 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         cancelImpl(cause);
     }
 
+    @Override
+    void onProtocolError(final String errorMessage) {
+        if (debug.on()) {
+            debug.log("closing connection due to protocol error: %s", errorMessage);
+        }
+        Log.logError("closing connection due to protocol error: {0}\n", errorMessage);
+        // close the connection
+        connection.close();
+    }
+
     private void cancelImpl(Throwable cause) {
         LinkedList<CompletableFuture<?>> toComplete = null;
         int count = 0;
