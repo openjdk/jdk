@@ -46,17 +46,19 @@ public class JDK8292276MissingColorNamesInCSS {
     // The CSS 'color' property accepts <name-color>, 'transparent' keyword <rgb()>, <rgba> values.
     // - 'cyan' is the missing <name-color> keyword that originates the PR JDK8292276 :
     //   Missing Color Names In CSS.
-    //   'cyan' keyword, as 130 <name-color> keywords defined in CSS Color Module
-    //   Level 4, is not referenced in CSS.java.
+    //   'cyan' keyword, as 131 <name-color> keywords also defined in CSS Color Module
+    //   Level 4, are not referenced in CSS.java.
     // - sRGB colors defined by rgb and rgba functions must be case insensitive.
     // - 'transparent' keyword is the missing.
     //
-    // This test fails, if getAttribute :
-    // - doesn't return cyan value.
-    //   - When a <color-name> keyword is missing, getAttribute returns a black Color Object.
-    // - returns null when <rgb()> and <rgba()> values are not treated as being all lowercase.
-    //   - When <rgb()> and <rgba()> values contains at least an uppercase character, getAttribute returns null.
-    // - returns null when using 'transparent' keyword.
+    // This test fails,
+    // - if stringToColor(null) returns null
+    // - if getAttribute :
+    //   - doesn't return cyan value.
+    //     - When a <color-name> keyword is missing, getAttribute returns a black Color Object.
+    //   - returns null when <rgb()> and <rgba()> values are not treated as being all lowercase.
+    //     - When <rgb()> and <rgba()> values contains at least an uppercase character, getAttribute returns null.
+    //   - returns null when using 'transparent' keyword.
     public static void main(String[] args) {
         StringBuilder result = new StringBuilder("Failed.");
         boolean passed = true;
@@ -74,6 +76,10 @@ public class JDK8292276MissingColorNamesInCSS {
         bdleftcolor = attributeSet.getAttribute(BORDER_LEFT_COLOR);
         bdrightcolor = attributeSet.getAttribute(BORDER_RIGHT_COLOR);
 
+        if(styleSheet.stringToColor(null) != null){
+            passed = false;
+            result.append(" [stringToColor(null) must return null]");
+        }
         if (!color.toString().toLowerCase(Locale.ROOT).equals("cyan")) {
             passed = false;
             result.append(" [<name-color> keyword(s) missing]");
