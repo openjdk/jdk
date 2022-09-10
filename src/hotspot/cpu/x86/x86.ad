@@ -1888,6 +1888,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
           return false;
         }
       }
+      // fallthrough
     case Op_VectorCastD2X:
       if (bt == T_LONG && !VM_Version::supports_avx512dq()) {
         return false;
