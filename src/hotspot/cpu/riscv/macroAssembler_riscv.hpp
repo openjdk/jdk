@@ -473,15 +473,26 @@ class MacroAssembler: public Assembler {
   void double_blt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
   void double_bgt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
 
+private:
+  int push_reg(unsigned int bitset, Register stack);
+  int pop_reg(unsigned int bitset, Register stack);
+  int push_fp(unsigned int bitset, Register stack);
+  int pop_fp(unsigned int bitset, Register stack);
+#ifdef COMPILER2
+  int push_v(unsigned int bitset, Register stack);
+  int pop_v(unsigned int bitset, Register stack);
+#endif // COMPILER2
+
+public:
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
-  void push_reg(RegSet regset, Register stack);
-  void pop_reg(RegSet regset, Register stack);
-  void push_fp(FloatRegSet regset, Register stack);
-  void pop_fp(FloatRegSet regset, Register stack);
+  void push_reg(RegSet regs, Register stack) { if (regs.bits()) push_reg(regs.bits(), stack); }
+  void pop_reg(RegSet regs, Register stack)  { if (regs.bits()) pop_reg(regs.bits(), stack); }
+  void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
+  void pop_fp(FloatRegSet regs, Register stack)  { if (regs.bits()) pop_fp(regs.bits(), stack); }
 #ifdef COMPILER2
-  void push_vp(VectorRegSet regset, Register stack);
-  void pop_vp(VectorRegSet regset, Register stack);
+  void push_v(VectorRegSet regs, Register stack) { if (regs.bits()) push_v(regs.bits(), stack); }
+  void pop_v(VectorRegSet regs, Register stack)  { if (regs.bits()) pop_v(regs.bits(), stack); }
 #endif // COMPILER2
 
   // Push and pop everything that might be clobbered by a native
