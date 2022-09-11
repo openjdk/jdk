@@ -2970,6 +2970,7 @@ void Compile::Code_Gen() {
     }
     cfg.fixup_flow();
     cfg.remove_unreachable_blocks();
+    cfg.verify_dominator_tree();
   }
 
   // Apply peephole optimizations
