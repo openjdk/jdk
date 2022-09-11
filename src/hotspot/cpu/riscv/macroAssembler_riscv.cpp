@@ -1050,7 +1050,7 @@ int MacroAssembler::push_v(unsigned int bitset, Register stack) {
     vs1r_v(as_VectorRegister(regs[i]), stack);
   }
 
-  return count;
+  return count * vector_size_in_bytes / wordSize;
 }
 
 int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
@@ -1066,7 +1066,7 @@ int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
     add(stack, stack, vector_size_in_bytes);
   }
 
-  return count;
+  return count * vector_size_in_bytes / wordSize;
 }
 #endif // COMPILER2
 
