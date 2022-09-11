@@ -946,7 +946,7 @@ int MacroAssembler::bitset_to_regs(unsigned int bitset, unsigned char* regs) {
   return count;
 }
 
-// Push lots of registers in the regset supplied.  Don't push sp.
+// Push lots of registers in the bitset supplied.  Don't push sp.
 // Return the number of words pushed
 int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
   DEBUG_ONLY(int words_pushed = 0;)
@@ -992,7 +992,7 @@ int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
   return count;
 }
 
-// Push float registers in the regset
+// Push float registers in the bitset
 // Return the number of words pushed
 int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
   CompressibleRegion cr(this);
