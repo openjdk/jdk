@@ -164,7 +164,7 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
   const auto Default = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
                                       LogDecorators());
   size_t len = strlen(TestLogFileName) + strlen(LogFileOutput::Prefix) + 1;
-  char name[len];
+  char* name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
   snprintf(name, len, "%s%s", LogFileOutput::Prefix, TestLogFileName);
 
   LogFileStreamOutput* output = new LogFileOutput(name);
@@ -236,6 +236,8 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
   EXPECT_FALSE(buffer->iterator().hasNext());
 
   delete output; // close file
+  FREE_C_HEAP_ARRAY(char, name);
+
   const char* strs[4];
   strs[0] = "a log line";
   strs[1] = "yet another";
