@@ -33,11 +33,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.NumberFormatException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -1350,6 +1352,8 @@ public class CSS implements Serializable {
       return colorstr;
     }
 
+    private static Pattern hex   = Pattern.compile("\\p{XDigit}+");
+
     /**
      * Convert a "#FFF", "#FFFF", "#FFFFFF" or "#FFFFFFFF" hex string to a Color.
      * If the color specification is bad, an attempt
@@ -1360,7 +1364,7 @@ public class CSS implements Serializable {
         if (digits.startsWith("#")) {
             digits = digits.substring(1, Math.min(n, 9));
             n--;
-        }        
+        }
         // CSS level 4
         // - defines color hex code as #[2 digits Red][2 digits Green][2 digits Blue][2 digits Alpha]. With digit 0 ... f.
         // - allows, webpage passes 3, 4, 6 or 8 digit color code.
@@ -1404,7 +1408,6 @@ public class CSS implements Serializable {
             int l = intValue.intValue();
             return new Color((int)((l >> 24) & 0xFF),(int)((l >> 16) & 0xFF), (int)((l >> 8) & 0xFF), (int)(l & 0xFF));
         } catch (NumberFormatException nfe) {
-            System.out.println(nfe);
             return null;
         }
     }
