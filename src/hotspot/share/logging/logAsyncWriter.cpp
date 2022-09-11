@@ -74,7 +74,7 @@ void AsyncLogWriter::Buffer::push_flush_token() {
 void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
   // To save space and streamline execution, we just ignore null message.
   // client should use "" instead.
-  if (msg == nullptr) return;
+  assert(msg != nullptr, "enqueuing a null message!");
 
   if (!_buffer->push_back(output, decorations, msg)) {
     bool p_created;

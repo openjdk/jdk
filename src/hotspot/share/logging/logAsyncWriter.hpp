@@ -65,7 +65,7 @@ class AsyncLogWriter : public NonJavaThread {
                           mtLogging>;
 
   // Messsage is the envelop of a log line and its associative data.
-  // The size is variety-length with zero-terminated c-str. It is only valid when we create it using placement new
+  // Its length is variable because of the zero-terminated c-str. It is only valid when we create it using placement new
   // within a buffer.
   //
   // Example layout:
