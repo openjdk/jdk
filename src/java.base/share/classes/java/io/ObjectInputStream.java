@@ -2430,7 +2430,6 @@ public class ObjectInputStream
                     // Read fields of the current descriptor into a new FieldValues and discard
                     new FieldValues(slotDesc, true);
                 } else if (slotDesc.hasReadObjectMethod()) {
-                    boolean reset = false;
                     SerialCallbackContext oldContext = curContext;
                     if (oldContext != null)
                         oldContext.check();
@@ -2449,13 +2448,10 @@ public class ObjectInputStream
                          */
                         handles.markException(passHandle, ex);
                     } finally {
-                        do {
-                            curContext.setUsed();
-                            if (oldContext!= null)
-                                oldContext.check();
-                            curContext = oldContext;
-                            reset = true;
-                        } while (!reset);
+                        curContext.setUsed();
+                        if (oldContext!= null)
+                            oldContext.check();
+                        curContext = oldContext;
                     }
 
                     /*

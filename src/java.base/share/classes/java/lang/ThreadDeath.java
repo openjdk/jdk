@@ -26,15 +26,15 @@
 package java.lang;
 
 /**
- * This error is no longer thrown.
+ * An instance of {@code ThreadDeath} was originally specified to be thrown
+ * by a victim thread when "stopped" with {@link Thread#stop()}.
  *
  * @deprecated {@link Thread#stop()} was originally specified to "stop" a
  *      thread by causing it to throw a {@code ThreadDeath}. It was inherently
  *      unsafe and deprecated in an early JDK release. The ability to "stop" a
  *      thread with {@code Thread.stop} has been removed and the {@code
  *      Thread.stop} method changed to throw an exception. Consequently,
- *      {@code ThreadDeath} is also deprecated and may be deprecated
- *      for removal in a future release.
+ *      {@code ThreadDeath} is also deprecated.
  *
  * @since   1.0
  */
