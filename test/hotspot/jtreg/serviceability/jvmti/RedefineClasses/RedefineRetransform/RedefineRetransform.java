@@ -171,7 +171,7 @@ public class RedefineRetransform {
         if (hookClassBytes == null) {
             throw new RuntimeException("Redefine error (ver = " + ver + ")");
         }
-        // verity ClassFileLoadHook gets the expected class bytes
+        // verify ClassFileLoadHook gets the expected class bytes
         int hookVer = getClassBytesVersion(hookClassBytes);
         if (hookVer != ver) {
             throw new RuntimeException("CLFH got unexpected version: "  + hookVer
