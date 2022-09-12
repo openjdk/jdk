@@ -95,11 +95,12 @@ public class Response1xxTest {
 
         @Override
         public void run() {
-            try {
-                System.out.println("Server running at " + serverSocket);
-                while (!stop) {
+            System.out.println("Server running at " + serverSocket);
+            while (!stop) {
+                Socket socket = null;
+                try {
                     // accept a connection
-                    final Socket socket = serverSocket.accept();
+                    socket = serverSocket.accept();
                     System.out.println("Accepted connection from client " + socket);
                     // read request
                     final String requestLine;
@@ -152,10 +153,13 @@ public class Response1xxTest {
                         os.flush();
                         System.out.println("Sent 200 response code to client " + socket);
                     }
+                } catch (Throwable t) {
+                    // close the client connection
+                    safeClose(socket);
+                    // continue accepting any other client connections until we are asked to stop
+                    System.err.println("Ignoring exception in server:");
+                    t.printStackTrace();
                 }
-            } catch (Throwable t) {
-                System.err.println("Stopping server due to exception");
-                t.printStackTrace();
             }
         }
 
