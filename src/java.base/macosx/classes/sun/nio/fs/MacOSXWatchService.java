@@ -51,6 +51,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 class MacOSXWatchService extends AbstractWatchService {
@@ -66,12 +67,8 @@ class MacOSXWatchService extends AbstractWatchService {
         t.setDaemon(true);
         t.start();
 
-        try {
-            // In order to be able to schedule any FSEventStream's, a reference to a run loop is required.
-            runLoopThread.waitForRunLoopRef();
-        } catch (InterruptedException e) {
-            throw new IOException(e);
-        }
+        // In order to be able to schedule any FSEventStream's, a reference to a run loop is required.
+        runLoopThread.waitForRunLoopRef();
     }
 
     @SuppressWarnings("removal")
@@ -164,18 +161,22 @@ class MacOSXWatchService extends AbstractWatchService {
 
     private class CFRunLoopThread implements Runnable {
         // Native reference to the CFRunLoop object of the watch service run loop.
-        private long runLoopRef;
+        private volatile long runLoopRef;
+        private final CountDownLatch runLoopRefAvailabilitySignal = new CountDownLatch(1);
 
-        private synchronized void waitForRunLoopRef() throws InterruptedException {
-            if (runLoopRef == 0)
-                runLoopThread.wait(); // ...for CFRunLoopRef to become available
+        private void waitForRunLoopRef() throws IOException {
+            try {
+                runLoopRefAvailabilitySignal.await();
+            } catch (InterruptedException e) {
+                throw new IOException(e);
+            }
         }
 
         long getRunLoopRef() {
             return runLoopRef;
         }
 
-        synchronized void runLoopStop() {
+        void runLoopStop() {
             if (runLoopRef != 0) {
                 // The run loop may have stuck in CFRunLoopRun() even though all of its input sources
                 // have been removed. Need to terminate it explicitly so that it can run to completion.
@@ -185,19 +186,15 @@ class MacOSXWatchService extends AbstractWatchService {
 
         @Override
         public void run() {
-            synchronized (this) {
-                runLoopRef = CFRunLoopGetCurrent();
-                notify(); // ... of CFRunLoopRef availability
-            }
+            runLoopRef = CFRunLoopGetCurrent();
+            runLoopRefAvailabilitySignal.countDown();
 
             while (isOpen()) {
                 CFRunLoopRun(MacOSXWatchService.this);
                 waitForEventSource();
             }
 
-            synchronized (this) {
-                runLoopRef = 0; // CFRunLoopRef is no longer usable when the loop has been terminated
-            }
+            runLoopRef = 0; // CFRunLoopRef is no longer usable when the loop has been terminated
         }
     }
 
