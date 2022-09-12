@@ -193,7 +193,6 @@ class ttyUnlocker: StackObj {
 // Buffer will always be zero-terminated.
 class stringStream : public outputStream {
   // Invariant: Do not alter stringStream after calling ::base()
-  DEBUG_ONLY(bool _use_after_base = false;)
   char*  _buffer;
   size_t _written;  // Number of characters written, excluding termin. zero
   size_t _capacity;
