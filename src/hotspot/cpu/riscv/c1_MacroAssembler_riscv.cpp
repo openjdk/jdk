@@ -97,7 +97,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // assuming both the stack pointer and page_size have their least
   // significant 2 bits cleared and page_size is a power of 2
   sub(hdr, hdr, sp);
-  li(t0, aligned_mask - os::vm_page_size());
+  mv(t0, aligned_mask - os::vm_page_size());
   andr(hdr, hdr, t0);
   // for recursive locking, the result is zero => save it in the displaced header
   // location (NULL in the displaced hdr location indicates recursive locking)

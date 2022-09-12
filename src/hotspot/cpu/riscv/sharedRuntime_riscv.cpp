@@ -151,7 +151,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   }
 #endif
 
-  assert_cond(masm != NULL && total_frame_words != NULL);
   int frame_size_in_bytes = align_up(additional_frame_words * wordSize + ra_offset_in_bytes() + wordSize, 16);
   // OopMap frame size is in compiler stack slots (jint's) not bytes or words
   int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
@@ -206,7 +205,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 }
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
-  assert_cond(masm != NULL);
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::scalable_vector_reg_size(T_BYTE));
 #else
@@ -331,7 +329,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm) {
-  assert_cond(masm != NULL);
   Label L;
   __ ld(t0, Address(xmethod, in_bytes(Method::code_offset())));
   __ beqz(t0, L);
@@ -440,7 +437,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
           __ sd(t0, Address(sp, next_off), /*temp register*/esp);
 #ifdef ASSERT
           // Overwrite the unused slot with known junk
-          __ li(t0, 0xdeadffffdeadaaaaul);
+          __ mv(t0, 0xdeadffffdeadaaaaul);
           __ sd(t0, Address(sp, st_off), /*temp register*/esp);
 #endif /* ASSERT */
         } else {
@@ -459,7 +456,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
           // long/double in gpr
 #ifdef ASSERT
           // Overwrite the unused slot with known junk
-          __ li(t0, 0xdeadffffdeadaaabul);
+          __ mv(t0, 0xdeadffffdeadaaabul);
           __ sd(t0, Address(sp, st_off), /*temp register*/esp);
 #endif /* ASSERT */
           __ sd(r, Address(sp, next_off));
@@ -475,7 +472,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       } else {
 #ifdef ASSERT
         // Overwrite the unused slot with known junk
-        __ li(t0, 0xdeadffffdeadaaacul);
+        __ mv(t0, 0xdeadffffdeadaaacul);
         __ sd(t0, Address(sp, st_off), /*temp register*/esp);
 #endif /* ASSERT */
         __ fsd(r_1->as_FloatRegister(), Address(sp, next_off));
@@ -769,7 +766,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 // 32bits for a parameter. On 32bit it will simply be 32 bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
 static void move32_64(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
-  assert_cond(masm != NULL);
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
@@ -799,7 +795,6 @@ static void object_move(MacroAssembler* masm,
                         VMRegPair dst,
                         bool is_receiver,
                         int* receiver_offset) {
-  assert_cond(masm != NULL && map != NULL && receiver_offset != NULL);
   // must pass a handle. First figure out the location we use as a handle
   Register rHandle = dst.first()->is_stack() ? t1 : dst.first()->as_Register();
 
@@ -882,7 +877,6 @@ static void object_move(MacroAssembler* masm,
 static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(src.first()->is_stack() && dst.first()->is_stack() ||
          src.first()->is_reg() && dst.first()->is_reg() || src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
-  assert_cond(masm != NULL);
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       __ lwu(t0, Address(fp, reg2offset_in(src.first())));
@@ -903,7 +897,6 @@ static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
 // A long move
 static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
-  assert_cond(masm != NULL);
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
@@ -927,7 +920,6 @@ static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(src.first()->is_stack() && dst.first()->is_stack() ||
          src.first()->is_reg() && dst.first()->is_reg() || src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
-  assert_cond(masm != NULL);
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       __ ld(t0, Address(fp, reg2offset_in(src.first())));
@@ -947,7 +939,6 @@ static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 }
 
 void SharedRuntime::save_native_result(MacroAssembler *masm, BasicType ret_type, int frame_slots) {
-  assert_cond(masm != NULL);
   // We always ignore the frame_slots arg and just use the space just below frame pointer
   // which by this time is free to use
   switch (ret_type) {
@@ -965,7 +956,6 @@ void SharedRuntime::save_native_result(MacroAssembler *masm, BasicType ret_type,
 }
 
 void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_type, int frame_slots) {
-  assert_cond(masm != NULL);
   // We always ignore the frame_slots arg and just use the space just below frame pointer
   // which by this time is free to use
   switch (ret_type) {
@@ -983,7 +973,6 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_ty
 }
 
 static void save_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegPair *args) {
-  assert_cond(masm != NULL && args != NULL);
   RegSet x;
   for ( int i = first_arg ; i < arg_count ; i++ ) {
     if (args[i].first()->is_Register()) {
@@ -997,7 +986,6 @@ static void save_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegP
 }
 
 static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegPair *args) {
-  assert_cond(masm != NULL && args != NULL);
   RegSet x;
   for ( int i = first_arg ; i < arg_count ; i++ ) {
     if (args[i].first()->is_Register()) {
@@ -1018,7 +1006,6 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
 }
 
 static void rt_call(MacroAssembler* masm, address dest) {
-  assert_cond(masm != NULL);
   CodeBlob *cb = CodeCache::find_blob(dest);
   if (cb) {
     __ far_call(RuntimeAddress(dest));
@@ -1986,7 +1973,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Now it is safe to overwrite any register
 
   // Deopt during an exception.  Save exec mode for unpack_frames.
-  __ li(xcpool, Deoptimization::Unpack_exception); // callee-saved
+  __ mv(xcpool, Deoptimization::Unpack_exception); // callee-saved
 
   // load throwing pc from JavaThread and patch it as the return address
   // of the current frame. Then clear the field in JavaThread
@@ -2047,7 +2034,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ lwu(xcpool, Address(x15, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
   Label noException;
-  __ li(t0, Deoptimization::Unpack_exception);
+  __ mv(t0, Deoptimization::Unpack_exception);
   __ bne(xcpool, t0, noException); // Was exception pending?
   __ ld(x10, Address(xthread, JavaThread::exception_oop_offset()));
   __ ld(x13, Address(xthread, JavaThread::exception_pc_offset()));
@@ -2126,7 +2113,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ sub(sp, sp, x9);
 
   // Push interpreter frames in a loop
-  __ li(t0, 0xDEADDEAD);               // Make a recognizable pattern
+  __ mv(t0, 0xDEADDEAD);               // Make a recognizable pattern
   __ mv(t1, t0);
   Label loop;
   __ bind(loop);
@@ -2535,7 +2522,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 // must do any gc of the args.
 //
 RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
-  assert (StubRoutines::forward_exception_entry() != NULL, "must be generated before");
+  assert(StubRoutines::forward_exception_entry() != NULL, "must be generated before");
 
   // allocate space for the code
   ResourceMark rm;
