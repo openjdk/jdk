@@ -549,6 +549,7 @@ public:
     // Loop info
     Loop*                            _loop;              // nearest loop
 
+    ciBlock*     ciblock() const     { return _ciblock; }
     StateVector* state() const     { return _state; }
 
     // Compute the exceptional successors and types for this Block.
@@ -566,7 +567,6 @@ public:
     bool has_trap()   const  { return _trap_bci != -1; }
     int  trap_bci()   const  { assert(has_trap(), ""); return _trap_bci; }
     int  trap_index() const  { assert(has_trap(), ""); return _trap_index; }
-    ciBlock* ciblock() const { return _ciblock; }
 
     // accessors
     ciTypeFlow* outer() const { return state()->outer(); }
@@ -687,6 +687,7 @@ public:
     Loop*  loop() const                  { return _loop; }
     void   set_loop(Loop* lp)            { _loop = lp; }
     bool   is_loop_head() const          { return _loop && _loop->head() == this; }
+    bool   is_loop_tail() const          { return _loop && _loop->tail() == this; }
     void   set_irreducible_entry(bool c) { _irreducible_entry = c; }
     bool   is_irreducible_entry() const  { return _irreducible_entry; }
     void   set_has_monitorenter()        { _has_monitorenter = true; }
@@ -694,6 +695,7 @@ public:
     bool   is_visited() const            { return has_pre_order(); }
     bool   is_post_visited() const       { return has_post_order(); }
     bool   is_clonable_exit(Loop* lp);
+    bool   is_normal_exit(Loop* lp);
     Block* looping_succ(Loop* lp);       // Successor inside of loop
     bool   is_single_entry_loop_head() const {
       if (!is_loop_head()) return false;

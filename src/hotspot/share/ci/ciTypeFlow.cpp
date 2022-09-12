@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1862,6 +1862,23 @@ bool ciTypeFlow::Block::is_clonable_exit(ciTypeFlow::Loop* lp) {
     }
   }
   return in_loop_cnt == 1;
+}
+
+// ------------------------------------------------------------------
+// ciTypeFlow::Block::is_normal_exit
+//
+// Test if the block is a normal loop exit point, return ture if
+// 1) The block itself is in the same loop, and
+// 2) Only 2 successors, one is the loop exit and the other continues the loop
+bool ciTypeFlow::Block::is_normal_exit(ciTypeFlow::Loop* lp) {
+  if (lp->contains(this) && successors()->length() == 2) {
+    bool is_succ0_exit = !lp->contains(successors()->at(0));
+    bool is_succ1_exit = !lp->contains(successors()->at(1));
+    if ((is_succ0_exit && !is_succ1_exit) || (!is_succ0_exit && is_succ1_exit)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // ------------------------------------------------------------------

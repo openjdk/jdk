@@ -1192,6 +1192,60 @@ static bool has_injected_profile(BoolTest::mask btest, Node* test, int& taken, i
   }
   return false;
 }
+
+//--------------------------adjust_zero_branch_count--------------------------
+// Try to adjust the zero profile count for a loop exit. It is based on
+// the observation that for most common cases, the loop exit will be
+// executed at least once. So the zero count will be set to 1 if:
+// 1) The branch is in a loop head or tail, and
+// 2) The zero count associated target is a loop exit, and
+// 3) Only one loop exit path in either loop head or tail
+void Parse::adjust_zero_branch_count(int &taken, int &not_taken) {
+  assert(taken == 0 || not_taken == 0, "must be");
+
+  ciTypeFlow::Block* blk = block()->flow();
+  ciTypeFlow::Loop*  lp  = blk->loop();
+  if ((lp == NULL) || (lp == flow()->loop_tree_root())) {
+    return;
+  }
+
+  bool is_head = blk->is_loop_head();
+  bool is_tail = blk->is_loop_tail();
+  // Give up if the branch isn't in a loop head or tail
+  if (!is_head && !is_tail) {
+    return;
+  }
+
+  int zero_count_bci = -1;
+  if (taken == 0) {
+    zero_count_bci = iter().get_dest();
+  } else {
+    zero_count_bci = iter().next_bci();
+  }
+  ciTypeFlow::Block* zero_count_target = successor_for_bci(zero_count_bci)->flow();
+  // Give up if the zero count associated target isn't a loop exit
+  if (lp->contains(zero_count_target)) {
+    return;
+  }
+
+  if (blk->is_normal_exit(lp)) {
+    ciTypeFlow::Block* head = lp->head();
+    ciTypeFlow::Block* tail = lp->tail();
+    // Give up if there is a loop exit path in both loop head and tail
+    if ((head != tail) &&
+        ((is_head && tail->is_normal_exit(lp)) || (is_tail && head->is_normal_exit(lp)))) {
+      return;
+    }
+
+    // Set the zero count to 1 assuming that the loop exit would be executed at least once.
+    if (taken == 0) {
+      taken = 1;
+    } else {
+      not_taken = 1;
+    }
+  }
+}
+
 //--------------------------dynamic_branch_prediction--------------------------
 // Try to gather dynamic branch prediction behavior.  Return a probability
 // of the branch being taken and set the "cnt" field.  Returns a -1.0
@@ -1222,16 +1276,12 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
     not_taken = 0;
     if (data->is_BranchData()) {
       not_taken = data->as_BranchData()->not_taken();
-      // Don't adjust the taken count if too few not_taken count to be meaningful.
-      if (taken == 0 && not_taken >= 40) {
-        int target_bci = iter().get_dest();
-        Block* branch_block = successor_for_bci(target_bci);
-        bool is_loop_exit = branch_block->flow()->ciblock()->is_loop_exit();
-        if (is_loop_exit) {
-          // If the branch target is a loop exit, we assume it would take at least once.
-          taken = 1;
-        }
-      }
+
+       // Don't adjust if too few (or too many, in which case the sum will overflow) counts to be meaningful.
+       // This will also avoid polluting counts for dead code (e.g., dead loop).
+       if ((taken == 0 || not_taken == 0) && (taken + not_taken > 40)) {
+         adjust_zero_branch_count(taken, not_taken);
+       }
     }
 
     // scale the counts to be commensurate with invocation counts:

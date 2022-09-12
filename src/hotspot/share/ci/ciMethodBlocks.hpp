@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,7 @@ private:
     DoesJsr     = (1 << 3),
     DoesRet     = (1 << 4),
     RetTarget   = (1 << 5),
-    HasHandler  = (1 << 6),
-    LoopExit    = (1 << 7)
+    HasHandler  = (1 << 6)
   };
 
 
@@ -110,8 +109,6 @@ public:
   bool  does_ret() const            { return (_flags & DoesRet) != 0; }
   bool  has_handler() const         { return (_flags & HasHandler) != 0; }
   bool  is_ret_target() const       { return (_flags & RetTarget) != 0; }
-  bool  is_loop_exit() const        { return (_flags & LoopExit) != 0; }
-  void  set_is_loop_exit()          { _flags |= LoopExit; }
   void  set_processed()             { _flags |= Processed; }
   void  clear_processed()           { _flags &= ~Processed; }
   void  set_handler()               { _flags |= Handler; }

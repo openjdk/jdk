@@ -534,6 +534,7 @@ class Parse : public GraphKit {
   void do_jsr();
   void do_ret();
 
+  void    adjust_zero_branch_count(int &taken, int &not_taken);
   float   dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* test);
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci, Node* test);
   bool    seems_never_taken(float prob) const;

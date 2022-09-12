@@ -34,7 +34,7 @@
  *                   -XX:-TieredCompilation -XX:+PrintCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=quiet
- *                   -XX:CompileCommand=compileonly,compiler.profiling.TestUnexpectedLoopExitDeopt::test
+ *                   -XX:CompileCommand=compileonly,compiler.profiling.TestUnexpectedLoopExitDeopt::test*
  *                   compiler.profiling.TestUnexpectedLoopExitDeopt
  */
 
@@ -49,14 +49,34 @@ public class TestUnexpectedLoopExitDeopt {
     private static int d[] = new int[N];
 
     private static void run() {
-        System.out.println(test(d));
+        System.out.println(testFor(d));
+        System.out.println(testWhile(d));
+        System.out.println(testDoWhile(d));
     }
 
-    private static int test(int[] a) {
+    private static int testFor(int[] a) {
         int sum = 0;
         for(int i = 0; i < a.length; i++) {
             sum += a[i];
         }
+        return sum;
+    }
+
+    private static int testWhile(int[] a) {
+        int sum = 0;
+        int i = 0;
+        while (i < a.length) {
+            sum += a[i++];
+        }
+        return sum;
+    }
+
+    private static int testDoWhile(int[] a) {
+        int sum = 0;
+        int i = 0;
+        do {
+            sum += a[i++];
+        } while (i < a.length);
         return sum;
     }
 
