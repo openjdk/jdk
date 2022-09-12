@@ -36,7 +36,7 @@
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/resourceHash.hpp"
 
-struct ArchiveHeapOopmapInfo;
+struct ArchiveHeapBitmapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -406,8 +406,8 @@ public:
   void write_archive(FileMapInfo* mapinfo,
                      GrowableArray<MemRegion>* closed_heap_regions,
                      GrowableArray<MemRegion>* open_heap_regions,
-                     GrowableArray<ArchiveHeapOopmapInfo>* closed_heap_oopmaps,
-                     GrowableArray<ArchiveHeapOopmapInfo>* open_heap_oopmaps);
+                     GrowableArray<ArchiveHeapBitmapInfo>* closed_heap_oopmaps,
+                     GrowableArray<ArchiveHeapBitmapInfo>* open_heap_oopmaps);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 

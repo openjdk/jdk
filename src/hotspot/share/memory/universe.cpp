@@ -258,9 +258,6 @@ void Universe::serialize(SerializeClosure* f) {
         }
         f->do_oop(&mirror_oop); // write to archive
       }
-      if (mirror_oop != NULL) { // may be null if archived heap is disabled
-        java_lang_Class::update_archived_primitive_mirror_native_pointers(mirror_oop);
-      }
     }
   }
 #endif
