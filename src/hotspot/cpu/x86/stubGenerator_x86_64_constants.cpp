@@ -23,95 +23,94 @@
  */
 
 #include "precompiled.hpp"
+#include "stubGenerator_x86_64.hpp"
 
-#include "macroAssembler_x86.hpp"
-
-#ifdef _LP64
+// Constants for libm trigonometric stubs
 
 ATTRIBUTE_ALIGNED(8) juint _ONE[] = {
     0x00000000UL, 0x3ff00000UL
 };
-address MacroAssembler::ONE = (address)_ONE;
+address StubGenerator::ONE = (address)_ONE;
 
 ATTRIBUTE_ALIGNED(16) juint _ONEHALF[] = {
     0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
 };
-address MacroAssembler::ONEHALF = (address)_ONEHALF;
+address StubGenerator::ONEHALF = (address)_ONEHALF;
 
 ATTRIBUTE_ALIGNED(8) juint _SIGN_MASK[] = {
     0x00000000UL, 0x80000000UL
 };
-address MacroAssembler::SIGN_MASK = (address)_SIGN_MASK;
+address StubGenerator::SIGN_MASK = (address)_SIGN_MASK;
 
 ATTRIBUTE_ALIGNED(8) juint _TWO_POW_55[] = {
     0x00000000UL, 0x43600000UL
 };
-address MacroAssembler::TWO_POW_55 = (address)_TWO_POW_55;
+address StubGenerator::TWO_POW_55 = (address)_TWO_POW_55;
 
 ATTRIBUTE_ALIGNED(8) juint _TWO_POW_M55[] = {
     0x00000000UL, 0x3c800000UL
 };
-address MacroAssembler::TWO_POW_M55 = (address)_TWO_POW_M55;
+address StubGenerator::TWO_POW_M55 = (address)_TWO_POW_M55;
 
 ATTRIBUTE_ALIGNED(16) juint _SHIFTER[] = {
     0x00000000UL, 0x43380000UL, 0x00000000UL, 0x43380000UL
 };
-address MacroAssembler::SHIFTER = (address)_SHIFTER;
+address StubGenerator::SHIFTER = (address)_SHIFTER;
 
 ATTRIBUTE_ALIGNED(4) juint _ZERO[] = {
     0x00000000UL, 0x00000000UL
 };
-address MacroAssembler::ZERO = (address)_ZERO;
+address StubGenerator::ZERO = (address)_ZERO;
 
 ATTRIBUTE_ALIGNED(16) juint _SC_1[] = {
     0x55555555UL, 0xbfc55555UL, 0x00000000UL, 0xbfe00000UL
 };
-address MacroAssembler::SC_1 = (address)_SC_1;
+address StubGenerator::SC_1 = (address)_SC_1;
 
 ATTRIBUTE_ALIGNED(16) juint _SC_2[] = {
     0x11111111UL, 0x3f811111UL, 0x55555555UL, 0x3fa55555UL
 };
-address MacroAssembler::SC_2 = (address)_SC_2;
+address StubGenerator::SC_2 = (address)_SC_2;
 
 ATTRIBUTE_ALIGNED(16) juint _SC_3[] = {
     0x1a01a01aUL, 0xbf2a01a0UL, 0x16c16c17UL, 0xbf56c16cUL
 };
-address MacroAssembler::SC_3 = (address)_SC_3;
+address StubGenerator::SC_3 = (address)_SC_3;
 
 ATTRIBUTE_ALIGNED(16) juint _SC_4[] = {
     0xa556c734UL, 0x3ec71de3UL, 0x1a01a01aUL, 0x3efa01a0UL
 };
-address MacroAssembler::SC_4 = (address)_SC_4;
+address StubGenerator::SC_4 = (address)_SC_4;
 
 ATTRIBUTE_ALIGNED(8) juint _PI_4[] = {
     0x40000000UL, 0x3fe921fbUL, 0x18469899UL, 0x3e64442dUL
 };
-address MacroAssembler::PI_4 = (address)_PI_4;
+address StubGenerator::PI_4 = (address)_PI_4;
 
 ATTRIBUTE_ALIGNED(8) juint _PI32INV[] = {
     0x6dc9c883UL, 0x40245f30UL
 };
-address MacroAssembler::PI32INV = (address)_PI32INV;
+address StubGenerator::PI32INV = (address)_PI32INV;
 
 ATTRIBUTE_ALIGNED(8) juint _NEG_ZERO[] = {
     0x00000000UL, 0x80000000UL
 };
-address MacroAssembler::NEG_ZERO = (address)_NEG_ZERO;
+address StubGenerator::NEG_ZERO = (address)_NEG_ZERO;
 
 ATTRIBUTE_ALIGNED(8) juint _P_1[] = {
     0x54400000UL, 0x3fb921fbUL
 };
-address MacroAssembler::P_1 = (address)_P_1;
+address StubGenerator::P_1 = (address)_P_1;
 
 ATTRIBUTE_ALIGNED(16) juint _P_2[] = {
     0x1a600000UL, 0x3d90b461UL, 0x1a600000UL, 0x3d90b461UL
 };
-address MacroAssembler::P_2 = (address)_P_2;
+address StubGenerator::P_2 = (address)_P_2;
 
 ATTRIBUTE_ALIGNED(8) juint _P_3[] = {
     0x2e037073UL, 0x3b63198aUL
 };
-address MacroAssembler::P_3 = (address)_P_3;
+address StubGenerator::P_3 = (address)_P_3;
 
 
 ATTRIBUTE_ALIGNED(16) juint _PI_INV_TABLE[] = {
@@ -125,7 +124,7 @@ ATTRIBUTE_ALIGNED(16) juint _PI_INV_TABLE[] = {
     0x8a5292eaUL, 0x6bfb5fb1UL, 0x1f8d5d08UL, 0x56033046UL, 0xfc7b6babUL,
     0xf0cfbc21UL
 };
-address MacroAssembler::PI_INV_TABLE = (address)_PI_INV_TABLE;
+address StubGenerator::PI_INV_TABLE = (address)_PI_INV_TABLE;
 
 
 ATTRIBUTE_ALIGNED(16) juint _Ctable[] = {
@@ -233,35 +232,5 @@ ATTRIBUTE_ALIGNED(16) juint _Ctable[] = {
     0xbf73b92eUL, 0xbc29b42cUL, 0xbfb917a6UL, 0xe0000000UL, 0x3c3e2718UL,
     0x00000000UL, 0x3ff00000UL
 };
-address MacroAssembler::Ctable = (address)_Ctable;
+address StubGenerator::Ctable = (address)_Ctable;
 
-#else // !_LP64
-
-ATTRIBUTE_ALIGNED(16) juint _ONES[] = {
-    0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0xbff00000UL
-};
-address MacroAssembler::ONES = (address)_ONES;
-
-ATTRIBUTE_ALIGNED(16) juint _PI4_INV[] = {
-    0x6dc9c883UL, 0x3ff45f30UL
-};
-address MacroAssembler::PI4_INV = (address)_PI4_INV;
-
-ATTRIBUTE_ALIGNED(16) juint _PI4X3[] = {
-    0x54443000UL, 0xbfe921fbUL, 0x3b39a000UL, 0x3d373dcbUL, 0xe0e68948UL,
-    0xba845c06UL
-};
-address MacroAssembler::PI4X3 = (address)_PI4X3;
-
-ATTRIBUTE_ALIGNED(16) juint _PI4X4[] = {
-    0x54400000UL, 0xbfe921fbUL, 0x1a600000UL, 0xbdc0b461UL, 0x2e000000UL,
-    0xbb93198aUL, 0x252049c1UL, 0xb96b839aUL
-};
-address MacroAssembler::PI4X4 = (address)_PI4X4;
-
-ATTRIBUTE_ALIGNED(16) juint _L_2IL0FLOATPACKET_0[] = {
-    0xffffffffUL, 0x7fffffffUL, 0x00000000UL, 0x00000000UL
-};
-address MacroAssembler::L_2IL0FLOATPACKET_0 = (address)_L_2IL0FLOATPACKET_0;
-
-#endif // _LP64

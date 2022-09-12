@@ -355,7 +355,7 @@ ModuleEntryTable::ModuleEntryTable() { }
 ModuleEntryTable::~ModuleEntryTable() {
   class ModuleEntryTableDeleter : public StackObj {
    public:
-    bool do_entry(const Symbol*& name, ModuleEntry*& entry) {
+    bool do_entry(const SymbolHandle& name, ModuleEntry*& entry) {
       if (log_is_enabled(Info, module, unload) || log_is_enabled(Debug, module)) {
         ResourceMark rm;
         const char* str = name->as_C_string();
@@ -511,7 +511,7 @@ static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {
 }
 
 void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
-  auto syms = [&] (const Symbol*& key, ModuleEntry*& m) {
+  auto syms = [&] (const SymbolHandle& key, ModuleEntry*& m) {
       m->iterate_symbols(closure);
   };
   _table.iterate_all(syms);
@@ -520,7 +520,7 @@ void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
 Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
   Array<ModuleEntry*>* archived_modules = ArchiveBuilder::new_rw_array<ModuleEntry*>(_table.number_of_entries());
   int n = 0;
-  auto grab = [&] (const Symbol*& key, ModuleEntry*& m) {
+  auto grab = [&] (const SymbolHandle& key, ModuleEntry*& m) {
     archived_modules->at_put(n++, m);
   };
   _table.iterate_all(grab);
@@ -603,7 +603,7 @@ ModuleEntry* ModuleEntryTable::lookup_only(Symbol* name) {
 // This should only occur at class unloading.
 void ModuleEntryTable::purge_all_module_reads() {
   assert_locked_or_safepoint(Module_lock);
-  auto purge = [&] (const Symbol*& key, ModuleEntry*& entry) {
+  auto purge = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     entry->purge_reads();
   };
   _table.iterate_all(purge);
@@ -637,7 +637,7 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
 // be set with the defining module.  During startup, prior to java.base's definition,
 // classes needing their module field set are added to the fixup_module_list.
 // Their module field is set once java.base's java.lang.Module is known to the VM.
-void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
+void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module_handle) {
   if (module_handle.is_null()) {
     fatal("Unable to patch the module field of classes loaded prior to "
           JAVA_BASE_NAME "'s definition, invalid java.lang.Module");
@@ -660,7 +660,18 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-    java_lang_Class::fixup_module_field(k, module_handle);
+#ifndef PRODUCT
+    if (HeapShared::is_a_test_class_in_unnamed_module(k)) {
+      // We allow -XX:ArchiveHeapTestClass to archive additional classes
+      // into the CDS heap, but these must be in the unnamed module.
+      ModuleEntry* unnamed_module = ClassLoaderData::the_null_class_loader_data()->unnamed_module();
+      Handle unnamed_module_handle(current, unnamed_module->module());
+      java_lang_Class::fixup_module_field(k, unnamed_module_handle);
+    } else
+#endif
+    {
+      java_lang_Class::fixup_module_field(k, module_handle);
+    }
     k->class_loader_data()->dec_keep_alive();
   }
 
@@ -670,7 +681,7 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
 
 void ModuleEntryTable::print(outputStream* st) {
   ResourceMark rm;
-  auto printer = [&] (const Symbol*& name, ModuleEntry*& entry) {
+  auto printer = [&] (const SymbolHandle& name, ModuleEntry*& entry) {
     entry->print(st);
   };
   st->print_cr("Module Entry Table (table_size=%d, entries=%d)",
@@ -680,14 +691,14 @@ void ModuleEntryTable::print(outputStream* st) {
 }
 
 void ModuleEntryTable::modules_do(void f(ModuleEntry*)) {
-  auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     f(entry);
   };
   _table.iterate_all(do_f);
 }
 
 void ModuleEntryTable::modules_do(ModuleClosure* closure) {
-  auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     closure->do_module(entry);
   };
   _table.iterate_all(do_f);
@@ -705,7 +716,7 @@ void ModuleEntry::print(outputStream* st) {
 }
 
 void ModuleEntryTable::verify() {
-  auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     entry->verify();
   };
   assert_locked_or_safepoint(Module_lock);
