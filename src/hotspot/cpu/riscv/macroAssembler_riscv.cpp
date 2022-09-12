@@ -992,7 +992,7 @@ int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
   return count;
 }
 
-// Push float registers in the bitset
+// Push floating-point registers in the bitset supplied.
 // Return the number of words pushed
 int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
   CompressibleRegion cr(this);
@@ -1037,6 +1037,8 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
 }
 
 #ifdef COMPILER2
+// Push vector registers in the bitset supplied.
+// Return the number of words pushed
 int MacroAssembler::push_v(unsigned int bitset, Register stack) {
   CompressibleRegion cr(this);
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
