@@ -1516,6 +1516,10 @@ public class JmodTask {
                             .showUsage(true);
             }
             if (opts.has(compLevel)) {
+                if (!options.mode.equals(Mode.CREATE)) {
+                    throw new CommandException("err.compression.level.wrong.mode")
+                            .showUsage(true);
+                }
                 options.compLevel = getLastElement(opts.valuesOf(compLevel));
             } else {
                 // Default to fast compression.

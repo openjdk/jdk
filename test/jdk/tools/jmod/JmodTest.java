@@ -751,6 +751,14 @@ public class JmodTest {
              jmod.toString())
             .assertSuccess();
 
+        jmod("list",
+             "--compression-level=0",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("is only accepted with create mode"), "Error message printed");
+            });
+
         FileUtils.deleteFileIfExistsWithRetry(jmod);
 
         jmod("create",
