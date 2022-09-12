@@ -610,12 +610,7 @@ public class LinkedHashMap<K,V>
      * @return a set view of the keys contained in this map
      */
     public Set<K> keySet() {
-        var ks = keySet;
-        if (ks == null) {
-            ks = new LinkedKeySet(false);
-            keySet = ks;
-        }
-        return ks;
+        return sequencedKeySet();
     }
 
     /**
@@ -623,9 +618,13 @@ public class LinkedHashMap<K,V>
      * @return a SequencedSet view of this map's keySet
      */
     public SequencedSet<K> sequencedKeySet() {
-        var ks = keySet;
-        if (ks instanceof SequencedSet<K> ss) {
-            return ss;
+        Set<K> ks = keySet;
+        if (ks instanceof SequencedSet<K> sks) {
+            return sks;
+        } else if (ks == null) {
+            SequencedSet<K> sks = new LinkedKeySet(false);
+            keySet = sks;
+            return sks;
         } else {
             return new LinkedKeySet(false);
         }
@@ -754,12 +753,7 @@ public class LinkedHashMap<K,V>
      * @return a view of the values contained in this map
      */
     public Collection<V> values() {
-        var vs = values;
-        if (vs == null) {
-            vs = new LinkedValues(false);
-            values = vs;
-        }
-        return vs;
+        return sequencedValues();
     }
 
     /**
@@ -767,9 +761,13 @@ public class LinkedHashMap<K,V>
      * @return a SequencedCollection view of this map's values collection
      */
     public SequencedCollection<V> sequencedValues() {
-        var vs = values;
-        if (vs instanceof SequencedCollection<V> sc) {
-            return sc;
+        Collection<V> vs = values;
+        if (vs instanceof SequencedCollection<V> svs) {
+            return svs;
+        } else if (vs == null) {
+            SequencedCollection<V> svs = new LinkedValues(false);
+            values = svs;
+            return svs;
         } else {
             return new LinkedValues(false);
         }
@@ -854,11 +852,7 @@ public class LinkedHashMap<K,V>
      * @return a set view of the mappings contained in this map
      */
     public Set<Map.Entry<K,V>> entrySet() {
-        var es = entrySet;
-        if (es == null) {
-            entrySet = es = new LinkedEntrySet(false);
-        }
-        return es;
+        return sequencedEntrySet();
     }
 
     /**
@@ -866,9 +860,13 @@ public class LinkedHashMap<K,V>
      * @return a SequencedSet view of this map's entrySet
      */
     public SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
-        var es = entrySet;
-        if (es instanceof SequencedSet<Map.Entry<K, V>> ss) {
-            return ss;
+        Set<Map.Entry<K, V>> es = entrySet;
+        if (es instanceof SequencedSet<Map.Entry<K, V>> ses) {
+            return ses;
+        } else if (es == null) {
+            SequencedSet<Map.Entry<K, V>> ses = new LinkedEntrySet(false);
+            entrySet = ses;
+            return ses;
         } else {
             return new LinkedEntrySet(false);
         }
