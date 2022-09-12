@@ -1178,8 +1178,8 @@ public:
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: NULL if CodeCache is full.
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  // Return: the call PC or NULL if CodeCache is full.
+  address trampoline_call(Address entry);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
@@ -1201,8 +1201,8 @@ public:
   // The tmp register is invalidated.
   //
   // Far_jump returns the amount of the emitted code.
-  void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  void far_call(Address entry, Register tmp = rscratch1);
+  int far_jump(Address entry, Register tmp = rscratch1);
 
   static int far_codestub_branch_size() {
     if (codestub_branch_needs_far_jump()) {
