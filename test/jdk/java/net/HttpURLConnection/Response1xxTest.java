@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
+import java.net.ProtocolException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
@@ -222,6 +223,6 @@ public class Response1xxTest {
         System.out.println("Issuing request to " + requestURI);
         final HttpURLConnection urlConnection = (HttpURLConnection) requestURI.toURL().openConnection();
         // we expect the request to fail because the server unexpectedly sends a 101 response
-        Assert.assertThrows(IOException.class, () -> urlConnection.getResponseCode());
+        Assert.assertThrows(ProtocolException.class, () -> urlConnection.getResponseCode());
     }
 }
