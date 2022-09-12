@@ -87,9 +87,10 @@ public @interface IR {
     String[] counts() default {};
 
     /**
-     * Define a list of {@link CompilePhase} enums to apply the IR rule constraints on. By default, matching is done
-     * on the predefined default phase of an {@link IRNode} as defined in {@link IRNodeMappings}. For non-{@link IRNode}
-     * constraints, a compile phase must explicitly be set. Otherwise, a {@link TestFormatException} is thrown.
+     * Define a list of {@link CompilePhase} enums to apply the IR rule constraint attributes on. By default, IR matching
+     * is applied on the predefined default phase of an {@link IRNode} as defined in {@link IRNodeMappings}. For
+     * non-{@link IRNode} constraints (i.e. user-defined regexes), a compile phase must explicitly be set. Otherwise,
+     * a {@link TestFormatException} is thrown.
      */
     CompilePhase[] phase() default { CompilePhase.DEFAULT };
 

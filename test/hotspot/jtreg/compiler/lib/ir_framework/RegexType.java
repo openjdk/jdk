@@ -29,5 +29,5 @@ package compiler.lib.ir_framework;
  * @see CompilePhase
  */
 public enum RegexType {
-    IDEAL, MACH, OPTO_ASSEMBLY
+    IDEAL_INDEPENDENT, MACH, OPTO_ASSEMBLY
 }

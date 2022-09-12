@@ -53,7 +53,7 @@ public enum CompilePhase {
     BEFORE_BEAUTIFY_LOOPS("Before beautify loops"),
     AFTER_BEAUTIFY_LOOPS("After beautify loops"),
     // Match on very first BEFORE_CLOOPS phase (there could be multiple phases for multiple loops in the code).
-    BEFORE_CLOOPS("Before CountedLoop", RegexType.IDEAL, ActionOnRepeat.KEEP_FIRST),
+    BEFORE_CLOOPS("Before CountedLoop", RegexType.IDEAL_INDEPENDENT, ActionOnRepeat.KEEP_FIRST),
     AFTER_CLOOPS("After CountedLoop"),
     PHASEIDEAL_BEFORE_EA("PhaseIdealLoop before EA"),
     AFTER_EA("After Escape Analysis"),
@@ -99,7 +99,7 @@ public enum CompilePhase {
 
     CompilePhase(String name) {
         this.name = name;
-        this.regexType = RegexType.IDEAL;
+        this.regexType = RegexType.IDEAL_INDEPENDENT;
         this.actionOnRepeat = ActionOnRepeat.KEEP_LAST;
     }
 

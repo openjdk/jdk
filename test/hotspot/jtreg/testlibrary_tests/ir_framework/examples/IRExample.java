@@ -34,49 +34,71 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  */
 
 /**
- * Multiple @IR rules can be specified at @Test methods. The framework performs a regex based match on the PrintIdeal
- * and PrintOptoAssembly of the run test VM. Some default string regexes for IR nodes are defined in the framework
- * IRNode class. There are two kinds of checks:
+ * Multiple {@link IR @IR} rules can be specified at {@link Test @Test} methods. The IR framework performs a regex based
+ * IR matching on the ideal graph compile phase (printed by compile command PrintIdealPhase) or PrintOptoAssembly (also
+ * treated as a compile phase and specified in {@link CompilePhase}) output of a method.
+ *
+ * <p>
+ * To perform a matching on a C2 IR node, the user can directly use the strings defined in {@link IRNode}.
+ * These represent special placeholder strings which are replaced by the IR framework by regexes (defined in package
+ * {@link compiler.lib.ir_framework.driver.irmatching.regexes}) depending on which compile phase (defined with
+ * {@link IR#phase()} the {@link IR @IR} rule should be applied on. If an {@link IRNode} cannot be applied for a compile
+ * phase (e.g. the node does not exist in this phase), a format violation will be reported.
+ *
+ * <p>
+ * When not specifying any compile phase with {@link IR#phase()} (or explicitly setting {@link CompilePhase#DEFAULT}),
+ * the framework will perform IR matching on a default compile phase which for most IR nodes is
+ * {@link CompilePhase#PRINT_IDEAL} (output of flag -XX:+PrintIdeal, the state of the machine independent ideal graph
+ * after applying optimizations). The exact mapping from {@link IRNode} strings to regexes and default phases is
+ * defined in class {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings}.
+ *
+ * <p>
+ * The user can also directly specify user-defined regexes in combination with a compile phase. If this regex represents
+ * a not yet supported C2 IR node, it is encouraged to directly add it to the IR framework instead.
+ *
+ * <p>
+ * There are two kinds of checks:
  * <ul>
- *     <li><p>{@link IR#failOn}: One or more (IR node) regexes that are not allowed to occur in the IR (neither in
- *                               PrintIdeal nor in PrintOptoAssembly)</li>
- *     <li><p>{@link IR#counts}: One or more regexes-count pairs specifies how often an (IR node) regex must be found in
- *                               PrintIdeal and PrintOptoAssembly.</li>
+ *     <li><p>{@link IR#failOn}: A list of one or more IR nodes/user-defined regexes which are not allowed to occur in
+ *                               any compilation output of any compile phase.</li>
+ *     <li><p>{@link IR#counts}: A list of one or more "IR node/user-defined regex - counter" pairs which specify how
+ *                               often each IR node/user-defined regex should be matched on the compilation output of
+ *                               each compile phase.</li>
  * </ul>
  * <p>
  *
  * One might also want to restrict the application of certain @IR rules depending on the used flags in the test VM.
- * These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted (see
- * {@link TestFramework}) most of them should not have an impact on the IR except for different GC flags which should
- * be considered) to enable a verification by the framework (see below). The @IR rules thus have an option to restrict
- * their application:
+ * These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted (i.e. have
+ * no unexpected impact on the IR except if the flag simulates a specific machine setup like UseAVX={1,2,3} etc.)
+ * to enable an IR verification by the framework (see below). The @IR rules thus have an option to restrict their
+ * application:
  * <ul>
- *     <li><p>{@link IR#applyIf}: Only apply a rule if a flag has a certain value</li>
- *     <li><p>{@link IR#applyIfNot}: Only apply a rule if a flag has NOT a certain value (inverse of applyIf)</li>
- *     <li><p>{@link IR#applyIfAnd}: Only apply a rule if all flags have the specified value</li>
- *     <li><p>{@link IR#applyIfOr}: Only apply a rule if at least one flag has the specified value</li>
+ *     <li><p>{@link IR#applyIf}:    Only apply a rule if a flag has the specified value/range of values.</li>
+ *     <li><p>{@link IR#applyIfNot}: Only apply a rule if a flag has NOT a specified value/range of values
+ *                                   (inverse of applyIf).</li>
+ *     <li><p>{@link IR#applyIfAnd}: Only apply a rule if ALL flags have the specified value/range of values.</li>
+ *     <li><p>{@link IR#applyIfOr}:  Only apply a rule if AT LEAST ONE flag has the specified value/range of values.</li>
  * </ul>
  * <p>
  *
- * The framework, however, does not perform the verification if:
+ * The framework, however, does NOT perform an IR verification if:
  * <ul>
  *     <li><p>-DVerifyIR=false is used</li>
  *     <li><p>The test is run with a non-debug build</li>
  *     <li><p>-Xcomp, -Xint, -XX:-UseCompile, -XX:CompileThreshold, -DFlipC1C2=true, or -DExcludeRandom=true are used.</li>
- *     <li><p>JTreg specifies non-whitelisted flags as VM and/or Javaoptions (could change the IR in an unexpected way)</li>
+ *     <li><p>JTreg specifies non-whitelisted flags as VM and/or Javaoptions (could change the IR in unexpected ways).</li>
  * </ul>
  *
  * @see IR
  * @see Test
  * @see TestFramework
  */
-// This test is expected to fail when run with JTreg.
 public class IRExample {
     int iFld, iFld2, iFld3;
     public static void main(String[] args) {
-        TestFramework.run(); // First run tests from IRExample
+        TestFramework.run(); // First run tests from IRExample. No failure.
         try {
-            TestFramework.run(FailingExamples.class); // Secondly, run tests from FailingExamples
+            TestFramework.run(FailingExamples.class); // Secondly, run tests from FailingExamples. Expected to fail.
         } catch (IRViolationException e) {
             // Expected. Check stderr/stdout to see how IR failures are reported (always printed, regardless if
             // exception is thrown or not). Uncomment the "throw" statement below to get a completely failing test.
@@ -84,7 +106,7 @@ public class IRExample {
         }
     }
 
-    // Rules with failOn constraint which all pass
+    // Rules with failOn constraint which all pass.
     @Test
     @IR(failOn = IRNode.LOAD) // 1 default regex
     @IR(failOn = {IRNode.LOAD, IRNode.LOOP}) // 2 default regexes
@@ -102,7 +124,7 @@ public class IRExample {
         iFld = 42; // No load, no loop, no store to iFld2, no store to class Foo
     }
 
-    // Rules with counts constraint which all pass
+    // Rules with counts constraint which all pass.
     @Test
     @IR(counts = {IRNode.STORE, "2"}) // 1 default regex
     @IR(counts = {IRNode.LOAD, "0"}) // equivalent to failOn = IRNode.LOAD
@@ -121,7 +143,7 @@ public class IRExample {
         iFld2 = 42; // No load, store to iFld2 in class IRExample
     }
 
-    // @IR rules can also specify both type of checks in the same rule
+    // @IR rules can also specify both type of checks in the same rule.
     @Test
     @IR(failOn = {IRNode.ALLOC,
                   IRNode.LOOP},
@@ -131,6 +153,21 @@ public class IRExample {
     public void mixFailOnAndCounts() {
         iFld = iFld2;
         iFld2 = iFld3;
+    }
+
+    // Rules on compile phases.
+    @Test
+    // Apply IR matching on default phase which is PrintOptoAssembly for ALLOC and PrintIdeal for LOAD
+    @IR(failOn = {IRNode.ALLOC, IRNode.LOAD})
+    // Apply IR matching on compile phase AFTER_PARSING.
+    @IR(failOn = {IRNode.ALLOC, IRNode.LOAD}, phase = CompilePhase.AFTER_PARSING)
+    // Apply IR matching on compile phase AFTER_PARSING and CCP1.
+    @IR(counts = {IRNode.ALLOC, "0",IRNode.STORE_I, ""}, phase = {CompilePhase.AFTER_PARSING, CompilePhase.CCP1})
+    // Apply IR matching on compile phase BEFORE_MATCHING by using a custom regex. In this case, a compile phase must
+    // be specified as there is no default compiler phase for user defined regexes.
+    @IR(failOn = "LoadI", phase = CompilePhase.BEFORE_MATCHING)
+    public void compilePhases() {
+        iFld = 42;
     }
 }
 
@@ -152,7 +189,7 @@ class FailingExamples {
     }
 
 
-    // Rules with counts constraint which all fail
+    // Rules with counts constraint which all fail.
     @Test
     @IR(counts = {IRNode.STORE, "1"}) // There are 2 stores
     @IR(counts = {IRNode.LOAD, "0"}) // equivalent to failOn = IRNode.LOAD, there is 1 load
@@ -170,5 +207,20 @@ class FailingExamples {
     public void badCounts() {
         irExample.iFld = iFld3; // No load, store to iFld in class IRExample
         iFld2 = 42; // No load, store to iFld2 in class IRExample
+    }
+
+    // Rules on compile phases which fail
+    @Test
+    // The compile phase BEFORE_STRINGOPTS will not be emitted for this method, resulting in an IR matching failure.
+    @IR(failOn = IRNode.LOAD_I, phase = CompilePhase.BEFORE_STRINGOPTS)
+    // Apply IR matching on compile phase AFTER_PARSING and ITER_GVN1. After parsing, we have 2 stores and we fail
+    // for compile phase AFTER_PARSING. However, once IGVN is over, we were able to optimize one store away, leaving
+    // us with only 1 store and we do not fail with compile phase ITER_GVN1.
+    @IR(counts = {IRNode.STORE_I, "1"},
+        phase = {CompilePhase.AFTER_PARSING, // Fail
+                 CompilePhase.ITER_GVN1}) // works
+    public void badCompilePhases() {
+        iFld2 = 42;
+        iFld2 = 42 + iFld2; // Removed in first IGVN iteration and replaced by iFld2 = 84
     }
 }

@@ -30,17 +30,17 @@ import compiler.lib.ir_framework.IRNode;
 import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants.*;
 
 /**
- * This class provides default regex strings for matches on the ideal graph including PrintIdeal (i.e. {@link CompilePhase
- * compile phases} after before matching andcode generation). These default regexes are used to replace IR node placeholder
- * strings (defined in {@link IRNode}) found in check attributes {@link IR#failOn()} and {@link IR#counts()}. The mappings
- * in {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings} specify on which compile phases
- * a default regex is applied.
+ * This class provides default regex strings for matches on the machine independent ideal graph including PrintIdeal
+ * (i.e. {@link CompilePhase compile phases} before matching and code generation). These default regexes are used to
+ * replace IR node placeholder strings (defined in {@link IRNode}) found in check attributes {@link IR#failOn()} and
+ * {@link IR#counts()}. The mappings in {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings}
+ * specify on which compile phases a default regex is applied.
  *
  * @see IR
  * @see IRNode
  * @see compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings
  */
-public class IdealDefaultRegexes {
+public class IdealIndependentDefaultRegexes {
     public static final String ABS_D = START + "AbsD" + MID + END;
     public static final String ABS_F = START + "AbsF" + MID + END;
     public static final String ABS_I = START + "AbsI" + MID + END;

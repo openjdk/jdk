@@ -25,7 +25,7 @@ package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
 import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants;
-import compiler.lib.ir_framework.driver.irmatching.regexes.IdealDefaultRegexes;
+import compiler.lib.ir_framework.driver.irmatching.regexes.IdealIndependentDefaultRegexes;
 import compiler.lib.ir_framework.driver.irmatching.regexes.MachDefaultRegexes;
 import compiler.lib.ir_framework.driver.irmatching.regexes.OptoAssemblyDefaultRegexes;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
@@ -37,7 +37,8 @@ import jdk.test.whitebox.WhiteBox;
  * This class specifies IR node placeholder strings that can be used in {@link IR#failOn()} and/or {@link IR#counts()}
  * attributes to define IR constraints. These placeholder strings are replaced with default regexes (defined in package
  * {@link compiler.lib.ir_framework.driver.irmatching.regexes}) by the IR framework depending on the specified
- * compile phases in {@link IR#phase()} and the provided mapping in {@link IRNodeMappings}.
+ * compile phases in {@link IR#phase()} and the provided mapping in
+ * {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings}.
  *
  * <p>
  * If an IR node is either missing a mapping in {@link IRNodeMappings} or does not provide a default regex for a
@@ -55,7 +56,7 @@ import jdk.test.whitebox.WhiteBox;
  *
  * @see IRNodeMappings
  * @see DefaultRegexConstants
- * @see IdealDefaultRegexes
+ * @see IdealIndependentDefaultRegexes
  * @see MachDefaultRegexes
  * @see OptoAssemblyDefaultRegexes
  */

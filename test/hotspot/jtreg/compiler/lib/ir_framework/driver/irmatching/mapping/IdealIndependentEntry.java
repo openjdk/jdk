@@ -27,18 +27,19 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.RegexType;
 
 /**
- * This class represents a mapping entry for an IR node that is only applied on ideal graph phases (i.e. before matching
- * creates a Mach Graph). All compile phases on the ideal graph specify {@link RegexType#IDEAL} as regex type.
+ * This class represents a mapping entry for an IR node that is only applied on ideal graph phases that are machine
+ * independent (i.e. before matching creates a machine dependent Mach Graph). All these compile phases on the ideal graph
+ * specify {@link RegexType#IDEAL_INDEPENDENT} as regex type.
  */
-class IdealOnlyEntry extends SingleRegexEntry {
+class IdealIndependentEntry extends SingleRegexEntry {
 
-    protected IdealOnlyEntry(CompilePhase defaultCompilePhase, String regex) {
+    protected IdealIndependentEntry(CompilePhase defaultCompilePhase, String regex) {
         super(defaultCompilePhase, regex);
     }
 
     @Override
     public String getRegexForPhase(CompilePhase compilePhase) {
-        if (compilePhase.getRegexType() == RegexType.IDEAL) {
+        if (compilePhase.getRegexType() == RegexType.IDEAL_INDEPENDENT) {
             return regex;
         } else {
             return null;
