@@ -23,11 +23,11 @@
  * questions.
  */
 
-package java.util.regex;
+package jdk.internal.util.regex;
 
 import java.util.Objects;
 
-final class Grapheme {
+public final class Grapheme {
 
     /**
      * Look for the next extended grapheme cluster boundary in a CharSequence.
@@ -43,7 +43,7 @@ final class Grapheme {
      * @param limit limit offset in the src (exclusive)
      * @return the next grapheme boundary
      */
-    static int nextBoundary(CharSequence src, int off, int limit) {
+    public static int nextBoundary(CharSequence src, int off, int limit) {
         Objects.checkFromToIndex(off, limit, src.length());
 
         int ch0 = Character.codePointAt(src, off);

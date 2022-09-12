@@ -166,8 +166,6 @@ public class Attr extends JCTree.Visitor {
         Options options = Options.instance(context);
 
         Source source = Source.instance(context);
-        allowPoly = Feature.POLY.allowedInSource(source);
-        allowLambda = Feature.LAMBDA.allowedInSource(source);
         allowReifiableTypesInInstanceof = Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowPatternSwitch = (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH)) &&
@@ -185,14 +183,6 @@ public class Attr extends JCTree.Visitor {
         unknownTypeExprInfo = new ResultInfo(KindSelector.VAL_TYP, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
     }
-
-    /** Switch: support target-typing inference
-     */
-    boolean allowPoly;
-
-    /** Switch: support lambda expressions ?
-     */
-    boolean allowLambda;
 
     /** Switch: reifiable types in instanceof enabled?
      */
@@ -247,7 +237,7 @@ public class Attr extends JCTree.Visitor {
                       Errors.UnexpectedType(resultInfo.pkind.kindNames(),
                                             ownkind.kindNames()));
             owntype = types.createErrorType(found);
-        } else if (allowPoly && inferenceContext.free(found)) {
+        } else if (inferenceContext.free(found)) {
             //delay the check if there are inference variables in the found type
             //this means we are dealing with a partially inferred poly expression
             owntype = shouldCheck ? resultInfo.pt : found;
@@ -770,7 +760,7 @@ public class Attr extends JCTree.Visitor {
     KindSelector attribArgs(KindSelector initialKind, List<JCExpression> trees, Env<AttrContext> env, ListBuffer<Type> argtypes) {
         KindSelector kind = initialKind;
         for (JCExpression arg : trees) {
-            Type argtype = chk.checkNonVoid(arg, attribTree(arg, env, allowPoly ? methodAttrInfo : unknownExprInfo));
+            Type argtype = chk.checkNonVoid(arg, attribTree(arg, env, methodAttrInfo));
             if (argtype.hasTag(DEFERRED)) {
                 kind = KindSelector.of(KindSelector.POLY, kind);
             }
@@ -1983,8 +1973,7 @@ public class Attr extends JCTree.Visitor {
         Type condtype = attribExpr(tree.cond, env, syms.booleanType);
         MatchBindings condBindings = matchBindings;
 
-        tree.polyKind = (!allowPoly ||
-                pt().hasTag(NONE) && pt() != Type.recoveryType && pt() != Infer.anyPoly ||
+        tree.polyKind = (pt().hasTag(NONE) && pt() != Type.recoveryType && pt() != Infer.anyPoly ||
                 isBooleanOrNumeric(env, tree)) ?
                 PolyKind.STANDALONE : PolyKind.POLY;
 
@@ -2440,10 +2429,8 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitThrow(JCThrow tree) {
-        Type owntype = attribExpr(tree.expr, env, allowPoly ? Type.noType : syms.throwableType);
-        if (allowPoly) {
-            chk.checkType(tree, owntype, syms.throwableType);
-        }
+        Type owntype = attribExpr(tree.expr, env, Type.noType);
+        chk.checkType(tree, owntype, syms.throwableType);
         result = null;
     }
 
@@ -4056,7 +4043,7 @@ public class Attr extends JCTree.Visitor {
         //should we propagate the target type?
         final ResultInfo castInfo;
         JCExpression expr = TreeInfo.skipParens(tree.expr);
-        boolean isPoly = allowPoly && (expr.hasTag(LAMBDA) || expr.hasTag(REFERENCE));
+        boolean isPoly = (expr.hasTag(LAMBDA) || expr.hasTag(REFERENCE));
         if (isPoly) {
             //expression is a poly - we need to propagate target type info
             castInfo = new ResultInfo(KindSelector.VAL, clazztype,

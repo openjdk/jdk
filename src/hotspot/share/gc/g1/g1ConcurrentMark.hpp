@@ -608,6 +608,8 @@ public:
 
   ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
 
+  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
+
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently
   // to the application. Also scrubs dead objects to ensure region is parsable.

@@ -76,9 +76,6 @@ public class TransTypes extends TreeTranslator {
     private final Resolve resolve;
     private final CompileStates compileStates;
 
-    /** Switch: is complex graph inference supported? */
-    private final boolean allowGraphInference;
-
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
         compileStates = CompileStates.instance(context);
@@ -89,8 +86,6 @@ public class TransTypes extends TreeTranslator {
         types = Types.instance(context);
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
-        Source source = Source.instance(context);
-        allowGraphInference = Feature.GRAPH_INFERENCE.allowedInSource(source);
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
     }
@@ -671,8 +666,7 @@ public class TransTypes extends TreeTranslator {
         tree.meth = translate(tree.meth, null);
         Symbol meth = TreeInfo.symbol(tree.meth);
         Type mt = meth.erasure(types);
-        boolean useInstantiatedPtArgs =
-                allowGraphInference && !types.isSignaturePolymorphic((MethodSymbol)meth.baseSymbol());
+        boolean useInstantiatedPtArgs = !types.isSignaturePolymorphic((MethodSymbol)meth.baseSymbol());
         List<Type> argtypes = useInstantiatedPtArgs ?
                 tree.meth.type.getParameterTypes() :
                 mt.getParameterTypes();
@@ -706,7 +700,7 @@ public class TransTypes extends TreeTranslator {
                 erasure(tree.constructorType) :
                 null;
 
-        List<Type> argtypes = erasedConstructorType != null && allowGraphInference ?
+        List<Type> argtypes = erasedConstructorType != null ?
                 erasedConstructorType.getParameterTypes() :
                 tree.constructor.erasure(types).getParameterTypes();
 
