@@ -106,11 +106,6 @@ public class Move {
             System.out.println("register for different events");
             final WatchKey rootKey = dir.resolve(dir.resolve("root")).register(rootWatcher,
                     new WatchEvent.Kind<?>[]{ ENTRY_CREATE, ENTRY_DELETE });
-            final WatchKey subtreeKey = dir.resolve(dir.resolve("root")).register(subtreeWatcher,
-                    new WatchEvent.Kind<?>[]{ ENTRY_CREATE, ENTRY_DELETE },  ExtendedWatchEventModifier.FILE_TREE);
-
-            if (rootKey == subtreeKey)
-                throw new RuntimeException("keys should be different");
 
             System.out.println("Move root/subdir/1/2 -> root/subdir/2.moved");
             Files.move(dir.resolve("root").resolve("subdir").resolve("1").resolve("2"),
@@ -123,24 +118,7 @@ public class Move {
                     throw new RuntimeException("key not expected");
             }
 
-            // Check that the moved subtree has become a series of DELETE/CREATE events
-            {
-                takeExpectedKey(subtreeWatcher, subtreeKey);
-                final List<WatchEvent<?>> events = subtreeKey.pollEvents();
-                dumpEvents(events);
-
-                assertHasEvent(events, Path.of("subdir").resolve("1").resolve("2").resolve("3").resolve("file3"), ENTRY_DELETE);
-                assertHasEvent(events, Path.of("subdir").resolve("1").resolve("2").resolve("3"), ENTRY_DELETE);
-                assertHasEvent(events, Path.of("subdir").resolve("1").resolve("2"), ENTRY_DELETE);
-                assertHasEvent(events, Path.of("subdir").resolve("2.moved"), ENTRY_CREATE);
-                assertHasEvent(events, Path.of("subdir").resolve("2.moved").resolve("3"), ENTRY_CREATE);
-                assertHasEvent(events, Path.of("subdir").resolve("2.moved").resolve("3").resolve("file3"), ENTRY_CREATE);
-                if (events.size() > 6) {
-                    throw new RuntimeException("Too many events");
-                }
-            }
             rootKey.reset();
-            subtreeKey.reset();
 
             System.out.println("Move root/subdir/2.moved -> root/2");
             Files.move(dir.resolve("root").resolve("subdir").resolve("2.moved"),
@@ -157,25 +135,8 @@ public class Move {
                 }
             }
 
-            // Check the recursive root directory watcher
-            {
-                takeExpectedKey(subtreeWatcher, subtreeKey);
-                final List<WatchEvent<?>> events = subtreeKey.pollEvents();
-                dumpEvents(events);
-
-                assertHasEvent(events, Path.of("subdir").resolve("2.moved").resolve("3").resolve("file3"), ENTRY_DELETE);
-                assertHasEvent(events, Path.of("subdir").resolve("2.moved").resolve("3"), ENTRY_DELETE);
-                assertHasEvent(events, Path.of("subdir").resolve("2.moved"), ENTRY_DELETE);
-                assertHasEvent(events, Path.of("2"), ENTRY_CREATE);
-                assertHasEvent(events, Path.of("2").resolve("3"), ENTRY_CREATE);
-                assertHasEvent(events, Path.of("2").resolve("3").resolve("file3"), ENTRY_CREATE);
-                if (events.size() > 6) {
-                    throw new RuntimeException("Too many events");
-                }
-            }
         } finally {
             rootWatcher.close();
-            subtreeWatcher.close();
         }
     }
 

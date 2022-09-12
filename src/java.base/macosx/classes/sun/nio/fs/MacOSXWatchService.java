@@ -41,17 +41,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayDeque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Consumer;
 
 class MacOSXWatchService extends AbstractWatchService {
     private static final MacOSXFileSystemProvider theFSProvider = DefaultFileSystemProvider.instance();
@@ -75,7 +69,9 @@ class MacOSXWatchService extends AbstractWatchService {
 
     @SuppressWarnings("removal")
     @Override
-    WatchKey register(Path dir, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException {
+    WatchKey register(Path dir,
+                      WatchEvent.Kind<?>[] events,
+                      WatchEvent.Modifier... modifiers) throws IOException {
         checkIsOpen();
 
         final UnixPath unixDir = (UnixPath)dir;
@@ -84,7 +80,8 @@ class MacOSXWatchService extends AbstractWatchService {
         final EnumSet<WatchModifier> modifierSet = WatchModifier.setOf(modifiers);
 
         try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<MacOSXWatchKey>() {
+            return AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<MacOSXWatchKey>() {
                 @Override
                 public MacOSXWatchKey run() throws IOException {
                     return doPrivilegedRegister(unixDir, dirKey, eventSet, modifierSet);
@@ -98,7 +95,10 @@ class MacOSXWatchService extends AbstractWatchService {
         }
     }
 
-    private MacOSXWatchKey doPrivilegedRegister(UnixPath unixDir, Object dirKey, EnumSet<FSEventKind> eventSet, EnumSet<WatchModifier> modifierSet) throws IOException {
+    private MacOSXWatchKey doPrivilegedRegister(UnixPath unixDir,
+                                                Object dirKey,
+                                                EnumSet<FSEventKind> eventSet,
+                                                EnumSet<WatchModifier> modifierSet) throws IOException {
         synchronized (closeLock()) {
             checkIsOpen();
 
@@ -115,16 +115,20 @@ class MacOSXWatchService extends AbstractWatchService {
 
                 watchKey.enable(runLoopThread, eventSet, modifierSet);
                 eventStreamToWatchKey.put(watchKey.getEventStreamRef(), watchKey);
-                watchKeysLock.notify(); // So that run loop gets running again if stopped due to lack of event streams
+                watchKeysLock.notify(); // So that run loop gets running again
+                                        // if stopped due to lack of event streams
                 return watchKey;
             }
         }
     }
 
     /**
-     * Invoked on the CFRunLoopThread by the native code to report directories that need to be re-scanned.
+     * Invoked on the CFRunLoopThread by the native code to report directories
+     * that need to be re-scanned.
      */
-    private void callback(final long eventStreamRef, final String[] paths, final long eventFlagsPtr) {
+    private void callback(final long eventStreamRef,
+                          final String[] paths,
+                          final long eventFlagsPtr) {
         synchronized (watchKeysLock) {
             final MacOSXWatchKey watchKey = eventStreamToWatchKey.get(eventStreamRef);
             if (watchKey != null) {
@@ -180,8 +184,9 @@ class MacOSXWatchService extends AbstractWatchService {
 
         void runLoopStop() {
             if (runLoopRef != 0) {
-                // The run loop may have stuck in CFRunLoopRun() even though all of its input sources
-                // have been removed. Need to terminate it explicitly so that it can run to completion.
+                // The run loop may have stuck in CFRunLoopRun() even though
+                // all of its input sources have been removed. Need to terminate
+                // it explicitly so that it can run to completion.
                 MacOSXWatchService.CFRunLoopStop(runLoopRef);
             }
         }
@@ -260,16 +265,13 @@ class MacOSXWatchService extends AbstractWatchService {
 
             return eventSet;
         }
-
     }
 
     private enum WatchModifier {
-        FILE_TREE, SENSITIVITY_HIGH, SENSITIVITY_MEDIUM, SENSITIVITY_LOW;
+        SENSITIVITY_HIGH, SENSITIVITY_MEDIUM, SENSITIVITY_LOW;
 
         public static WatchModifier of(final WatchEvent.Modifier watchEventModifier) {
-            if (ExtendedOptions.FILE_TREE.matches(watchEventModifier)) {
-                return FILE_TREE;
-            } if (ExtendedOptions.SENSITIVITY_HIGH.matches(watchEventModifier)) {
+            if (ExtendedOptions.SENSITIVITY_HIGH.matches(watchEventModifier)) {
                 return SENSITIVITY_HIGH;
             } if (ExtendedOptions.SENSITIVITY_MEDIUM.matches(watchEventModifier)) {
                 return SENSITIVITY_MEDIUM;
@@ -306,7 +308,6 @@ class MacOSXWatchService extends AbstractWatchService {
     private static class MacOSXWatchKey extends AbstractWatchKey {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
 
-        private static final long kFSEventStreamEventFlagMustScanSubDirs = 0x00000001;
         private static final long kFSEventStreamEventFlagRootChanged     = 0x00000020;
 
         private final static Path relativeRootPath = theFS.getPath("");
@@ -319,14 +320,11 @@ class MacOSXWatchService extends AbstractWatchService {
         // Kinds of events to be reported.
         private EnumSet<FSEventKind> eventsToWatch;
 
-        // Should events in directories below realRootPath reported?
-        private boolean watchFileTree;
-
         // Native FSEventStreamRef as returned by FSEventStreamCreate().
         private long         eventStreamRef;
         private final Object eventStreamRefLock = new Object();
 
-        private final DirectoryTreeSnapshot directoryTreeSnapshot = new DirectoryTreeSnapshot();
+        private DirectorySnapshot directorySnapshot;
 
         MacOSXWatchKey(final MacOSXWatchService watchService,
                        final UnixPath dir,
@@ -343,9 +341,8 @@ class MacOSXWatchService extends AbstractWatchService {
             assert(!isValid());
 
             this.eventsToWatch = eventsToWatch;
-            this.watchFileTree = modifierSet.contains(WatchModifier.FILE_TREE);
 
-            directoryTreeSnapshot.build();
+            directorySnapshot = DirectorySnapshot.create(getRealRootPath());
 
             synchronized (eventStreamRefLock) {
                 final int kFSEventStreamCreateFlagWatchRoot  = 0x00000004;
@@ -357,13 +354,14 @@ class MacOSXWatchService extends AbstractWatchService {
                 if (eventStreamRef == 0)
                     throw new IOException("Unable to create FSEventStream");
 
-                MacOSXWatchService.eventStreamSchedule(eventStreamRef, runLoopThread.getRunLoopRef());
+                MacOSXWatchService.eventStreamSchedule(eventStreamRef,
+                        runLoopThread.getRunLoopRef());
             }
         }
 
         synchronized void disable() {
             invalidate();
-            directoryTreeSnapshot.reset();
+            directorySnapshot = null;
         }
 
         synchronized void handleEvents(final String[] paths, long eventFlagsPtr) {
@@ -372,17 +370,8 @@ class MacOSXWatchService extends AbstractWatchService {
                 return;
             }
 
-            final Set<Path> dirsToScan = new LinkedHashSet<>(paths.length);
-            final Set<Path> dirsToScanRecursively = new LinkedHashSet<>();
-            collectDirsToScan(paths, eventFlagsPtr, dirsToScan, dirsToScanRecursively);
-
-            for (final Path recurseDir : dirsToScanRecursively) {
-                dirsToScan.removeIf(dir -> dir.startsWith(recurseDir));
-                directoryTreeSnapshot.update(recurseDir, true);
-            }
-
-            for (final Path dir : dirsToScan) {
-                directoryTreeSnapshot.update(dir, false);
+            if (updateNeeded(paths, eventFlagsPtr)) {
+                directorySnapshot.update(MacOSXWatchKey.this);
             }
         }
 
@@ -392,9 +381,8 @@ class MacOSXWatchService extends AbstractWatchService {
                     : relativeRootPath;
         }
 
-        private void collectDirsToScan(final String[] paths, long eventFlagsPtr,
-                                       final Set<Path> dirsToScan,
-                                       final Set<Path> dirsToScanRecursively) {
+        private boolean updateNeeded(String[] paths, long eventFlagsPtr) {
+            boolean rootChanged = false;
             for (final String absPath : paths) {
                 if (absPath == null) {
                     reportOverflow(null);
@@ -403,7 +391,8 @@ class MacOSXWatchService extends AbstractWatchService {
 
                 Path path = toRelativePath(absPath);
 
-                if (!watchFileTree && !relativeRootPath.equals(path)) {
+                if (!relativeRootPath.equals(path)) {
+                    // Ignore events from subdirectories for now.
                     continue;
                 }
 
@@ -411,183 +400,47 @@ class MacOSXWatchService extends AbstractWatchService {
                 if ((flags & kFSEventStreamEventFlagRootChanged) != 0) {
                     cancel();
                     signal();
+                    rootChanged = false;
                     break;
-                } else if ((flags & kFSEventStreamEventFlagMustScanSubDirs) != 0 && watchFileTree) {
-                    dirsToScanRecursively.add(path);
                 } else {
-                    dirsToScan.add(path);
+                    rootChanged = true;
                 }
 
-                final long SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS = 4L; // FSEventStreamEventFlags is UInt32
+                // FSEventStreamEventFlags is UInt32.
+                final long SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS = 4L;
                 eventFlagsPtr += SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS;
             }
+
+            return rootChanged;
         }
 
         /**
-         * Represents a snapshot of a directory tree.
-         * The snapshot includes subdirectories iff <code>watchFileTree</code> is <code>true</code>.
-         */
-        private class DirectoryTreeSnapshot {
-            private final HashMap<Path, DirectorySnapshot> snapshots;
-
-            DirectoryTreeSnapshot() {
-                this.snapshots = new HashMap<>(watchFileTree ? 256 : 1);
-            }
-
-            void build() throws IOException {
-                final Queue<Path> pathToDo = new ArrayDeque<>();
-                pathToDo.offer(relativeRootPath);
-
-                while (!pathToDo.isEmpty()) {
-                    final Path path = pathToDo.poll();
-                    try {
-                        createForOneDirectory(path, watchFileTree ? pathToDo : null);
-                    } catch (IOException e) {
-                        final boolean exceptionForRootPath = relativeRootPath.equals(path);
-                        if (exceptionForRootPath)
-                            throw e; // report to the user as the watch root may have disappeared
-
-                        // Ignore for sub-directories as some may have been removed during the scan.
-                        // That's OK, those kinds of changes in the directory hierarchy is what
-                        // WatchService is used for. However, it's impossible to catch all changes
-                        // at this point, so we may fail to report some events that had occurred before
-                        // FSEventStream has been created to watch for those changes.
-                    }
-                }
-            }
-
-            private DirectorySnapshot createForOneDirectory(
-                    final Path directory,
-                    final Queue<Path> newDirectoriesFound) throws IOException {
-                final DirectorySnapshot snapshot = DirectorySnapshot.create(getRealRootPath(), directory);
-                snapshots.put(directory, snapshot);
-                if (newDirectoriesFound != null)
-                    snapshot.forEachDirectory(newDirectoriesFound::offer);
-
-                return snapshot;
-            }
-
-            void reset() {
-                snapshots.clear();
-            }
-
-            void update(final Path directory, final boolean recurse) {
-                if (!recurse) {
-                    directoryTreeSnapshot.update(directory, null);
-                } else {
-                    final Queue<Path> pathToDo = new ArrayDeque<>();
-                    pathToDo.offer(directory);
-                    while (!pathToDo.isEmpty()) {
-                        final Path dir = pathToDo.poll();
-                        directoryTreeSnapshot.update(dir, pathToDo);
-                    }
-                }
-            }
-
-            private void update(final Path directory, final Queue<Path> modifiedDirs) {
-                final DirectorySnapshot snapshot = snapshots.get(directory);
-                if (snapshot == null) {
-                    // This means that we missed a notification about an update of our parent.
-                    // Report overflow (who knows what else we weren't notified about?) and
-                    // do our best to recover from this mess by queueing our parent for an update.
-                    reportOverflow(directory);
-                    if (modifiedDirs != null)
-                        modifiedDirs.offer(getParentOf(directory));
-
-                    return;
-                }
-
-                // FSEvents API does not generate events for directories that got moved from/to the directory
-                // being watched, so we have to watch for new/deleted directories ourselves. If we still
-                // receive an event for, say, one of the new directories, it won't be reported again as this
-                // will count as refresh with no modifications detected.
-                final Queue<Path> createdDirs = new ArrayDeque<>();
-                final Queue<Path> deletedDirs = new ArrayDeque<>();
-                snapshot.update(MacOSXWatchKey.this, createdDirs, deletedDirs, modifiedDirs);
-
-                handleNewDirectories(createdDirs);
-                handleDeletedDirectories(deletedDirs);
-            }
-
-            private Path getParentOf(final Path directory) {
-                Path parent = directory.getParent();
-                if (parent == null)
-                    parent = relativeRootPath;
-                return parent;
-            }
-
-            private void handleDeletedDirectories(final Queue<Path> deletedDirs) {
-                // We don't know the exact sequence in which these were deleted,
-                // so at least maintain a sensible order, i.e. children are deleted before the parent.
-                final LinkedList<Path> dirsToReportDeleted = new LinkedList<>();
-                while (!deletedDirs.isEmpty()) {
-                    final Path path = deletedDirs.poll();
-                    dirsToReportDeleted.addFirst(path);
-                    final DirectorySnapshot directorySnapshot = snapshots.get(path);
-                    if (directorySnapshot != null) // May be null if we're not watching the whole file tree.
-                        directorySnapshot.forEachDirectory(deletedDirs::offer);
-                }
-
-                for(final Path path : dirsToReportDeleted) {
-                    final DirectorySnapshot directorySnapshot = snapshots.remove(path);
-                    if (directorySnapshot != null) {
-                        // This is needed in case a directory tree was moved (mv -f) out of this directory.
-                        directorySnapshot.forEachFile(MacOSXWatchKey.this::reportDeleted);
-                    }
-                    reportDeleted(path);
-                }
-            }
-
-            private void handleNewDirectories(final Queue<Path> createdDirs) {
-                // We don't know the exact sequence in which these were created,
-                // so at least maintain a sensible order, i.e. the parent created before its children.
-                while (!createdDirs.isEmpty()) {
-                    final Path path = createdDirs.poll();
-                    reportCreated(path);
-                    if (watchFileTree) {
-                        if (!snapshots.containsKey(path)) {
-                            // Happens when a directory tree gets moved (mv -f) into this directory.
-                            DirectorySnapshot newSnapshot = null;
-                            try {
-                                newSnapshot = createForOneDirectory(path, createdDirs);
-                            } catch(IOException ignore) { }
-
-                            if (newSnapshot != null)
-                                newSnapshot.forEachFile(MacOSXWatchKey.this::reportCreated);
-                        }
-                    }
-                }
-            }
-        }
-
-        /**
-         * Represents a snapshot of a directory with a millisecond precision timestamp of the last modification.
+         * Represents a snapshot of the watched directory with a millisecond
+         * precision timestamp of the last modification.
          */
         private static class DirectorySnapshot {
-            // Path to this directory relative to the watch root.
-            private final Path directory;
-
             // Maps file names to their attributes.
-            private final Map<Path, Entry> files;
+            private final Map<Path, Entry> files = new HashMap<>();
 
             // A counter to keep track of files that have disappeared since the last run.
             private long currentTick;
 
-            private DirectorySnapshot(final Path directory) {
-                this.directory = directory;
-                this.files     = new HashMap<>();
-            }
-
-            static DirectorySnapshot create(final Path realRootPath, final Path directory) throws IOException {
-                final DirectorySnapshot snapshot = new DirectorySnapshot(directory);
-                try (final DirectoryStream<Path> directoryStream = theFSProvider.newDirectoryStream(
-                                     realRootPath.resolve(directory), p -> true)) {
+            static DirectorySnapshot create(final Path realRootPath) throws IOException {
+                final DirectorySnapshot snapshot = new DirectorySnapshot();
+                try (final DirectoryStream<Path> directoryStream
+                             = theFSProvider.newDirectoryStream(
+                                     realRootPath, p -> true)) {
                     for (final Path file : directoryStream) {
                         try {
-                            final BasicFileAttributes attrs = theFSProvider.readAttributes(
-                                    file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                            final BasicFileAttributes attrs
+                                    = theFSProvider.readAttributes(
+                                            file,
+                                            BasicFileAttributes.class,
+                                            LinkOption.NOFOLLOW_LINKS);
                             final Entry entry = new Entry(
-                                    attrs.isDirectory(), attrs.lastModifiedTime().toMillis(), 0);
+                                    attrs.isDirectory(),
+                                    attrs.lastModifiedTime().toMillis(),
+                                    0);
                             snapshot.files.put(file.getFileName(), entry);
                         } catch (IOException ignore) {}
                     }
@@ -598,58 +451,53 @@ class MacOSXWatchService extends AbstractWatchService {
                 return snapshot;
             }
 
-            void forEachDirectory(final Consumer<Path> consumer) {
-                files.forEach((path, entry) -> { if (entry.isDirectory) consumer.accept(directory.resolve(path)); } );
-            }
-
-            void forEachFile(final Consumer<Path> consumer) {
-                files.forEach((path, entry) -> { if (!entry.isDirectory) consumer.accept(directory.resolve(path)); } );
-            }
-
-            void update(final MacOSXWatchKey watchKey,
-                        final Queue<Path> createdDirs,
-                        final Queue<Path> deletedDirs,
-                        final Queue<Path> modifiedDirs) {
+            void update(final MacOSXWatchKey watchKey) {
                 currentTick++;
 
                 try (final DirectoryStream<Path> directoryStream
-                             = theFSProvider.newDirectoryStream(watchKey.getRealRootPath().resolve(directory), p -> true)) {
+                             = theFSProvider.newDirectoryStream(
+                                     watchKey.getRealRootPath().resolve(relativeRootPath),
+                                     p -> true)) {
                     for (final Path file : directoryStream) {
                         try {
                             final BasicFileAttributes attrs
-                                    = theFSProvider.readAttributes(file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                                    = theFSProvider.readAttributes(
+                                            file,
+                                            BasicFileAttributes.class,
+                                            LinkOption.NOFOLLOW_LINKS);
                             final Path fileName     = file.getFileName();
                             final Entry entry       = files.get(fileName);
                             final boolean isNew     = (entry == null);
                             final long lastModified = attrs.lastModifiedTime().toMillis();
-                            final Path relativePath = directory.resolve(fileName);
+                            final Path relativePath = relativeRootPath.resolve(fileName);
 
                             if (attrs.isDirectory()) {
                                 if (isNew) {
-                                    files.put(fileName, new Entry(true, lastModified, currentTick));
-                                    if (createdDirs != null) createdDirs.offer(relativePath);
+                                    files.put(fileName,
+                                            new Entry(true, lastModified, currentTick));
+                                    watchKey.reportCreated(relativePath);
                                 } else {
                                     if (!entry.isDirectory) { // Used to be a file, now a directory
-                                        if (createdDirs != null) createdDirs.offer(relativePath);
-
-                                        files.put(fileName, new Entry(true, lastModified, currentTick));
+                                        watchKey.reportCreated(relativePath);
+                                        files.put(fileName,
+                                                new Entry(true, lastModified, currentTick));
                                         watchKey.reportDeleted(relativePath);
                                     } else if (entry.isModified(lastModified)) {
-                                        if (modifiedDirs != null) modifiedDirs.offer(relativePath);
                                         watchKey.reportModified(relativePath);
                                     }
                                     entry.update(lastModified, currentTick);
                                 }
                             } else {
                                 if (isNew) {
-                                    files.put(fileName, new Entry(false, lastModified, currentTick));
+                                    files.put(fileName,
+                                            new Entry(false, lastModified, currentTick));
                                     watchKey.reportCreated(relativePath);
                                 } else {
                                     if (entry.isDirectory) { // Used to be a directory, now a file.
-                                        if (deletedDirs != null) deletedDirs.offer(relativePath);
-
-                                        files.put(fileName, new Entry(false, lastModified, currentTick));
-                                        watchKey.reportCreated(directory.resolve(fileName));
+                                        watchKey.reportDeleted(relativePath);
+                                        files.put(fileName,
+                                                new Entry(false, lastModified, currentTick));
+                                        watchKey.reportCreated(relativeRootPath.resolve(fileName));
                                     } else if (entry.isModified(lastModified)) {
                                         watchKey.reportModified(relativePath);
                                     }
@@ -664,10 +512,10 @@ class MacOSXWatchService extends AbstractWatchService {
                     // Most probably this directory has just been deleted; its parent will notice that.
                 }
 
-                checkDeleted(watchKey, deletedDirs);
+                checkDeleted(watchKey);
             }
 
-            private void checkDeleted(final MacOSXWatchKey watchKey, final Queue<Path> deletedDirs) {
+            private void checkDeleted(final MacOSXWatchKey watchKey) {
                 final Iterator<Map.Entry<Path, Entry>> it = files.entrySet().iterator();
                 while (it.hasNext()) {
                     final Map.Entry<Path, Entry> mapEntry = it.next();
@@ -675,12 +523,7 @@ class MacOSXWatchService extends AbstractWatchService {
                     if (entry.lastTickCount != currentTick) {
                         final Path file = mapEntry.getKey();
                         it.remove();
-
-                        if (entry.isDirectory) {
-                            if (deletedDirs != null) deletedDirs.offer(directory.resolve(file));
-                        } else {
-                            watchKey.reportDeleted(directory.resolve(file));
-                        }
+                        watchKey.reportDeleted(relativeRootPath.resolve(file));
                     }
                 }
             }
