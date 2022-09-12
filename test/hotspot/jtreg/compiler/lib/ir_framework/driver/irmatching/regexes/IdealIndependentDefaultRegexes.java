@@ -62,7 +62,7 @@ public class IdealIndependentDefaultRegexes {
     public static final String CAST_II = START + "CastII" + MID + END;
     public static final String CAST_LL = START + "CastLL" + MID + END;
     public static final String CLASS_CHECK_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*class_check" + END;
-    public static final String CMOVEI = START + "CMoveI" + MID + END;
+    public static final String CMOVE_I = START + "CMoveI" + MID + END;
     public static final String CMP_I = START + "CmpI" + MID + END;
     public static final String CMP_L = START + "CmpL" + MID + END;
     public static final String CMP_U = START + "CmpU" + MID + END;

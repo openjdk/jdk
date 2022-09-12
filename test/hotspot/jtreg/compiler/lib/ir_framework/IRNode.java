@@ -98,7 +98,7 @@ public class IRNode {
     public static final String CHECKCAST_ARRAYCOPY = PREFIX + "CHECKCAST_ARRAYCOPY" + POSTFIX;
     public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     public static final String CLASS_CHECK_TRAP = PREFIX + "CLASS_CHECK_TRAP" + POSTFIX;
-    public static final String CMOVEI = PREFIX + "CMOVEI" + POSTFIX;
+    public static final String CMOVE_I = PREFIX + "CMOVE_I" + POSTFIX;
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
     public static final String CMP_L = PREFIX + "CMP_L" + POSTFIX;
     public static final String CMP_U = PREFIX + "CMP_U" + POSTFIX;

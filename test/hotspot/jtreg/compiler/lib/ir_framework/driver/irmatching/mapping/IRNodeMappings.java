@@ -88,7 +88,7 @@ public class IRNodeMappings {
         optoOnly(IRNode.CHECKCAST_ARRAYCOPY, OptoAssemblyDefaultRegexes.CHECKCAST_ARRAYCOPY);
         optoOnly(IRNode.CHECKCAST_ARRAY_OF, OptoAssemblyDefaultRegexes.CHECKCAST_ARRAY_OF);
         idealindependentOnly(IRNode.CLASS_CHECK_TRAP, IdealIndependentDefaultRegexes.CLASS_CHECK_TRAP);
-        idealindependentOnly(IRNode.CMOVEI, IdealIndependentDefaultRegexes.CMOVEI);
+        idealindependentOnly(IRNode.CMOVE_I, IdealIndependentDefaultRegexes.CMOVE_I);
         idealindependentOnly(IRNode.CMP_I, IdealIndependentDefaultRegexes.CMP_I);
         idealindependentOnly(IRNode.CMP_L, IdealIndependentDefaultRegexes.CMP_L);
         idealindependentOnly(IRNode.CMP_U, IdealIndependentDefaultRegexes.CMP_U);
