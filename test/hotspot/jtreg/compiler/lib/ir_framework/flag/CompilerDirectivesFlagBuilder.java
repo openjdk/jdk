@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.flag;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.test.TestVM;
 
@@ -33,6 +32,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,50 +46,59 @@ import java.util.stream.Collectors;
  * @see FlagVM
  * @see CompilePhaseCollector
  */
-class CompileCommandFileWriter {
-
-    public static void createFile(Class<?> testClass) {
-        Map<String, Set<CompilePhase>> methodsToCompilePhasesMap = CompilePhaseCollector.collect(testClass);
-        CompileCommandFileWriter.writeFile(methodsToCompilePhasesMap);
+class CompilerDirectivesFlagBuilder {
+    private final Map<String, Set<CompilePhase>> methodsToCompilePhasesMap;
+    private int directivesCount = 0;
+    public CompilerDirectivesFlagBuilder(Class<?> testClass) {
+        methodsToCompilePhasesMap = CompilePhaseCollector.collect(testClass);
     }
 
-    private static void writeFile(Map<String, Set<CompilePhase>> methodToPhases) {
+    public List<String> build() {
+        List<String> flags = new ArrayList<>();
+        flags.add("-XX:CompilerDirectivesFile=" + FlagVM.TEST_VM_COMPILE_COMMANDS_FILE);
+        writeDirectivesFile();
+        flags.add("-XX:CompilerDirectivesLimit=" + directivesCount + 1);
+        return flags;
+    }
+
+    private void writeDirectivesFile() {
         try (var writer = Files.newBufferedWriter(Paths.get(FlagVM.TEST_VM_COMPILE_COMMANDS_FILE))) {
             writer.write("[" + System.lineSeparator());
-            writeBody(writer, methodToPhases);
+            writeBody(writer);
             writer.write("]" + System.lineSeparator());
         } catch (IOException e) {
             throw new TestFrameworkException("Error while writing to file " + FlagVM.TEST_VM_COMPILE_COMMANDS_FILE, e);
         }
     }
 
-    private static void writeBody(BufferedWriter writer, Map<String, Set<CompilePhase>> methodToPhases) throws IOException {
-        String methodEntries = methodToPhases.entrySet()
-                                             .stream()
-                                             .map(e -> buildMethodEntry(e.getKey(), e.getValue()))
-                                             .collect(Collectors.joining("," + System.lineSeparator()));
+    private void writeBody(BufferedWriter writer) throws IOException {
+        String methodEntries = methodsToCompilePhasesMap.entrySet()
+                                                        .stream()
+                                                        .map(e -> writeMethodDirectives(e.getKey(), e.getValue()))
+                                                        .collect(Collectors.joining("," + System.lineSeparator()));
         writer.write(methodEntries + System.lineSeparator());
     }
 
-    private static String buildMethodEntry(String methodName, Set<CompilePhase> compilePhases) {
+    private String writeMethodDirectives(String methodName, Set<CompilePhase> compilePhases) {
+        directivesCount++;
         StringBuilder builder = new StringBuilder();
         appendLine(builder, "{", 1);
         appendLine(builder, "match : \"" + methodName + "\",", 2);
         appendLine(builder, "log : true,", 2);
-        appendIdeal(compilePhases, builder);
-        appendOptoAssembly(compilePhases, builder);
+        appendPrintIdeal(compilePhases, builder);
+        appendPrintOptoAssembly(compilePhases, builder);
         appendRemainingCompilePhases(compilePhases, builder);
         append(builder, "}", 1);
         return builder.toString();
     }
 
-    private static void appendIdeal(Set<CompilePhase> compilePhases, StringBuilder builder) {
+    private static void appendPrintIdeal(Set<CompilePhase> compilePhases, StringBuilder builder) {
         if (compilePhases.remove(CompilePhase.PRINT_IDEAL)) {
             appendLine(builder, "PrintIdeal : true,", 2);
         }
     }
 
-    private static void appendOptoAssembly(Set<CompilePhase> compilePhases, StringBuilder builder) {
+    private static void appendPrintOptoAssembly(Set<CompilePhase> compilePhases, StringBuilder builder) {
         if (compilePhases.remove(CompilePhase.PRINT_OPTO_ASSEMBLY)) {
             appendLine(builder, "PrintOptoAssembly : true,", 2);
         }

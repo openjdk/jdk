@@ -170,7 +170,7 @@ public class IRExample {
     // Apply IR matching on compile phase AFTER_PARSING.
     @IR(failOn = {IRNode.ALLOC, IRNode.LOAD}, phase = CompilePhase.AFTER_PARSING)
     // Apply IR matching on compile phase AFTER_PARSING and CCP1.
-    @IR(counts = {IRNode.ALLOC, "0",IRNode.STORE_I, ""}, phase = {CompilePhase.AFTER_PARSING, CompilePhase.CCP1})
+    @IR(counts = {IRNode.ALLOC, "0", IRNode.STORE_I, "1"}, phase = {CompilePhase.AFTER_PARSING, CompilePhase.CCP1})
     // Apply IR matching on compile phase BEFORE_MATCHING by using a custom regex. In this case, a compile phase must
     // be specified as there is no default compiler phase for user defined regexes.
     @IR(failOn = "LoadI", phase = CompilePhase.BEFORE_MATCHING)

@@ -133,7 +133,6 @@ public class TestCompilePhaseCollector {
     }
 
     private void testDefault(Class<?> testClass, CompilePhase... compilePhases) {
-        CompileCommandFileWriter.createFile(testClass);
         Map<String, Set<CompilePhase>> methodToCompilePhases = CompilePhaseCollector.collect(testClass);
         assertSize(methodToCompilePhases, 6);
         assertFindOnly(methodToCompilePhases, testClass, compilePhases);

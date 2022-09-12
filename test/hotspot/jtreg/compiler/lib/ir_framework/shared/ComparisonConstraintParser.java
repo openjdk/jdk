@@ -29,7 +29,7 @@ import java.util.function.Function;
 /**
  * Utility class to parse a comparator either in the applyIf* or in the counts properties of an @IR rules.
  */
-public class ComparisonConstraintParser<T extends Comparable<T>> {
+public class ComparisonConstraintParser {
 
     private enum Comparator {
         ONE_CHAR, TWO_CHARS

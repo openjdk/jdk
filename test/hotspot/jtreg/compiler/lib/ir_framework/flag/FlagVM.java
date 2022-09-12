@@ -124,8 +124,8 @@ public class FlagVM {
     private static void addIRVerificationFlags(ArrayList<String> cmds, Class<?> testClass) {
         cmds.addAll(Arrays.asList(getPrintFlags()));
         cmds.add("-XX:+LogCompilation");
-        CompileCommandFileWriter.createFile(testClass);
-        cmds.add("-XX:CompilerDirectivesFile=" + TEST_VM_COMPILE_COMMANDS_FILE);
+        CompilerDirectivesFlagBuilder compilerDirectivesFlagBuilder = new CompilerDirectivesFlagBuilder(testClass);
+        cmds.addAll(compilerDirectivesFlagBuilder.build());
         // Always trap for exception throwing to not confuse IR verification
         cmds.add("-XX:-OmitStackTraceInFastThrow");
         cmds.add("-DShouldDoIRVerification=true");

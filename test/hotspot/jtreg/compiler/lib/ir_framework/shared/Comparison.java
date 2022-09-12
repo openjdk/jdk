@@ -26,7 +26,6 @@ package compiler.lib.ir_framework.shared;
 import compiler.lib.ir_framework.IR;
 
 import java.util.function.BiPredicate;
-import java.util.function.Function;
 
 /**
  * Comparison result of parsing a {@link IR#counts} constraint with {@link ComparisonConstraintParser}

@@ -32,18 +32,18 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
- * This class collects for each method a set of compile phases that are specified in the {@link IR @IR} annotations.
+ * This class collects all unique compile phases which are specified in all method {@link IR @IR} annotations.
  * If {@link CompilePhase#DEFAULT} is found, then we try to replace it with {@link CompilePhase#PRINT_IDEAL} or
- * {@link CompilePhase#PRINT_OPTO_ASSEMBLY} depending on wheter all string placeholders specified in {@link IRNode}
+ * {@link CompilePhase#PRINT_OPTO_ASSEMBLY} depending on whether all string placeholders specified in {@link IRNode}
  * could be replaced.
  *
  * @see FlagVM
- * @see CompileCommandFileWriter
+ * @see CompilerDirectivesFlagBuilder
  */
 class CompilePhaseCollector {
 
     /**
-     * Returns a map "method name -> compile phases set" that can be used by {@link CompileCommandFileWriter}.
+     * Returns a map "method name -> compile phases set" that can be used by {@link CompilerDirectivesFlagBuilder}.
      */
     public static Map<String, Set<CompilePhase>> collect(Class<?> testClass) {
         Map<String, Set<CompilePhase>> methodNameToCompilePhasesMap = new HashMap<>();
