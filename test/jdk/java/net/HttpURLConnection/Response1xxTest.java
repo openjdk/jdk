@@ -193,8 +193,7 @@ public class Response1xxTest {
         final URI[] requestURIs = new URI[]{
                 new URI(requestURIBase + "/test/foo"),
                 new URI(requestURIBase + "/test/bar"),
-                new URI(requestURIBase + "/test/hello"),
-                new URI(requestURIBase + "/test/bye")};
+                new URI(requestURIBase + "/test/hello")};
         for (final URI requestURI : requestURIs) {
             System.out.println("Issuing request to " + requestURI);
             final HttpURLConnection urlConnection = (HttpURLConnection) requestURI.toURL().openConnection();
@@ -207,5 +206,18 @@ public class Response1xxTest {
             }
             Assert.assertEquals(body, EXPECTED_RSP_BODY, "Unexpected response body");
         }
+    }
+
+    /**
+     * Tests that when a HTTP/1.1 server sends 101 response code, when the client
+     * didn't ask for a connection upgrade, then the request fails with an exception.
+     */
+    @Test
+    public void test101CausesRequestFailure() throws Exception {
+        final URI requestURI = new URI(requestURIBase + "/test/bye");
+        System.out.println("Issuing request to " + requestURI);
+        final HttpURLConnection urlConnection = (HttpURLConnection) requestURI.toURL().openConnection();
+        // we expect the request to fail because the server unexpectedly sends a 101 response
+        Assert.assertThrows(IOException.class, () -> urlConnection.getResponseCode());
     }
 }
