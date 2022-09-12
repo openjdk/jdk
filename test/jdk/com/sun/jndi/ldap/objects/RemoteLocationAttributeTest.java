@@ -50,6 +50,8 @@ import jdk.test.lib.net.URIBuilder;
  *                   RemoteLocationAttributeTest
  * @run main/othervm -Dcom.sun.jndi.ldap.object.trustSerialData=true
  *                   RemoteLocationAttributeTest
+ * @run main/othervm -Dcom.sun.jndi.ldap.object.trustSerialData=TrUe
+ *                   RemoteLocationAttributeTest
  */
 
 public class RemoteLocationAttributeTest {
@@ -77,7 +79,7 @@ public class RemoteLocationAttributeTest {
                 RemoteLocationAttributeTest.class.getName(), args, false);
 
         DirContext ctx = null;
-        try {
+        try (serverSocket) {
             System.err.println(env);
             // connect to server
             ctx = new InitialDirContext(env);

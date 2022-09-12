@@ -44,8 +44,8 @@ public final class VersionHelper {
     private static final boolean trustURLCodebase;
 
     /**
-     * Determines whether objects may be deserialized from the content of
-     * 'javaSerializedData' attribute.
+     * Determines whether objects may be deserialized or reconstructed from a content of
+     * 'javaSerializedData', 'javaRemoteLocation' or 'javaReferenceAddress' LDAP attributes.
      */
     private static final boolean trustSerialData;
 
@@ -56,8 +56,8 @@ public final class VersionHelper {
                 "com.sun.jndi.ldap.object.trustURLCodebase", "false");
         trustURLCodebase = "true".equalsIgnoreCase(trust);
 
-        // System property to control whether classes is allowed to be loaded from
-        // 'javaSerializedData' attribute
+        // System property to control whether classes are allowed to be loaded from
+        // 'javaSerializedData', 'javaRemoteLocation' or 'javaReferenceAddress' attributes.
         String trustSerialDataSp = getPrivilegedProperty(
                 "com.sun.jndi.ldap.object.trustSerialData", "false");
         trustSerialData = "true".equalsIgnoreCase(trustSerialDataSp);
@@ -81,8 +81,9 @@ public final class VersionHelper {
     }
 
     /**
-     * Returns true if deserialization of objects from 'javaSerializedData'
-     * and 'javaReferenceAddress' LDAP attributes is allowed.
+     * Returns true if deserialization or reconstruction of objects from
+     * 'javaSerializedData', 'javaRemoteLocation' and 'javaReferenceAddress'
+     * LDAP attributes is allowed.
      *
      * @return true if deserialization is allowed; false - otherwise
      */

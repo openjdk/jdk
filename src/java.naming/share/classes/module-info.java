@@ -84,8 +84,8 @@
  *          reconstruction of {@linkplain javax.naming.BinaryRefAddr binary reference addresses} from
  *          the {@code javaReferenceAddress} LDAP attribute.
  *          To allow the deserialization or reconstruction of java objects from {@code javaSerializedData},
- *          {@code javaRemoteLocation} or {@code javaReferenceAddress} attributes, the system property value can be
- *          set to {@code true}.
+ *          {@code javaRemoteLocation} or {@code javaReferenceAddress} attributes, the system property value
+ *          can be set to {@code true} (case insensitive).
  *          <br>If the property is not specified the deserialization of java objects
  *          from the {@code javaSerializedData}, the {@code javaRemoteLocation}, or {@code javaReferenceAddress}
  *          attributes is not allowed.
