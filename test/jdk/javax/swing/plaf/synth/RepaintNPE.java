@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6529151
+ * @key headful
  * @summary  Verifies no NPE is thrown in SynthLookAndFeel$Handler
  * @run main RepaintNPE
  */
