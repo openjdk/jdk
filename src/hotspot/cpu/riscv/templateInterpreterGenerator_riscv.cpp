@@ -526,7 +526,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   address entry = __ pc();
   __ push(state);
   __ call_VM(noreg, runtime_entry);
-  __ fence(0xf, 0xf);
+  __ membar(MacroAssembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
@@ -787,12 +787,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // End of helpers
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return NULL;
-}
-
 // Various method entries
 //------------------------------------------------------------------------------------------------------------------------
 //
@@ -932,7 +926,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // x11: Method*
   // x30: sender sp
@@ -1326,7 +1320,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // determine code generation flags
-  const bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  const bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // t0: sender sp
   address entry_point = __ pc();
@@ -1604,7 +1598,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label L_done;
 
     __ lbu(t0, Address(xbcp, 0));
-    __ li(t1, Bytecodes::_invokestatic);
+    __ mv(t1, Bytecodes::_invokestatic);
     __ bne(t1, t0, L_done);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
@@ -1741,7 +1735,7 @@ void TemplateInterpreterGenerator::count_bytecode() {
   __ push_reg(t0);
   __ push_reg(x10);
   __ mv(x10, (address) &BytecodeCounter::_counter_value);
-  __ li(t0, 1);
+  __ mv(t0, 1);
   __ amoadd_d(zr, x10, t0, Assembler::aqrl);
   __ pop_reg(x10);
   __ pop_reg(t0);

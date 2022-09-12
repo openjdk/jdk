@@ -270,6 +270,7 @@ class MetaspaceObj {
   // non-shared or shared metaspace.
   static bool is_valid(const MetaspaceObj* p);
 
+#if INCLUDE_CDS
   static bool is_shared(const MetaspaceObj* p) {
     // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
     // both be NULL and all values of p will be rejected quickly.
@@ -277,6 +278,10 @@ class MetaspaceObj {
             ((void*)p) >= _shared_metaspace_base);
   }
   bool is_shared() const { return MetaspaceObj::is_shared(this); }
+#else
+  static bool is_shared(const MetaspaceObj* p) { return false; }
+  bool is_shared() const { return false; }
+#endif
 
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 

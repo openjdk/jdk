@@ -34,6 +34,7 @@
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
@@ -619,7 +620,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
     ContinuationEntry::from_frame(deopt_sender)->set_argsize(0);
   }
 
-  assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
+  assert(CodeCache::find_blob(frame_pcs[0]) != NULL, "bad pc");
 
 #if INCLUDE_JVMCI
   if (exceptionObject() != NULL) {
@@ -957,10 +958,10 @@ Deoptimization::DeoptAction Deoptimization::_unloaded_action
 template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
-  static InstanceKlass* find_cache_klass(Symbol* klass_name) {
-    ResourceMark rm;
+  static InstanceKlass* find_cache_klass(Thread* thread, Symbol* klass_name) {
+    ResourceMark rm(thread);
     char* klass_name_str = klass_name->as_C_string();
-    InstanceKlass* ik = SystemDictionary::find_instance_klass(klass_name, Handle(), Handle());
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(thread, klass_name, Handle(), Handle());
     guarantee(ik != NULL, "%s must be loaded", klass_name_str);
     guarantee(ik->is_initialized(), "%s must be initialized", klass_name_str);
     CacheType::compute_offsets(ik);
@@ -975,7 +976,7 @@ template<typename PrimitiveType, typename CacheType, typename BoxType> class Box
 protected:
   static BoxCache<PrimitiveType, CacheType, BoxType> *_singleton;
   BoxCache(Thread* thread) {
-    InstanceKlass* ik = BoxCacheBase<CacheType>::find_cache_klass(CacheType::symbol());
+    InstanceKlass* ik = BoxCacheBase<CacheType>::find_cache_klass(thread, CacheType::symbol());
     objArrayOop cache = CacheType::cache(ik);
     assert(cache->length() > 0, "Empty cache");
     _low = BoxType::value(cache->obj_at(0));
@@ -1031,7 +1032,7 @@ class BooleanBoxCache : public BoxCacheBase<java_lang_Boolean> {
 protected:
   static BooleanBoxCache *_singleton;
   BooleanBoxCache(Thread *thread) {
-    InstanceKlass* ik = find_cache_klass(java_lang_Boolean::symbol());
+    InstanceKlass* ik = find_cache_klass(thread, java_lang_Boolean::symbol());
     _true_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_TRUE(ik)));
     _false_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_FALSE(ik)));
   }
@@ -1895,12 +1896,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 #endif
   frame stub_frame = current->last_frame();
   frame fr = stub_frame.sender(&reg_map);
-  // Make sure the calling nmethod is not getting deoptimized and removed
-  // before we are done with it.
-  nmethodLocker nl(fr.pc());
 
   // Log a message
-  Events::log_deopt_message(current, "Uncommon trap: trap_request=" PTR32_FORMAT " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
+  Events::log_deopt_message(current, "Uncommon trap: trap_request=" INT32_FORMAT_X_0 " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
               trap_request, p2i(fr.pc()), fr.pc() - fr.cb()->code_begin());
 
   {
@@ -1954,7 +1952,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     // Ensure that we can record deopt. history:
     // Need MDO to record RTM code generation state.
-    bool create_if_missing = ProfileTraps || UseCodeAging RTM_OPT_ONLY( || UseRTMLocking );
+    bool create_if_missing = ProfileTraps RTM_OPT_ONLY( || UseRTMLocking );
 
     methodHandle profiled_method;
 #if INCLUDE_JVMCI

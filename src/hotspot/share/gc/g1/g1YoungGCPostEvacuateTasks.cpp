@@ -49,7 +49,7 @@ public:
 
   double worker_cost() const override { return 1.0; }
 
-  void do_work(uint worker_id) override { _per_thread_states->flush(); }
+  void do_work(uint worker_id) override { _per_thread_states->flush_stats(); }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {

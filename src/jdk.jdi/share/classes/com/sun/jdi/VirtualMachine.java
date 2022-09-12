@@ -144,7 +144,7 @@ public interface VirtualMachine extends Mirror {
      *
      * @return a list of {@link ReferenceType} objects, each mirroring
      * a loaded type in the target VM.
-     * @see <a href="{@docRoot}/../specs/jvmti/jvmti.html#GetLoadedClasses">
+     * @see <a href="{@docRoot}/../specs/jvmti.html#GetLoadedClasses">
      * JVM TI GetLoadedClasses</a> regarding how class and interface creation can be triggered
      */
     List<ReferenceType> allClasses();

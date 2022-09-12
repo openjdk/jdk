@@ -228,7 +228,6 @@
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
-  nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   nonstatic_field(MethodCounters,              _interpreter_throwout_count,                   u2)                                    \
@@ -337,7 +336,6 @@
   static_field(StubRoutines,                _vectorizedMismatch,                              address)                               \
   static_field(StubRoutines,                _bigIntegerRightShiftWorker,                      address)                               \
   static_field(StubRoutines,                _bigIntegerLeftShiftWorker,                       address)                               \
-  static_field(StubRoutines,                _cont_doYield,                                    address)                               \
   static_field(StubRoutines,                _cont_thaw,                                       address)                               \
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2028, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +74,10 @@ void MemTracker::initialize() {
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
       return;
     }
+  } else {
+    if (MallocLimit != nullptr) {
+      warning("MallocLimit will be ignored since NMT is disabled.");
+    }
   }
 
   NMTPreInit::pre_to_post();
@@ -110,6 +115,7 @@ void MemTracker::error_report(outputStream* output) {
     report(true, output, MemReporterBase::default_scale); // just print summary for error case.
     output->print("Preinit state:");
     NMTPreInit::print_state(output);
+    MallocMemorySummary::print_limits(output);
   }
 }
 
@@ -154,5 +160,6 @@ void MemTracker::tuning_statistics(outputStream* out) {
   out->cr();
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
+  MallocMemorySummary::print_limits(out);
   out->cr();
 }

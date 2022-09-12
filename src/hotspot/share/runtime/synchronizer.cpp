@@ -57,7 +57,13 @@
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
+
+class ObjectMonitorsHashtable::PtrList :
+  public LinkedListImpl<ObjectMonitor*,
+                        ResourceObj::C_HEAP, mtThread,
+                        AllocFailStrategy::RETURN_NULL> {};
 
 class CleanupObjectMonitorsHashtable: StackObj {
  public:

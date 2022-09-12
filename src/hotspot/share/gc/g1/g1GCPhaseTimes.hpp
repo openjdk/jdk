@@ -142,6 +142,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   enum GCMergePSSWorkItems {
     MergePSSCopiedBytes,
+    MergePSSLABSize,
     MergePSSLABWasteBytes,
     MergePSSLABUndoWasteBytes
   };

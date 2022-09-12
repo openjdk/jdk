@@ -41,7 +41,6 @@ private:
 public:
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
-  static void flush_nmethod(nmethod* nm);
 
   static bool supports_entry_barrier(nmethod* nm);
 
@@ -61,7 +60,7 @@ public:
   static ZReentrantLock* lock_for_nmethod(nmethod* nm);
 
   static void unlink(ZWorkers* workers, bool unloading_occurred);
-  static void purge(ZWorkers* workers);
+  static void purge();
 };
 
 #endif // SHARE_GC_Z_ZNMETHOD_HPP
