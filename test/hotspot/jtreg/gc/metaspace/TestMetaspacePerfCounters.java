@@ -211,16 +211,20 @@ public class TestMetaspacePerfCounters {
         long capacity;
         long used;
 
-        // The perf counter values are updated during GC and to be able to
-        // do the assertions below we need to ensure that the values are from
-        // the same GC cycle.
+        // The perf counter values are updated during GC for all but Epsilon
+        // GC. To be able to do the assertions below we need to ensure that
+        // the values are at least from the same GC cycle.
+        // For Epsilon we assume that current "capacity" always increases
+        // without a metaspace GC which will cause another loop iteration, so
+        // reading "capacity" after "used" will at least return a consistent
+        // result.
         do {
             gcCountBefore = currentGCCount();
 
             minCapacity = getMinCapacity(ns);
             maxCapacity = getMaxCapacity(ns);
-            capacity = getCapacity(ns);
             used = getUsed(ns);
+            capacity = getCapacity(ns);
 
             gcCountAfter = currentGCCount();
             assertGTE(gcCountAfter, gcCountBefore);
