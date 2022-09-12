@@ -94,11 +94,6 @@ class BsdFileSystem extends UnixFileSystem {
         try {
             BsdNativeDispatcher.clonefile(src, dst, flags);
         } catch (UnixException x) {
-            // clone failed so roll back
-            try {
-                unlink(dst);
-            } catch (UnixException ignore) { }
-
             switch (x.errno()) {
                 case ENOTSUP: // cloning not supported by filesystem
                 case EXDEV:   // src and dst on different filesystems
@@ -131,17 +126,26 @@ class BsdFileSystem extends UnixFileSystem {
         // Attempt to clone the source unless cancellation is not possible,
         // or attributes are not to be copied
         if (addressToPollForCancel == 0 && flags.copyPosixAttributes) {
-            int res = clone(source, target, flags.followLinks);
+            try {
+                int res = clone(source, target, flags.followLinks);
 
-            if (res == 0) {
-                // copy owner (not done by clonefile)
-                try {
-                    chown(target, attrs.uid(), attrs.gid());
-                } catch (UnixException x) {
-                    if (flags.failIfUnableToCopyPosix)
-                        x.rethrowAsIOException(target);
+                if (res == 0) {
+                    // copy owner (not done by clonefile)
+                    try {
+                        chown(target, attrs.uid(), attrs.gid());
+                    } catch (UnixException x) {
+                        if (flags.failIfUnableToCopyPosix)
+                            x.rethrowAsIOException(target);
+                    }
+                    return;
                 }
-                return;
+            } catch (IOException e) {
+                // clone or chown failed so roll back
+                try {
+                    unlink(target);
+                } catch (UnixException ignore) { }
+
+                throw e;
             }
 
             // fall through to superclass method
