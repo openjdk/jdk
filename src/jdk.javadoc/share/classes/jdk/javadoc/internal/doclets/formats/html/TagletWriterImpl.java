@@ -29,8 +29,10 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
@@ -46,6 +48,7 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IndexTree;
+import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
@@ -66,6 +69,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.ParamTaglet;
@@ -79,6 +83,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+
+import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
 
 /**
  * The taglet writer that writes HTML.
@@ -143,6 +150,9 @@ public class TagletWriterImpl extends TagletWriter {
     private final HtmlOptions options;
     private final Utils utils;
     private final Resources resources;
+
+    private final Messages messages;
+
     private final Contents contents;
     private final Context context;
 
@@ -186,6 +196,7 @@ public class TagletWriterImpl extends TagletWriter {
         configuration = htmlWriter.configuration;
         options = configuration.getOptions();
         utils = configuration.utils;
+        messages = configuration.messages;
         resources = configuration.getDocResources();
         contents = configuration.getContents();
     }
@@ -197,7 +208,7 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     protected Content codeTagOutput(Element element, LiteralTree tag) {
-        return HtmlTree.CODE(Text.of(utils.normalizeNewlines(tag.getBody().getBody())));
+        return HtmlTree.CODE(Text.of(Text.normalizeNewlines(tag.getBody().getBody())));
     }
 
     @Override
@@ -271,19 +282,44 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
+    public Content linkTagOutput(Element element, LinkTree tag) {
+        CommentHelper ch = utils.getCommentHelper(element);
+
+        var linkRef = tag.getReference();
+        if (linkRef == null) {
+            messages.warning(ch.getDocTreePath(tag), "doclet.link.no_reference");
+            return invalidTagOutput(resources.getText("doclet.tag.invalid_input", tag.toString()),
+                    Optional.empty());
+        }
+
+        DocTree.Kind kind = tag.getKind();
+        String tagName = ch.getTagName(tag);
+        String refSignature = ch.getReferencedSignature(linkRef);
+
+        return linkSeeReferenceOutput(element,
+                tag,
+                refSignature,
+                ch.getReferencedElement(tag),
+                tagName,
+                (kind == LINK_PLAIN),
+                htmlWriter.commentTagsToContent(element, tag.getLabel(), context),
+                (key, args) -> messages.warning(ch.getDocTreePath(tag), key, args)
+        );
+    }
+
+    @Override
     protected Content literalTagOutput(Element element, LiteralTree tag) {
-        return Text.of(utils.normalizeNewlines(tag.getBody().getBody()));
+        return Text.of(Text.normalizeNewlines(tag.getBody().getBody()));
     }
 
     @Override
     public Content getParamHeader(ParamTaglet.ParamKind kind) {
-        Content header;
-        switch (kind) {
-            case PARAMETER:         header = contents.parameters ; break;
-            case TYPE_PARAMETER:    header = contents.typeParameters ; break;
-            case RECORD_COMPONENT:  header = contents.recordComponents ; break;
-            default: throw new IllegalArgumentException(kind.toString());
-        }
+        Content header = switch (kind) {
+            case PARAMETER -> contents.parameters;
+            case TYPE_PARAMETER -> contents.typeParameters;
+            case RECORD_COMPONENT -> contents.recordComponents;
+            default -> throw new IllegalArgumentException(kind.toString());
+        };
         return HtmlTree.DT(header);
     }
 
@@ -315,8 +351,9 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     public Content seeTagOutput(Element holder, List<? extends SeeTree> seeTags) {
         List<Content> links = new ArrayList<>();
-        for (DocTree dt : seeTags) {
-            links.add(htmlWriter.seeTagToContent(holder, dt, context.within(dt)));
+        for (SeeTree dt : seeTags) {
+            TagletWriterImpl t = new TagletWriterImpl(htmlWriter, context.within(dt));
+            links.add(t.seeTagOutput(holder, dt));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
                 htmlWriter instanceof ClassWriterImpl writer) {
@@ -346,9 +383,9 @@ public class TagletWriterImpl extends TagletWriter {
         // Use a different style if any link label is longer than 30 chars or contains commas.
         boolean hasLongLabels = links.stream().anyMatch(this::isLongOrHasComma);
         var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
-        links.stream().filter(Predicate.not(Content::isEmpty)).forEach(item -> {
-            seeList.add(HtmlTree.LI(item));
-        });
+        links.stream()
+                .filter(Predicate.not(Content::isEmpty))
+                .forEach(item -> seeList.add(HtmlTree.LI(item)));
 
         return new ContentBuilder(
                 HtmlTree.DT(contents.seeAlso),
@@ -361,6 +398,203 @@ public class TagletWriterImpl extends TagletWriter {
                 .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
                 .replaceAll("\\R", "\n");             // normalize newlines
         return s.length() > SEE_TAG_MAX_INLINE_LENGTH || s.contains(",");
+    }
+
+    /**
+     * {@return the output for a single {@code @see} tag}
+     *
+     * @param element the element that has the documentation comment containing this tag
+     * @param seeTag  the tag
+     */
+    private Content seeTagOutput(Element element, SeeTree seeTag) {
+        List<? extends DocTree> ref = seeTag.getReference();
+        assert !ref.isEmpty();
+        DocTree ref0 = ref.get(0);
+        switch (ref0.getKind()) {
+            case TEXT, START_ELEMENT -> {
+                // @see "Reference"
+                // @see <a href="...">...</a>
+                return htmlWriter.commentTagsToContent(element, ref, false, false);
+            }
+
+            case REFERENCE -> {
+                // @see reference label...
+                CommentHelper ch = utils.getCommentHelper(element);
+                String tagName = ch.getTagName(seeTag);
+                String refSignature = ch.getReferencedSignature(ref0);
+                List<? extends DocTree> label = ref.subList(1, ref.size());
+
+                return linkSeeReferenceOutput(element,
+                        seeTag,
+                        refSignature,
+                        ch.getReferencedElement(seeTag),
+                        tagName,
+                        false,
+                        htmlWriter.commentTagsToContent(element, label, context),
+                        (key, args) -> messages.warning(ch.getDocTreePath(seeTag), key, args)
+                );
+            }
+
+            case ERRONEOUS -> {
+                return invalidTagOutput(resources.getText("doclet.tag.invalid_input",
+                                ref0.toString()),
+                        Optional.empty());
+            }
+
+            default -> throw new IllegalStateException(ref0.getKind().toString());
+        }
+
+    }
+
+    /**
+     * Worker method to generate a link from the information in different kinds of tags,
+     * such as {@code {@link ...}} tags, {@code @see ...} tags and the {@code link} markup tag
+     * in a {@code {@snippet ...}} tag.
+     *
+     * @param holder        the element that has the documentation comment containing the information
+     * @param refTree       the tree node containing the information, or {@code null} if not available
+     * @param refSignature  the normalized signature of the target of the reference
+     * @param ref           the target of the reference
+     * @param tagName       the name of the tag in the source, to be used in diagnostics
+     * @param isLinkPlain   {@code true} if the link should be presented in "plain" font,
+     *                      or {@code false} for "code" font
+     * @param label         the label for the link,
+     *                      or an empty item to use a default label derived from the signature
+     * @param reportWarning a function to report warnings about issues found in the reference
+     *
+     * @return the output containing the generated link, or content indicating an error
+     */
+    private Content linkSeeReferenceOutput(Element holder,
+                                           DocTree refTree,
+                                           String refSignature,
+                                           Element ref,
+                                           String tagName,
+                                           boolean isLinkPlain,
+                                           Content label,
+                                           BiConsumer<String, Object[]> reportWarning) {
+        Content labelContent = plainOrCode(isLinkPlain, label);
+
+        // The signature from the @see tag. We will output this text when a label is not specified.
+        Content text = plainOrCode(isLinkPlain,
+                Text.of(Objects.requireNonNullElse(refSignature, "")));
+
+        CommentHelper ch = utils.getCommentHelper(holder);
+        TypeElement refClass = ch.getReferencedClass(ref);
+        Element refMem =       ch.getReferencedMember(ref);
+        String refMemName =    ch.getReferencedMemberName(refSignature);
+
+        if (refMemName == null && refMem != null) {
+            refMemName = refMem.toString();
+        }
+        if (refClass == null) {
+            ModuleElement refModule = ch.getReferencedModule(ref);
+            if (refModule != null && utils.isIncluded(refModule)) {
+                return htmlWriter.getModuleLink(refModule, labelContent.isEmpty() ? text : labelContent);
+            }
+            //@see is not referencing an included class
+            PackageElement refPackage = ch.getReferencedPackage(ref);
+            if (refPackage != null && utils.isIncluded(refPackage)) {
+                //@see is referencing an included package
+                if (labelContent.isEmpty())
+                    labelContent = plainOrCode(isLinkPlain,
+                            Text.of(refPackage.getQualifiedName()));
+                return htmlWriter.getPackageLink(refPackage, labelContent);
+            } else {
+                // @see is not referencing an included class, module or package. Check for cross links.
+                String refModuleName =  ch.getReferencedModuleName(refSignature);
+                DocLink elementCrossLink = (refPackage != null) ? htmlWriter.getCrossPackageLink(refPackage) :
+                        (configuration.extern.isModule(refModuleName))
+                                ? htmlWriter.getCrossModuleLink(utils.elementUtils.getModuleElement(refModuleName))
+                                : null;
+                if (elementCrossLink != null) {
+                    // Element cross link found
+                    return htmlWriter.links.createExternalLink(elementCrossLink,
+                            (labelContent.isEmpty() ? text : labelContent));
+                } else {
+                    // No cross link found so print warning
+                    if (!configuration.isDocLintReferenceGroupEnabled()) {
+                        reportWarning.accept(
+                                "doclet.see.class_or_package_not_found",
+                                new Object[] { "@" + tagName, refSignature});
+                    }
+                    return htmlWriter.invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                            Optional.of(labelContent.isEmpty() ? text: labelContent));
+                }
+            }
+        } else if (refMemName == null) {
+            // Must be a class reference since refClass is not null and refMemName is null.
+            if (labelContent.isEmpty() && refTree != null) {
+                TypeMirror referencedType = ch.getReferencedType(refTree);
+                if (utils.isGenericType(referencedType)) {
+                    // This is a generic type link, use the TypeMirror representation.
+                    return plainOrCode(isLinkPlain, htmlWriter.getLink(
+                            new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, referencedType)));
+                }
+                labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
+            }
+            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refClass)
+                    .label(labelContent));
+        } else if (refMem == null) {
+            // Must be a member reference since refClass is not null and refMemName is not null.
+            // However, refMem is null, so this referenced member does not exist.
+            return (labelContent.isEmpty() ? text: labelContent);
+        } else {
+            // Must be a member reference since refClass is not null and refMemName is not null.
+            // refMem is not null, so this @see tag must be referencing a valid member.
+            TypeElement containing = utils.getEnclosingTypeElement(refMem);
+
+            // Find the enclosing type where the method is actually visible
+            // in the inheritance hierarchy.
+            ExecutableElement overriddenMethod = null;
+            if (refMem.getKind() == ElementKind.METHOD) {
+                VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
+                overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
+
+                if (overriddenMethod != null)
+                    containing = utils.getEnclosingTypeElement(overriddenMethod);
+            }
+            if (refSignature.trim().startsWith("#") &&
+                    ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
+                // Since the link is relative and the holder is not even being
+                // documented, this must be an inherited link.  Redirect it.
+                // The current class either overrides the referenced member or
+                // inherits it automatically.
+                if (htmlWriter instanceof ClassWriterImpl writer) {
+                    containing = writer.getTypeElement();
+                } else if (!utils.isPublic(containing)) {
+                    reportWarning.accept("doclet.see.class_or_package_not_accessible",
+                            new Object[] { tagName, utils.getFullyQualifiedName(containing)});
+                } else {
+                    if (!configuration.isDocLintReferenceGroupEnabled()) {
+                        reportWarning.accept("doclet.see.class_or_package_not_found",
+                                new Object[] { tagName, refSignature });
+                    }
+                }
+            }
+            if (configuration.currentTypeElement != containing) {
+                refMemName = (utils.isConstructor(refMem))
+                        ? refMemName
+                        : utils.getSimpleName(containing) + "." + refMemName;
+            }
+            if (utils.isExecutableElement(refMem)) {
+                if (refMemName.indexOf('(') < 0) {
+                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
+                }
+                if (overriddenMethod != null) {
+                    // The method to actually link.
+                    refMem = overriddenMethod;
+                }
+            }
+
+            return htmlWriter.getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
+                    refMem, (labelContent.isEmpty()
+                            ? plainOrCode(isLinkPlain, Text.of(refMemName))
+                            : labelContent), null, false);
+        }
+    }
+
+    private Content plainOrCode(boolean plain, Content body) {
+        return (plain || body.isEmpty()) ? body : HtmlTree.CODE(body);
     }
 
     @Override
@@ -395,7 +629,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
 
         content.consumeBy((styles, sequence) -> {
-            CharSequence text = utils.normalizeNewlines(sequence);
+            CharSequence text = Text.normalizeNewlines(sequence);
             if (styles.isEmpty()) {
                 code.add(text);
             } else {
@@ -434,7 +668,14 @@ public class TagletWriterImpl extends TagletWriter {
                     //disable preview tagging inside the snippets:
                     PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
-                        c = new ContentBuilder(htmlWriter.linkToContent(element, e, t, sequence.toString()));
+                        c = linkSeeReferenceOutput(element,
+                                null,
+                                t,
+                                e,
+                                "link",
+                                false, // TODO: for now
+                                Text.of(sequence.toString()),
+                                (key, args) -> { /* TODO: report diagnostic */ });
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
                     }
@@ -536,7 +777,7 @@ public class TagletWriterImpl extends TagletWriter {
         return htmlWriter.invalidTagOutput(summary,
                 detail.isEmpty() || detail.get().isEmpty()
                         ? Optional.empty()
-                        : Optional.of(Text.of(utils.normalizeNewlines(detail.get()))));
+                        : Optional.of(Text.of(Text.normalizeNewlines(detail.get()))));
     }
 
     @Override

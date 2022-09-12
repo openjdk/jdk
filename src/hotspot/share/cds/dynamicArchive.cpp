@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -106,8 +107,6 @@ public:
   }
 
   void doit() {
-    SystemDictionaryShared::start_dumping();
-
     verify_universe("Before CDS dynamic dump");
     DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
@@ -117,7 +116,6 @@ public:
 
     if (SystemDictionaryShared::is_dumptime_table_empty()) {
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
-      SystemDictionaryShared::stop_dumping();
       return;
     }
 
@@ -177,7 +175,6 @@ public:
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
-    SystemDictionaryShared::stop_dumping();
   }
 
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {

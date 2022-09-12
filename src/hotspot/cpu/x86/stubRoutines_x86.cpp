@@ -91,29 +91,6 @@ address StubRoutines::x86::_ghash_poly512_addr = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 
-//tables common for sin and cos
-address StubRoutines::x86::_ONEHALF_adr = NULL;
-address StubRoutines::x86::_P_2_adr = NULL;
-address StubRoutines::x86::_SC_4_adr = NULL;
-address StubRoutines::x86::_Ctable_adr = NULL;
-address StubRoutines::x86::_SC_2_adr = NULL;
-address StubRoutines::x86::_SC_3_adr = NULL;
-address StubRoutines::x86::_SC_1_adr = NULL;
-address StubRoutines::x86::_PI_INV_TABLE_adr = NULL;
-address StubRoutines::x86::_PI_4_adr = NULL;
-address StubRoutines::x86::_PI32INV_adr = NULL;
-address StubRoutines::x86::_SIGN_MASK_adr = NULL;
-address StubRoutines::x86::_P_1_adr = NULL;
-address StubRoutines::x86::_P_3_adr = NULL;
-address StubRoutines::x86::_NEG_ZERO_adr = NULL;
-
-//tables common for sincos and tancot
-address StubRoutines::x86::_L_2il0floatpacket_0_adr = NULL;
-address StubRoutines::x86::_Pi4Inv_adr = NULL;
-address StubRoutines::x86::_Pi4x3_adr = NULL;
-address StubRoutines::x86::_Pi4x4_adr = NULL;
-address StubRoutines::x86::_ones_adr = NULL;
-
 uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {
   /* The fields in this structure are arranged so that they can be
@@ -256,25 +233,6 @@ juint StubRoutines::x86::_shuf_table_crc32_avx512[] =
     0x83828100UL, 0x87868584UL, 0x8b8a8988UL, 0x8f8e8d8cUL,
     0x03020100UL, 0x07060504UL, 0x0b0a0908UL, 0x000e0d0cUL
 };
-
-juint StubRoutines::x86::_adler32_ascale_table[] =
-{
-    0x00000000UL, 0x00000001UL, 0x00000002UL, 0x00000003UL,
-    0x00000004UL, 0x00000005UL, 0x00000006UL, 0x00000007UL
-};
-
-juint StubRoutines::x86::_adler32_shuf0_table[] =
-{
-    0xFFFFFF00UL, 0xFFFFFF01UL, 0xFFFFFF02UL, 0xFFFFFF03UL,
-    0xFFFFFF04UL, 0xFFFFFF05UL, 0xFFFFFF06UL, 0xFFFFFF07UL
-};
-
-juint StubRoutines::x86::_adler32_shuf1_table[] =
-{
-    0xFFFFFF08UL, 0xFFFFFF09, 0xFFFFFF0AUL, 0xFFFFFF0BUL,
-    0xFFFFFF0CUL, 0xFFFFFF0D, 0xFFFFFF0EUL, 0xFFFFFF0FUL
-};
-
 #endif // _LP64
 
 #define D 32

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package sun.management;
 
-import java.util.regex.*;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -150,7 +147,7 @@ class HotspotCompilation
         numActiveThreads = (int) compilerThreads.longValue();
 
         // Allocate CompilerThreadInfo for compilerThread and adaptorThread
-        threads = new ArrayList<CompilerThreadInfo>();
+        threads = new ArrayList<>();
 
         for (int i = 0; i < numActiveThreads; i++) {
             if (counters.containsKey(SUN_CI + "compilerThread." + i + ".method")) {

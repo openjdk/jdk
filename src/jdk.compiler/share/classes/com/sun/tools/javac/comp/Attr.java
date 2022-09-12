@@ -166,11 +166,6 @@ public class Attr extends JCTree.Visitor {
         Options options = Options.instance(context);
 
         Source source = Source.instance(context);
-        allowPoly = Feature.POLY.allowedInSource(source);
-        allowTypeAnnos = Feature.TYPE_ANNOTATIONS.allowedInSource(source);
-        allowLambda = Feature.LAMBDA.allowedInSource(source);
-        allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
-        allowStaticInterfaceMethods = Feature.STATIC_INTERFACE_METHODS.allowedInSource(source);
         allowReifiableTypesInInstanceof = Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowPatternSwitch = (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH)) &&
@@ -188,26 +183,6 @@ public class Attr extends JCTree.Visitor {
         unknownTypeExprInfo = new ResultInfo(KindSelector.VAL_TYP, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
     }
-
-    /** Switch: support target-typing inference
-     */
-    boolean allowPoly;
-
-    /** Switch: support type annotations.
-     */
-    boolean allowTypeAnnos;
-
-    /** Switch: support lambda expressions ?
-     */
-    boolean allowLambda;
-
-    /** Switch: support default methods ?
-     */
-    boolean allowDefaultMethods;
-
-    /** Switch: static interface methods enabled?
-     */
-    boolean allowStaticInterfaceMethods;
 
     /** Switch: reifiable types in instanceof enabled?
      */
@@ -262,7 +237,7 @@ public class Attr extends JCTree.Visitor {
                       Errors.UnexpectedType(resultInfo.pkind.kindNames(),
                                             ownkind.kindNames()));
             owntype = types.createErrorType(found);
-        } else if (allowPoly && inferenceContext.free(found)) {
+        } else if (inferenceContext.free(found)) {
             //delay the check if there are inference variables in the found type
             //this means we are dealing with a partially inferred poly expression
             owntype = shouldCheck ? resultInfo.pt : found;
@@ -785,7 +760,7 @@ public class Attr extends JCTree.Visitor {
     KindSelector attribArgs(KindSelector initialKind, List<JCExpression> trees, Env<AttrContext> env, ListBuffer<Type> argtypes) {
         KindSelector kind = initialKind;
         for (JCExpression arg : trees) {
-            Type argtype = chk.checkNonVoid(arg, attribTree(arg, env, allowPoly ? methodAttrInfo : unknownExprInfo));
+            Type argtype = chk.checkNonVoid(arg, attribTree(arg, env, methodAttrInfo));
             if (argtype.hasTag(DEFERRED)) {
                 kind = KindSelector.of(KindSelector.POLY, kind);
             }
@@ -1720,8 +1695,6 @@ public class Attr extends JCTree.Visitor {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
                                 log.error(label.pos(), Errors.DuplicateCaseLabel);
-                            } else if (wasUnconditionalPattern) {
-                                log.error(label.pos(), Errors.PatternDominated);
                             }
                             hasNullPattern = true;
                             attribExpr(expr, switchEnv, seltype);
@@ -2000,8 +1973,7 @@ public class Attr extends JCTree.Visitor {
         Type condtype = attribExpr(tree.cond, env, syms.booleanType);
         MatchBindings condBindings = matchBindings;
 
-        tree.polyKind = (!allowPoly ||
-                pt().hasTag(NONE) && pt() != Type.recoveryType && pt() != Infer.anyPoly ||
+        tree.polyKind = (pt().hasTag(NONE) && pt() != Type.recoveryType && pt() != Infer.anyPoly ||
                 isBooleanOrNumeric(env, tree)) ?
                 PolyKind.STANDALONE : PolyKind.POLY;
 
@@ -2457,10 +2429,8 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitThrow(JCThrow tree) {
-        Type owntype = attribExpr(tree.expr, env, allowPoly ? Type.noType : syms.throwableType);
-        if (allowPoly) {
-            chk.checkType(tree, owntype, syms.throwableType);
-        }
+        Type owntype = attribExpr(tree.expr, env, Type.noType);
+        chk.checkType(tree, owntype, syms.throwableType);
         result = null;
     }
 
@@ -2940,7 +2910,7 @@ public class Attr extends JCTree.Visitor {
                     && ((tree.constructorType != null && inferenceContext.free(tree.constructorType))
                     || (tree.clazz.type != null && inferenceContext.free(tree.clazz.type)))) {
                 final ResultInfo resultInfoForClassDefinition = this.resultInfo;
-                Env<AttrContext> dupLocalEnv = localEnv.dup(localEnv.tree, localEnv.info.dup(localEnv.info.scope.dupUnshared()));
+                Env<AttrContext> dupLocalEnv = copyEnv(localEnv);
                 inferenceContext.addFreeTypeListener(List.of(tree.constructorType, tree.clazz.type),
                         instantiatedContext -> {
                             tree.constructorType = instantiatedContext.asInstType(tree.constructorType);
@@ -4073,7 +4043,7 @@ public class Attr extends JCTree.Visitor {
         //should we propagate the target type?
         final ResultInfo castInfo;
         JCExpression expr = TreeInfo.skipParens(tree.expr);
-        boolean isPoly = allowPoly && (expr.hasTag(LAMBDA) || expr.hasTag(REFERENCE));
+        boolean isPoly = (expr.hasTag(LAMBDA) || expr.hasTag(REFERENCE));
         if (isPoly) {
             //expression is a poly - we need to propagate target type info
             castInfo = new ResultInfo(KindSelector.VAL, clazztype,
@@ -4464,16 +4434,16 @@ public class Attr extends JCTree.Visitor {
                               tree.pos(), site, sym.name, true);
                 }
             }
-            if (!allowStaticInterfaceMethods && sitesym.isInterface() &&
-                    sym.isStatic() && sym.kind == MTH) {
-                log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(), Feature.STATIC_INTERFACE_METHODS_INVOKE.error(sourceName));
-            }
         } else if (sym.kind != ERR &&
                    (sym.flags() & STATIC) != 0 &&
                    sym.name != names._class) {
             // If the qualified item is not a type and the selected item is static, report
             // a warning. Make allowance for the class of an array type e.g. Object[].class)
-            chk.warnStatic(tree, Warnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
+            if (!sym.owner.isAnonymous()) {
+                chk.warnStatic(tree, Warnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
+            } else {
+                chk.warnStatic(tree, Warnings.StaticNotQualifiedByType2(sym.kind.kindName()));
+            }
         }
 
         // If we are selecting an instance member via a `super', ...
@@ -5569,9 +5539,7 @@ public class Attr extends JCTree.Visitor {
             // are compatible (i.e. no two define methods with same arguments
             // yet different return types).  (JLS 8.4.8.3)
             chk.checkCompatibleSupertypes(tree.pos(), c.type);
-            if (allowDefaultMethods) {
-                chk.checkDefaultMethodClashes(tree.pos(), c.type);
-            }
+            chk.checkDefaultMethodClashes(tree.pos(), c.type);
         }
 
         // Check that class does not import the same parameterized interface
@@ -5627,13 +5595,11 @@ public class Attr extends JCTree.Visitor {
                 && !c.isAnonymous()) {
             chk.checkSerialStructure(tree, c);
         }
-        if (allowTypeAnnos) {
-            // Correctly organize the positions of the type annotations
-            typeAnnotations.organizeTypeAnnotationsBodies(tree);
+        // Correctly organize the positions of the type annotations
+        typeAnnotations.organizeTypeAnnotationsBodies(tree);
 
-            // Check type annotations applicability rules
-            validateTypeAnnotations(tree, false);
-        }
+        // Check type annotations applicability rules
+        validateTypeAnnotations(tree, false);
     }
         // where
         /** get a diagnostic position for an attribute of Type t, or null if attribute missing */

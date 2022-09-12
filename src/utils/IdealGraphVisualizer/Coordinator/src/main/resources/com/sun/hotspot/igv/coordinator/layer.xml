@@ -158,6 +158,12 @@
         <folder name="RunProject_hidden"/>
         <folder name="Versioning_hidden"/>
 
+        <folder name="Options">
+            <file name="org-netbeans-modules-options-OptionsWindowAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Window/org-netbeans-modules-options-OptionsWindowAction.instance"/>
+            </file>
+        </folder>
+
         <folder name="Window">
             <file name="OutlineAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Window/com-sun-hotspot-igv-coordinator-actions-OutlineAction.instance"/>

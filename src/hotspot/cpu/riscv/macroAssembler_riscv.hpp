@@ -46,11 +46,8 @@ class MacroAssembler: public Assembler {
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
-  // Place a fence.i after code may have been modified due to a safepoint.
-  void safepoint_ifence();
-
   // Alignment
-  void align(int modulus, int extra_offset = 0);
+  int align(int modulus, int extra_offset = 0);
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP
@@ -178,7 +175,7 @@ class MacroAssembler: public Assembler {
   void resolve_oop_handle(Register result, Register tmp = x15);
   void resolve_jobject(Register value, Register thread, Register tmp);
 
-  void movoop(Register dst, jobject obj, bool immediate = false);
+  void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
   void bang_stack_size(Register size, Register tmp);
   void set_narrow_oop(Register dst, jobject obj);
@@ -188,7 +185,7 @@ class MacroAssembler: public Assembler {
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst,
                       Address src, Register tmp1, Register thread_tmp);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
-                       Register src, Register tmp1, Register thread_tmp);
+                       Register src, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp, Label &L);
@@ -208,7 +205,7 @@ class MacroAssembler: public Assembler {
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
                               Register thread_tmp = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -269,15 +266,6 @@ class MacroAssembler: public Assembler {
     Register tmp1,                  // temp register
     Register tmp2,                  // temp register
     Label&   slow_case,             // continuation point of fast allocation fails
-    bool is_far = false
-  );
-
-  void eden_allocate(
-    Register obj,                   // result: pointer to object after successful allocation
-    Register var_size_in_bytes,     // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,     // object size in bytes if   known at compile time
-    Register tmp,                   // temp register
-    Label&   slow_case,             // continuation point if fast allocation fails
     bool is_far = false
   );
 
@@ -525,15 +513,14 @@ class MacroAssembler: public Assembler {
   }
 
   // mv
+  void mv(Register Rd, address addr)          { li(Rd, (int64_t)addr); }
+
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  inline void mv(Register Rd, T o) {
-    li(Rd, (int64_t)o);
-  }
+  inline void mv(Register Rd, T o)            { li(Rd, (int64_t)o); }
 
   inline void mvw(Register Rd, int32_t imm32) { mv(Rd, imm32); }
 
   void mv(Register Rd, Address dest);
-  void mv(Register Rd, address addr);
   void mv(Register Rd, RegisterOrConstant src);
 
   // logic
@@ -845,9 +832,6 @@ private:
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
-
-  // Check the current thread doesn't need a cross modify fence.
-  void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 };
 
 #ifdef ASSERT

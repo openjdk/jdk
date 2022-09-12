@@ -171,7 +171,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // Entry arguments:
-  //  t2: CompiledICHolder
+  //  t1: CompiledICHolder
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,

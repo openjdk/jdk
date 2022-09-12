@@ -54,6 +54,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/synchronizer.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #endif // INCLUDE_G1GC
@@ -63,7 +64,10 @@
 
 static bool caller_is_deopted() {
   JavaThread* thread = JavaThread::current();
-  RegisterMap reg_map(thread, false);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.is_compiled_frame(), "must be compiled");
@@ -74,7 +78,10 @@ static bool caller_is_deopted() {
 static void deopt_caller() {
   if ( !caller_is_deopted()) {
     JavaThread* thread = JavaThread::current();
-    RegisterMap reg_map(thread, false);
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame runtime_frame = thread->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
     Deoptimization::deoptimize_frame(thread, caller_frame.id(), Deoptimization::Reason_constraint);
@@ -255,7 +262,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   assert(cm != NULL, "this is not a compiled method");
   // Adjust the pc as needed/
   if (cm->is_deopt_pc(pc)) {
-    RegisterMap map(current, false);
+    RegisterMap map(current,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
     frame exception_frame = current->last_frame().sender(&map);
     // if the frame isn't deopted then pc must not correspond to the caller of last_frame
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
@@ -295,7 +305,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     // notifications since the interpreter would also notify about
     // these same catches and throws as it unwound the frame.
 
-    RegisterMap reg_map(current);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame stub_frame = current->last_frame();
     frame caller_frame = stub_frame.sender(&reg_map);
 
@@ -789,13 +802,6 @@ void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
   Universe::heap()->register_nmethod(nm);
 }
 
-void JVMCINMethodData::clear_nmethod_mirror(nmethod* nm) {
-  if (_nmethod_mirror_index != -1) {
-    oop* addr = nm->oop_addr_at(_nmethod_mirror_index);
-    *addr = NULL;
-  }
-}
-
 void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
   oop nmethod_mirror = get_nmethod_mirror(nm, /* phantom_ref */ false);
   if (nmethod_mirror == NULL) {
@@ -808,7 +814,7 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
   JVMCIEnv* jvmciEnv = NULL;
   nmethod* current = (nmethod*) HotSpotJVMCI::InstalledCode::address(jvmciEnv, nmethod_mirror);
   if (nm == current) {
-    if (!nm->is_alive()) {
+    if (nm->is_unloading()) {
       // Break the link from the mirror to nm such that
       // future invocations via the mirror will result in
       // an InvalidInstalledCodeException.
@@ -822,7 +828,7 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
     }
   }
 
-  if (_nmethod_mirror_index != -1 && nm->is_unloaded()) {
+  if (_nmethod_mirror_index != -1 && nm->is_unloading()) {
     // Drop the reference to the nmethod mirror object but don't clear the actual oop reference.  Otherwise
     // it would appear that the nmethod didn't need to be unloaded in the first place.
     _nmethod_mirror_index = -1;
@@ -1650,7 +1656,7 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
     if (!require_local) {
       found_klass = SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
     } else {
-      found_klass = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
+      found_klass = SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain);
     }
   }
 
@@ -1995,7 +2001,7 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
         bool retryable = JVMCIENV->get_HotSpotCompilationRequestResult_retry(result_object) != 0;
         compile_state->set_failure(retryable, failure_reason, true);
       } else {
-        if (compile_state->task()->code() == nullptr) {
+        if (!compile_state->task()->is_success()) {
           compile_state->set_failure(true, "no nmethod produced");
         } else {
           compile_state->task()->set_num_inlined_bytecodes(JVMCIENV->get_HotSpotCompilationRequestResult_inlinedBytecodes(result_object));
@@ -2027,31 +2033,30 @@ bool JVMCIRuntime::is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name)
 
 // ------------------------------------------------------------------
 JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
-                                const methodHandle& method,
-                                nmethodLocker& code_handle,
-                                int entry_bci,
-                                CodeOffsets* offsets,
-                                int orig_pc_offset,
-                                CodeBuffer* code_buffer,
-                                int frame_words,
-                                OopMapSet* oop_map_set,
-                                ExceptionHandlerTable* handler_table,
-                                ImplicitExceptionTable* implicit_exception_table,
-                                AbstractCompiler* compiler,
-                                DebugInformationRecorder* debug_info,
-                                Dependencies* dependencies,
-                                int compile_id,
-                                bool has_monitors,
-                                bool has_unsafe_access,
-                                bool has_wide_vector,
-                                JVMCIObject compiled_code,
-                                JVMCIObject nmethod_mirror,
-                                FailedSpeculation** failed_speculations,
-                                char* speculations,
-                                int speculations_len) {
+                                                       const methodHandle& method,
+                                                       nmethod*& nm,
+                                                       int entry_bci,
+                                                       CodeOffsets* offsets,
+                                                       int orig_pc_offset,
+                                                       CodeBuffer* code_buffer,
+                                                       int frame_words,
+                                                       OopMapSet* oop_map_set,
+                                                       ExceptionHandlerTable* handler_table,
+                                                       ImplicitExceptionTable* implicit_exception_table,
+                                                       AbstractCompiler* compiler,
+                                                       DebugInformationRecorder* debug_info,
+                                                       Dependencies* dependencies,
+                                                       int compile_id,
+                                                       bool has_monitors,
+                                                       bool has_unsafe_access,
+                                                       bool has_wide_vector,
+                                                       JVMCIObject compiled_code,
+                                                       JVMCIObject nmethod_mirror,
+                                                       FailedSpeculation** failed_speculations,
+                                                       char* speculations,
+                                                       int speculations_len) {
   JVMCI_EXCEPTION_CONTEXT;
-  nmethod* nm = NULL;
-  int comp_level = CompLevel_full_optimization;
+  CompLevel comp_level = CompLevel_full_optimization;
   char* failure_detail = NULL;
 
   bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(nmethod_mirror) != 0;
@@ -2077,6 +2082,9 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
   }
 
   if (result == JVMCI::ok) {
+    // Check if memory should be freed before allocation
+    CodeCache::gc_on_allocation();
+
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
@@ -2141,12 +2149,6 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         nm->set_has_wide_vectors(has_wide_vector);
         nm->set_has_monitors(has_monitors);
 
-        // Record successful registration.
-        // (Put nm into the task handle *before* publishing to the Java heap.)
-        if (JVMCIENV->compile_state() != NULL) {
-          JVMCIENV->compile_state()->task()->set_code(nm);
-        }
-
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         assert(data != NULL, "must be");
         if (install_default) {
@@ -2201,9 +2203,6 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         }
       }
     }
-    if (result == JVMCI::ok) {
-      code_handle.set_code(nm);
-    }
   }
 
   // String creation must be done outside lock
@@ -2214,8 +2213,11 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
   }
 
   if (result == JVMCI::ok) {
-    // JVMTI -- compiled method notification (must be done outside lock)
-    nm->post_compiled_method_load_event();
+    JVMCICompileState* state = JVMCIENV->compile_state();
+    if (state != NULL) {
+      // Compilation succeeded, post what we know about it
+      nm->post_compiled_method(state->task());
+    }
   }
 
   return result;

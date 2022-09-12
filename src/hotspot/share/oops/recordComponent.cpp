@@ -58,7 +58,7 @@ void RecordComponent::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void RecordComponent::print_value_on(outputStream* st) const {
-  st->print("RecordComponent(" INTPTR_FORMAT ")", p2i(this));
+  st->print("RecordComponent(" PTR_FORMAT ")", p2i(this));
 }
 
 #ifndef PRODUCT
