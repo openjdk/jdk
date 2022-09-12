@@ -1278,6 +1278,15 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     save_bcp(); // Save in case of exception
 
+#ifdef _LP64
+  const Register thread = r15_thread;
+#else
+  const Register thread = header_reg;
+  get_thread(rax);
+#endif
+    cmpptr(obj_reg, Address(thread, Thread::lock_stack_current_offset()));
+    jcc(Assembler::notEqual, slow_case);
+
     // Try to swing header from locked to unlock.
     movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
