@@ -1271,6 +1271,22 @@ class G1MergeHeapRootsTask : public WorkerTask {
              "Bitmap should have no mark for region %u", hr->hrm_index());
     }
 
+    bool should_clear_region(HeapRegion* hr) const {
+      // The bitmap for young regions must obviously be clear as we never mark through them;
+      // old regions are only in the collection set after the concurrent cycle completed,
+      // so their bitmaps must also be clear except when the pause occurs during the
+      // Concurrent Cleanup for Next Mark phase. Only at that point the region's bitmap may
+      // contain marks while being in the collection set at the same time.
+      //
+      // There is one exception: shutdown might have aborted the Concurrent Cleanup for Next
+      // Mark phase midway, which might have also left stale marks in old generation regions.
+      // There might actually have been scheduled multiple collections, but at that point we do
+      // not care that much about performance and just do the work multiple times if needed.
+      return (_g1h->collector_state()->clearing_bitmap() ||
+              _g1h->concurrent_mark_is_terminating()) &&
+              hr->is_old();
+    }
+
   public:
     G1ClearBitmapClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
@@ -1279,13 +1295,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
       // Evacuation failure uses the bitmap to record evacuation failed objects,
       // so the bitmap for the regions in the collection set must be cleared if not already.
-      //
-      // A clear bitmap is obvious for young regions as we never mark through them;
-      // old regions are only in the collection set after the concurrent cycle completed,
-      // so their bitmaps must also be clear except when the pause occurs during the
-      // concurrent bitmap clear. At that point the region's bitmap may contain marks
-      // while being in the collection set at the same time.
-      if (_g1h->collector_state()->clearing_bitmap() && hr->is_old()) {
+      if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
@@ -1602,7 +1612,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 }
 
 bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
-  assert(!_g1h->is_gc_active(), "Only call concurrently");
+  assert(!SafepointSynchronize::is_at_safepoint(), "Only call concurrently");
 
   CardValue* card_ptr = *card_ptr_addr;
   // Find the start address represented by the card.
@@ -1657,8 +1667,6 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   //
 
   if (G1HotCardCache::use_cache()) {
-    assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
-
     const CardValue* orig_card_ptr = card_ptr;
     card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {

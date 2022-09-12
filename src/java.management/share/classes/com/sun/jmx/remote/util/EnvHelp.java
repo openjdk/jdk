@@ -439,7 +439,7 @@ public class EnvHelp {
             logger.trace("filterAttributes", "starts");
         }
 
-        SortedMap<String, V> map = new TreeMap<String, V>(attributes);
+        SortedMap<String, V> map = new TreeMap<>(attributes);
         purgeUnserializable(map.values());
         hideAttributes(map);
         return map;
@@ -524,9 +524,9 @@ public class EnvHelp {
         "jmx.remote.x.password.file ";
 
     private static final SortedSet<String> defaultHiddenStrings =
-            new TreeSet<String>();
+            new TreeSet<>();
     private static final SortedSet<String> defaultHiddenPrefixes =
-            new TreeSet<String>();
+            new TreeSet<>();
 
     private static void hideAttributes(SortedMap<String, ?> map) {
         if (map.isEmpty())
@@ -541,8 +541,8 @@ public class EnvHelp {
                 hide = hide.substring(1);
             else
                 hide += " " + DEFAULT_HIDDEN_ATTRIBUTES;
-            hiddenStrings = new TreeSet<String>();
-            hiddenPrefixes = new TreeSet<String>();
+            hiddenStrings = new TreeSet<>();
+            hiddenPrefixes = new TreeSet<>();
             parseHiddenAttributes(hide, hiddenStrings, hiddenPrefixes);
         } else {
             hide = DEFAULT_HIDDEN_ATTRIBUTES;

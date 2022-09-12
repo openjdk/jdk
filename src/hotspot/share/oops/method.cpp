@@ -332,7 +332,7 @@ int Method::bci_from(address bcp) const {
   // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
   // may call this after interrupting a nested ResourceMark.
   assert(is_native() && bcp == code_base() || contains(bcp) || VMError::is_error_reported(),
-         "bcp doesn't belong to this method. bcp: " INTPTR_FORMAT, p2i(bcp));
+         "bcp doesn't belong to this method. bcp: " PTR_FORMAT, p2i(bcp));
 
   return bcp - code_base();
 }
@@ -2347,9 +2347,9 @@ void Method::print_on(outputStream* st) const {
   ResourceMark rm;
   assert(is_method(), "must be method");
   st->print_cr("%s", internal_name());
-  st->print_cr(" - this oop:          " INTPTR_FORMAT, p2i(this));
+  st->print_cr(" - this oop:          " PTR_FORMAT, p2i(this));
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
-  st->print   (" - constants:         " INTPTR_FORMAT " ", p2i(constants()));
+  st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
   st->print   (" - access:            0x%x  ", access_flags().as_int()); access_flags().print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
@@ -2363,26 +2363,26 @@ void Method::print_on(outputStream* st) const {
   if (highest_comp_level() != CompLevel_none)
     st->print_cr(" - highest level:     %d", highest_comp_level());
   st->print_cr(" - vtable index:      %d",   _vtable_index);
-  st->print_cr(" - i2i entry:         " INTPTR_FORMAT, p2i(interpreter_entry()));
+  st->print_cr(" - i2i entry:         " PTR_FORMAT, p2i(interpreter_entry()));
   st->print(   " - adapters:          ");
   AdapterHandlerEntry* a = ((Method*)this)->adapter();
   if (a == NULL)
-    st->print_cr(INTPTR_FORMAT, p2i(a));
+    st->print_cr(PTR_FORMAT, p2i(a));
   else
     a->print_adapter_on(st);
-  st->print_cr(" - compiled entry     " INTPTR_FORMAT, p2i(from_compiled_entry()));
+  st->print_cr(" - compiled entry     " PTR_FORMAT, p2i(from_compiled_entry()));
   st->print_cr(" - code size:         %d",   code_size());
   if (code_size() != 0) {
-    st->print_cr(" - code start:        " INTPTR_FORMAT, p2i(code_base()));
-    st->print_cr(" - code end (excl):   " INTPTR_FORMAT, p2i(code_base() + code_size()));
+    st->print_cr(" - code start:        " PTR_FORMAT, p2i(code_base()));
+    st->print_cr(" - code end (excl):   " PTR_FORMAT, p2i(code_base() + code_size()));
   }
   if (method_data() != NULL) {
-    st->print_cr(" - method data:       " INTPTR_FORMAT, p2i(method_data()));
+    st->print_cr(" - method data:       " PTR_FORMAT, p2i(method_data()));
   }
   st->print_cr(" - checked ex length: %d",   checked_exceptions_length());
   if (checked_exceptions_length() > 0) {
     CheckedExceptionElement* table = checked_exceptions_start();
-    st->print_cr(" - checked ex start:  " INTPTR_FORMAT, p2i(table));
+    st->print_cr(" - checked ex start:  " PTR_FORMAT, p2i(table));
     if (Verbose) {
       for (int i = 0; i < checked_exceptions_length(); i++) {
         st->print_cr("   - throws %s", constants()->printable_name_at(table[i].class_cp_index));
@@ -2391,7 +2391,7 @@ void Method::print_on(outputStream* st) const {
   }
   if (has_linenumber_table()) {
     u_char* table = compressed_linenumber_table();
-    st->print_cr(" - linenumber start:  " INTPTR_FORMAT, p2i(table));
+    st->print_cr(" - linenumber start:  " PTR_FORMAT, p2i(table));
     if (Verbose) {
       CompressedLineNumberReadStream stream(table);
       while (stream.read_pair()) {
@@ -2402,7 +2402,7 @@ void Method::print_on(outputStream* st) const {
   st->print_cr(" - localvar length:   %d",   localvariable_table_length());
   if (localvariable_table_length() > 0) {
     LocalVariableTableElement* table = localvariable_table_start();
-    st->print_cr(" - localvar start:    " INTPTR_FORMAT, p2i(table));
+    st->print_cr(" - localvar start:    " PTR_FORMAT, p2i(table));
     if (Verbose) {
       for (int i = 0; i < localvariable_table_length(); i++) {
         int bci = table[i].start_bci;
@@ -2419,8 +2419,8 @@ void Method::print_on(outputStream* st) const {
     code()->print_value_on(st);
   }
   if (is_native()) {
-    st->print_cr(" - native function:   " INTPTR_FORMAT, p2i(native_function()));
-    st->print_cr(" - signature handler: " INTPTR_FORMAT, p2i(signature_handler()));
+    st->print_cr(" - native function:   " PTR_FORMAT, p2i(native_function()));
+    st->print_cr(" - signature handler: " PTR_FORMAT, p2i(signature_handler()));
   }
 }
 

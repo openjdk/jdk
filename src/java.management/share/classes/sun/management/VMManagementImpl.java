@@ -205,7 +205,7 @@ class VMManagementImpl implements VMManagement {
     public String   getCompilerName() {
         @SuppressWarnings("removal")
         String name =  AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
+            new PrivilegedAction<>() {
                 public String run() {
                     return System.getProperty("sun.management.compiler");
                 }
