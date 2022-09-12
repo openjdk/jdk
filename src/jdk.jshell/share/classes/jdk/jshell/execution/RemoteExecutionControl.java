@@ -160,7 +160,7 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         }
     }
 
-    @SuppressWarnings({"serial", "deprecation"})       // serialVersionUID intentionally omitted
+    @SuppressWarnings({"serial", "removal"})       // serialVersionUID intentionally omitted
     private class StopExecutionException extends ThreadDeath {
 
         @Override
