@@ -236,9 +236,9 @@ endif
 # at all. Final JMODs are recompiled often, so pay with little extra space, but
 # win a lot of CPU time back with the lightest compression level possible.
 ifeq ($(INTERIM_JMOD), true)
-  JMOD_FLAGS += --compression-level=0
+  JMOD_FLAGS += --compress zip-0
 else
-  JMOD_FLAGS += --compression-level=1
+  JMOD_FLAGS += --compress zip-1
 endif
 
 # Create jmods in the support dir and then move them into place to keep the
