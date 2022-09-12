@@ -7453,62 +7453,6 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success. Implemented with a CASA on Sparc.
-
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java.
-// Mem_ptr must be a memory operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set this node
-// can be rematerialized which leads to errors.
-instruct storeLConditional_regP_regL_regL(flagsReg crx, indirect mem_ptr, iRegLsrc oldVal, iRegLsrc newVal, flagsRegCR0 cr0) %{
-  match(Set crx (StoreLConditional mem_ptr (Binary oldVal newVal)));
-  effect(TEMP cr0);
-  format %{ "CMPXCHGD if ($crx = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
-  ins_encode %{
-    __ cmpxchgd($crx$$CondRegister, R0, $oldVal$$Register, $newVal$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarAcq, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, NULL, true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off.
-// Mem_ptr must be a memory operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set this node
-// can be rematerialized which leads to errors.
-instruct storePConditional_regP_regP_regP(flagsRegCR0 cr0, indirect mem_ptr, iRegPsrc oldVal, iRegPsrc newVal) %{
-  match(Set cr0 (StorePConditional mem_ptr (Binary oldVal newVal)));
-  ins_cost(2*MEMORY_REF_COST);
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-
-  format %{ "STDCX_  if ($cr0 = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
-  ins_encode %{
-    __ stdcx_($newVal$$Register, $mem_ptr$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegPdst dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(2*MEMORY_REF_COST);
-
-  format %{ "LDARX   $dst, $mem \t// loadPLocked\n\t" %}
-  size(4);
-  ins_encode %{
-    __ ldarx($dst$$Register, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 //----------Compare-And-Swap---------------------------------------------------
 
 // CompareAndSwap{P,I,L} have more than one output, therefore "CmpI

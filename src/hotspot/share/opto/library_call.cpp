@@ -525,6 +525,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_numberOfTrailingZeros_l:
   case vmIntrinsics::_bitCount_i:
   case vmIntrinsics::_bitCount_l:
+  case vmIntrinsics::_reverse_i:
+  case vmIntrinsics::_reverse_l:
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
   case vmIntrinsics::_reverseBytes_s:
@@ -641,9 +643,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     return inline_fma(intrinsic_id());
-
-  case vmIntrinsics::_Continuation_doYield:
-    return inline_continuation_do_yield();
 
   case vmIntrinsics::_isDigit:
   case vmIntrinsics::_isLowerCase:
@@ -1616,12 +1615,19 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     return false;
   }
 
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
+
   value = must_be_not_null(value, true);
 
   Node* adr = array_element_address(value, index, T_CHAR);
   if (adr->is_top()) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false;
   }
+  old_map->destruct(&_gvn);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -2060,6 +2066,8 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( 0,   arg);  break;
   case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( 0,   arg);  break;
   case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( 0,   arg);  break;
+  case vmIntrinsics::_reverse_i:                n = new ReverseINode(0, arg); break;
+  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(0, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -7404,15 +7412,6 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
 
   return instof_false;  // even if it is NULL
-}
-
-bool LibraryCallKit::inline_continuation_do_yield() {
-  address call_addr = StubRoutines::cont_doYield();
-  const TypeFunc* tf = OptoRuntime::continuation_doYield_Type();
-  Node* call = make_runtime_call(RC_NO_LEAF, tf, call_addr, "doYield", TypeRawPtr::BOTTOM);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
-  return true;
 }
 
 //-------------inline_fma-----------------------------------

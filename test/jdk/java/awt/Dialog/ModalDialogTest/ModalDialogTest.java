@@ -47,6 +47,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.reflect.InvocationTargetException;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -210,7 +211,9 @@ class WindowPanel extends Panel {
         win.add(center, BorderLayout.CENTER);
         win.add(bottom, BorderLayout.SOUTH);
         win.pack();
-        win.setVisible(true);
+        if (windows != 0) {
+            win.setVisible(true);
+        }
 
         PassFailJFrame.addTestWindow(win);
     }
@@ -344,16 +347,20 @@ public class ModalDialogTest {
         PassFailJFrame passFailJFrame = new PassFailJFrame("ModalDialogTest " +
         "Instructions", getInstructions(), 10, 20, 60);
 
-        WindowPanel.buildAndShowWindow(
-            frame,
-            new Label("Owner: none"),
-            new TestPanel(new TextArea(10, 30)),
-            new WindowPanel()
-        );
+        SwingUtilities.invokeAndWait(() ->{
+            WindowPanel.buildAndShowWindow(
+                frame,
+                new Label("Owner: none"),
+                new TestPanel(new TextArea(10, 30)),
+                new WindowPanel()
+            );
 
-        // adding only the root frame to be positioned
-        // w.r.t instruction frame
-        passFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
+            // adding only the root frame to be positioned
+            // w.r.t instruction frame
+            passFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
+            frame.setVisible(true);
+        });
+
         passFailJFrame.awaitAndCheck();
     }
 }

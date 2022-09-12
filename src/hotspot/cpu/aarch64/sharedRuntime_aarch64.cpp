@@ -41,6 +41,7 @@
 #include "nativeInst_aarch64.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -119,9 +120,9 @@ class RegisterSaver {
                 // setting for it. We must therefore force the layout
                 // so that it agrees with the frame sender code.
                 r0_off = fpu_state_off + FPUStateSizeInWords,
-                rfp_off = r0_off + (RegisterImpl::number_of_registers - 2) * RegisterImpl::max_slots_per_register,
-                return_off = rfp_off + RegisterImpl::max_slots_per_register,      // slot for return address
-                reg_save_size = return_off + RegisterImpl::max_slots_per_register};
+                rfp_off = r0_off + (Register::number_of_registers - 2) * Register::max_slots_per_register,
+                return_off = rfp_off + Register::max_slots_per_register,      // slot for return address
+                reg_save_size = return_off + Register::max_slots_per_register};
 
 };
 
@@ -131,11 +132,11 @@ int RegisterSaver::reg_offset_in_bytes(Register r) {
   // offset depends on whether we are saving full vectors, and whether
   // those vectors are NEON or SVE.
 
-  int slots_per_vect = FloatRegisterImpl::save_slots_per_register;
+  int slots_per_vect = FloatRegister::save_slots_per_register;
 
 #if COMPILER2_OR_JVMCI
   if (_save_vectors) {
-    slots_per_vect = FloatRegisterImpl::slots_per_neon_register;
+    slots_per_vect = FloatRegister::slots_per_neon_register;
 
 #ifdef COMPILER2
     if (Matcher::supports_scalable_vector()) {
@@ -145,7 +146,7 @@ int RegisterSaver::reg_offset_in_bytes(Register r) {
   }
 #endif
 
-  int r0_offset = v0_offset_in_bytes() + (slots_per_vect * FloatRegisterImpl::number_of_registers) * BytesPerInt;
+  int r0_offset = v0_offset_in_bytes() + (slots_per_vect * FloatRegister::number_of_registers) * BytesPerInt;
   return r0_offset + r->encoding() * wordSize;
 }
 
@@ -163,7 +164,7 @@ int RegisterSaver::total_sve_predicate_in_bytes() {
     // of 16 bytes so we manually align it up.
     return align_up(Matcher::scalable_predicate_reg_slots() *
                     VMRegImpl::stack_slot_size *
-                    PRegisterImpl::number_of_saved_registers, 16);
+                    PRegister::number_of_saved_registers, 16);
   }
 #endif
   return 0;
@@ -191,13 +192,13 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     int extra_save_slots_per_register = 0;
     // Save upper half of vector registers
     if (use_sve) {
-      extra_save_slots_per_register = sve_vector_size_in_slots - FloatRegisterImpl::save_slots_per_register;
+      extra_save_slots_per_register = sve_vector_size_in_slots - FloatRegister::save_slots_per_register;
     } else {
-      extra_save_slots_per_register = FloatRegisterImpl::extra_save_slots_per_neon_register;
+      extra_save_slots_per_register = FloatRegister::extra_save_slots_per_neon_register;
     }
     int extra_vector_bytes = extra_save_slots_per_register *
                              VMRegImpl::stack_slot_size *
-                             FloatRegisterImpl::number_of_registers;
+                             FloatRegister::number_of_registers;
     additional_frame_words += ((extra_vector_bytes + total_predicate_in_bytes) / wordSize);
   }
 #else
@@ -226,31 +227,31 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
 
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < Register::number_of_registers; i++) {
     Register r = as_Register(i);
-    if (r <= rfp && r != rscratch1 && r != rscratch2) {
+    if (i <= rfp->encoding() && r != rscratch1 && r != rscratch2) {
       // SP offsets are in 4-byte words.
       // Register slots are 8 bytes wide, 32 floating-point registers.
-      int sp_offset = RegisterImpl::max_slots_per_register * i +
-                      FloatRegisterImpl::save_slots_per_register * FloatRegisterImpl::number_of_registers;
+      int sp_offset = Register::max_slots_per_register * i +
+                      FloatRegister::save_slots_per_register * FloatRegister::number_of_registers;
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset + additional_frame_slots), r->as_VMReg());
     }
   }
 
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
     FloatRegister r = as_FloatRegister(i);
     int sp_offset = 0;
     if (_save_vectors) {
       sp_offset = use_sve ? (total_predicate_in_slots + sve_vector_size_in_slots * i) :
-                            (FloatRegisterImpl::slots_per_neon_register * i);
+                            (FloatRegister::slots_per_neon_register * i);
     } else {
-      sp_offset = FloatRegisterImpl::save_slots_per_register * i;
+      sp_offset = FloatRegister::save_slots_per_register * i;
     }
     oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
   }
 
   if (_save_vectors && use_sve) {
-    for (int i = 0; i < PRegisterImpl::number_of_saved_registers; i++) {
+    for (int i = 0; i < PRegister::number_of_saved_registers; i++) {
       PRegister r = as_PRegister(i);
       int sp_offset = sve_predicate_size_in_slots * i;
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
@@ -289,8 +290,8 @@ bool SharedRuntime::is_wide_vector(int size) {
 // refer to 4-byte stack slots.  All stack slots are based off of the stack pointer
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
-// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.  Register
-// up to RegisterImpl::number_of_registers) are the 64-bit
+// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.
+// Register up to Register::number_of_registers are the 64-bit
 // integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words,
@@ -1049,11 +1050,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     fill_continuation_entry(masm);
 
-    __ cmp(c_rarg2, (u1)0);
-    __ br(Assembler::NE, call_thaw);
+    __ cbnz(c_rarg2, call_thaw);
 
     address mark = __ pc();
-    __ trampoline_call1(resolve, NULL, false);
+    __ trampoline_call(resolve);
 
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
@@ -1075,11 +1075,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   fill_continuation_entry(masm);
 
-  __ cmp(c_rarg2, (u1)0);
-  __ br(Assembler::NE, call_thaw);
+  __ cbnz(c_rarg2, call_thaw);
 
   address mark = __ pc();
-  __ trampoline_call1(resolve, NULL, false);
+  __ trampoline_call(resolve);
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
@@ -1122,6 +1121,62 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   CodeBuffer* cbuf = masm->code_section()->outer();
   CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+}
+
+static void gen_continuation_yield(MacroAssembler* masm,
+                                   const methodHandle& method,
+                                   const BasicType* sig_bt,
+                                   const VMRegPair* regs,
+                                   int& exception_offset,
+                                   OopMapSet* oop_maps,
+                                   int& frame_complete,
+                                   int& stack_slots,
+                                   int& interpreted_entry_offset,
+                                   int& compiled_entry_offset) {
+    enum layout {
+      rfp_off1,
+      rfp_off2,
+      lr_off,
+      lr_off2,
+      framesize // inclusive of return address
+    };
+    // assert(is_even(framesize/2), "sp not 16-byte aligned");
+    stack_slots = framesize /  VMRegImpl::slots_per_word;
+    assert(stack_slots == 2, "recheck layout");
+
+    address start = __ pc();
+
+    compiled_entry_offset = __ pc() - start;
+    __ enter();
+
+    __ mov(c_rarg1, sp);
+
+    frame_complete = __ pc() - start;
+    address the_pc = __ pc();
+
+    __ post_call_nop(); // this must be exactly after the pc value that is pushed into the frame info, we use this nop for fast CodeBlob lookup
+
+    __ mov(c_rarg0, rthread);
+    __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
+    __ call_VM_leaf(Continuation::freeze_entry(), 2);
+    __ reset_last_Java_frame(true);
+
+    Label pinned;
+
+    __ cbnz(r0, pinned);
+
+    // We've succeeded, set sp to the ContinuationEntry
+    __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
+    __ mov(sp, rscratch1);
+    continuation_enter_cleanup(masm);
+
+    __ bind(pinned); // pinned -- return to caller
+
+    __ leave();
+    __ ret(lr);
+
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(the_pc - start, map);
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
@@ -1208,25 +1263,38 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
-  if (method->is_continuation_enter_intrinsic()) {
-    vmIntrinsics::ID iid = method->intrinsic_id();
-    intptr_t start = (intptr_t)__ pc();
+  if (method->is_continuation_native_intrinsic()) {
     int vep_offset = 0;
     int exception_offset = 0;
     int frame_complete = 0;
     int stack_slots = 0;
     OopMapSet* oop_maps =  new OopMapSet();
     int interpreted_entry_offset = -1;
-    gen_continuation_enter(masm,
-                         method,
-                         in_sig_bt,
-                         in_regs,
-                         exception_offset,
-                         oop_maps,
-                         frame_complete,
-                         stack_slots,
-                         interpreted_entry_offset,
-                         vep_offset);
+    if (method->is_continuation_enter_intrinsic()) {
+      gen_continuation_enter(masm,
+                             method,
+                             in_sig_bt,
+                             in_regs,
+                             exception_offset,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             interpreted_entry_offset,
+                             vep_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      gen_continuation_yield(masm,
+                             method,
+                             in_sig_bt,
+                             in_regs,
+                             exception_offset,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             interpreted_entry_offset,
+                             vep_offset);
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
@@ -1238,7 +1306,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
-    ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
+    if (method->is_continuation_enter_intrinsic()) {
+      ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      _cont_doYield_stub = nm;
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
     return nm;
   }
 
@@ -1470,12 +1544,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   int int_args = 0;
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[FloatRegisterImpl::number_of_registers];
-  for ( int r = 0 ; r < RegisterImpl::number_of_registers ; r++ ) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[FloatRegister::number_of_registers];
+  for ( int r = 0 ; r < Register::number_of_registers ; r++ ) {
     reg_destroyed[r] = false;
   }
-  for ( int f = 0 ; f < FloatRegisterImpl::number_of_registers ; f++ ) {
+  for ( int f = 0 ; f < FloatRegister::number_of_registers ; f++ ) {
     freg_destroyed[f] = false;
   }
 
@@ -1555,8 +1629,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     //  load oop into a register
     __ movoop(c_rarg1,
-              JNIHandles::make_local(method->method_holder()->java_mirror()),
-              /*immediate*/true);
+              JNIHandles::make_local(method->method_holder()->java_mirror()));
 
     // Now handlize the static class mirror it's known not-null.
     __ str(c_rarg1, Address(sp, klass_offset));

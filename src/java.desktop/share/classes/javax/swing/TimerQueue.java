@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,10 @@
  * questions.
  */
 
-
-
 package javax.swing;
-
-
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -49,8 +44,6 @@ class TimerQueue implements Runnable
 {
     private static final Object sharedInstanceKey =
         new StringBuffer("TimerQueue.sharedInstanceKey");
-    private static final Object expiredTimersKey =
-        new StringBuffer("TimerQueue.expiredTimersKey");
 
     private final DelayQueue<DelayedTimer> queue;
     private volatile boolean running;
@@ -268,7 +261,7 @@ class TimerQueue implements Runnable
 
 
         public final long getDelay(TimeUnit unit) {
-            return  unit.convert(time - now(), TimeUnit.NANOSECONDS);
+            return unit.convert(time - now(), TimeUnit.NANOSECONDS);
         }
 
         final void setTime(long nanos) {

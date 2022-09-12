@@ -50,23 +50,23 @@ class Argument {
 };
 
 // function argument(caller-save registers)
-REGISTER_DECLARATION(Register, c_rarg0, x10);
-REGISTER_DECLARATION(Register, c_rarg1, x11);
-REGISTER_DECLARATION(Register, c_rarg2, x12);
-REGISTER_DECLARATION(Register, c_rarg3, x13);
-REGISTER_DECLARATION(Register, c_rarg4, x14);
-REGISTER_DECLARATION(Register, c_rarg5, x15);
-REGISTER_DECLARATION(Register, c_rarg6, x16);
-REGISTER_DECLARATION(Register, c_rarg7, x17);
+constexpr Register c_rarg0 = x10;
+constexpr Register c_rarg1 = x11;
+constexpr Register c_rarg2 = x12;
+constexpr Register c_rarg3 = x13;
+constexpr Register c_rarg4 = x14;
+constexpr Register c_rarg5 = x15;
+constexpr Register c_rarg6 = x16;
+constexpr Register c_rarg7 = x17;
 
-REGISTER_DECLARATION(FloatRegister, c_farg0, f10);
-REGISTER_DECLARATION(FloatRegister, c_farg1, f11);
-REGISTER_DECLARATION(FloatRegister, c_farg2, f12);
-REGISTER_DECLARATION(FloatRegister, c_farg3, f13);
-REGISTER_DECLARATION(FloatRegister, c_farg4, f14);
-REGISTER_DECLARATION(FloatRegister, c_farg5, f15);
-REGISTER_DECLARATION(FloatRegister, c_farg6, f16);
-REGISTER_DECLARATION(FloatRegister, c_farg7, f17);
+constexpr FloatRegister c_farg0 = f10;
+constexpr FloatRegister c_farg1 = f11;
+constexpr FloatRegister c_farg2 = f12;
+constexpr FloatRegister c_farg3 = f13;
+constexpr FloatRegister c_farg4 = f14;
+constexpr FloatRegister c_farg5 = f15;
+constexpr FloatRegister c_farg6 = f16;
+constexpr FloatRegister c_farg7 = f17;
 
 // Symbolically name the register arguments used by the Java calling convention.
 // We have control over the convention for java so we can do what we please.
@@ -83,32 +83,32 @@ REGISTER_DECLARATION(FloatRegister, c_farg7, f17);
 // | j_rarg7  j_rarg0  j_rarg1  j_rarg2  j_rarg3  j_rarg4  j_rarg5  j_rarg6 |
 // |------------------------------------------------------------------------|
 
-REGISTER_DECLARATION(Register, j_rarg0, c_rarg1);
-REGISTER_DECLARATION(Register, j_rarg1, c_rarg2);
-REGISTER_DECLARATION(Register, j_rarg2, c_rarg3);
-REGISTER_DECLARATION(Register, j_rarg3, c_rarg4);
-REGISTER_DECLARATION(Register, j_rarg4, c_rarg5);
-REGISTER_DECLARATION(Register, j_rarg5, c_rarg6);
-REGISTER_DECLARATION(Register, j_rarg6, c_rarg7);
-REGISTER_DECLARATION(Register, j_rarg7, c_rarg0);
+constexpr Register j_rarg0 = c_rarg1;
+constexpr Register j_rarg1 = c_rarg2;
+constexpr Register j_rarg2 = c_rarg3;
+constexpr Register j_rarg3 = c_rarg4;
+constexpr Register j_rarg4 = c_rarg5;
+constexpr Register j_rarg5 = c_rarg6;
+constexpr Register j_rarg6 = c_rarg7;
+constexpr Register j_rarg7 = c_rarg0;
 
 // Java floating args are passed as per C
 
-REGISTER_DECLARATION(FloatRegister, j_farg0, f10);
-REGISTER_DECLARATION(FloatRegister, j_farg1, f11);
-REGISTER_DECLARATION(FloatRegister, j_farg2, f12);
-REGISTER_DECLARATION(FloatRegister, j_farg3, f13);
-REGISTER_DECLARATION(FloatRegister, j_farg4, f14);
-REGISTER_DECLARATION(FloatRegister, j_farg5, f15);
-REGISTER_DECLARATION(FloatRegister, j_farg6, f16);
-REGISTER_DECLARATION(FloatRegister, j_farg7, f17);
+constexpr FloatRegister j_farg0 = f10;
+constexpr FloatRegister j_farg1 = f11;
+constexpr FloatRegister j_farg2 = f12;
+constexpr FloatRegister j_farg3 = f13;
+constexpr FloatRegister j_farg4 = f14;
+constexpr FloatRegister j_farg5 = f15;
+constexpr FloatRegister j_farg6 = f16;
+constexpr FloatRegister j_farg7 = f17;
 
 // zero rigster
-REGISTER_DECLARATION(Register, zr,        x0);
+constexpr Register zr = x0;
 // global pointer
-REGISTER_DECLARATION(Register, gp,        x3);
+constexpr Register gp = x3;
 // thread pointer
-REGISTER_DECLARATION(Register, tp,        x4);
+constexpr Register tp = x4;
 
 // registers used to hold VM data either temporarily within a method
 // or across method calls
@@ -116,40 +116,28 @@ REGISTER_DECLARATION(Register, tp,        x4);
 // volatile (caller-save) registers
 
 // current method -- must be in a call-clobbered register
-REGISTER_DECLARATION(Register, xmethod,   x31);
+constexpr Register xmethod =  x31;
 // return address
-REGISTER_DECLARATION(Register, ra,        x1);
+constexpr Register ra      =  x1;
 
 // non-volatile (callee-save) registers
 
-// stack pointer
-REGISTER_DECLARATION(Register, sp,        x2);
-// frame pointer
-REGISTER_DECLARATION(Register, fp,        x8);
-// base of heap
-REGISTER_DECLARATION(Register, xheapbase, x27);
-// constant pool cache
-REGISTER_DECLARATION(Register, xcpool,    x26);
-// monitors allocated on stack
-REGISTER_DECLARATION(Register, xmonitors, x25);
-// locals on stack
-REGISTER_DECLARATION(Register, xlocals,   x24);
-
-// java thread pointer
-REGISTER_DECLARATION(Register, xthread,   x23);
-// bytecode pointer
-REGISTER_DECLARATION(Register, xbcp,      x22);
-// Dispatch table base
-REGISTER_DECLARATION(Register, xdispatch, x21);
-// Java expression stack pointer
-REGISTER_DECLARATION(Register, esp,       x20);
-// Sender's SP while in interpreter
-REGISTER_DECLARATION(Register, x19_sender_sp, x19);
+constexpr Register sp            = x2; // stack pointer
+constexpr Register fp            = x8; // frame pointer
+constexpr Register xheapbase     = x27; // base of heap
+constexpr Register xcpool        = x26; // constant pool cache
+constexpr Register xmonitors     = x25; // monitors allocated on stack
+constexpr Register xlocals       = x24; // locals on stack
+constexpr Register xthread       = x23; // java thread pointer
+constexpr Register xbcp          = x22; // bytecode pointer
+constexpr Register xdispatch     = x21; // Dispatch table base
+constexpr Register esp           = x20; // Java expression stack pointer
+constexpr Register x19_sender_sp = x19; // Sender's SP while in interpreter
 
 // temporary register(caller-save registers)
-REGISTER_DECLARATION(Register, t0, x5);
-REGISTER_DECLARATION(Register, t1, x6);
-REGISTER_DECLARATION(Register, t2, x7);
+constexpr Register t0 = x5;
+constexpr Register t1 = x6;
+constexpr Register t2 = x7;
 
 const Register g_INTArgReg[Argument::n_int_register_parameters_c] = {
   c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, c_rarg6, c_rarg7
@@ -218,10 +206,6 @@ class Address {
   bool uses(Register reg) const { return _base == reg; }
   const address target() const { return _target; }
   const RelocationHolder& rspec() const { return _rspec; }
-  ~Address() {
-    _target = NULL;
-    _base = NULL;
-  }
 };
 
 // Convenience classes
@@ -339,7 +323,6 @@ public:
   void movptr(Register Rd, address addr);
   void movptr_with_offset(Register Rd, address addr, int32_t &offset);
   void movptr(Register Rd, uintptr_t imm64);
-  void ifence();
   void j(const address &dest, Register temp = t0);
   void j(const Address &adr, Register temp = t0);
   void j(Label &l, Register temp = t0);
@@ -395,15 +378,15 @@ public:
   }
 
   static void patch_reg(address a, unsigned lsb, Register reg) {
-    patch(a, lsb + 4, lsb, reg->encoding_nocheck());
+    patch(a, lsb + 4, lsb, reg->raw_encoding());
   }
 
   static void patch_reg(address a, unsigned lsb, FloatRegister reg) {
-    patch(a, lsb + 4, lsb, reg->encoding_nocheck());
+    patch(a, lsb + 4, lsb, reg->raw_encoding());
   }
 
   static void patch_reg(address a, unsigned lsb, VectorRegister reg) {
-    patch(a, lsb + 4, lsb, reg->encoding_nocheck());
+    patch(a, lsb + 4, lsb, reg->raw_encoding());
   }
 
   void emit(unsigned insn) {
@@ -961,7 +944,6 @@ public:
     emit(insn);                                             \
   }
 
-  INSN(fence_i, 0b0001111, 0b001, 0b000000000000);
   INSN(ecall,   0b1110011, 0b000, 0b000000000000);
   INSN(_ebreak, 0b1110011, 0b000, 0b000000000001);
 
@@ -1552,7 +1534,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs1, VectorRegister Vs2, VectorMask vm = unmasked) { \
-    patch_VArith(op, Vd, funct3, Vs1->encoding_nocheck(), Vs2, vm, funct6);                        \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);                            \
   }
 
   // Vector Single-Width Floating-Point Fused Multiply-Add Instructions
@@ -1575,7 +1557,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, Register Rs1, VectorRegister Vs2, VectorMask vm = unmasked) {       \
-    patch_VArith(op, Vd, funct3, Rs1->encoding_nocheck(), Vs2, vm, funct6);                        \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);                            \
   }
 
   // Vector Single-Width Integer Multiply-Add Instructions
@@ -1590,7 +1572,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, FloatRegister Rs1, VectorRegister Vs2, VectorMask vm = unmasked) {  \
-    patch_VArith(op, Vd, funct3, Rs1->encoding_nocheck(), Vs2, vm, funct6);                        \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);                            \
   }
 
   // Vector Single-Width Floating-Point Fused Multiply-Add Instructions
@@ -1607,7 +1589,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1, VectorMask vm = unmasked) { \
-    patch_VArith(op, Vd, funct3, Vs1->encoding_nocheck(), Vs2, vm, funct6);                        \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);                            \
   }
 
   // Vector Single-Width Floating-Point Reduction Instructions
@@ -1697,7 +1679,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, Register Rs1, VectorMask vm = unmasked) {       \
-    patch_VArith(op, Vd, funct3, Rs1->encoding_nocheck(), Vs2, vm, funct6);                        \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);                            \
   }
 
   // Vector Integer Divide Instructions
@@ -1750,7 +1732,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, FloatRegister Rs1, VectorMask vm = unmasked) {  \
-    patch_VArith(op, Vd, funct3, Rs1->encoding_nocheck(), Vs2, vm, funct6);                        \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);                            \
   }
 
   // Vector Floating-Point Compare Instructions
@@ -1813,7 +1795,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, vm, funct6)                                   \
   void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1) {     \
-    patch_VArith(op, Vd, funct3, Vs1->encoding_nocheck(), Vs2, vm, funct6);  \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
   }
 
   // Vector Compress Instruction
@@ -1844,7 +1826,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, Vs2, vm, funct6)                             \
   void NAME(VectorRegister Vd, FloatRegister Rs1) {                         \
-    patch_VArith(op, Vd, funct3, Rs1->encoding_nocheck(), Vs2, vm, funct6); \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);     \
   }
 
   // Floating-Point Scalar Move Instructions
@@ -1856,7 +1838,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, Vs2, vm, funct6)                             \
   void NAME(VectorRegister Vd, VectorRegister Vs1) {                        \
-    patch_VArith(op, Vd, funct3, Vs1->encoding_nocheck(), Vs2, vm, funct6); \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);     \
   }
 
   // Vector Integer Move Instructions
@@ -1866,7 +1848,7 @@ enum VectorMask {
 
 #define INSN(NAME, op, funct3, Vs2, vm, funct6)                             \
    void NAME(VectorRegister Vd, Register Rs1) {                             \
-    patch_VArith(op, Vd, funct3, Rs1->encoding_nocheck(), Vs2, vm, funct6); \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);     \
    }
 
   // Integer Scalar Move Instructions
@@ -1977,7 +1959,7 @@ enum Nf {
 
 #define INSN(NAME, op, width, mop, mew)                                                                  \
   void NAME(VectorRegister Vd, Register Rs1, VectorRegister Vs2, VectorMask vm = unmasked, Nf nf = g1) { \
-    patch_VLdSt(op, Vd, width, Rs1, Vs2->encoding_nocheck(), vm, mop, mew, nf);                          \
+    patch_VLdSt(op, Vd, width, Rs1, Vs2->raw_encoding(), vm, mop, mew, nf);                              \
   }
 
   // Vector unordered indexed load instructions
@@ -1995,7 +1977,7 @@ enum Nf {
 
 #define INSN(NAME, op, width, mop, mew)                                                                  \
   void NAME(VectorRegister Vd, Register Rs1, Register Rs2, VectorMask vm = unmasked, Nf nf = g1) {       \
-    patch_VLdSt(op, Vd, width, Rs1, Rs2->encoding_nocheck(), vm, mop, mew, nf);                          \
+    patch_VLdSt(op, Vd, width, Rs1, Rs2->raw_encoding(), vm, mop, mew, nf);                              \
   }
 
   // Vector Strided Instructions
@@ -2167,22 +2149,22 @@ public:
 
   // patch a 16-bit instruction with a general purpose register ranging [0, 31] (5 bits)
   static void c_patch_reg(address a, unsigned lsb, Register reg) {
-    c_patch(a, lsb + 4, lsb, reg->encoding_nocheck());
+    c_patch(a, lsb + 4, lsb, reg->raw_encoding());
   }
 
   // patch a 16-bit instruction with a general purpose register ranging [8, 15] (3 bits)
   static void c_patch_compressed_reg(address a, unsigned lsb, Register reg) {
-    c_patch(a, lsb + 2, lsb, reg->compressed_encoding_nocheck());
+    c_patch(a, lsb + 2, lsb, reg->compressed_raw_encoding());
   }
 
   // patch a 16-bit instruction with a float register ranging [0, 31] (5 bits)
   static void c_patch_reg(address a, unsigned lsb, FloatRegister reg) {
-    c_patch(a, lsb + 4, lsb, reg->encoding_nocheck());
+    c_patch(a, lsb + 4, lsb, reg->raw_encoding());
   }
 
   // patch a 16-bit instruction with a float register ranging [8, 15] (3 bits)
   static void c_patch_compressed_reg(address a, unsigned lsb, FloatRegister reg) {
-    c_patch(a, lsb + 2, lsb, reg->compressed_encoding_nocheck());
+    c_patch(a, lsb + 2, lsb, reg->compressed_raw_encoding());
   }
 
 // --------------  RVC Instruction Definitions  --------------

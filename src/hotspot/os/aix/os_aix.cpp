@@ -45,6 +45,7 @@
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
+#include "os_posix.hpp"
 #include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -59,6 +60,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.hpp"
@@ -159,7 +161,6 @@ static void vmembk_print_on(outputStream* os);
 julong    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
-int       os::Aix::_page_size = -1;
 
 // -1 = uninitialized, 0 if AIX, 1 if OS/400 pase
 int       os::Aix::_on_pase = -1;
@@ -469,7 +470,7 @@ static void query_multipage_support() {
         guarantee0(p != (void*) -1); // Should always work.
         const size_t real_pagesize = os::Aix::query_pagesize(p);
         if (real_pagesize != pagesize) {
-          trcVerbose("real page size (" SIZE_FORMAT_HEX ") differs.", real_pagesize);
+          trcVerbose("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
         } else {
           can_use = true;
         }
@@ -889,8 +890,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) kernel_thread_id);
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread  id: " UINTX_FORMAT
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), (uintx) kernel_thread_id,
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -1392,14 +1395,6 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
@@ -1754,18 +1749,6 @@ static bool uncommit_mmaped_memory(char* addr, size_t size) {
   }
 
   return rc;
-}
-
-int os::vm_page_size() {
-  // Seems redundant as all get out.
-  assert(os::Aix::page_size() != -1, "must call os::init");
-  return os::Aix::page_size();
-}
-
-// Aix allocates memory by pages.
-int os::vm_allocation_granularity() {
-  assert(os::Aix::page_size() != -1, "must call os::init");
-  return os::Aix::page_size();
 }
 
 #ifdef PRODUCT
@@ -2233,6 +2216,11 @@ extern "C" {
   }
 }
 
+static void set_page_size(int page_size) {
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+}
+
 // This is called _before_ the most of global arguments have been parsed.
 void os::init(void) {
   // This is basic, we want to know if that ever changes.
@@ -2289,16 +2277,16 @@ void os::init(void) {
       // -XX:-Use64KPages.
       if (Use64KPages) {
         trcVerbose("64K page mode (faked for data segment)");
-        Aix::_page_size = 64*K;
+        set_page_size(64*K);
       } else {
         trcVerbose("4K page mode (Use64KPages=off)");
-        Aix::_page_size = 4*K;
+        set_page_size(4*K);
       }
     } else {
       // .. and not able to allocate 64k pages dynamically. Here, just
       // fall back to 4K paged mode and use mmap for everything.
       trcVerbose("4K page mode");
-      Aix::_page_size = 4*K;
+      set_page_size(4*K);
       FLAG_SET_ERGO(Use64KPages, false);
     }
   } else {
@@ -2307,14 +2295,14 @@ void os::init(void) {
     // (There is one special case where this may be false: EXTSHM=on.
     // but we decided to not support that mode).
     assert0(g_multipage_support.can_use_64K_pages);
-    Aix::_page_size = 64*K;
+    set_page_size(64*K);
     trcVerbose("64K page mode");
     FLAG_SET_ERGO(Use64KPages, true);
   }
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
-  _page_sizes.add(Aix::_page_size);
+  _page_sizes.add(os::vm_page_size());
 
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));

@@ -285,6 +285,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMKeepAliveAndDrainClosure;
   friend class G1CMRefProcProxyTask;
   friend class G1CMRemarkTask;
+  friend class G1CMRootRegionScanTask;
   friend class G1CMTask;
   friend class G1ConcurrentMarkThread;
 
@@ -497,8 +498,6 @@ public:
   size_t partial_mark_stack_size_target() const { return _global_mark_stack.capacity() / 3; }
   bool mark_stack_empty() const                 { return _global_mark_stack.is_empty(); }
 
-  G1CMRootMemRegions* root_regions() { return &_root_regions; }
-
   void concurrent_cycle_start();
   // Abandon current marking iteration due to a Full GC.
   bool concurrent_cycle_abort();
@@ -557,9 +556,16 @@ public:
   // Scan all the root regions and mark everything reachable from
   // them.
   void scan_root_regions();
+  bool wait_until_root_region_scan_finished();
+  void add_root_region(HeapRegion* r);
+
+private:
+  G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
   // Scan a single root MemRegion to mark everything reachable from it.
   void scan_root_region(const MemRegion* region, uint worker_id);
+
+public:
 
   // Do concurrent phase of marking, to a tentative transitive closure.
   void mark_from_roots();
@@ -602,13 +608,14 @@ public:
 
   ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
 
+  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
+
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently
   // to the application. Also scrubs dead objects to ensure region is parsable.
   void rebuild_and_scrub();
 
   uint needs_remembered_set_rebuild() const { return _needs_remembered_set_rebuild; }
-
 };
 
 // A class representing a marking task.
