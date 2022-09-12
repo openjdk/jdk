@@ -38,10 +38,13 @@ import lib.jdb.JdbTest;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.SymbolLookup;
-import java.lang.invoke.MethodHandle;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
 
 class TestNativeLastError {
+
+    static final int VALUE = 42;
+
     public static void main(String[] args) throws Throwable {
         testWindows();
     }
@@ -57,11 +60,11 @@ class TestNativeLastError {
             lookup.lookup("SetLastError").orElseThrow(),
             FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT));
 
-        for (int i=0; i<10; i++) {
-            setLastError.invoke(42);
+        for (int i = 0; i < 10; i++) {
+            setLastError.invoke(VALUE);
             int lastError = (int) getLastError.invoke();
             System.out.println(lastError);
-            if (lastError != 42) {
+            if (lastError != VALUE) {
                 throw new RuntimeException("failed, lastError = " + lastError);
             }
         }
