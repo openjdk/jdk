@@ -1184,21 +1184,25 @@ public class JmodTask {
     static class CompLevelConverter implements ValueConverter<Integer> {
         @Override
         public Integer convert(String value) {
-
+            int idx = value.indexOf("-");
+            int lastIdx = value.lastIndexOf("-");
+            if (idx != lastIdx) {
+                throw new CommandException("err.compress.incorrect", value);
+            }
             try {
-                int level = Integer.parseInt(value);
+                int level = Integer.parseInt(value.substring(idx + 1));
                 if (level < 0 || level > 9) {
-                    throw new CommandException("err.compression.level.out.of.range", value);
+                    throw new CommandException("err.compress.incorrect", value);
                 }
                 return level;
             } catch (NumberFormatException x) {
-                throw new CommandException("err.compression.level.out.of.range", value);
+                throw new CommandException("err.compress.incorrect", value);
             }
         }
 
         @Override public Class<Integer> valueType() { return Integer.class; }
 
-        @Override public String valuePattern() { return "compression level (0-9)"; }
+        @Override public String valuePattern() { return "compress"; }
     }
 
     static class WarnIfResolvedReasonConverter
@@ -1441,8 +1445,8 @@ public class JmodTask {
                         .withRequiredArg()
                         .withValuesConvertedBy(new DateConverter());
 
-        OptionSpec<Integer> compLevel
-                = parser.accepts("compression-level", getMessage("main.opt.compression-level"))
+        OptionSpec<Integer> compress
+                = parser.accepts("compress", getMessage("main.opt.compress"))
                         .withRequiredArg()
                         .withValuesConvertedBy(new CompLevelConverter());
 
@@ -1515,12 +1519,12 @@ public class JmodTask {
                     throw new CommandException("err.modulepath.must.be.specified")
                             .showUsage(true);
             }
-            if (opts.has(compLevel)) {
+            if (opts.has(compress)) {
                 if (!options.mode.equals(Mode.CREATE)) {
-                    throw new CommandException("err.compression.level.wrong.mode")
+                    throw new CommandException("err.compress.wrong.mode")
                             .showUsage(true);
                 }
-                options.compLevel = getLastElement(opts.valuesOf(compLevel));
+                options.compLevel = getLastElement(opts.valuesOf(compress));
             } else {
                 // Default to fast compression.
                 options.compLevel = Deflater.DEFAULT_COMPRESSION;

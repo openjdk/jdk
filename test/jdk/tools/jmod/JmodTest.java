@@ -747,23 +747,23 @@ public class JmodTest {
 
         jmod("create",
              "--class-path", cp,
-             "--compression-level=0",
+             "--compress", "zip-0",
              jmod.toString())
             .assertSuccess();
 
         jmod("list",
-             "--compression-level=0",
+             "--compress", "zip-0",
              jmod.toString())
             .assertFailure()
             .resultChecker(r -> {
-                assertTrue(r.output.contains("is only accepted with create mode"), "Error message printed");
+                assertTrue(r.output.contains("--compress is only accepted with create mode"), "Error message printed");
             });
 
         FileUtils.deleteFileIfExistsWithRetry(jmod);
 
         jmod("create",
              "--class-path", cp,
-             "--compression-level=9",
+             "--compress", "zip-9",
              jmod.toString())
             .assertSuccess();
 
@@ -771,33 +771,44 @@ public class JmodTest {
 
         jmod("create",
              "--class-path", cp,
-             "--compression-level=-1",
+             "--compress", "zip--1",
              jmod.toString())
             .assertFailure()
             .resultChecker(r -> {
-                assertTrue(r.output.contains("is out of the valid range: 0-9"), "Error message printed");
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
             });
 
         FileUtils.deleteFileIfExistsWithRetry(jmod);
 
         jmod("create",
              "--class-path", cp,
-             "--compression-level=10",
+             "--compress", "zip-1-something",
              jmod.toString())
             .assertFailure()
             .resultChecker(r -> {
-                assertTrue(r.output.contains("is out of the valid range: 0-9"), "Error message printed");
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
             });
 
         FileUtils.deleteFileIfExistsWithRetry(jmod);
 
         jmod("create",
              "--class-path", cp,
-             "--compression-level=test",
+             "--compress", "zip-10",
              jmod.toString())
             .assertFailure()
             .resultChecker(r -> {
-                assertTrue(r.output.contains("is out of the valid range: 0-9"), "Error message printed");
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "test",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
             });
     }
 
