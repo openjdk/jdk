@@ -358,6 +358,7 @@ void stringStream::grow(size_t new_capacity) {
 }
 
 void stringStream::write(const char* s, size_t len) {
+  assert(_use_after_base == false, "invariant");
   assert(_capacity >= _written + 1, "Sanity");
   if (len == 0) {
     return;
@@ -397,6 +398,7 @@ void stringStream::zero_terminate() {
 }
 
 void stringStream::reset() {
+  assert(_use_after_base == false, "invariant");
   _written = 0; _precount = 0; _position = 0;
   _newlines = 0;
   zero_terminate();

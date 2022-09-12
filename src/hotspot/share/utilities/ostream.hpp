@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -191,6 +192,8 @@ class ttyUnlocker: StackObj {
 // for writing to strings; buffer will expand automatically.
 // Buffer will always be zero-terminated.
 class stringStream : public outputStream {
+  // Invariant: Do not alter stringStream after calling ::base()
+  DEBUG_ONLY(bool _use_after_base = false;)
   char*  _buffer;
   size_t _written;  // Number of characters written, excluding termin. zero
   size_t _capacity;
