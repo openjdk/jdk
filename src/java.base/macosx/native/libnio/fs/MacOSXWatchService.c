@@ -29,21 +29,26 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
 
-static jmethodID        callbackMID;  // MacOSXWatchService.callback()
-static __thread jobject watchService; // The instance of MacOSXWatchService that is associated with this thread
+// MacOSXWatchService.callback()
+static jmethodID        callbackMID;
+// The instance of MacOSXWatchService that is associated with this thread
+static __thread jobject watchService;
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_MacOSXWatchService_initIDs(JNIEnv* env, __unused jclass clazz)
 {
-    callbackMID = (*env)->GetMethodID(env, clazz, "callback", "(J[Ljava/lang/String;J)V");
+    callbackMID = (*env)->GetMethodID(env, clazz,
+                                      "callback", "(J[Ljava/lang/String;J)V");
 }
 
 extern CFStringRef
 toCFString(JNIEnv *env, jstring javaString);
 
 static jboolean
-convertToJavaStringArray(JNIEnv* env, char **eventPaths,
-                         const jsize numEventsToReport, jobjectArray javaEventPathsArray)
+convertToJavaStringArray(JNIEnv* env,
+                         char **eventPaths,
+                         const jsize numEventsToReport,
+                         jobjectArray javaEventPathsArray)
 {
     for (jsize i = 0; i < numEventsToReport; i++) {
         const jstring path = JNU_NewStringPlatform(env, eventPaths[i]);
@@ -55,17 +60,22 @@ convertToJavaStringArray(JNIEnv* env, char **eventPaths,
 }
 
 static void
-callJavaCallback(JNIEnv* env, jlong streamRef, jobjectArray javaEventPathsArray, jlong eventFlags)
+callJavaCallback(JNIEnv* env,
+                 jlong streamRef,
+                 jobjectArray javaEventPathsArray,
+                 jlong eventFlags)
 {
     if (callbackMID != NULL && watchService != NULL) {
-        // We are called on the run loop thread, so it's OK to use the thread-local reference
-        // to the watch service.
-        (*env)->CallVoidMethod(env, watchService, callbackMID, streamRef, javaEventPathsArray, eventFlags);
+        // We are called on the run loop thread, so it's OK to use
+        // the thread-local reference to the watch service.
+        (*env)->CallVoidMethod(env, watchService, callbackMID,
+                               streamRef, javaEventPathsArray, eventFlags);
     }
 }
 
 /**
- * Callback that is invoked on the run loop thread and informs of new file-system events from an FSEventStream.
+ * Callback that is invoked on the run loop thread and informs of new
+ * file-system events from an FSEventStream.
  */
 static void
 callback(__unused ConstFSEventStreamRef streamRef,
@@ -91,21 +101,30 @@ callback(__unused ConstFSEventStreamRef streamRef,
                                         ? MAX_EVENTS_TO_REPORT_AT_ONCE
                                         : numEventsRemaining;
 
-        const jboolean localFramePushed = ((*env)->PushLocalFrame(env, numEventsToReport + 5) == JNI_OK);
+        const jboolean localFramePushed
+            = ((*env)->PushLocalFrame(env, numEventsToReport + 5) == JNI_OK);
         success = localFramePushed;
 
         jobjectArray javaEventPathsArray = NULL;
         if (success) {
-            javaEventPathsArray = (*env)->NewObjectArray(env, (jsize)numEventsToReport, JNU_ClassString(env), NULL);
+            javaEventPathsArray = (*env)->NewObjectArray(env,
+                                                         (jsize)numEventsToReport,
+                                                         JNU_ClassString(env),
+                                                         NULL);
             success = (javaEventPathsArray != NULL);
         }
 
         if (success) {
-            success = convertToJavaStringArray(env, &((char**)eventPaths)[eventIndex],
-                                               numEventsToReport, javaEventPathsArray);
+            success = convertToJavaStringArray(env,
+                                               &((char**)eventPaths)[eventIndex],
+                                               numEventsToReport,
+                                               javaEventPathsArray);
         }
 
-        callJavaCallback(env, (jlong)streamRef, javaEventPathsArray, (jlong)&eventFlags[eventIndex]);
+        callJavaCallback(env,
+                         ptr_to_jlong(streamRef),
+                         javaEventPathsArray,
+                         ptr_to_jlong(&eventFlags[eventIndex]));
 
         if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionDescribe(env);
@@ -123,12 +142,16 @@ callback(__unused ConstFSEventStreamRef streamRef,
  * Creates a new FSEventStream and returns FSEventStreamRef for it.
  */
 JNIEXPORT jlong JNICALL
-Java_sun_nio_fs_MacOSXWatchService_eventStreamCreate(JNIEnv* env, __unused jclass clazz,
-                                                     jstring dir, jdouble latencyInSeconds, jint flags)
+Java_sun_nio_fs_MacOSXWatchService_eventStreamCreate(JNIEnv* env,
+                                                     __unused jclass clazz,
+                                                     jstring dir,
+                                                     jdouble latencyInSeconds,
+                                                     jint flags)
 {
     const CFStringRef path = toCFString(env, dir);
     CHECK_NULL_RETURN(path, 0);
-    const CFArrayRef pathsToWatch = CFArrayCreate(NULL, (const void **) &path, 1, NULL);
+    const CFArrayRef pathsToWatch = CFArrayCreate(NULL, (const void **) &path,
+                                                  1, NULL);
     CHECK_NULL_RETURN(pathsToWatch, 0);
 
     const FSEventStreamRef stream = FSEventStreamCreate(
@@ -140,7 +163,7 @@ Java_sun_nio_fs_MacOSXWatchService_eventStreamCreate(JNIEnv* env, __unused jclas
             (CFAbsoluteTime) latencyInSeconds,
             flags);
 
-    return (jlong)stream;
+    return ptr_to_jlong(stream);
 }
 
 
@@ -149,11 +172,13 @@ Java_sun_nio_fs_MacOSXWatchService_eventStreamCreate(JNIEnv* env, __unused jclas
  * so that the run loop can receive events from the stream.
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_MacOSXWatchService_eventStreamSchedule(__unused JNIEnv* env,  __unused jclass clazz,
-                                                     jlong eventStreamRef, jlong runLoopRef)
+Java_sun_nio_fs_MacOSXWatchService_eventStreamSchedule(__unused JNIEnv* env,
+                                                       __unused jclass clazz,
+                                                       jlong eventStreamRef,
+                                                       jlong runLoopRef)
 {
-    const FSEventStreamRef stream  = (FSEventStreamRef)eventStreamRef;
-    const CFRunLoopRef     runLoop = (CFRunLoopRef)runLoopRef;
+    const FSEventStreamRef stream  = jlong_to_ptr(eventStreamRef);
+    const CFRunLoopRef     runLoop = jlong_to_ptr(runLoopRef);
 
     FSEventStreamScheduleWithRunLoop(stream, runLoop, kCFRunLoopDefaultMode);
     FSEventStreamStart(stream);
@@ -164,41 +189,49 @@ Java_sun_nio_fs_MacOSXWatchService_eventStreamSchedule(__unused JNIEnv* env,  __
  * The stream must have been started and scheduled with a run loop.
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_MacOSXWatchService_eventStreamStop(__unused JNIEnv* env, __unused jclass clazz, jlong eventStreamRef)
+Java_sun_nio_fs_MacOSXWatchService_eventStreamStop(__unused JNIEnv* env,
+                                                   __unused jclass clazz,
+                                                   jlong eventStreamRef)
 {
-    const FSEventStreamRef streamRef = (FSEventStreamRef)eventStreamRef;
+    const FSEventStreamRef streamRef = jlong_to_ptr(eventStreamRef);
 
-    FSEventStreamStop(streamRef);       // Unregister with the FS Events service. No more callbacks from this stream
-    FSEventStreamInvalidate(streamRef); // De-schedule from any runloops
-    FSEventStreamRelease(streamRef);    // Decrement the stream's refcount
+    FSEventStreamStop(streamRef);       // Unregister with the FS Events service.
+                                        // No more callbacks from this stream.
+    FSEventStreamInvalidate(streamRef); // De-schedule from any runloops.
+    FSEventStreamRelease(streamRef);    // Decrement the stream's refcount.
 }
 
 /**
  * Returns the CFRunLoop object for the current thread.
  */
 JNIEXPORT jlong JNICALL
-Java_sun_nio_fs_MacOSXWatchService_CFRunLoopGetCurrent(__unused JNIEnv* env, __unused jclass clazz)
+Java_sun_nio_fs_MacOSXWatchService_CFRunLoopGetCurrent(__unused JNIEnv* env,
+                                                       __unused jclass clazz)
 {
-    return (jlong)CFRunLoopGetCurrent();
+    return ptr_to_jlong(CFRunLoopGetCurrent());
 }
 
 /**
- * Simply calls CFRunLoopRun() to run current thread's run loop for as long as there are event sources
- * attached to it.
+ * Simply calls CFRunLoopRun() to run current thread's run loop for as long as
+ * there are event sources attached to it.
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_MacOSXWatchService_CFRunLoopRun(__unused JNIEnv* env, __unused jclass clazz, jlong watchServiceObject)
+Java_sun_nio_fs_MacOSXWatchService_CFRunLoopRun(__unused JNIEnv* env,
+                                                __unused jclass clazz,
+                                                jlong watchServiceObject)
 {
     // Thread-local pointer to the WatchService instance will be used by the callback
     // on this thread.
-    watchService = (*env)->NewGlobalRef(env, (jobject)watchServiceObject);
+    watchService = (*env)->NewGlobalRef(env, jlong_to_ptr(watchServiceObject));
     CFRunLoopRun();
-    (*env)->DeleteGlobalRef(env, (jobject)watchService);
+    (*env)->DeleteGlobalRef(env, watchService);
     watchService = NULL;
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_MacOSXWatchService_CFRunLoopStop(__unused JNIEnv* env, __unused jclass clazz, jlong runLoopRef)
+Java_sun_nio_fs_MacOSXWatchService_CFRunLoopStop(__unused JNIEnv* env,
+                                                 __unused jclass clazz,
+                                                 jlong runLoopRef)
 {
-    CFRunLoopStop((CFRunLoopRef)runLoopRef);
+    CFRunLoopStop(jlong_to_ptr(runLoopRef));
 }
