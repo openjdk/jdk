@@ -57,7 +57,7 @@ import static java.util.zip.ZipUtils.*;
  *             ZipEntry ze;
  *             while((ze= zis.getNextEntry()) != null) {
  *                 var bytes = zis.readAllBytes();
- *                 System.out.printf("Entry: %s,  bytes read: %s%n", ze.getName(),
+ *                 System.out.printf("Entry: %s, bytes read: %s%n", ze.getName(),
  *                         bytes.length);
  *             }
  *       }
