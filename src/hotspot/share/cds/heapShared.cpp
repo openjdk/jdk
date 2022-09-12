@@ -340,7 +340,7 @@ void HeapShared::archive_klass_objects() {
   GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
   assert(klasses != NULL, "sanity");
   for (int i = 0; i < klasses->length(); i++) {
-    Klass* k = ArchiveBuilder::get_relocated_klass(klasses->at(i));
+    Klass* k = ArchiveBuilder::get_buffered_klass(klasses->at(i));
 
     // archive mirror object
     java_lang_Class::archive_mirror(k);
@@ -377,7 +377,7 @@ void HeapShared::check_enum_obj(int level,
                                 oop orig_obj,
                                 bool is_closed_archive) {
   Klass* k = orig_obj->klass();
-  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
+  Klass* buffered_k = ArchiveBuilder::get_buffered_klass(k);
   if (!k->is_instance_klass()) {
     return;
   }
@@ -385,7 +385,7 @@ void HeapShared::check_enum_obj(int level,
   if (ik->java_super() == vmClasses::Enum_klass() && !ik->has_archived_enum_objs()) {
     ResourceMark rm;
     ik->set_has_archived_enum_objs();
-    relocated_k->set_has_archived_enum_objs();
+    buffered_k->set_has_archived_enum_objs();
     oop mirror = ik->java_mirror();
 
     for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
@@ -567,14 +567,14 @@ HeapShared::DumpTimeKlassSubGraphInfoTable* HeapShared::_dump_time_subgraph_info
 HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_table;
 
 // Get the subgraph_info for Klass k. A new subgraph_info is created if
-// there is no existing one for k. The subgraph_info records the relocated
-// Klass* of the original k.
+// there is no existing one for k. The subgraph_info records the "buffered"
+// address of the class.
 KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_graph) {
   assert(DumpSharedSpaces, "dump time only");
   bool created;
-  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
+  Klass* buffered_k = ArchiveBuilder::get_buffered_klass(k);
   KlassSubGraphInfo* info =
-    _dump_time_subgraph_info_table->put_if_absent(k, KlassSubGraphInfo(relocated_k, is_full_module_graph),
+    _dump_time_subgraph_info_table->put_if_absent(k, KlassSubGraphInfo(buffered_k, is_full_module_graph),
                                                   &created);
   assert(created, "must not initialize twice");
   return info;
@@ -603,23 +603,23 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
 // Only objects of boot classes can be included in sub-graph.
 void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   assert(DumpSharedSpaces, "dump time only");
-  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(orig_k);
+  Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
 
   if (_subgraph_object_klasses == NULL) {
     _subgraph_object_klasses =
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
-  assert(ArchiveBuilder::current()->is_in_buffer_space(relocated_k), "must be a shared class");
+  assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_k), "must be a shared class");
 
-  if (_k == relocated_k) {
+  if (_k == buffered_k) {
     // Don't add the Klass containing the sub-graph to it's own klass
     // initialization list.
     return;
   }
 
-  if (relocated_k->is_instance_klass()) {
-    assert(InstanceKlass::cast(relocated_k)->is_shared_boot_class(),
+  if (buffered_k->is_instance_klass()) {
+    assert(InstanceKlass::cast(buffered_k)->is_shared_boot_class(),
           "must be boot class");
     // vmClasses::xxx_klass() are not updated, need to check
     // the original Klass*
@@ -630,32 +630,32 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
       return;
     }
     check_allowed_klass(InstanceKlass::cast(orig_k));
-  } else if (relocated_k->is_objArray_klass()) {
-    Klass* abk = ObjArrayKlass::cast(relocated_k)->bottom_klass();
+  } else if (buffered_k->is_objArray_klass()) {
+    Klass* abk = ObjArrayKlass::cast(buffered_k)->bottom_klass();
     if (abk->is_instance_klass()) {
       assert(InstanceKlass::cast(abk)->is_shared_boot_class(),
             "must be boot class");
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
-    if (relocated_k == Universe::objectArrayKlassObj()) {
+    if (buffered_k == Universe::objectArrayKlassObj()) {
       // Initialized early during Universe::genesis. No need to be added
       // to the list.
       return;
     }
   } else {
-    assert(relocated_k->is_typeArray_klass(), "must be");
+    assert(buffered_k->is_typeArray_klass(), "must be");
     // Primitive type arrays are created early during Universe::genesis.
     return;
   }
 
   if (log_is_enabled(Debug, cds, heap)) {
-    if (!_subgraph_object_klasses->contains(relocated_k)) {
+    if (!_subgraph_object_klasses->contains(buffered_k)) {
       ResourceMark rm;
       log_debug(cds, heap)("Adding klass %s", orig_k->external_name());
     }
   }
 
-  _subgraph_object_klasses->append_if_missing(relocated_k);
+  _subgraph_object_klasses->append_if_missing(buffered_k);
   _has_non_early_klasses |= is_non_early_klass(orig_k);
 }
 
@@ -767,8 +767,8 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
         (ArchivedKlassSubGraphInfoRecord*)ArchiveBuilder::ro_region_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
       record->init(&info);
 
-      Klass* relocated_k = ArchiveBuilder::get_relocated_klass(klass);
-      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)relocated_k);
+      Klass* buffered_k = ArchiveBuilder::get_buffered_klass(klass);
+      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)buffered_k);
       u4 delta = ArchiveBuilder::current()->any_to_offset_u4(record);
       _writer->add(hash, delta);
     }
@@ -1786,7 +1786,7 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
     o->oop_iterate(&finder);
     p += o->size();
     if (DumpSharedSpaces) {
-      builder->relocate_klass_ptr(o);
+      builder->relocate_klass_ptr_of_oop(o);
     }
     ++ num_objs;
   }
