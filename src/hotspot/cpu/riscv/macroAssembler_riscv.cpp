@@ -946,7 +946,7 @@ int MacroAssembler::bitset_to_regs(unsigned int bitset, unsigned char* regs) {
   return count;
 }
 
-// Push lots of registers in the bitset supplied.  Don't push sp.
+// Push integer registers in the bitset supplied. Don't push sp.
 // Return the number of words pushed
 int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
   DEBUG_ONLY(int words_pushed = 0;)
