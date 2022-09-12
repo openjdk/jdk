@@ -2969,6 +2969,7 @@ void Compile::Code_Gen() {
       cfg.set_loop_alignment();
     }
     cfg.fixup_flow();
+    cfg.remove_unreachable_blocks();
   }
 
   // Apply peephole optimizations
@@ -4570,6 +4571,35 @@ void Compile::dump_inline_data(outputStream* out) {
   if (inl_tree != NULL) {
     out->print(" inline %d", inl_tree->count());
     inl_tree->dump_replay_data(out);
+  }
+}
+
+void Compile::dump_inline_data_reduced(outputStream* out) {
+  assert(ReplayReduce, "");
+
+  InlineTree* inl_tree = ilt();
+  if (inl_tree == NULL) {
+    return;
+  }
+  // Enable iterative replay file reduction
+  // Output "compile" lines for depth 1 subtrees,
+  // simulating that those trees were compiled
+  // instead of inlined.
+  for (int i = 0; i < inl_tree->subtrees().length(); ++i) {
+    InlineTree* sub = inl_tree->subtrees().at(i);
+    if (sub->inline_level() != 1) {
+      continue;
+    }
+
+    ciMethod* method = sub->method();
+    int entry_bci = -1;
+    int comp_level = env()->task()->comp_level();
+    out->print("compile ");
+    method->dump_name_as_ascii(out);
+    out->print(" %d %d", entry_bci, comp_level);
+    out->print(" inline %d", sub->count());
+    sub->dump_replay_data(out, -1);
+    out->cr();
   }
 }
 

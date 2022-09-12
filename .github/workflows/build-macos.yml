@@ -97,7 +97,10 @@ jobs:
           --with-gtest=${{ steps.gtest.outputs.path }}
           --enable-jtreg-failure-handler
           --with-zlib=system
-          ${{ inputs.extra-conf-options }}
+          ${{ inputs.extra-conf-options }} || (
+          echo "Dumping config.log:" &&
+          cat config.log &&
+          exit 1)
 
       - name: 'Build'
         id: build

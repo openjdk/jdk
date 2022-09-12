@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/archiveHeapLoader.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -329,6 +330,7 @@ void ConstantPool::add_dumped_interned_strings() {
 }
 #endif
 
+#if INCLUDE_CDS
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
   if (!_pool_holder->is_linked() && !_pool_holder->is_rewritten()) {
@@ -342,13 +344,10 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != NULL) return;
 
-  // restore the C++ vtable from the shared archive
-  restore_vtable();
-
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (HeapShared::is_fully_available() &&
+    if (ArchiveHeapLoader::is_fully_available() &&
         _cache->archived_references() != NULL) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -427,6 +426,7 @@ void ConstantPool::remove_unshareable_info() {
     cache()->remove_unshareable_info();
   }
 }
+#endif // INCLUDE_CDS
 
 int ConstantPool::cp_to_object_index(int cp_index) {
   // this is harder don't do this so much.
@@ -2268,12 +2268,13 @@ void ConstantPool::print_on(outputStream* st) const {
     st->cr();
   }
   if (pool_holder() != NULL) {
-    st->print_cr(" - holder: " INTPTR_FORMAT, p2i(pool_holder()));
+    st->print_cr(" - holder: " PTR_FORMAT, p2i(pool_holder()));
   }
-  st->print_cr(" - cache: " INTPTR_FORMAT, p2i(cache()));
-  st->print_cr(" - resolved_references: " INTPTR_FORMAT, p2i(resolved_references()));
-  st->print_cr(" - reference_map: " INTPTR_FORMAT, p2i(reference_map()));
-  st->print_cr(" - resolved_klasses: " INTPTR_FORMAT, p2i(resolved_klasses()));
+  st->print_cr(" - cache: " PTR_FORMAT, p2i(cache()));
+  st->print_cr(" - resolved_references: " PTR_FORMAT, p2i(resolved_references_or_null()));
+  st->print_cr(" - reference_map: " PTR_FORMAT, p2i(reference_map()));
+  st->print_cr(" - resolved_klasses: " PTR_FORMAT, p2i(resolved_klasses()));
+  st->print_cr(" - cp length: %d", length());
 
   for (int index = 1; index < length(); index++) {      // Index 0 is unused
     ((ConstantPool*)this)->print_entry_on(index, st);

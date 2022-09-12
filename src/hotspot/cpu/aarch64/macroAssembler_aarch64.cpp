@@ -849,6 +849,37 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
   call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
 }
 
+// Check the entry target is always reachable from any branch.
+static bool is_always_within_branch_range(Address entry) {
+  const address target = entry.target();
+
+  if (!CodeCache::contains(target)) {
+    // We always use trampolines for callees outside CodeCache.
+    assert(entry.rspec().type() == relocInfo::runtime_call_type, "non-runtime call of an external target");
+    return false;
+  }
+
+  if (!MacroAssembler::far_branches()) {
+    return true;
+  }
+
+  if (entry.rspec().type() == relocInfo::runtime_call_type) {
+    // Runtime calls are calls of a non-compiled method (stubs, adapters).
+    // Non-compiled methods stay forever in CodeCache.
+    // We check whether the longest possible branch is within the branch range.
+    assert(CodeCache::find_blob(target) != NULL &&
+          !CodeCache::find_blob(target)->is_compiled(),
+          "runtime call of compiled method");
+    const address right_longest_branch_start = CodeCache::high_bound() - NativeInstruction::instruction_size;
+    const address left_longest_branch_start = CodeCache::low_bound();
+    const bool is_reachable = Assembler::reachable_from_branch_at(left_longest_branch_start, target) &&
+                              Assembler::reachable_from_branch_at(right_longest_branch_start, target);
+    return is_reachable;
+  }
+
+  return false;
+}
+
 // Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
 address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
@@ -859,22 +890,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
 
   address target = entry.target();
 
-  // We might need a trampoline if branches are far.
-  bool need_trampoline = far_branches();
-  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(target)) {
-    // If it is a runtime call of an address outside small CodeCache,
-    // we need to check whether it is in range.
-    assert(target < CodeCache::low_bound() || target >= CodeCache::high_bound(), "target is inside CodeCache");
-    // Case 1: -------T-------L====CodeCache====H-------
-    //                ^-------longest branch---|
-    // Case 2: -------L====CodeCache====H-------T-------
-    //                |-------longest branch ---^
-    address longest_branch_start = (target < CodeCache::low_bound()) ? CodeCache::high_bound() - NativeInstruction::instruction_size
-                                                                     : CodeCache::low_bound();
-    need_trampoline = !reachable_from_branch_at(longest_branch_start, target);
-  }
-
-  if (need_trampoline) {
+  if (!is_always_within_branch_range(entry)) {
     if (!in_scratch_emit_size()) {
       // We don't want to emit a trampoline if C2 is generating dummy
       // code during its branch shortening phase.
@@ -2453,7 +2469,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   if (CheckCompressedOops) {
     Label ok;
     push(1 << rscratch1->encoding(), sp); // cmpptr trashes rscratch1
-    cmpptr(rheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+    cmpptr(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
     br(Assembler::EQ, ok);
     stop(msg);
     bind(ok);
@@ -2587,7 +2603,7 @@ void MacroAssembler::reinit_heapbase()
     if (Universe::is_fully_initialized()) {
       mov(rheapbase, CompressedOops::ptrs_base());
     } else {
-      lea(rheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+      lea(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
       ldr(rheapbase, Address(rheapbase));
     }
   }
@@ -4440,11 +4456,8 @@ Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
   return Address((address)obj, rspec);
 }
 
-// Move an oop into a register.  immediate is true if we want
-// immediate instructions and nmethod entry barriers are not enabled.
-// i.e. we are not going to patch this instruction while the code is being
-// executed by another thread.
-void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
+// Move an oop into a register.
+void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
   if (obj == NULL) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -4459,15 +4472,12 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   }
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
-  // nmethod entry barrier necessitate using the constant pool. They have to be
-  // ordered with respected to oop accesses.
-  // Using immediate literals would necessitate ISBs.
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if ((bs->barrier_set_nmethod() != NULL && bs->barrier_set_assembler()->nmethod_patching_type() == NMethodPatchingType::conc_data_patch) || !immediate) {
+  if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
+    mov(dst, Address((address)obj, rspec));
+  } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ldr_constant(dst, Address(dummy, rspec));
-  } else
-    mov(dst, Address((address)obj, rspec));
+  }
 
 }
 
