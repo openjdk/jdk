@@ -24,6 +24,7 @@
 
 package sun.nio.fs;
 
+import jdk.internal.misc.InnocuousThread;
 import jdk.internal.misc.Unsafe;
 
 import java.io.IOException;
@@ -61,8 +62,9 @@ class MacOSXWatchService extends AbstractWatchService {
 
     MacOSXWatchService() throws IOException {
         runLoopThread = new CFRunLoopThread();
-        runLoopThread.setDaemon(true);
-        runLoopThread.start();
+        Thread t = InnocuousThread.newThread("FileSystemWatcher", runLoopThread);
+        t.setDaemon(true);
+        t.start();
 
         try {
             // In order to be able to schedule any FSEventStream's, a reference to a run loop is required.
@@ -160,13 +162,9 @@ class MacOSXWatchService extends AbstractWatchService {
         }
     }
 
-    private class CFRunLoopThread extends Thread {
+    private class CFRunLoopThread implements Runnable {
         // Native reference to the CFRunLoop object of the watch service run loop.
         private long runLoopRef;
-
-        public CFRunLoopThread() {
-            super("FileSystemWatcher");
-        }
 
         private synchronized void waitForRunLoopRef() throws InterruptedException {
             if (runLoopRef == 0)
