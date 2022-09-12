@@ -171,7 +171,7 @@ public class RedefineRetransform {
         if (hookClassBytes == null) {
             throw new RuntimeException("Redefine error (ver = " + ver + ")");
         }
-        // verity ClassFileLoadHook get expected class bytes
+        // verity ClassFileLoadHook gets the expected class bytes
         int hookVer = getClassBytesVersion(hookClassBytes);
         if (hookVer != ver) {
             throw new RuntimeException("CLFH got unexpected version: "  + hookVer
@@ -194,7 +194,7 @@ public class RedefineRetransform {
     public static void main(String[] args) throws Exception {
         int testCase;
         try {
-            testCase= Integer.valueOf(args[0]);
+            testCase = Integer.valueOf(args[0]);
         } catch (Exception ex) {
             throw new RuntimeException("Single numeric argument expected", ex);
         }
@@ -212,7 +212,7 @@ public class RedefineRetransform {
             test("Redefine-Retransform-Redefine-Redefine", () -> {
                 redefine(1);        // cached class bytes are not set
                 retransform(2, 1);  // sets cached class bytes to ver 1
-                redefine(3);        // resets cached class bytes
+                redefine(3);        // resets cached class bytes to nullptr
                 redefine(4);        // cached class bytes are not set
             });
             break;
@@ -221,7 +221,7 @@ public class RedefineRetransform {
             test("Redefine-Retransform-Redefine-Retransform", () -> {
                 redefine(1);        // cached class bytes are not set
                 retransform(2, 1);  // sets cached class bytes to ver 1
-                redefine(3);        // resets cached class bytes
+                redefine(3);        // resets cached class bytes to nullptr
                 retransform(4, 3);  // sets cached class bytes to ver 3
             });
             break;
@@ -229,7 +229,7 @@ public class RedefineRetransform {
         case 4:
             test("Retransform-Redefine-Retransform-Retransform", () -> {
                 retransform(1, 0);  // sets cached class bytes to ver 0 (initially loaded)
-                redefine(2);        // resets cached class bytes
+                redefine(2);        // resets cached class bytes to nullptr
                 retransform(3, 2);  // sets cached class bytes to ver 2
                 retransform(4, 2);  // uses existing cache
             });
@@ -239,7 +239,7 @@ public class RedefineRetransform {
             test("Redefine-Retransform-Redefine-Retransform with CFLH", () -> {
                 redefine(1, 5);     // CFLH sets cached class bytes to ver 1
                 retransform(2, 1);  // uses existing cache
-                redefine(3, 6);     // resets cached class bytes,
+                redefine(3, 6);     // resets cached class bytes to nullptr,
                                     // CFLH sets cached class bytes to ver 3
                 retransform(4, 3);  // uses existing cache
             });
@@ -248,7 +248,7 @@ public class RedefineRetransform {
         case 6:
             test("Retransform-Redefine-Retransform-Retransform with CFLH", () -> {
                 retransform(1, 0);  // sets cached class bytes to ver 0 (initially loaded)
-                redefine(2, 5);     // resets cached class bytes,
+                redefine(2, 5);     // resets cached class bytes to nullptr,
                                     // CFLH sets cached class bytes to ver 2
                 retransform(3, 2);  // uses existing cache
                 retransform(4, 2);  // uses existing cache

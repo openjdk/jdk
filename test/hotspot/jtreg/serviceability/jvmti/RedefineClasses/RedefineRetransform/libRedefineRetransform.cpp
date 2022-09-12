@@ -20,11 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <stdio.h>
-#include <jvmti.h>
-#include <jni.h>
-#include <string.h>
 
+#include <jni.h>
+#include <jvmti.h>
+#include <stdio.h>
+#include <string.h>
 
 // set by Agent_OnLoad
 static jvmtiEnv* jvmti = nullptr;
@@ -45,6 +45,12 @@ static bool isTestClass(const char* name) {
     return name != nullptr && strcmp(name, testClassName) == 0;
 }
 
+/*
+ * Helper class for data exchange between RedefineClasses/RetransformClasses and
+ * ClassFileLoadHook callback (saves class bytes passed to CFLH,
+ * allows to set new class bytes to return from CFLH).
+ * Callers create an instance on the stack, ClassFileLoadHook handler uses getInstance().
+ */
 class ClassFileLoadHookHelper {
     const char* mode;   // for logging only
     bool eventEnabled;
@@ -212,7 +218,11 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) 
 
     caps.can_redefine_classes = 1;
     caps.can_retransform_classes = 1;
-    jvmti->AddCapabilities(&caps);
+    res = jvmti->AddCapabilities(&caps);
+    if (res != JVMTI_ERROR_NONE) {
+        _log("Failed to add capabilities: %ld\n", res);
+        return JNI_ERR;
+    }
 
     jvmtiEventCallbacks eventCallbacks;
     memset(&eventCallbacks, 0, sizeof(eventCallbacks));

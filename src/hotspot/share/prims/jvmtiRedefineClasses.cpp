@@ -4330,14 +4330,14 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   transfer_old_native_function_registrations(the_class);
 
   if (scratch_class->get_cached_class_file() != the_class->get_cached_class_file()) {
-    // 1. the_class doesn't have a cache yet, scratch_class does have.
+    // 1. the_class doesn't have a cache yet, scratch_class does have a cache.
     // 2. The same class can be present twice in the scratch classes list or there
     // are multiple concurrent RetransformClasses calls on different threads.
     // the_class and scratch_class have the same cached bytes, but different buffers.
-    // In such cases we need to deallocate one of the buffer.
-    // 3. RedefineClasses and the_class has cached bytes from previous transformation.
+    // In such cases we need to deallocate one of the buffers.
+    // 3. RedefineClasses and the_class has cached bytes from a previous transformation.
     // In the case we need to use class bytes from scratch_class.
-    if (the_class->get_cached_class_file() != 0) {
+    if (the_class->get_cached_class_file() != nullptr) {
       os::free(the_class->get_cached_class_file());
     }
     the_class->set_cached_class_file(scratch_class->get_cached_class_file());
