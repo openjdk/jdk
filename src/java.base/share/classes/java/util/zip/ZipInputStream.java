@@ -45,14 +45,17 @@ import static java.util.zip.ZipUtils.*;
  * <H2>Reading Zip File Entries</H2>
  *
  * The {@link #getNextEntry()} method is used to read the next ZIP file entry
- * (Local file (LOC) header) and position the stream at the entry's file data.
- * The file data may read using one of {@code ZipInputStream} read methods such
- * as {@link #read(byte[], int, int) read} or {@link #readAllBytes() readAllBytes()}. For example:
+ * (Local file (LOC) header record in the ZIP format) and position the stream at
+ * the entry's file data. The file data may read using one of
+ * {@code ZipInputStream} read methods such
+ * as {@link #read(byte[], int, int) read} or {@link #readAllBytes() readAllBytes()}.
+ * For example:
  * <pre>
  *     {@code
- *      try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zip.toFile()))) {
+ *      try (FileInputStream fis = new FileInputStream(jar.toFile());
+ *              ZipInputStream zis = new ZipInputStream(fis)) {
  *             ZipEntry ze;
- *             while( (ze= zis.getNextEntry()) != null) {
+ *             while((ze= zis.getNextEntry()) != null) {
  *                 var bytes = zis.readAllBytes();
  *                 System.out.printf("Entry: %s,  bytes read: %s%n", ze.getName(),
  *                         bytes.length);
