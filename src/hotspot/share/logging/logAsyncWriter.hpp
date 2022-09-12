@@ -89,19 +89,20 @@ class AsyncLogWriter : public NonJavaThread {
       strcpy(reinterpret_cast<char* >(this+1), msg);
     }
 
-    size_t size() const {
-      size_t len = strlen(message()) + 1;
-      return align_up(sizeof(*this) + len, sizeof(void*));
+    // Calculate the size for a prospective Message object depending on its message length including the trailing zero
+    static constexpr size_t calc_size(size_t message_len) {
+      return align_up(sizeof(Message) + message_len + 1, sizeof(void*));
     }
 
-    bool is_token() const { return _output == nullptr; }
+    size_t size() const {
+      return calc_size(strlen(message()));
+    }
+
+    inline bool is_token() const { return _output == nullptr; }
     LogFileStreamOutput* output() const { return _output; }
     const LogDecorations& decorations() const { return _decorations; }
     const char* message() const { return reinterpret_cast<const char *>(this+1); }
   };
-
-  // A flush TOKEN is Message(nullptr, None, "");
-  static const size_t TOKEN_SIZE = {align_up(sizeof(Message) + 1, sizeof(void*))};
 
   class Buffer : public CHeapObj<mtLogging> {
     char* _buf;

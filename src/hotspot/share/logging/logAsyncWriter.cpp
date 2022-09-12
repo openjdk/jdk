@@ -48,16 +48,17 @@ const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, L
                                       LogDecorators::None);
 
 // Reserve space for a flush token, so 'push_flush_token' always succeeds.
-AsyncLogWriter::Buffer::Buffer(size_t capacity) : _pos(0) {
+AsyncLogWriter::Buffer::Buffer(size_t capacity) : _pos(0), _capacity(capacity) {
   _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
-  _capacity = capacity - AsyncLogWriter::TOKEN_SIZE;
 }
 
 bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
-  size_t len = strlen(msg) + 1; // including trailing zero
-  size_t sz = align_up(sizeof(Message) + len, sizeof(void*));
+  const size_t sz = Message::calc_size(strlen(msg));
+  const bool is_token = output == nullptr;
+  // Always leave headroom for the flush token. Pushing a token must succeed.
+  const size_t headroom = (!is_token) ? Message::calc_size(0) : 0;
 
-  if (_pos + sz <= _capacity || output == nullptr/*token*/) {
+  if (_pos + sz <= (_capacity - headroom)) {
     new(_buf + _pos) Message(output, decorations, msg);
     _pos += sz;
     return true;
