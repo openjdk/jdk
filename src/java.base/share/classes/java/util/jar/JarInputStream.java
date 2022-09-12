@@ -71,7 +71,12 @@ import jdk.internal.util.jar.JarIndex;
  *  reading until the end of the entry's input stream,
  *  {@linkplain  JarEntry#getCertificates()} may be called to obtain the certificates
  *  for this entry and {@linkplain JarEntry#getCodeSigners()} may be called to obtain
- *  the verified signers.
+ *  the signers.
+ * <p>
+ * <b>Note:</b>If a {@code JarEntry} is modified after the Jar file is signed,
+ * a {@linkplain SecurityException} will be thrown when an attempt is made to
+ * read the entry.
+ * </p>
  *
  * @author  David Connelly
  * @see     Manifest
