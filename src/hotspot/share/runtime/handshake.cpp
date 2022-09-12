@@ -375,6 +375,8 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
     return;
   }
 
+  // Separate the arming of the poll in add_operation() above from
+  // the read of JavaThread state in the try_process() call below.
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
   }
