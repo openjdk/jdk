@@ -293,7 +293,7 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
   return result;
 }
 
-G1PLABAllocator::PerDestinationPLABData::PerDestinationPLABData() :
+G1PLABAllocator::PLABData::PLABData() :
   _alloc_buffer(nullptr),
   _direct_allocated(0),
   _num_plab_fills(0),
@@ -302,7 +302,7 @@ G1PLABAllocator::PerDestinationPLABData::PerDestinationPLABData() :
   _cur_desired_plab_size(0),
   _num_alloc_buffers(0) { }
 
-G1PLABAllocator::PerDestinationPLABData::~PerDestinationPLABData() {
+G1PLABAllocator::PLABData::~PLABData() {
   if (_alloc_buffer == nullptr) {
     return;
   }
@@ -311,7 +311,7 @@ G1PLABAllocator::PerDestinationPLABData::~PerDestinationPLABData() {
   }
 }
 
-void G1PLABAllocator::PerDestinationPLABData::initialize(uint num_alloc_buffers, size_t desired_plab_size, size_t tolerated_refills) {
+void G1PLABAllocator::PLABData::initialize(uint num_alloc_buffers, size_t desired_plab_size, size_t tolerated_refills) {
   _num_alloc_buffers = num_alloc_buffers;
   _alloc_buffer = NEW_C_HEAP_ARRAY(PLAB*, _num_alloc_buffers, mtGC);
 
@@ -323,7 +323,7 @@ void G1PLABAllocator::PerDestinationPLABData::initialize(uint num_alloc_buffers,
   _cur_desired_plab_size = desired_plab_size;
 }
 
-void G1PLABAllocator::PerDestinationPLABData::notify_plab_refill(size_t tolerated_refills, size_t next_plab_size) {
+void G1PLABAllocator::PLABData::notify_plab_refill(size_t tolerated_refills, size_t next_plab_size) {
   _num_plab_fills++;
   if (should_boost()) {
     _plab_fill_counter = tolerated_refills;
@@ -355,7 +355,7 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   // The initial PLAB refill should not count, hence the +1 for the first boost.
   size_t initial_tolerated_refills = ResizePLAB ? _tolerated_refills + 1 : _tolerated_refills;
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
-    _data[state].initialize(alloc_buffers_length(state), _g1h->desired_plab_sz(state), initial_tolerated_refills);
+    _dest_data[state].initialize(alloc_buffers_length(state), _g1h->desired_plab_sz(state), initial_tolerated_refills);
   }
 }
 
@@ -370,7 +370,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   size_t plab_word_size = plab_size(dest.type());
   size_t next_plab_word_size = plab_word_size;
 
-  PerDestinationPLABData* plab_data = &_data[dest.type()];
+  PLABData* plab_data = &_dest_data[dest.type()];
 
   if (plab_data->should_boost()) {
     next_plab_word_size = _g1h->clamp_plab_size(next_plab_word_size * 2);
@@ -437,7 +437,7 @@ void G1PLABAllocator::flush_and_retire_stats(uint num_workers) {
         buf->flush_and_retire_stats(stats);
       }
     }
-    PerDestinationPLABData* plab_data = &_data[state];
+    PLABData* plab_data = &_dest_data[state];
     stats->add_num_plab_filled(plab_data->_num_plab_fills);
     stats->add_direct_allocated(plab_data->_direct_allocated);
     stats->add_num_direct_allocated(plab_data->_num_direct_allocations);
@@ -446,11 +446,11 @@ void G1PLABAllocator::flush_and_retire_stats(uint num_workers) {
   log_trace(gc, plab)("PLAB boost: Young %zu -> %zu refills %zu (tolerated %zu) Old %zu -> %zu refills %zu (tolerated %zu)",
                       _g1h->alloc_buffer_stats(G1HeapRegionAttr::Young)->desired_plab_size(num_workers),
                       plab_size(G1HeapRegionAttr::Young),
-                      _data[G1HeapRegionAttr::Young]._num_plab_fills,
+                      _dest_data[G1HeapRegionAttr::Young]._num_plab_fills,
                       _tolerated_refills,
                       _g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->desired_plab_size(num_workers),
                       plab_size(G1HeapRegionAttr::Old),
-                      _data[G1HeapRegionAttr::Old]._num_plab_fills,
+                      _dest_data[G1HeapRegionAttr::Old]._num_plab_fills,
                       _tolerated_refills);
 }
 
@@ -468,7 +468,7 @@ size_t G1PLABAllocator::waste() const {
 }
 
 size_t G1PLABAllocator::plab_size(G1HeapRegionAttr which) const {
-  return _data[which.type()]._cur_desired_plab_size;
+  return _dest_data[which.type()]._cur_desired_plab_size;
 }
 
 size_t G1PLABAllocator::undo_waste() const {

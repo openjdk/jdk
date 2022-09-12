@@ -158,7 +158,7 @@ private:
 
   // Collects per-destination information (e.g. young, old gen) about current PLAB
   // and statistics about it.
-  struct PerDestinationPLABData {
+  struct PLABData {
     PLAB** _alloc_buffer;
 
     size_t _direct_allocated;             // Number of words allocated directly (not counting PLAB allocation).
@@ -170,8 +170,8 @@ private:
 
     uint _num_alloc_buffers;              // The number of PLABs for this destination.
 
-    PerDestinationPLABData();
-    ~PerDestinationPLABData();
+    PLABData();
+    ~PLABData();
 
     void initialize(uint num_alloc_buffers, size_t desired_plab_size, size_t tolerated_refills);
 
@@ -182,7 +182,7 @@ private:
 
     void notify_plab_refill(size_t tolerated_refills, size_t next_plab_size);
 
-  } _data[G1HeapRegionAttr::Num];
+  } _dest_data[G1HeapRegionAttr::Num];
 
   // The amount of PLAB refills tolerated until boosting PLAB size.
   // This value is the same for all generations because they all use the same
