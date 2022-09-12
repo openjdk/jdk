@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
@@ -55,6 +54,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 class MacOSXWatchService extends AbstractWatchService {
+    private static final MacOSXFileSystemProvider theFSProvider = DefaultFileSystemProvider.instance();
+    private static final MacOSXFileSystem theFS = (MacOSXFileSystem) theFSProvider.theFileSystem();
+
     private final HashMap<Object, MacOSXWatchKey> dirKeyToWatchKey      = new HashMap<>();
     private final HashMap<Long, MacOSXWatchKey>   eventStreamToWatchKey = new HashMap<>();
     private final Object                          watchKeysLock         = new Object();
@@ -307,7 +309,7 @@ class MacOSXWatchService extends AbstractWatchService {
         private static final long kFSEventStreamEventFlagMustScanSubDirs = 0x00000001;
         private static final long kFSEventStreamEventFlagRootChanged     = 0x00000020;
 
-        private final static Path relativeRootPath = Path.of("");
+        private final static Path relativeRootPath = theFS.getPath("");
 
         // Full path to this key's watch root directory.
         private final Path   realRootPath;
@@ -386,7 +388,7 @@ class MacOSXWatchService extends AbstractWatchService {
 
         private Path toRelativePath(final String absPath) {
             return   (absPath.length() > realRootPathLength)
-                    ? Path.of(absPath.substring(realRootPathLength))
+                    ? theFS.getPath(absPath.substring(realRootPathLength))
                     : relativeRootPath;
         }
 
@@ -578,11 +580,11 @@ class MacOSXWatchService extends AbstractWatchService {
 
             static DirectorySnapshot create(final Path realRootPath, final Path directory) throws IOException {
                 final DirectorySnapshot snapshot = new DirectorySnapshot(directory);
-                try (final DirectoryStream<Path> directoryStream
-                             = Files.newDirectoryStream(realRootPath.resolve(directory))) {
+                try (final DirectoryStream<Path> directoryStream = theFSProvider.newDirectoryStream(
+                                     realRootPath.resolve(directory), p -> true)) {
                     for (final Path file : directoryStream) {
                         try {
-                            final BasicFileAttributes attrs = Files.readAttributes(
+                            final BasicFileAttributes attrs = theFSProvider.readAttributes(
                                     file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
                             final Entry entry = new Entry(
                                     attrs.isDirectory(), attrs.lastModifiedTime().toMillis(), 0);
@@ -611,11 +613,11 @@ class MacOSXWatchService extends AbstractWatchService {
                 currentTick++;
 
                 try (final DirectoryStream<Path> directoryStream
-                             = Files.newDirectoryStream(watchKey.getRealRootPath().resolve(directory))) {
+                             = theFSProvider.newDirectoryStream(watchKey.getRealRootPath().resolve(directory), p -> true)) {
                     for (final Path file : directoryStream) {
                         try {
                             final BasicFileAttributes attrs
-                                    = Files.readAttributes(file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                                    = theFSProvider.readAttributes(file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
                             final Path fileName     = file.getFileName();
                             final Entry entry       = files.get(fileName);
                             final boolean isNew     = (entry == null);
