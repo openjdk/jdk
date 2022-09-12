@@ -953,21 +953,7 @@ public:
         int iter);
 
   void addm(int disp, Register r1, Register r2);
-  void gfmul(XMMRegister tmp0, XMMRegister t);
-  void schoolbookAAD(int i, Register subkeyH, XMMRegister data, XMMRegister tmp0,
-                     XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3);
-  void generateHtbl_one_block(Register htbl);
-  void generateHtbl_eight_blocks(Register htbl);
- public:
-  void sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
-                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
-                   Register buf, Register state, Register ofs, Register limit, Register rsp,
-                   bool multi_block, XMMRegister shuf_mask);
-  void avx_ghash(Register state, Register htbl, Register data, Register blocks);
-#endif
 
-#ifdef _LP64
- private:
   void sha512_AVX2_one_round_compute(Register old_h, Register a, Register b, Register c, Register d,
                                      Register e, Register f, Register g, Register h, int iteration);
 
@@ -977,31 +963,15 @@ public:
 
   void addmq(int disp, Register r1, Register r2);
  public:
+  void sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                   Register buf, Register state, Register ofs, Register limit, Register rsp,
+                   bool multi_block, XMMRegister shuf_mask);
   void sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
                    Register buf, Register state, Register ofs, Register limit, Register rsp, bool multi_block,
                    XMMRegister shuf_mask);
-private:
-  void roundEnc(XMMRegister key, int rnum);
-  void lastroundEnc(XMMRegister key, int rnum);
-  void roundDec(XMMRegister key, int rnum);
-  void lastroundDec(XMMRegister key, int rnum);
-  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
-  void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
-  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl);
-  void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
-                                  XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
-                                  XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
-                                  bool final_reduction, int index, XMMRegister counter_inc_mask);
-public:
-  void aesecb_encrypt(Register source_addr, Register dest_addr, Register key, Register len);
-  void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
-  void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
-                      Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
-  void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
-                      Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
-
-#endif
+#endif // _LP64
 
   void fast_md5(Register buf, Address state, Address ofs, Address limit,
                 bool multi_block);
@@ -1027,57 +997,7 @@ public:
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp);
 
-#ifdef _LP64
- private:
-  // Initialized in macroAssembler_x86_constants.cpp
-  static address ONE;
-  static address ONEHALF;
-  static address SIGN_MASK;
-  static address TWO_POW_55;
-  static address TWO_POW_M55;
-  static address SHIFTER;
-  static address ZERO;
-  static address NEG_ZERO;
-  static address PI32INV;
-  static address PI_INV_TABLE;
-  static address Ctable;
-  static address SC_1;
-  static address SC_2;
-  static address SC_3;
-  static address SC_4;
-  static address PI_4;
-  static address P_1;
-  static address P_3;
-  static address P_2;
-
- public:
-  void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register tmp1, Register tmp2);
-
-  void fast_log10(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                  XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                  Register rax, Register rcx, Register rdx, Register r11, Register tmp);
-
-  void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
-                XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
-                Register rdx, Register tmp1, Register tmp2, Register tmp3, Register tmp4);
-
-  void fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rbx, Register rcx, Register rdx, Register tmp1);
-
-  void fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register r8,
-                Register  r9, Register r10, Register r11, Register tmp);
-
-  void fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register r8,
-                Register  r9, Register r10, Register r11, Register tmp);
-
-#else
+#ifndef _LP64
  private:
   // Initialized in macroAssembler_x86_constants.cpp
   static address ONES;
@@ -1121,7 +1041,7 @@ public:
   void fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp);
-#endif
+#endif // !_LP64
 
 private:
 
@@ -1961,7 +1881,6 @@ public:
   void kernel_crc32_avx512_256B(Register crc, Register buf, Register len, Register key, Register pos,
                                 Register tmp1, Register tmp2, Label& L_barrett, Label& L_16B_reduction_loop,
                                 Label& L_get_last_two_xmms, Label& L_128_done, Label& L_cleanup);
-  void updateBytesAdler32(Register adler32, Register buf, Register length, XMMRegister shuf0, XMMRegister shuf1, ExternalAddress scale);
 #endif // _LP64
 
   // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic
@@ -2048,42 +1967,14 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
-#if COMPILER2_OR_JVMCI
-  void arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
-                                    Register to, Register count, int shift,
-                                    Register index, Register temp,
-                                    bool use64byteVector, Label& L_entry, Label& L_exit);
-
-  void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
-                                             Register to, Register start_index, Register end_index,
-                                             Register count, int shift, Register temp,
-                                             bool use64byteVector, Label& L_entry, Label& L_exit);
-
-  void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
-                         KRegister mask, Register length, Register index,
-                         Register temp, int shift = Address::times_1, int offset = 0,
-                         bool use64byteVector = false);
-
-  void copy32_masked_avx(Register dst, Register src, XMMRegister xmm,
-                         KRegister mask, Register length, Register index,
-                         Register temp, int shift = Address::times_1, int offset = 0);
-
-  void copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
-                  int shift = Address::times_1, int offset = 0);
-
-  void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
-                  bool conjoint, int shift = Address::times_1, int offset = 0,
-                  bool use64byteVector = false);
-
+#ifdef COMPILER2_OR_JVMCI
   void generate_fill_avx3(BasicType type, Register to, Register value,
                           Register count, Register rtmp, XMMRegister xtmp);
-
 #endif // COMPILER2_OR_JVMCI
 
   OopMap* continuation_enter_setup(int& stack_slots);
   void fill_continuation_entry(Register reg_cont_obj, Register reg_flags);
   void continuation_enter_cleanup();
-
 #endif // _LP64
 
   void vallones(XMMRegister dst, int vector_len);

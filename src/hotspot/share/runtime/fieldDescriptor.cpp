@@ -156,47 +156,38 @@ void fieldDescriptor::print() const { print_on(tty); }
 
 void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   print_on(st);
+  st->print(" ");
+
   BasicType ft = field_type();
-  jint as_int = 0;
   switch (ft) {
     case T_BYTE:
-      as_int = (jint)obj->byte_field(offset());
-      st->print(" %d", obj->byte_field(offset()));
+      st->print("%d", obj->byte_field(offset()));
       break;
     case T_CHAR:
-      as_int = (jint)obj->char_field(offset());
       {
         jchar c = obj->char_field(offset());
-        as_int = c;
-        st->print(" %c %d", isprint(c) ? c : ' ', c);
+        st->print("%c %d", isprint(c) ? c : ' ', c);
       }
       break;
     case T_DOUBLE:
-      st->print(" %lf", obj->double_field(offset()));
+      st->print("%lf", obj->double_field(offset()));
       break;
     case T_FLOAT:
-      as_int = obj->int_field(offset());
-      st->print(" %f", obj->float_field(offset()));
+      st->print("%f", obj->float_field(offset()));
       break;
     case T_INT:
-      as_int = obj->int_field(offset());
-      st->print(" %d", obj->int_field(offset()));
+      st->print("%d", obj->int_field(offset()));
       break;
     case T_LONG:
-      st->print(" ");
       st->print_jlong(obj->long_field(offset()));
       break;
     case T_SHORT:
-      as_int = obj->short_field(offset());
-      st->print(" %d", obj->short_field(offset()));
+      st->print("%d", obj->short_field(offset()));
       break;
     case T_BOOLEAN:
-      as_int = obj->bool_field(offset());
-      st->print(" %s", obj->bool_field(offset()) ? "true" : "false");
+      st->print("%s", obj->bool_field(offset()) ? "true" : "false");
       break;
     case T_ARRAY:
-      st->print(" ");
-      NOT_LP64(as_int = obj->int_field(offset()));
       if (obj->obj_field(offset()) != NULL) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
@@ -204,8 +195,6 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       }
       break;
     case T_OBJECT:
-      st->print(" ");
-      NOT_LP64(as_int = obj->int_field(offset()));
       if (obj->obj_field(offset()) != NULL) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
@@ -216,18 +205,31 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       ShouldNotReachHere();
       break;
   }
-  // Print a hint as to the underlying integer representation. This can be wrong for
-  // pointers on an LP64 machine
+
+  // Print a hint as to the underlying integer representation.
+  if (is_reference_type(ft)) {
 #ifdef _LP64
-  if (is_reference_type(ft) && UseCompressedOops) {
-    st->print(" (%x)", obj->int_field(offset()));
-  }
-  else // <- intended
+    if (UseCompressedOops) {
+      st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));
+    } else {
+      st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset()));
+    }
+#else
+    st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));
 #endif
-  if (ft == T_LONG || ft == T_DOUBLE LP64_ONLY(|| !is_java_primitive(ft)) ) {
-    st->print(" (%x %x)", obj->int_field(offset()), obj->int_field(offset()+sizeof(jint)));
-  } else if (as_int < 0 || as_int > 9) {
-    st->print(" (%x)", as_int);
+  } else { // Primitives
+    switch (ft) {
+      case T_LONG:    st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset())); break;
+      case T_DOUBLE:  st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset())); break;
+      case T_BYTE:    st->print(" (" INT8_FORMAT_X_0  ")", obj->byte_field(offset()));          break;
+      case T_CHAR:    st->print(" (" INT16_FORMAT_X_0 ")", obj->char_field(offset()));          break;
+      case T_FLOAT:   st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));           break;
+      case T_INT:     st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));           break;
+      case T_SHORT:   st->print(" (" INT16_FORMAT_X_0 ")", obj->short_field(offset()));         break;
+      case T_BOOLEAN: st->print(" (" INT8_FORMAT_X_0  ")", obj->bool_field(offset()));          break;
+    default:
+      ShouldNotReachHere();
+      break;
+    }
   }
 }
-
