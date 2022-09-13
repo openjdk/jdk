@@ -511,7 +511,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        tree.var = translate(tree.var, null);
+        tree.varOrRecordPattern = translate(tree.varOrRecordPattern, null);
         Type iterableType = tree.expr.type;
         tree.expr = translate(tree.expr, erasure(tree.expr.type));
         if (types.elemtype(tree.expr.type) == null)

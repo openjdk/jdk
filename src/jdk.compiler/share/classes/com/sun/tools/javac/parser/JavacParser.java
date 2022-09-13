@@ -759,7 +759,6 @@ public class JavacParser implements Parser {
 
     /** parses patterns.
      */
-
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType,
                                   boolean allowVar, boolean checkGuard) {
         JCPattern pattern;
@@ -2826,25 +2825,47 @@ public class JavacParser implements Parser {
         case FOR: {
             nextToken();
             accept(LPAREN);
-            List<JCStatement> inits = token.kind == SEMI ? List.nil() : forInit();
-            if (inits.length() == 1 &&
-                inits.head.hasTag(VARDEF) &&
-                ((JCVariableDecl) inits.head).init == null &&
-                token.kind == COLON) {
-                JCVariableDecl var = (JCVariableDecl)inits.head;
+            JCTree pattern;
+
+            ForInitResult initResult = analyzeForInit();
+
+            if (initResult == ForInitResult.RecordPattern) {
+                int patternPos = token.pos;
+                JCModifiers mods = optFinal(0);
+                int typePos = token.pos;
+                JCExpression type = unannotatedType(false);
+
+                pattern = parsePattern(patternPos, mods, type, false, false);
+
+                if (pattern != null) {
+                    checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
+                }
                 accept(COLON);
                 JCExpression expr = parseExpression();
                 accept(RPAREN);
                 JCStatement body = parseStatementAsBlock();
-                return F.at(pos).ForeachLoop(var, expr, body);
+                return F.at(pos).ForeachLoop(pattern, expr, body);
             } else {
-                accept(SEMI);
-                JCExpression cond = token.kind == SEMI ? null : parseExpression();
-                accept(SEMI);
-                List<JCExpressionStatement> steps = token.kind == RPAREN ? List.nil() : forUpdate();
-                accept(RPAREN);
-                JCStatement body = parseStatementAsBlock();
-                return F.at(pos).ForLoop(inits, cond, steps, body);
+                List<JCStatement> inits = token.kind == SEMI ? List.nil() : forInit();
+                if (inits.length() == 1 &&
+                        inits.head.hasTag(VARDEF) &&
+                        ((JCVariableDecl) inits.head).init == null &&
+                        token.kind == COLON) {
+                    JCVariableDecl var = (JCVariableDecl) inits.head;
+                    accept(COLON);
+                    JCExpression expr = parseExpression();
+                    accept(RPAREN);
+                    JCStatement body = parseStatementAsBlock();
+                    return F.at(pos).ForeachLoop(var, expr, body);
+                } else {
+                    accept(SEMI);
+                    JCExpression cond = token.kind == SEMI ? null : parseExpression();
+                    accept(SEMI);
+                    List<JCExpressionStatement> steps = token.kind == RPAREN ? List.nil() : forUpdate();
+                    accept(RPAREN);
+                    JCStatement body = parseStatementAsBlock();
+                    return F.at(pos).ForLoop(inits, cond, steps, body);
+                }
             }
         }
         case WHILE: {
@@ -2958,6 +2979,79 @@ public class JavacParser implements Parser {
         default:
             Assert.error();
             return null;
+        }
+    }
+
+    private enum ForInitResult {
+        LocalVarDecl,
+        RecordPattern
+    }
+
+    @SuppressWarnings("fallthrough")
+    ForInitResult analyzeForInit() {
+        int depth = 0;
+        boolean inType = false;
+        boolean inSelectionAndParenthesis = false;
+        ForInitResult defaultResult = ForInitResult.LocalVarDecl;
+        outer: for (int lookahead = 0; ; lookahead++) {
+            TokenKind tk = S.token(lookahead).kind;
+            switch (tk) {
+                case DOT:
+                    if (inType) break; // in qualified type
+                case COMMA: case EXTENDS: case SUPER:  case AMP: case QUES:
+                    break;
+                case BYTE: case SHORT: case INT: case LONG: case FLOAT:
+                case DOUBLE: case BOOLEAN: case CHAR: case VOID:
+                    if (peekToken(lookahead, IDENTIFIER)) {
+                        return ForInitResult.LocalVarDecl;
+                    }
+                    break;
+                case LPAREN:
+                    if (lookahead != 0 && inType) {
+                        inSelectionAndParenthesis = true;
+                        inType = false;
+                    }
+                    break;
+                case RPAREN:
+                    // a method call in the init part or a record pattern?
+                    if (inSelectionAndParenthesis) {
+                        if (peekToken(lookahead, COMMA) ||
+                                peekToken(lookahead, DOT)  ||
+                                peekToken(lookahead, SEMI)) {
+                            return ForInitResult.LocalVarDecl;
+                        }
+                        return ForInitResult.RecordPattern;
+                    }
+                case UNDERSCORE:
+                case ASSERT:
+                case ENUM:
+                case IDENTIFIER:
+                    if (lookahead == 0) {
+                        inType = true;
+                    }
+                    break;
+                case FINAL:
+                case ELLIPSIS:
+                case MONKEYS_AT:
+                    lookahead = skipAnnotation(lookahead);
+                    break;
+                case LBRACKET:
+                    if (peekToken(lookahead, RBRACKET)) {
+                        return ForInitResult.LocalVarDecl;
+                    }
+                case LT:
+                    depth++; break;
+                case GTGTGT:
+                    depth--;
+                case GTGT:
+                    depth--;
+                case GT:
+                    depth--;
+                    break;
+                default:
+                    //this includes EOF
+                    return defaultResult;
+            }
         }
     }
 

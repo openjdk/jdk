@@ -42,10 +42,24 @@ package com.sun.source.tree;
  */
 public interface EnhancedForLoopTree extends StatementTree {
     /**
+     * Enhanced for declarations come in two forms:
+     * <ul>
+     * <li> local variable declarations and
+     * <li> record patterns
+     * </ul>
+     */
+    public enum DeclarationKind {
+        /** enum constant for local variable declarations */
+        VARDECL,
+        /** enum constant for record pattern declarations */
+        RECORDPATTERNDECL
+    }
+
+    /**
      * Returns the control variable for the loop.
      * @return the control variable
      */
-    VariableTree getVariable();
+    Tree getVariableOrRecordPattern();
 
     /**
      * Returns the expression yielding the values for the control variable.
@@ -58,4 +72,10 @@ public interface EnhancedForLoopTree extends StatementTree {
      * @return the body of the loop
      */
     StatementTree getStatement();
+
+    /**
+     * Returns the kind of the declaration of the enhanced for.
+     * @return the kind of the declaration
+     */
+    EnhancedForLoopTree.DeclarationKind getDeclarationKind();
 }
