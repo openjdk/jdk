@@ -218,18 +218,18 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) 
 
     caps.can_redefine_classes = 1;
     caps.can_retransform_classes = 1;
-    res = jvmti->AddCapabilities(&caps);
-    if (res != JVMTI_ERROR_NONE) {
-        _log("Failed to add capabilities: %ld\n", res);
+    jvmtiError err = jvmti->AddCapabilities(&caps);
+    if (err != JVMTI_ERROR_NONE) {
+        _log("Failed to add capabilities: %d\n", err);
         return JNI_ERR;
     }
 
     jvmtiEventCallbacks eventCallbacks;
     memset(&eventCallbacks, 0, sizeof(eventCallbacks));
     eventCallbacks.ClassFileLoadHook = callbackClassFileLoadHook;
-    res = jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks));
-    if (res != JVMTI_ERROR_NONE) {
-        _log("Error setting event callbacks: %ld\n", res);
+    err = jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks));
+    if (err != JVMTI_ERROR_NONE) {
+        _log("Error setting event callbacks: %d\n", err);
         return JNI_ERR;
     }
 
