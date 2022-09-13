@@ -98,7 +98,7 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RestoreRetainedRegionsTask : public G1AbstractSubTask {
-  G1RemoveSelfForwardsInChunksTask _task;
+  G1RemoveSelfForwardsTask _task;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
@@ -116,8 +116,8 @@ public:
     _task.work(worker_id);
   }
 
-  void initialize(uint num_workers) {
-    _task.initialize(num_workers);
+  void initialize() {
+    _task.initialize();
   }
 };
 
@@ -137,8 +137,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
     RestoreRetainedRegionsTask* restore_retained_regions_task = new RestoreRetainedRegionsTask(evac_failure_regions);
     add_parallel_task(restore_retained_regions_task);
 
-    uint num_workers = clamp(num_workers_estimate(), 1u, G1CollectedHeap::heap()->workers()->active_workers());
-    restore_retained_regions_task->initialize(num_workers);
+    restore_retained_regions_task->initialize();
   }
 }
 
@@ -369,7 +368,9 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
   public:
 
     bool do_heap_region(HeapRegion* r) override {
-      G1CollectedHeap::heap()->clear_bitmap_for_region(r, false /* update_tams */);
+      assert(r->bottom() == r->top_at_mark_start(),
+             "TAMS should have been reset for region %u", r->hrm_index());
+      G1CollectedHeap::heap()->clear_bitmap_for_region(r);
       return false;
     }
   };
@@ -379,7 +380,10 @@ public:
   ClearRetainedRegionBitmaps(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionBitmaps),
     _evac_failure_regions(evac_failure_regions),
-    _claimer(0) { }
+    _claimer(0) {
+    assert(!G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc(),
+           "Should not clear bitmaps of retained regions during concurrent start");
+  }
 
   void set_max_workers(uint max_workers) override {
     _claimer.set_n_workers(max_workers);

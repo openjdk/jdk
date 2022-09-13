@@ -78,7 +78,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     SampleCollectionSetCandidates,
     MergePSS,
     RestoreRetainedRegions,
-    RemoveSelfForwardsInChunks,
+    RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
     ResetHotCardCache,
@@ -151,7 +151,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RestoreRetainedRegionsNum,
   };
 
-  enum RemoveSelfForwardsInChunksWorkItems {
+  enum RemoveSelfForwardsWorkItems {
     RemoveSelfForwardChunksNum,
     RemoveSelfForwardEmptyChunksNum,
     RemoveSelfForwardObjectsNum,

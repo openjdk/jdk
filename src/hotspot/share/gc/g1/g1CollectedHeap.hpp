@@ -525,6 +525,10 @@ public:
 
   // Return "optimal" number of chunks per region we want to use for claiming areas
   // within a region to claim.
+  // The returned value is a trade-off between granularity of work distribution and
+  // memory usage and maintenance costs of that table.
+  // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
+  // and so on seems to be such a good trade-off.
   static uint get_chunks_per_region();
 
   G1Allocator* allocator() {
@@ -609,7 +613,7 @@ public:
   // for all regions.
   void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
-  void clear_bitmap_for_region(HeapRegion* hr, bool update_tams);
+  void clear_bitmap_for_region(HeapRegion* hr);
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 

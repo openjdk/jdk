@@ -2944,8 +2944,8 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
                                                create_g1_evac_summary(&_old_evac_stats));
 }
 
-void G1CollectedHeap::clear_bitmap_for_region(HeapRegion* hr, bool update_tams) {
-  concurrent_mark()->clear_bitmap_for_region(hr, update_tams);
+void G1CollectedHeap::clear_bitmap_for_region(HeapRegion* hr) {
+  concurrent_mark()->clear_bitmap_for_region(hr);
 }
 
 void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
@@ -3301,10 +3301,9 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
 }
 
 void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+  _cm->raw_mark_in_bitmap(obj);
   if (collector_state()->in_concurrent_start_gc()) {
-    _cm->raw_mark_in_bitmap(worker_id, obj, obj_size);
-  } else {
-    _cm->raw_mark_in_bitmap(obj);
+    _cm->add_to_liveness(worker_id, obj, obj_size);
   }
 }
 

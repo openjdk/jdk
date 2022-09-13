@@ -284,11 +284,6 @@ inline void G1ConcurrentMark::raw_mark_in_bitmap(oop obj) {
   _mark_bitmap.par_mark(obj);
 }
 
-inline void G1ConcurrentMark::raw_mark_in_bitmap(uint worker_id, oop obj, size_t obj_size) {
-  raw_mark_in_bitmap(obj);
-  add_to_liveness(worker_id, obj, obj_size);
-}
-
 bool G1ConcurrentMark::is_marked_in_bitmap(oop p) const {
   assert(p != NULL && oopDesc::is_oop(p), "expected an oop");
   return _mark_bitmap.is_marked(cast_from_oop<HeapWord*>(p));
