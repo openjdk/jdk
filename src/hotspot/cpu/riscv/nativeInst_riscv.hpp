@@ -78,7 +78,9 @@ class NativeInstruction {
   static bool is_jump_at(address instr)       { assert_cond(instr != NULL); return is_branch_at(instr) || is_jal_at(instr) || is_jalr_at(instr); }
   static bool is_addi_at(address instr)       { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0010011 && extract_funct3(instr) == 0b000; }
   static bool is_addiw_at(address instr)      { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0011011 && extract_funct3(instr) == 0b000; }
+  static bool is_addiw_to_zr_at(address instr) { assert_cond(instr != NULL); return is_addiw_at(instr) && extract_rd(instr) == zr; }
   static bool is_lui_at(address instr)        { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0110111; }
+  static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != NULL); return is_lui_at(instr) && extract_rd(instr) == zr; }
   static bool is_slli_shift_at(address instr, uint32_t shift) {
     assert_cond(instr != NULL);
     return (extract_opcode(instr) == 0b0010011 && // opcode field
@@ -554,10 +556,22 @@ inline NativeMembar *NativeMembar_at(address addr) {
   return (NativeMembar*)addr;
 }
 
+// A NativePostCallNop takes the form of three instructions:
+//     nop; lui zr, hi20; addiw zr, lo12
+//
+// The nop is patchable for a deoptimization trap. The lui and addiw
+// instructions execute as nops but have a 20/12-bit payload in which we
+// can store an offset from the initial nop to the nmethod.
 class NativePostCallNop: public NativeInstruction {
 public:
-  bool check() const { return is_nop(); }
-  int displacement() const { return 0; }
+  bool check() const {
+    // Check for two instructions: nop; lui zr, hi20
+    // These instructions only ever appear together in a post-call
+    // NOP, so it's unnecessary to check that the third instruction is
+    // an addiw as well.
+    return is_nop() && is_lui_to_zr_at(addr_at(4));
+  }
+  int displacement() const;
   void patch(jint diff);
   void make_deopt();
 };

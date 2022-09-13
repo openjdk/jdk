@@ -387,6 +387,9 @@ class MacroAssembler: public Assembler {
 
   static int patch_oop(address insn_addr, address o);
 
+  static address get_target_of_li32(address insn_addr);
+  static int patch_imm_in_li32(address branch, int32_t target);
+
   // Return whether code is emitted to a scratch blob.
   virtual bool in_scratch_emit_size() {
     return false;
