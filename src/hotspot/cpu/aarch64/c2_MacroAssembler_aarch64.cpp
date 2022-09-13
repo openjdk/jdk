@@ -2009,6 +2009,41 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   // result in dst
 }
 
+void C2_MacroAssembler::vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                           FloatRegister one, SIMD_Arrangement T) {
+  assert_different_registers(dst, src, zero, one);
+  assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+
+  facgt(dst, T, src, zero);
+  ushr(dst, T, dst, 1); // dst=0 for +-0.0 and NaN. 0x7FF..F otherwise
+  bsl(dst, T == T2S ? T8B : T16B, one, src); // Result in dst
+}
+
+void C2_MacroAssembler::vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T) {
+    assert_different_registers(dst, src, zero, one, vtmp);
+    assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
+
+    sve_orr(vtmp, src, src);
+    sve_fac(Assembler::GT, pgtmp, T, ptrue, src, zero); // pmtp=0 for +-0.0 and NaN. 0x1 otherwise
+    switch (T) {
+    case S:
+      sve_and(vtmp, T, min_jint); // Extract the sign bit of float value in every lane of src
+      sve_orr(vtmp, T, jint_cast(1.0)); // OR it with +1 to make the final result +1 or -1 depending
+                                        // on the sign of the float value
+      break;
+    case D:
+      sve_and(vtmp, T, min_jlong);
+      sve_orr(vtmp, T, jlong_cast(1.0));
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+    }
+    sve_sel(dst, T, pgtmp, vtmp, src); // Select either from src or vtmp based on the predicate register pgtmp
+                                       // Result in dst
+}
+
 bool C2_MacroAssembler::in_scratch_emit_size() {
   if (ciEnv::current()->task() != NULL) {
     PhaseOutput* phase_output = Compile::current()->output();
@@ -2018,4 +2053,3 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   }
   return MacroAssembler::in_scratch_emit_size();
 }
-

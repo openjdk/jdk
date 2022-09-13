@@ -695,7 +695,6 @@ public class TestSearch extends JavadocTester {
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
                 "search.js",
-                "jquery-ui.overrides.css",
                 "script-dir/jquery-3.6.0.min.js",
                 "script-dir/jquery-ui.min.js",
                 "script-dir/jquery-ui.min.css",

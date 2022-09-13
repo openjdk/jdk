@@ -33,12 +33,12 @@
 #include "runtime/mutexLocker.hpp"
 
 class MetadataAllocationRequest {
-  ClassLoaderData*           _loader_data;
-  size_t                     _word_size;
-  Metaspace::MetadataType    _type;
-  MetadataAllocationRequest* _next;
-  MetaWord*                  _result;
-  bool                       _has_result;
+  ClassLoaderData* const        _loader_data;
+  const size_t                  _word_size;
+  const Metaspace::MetadataType _type;
+  MetadataAllocationRequest*    _next;
+  MetaWord*                     _result;
+  bool                          _is_processed;
 
 public:
   MetadataAllocationRequest(ClassLoaderData* loader_data,
@@ -49,7 +49,7 @@ public:
       _type(type),
       _next(NULL),
       _result(NULL),
-      _has_result(false) {
+      _is_processed(false) {
     MetaspaceCriticalAllocation::add(this);
   }
 
@@ -57,17 +57,17 @@ public:
     MetaspaceCriticalAllocation::remove(this);
   }
 
-  ClassLoaderData*           loader_data() const { return _loader_data; }
-  size_t                     word_size() const   { return _word_size; }
-  Metaspace::MetadataType    type() const        { return _type; }
-  MetadataAllocationRequest* next() const        { return _next; }
-  MetaWord*                  result() const      { return _result; }
-  bool                       has_result() const  { return _has_result; }
+  ClassLoaderData*           loader_data() const   { return _loader_data; }
+  size_t                     word_size() const     { return _word_size; }
+  Metaspace::MetadataType    type() const          { return _type; }
+  MetadataAllocationRequest* next() const          { return _next; }
+  MetaWord*                  result() const        { return _result; }
+  bool                       is_processed() const  { return _is_processed; }
 
   void set_next(MetadataAllocationRequest* next) { _next = next; }
   void set_result(MetaWord* result) {
     _result = result;
-    _has_result = true;
+    _is_processed = true;
   }
 };
 
@@ -113,13 +113,47 @@ void MetaspaceCriticalAllocation::remove(MetadataAllocationRequest* request) {
 }
 
 bool MetaspaceCriticalAllocation::try_allocate_critical(MetadataAllocationRequest* request) {
+  // This function uses an optimized scheme to limit the number of triggered
+  // GCs. The idea is that only one request in the list is responsible for
+  // triggering a GC, and later requests will try to piggy-back on that
+  // request.
+  //
+  // For this to work, it is important that we can tell which requests were
+  // seen by the GC's call to process(), and which requests were added after
+  // last proccess() call. The property '_is_processed' tells this. Because the
+  // logic below relies on that property, it is important that the GC calls
+  // process() even when the GC didn't unload any classes.
+  //
+  // Note that process() leaves the requests in the queue, so that threads
+  // in wait_for_purge, which had their requests processed, but didn't get any
+  // memory can exit that function and trigger a new GC as a last effort to get
+  // memory before throwing an OOME.
+  //
+  // Requests that have been processed once, will not trigger new GCs, we
+  // therefore filter them out when we determine if the current 'request'
+  // needs to trigger a GC, or if there are earlier requests that will
+  // trigger a GC.
+
   {
     MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
-    if (_requests_head == request) {
-      // The first request can't opportunistically ride on a previous GC
+    auto is_first_unprocessed = [&]() {
+      for (MetadataAllocationRequest* curr = _requests_head; curr != NULL; curr = curr->next()) {
+        if (!curr->is_processed()) {
+          // curr is the first not satisfied request
+          return curr == request;
+        }
+      }
+
+      return false;
+    };
+
+    if (is_first_unprocessed()) {
+      // The first non-processed request takes ownership of triggering the GC
+      // on behalf of itself, and all trailing requests in the list.
       return false;
     }
   }
+
   // Try to ride on a previous GC and hope for early satisfaction
   wait_for_purge(request);
   return request->result() != NULL;
@@ -129,7 +163,9 @@ void MetaspaceCriticalAllocation::wait_for_purge(MetadataAllocationRequest* requ
   ThreadBlockInVM tbivm(JavaThread::current());
   MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   for (;;) {
-    if (request->has_result()) {
+    if (request->is_processed()) {
+      // The GC has procesed this request during the purge.
+      // Return and check the result, and potentially call a last-effort GC.
       break;
     }
     MetaspaceCritical_lock->wait_without_safepoint_check();
@@ -144,12 +180,12 @@ void MetaspaceCriticalAllocation::block_if_concurrent_purge() {
   }
 }
 
-void MetaspaceCriticalAllocation::satisfy() {
+void MetaspaceCriticalAllocation::process() {
   assert_lock_strong(MetaspaceCritical_lock);
   bool all_satisfied = true;
   for (MetadataAllocationRequest* curr = _requests_head; curr != NULL; curr = curr->next()) {
     if (curr->result() != NULL) {
-      // Don't satisfy twice
+      // Don't satisfy twice (can still be processed twice)
       continue;
     }
     // Try to allocate metadata.
