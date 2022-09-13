@@ -178,6 +178,7 @@ public class TestCPUAwareness {
             .shouldMatch("active_processor_count.*" + expectedAPC);
     }
 
+
     private static void testAPCCombo(String cpuset, int quota, int period, int shares,
                                      int expectedAPC) throws Exception {
         Common.logNewTestCase("test APC Combo");
