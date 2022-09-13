@@ -34,7 +34,7 @@ import jdk.internal.util.jar.JarIndex;
  * The {@code JarInputStream} class, which extends {@linkplain ZipInputStream},
  * is used to read the contents of a JAR file from an input stream.
  * It provides support for reading an optional {@linkplain JarFile#MANIFEST_NAME Manifest}
- * entry. The {@linkplain JarFile#MANIFEST_NAME Manifest} can be used to store
+ * entry. The {@code Manifest} can be used to store
  * meta-information about the JAR file and its entries.
  *
  * <h2>Accessing the Manifest</h2>
