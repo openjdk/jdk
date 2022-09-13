@@ -599,7 +599,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label exit, error;
 
-    __ push_reg(0x3000, sp);   // save c_rarg2 and c_rarg3
+    __ push_reg(RegSet::of(c_rarg2, c_rarg3), sp); // save c_rarg2 and c_rarg3
 
     __ la(c_rarg2, ExternalAddress((address) StubRoutines::verify_oop_count_addr()));
     __ ld(c_rarg3, Address(c_rarg2));
@@ -635,12 +635,12 @@ class StubGenerator: public StubCodeGenerator {
     // return if everything seems ok
     __ bind(exit);
 
-    __ pop_reg(0x3000, sp);   // pop c_rarg2 and c_rarg3
+    __ pop_reg(RegSet::of(c_rarg2, c_rarg3), sp);  // pop c_rarg2 and c_rarg3
     __ ret();
 
     // handle errors
     __ bind(error);
-    __ pop_reg(0x3000, sp);   // pop c_rarg2 and c_rarg3
+    __ pop_reg(RegSet::of(c_rarg2, c_rarg3), sp); // pop c_rarg2 and c_rarg3
 
     __ push_reg(RegSet::range(x0, x31), sp);
     // debug(char* msg, int64_t pc, int64_t regs[])
