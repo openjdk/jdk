@@ -67,11 +67,7 @@ public class TestMemoryAwareness {
             testMemoryLimit("500m", "524288000", false);
             testMemoryLimit("1g", "1073741824", false);
             testMemoryLimit("4g", "4294967296", false);
-            testMemoryLimit("100m", "104857600", true);
-            testMemoryLimit("500m", "524288000", true);
-            testMemoryLimit("1g", "1073741824", true);
-            testMemoryLimit("4g", "4294967296", true);
-
+            testMemoryLimit("100m", "104857600", true /* additional cgroup mount */);
 
             testMemorySoftLimit("500m", "524288000");
             testMemorySoftLimit("1g", "1073741824");

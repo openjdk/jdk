@@ -74,10 +74,7 @@ public class TestCPUAwareness {
             testCpuQuotaAndPeriod(100*1000, 100*1000, false);
             testCpuQuotaAndPeriod(150*1000, 100*1000, false);
             testCpuQuotaAndPeriod(400*1000, 100*1000, false);
-            testCpuQuotaAndPeriod(50*1000, 100*1000, true);
-            testCpuQuotaAndPeriod(100*1000, 100*1000, true);
-            testCpuQuotaAndPeriod(150*1000, 100*1000, true);
-            testCpuQuotaAndPeriod(400*1000, 100*1000, true);
+            testCpuQuotaAndPeriod(50*1000, 100*1000, true /* additional cgroup mount */);
 
             testOperatingSystemMXBeanAwareness("0.5", "1");
             testOperatingSystemMXBeanAwareness("1.0", "1");
