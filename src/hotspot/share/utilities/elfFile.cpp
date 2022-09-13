@@ -34,6 +34,7 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/elfFuncDescTable.hpp"
