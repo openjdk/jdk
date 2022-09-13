@@ -35,6 +35,13 @@ jdk/jshell/UserJdiUserRemoteTest.java                                           
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all
 jdk/jshell/ToolBasicTest.java                                                   8265357    macosx-aarch64
 jdk/jshell/HighlightUITest.java                                                 8284144    generic-all
+jdk/jshell/ToolTabSnippetTest.java                                              8293591 generic-all
+jdk/jshell/ToolTabCommandTest.java                                              8293591 generic-all
+jdk/jshell/ToolShiftTabTest.java                                                8293591 generic-all
+jdk/jshell/ToolMultilineSnippetHistoryTest.java                                 8293591 generic-all
+jdk/jshell/PasteAndMeasurementsUITest.java                                      8293591 generic-all
+jdk/jshell/IndentUITest.java                                                    8293591 generic-all
+jdk/jshell/HistoryUITest.java                                                   8293591 generic-all
 
 ###########################################################################
 #

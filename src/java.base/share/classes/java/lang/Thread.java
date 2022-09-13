@@ -1631,8 +1631,7 @@ public class Thread implements Runnable {
     /**
      * Throws {@code UnsupportedOperationException}.
      *
-     * @throws  UnsupportedOperationException
-     *          always
+     * @throws  UnsupportedOperationException always
      *
      * @deprecated This method was originally specified to "stop" a thread
      *       by causing it to throw a {@link ThreadDeath}. It was inherently

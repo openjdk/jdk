@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,6 @@ public final class SecurityConstants {
     // java.lang.Class, java.lang.ClassLoader, java.lang.Thread
     public static final RuntimePermission GET_CLASSLOADER_PERMISSION =
         new RuntimePermission("getClassLoader");
-
-    // java.lang.Thread
-    public static final RuntimePermission STOP_THREAD_PERMISSION =
-       new RuntimePermission("stopThread");
 
     // java.lang.Thread
     public static final RuntimePermission GET_STACK_TRACE_PERMISSION =
