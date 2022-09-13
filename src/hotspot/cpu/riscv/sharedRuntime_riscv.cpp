@@ -1984,7 +1984,7 @@ void SharedRuntime::generate_deopt_blob() {
     Label retaddr;
     __ set_last_Java_frame(sp, noreg, retaddr, t0);
 
-    __ lwu(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
     __ mvw(t0, -1);
     __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
 
