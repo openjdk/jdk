@@ -50,8 +50,7 @@ import static java.util.zip.ZipUtils.*;
  * {@code ZipInputStream} read methods such
  * as {@link #read(byte[], int, int) read} or {@link #readAllBytes() readAllBytes()}.
  * For example:
- * <pre>
- *    {@code
+ *    {@snippet :
  *      try (FileInputStream fis = new FileInputStream(jar.toFile());
  *           ZipInputStream zis = new ZipInputStream(fis)) {
  *          ZipEntry ze;
@@ -62,7 +61,6 @@ import static java.util.zip.ZipUtils.*;
  *          }
  *      }
  *    }
- * </pre>
  * The LOC header contains metadata about the Zip file entry. {@code ZipInputStream}
  * does not read the Central directory (CEN) header for the entry and therefore
  * will not have access to its metadata such as the external file attributes.
