@@ -168,7 +168,7 @@ public class JmodTask {
         List<PathMatcher> excludes;
         Path extractDir;
         LocalDateTime date;
-        int compLevel;
+        int compressLevel;
     }
 
     // Valid --date range
@@ -440,7 +440,7 @@ public class JmodTask {
         Path target = options.jmodFile;
         Path tempTarget = jmodTempFilePath(target);
         try {
-            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date, options.compLevel)) {
+            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date, options.compressLevel)) {
                 jmod.write(jos);
             }
             Files.move(tempTarget, target);
@@ -1026,7 +1026,7 @@ public class JmodTask {
         {
 
             try (JmodFile jf = new JmodFile(target);
-                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date, options.compLevel))
+                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date, options.compressLevel))
             {
                 jf.stream().forEach(e -> {
                     try (InputStream in = jf.getInputStream(e.section(), e.name())) {
@@ -1186,7 +1186,10 @@ public class JmodTask {
         public Integer convert(String value) {
             int idx = value.indexOf("-");
             int lastIdx = value.lastIndexOf("-");
-            if (idx != lastIdx) {
+            if (idx == -1 || idx != lastIdx) {
+                throw new CommandException("err.compress.incorrect", value);
+            }
+            if (!value.substring(0, idx).equals("zip")) {
                 throw new CommandException("err.compress.incorrect", value);
             }
             try {
@@ -1524,10 +1527,10 @@ public class JmodTask {
                     throw new CommandException("err.compress.wrong.mode")
                             .showUsage(true);
                 }
-                options.compLevel = getLastElement(opts.valuesOf(compress));
+                options.compressLevel = getLastElement(opts.valuesOf(compress));
             } else {
                 // Default to fast compression.
-                options.compLevel = Deflater.DEFAULT_COMPRESSION;
+                options.compressLevel = Deflater.DEFAULT_COMPRESSION;
             }
 
             if (options.mode.equals(Mode.HASH)) {

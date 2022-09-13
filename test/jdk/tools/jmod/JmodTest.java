@@ -810,6 +810,17 @@ public class JmodTest {
             .resultChecker(r -> {
                 assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
             });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "test-0",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
     }
 
     // ---
