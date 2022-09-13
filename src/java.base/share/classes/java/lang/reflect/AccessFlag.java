@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -324,7 +325,7 @@ public enum AccessFlag {
      * major versions 46 through 60, inclusive (JVMS {@jvms 4.6}),
      * corresponding to Java SE 1.2 through 16.
      */
-    STRICT(Modifier.STRICT, true, Location.SET_METHOD,
+    STRICT(Modifier.STRICT, true, Location.EMPTY_SET,
              new Function<ClassFileFormatVersion, Set<Location>>() {
                @Override
                public Set<Location> apply(ClassFileFormatVersion cffv) {
@@ -470,6 +471,7 @@ public enum AccessFlag {
      * @throws NullPointerException if the parameter is {@code null}
      */
     public Set<Location> locations(ClassFileFormatVersion cffv) {
+        Objects.requireNonNull(cffv);
         if (cffvToLocations == null) {
             return locations;
         } else {
