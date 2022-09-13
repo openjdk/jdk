@@ -198,7 +198,7 @@ class NativeInstruction {
   inline bool is_nop() const;
   inline bool is_jump_or_nop();
   bool is_safepoint_poll();
-  bool is_sigill_zombie_not_entrant();
+  bool is_sigill_not_entrant();
   bool is_stop();
 
  protected:

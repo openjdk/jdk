@@ -28,6 +28,7 @@
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -240,6 +241,35 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 }
 
 typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, Register temp);
+
+void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
+  int alignment_bytes = align(4);
+
+  bind(stub->slow_path());
+
+  int32_t _offset = 0;
+  movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), _offset);
+  jalr(ra, t0, _offset);
+  j(stub->continuation());
+
+  bind(stub->guard());
+  relocate(entry_guard_Relocation::spec());
+  assert(offset() % 4 == 0, "bad alignment");
+  emit_int32(0);  // nmethod guard value
+  // make sure the stub with a fixed code size
+  if (alignment_bytes == 2) {
+    assert(UseRVC, "bad alignment");
+    c_nop();
+  } else {
+    assert(alignment_bytes == 0, "bad alignment");
+    nop();
+  }
+}
+
+int C2_MacroAssembler::entry_barrier_stub_size() {
+  return 8 * 4 + 4; // 4 bytes for alignment margin
+}
 
 // Search for needle in haystack and return index or -1
 // x10: result

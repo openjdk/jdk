@@ -739,7 +739,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_getObjectSize:
-  case vmIntrinsics::_Continuation_doYield:
     break;
 
   case vmIntrinsics::_VectorCompressExpand:

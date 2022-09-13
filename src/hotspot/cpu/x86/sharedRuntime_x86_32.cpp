@@ -1660,14 +1660,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   intptr_t the_pc = (intptr_t) __ pc();
   oop_maps->add_gc_map(the_pc - start, map);
 
-  __ set_last_Java_frame(thread, rsp, noreg, (address)the_pc);
+  __ set_last_Java_frame(thread, rsp, noreg, (address)the_pc, noreg);
 
 
   // We have all of the arguments setup at this point. We must not touch any register
   // argument registers at this point (what if we save/restore them there are no oop?
 
   {
-    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0);
+    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0, noreg);
     __ mov_metadata(rax, method());
     __ call_VM_leaf(
          CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
@@ -1760,7 +1760,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ call(RuntimeAddress(native_func));
 
   // Verify or restore cpu control state after JNI call
-  __ restore_cpu_control_state_after_jni();
+  __ restore_cpu_control_state_after_jni(noreg);
 
   // WARNING - on Windows Java Natives use pascal calling convention and pop the
   // arguments off of the stack. We could just re-adjust the stack pointer here
@@ -1903,7 +1903,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   {
-    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0);
+    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0, noreg);
     // Tell dtrace about this method exit
     save_native_result(masm, ret_type, stack_slots);
     __ mov_metadata(rax, method());
@@ -2233,7 +2233,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ get_thread(rcx);
   __ push(rcx);
   // fetch_unroll_info needs to call last_java_frame()
-  __ set_last_Java_frame(rcx, noreg, noreg, NULL);
+  __ set_last_Java_frame(rcx, noreg, noreg, NULL, noreg);
 
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info)));
 
@@ -2381,7 +2381,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ push(rcx);
 
   // set last_Java_sp, last_Java_fp
-  __ set_last_Java_frame(rcx, noreg, rbp, NULL);
+  __ set_last_Java_frame(rcx, noreg, rbp, NULL, noreg);
 
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
@@ -2478,7 +2478,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // set last_Java_sp
   __ get_thread(rdx);
-  __ set_last_Java_frame(rdx, noreg, noreg, NULL);
+  __ set_last_Java_frame(rdx, noreg, noreg, NULL, noreg);
 
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
@@ -2590,7 +2590,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // set last_Java_sp, last_Java_fp
   __ get_thread(rdi);
-  __ set_last_Java_frame(rdi, noreg, rbp, NULL);
+  __ set_last_Java_frame(rdi, noreg, rbp, NULL, noreg);
 
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
@@ -2672,7 +2672,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // Push thread argument and setup last_Java_sp
   __ get_thread(java_thread);
   __ push(java_thread);
-  __ set_last_Java_frame(java_thread, noreg, noreg, NULL);
+  __ set_last_Java_frame(java_thread, noreg, noreg, NULL, noreg);
 
   // if this was not a poll_return then we need to correct the return address now.
   if (!cause_return) {
@@ -2811,7 +2811,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ get_thread(rdi);
 
   __ push(thread);
-  __ set_last_Java_frame(thread, noreg, rbp, NULL);
+  __ set_last_Java_frame(thread, noreg, rbp, NULL, noreg);
 
   __ call(RuntimeAddress(destination));
 

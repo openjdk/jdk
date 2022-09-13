@@ -238,12 +238,12 @@ static const char* action_to_string(PlaceholderTable::classloadAction action) {
  return "";
 }
 
-inline void log(PlaceholderEntry* entry, const char* function, PlaceholderTable::classloadAction action) {
+inline void log(Symbol* name, PlaceholderEntry* entry, const char* function, PlaceholderTable::classloadAction action) {
   if (log_is_enabled(Debug, class, load, placeholders)) {
     LogTarget(Debug, class, load, placeholders) lt;
     ResourceMark rm;
     LogStream ls(lt);
-    ls.print("%s %s ", function, action_to_string(action));
+    ls.print("entry %s : %s %s ", name->as_C_string(), function, action_to_string(action));
     entry->print_on(&ls);
   }
 }
@@ -269,7 +269,7 @@ PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
     }
   }
   probe->add_seen_thread(thread, action);
-  log(probe, "find_and_add", action);
+  log(name, probe, "find_and_add", action);
   return probe;
 }
 
@@ -293,7 +293,7 @@ void PlaceholderTable::find_and_remove(Symbol* name, ClassLoaderData* loader_dat
   assert_locked_or_safepoint(SystemDictionary_lock);
   PlaceholderEntry* probe = get_entry(name, loader_data);
   if (probe != NULL) {
-    log(probe, "find_and_remove", action);
+    log(name, probe, "find_and_remove", action);
     probe->remove_seen_thread(thread, action);
     // If no other threads using this entry, and this thread is not using this entry for other states
     if ((probe->superThreadQ() == NULL) && (probe->loadInstanceThreadQ() == NULL)

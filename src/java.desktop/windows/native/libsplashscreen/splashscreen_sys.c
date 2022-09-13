@@ -442,7 +442,7 @@ SplashInitPlatform(Splash * splash)
     splash->isLayered = FALSE;
     hdc = GetDC(NULL);
     paletteMode = (GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) != 0;
-    if (UpdateLayeredWindow && !paletteMode) {
+    if (!paletteMode) {
         splash->isLayered = TRUE;
     }
     splash->byteAlignment = 4;
