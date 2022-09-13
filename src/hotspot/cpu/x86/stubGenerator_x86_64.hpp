@@ -337,13 +337,6 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_key_shuffle_mask();
 
-  address generate_counter_shuffle_mask();
-
-  // This mask is used for incrementing counter value(linc0, linc4, etc.)
-  address generate_counter_mask_addr();
-
-  address generate_ghash_polynomial512_addr();
-
   void roundDec(XMMRegister xmm_reg);
   void roundDeclast(XMMRegister xmm_reg);
   void roundEnc(XMMRegister key, int rnum);
@@ -351,17 +344,19 @@ class StubGenerator: public StubCodeGenerator {
   void roundDec(XMMRegister key, int rnum);
   void lastroundDec(XMMRegister key, int rnum);
   void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
-  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl);
+  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl, Register rscratch);
   void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
                                   bool final_reduction, int index, XMMRegister counter_inc_mask);
   // Load key and shuffle operation
-  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg);
+  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
+  void ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
 
   // Utility routine for loading a 128-bit key word in little endian format
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg);
+  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
+  void load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
 
   // Utility routine for increase 128bit counter (iv in CTR mode)
   void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block);
@@ -376,17 +371,15 @@ class StubGenerator: public StubCodeGenerator {
   void schoolbookAAD(int i, Register subkeyH, XMMRegister data, XMMRegister tmp0,
                      XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3);
   void gfmul(XMMRegister tmp0, XMMRegister t);
-  void generateHtbl_one_block(Register htbl);
+  void generateHtbl_one_block(Register htbl, Register rscratch);
   void generateHtbl_eight_blocks(Register htbl);
   void avx_ghash(Register state, Register htbl, Register data, Register blocks);
 
-  address generate_ghash_polynomial_addr();
-
-  address generate_ghash_shufflemask_addr();
-
-  address generate_ghash_long_swap_mask(); // byte swap x86 long
-
-  address generate_ghash_byte_swap_mask(); // byte swap x86 byte array
+  // Used by GHASH and AES stubs.
+  address ghash_polynomial_addr();
+  address ghash_shufflemask_addr();
+  address ghash_long_swap_mask_addr(); // byte swap x86 long
+  address ghash_byte_swap_mask_addr(); // byte swap x86 byte array
 
   // Single and multi-block ghash operations
   address generate_ghash_processBlocks();
@@ -394,6 +387,8 @@ class StubGenerator: public StubCodeGenerator {
   // Ghash single and multi block operations using AVX instructions
   address generate_avx_ghash_processBlocks();
 
+
+  // BASE64 stubs
 
   address base64_shuffle_addr();
   address base64_avx2_shuffle_addr();
