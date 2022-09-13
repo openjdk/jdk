@@ -67,7 +67,7 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _ref_lock(),
     _ref_count(1),
     _done(false),
-    _relocated_remembered_fields_state(0),
+    _relocated_remembered_fields_state(ZPublishState::none),
     _relocated_remembered_fields_array(),
     _relocated_remembered_fields_publish_young_seqnum(0),
     _in_place(false),
@@ -256,27 +256,27 @@ inline void ZForwarding::relocated_remembered_fields_register(volatile zpointer*
   // Invariant: Page is being retained
   assert(ZGeneration::young()->is_phase_mark(), "Only called when");
 
-  const int res = Atomic::load(&_relocated_remembered_fields_state);
+  const ZPublishState res = Atomic::load(&_relocated_remembered_fields_state);
 
-  // 0: Gather remembered fields
-  // 1: Have already published fields - not possible since they haven't been
-  //    collected yet
-  // 2: YC rejected fields collected by the OC
-  // 3: YC has marked that there's no more concurrent scanning of relocated
-  //    fields - not possible since this code is still relocating objects
+  // none:      Gather remembered fields
+  // published: Have already published fields - not possible since they haven't been
+  //            collected yet
+  // reject:    YC rejected fields collected by the OC
+  // accept:    YC has marked that there's no more concurrent scanning of relocated
+  //            fields - not possible since this code is still relocating objects
 
-  if (res == 0) {
+  if (res == ZPublishState::none) {
     _relocated_remembered_fields_array.push(p);
     return;
   }
 
-  assert(res == 2, "Unexpected value");
+  assert(res == ZPublishState::reject, "Unexpected value");
 }
 
 // Returns true iff the page is being (or about to be) relocated by the OC
 // while the YC gathered the remembered fields of the "from" page.
 inline bool ZForwarding::relocated_remembered_fields_is_concurrently_scanned() const {
-  return Atomic::load(&_relocated_remembered_fields_state) == 2;
+  return Atomic::load(&_relocated_remembered_fields_state) == ZPublishState::reject;
 }
 
 template <typename Function>
@@ -284,14 +284,14 @@ inline void ZForwarding::relocated_remembered_fields_apply_to_published(Function
   // Invariant: Page is not being retained
   assert(ZGeneration::young()->is_phase_mark(), "Only called when");
 
-  const int res = Atomic::load_acquire(&_relocated_remembered_fields_state);
+  const ZPublishState res = Atomic::load_acquire(&_relocated_remembered_fields_state);
 
-  // 0: Nothing published - page had already been relocated before YC started
-  // 1: OC relocated and published relocated remembered fields
-  // 2: A previous YC concurrently scanned relocated remembered fields of the "from" page
-  // 3: A previous YC marked that it didn't do (2)
+  // none:      Nothing published - page had already been relocated before YC started
+  // published: OC relocated and published relocated remembered fields
+  // reject:    A previous YC concurrently scanned relocated remembered fields of the "from" page
+  // accept:    A previous YC marked that it didn't do (reject)
 
-  if (res == 1) {
+  if (res == ZPublishState::published) {
     log_debug(gc, remset)("Forwarding remset accept          : " PTR_FORMAT " " PTR_FORMAT " (" PTR_FORMAT ", %s)",
         untype(start()), untype(end()), p2i(this), Thread::current()->name());
 
@@ -311,15 +311,15 @@ inline void ZForwarding::relocated_remembered_fields_apply_to_published(Function
     // The page was relocated concurrently with the current young generation
     // collection. Mark that it is unsafe (and unnecessary) to call scan_page
     // on the page in the page table.
-    assert(res != 3, "Unexpected");
-    Atomic::store(&_relocated_remembered_fields_state, 2);
+    assert(res != ZPublishState::accept, "Unexpected");
+    Atomic::store(&_relocated_remembered_fields_state, ZPublishState::reject);
   } else {
     log_debug(gc, remset)("scan_forwarding failed retain safe " PTR_FORMAT, untype(start()));
     // Guaranteed that the page was fully relocated and removed from page table.
     // Because of this we can signal to scan_page that any page found in page table
     // of the same slot as the current forwarding is a page that is safe to scan,
     // and in fact must be scanned.
-    Atomic::store(&_relocated_remembered_fields_state, 3);
+    Atomic::store(&_relocated_remembered_fields_state, ZPublishState::accept);
   }
 }
 

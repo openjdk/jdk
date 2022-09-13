@@ -44,6 +44,13 @@ class ZForwarding {
   friend class VMStructs;
   friend class ZForwardingTest;
 
+  enum class ZPublishState : int8_t {
+    none,      // No publishing done yet
+    published, // OC published remset field info, which YC will reject or accept
+    reject,    // YC remset scanning accepted OC published remset field info
+    accept     // YC remset scanning rejected OC published remset field info
+  };
+
 private:
   typedef ZAttachedArray<ZForwarding, ZForwardingEntry> AttachedArray;
   typedef ZArray<volatile zpointer*> PointerArray;
@@ -60,7 +67,7 @@ private:
   volatile bool          _done;
 
   // Relocated remembered set fields support
-  int                    _relocated_remembered_fields_state;
+  volatile ZPublishState _relocated_remembered_fields_state;
   PointerArray           _relocated_remembered_fields_array;
   uint32_t               _relocated_remembered_fields_publish_young_seqnum;
 
