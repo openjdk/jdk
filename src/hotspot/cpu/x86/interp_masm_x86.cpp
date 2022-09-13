@@ -1279,10 +1279,10 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     save_bcp(); // Save in case of exception
 
 #ifdef _LP64
-  const Register thread = r15_thread;
+    const Register thread = r15_thread;
 #else
-  const Register thread = header_reg;
-  get_thread(rax);
+    const Register thread = header_reg;
+    get_thread(thread);
 #endif
     cmpptr(obj_reg, Address(thread, Thread::lock_stack_current_offset()));
     jcc(Assembler::notEqual, slow_case);
