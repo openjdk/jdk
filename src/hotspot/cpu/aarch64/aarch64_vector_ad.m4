@@ -871,14 +871,45 @@ UNARY_OP_PREDICATE_WITH_SIZE(vabsD, AbsVD, sve_fabs, D)
 
 // vector fabs diff
 
-instruct vfabd(vReg dst, vReg src1, vReg src2) %{
-  predicate(Matcher::vector_length_in_bytes(n) <= 16);
+instruct vfabd_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
+            !n->as_Vector()->is_predicated_vector());
   match(Set dst (AbsVF (SubVF src1 src2)));
   match(Set dst (AbsVD (SubVD src1 src2)));
-  format %{ "vfabd $dst, $src1, $src2\t# vector <= 128 bits" %}
+  format %{ "vfabd_neon $dst, $src1, $src2" %}
   ins_encode %{
     __ fabd($dst$$FloatRegister, get_arrangement(this),
             $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vfabd_sve(vReg dst_src1, vReg src2) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
+            !n->as_Vector()->is_predicated_vector());
+  match(Set dst_src1 (AbsVF (SubVF dst_src1 src2)));
+  match(Set dst_src1 (AbsVD (SubVD dst_src1 src2)));
+  format %{ "vfabd_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_fabd($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector fabs diff - predicated
+
+instruct vfabd_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (AbsVF (SubVF (Binary dst_src1 src2) pg) pg));
+  match(Set dst_src1 (AbsVD (SubVD (Binary dst_src1 src2) pg) pg));
+  format %{ "vfabd_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_fabd($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
