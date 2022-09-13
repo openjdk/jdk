@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -1350,19 +1351,34 @@ public class CSS implements Serializable {
       return colorstr;
     }
 
-     /**
-      * Convert a "#FFFFFF" hex string to a Color.
-      * If the color specification is bad, an attempt
-      * will be made to fix it up.
-      */
-    static final Color hexToColor(String value) {
-        String digits;
-        int n = value.length();
-        if (value.startsWith("#")) {
-            digits = value.substring(1, Math.min(value.length(), 7));
-        } else {
-            digits = value;
+    private static Pattern hex   = Pattern.compile("\\p{XDigit}+");
+
+    /**
+     * Convert a "#FFF", "#FFFF", "#FFFFFF" or "#FFFFFFFF" hex string to a Color.
+     * If the color specification is bad, an attempt
+     * will be made to fix it up.
+     */
+    static final Color hexToColor(String digits) {
+        int n = digits.length();
+        if (digits.startsWith("#")) {
+            digits = digits.substring(1, Math.min(n, 9));
+            n--;
         }
+        // CSS level 4
+        // - defines color hex code as #[2 digits Red][2 digits Green][2 digits Blue][2 digits Alpha]. With digit 0 ... f.
+        // - allows, webpage passes 3, 4, 6 or 8 digit color code.
+        //   - 3 digits #[R][G][B] ........ represents #[RR][GG][BB]FF
+        //   - 4 digits #[R][G][B][A] ..... represents #[RR][GG][BB][AA]
+        //   - 6 digits #[RR][GG][BB] ..... represents #[RR][GG][BB]FF
+        //   - 8 digits #[RR][GG][BB][AA] . represents #[RR][GG][BB][AA]
+        //
+        // Becareful ! In java.awt.Color hex #[2 digits Alpha][2 digits Red][2 digits Green][2 digits Blue]
+        // Since this method is defined in CSS.java, it must only take in charge CSS Level 4 color format.
+        //
+        // According notes below the current OpenJDK implementation is
+        // - 3 digits #[R][G][B]    represents #[RR][GG][BB]FF
+        // - 6 digits #[R][G][B]    represents #[RR][GG][BB]FF
+        //
         // Some webpage passes 3 digit color code as in #fff which is
         // decoded as #000FFF resulting in blue background.
         // As per https://www.w3.org/TR/CSS1/#color-units,
@@ -1370,21 +1386,30 @@ public class CSS implements Serializable {
         // (#rrggbb) by replicating digits, not by adding zeros.
         // This makes sure that white (#ffffff) can be specified with the short notation
         // (#fff) and removes any dependencies on the color depth of the display.
-        if (digits.length() == 3) {
+        if (n == 3 && hex.matcher(digits).matches()) {
             final String r = digits.substring(0, 1);
             final String g = digits.substring(1, 2);
             final String b = digits.substring(2, 3);
-            digits = String.format("%s%s%s%s%s%s", r, r, g, g, b, b);
+            digits = String.format("%s%s%s%s%s%sff", r, r, g, g, b, b);
+        } else if (n==4 && hex.matcher(digits).matches()) {
+            final String r = digits.substring(0, 1);
+            final String g = digits.substring(1, 2);
+            final String b = digits.substring(2, 3);
+            final String a = digits.substring(3, 4);
+            digits = String.format("%s%s%s%s%s%s%s%s", r, r, g, g, b, b, a, a);
+        } else if (n == 6 && hex.matcher(digits).matches()) {
+            digits = String.format("%sff", digits);
+        } else if (n != 8 || !hex.matcher(digits).matches()) {
+            return null;
         }
-        String hstr = "0x" + digits;
-        Color c;
         try {
-            c = Color.decode(hstr);
+            Integer intValue = Integer.parseUnsignedInt(digits, 16);
+            int l = intValue.intValue();
+            return new Color((l >> 24) & 0xFF,(l >> 16) & 0xFF, (l >> 8) & 0xFF, l & 0xFF);
         } catch (NumberFormatException nfe) {
-            c = null;
+            return null;
         }
-         return c;
-     }
+    }
 
     /**
      * Convert a color string such as "RED" or "#NNNNNN" or "rgb(r, g, b)"
