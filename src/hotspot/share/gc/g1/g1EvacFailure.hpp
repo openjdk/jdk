@@ -52,8 +52,7 @@ class G1RemoveSelfForwardsTask : public WorkerTask {
     return _chunk_bitmap.par_set_bit(chunk_idx);
   }
 
-  class RegionGarbageWordsCache;
-  void process_chunk(uint worker_id, uint chunk_idx, RegionGarbageWordsCache* cache);
+  void process_chunk(uint worker_id, uint chunk_idx);
 
 public:
   explicit G1RemoveSelfForwardsTask(G1EvacFailureRegions* evac_failure_regions);

@@ -105,19 +105,20 @@ public:
   RestoreRetainedRegionsTask(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
     _task(evac_failure_regions),
-    _evac_failure_regions(evac_failure_regions) { }
+    _evac_failure_regions(evac_failure_regions) {
+
+    _task.initialize();
+  }
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
-    return _evac_failure_regions->num_regions_failed_evacuation() * G1PerRetainedRegionThreads;
+
+    return ((double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker) *
+      _evac_failure_regions->num_regions_failed_evacuation();
   }
 
   void do_work(uint worker_id) override {
     _task.work(worker_id);
-  }
-
-  void initialize() {
-    _task.initialize();
   }
 };
 
@@ -136,8 +137,6 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   if (evacuation_failed) {
     RestoreRetainedRegionsTask* restore_retained_regions_task = new RestoreRetainedRegionsTask(evac_failure_regions);
     add_parallel_task(restore_retained_regions_task);
-
-    restore_retained_regions_task->initialize();
   }
 }
 

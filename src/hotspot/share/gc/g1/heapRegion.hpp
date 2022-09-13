@@ -504,13 +504,13 @@ public:
   // Clear the card table corresponding to this region.
   void clear_cardtable();
 
-  // Notify the region that we are about to start processing
-  // self-forwarded objects during evac failure handling.
-  void note_self_forwarding_removal_start(bool during_concurrent_start);
+  // Notify the region that an evacuation failure occurred for an object within this
+  // region.
+  void note_evacuation_failure(bool during_concurrent_start);
 
   // Notify the region that we have partially finished processing self-forwarded
   // objects during evacuation failure handling.
-  void note_self_forwarding_removal_end_par(size_t garbage_bytes);
+  void note_self_forward_chunk_done(size_t garbage_bytes);
 
   uint index_in_opt_cset() const {
     assert(has_index_in_opt_cset(), "Opt cset index not set.");

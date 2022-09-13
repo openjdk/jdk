@@ -272,7 +272,7 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
-void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start) {
+void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
   // We always scrub the region to make sure the entire region is
   // parsable after the self-forwarding pointer removal.
   reset_parsable_bottom();
@@ -291,7 +291,7 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end_par(size_t garbage_bytes) {
+void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
   Atomic::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
 }
 

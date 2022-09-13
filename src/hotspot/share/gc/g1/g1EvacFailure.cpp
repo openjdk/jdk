@@ -100,56 +100,18 @@ static size_t zap_dead_objects(HeapRegion* hr, HeapWord* start, HeapWord* end) {
   return pointer_delta(end, start);
 }
 
+static void update_garbage_words_in_hr(HeapRegion* hr, size_t garbage_words) {
+  if (garbage_words != 0) {
+    hr->note_self_forward_chunk_done(garbage_words * HeapWordSize);
+  }
+}
+
 static void prefetch_obj(HeapWord* obj_addr) {
   Prefetch::write(obj_addr, PrefetchScanIntervalInBytes);
 }
 
-// Caches the currently accumulated number of garbage words found in this heap region.
-// Avoids direct (frequent) atomic operations on the HeapRegion's garbage counter.
-class G1RemoveSelfForwardsTask::RegionGarbageWordsCache {
-  G1CollectedHeap* _g1h;
-  const uint _uninitialized_idx;
-  uint _region_idx;
-  size_t _garbage_words;
-
-  void note_self_forwarding_removal_end_par() {
-    _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_garbage_words * HeapWordSize);
-  }
-
-  void flush() {
-    if (_region_idx != _uninitialized_idx) {
-      note_self_forwarding_removal_end_par();
-    }
-  }
-
-public:
-  RegionGarbageWordsCache(G1CollectedHeap* g1h):
-    _g1h(g1h),
-    _uninitialized_idx(_g1h->max_regions()),
-    _region_idx(_uninitialized_idx),
-    _garbage_words(0) { }
-
-  ~RegionGarbageWordsCache() {
-    flush();
-  }
-
-  void add(uint region_idx, size_t garbage_words) {
-    if (_region_idx == _uninitialized_idx) {
-      _region_idx = region_idx;
-      _garbage_words = garbage_words;
-    } else if (_region_idx == region_idx) {
-      _garbage_words += garbage_words;
-    } else {
-      note_self_forwarding_removal_end_par();
-      _region_idx = region_idx;
-      _garbage_words = garbage_words;
-    }
-  }
-};
-
 void G1RemoveSelfForwardsTask::process_chunk(uint worker_id,
-                                                     uint chunk_idx,
-                                                     RegionGarbageWordsCache* cache) {
+                                             uint chunk_idx) {
   PhaseTimesStat stat(_g1h->phase_times(), worker_id);
 
   G1CMBitMap* bitmap = _cm->mark_bitmap();
@@ -177,7 +139,7 @@ void G1RemoveSelfForwardsTask::process_chunk(uint worker_id,
 
   if (first_marked_addr >= chunk_end) {
     stat.register_empty_chunk();
-    cache->add(region_idx, garbage_words);
+    update_garbage_words_in_hr(hr, garbage_words);
     return;
   }
 
@@ -220,7 +182,8 @@ void G1RemoveSelfForwardsTask::process_chunk(uint worker_id,
   assert(marked_words > 0 && num_marked_objs > 0, "inv");
 
   stat.register_objects_count_and_size(num_marked_objs, marked_words);
-  cache->add(region_idx, garbage_words);
+
+  update_garbage_words_in_hr(hr, garbage_words);
 }
 
 G1RemoveSelfForwardsTask::G1RemoveSelfForwardsTask(G1EvacFailureRegions* evac_failure_regions) :
@@ -235,12 +198,10 @@ void G1RemoveSelfForwardsTask::work(uint worker_id) {
   const uint total_chunks = _num_chunks_per_region * _num_evac_fail_regions;
   const uint start_chunk_idx = worker_id * total_chunks / total_workers;
 
-  RegionGarbageWordsCache region_marked_words_cache(_g1h);
-
   for (uint i = 0; i < total_chunks; i++) {
     const uint chunk_idx = (start_chunk_idx + i) % total_chunks;
     if (claim_chunk(chunk_idx)) {
-      process_chunk(worker_id, chunk_idx, &region_marked_words_cache);
+      process_chunk(worker_id, chunk_idx);
     }
   }
 }
