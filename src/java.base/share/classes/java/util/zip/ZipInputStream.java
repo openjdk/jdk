@@ -64,7 +64,7 @@ import static java.util.zip.ZipUtils.*;
  * The LOC header contains metadata about the Zip file entry. {@code ZipInputStream}
  * does not read the Central directory (CEN) header for the entry and therefore
  * will not have access to its metadata such as the external file attributes.
- * {@linkplain ZipFile}, may be used when the information stored within
+ * {@linkplain ZipFile} may be used when the information stored within
  * the CEN header is required.
  *
  * @author      David Connelly
