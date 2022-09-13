@@ -243,6 +243,7 @@ public class TestMetaspacePerfCounters {
         PerfCounterSnapshot snap2 = new PerfCounterSnapshot();
 
         final int MaxAttempts = 10;
+
         int attempts = 0;
         do {
             snap1.get(ns);
@@ -250,7 +251,7 @@ public class TestMetaspacePerfCounters {
             snap2.get(ns);
         } while ((!snap1.equals(snap2)) && (++attempts < MaxAttempts));
 
-        if (attempts == 10) {
+        if (attempts == MaxAttempts) {
             throw new Exception("Failed to get stable reading of metaspace performance counters after " + MaxAttempts + " tries");
         }
 
