@@ -108,7 +108,7 @@ inline intptr_t* stackChunkOopDesc::sp_address()  const { return start_address()
 inline int stackChunkOopDesc::to_offset(intptr_t* p) const {
   assert(is_in_chunk(p)
     || (p >= start_address() && (p - start_address()) <= stack_size() + frame::metadata_words),
-    "p: " INTPTR_FORMAT " start: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
+    "p: " PTR_FORMAT " start: " PTR_FORMAT " end: " PTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
   return p - start_address();
 }
 
@@ -311,9 +311,9 @@ inline intptr_t* stackChunkOopDesc::interpreter_frame_local_at(const frame& fr, 
 }
 
 inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t* to, int size) {
-  log_develop_trace(continuations)("Copying from v: " INTPTR_FORMAT " - " INTPTR_FORMAT " (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying from v: " PTR_FORMAT " - " PTR_FORMAT " (%d words, %d bytes)",
     p2i(from), p2i(from + size), size, size << LogBytesPerWord);
-  log_develop_trace(continuations)("Copying to h: " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying to h: " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
     p2i(to), to - start_address(), relative_base() - to, p2i(to + size), to + size - start_address(),
     relative_base() - (to + size), size, size << LogBytesPerWord);
 
@@ -330,10 +330,10 @@ inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t
 }
 
 inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t* to, int size) {
-  log_develop_trace(continuations)("Copying from h: " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying from h: " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
     p2i(from), from - start_address(), relative_base() - from, p2i(from + size), from + size - start_address(),
     relative_base() - (from + size), size, size << LogBytesPerWord);
-  log_develop_trace(continuations)("Copying to v: " INTPTR_FORMAT " - " INTPTR_FORMAT " (%d words, %d bytes)", p2i(to),
+  log_develop_trace(continuations)("Copying to v: " PTR_FORMAT " - " PTR_FORMAT " (%d words, %d bytes)", p2i(to),
     p2i(to + size), size, size << LogBytesPerWord);
 
   assert(from >= start_address(), "");
