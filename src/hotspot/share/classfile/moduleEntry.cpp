@@ -450,15 +450,15 @@ void ModuleEntry::init_as_archived_entry() {
   _loader_data = NULL;  // re-init at runtime
   _shared_path_index = FileMapInfo::get_module_shared_path_index(_location);
   if (name() != NULL) {
-    _name = ArchiveBuilder::get_relocated_symbol(_name);
+    _name = ArchiveBuilder::get_buffered_symbol(_name);
     ArchivePtrMarker::mark_pointer((address*)&_name);
   }
   _reads = (GrowableArray<ModuleEntry*>*)archived_reads;
   if (_version != NULL) {
-    _version = ArchiveBuilder::get_relocated_symbol(_version);
+    _version = ArchiveBuilder::get_buffered_symbol(_version);
   }
   if (_location != NULL) {
-    _location = ArchiveBuilder::get_relocated_symbol(_location);
+    _location = ArchiveBuilder::get_buffered_symbol(_location);
   }
   JFR_ONLY(set_trace_id(0));// re-init at runtime
 

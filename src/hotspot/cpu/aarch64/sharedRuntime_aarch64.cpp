@@ -45,6 +45,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1052,8 +1053,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     __ cbnz(c_rarg2, call_thaw);
 
-    address mark = __ pc();
-    __ trampoline_call(resolve);
+    const address tr_call = __ trampoline_call(resolve);
 
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
@@ -1061,7 +1061,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ b(exit);
 
     CodeBuffer* cbuf = masm->code_section()->outer();
-    CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+    CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
   }
 
   // compiled entry
@@ -1077,8 +1077,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ cbnz(c_rarg2, call_thaw);
 
-  address mark = __ pc();
-  __ trampoline_call(resolve);
+  const address tr_call = __ trampoline_call(resolve);
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
@@ -1120,7 +1119,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   }
 
   CodeBuffer* cbuf = masm->code_section()->outer();
-  CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+  CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
 }
 
 static void gen_continuation_yield(MacroAssembler* masm,
@@ -1786,7 +1785,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ dmb(Assembler::ISH);
+  if (!UseSystemMemoryBarrier) {
+    __ dmb(Assembler::ISH);
+  }
 
   __ verify_sve_vector_length();
 
@@ -1884,7 +1885,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Unbox oop result, e.g. JNIHandles::resolve result.
   if (is_reference_type(ret_type)) {
-    __ resolve_jobject(r0, rthread, rscratch2);
+    __ resolve_jobject(r0, r1, r2);
   }
 
   if (CheckJNICalls) {
