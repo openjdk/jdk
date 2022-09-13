@@ -47,11 +47,6 @@ class AsyncLogWriter::AsyncLogLocker : public StackObj {
 const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
                                       LogDecorators::None);
 
-// Reserve space for a flush token, so 'push_flush_token' always succeeds.
-AsyncLogWriter::Buffer::Buffer(size_t capacity) : _pos(0), _capacity(capacity) {
-  _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
-}
-
 bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
   const size_t sz = Message::calc_size(strlen(msg));
   const bool is_token = output == nullptr;
@@ -235,10 +230,22 @@ void AsyncLogWriter::flush() {
   }
 }
 
-size_t AsyncLogWriter::throttle_buffers(size_t newsize) {
+AsyncLogWriter::BufferUpdater::BufferUpdater(size_t newsize) {
   AsyncLogLocker locker;
+  auto p = AsyncLogWriter::_instance;
 
-  size_t oldsize = _buffer->set_capacity(newsize);
-  _buffer_staging->set_capacity(newsize);
-  return oldsize;
+  _buf1 = p->_buffer;
+  _buf2 = p->_buffer_staging;
+  p->_buffer = new Buffer(newsize);
+  p->_buffer_staging = new Buffer(newsize);
+}
+
+AsyncLogWriter::BufferUpdater::~BufferUpdater() {
+  AsyncLogLocker locker;
+  auto p = AsyncLogWriter::_instance;
+
+  delete p->_buffer;
+  delete p->_buffer_staging;
+  p->_buffer = _buf1;
+  p->_buffer_staging = _buf2;
 }

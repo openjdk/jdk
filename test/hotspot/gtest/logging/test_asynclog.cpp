@@ -75,7 +75,7 @@ LOG_LEVEL_LIST
       const size_t sz = 2000;
 
       // shrink async buffer.
-      size_t saved = writer->throttle_buffers(1024/*bytes*/);
+      AsyncLogWriter::BufferUpdater saver(1024);
       LogMessage(logging) lm;
 
       // write more messages than its capacity in burst
@@ -83,7 +83,6 @@ LOG_LEVEL_LIST
         lm.debug("a lot of log...");
       }
       lm.flush();
-      writer->throttle_buffers(saved);
     }
   }
 

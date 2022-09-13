@@ -107,20 +107,20 @@ class AsyncLogWriter : public NonJavaThread {
   class Buffer : public CHeapObj<mtLogging> {
     char* _buf;
     size_t _pos;
-    size_t _capacity;
+    const size_t _capacity;
 
    public:
-    Buffer(size_t capacity);
+    Buffer(size_t capacity) :  _pos(0), _capacity(capacity) {
+      _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
+      assert(capacity >= Message::calc_size(0), "capcity must be great a token size");
+    }
+
+    ~Buffer() {
+      FREE_C_HEAP_ARRAY(char, _buf);
+    }
 
     void push_flush_token();
     bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
-
-    // for testing-only!
-    size_t set_capacity(size_t value) {
-      size_t old = _capacity;
-      _capacity = value;
-      return old;
-    }
 
     void reset() { _pos = 0; }
 
@@ -179,7 +179,14 @@ class AsyncLogWriter : public NonJavaThread {
   }
 
   // for testing-only
-  size_t throttle_buffers(size_t newsize);
+  class BufferUpdater {
+    Buffer* _buf1;
+    Buffer* _buf2;
+
+   public:
+    BufferUpdater(size_t newsize);
+    ~BufferUpdater();
+  };
 
  public:
   void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
