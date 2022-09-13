@@ -1529,8 +1529,9 @@ public class JmodTask {
                 }
                 options.compressLevel = getLastElement(opts.valuesOf(compress));
             } else {
-                // Default to fast compression.
-                options.compressLevel = Deflater.DEFAULT_COMPRESSION;
+                // Default to the default from zlib. Hard-coded here to avoid accidental
+                // compression level change if zlib ever changes the default.
+                options.compressLevel = 6;
             }
 
             if (options.mode.equals(Mode.HASH)) {
