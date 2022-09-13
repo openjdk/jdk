@@ -30,12 +30,12 @@ import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
 import javax.swing.text.View;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Insets;
 import java.awt.Graphics;
 import java.awt.FontMetrics;
-import java.awt.Color;
 import java.beans.PropertyChangeEvent;
 
 /**
@@ -47,6 +47,7 @@ import java.beans.PropertyChangeEvent;
  */
 public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     private SynthStyle style;
+    private Color fgColor;
 
     /**
      *
@@ -70,6 +71,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     @Override
     protected void installDefaults(JLabel c) {
         updateStyle(c);
+        fgColor =  UIManager.getColor("Label.foreground");
     }
 
     void updateStyle(JLabel c) {
@@ -215,9 +217,8 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
         } else {
             g.setColor(context.getStyle().getColor(context,
                     ColorType.TEXT_FOREGROUND));
-            Color col = UIManager.getColor("Label.foreground");
-            if (col != null) {
-                label.setForeground(col);
+            if (fgColor != null) {
+                label.setForeground(fgColor);
             }
         }
 

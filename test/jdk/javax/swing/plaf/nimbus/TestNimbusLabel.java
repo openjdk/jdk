@@ -25,7 +25,7 @@
  * @bug 7175396
  * @key headful
  * @summary  Verifies the text on label is painted red for Nimbus LaF.
- * @run main TestNimbusLabel
+ * @run main/othervm -Dsun.java2d.uiScale=1.0 TestNimbusLabel
  */
 
 import java.io.File;
@@ -117,3 +117,4 @@ public class TestNimbusLabel
         }
     }
 }
+
