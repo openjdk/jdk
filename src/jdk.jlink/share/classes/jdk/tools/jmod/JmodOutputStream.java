@@ -63,9 +63,9 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
 
     private final ZipOutputStream zos;
     private final LocalDateTime date;
-    private JmodOutputStream(OutputStream out, LocalDateTime date, int compLevel) {
+    private JmodOutputStream(OutputStream out, LocalDateTime date, int compressLevel) {
         this.zos = new ZipOutputStream(out);
-        this.zos.setLevel(compLevel);
+        this.zos.setLevel(compressLevel);
         this.date = date;
         try {
             JmodFile.writeMagicNumber(out);

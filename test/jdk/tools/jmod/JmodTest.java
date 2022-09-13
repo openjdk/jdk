@@ -804,6 +804,17 @@ public class JmodTest {
 
         jmod("create",
              "--class-path", cp,
+             "--compress", "zip-",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
              "--compress", "test",
              jmod.toString())
             .assertFailure()
