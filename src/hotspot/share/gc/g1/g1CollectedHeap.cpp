@@ -3301,6 +3301,8 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
 }
 
 void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+  assert(!_cm->is_marked_in_bitmap(obj), "must be");
+
   _cm->raw_mark_in_bitmap(obj);
   if (collector_state()->in_concurrent_start_gc()) {
     _cm->add_to_liveness(worker_id, obj, obj_size);

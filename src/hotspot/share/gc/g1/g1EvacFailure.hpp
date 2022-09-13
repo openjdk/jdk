@@ -42,8 +42,6 @@ class G1RemoveSelfForwardsTask : public WorkerTask {
   G1EvacFailureRegions* _evac_failure_regions;
   CHeapBitMap _chunk_bitmap;
 
-  // Initialized outside of the constructor because the number of workers is unknown
-  // at that time
   uint _num_chunks_per_region;
   uint _num_evac_fail_regions;
   size_t _chunk_size;

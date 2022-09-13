@@ -113,8 +113,8 @@ public:
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
 
-    return ((double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker) *
-      _evac_failure_regions->num_regions_failed_evacuation();
+    double chunks_per_thread = (double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker;
+    return chunks_per_thread * _evac_failure_regions->num_regions_failed_evacuation();
   }
 
   void do_work(uint worker_id) override {
@@ -135,8 +135,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
   if (evacuation_failed) {
-    RestoreRetainedRegionsTask* restore_retained_regions_task = new RestoreRetainedRegionsTask(evac_failure_regions);
-    add_parallel_task(restore_retained_regions_task);
+    add_parallel_task(new RestoreRetainedRegionsTask(evac_failure_regions));
   }
 }
 
