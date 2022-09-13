@@ -34,7 +34,6 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/elfFuncDescTable.hpp"
@@ -259,7 +258,6 @@ NullDecoder::decoder_status ElfFile::load_tables() {
 int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
   assert(name != NULL, "No section name");
   size_t len = strlen(name) + 1;
-  ResourceMark rm;
   char* buf = (char*)os::malloc(len, mtInternal);
   if (buf == NULL) {
     return -1;
