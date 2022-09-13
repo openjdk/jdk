@@ -873,8 +873,7 @@ UNARY_OP_PREDICATE_WITH_SIZE(vabsD, AbsVD, sve_fabs, D)
 // vector fabs diff
 
 instruct vfabd_neon(vReg dst, vReg src1, vReg src2) %{
-  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
   match(Set dst (AbsVF (SubVF src1 src2)));
   match(Set dst (AbsVD (SubVD src1 src2)));
   format %{ "vfabd_neon $dst, $src1, $src2" %}
@@ -886,8 +885,7 @@ instruct vfabd_neon(vReg dst, vReg src1, vReg src2) %{
 %}
 
 instruct vfabd_sve(vReg dst_src1, vReg src2) %{
-  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
   match(Set dst_src1 (AbsVF (SubVF dst_src1 src2)));
   match(Set dst_src1 (AbsVD (SubVD dst_src1 src2)));
   format %{ "vfabd_sve $dst_src1, $dst_src1, $src2" %}
