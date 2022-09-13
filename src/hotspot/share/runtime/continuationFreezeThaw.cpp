@@ -149,7 +149,7 @@ Address |   |                            |    |   Caller is still in the chunk.
 
 static const bool TEST_THAW_ONE_CHUNK_FRAME = false; // force thawing frames one-at-a-time for testing
 
-#define CONT_JFR true // emit low-level JFR events that count slow/fast path for continuation peformance debugging only
+#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation performance debugging only
 #if CONT_JFR
   #define CONT_JFR_ONLY(code) code
 #else
