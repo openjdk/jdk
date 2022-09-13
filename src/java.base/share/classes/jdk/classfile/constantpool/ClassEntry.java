@@ -25,8 +25,14 @@
 package jdk.classfile.constantpool;
 
 import java.lang.constant.ClassDesc;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import jdk.classfile.impl.ConcreteEntry;
+import jdk.classfile.impl.TemporaryConstantPool;
+import jdk.classfile.impl.Util;
+
 
 /**
  * Models a {@code CONSTANT_Class_info} constant in the constant pool of a
@@ -50,4 +56,72 @@ sealed public interface ClassEntry
      * {@return the class name, as a symbolic descriptor}
      */
     ClassDesc asSymbol();
+
+    /**
+     * Return a List composed by appending the additions to the base list.
+     * @param base The base elements for the list, must not include null
+     * @param additions The ClassEntrys to add to the list, must not include null
+     * @return the combined List
+     */
+    static List<ClassEntry> adding(List<ClassEntry> base, List<ClassEntry> additions) {
+        ArrayList<ClassEntry> members = new ArrayList<>(base);
+        members.addAll(additions);
+        return List.copyOf(members);
+    }
+
+    /**
+     * Return a List composed by appending the additions to the base list.
+     * @param base The base elements for the list, must not include null
+     * @param additions The ClassEntrys to add to the list, must not include null
+     * @return the combined List
+     */
+    static List<ClassEntry> adding(List<ClassEntry> base, ClassEntry... additions) {
+        ArrayList<ClassEntry> members = new ArrayList<>(base);
+        for (ClassEntry e : additions) {
+            members.add(e);
+        }
+        return List.copyOf(members);
+    }
+
+    /**
+     * Return a List composed by appending the additions to the base list.
+     * @param base The base elements for the list, must not include null
+     * @param additions The ClassDescs to add to the list, must not include null
+     * @return the combined List
+     */
+    static List<ClassEntry> addingSymbols(List<ClassEntry> base, List<ClassDesc> additions) {
+        ArrayList<ClassEntry> members = new ArrayList<>(base);
+        members.addAll(Util.entryList(additions));
+        return List.copyOf(members);
+    }
+
+      /**
+     * Return a List composed by appending the additions to the base list.
+     * @param base The base elements for the list, must not include null
+     * @param additions The ClassDescs to add to the list, must not include null
+     * @return the combined List
+     */
+    static List<ClassEntry> addingSymbols(List<ClassEntry> base, ClassDesc...additions) {
+        ArrayList<ClassEntry> members = new ArrayList<>(base);
+        for (ClassDesc e : additions) {
+            members.add(TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(e))));
+        }
+        return List.copyOf(members);
+    }
+
+    /**
+     * Remove duplicate ClassEntry elements from the List.
+     *
+     * @param original The list to deduplicate
+     * @return a List without any duplicate ClassEntry
+     */
+    static List<ClassEntry> deduplicate(List<ClassEntry> original) {
+        ArrayList<ClassEntry> newList = new ArrayList<>(original.size());
+        for (ClassEntry e : original) {
+            if (!newList.contains(e)) {
+                newList.add(e);
+            }
+        }
+        return List.copyOf(newList);
+    }
 }

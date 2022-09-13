@@ -352,6 +352,17 @@ public abstract sealed class ConcreteEntry {
             return toString().subSequence(start, end);
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o instanceof ConcreteUtf8Entry u) {
+                return equalsUtf8(u);
+            } else if (o instanceof Utf8Entry u) {
+                return equalsString(u.stringValue());
+            }
+            return false;
+        }
+
         public boolean equalsUtf8(ConcreteUtf8Entry u) {
             if (hashCode() != u.hashCode()
                 || length() != u.length())
@@ -520,6 +531,14 @@ public abstract sealed class ConcreteEntry {
         public String asInternalName() {
             return ref1.stringValue();
         }
+
+        public boolean equals(Object o) {
+            if (o == this) { return true; }
+            if (o instanceof NamedEntry ne) {
+                return tag == ne.tag() && name().equals(ref1());
+            }
+            return false;
+        }
     }
 
     public static final class ConcreteClassEntry extends NamedEntry implements ClassEntry {
@@ -542,6 +561,17 @@ public abstract sealed class ConcreteEntry {
         public ClassDesc asSymbol() {
             return Util.toClassDesc(asInternalName());
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o instanceof ConcreteClassEntry cce) {
+                return cce.name().equals(this.name());
+            } else if (o instanceof ClassEntry c) {
+                return c.asSymbol().equals(this.asSymbol());
+            }
+            return false;
+        }
     }
 
     public static final class ConcretePackageEntry extends NamedEntry implements PackageEntry {
@@ -559,6 +589,15 @@ public abstract sealed class ConcreteEntry {
         public PackageDesc asSymbol() {
             return PackageDesc.ofInternalName(asInternalName());
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o instanceof PackageEntry p) {
+                return name().equals(p.name());
+            }
+            return false;
+        }
     }
 
     public static final class ConcreteModuleEntry extends NamedEntry implements ModuleEntry {
@@ -575,6 +614,15 @@ public abstract sealed class ConcreteEntry {
         @Override
         public ModuleDesc asSymbol() {
             return ModuleDesc.of(asInternalName());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o instanceof ConcreteModuleEntry m) {
+                return name().equals(m.name());
+            }
+            return false;
         }
     }
 
@@ -598,6 +646,15 @@ public abstract sealed class ConcreteEntry {
         @Override
         public NameAndTypeEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.natEntry(ref1, ref2);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o instanceof ConcreteNameAndTypeEntry nat) {
+                return name().equals(nat.name()) && type().equals(nat.type());
+            }
+            return false;
         }
     }
 
@@ -624,6 +681,17 @@ public abstract sealed class ConcreteEntry {
         public String toString() {
             return tag() + " " + owner().asInternalName() + "." + nameAndType().name().stringValue()
                    + "-" + nameAndType().type().stringValue();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof MemberRefEntry m) {
+                return tag == m.tag()
+                && owner().equals(m.owner())
+                && nameAndType().equals(m.nameAndType());
+            }
+            return false;
         }
     }
 
@@ -746,6 +814,17 @@ public abstract sealed class ConcreteEntry {
             return tag() + " " + bootstrap() + "." + nameAndType().name().stringValue()
                    + "-" + nameAndType().type().stringValue();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof AbstractDynamicConstantPoolEntry d) {
+                return this.tag() == d.tag()
+                && bootstrap().equals(d.bootstrap())
+                && nameAndType.equals(d.nameAndType());
+            }
+            return false;
+        }
     }
 
     public static final class ConcreteInvokeDynamicEntry
@@ -862,6 +941,16 @@ public abstract sealed class ConcreteEntry {
             return tag() + " " + kind() + ":" + ((jdk.classfile.constantpool.MemberRefEntry) reference()).owner().asInternalName() + "." + ((jdk.classfile.constantpool.MemberRefEntry) reference()).nameAndType().name().stringValue()
                    + "-" + ((jdk.classfile.constantpool.MemberRefEntry) reference()).nameAndType().type().stringValue();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ConcreteMethodHandleEntry m) {
+                return kind() == m.kind()
+                && reference.equals(m.reference());
+            }
+            return false;
+        }
     }
 
     public static final class ConcreteMethodTypeEntry
@@ -884,6 +973,15 @@ public abstract sealed class ConcreteEntry {
         @Override
         public MethodTypeEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.methodTypeEntry(ref1);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o instanceof ConcreteMethodTypeEntry m) {
+                return descriptor().equals(m.descriptor());
+            }
+            return false;
         }
     }
 
@@ -919,6 +1017,18 @@ public abstract sealed class ConcreteEntry {
         public String toString() {
             return tag() + " \"" + stringValue() + "\"";
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o instanceof ConcreteStringEntry s) {
+                // check utf8 rather allocating a string
+                return utf8().equals(s.utf8());
+            }
+            return false;
+        }
+
+
     }
 
     static abstract sealed class PrimitiveEntry<T extends ConstantDesc>
@@ -966,6 +1076,15 @@ public abstract sealed class ConcreteEntry {
         public int intValue() {
             return value();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ConcreteIntegerEntry e) {
+                return intValue() == e.intValue();
+            }
+            return false;
+        }
     }
 
     public static final class ConcreteFloatEntry extends PrimitiveEntry<Float>
@@ -990,6 +1109,15 @@ public abstract sealed class ConcreteEntry {
         public float floatValue() {
             return value();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ConcreteFloatEntry e) {
+                return floatValue() == e.floatValue();
+            }
+            return false;
+        }
     }
 
     public static final class ConcreteLongEntry extends PrimitiveEntry<Long> implements LongEntry {
@@ -1013,6 +1141,15 @@ public abstract sealed class ConcreteEntry {
         public long longValue() {
             return value();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ConcreteLongEntry e) {
+                return longValue() == e.longValue();
+            }
+            return false;
+        }
     }
 
     public static final class ConcreteDoubleEntry extends PrimitiveEntry<Double> implements DoubleEntry {
@@ -1035,6 +1172,15 @@ public abstract sealed class ConcreteEntry {
         @Override
         public double doubleValue() {
             return value();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ConcreteDoubleEntry e) {
+                return doubleValue() == e.doubleValue();
+            }
+            return false;
         }
     }
 
