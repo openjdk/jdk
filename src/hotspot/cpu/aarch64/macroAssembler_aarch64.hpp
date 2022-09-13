@@ -830,7 +830,7 @@ public:
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
-  void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -843,21 +843,21 @@ public:
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 
-  void resolve_weak_handle(Register result, Register tmp);
-  void resolve_oop_handle(Register result, Register tmp = r5);
-  void load_mirror(Register dst, Register method, Register tmp = r5);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
+  void load_mirror(Register dst, Register method, Register tmp1, Register tmp2);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
-                      Register tmp1, Register tmp_thread);
+                      Register tmp1, Register tmp2);
 
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                        Register tmp1, Register tmp2, Register tmp3);
 
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                     Register tmp2 = noreg, DecoratorSet decorators = 0);
 
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                              Register tmp2 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
