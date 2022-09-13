@@ -132,9 +132,9 @@ void CardTable::initialize() {
   *guard_card = last_card;
 
   log_trace(gc, barrier)("CardTable::CardTable: ");
-  log_trace(gc, barrier)("    &_byte_map[0]: " INTPTR_FORMAT "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
+  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[_last_valid_index]: " PTR_FORMAT,
                   p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
-  log_trace(gc, barrier)("    _byte_map_base: " INTPTR_FORMAT, p2i(_byte_map_base));
+  log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT, p2i(_byte_map_base));
 }
 
 int CardTable::find_covering_region_by_base(HeapWord* base) {
@@ -330,13 +330,13 @@ void CardTable::resize_covered_region(MemRegion new_region) {
   _covered[ind].set_word_size(new_region.word_size());
 
   log_trace(gc, barrier)("CardTable::resize_covered_region: ");
-  log_trace(gc, barrier)("    _covered[%d].start(): " INTPTR_FORMAT " _covered[%d].last(): " INTPTR_FORMAT,
+  log_trace(gc, barrier)("    _covered[%d].start(): " PTR_FORMAT " _covered[%d].last(): " PTR_FORMAT,
                          ind, p2i(_covered[ind].start()), ind, p2i(_covered[ind].last()));
-  log_trace(gc, barrier)("    _committed[%d].start(): " INTPTR_FORMAT "  _committed[%d].last(): " INTPTR_FORMAT,
+  log_trace(gc, barrier)("    _committed[%d].start(): " PTR_FORMAT "  _committed[%d].last(): " PTR_FORMAT,
                          ind, p2i(_committed[ind].start()), ind, p2i(_committed[ind].last()));
-  log_trace(gc, barrier)("    byte_for(start): " INTPTR_FORMAT "  byte_for(last): " INTPTR_FORMAT,
+  log_trace(gc, barrier)("    byte_for(start): " PTR_FORMAT "  byte_for(last): " PTR_FORMAT,
                          p2i(byte_for(_covered[ind].start())),  p2i(byte_for(_covered[ind].last())));
-  log_trace(gc, barrier)("    addr_for(start): " INTPTR_FORMAT "  addr_for(last): " INTPTR_FORMAT,
+  log_trace(gc, barrier)("    addr_for(start): " PTR_FORMAT "  addr_for(last): " PTR_FORMAT,
                          p2i(addr_for((CardValue*) _committed[ind].start())),  p2i(addr_for((CardValue*) _committed[ind].last())));
 
   // Touch the last card of the covered region to show that it
@@ -413,7 +413,7 @@ void CardTable::verify_region(MemRegion mr, CardValue val, bool val_equals) {
     bool failed = (val_equals) ? (curr_val != val) : (curr_val == val);
     if (failed) {
       if (!failures) {
-        log_error(gc, verify)("== CT verification failed: [" INTPTR_FORMAT "," INTPTR_FORMAT "]", p2i(start), p2i(end));
+        log_error(gc, verify)("== CT verification failed: [" PTR_FORMAT "," PTR_FORMAT "]", p2i(start), p2i(end));
         log_error(gc, verify)("==   %sexpecting value: %d", (val_equals) ? "" : "not ", val);
         failures = true;
       }
@@ -436,6 +436,6 @@ void CardTable::verify_dirty_region(MemRegion mr) {
 #endif
 
 void CardTable::print_on(outputStream* st) const {
-  st->print_cr("Card table byte_map: [" INTPTR_FORMAT "," INTPTR_FORMAT "] _byte_map_base: " INTPTR_FORMAT,
+  st->print_cr("Card table byte_map: [" PTR_FORMAT "," PTR_FORMAT "] _byte_map_base: " PTR_FORMAT,
                p2i(_byte_map), p2i(_byte_map + _byte_map_size), p2i(_byte_map_base));
 }

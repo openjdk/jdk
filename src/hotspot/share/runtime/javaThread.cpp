@@ -161,10 +161,10 @@ void JavaThread::set_threadOopHandles(oop p) {
 }
 
 oop JavaThread::threadObj() const {
-  Thread* current = Thread::current_or_null_safe();
-  assert(current != nullptr, "cannot be called by a detached thread");
-  guarantee(current != this || JavaThread::cast(current)->is_oop_safe(),
-            "current cannot touch oops after its GC barrier is detached.");
+  // Ideally we would verify the current thread is oop_safe when this is called, but as we can
+  // be called from a signal handler we would have to use Thread::current_or_null_safe(). That
+  // has overhead and also interacts poorly with GetLastError on Windows due to the use of TLS.
+  // Instead callers must verify oop safe access.
   return _threadObj.resolve();
 }
 

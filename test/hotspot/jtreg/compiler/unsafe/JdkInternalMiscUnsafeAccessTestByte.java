@@ -43,7 +43,14 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestByte {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attempts with delay on failure.
+    // Be mindful of worst-case total time on test, which would be at
+    // roughly (delay*attempts) milliseconds.
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 100);
+    static final int WEAK_DELAY_MS = Math.max(1, Integer.getInteger("weakDelay", 1));
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -84,6 +91,16 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
         int ascale = UNSAFE.arrayIndexScale(byte[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay() {
+        try {
+            if (WEAK_DELAY_MS > 0) {
+                Thread.sleep(WEAK_DELAY_MS);
+            }
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static byte static_v;
@@ -240,6 +257,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetBytePlain(base, offset, (byte)0x01, (byte)0x23);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain byte");
             byte x = UNSAFE.getByte(base, offset);
@@ -257,6 +275,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetByteAcquire(base, offset, (byte)0x23, (byte)0x01);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire byte");
             byte x = UNSAFE.getByte(base, offset);
@@ -274,6 +293,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetByteRelease(base, offset, (byte)0x01, (byte)0x23);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease byte");
             byte x = UNSAFE.getByte(base, offset);
@@ -291,6 +311,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetByte(base, offset, (byte)0x23, (byte)0x01);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet byte");
             byte x = UNSAFE.getByte(base, offset);

@@ -52,7 +52,7 @@ public:
   // The other values are used for objects in regions requiring various special handling,
   // eager reclamation of humongous objects or optional regions.
   static const region_type_t Optional     =  -4;    // The region is optional not in the current collection set.
-  static const region_type_t Humongous    =  -3;    // The region is a humongous candidate not in the current collection set.
+  static const region_type_t HumongousCandidate    =  -3;    // The region is a humongous candidate not in the current collection set.
   static const region_type_t NewSurvivor  =  -2;    // The region is a new (ly allocated) survivor region.
   static const region_type_t NotInCSet    =  -1;    // The region is not in the collection set.
   static const region_type_t Young        =   0;    // The region is in the collection set and a young region.
@@ -70,7 +70,7 @@ public:
   const char* get_type_str() const {
     switch (type()) {
       case Optional: return "Optional";
-      case Humongous: return "Humongous";
+      case HumongousCandidate: return "HumongousCandidate";
       case NewSurvivor: return "NewSurvivor";
       case NotInCSet: return "NotInCSet";
       case Young: return "Young";
@@ -83,16 +83,16 @@ public:
 
   void set_new_survivor()              { _type = NewSurvivor; }
   void set_old()                       { _type = Old; }
-  void clear_humongous()               {
-    assert(is_humongous() || !is_in_cset(), "must be");
+  void clear_humongous_candidate()               {
+    assert(is_humongous_candidate() || !is_in_cset(), "must be");
     _type = NotInCSet;
   }
   void set_remset_is_tracked(bool value)      { _remset_is_tracked = value ? 1 : 0; }
 
-  bool is_in_cset_or_humongous() const { return is_in_cset() || is_humongous(); }
+  bool is_in_cset_or_humongous_candidate() const { return is_in_cset() || is_humongous_candidate(); }
   bool is_in_cset() const              { return type() >= Young; }
 
-  bool is_humongous() const            { return type() == Humongous; }
+  bool is_humongous_candidate() const            { return type() == HumongousCandidate; }
   bool is_new_survivor() const         { return type() == NewSurvivor; }
   bool is_young() const                { return type() == Young; }
   bool is_old() const                  { return type() == Old; }
@@ -132,18 +132,18 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     get_ref_by_index(index)->set_new_survivor();
   }
 
-  void set_humongous(uintptr_t index, bool remset_is_tracked) {
+  void set_humongous_candidate(uintptr_t index, bool remset_is_tracked) {
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
-    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Humongous, remset_is_tracked));
+    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::HumongousCandidate, remset_is_tracked));
   }
 
-  void clear_humongous(uintptr_t index) {
-    get_ref_by_index(index)->clear_humongous();
+  void clear_humongous_candidate(uintptr_t index) {
+    get_ref_by_index(index)->clear_humongous_candidate();
   }
 
-  bool is_humongous(uintptr_t index) {
-    return get_ref_by_index(index)->is_humongous();
+  bool is_humongous_candidate(uintptr_t index) {
+    return get_ref_by_index(index)->is_humongous_candidate();
   }
 
   void set_remset_is_tracked(uintptr_t index, bool remset_is_tracked) {
@@ -162,7 +162,7 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Old, remset_is_tracked));
   }
 
-  bool is_in_cset_or_humongous(HeapWord* addr) const { return at(addr).is_in_cset_or_humongous(); }
+  bool is_in_cset_or_humongous_candidate(HeapWord* addr) const { return at(addr).is_in_cset_or_humongous_candidate(); }
   bool is_in_cset(HeapWord* addr) const { return at(addr).is_in_cset(); }
   bool is_in_cset(const HeapRegion* hr) const { return get_by_index(hr->hrm_index()).is_in_cset(); }
   G1HeapRegionAttr at(HeapWord* addr) const { return get_by_address(addr); }

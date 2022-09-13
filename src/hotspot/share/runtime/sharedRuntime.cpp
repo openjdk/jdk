@@ -97,6 +97,7 @@ SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
 #endif // COMPILER2
 
+nmethod*            SharedRuntime::_cont_doYield_stub;
 
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_stubs() {
@@ -997,6 +998,9 @@ JRT_END
 
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL && thread->is_Java_thread()) {
+    Thread* current = Thread::current();
+    guarantee(current != thread || JavaThread::cast(thread)->is_oop_safe(),
+              "current cannot touch oops after its GC barrier is detached.");
     oop obj = JavaThread::cast(thread)->threadObj();
     return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
   }

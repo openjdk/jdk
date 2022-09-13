@@ -140,13 +140,17 @@ public class Analyzer {
      * the {@code -XDfind} option.
      */
     enum AnalyzerMode {
-        DIAMOND("diamond", Feature.DIAMOND),
-        LAMBDA("lambda", Feature.LAMBDA),
-        METHOD("method", Feature.GRAPH_INFERENCE),
+        DIAMOND("diamond"),
+        LAMBDA("lambda"),
+        METHOD("method"),
         LOCAL("local", Feature.LOCAL_VARIABLE_TYPE_INFERENCE);
 
         final String opt;
         final Feature feature;
+
+        AnalyzerMode(String opt) {
+            this(opt, null);
+        }
 
         AnalyzerMode(String opt, Feature feature) {
             this.opt = opt;
@@ -169,7 +173,7 @@ public class Analyzer {
                 res = EnumSet.allOf(AnalyzerMode.class);
             }
             for (AnalyzerMode mode : values()) {
-                if (modes.contains("-" + mode.opt) || !mode.feature.allowedInSource(source)) {
+                if (modes.contains("-" + mode.opt) || (mode.feature != null && !mode.feature.allowedInSource(source))) {
                     res.remove(mode);
                 } else if (modes.contains(mode.opt)) {
                     res.add(mode);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1751,11 +1751,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     }
 
     private void doMultiSelectionChanged(PropertyChangeEvent e) {
+        clearSelection();
         if (getFileChooser().isMultiSelectionEnabled()) {
             listSelectionModel.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+            getFileChooser().setSelectedFile(null);
         } else {
             listSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            clearSelection();
             getFileChooser().setSelectedFiles(null);
         }
     }

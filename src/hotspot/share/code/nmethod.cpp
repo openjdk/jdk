@@ -430,7 +430,7 @@ int nmethod::total_size() const {
 const char* nmethod::compile_kind() const {
   if (is_osr_method())     return "osr";
   if (method() != NULL && is_native_method()) {
-    if (method()->is_continuation_enter_intrinsic()) {
+    if (method()->is_continuation_native_intrinsic()) {
       return "cnt";
     }
     return "c2n";
