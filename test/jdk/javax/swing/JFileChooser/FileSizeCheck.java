@@ -52,7 +52,7 @@ public class FileSizeCheck {
                     "Test 2: If the size of 2nd-File-1-Byte shows 0.1 KB\n" +
                     "Test 3: If the size of 3rd-File-160-Byte shows 0.2 KB\n" +
                     "Test 3: If the size of 4th-File-299-Byte shows 0.3 KB\n" +
-                    "Test 4: If the size of 5th-File-500-Byte shows 0.5 KB\n" +
+                    "Test 4: If the size of 5th-File-900-Byte shows 0.9 KB\n" +
                     "Test 6: If the size of 6th-File-901-Byte shows 1.0 KB\n" +
                     "Test 7: If the size of 7th-File-999-KB shows 999.0 KB\n" +
                     "Test 8: If the size of 8th-File-1000-KB shows 1.0 MB\n" +
@@ -65,10 +65,10 @@ public class FileSizeCheck {
         fc.setControlButtonsAreShown(false);
         Path dir = Paths.get(".");
         String[] tempFilesName = {"1st-Empty-File", "2nd-File-1-Byte", "3rd-File-160-Byte",
-                "4th-File-299-Byte", "5th-File-500-Byte", "6th-File-901-Byte",
+                "4th-File-299-Byte", "5th-File-900-Byte", "6th-File-901-Byte",
                 "7th-File-999-KB", "8th-File-1000-KB", "9th-File-2.8-MB"};
 
-        int[] tempFilesSize = {0, 1, 160, 299, 500, 901, 999_000, 1_000_000, 2_800_000};
+        int[] tempFilesSize = {0, 1, 160, 299, 900, 901, 999_000, 1_000_000, 2_800_000};
 
         tempFilePaths = new Path[tempFilesName.length];
         PassFailJFrame.addTestWindow(frame);
