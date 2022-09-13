@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,14 @@
 
 package java.security;
 
+import sun.security.util.Debug;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-
-import sun.security.util.Debug;
 
 /**
- * This class extends ClassLoader with additional support for defining
+ * This class extends {@code ClassLoader} with additional support for defining
  * classes with an associated code source and permissions which are
  * retrieved by the system policy by default.
  *
@@ -45,7 +44,7 @@ public class SecureClassLoader extends ClassLoader {
 
     /*
      * Map that maps the CodeSource to a ProtectionDomain. The key is a
-     * CodeSourceKey class that uses a String instead of a URL to avoid
+     * CodeSourceKey class that uses a {@code String} instead of a URL to avoid
      * potential expensive name service lookups. This does mean that URLs that
      * are equivalent after nameservice lookup will be placed in separate
      * ProtectionDomains; however during policy enforcement these URLs will be
@@ -60,7 +59,7 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Creates a new SecureClassLoader using the specified parent
+     * Creates a new {@code SecureClassLoader} using the specified parent
      * class loader for delegation.
      *
      * <p>If there is a security manager, this method first
@@ -78,7 +77,7 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Creates a new SecureClassLoader using the default parent class
+     * Creates a new {@code SecureClassLoader} using the default parent class
      * loader for delegation.
      *
      * <p>If there is a security manager, this method first
@@ -114,7 +113,7 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Converts an array of bytes into an instance of class Class,
+     * Converts an array of bytes into an instance of class {@code Class},
      * with an optional CodeSource. Before the
      * class can be used it must be resolved.
      * <p>
@@ -219,28 +218,20 @@ public class SecureClassLoader extends ClassLoader {
         // that no nameservice lookup is done on the hostname (String comparison
         // only), and the fragment is not considered.
         CodeSourceKey key = new CodeSourceKey(cs);
-        return pdcache.computeIfAbsent(key, new Function<>() {
-            @Override
-            public ProtectionDomain apply(CodeSourceKey key /* not used */) {
-                PermissionCollection perms
-                        = SecureClassLoader.this.getPermissions(cs);
-                ProtectionDomain pd = new ProtectionDomain(
-                        cs, perms, SecureClassLoader.this, null);
-                if (DebugHolder.debug != null) {
-                    DebugHolder.debug.println(" getPermissions " + pd);
-                    DebugHolder.debug.println("");
-                }
-                return pd;
+        return pdcache.computeIfAbsent(key, unused -> {
+            PermissionCollection perms
+                    = SecureClassLoader.this.getPermissions(cs);
+            ProtectionDomain pd = new ProtectionDomain(
+                    cs, perms, SecureClassLoader.this, null);
+            if (DebugHolder.debug != null) {
+                DebugHolder.debug.println(" getPermissions " + pd);
+                DebugHolder.debug.println("");
             }
+            return pd;
         });
     }
 
-    private static class CodeSourceKey {
-        private final CodeSource cs;
-
-        CodeSourceKey(CodeSource cs) {
-            this.cs = cs;
-        }
+    private record CodeSourceKey(CodeSource cs) {
 
         @Override
         public int hashCode() {

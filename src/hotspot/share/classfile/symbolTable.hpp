@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,63 +28,14 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/symbol.hpp"
+#include "oops/symbolHandle.hpp"
 #include "utilities/tableStatistics.hpp"
 
 class JavaThread;
 template <typename T> class GrowableArray;
 
-// TempNewSymbol acts as a handle class in a handle/body idiom and is
-// responsible for proper resource management of the body (which is a Symbol*).
-// The body is resource managed by a reference counting scheme.
-// TempNewSymbol can therefore be used to properly hold a newly created or referenced
-// Symbol* temporarily in scope.
-//
-// Routines in SymbolTable will initialize the reference count of a Symbol* before
-// it becomes "managed" by TempNewSymbol instances. As a handle class, TempNewSymbol
-// needs to maintain proper reference counting in context of copy semantics.
-//
-// In SymbolTable, new_symbol() will create a Symbol* if not already in the
-// symbol table and add to the symbol's reference count.
-// probe() and lookup_only() will increment the refcount if symbol is found.
-class TempNewSymbol : public StackObj {
-  Symbol* _temp;
-
-public:
-  TempNewSymbol() : _temp(NULL) {}
-
-  // Conversion from a Symbol* to a TempNewSymbol.
-  // Does not increment the current reference count.
-  TempNewSymbol(Symbol *s) : _temp(s) {}
-
-  // Copy constructor increments reference count.
-  TempNewSymbol(const TempNewSymbol& rhs) : _temp(rhs._temp) {
-    if (_temp != NULL) {
-      _temp->increment_refcount();
-    }
-  }
-
-  // Assignment operator uses a c++ trick called copy and swap idiom.
-  // rhs is passed by value so within the scope of this method it is a copy.
-  // At method exit it contains the former value of _temp, triggering the correct refcount
-  // decrement upon destruction.
-  void operator=(TempNewSymbol rhs) {
-    Symbol* tmp = rhs._temp;
-    rhs._temp = _temp;
-    _temp = tmp;
-  }
-
-  // Decrement reference counter so it can go away if it's unused
-  ~TempNewSymbol() {
-    if (_temp != NULL) {
-      _temp->decrement_refcount();
-    }
-  }
-
-  // Symbol* conversion operators
-  Symbol* operator -> () const                   { return _temp; }
-  bool    operator == (Symbol* o) const          { return _temp == o; }
-  operator Symbol*()                             { return _temp; }
-};
+// TempNewSymbol in symbolHandle.hpp is used with SymbolTable operations,
+// so include it here.
 
 class CompactHashtableWriter;
 class SerializeClosure;
@@ -146,7 +97,7 @@ class SymbolTable : public AllStatic {
   static Arena*  _arena;
   static Arena* arena() { return _arena; }  // called for statistics
 
-  static void print_table_statistics(outputStream* st, const char* table_name);
+  static void print_table_statistics(outputStream* st);
 
   static void try_rehash_table();
   static bool do_rehash();

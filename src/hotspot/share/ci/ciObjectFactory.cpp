@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMemberName.hpp"
-#include "ci/ciNativeEntryPoint.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
@@ -37,6 +36,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciTypeArray.hpp"
@@ -286,6 +286,14 @@ ciMetadata* ciObjectFactory::cached_metadata(Metadata* key) {
 ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
   ASSERT_IN_VM;
 
+  if (ReplayCompiles && key->is_klass()) {
+    Klass* k = (Klass*)key;
+    if (k->is_instance_klass() && ciReplay::is_klass_unresolved((InstanceKlass*)k)) {
+      // Klass was unresolved at replay dump time. Simulate this case.
+      return ciEnv::_unloaded_ciinstance_klass;
+    }
+  }
+
 #ifdef ASSERT
   if (CIObjectFactoryVerify) {
     Metadata* last = NULL;
@@ -344,8 +352,6 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciCallSite(h_i);
     else if (java_lang_invoke_MemberName::is_instance(o))
       return new (arena()) ciMemberName(h_i);
-    else if (jdk_internal_invoke_NativeEntryPoint::is_instance(o))
-      return new (arena()) ciNativeEntryPoint(h_i);
     else if (java_lang_invoke_MethodHandle::is_instance(o))
       return new (arena()) ciMethodHandle(h_i);
     else if (java_lang_invoke_MethodType::is_instance(o))

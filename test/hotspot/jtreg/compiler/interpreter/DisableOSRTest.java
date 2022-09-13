@@ -28,8 +28,8 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+PrintCompilation
  *                   -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement
  *                   compiler.interpreter.DisableOSRTest
@@ -40,7 +40,7 @@
 
 package compiler.interpreter;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.Random;

@@ -23,6 +23,8 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
@@ -78,6 +81,14 @@ public final class LinuxHelper {
                         () -> cmd.name()).replaceAll("\\s+", "_"));
         return cmd.appLayout().destktopIntegrationDirectory().resolve(
                 desktopFileName);
+    }
+
+    static Path getServiceUnitFilePath(JPackageCommand cmd, String launcherName) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+        return cmd.pathToUnpackedPackageFile(
+                Path.of("/lib/systemd/system").resolve(getServiceUnitFileName(
+                        getPackageName(cmd),
+                        Optional.ofNullable(launcherName).orElseGet(cmd::name))));
     }
 
     static String getBundleName(JPackageCommand cmd) {
@@ -461,13 +472,24 @@ public final class LinuxHelper {
                 "Failed to locate system .desktop files folder"));
     }
 
+    private static void withTestFileAssociationsFile(FileAssociations fa,
+            ThrowingConsumer<Path> consumer) {
+        boolean iterated[] = new boolean[] { false };
+        PackageTest.withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
+            if (!iterated[0]) {
+                iterated[0] = true;
+                consumer.accept(testFiles.get(0));
+            }
+        });
+    }
+
     static void addFileAssociationsVerifier(PackageTest test, FileAssociations fa) {
         test.addInstallVerifier(cmd -> {
             if (cmd.isPackageUnpacked("Not running file associations checks")) {
                 return;
             }
 
-            PackageTest.withTestFileAssociationsFile(fa, testFile -> {
+            withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertEquals(fa.getMime(), mimeType, String.format(
@@ -491,7 +513,7 @@ public final class LinuxHelper {
         });
 
         test.addUninstallVerifier(cmd -> {
-            PackageTest.withTestFileAssociationsFile(fa, testFile -> {
+            withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertNotEquals(fa.getMime(), mimeType, String.format(
@@ -668,6 +690,31 @@ public final class LinuxHelper {
         return arch;
     }
 
+    private static String getServiceUnitFileName(String packageName,
+            String launcherName) {
+        try {
+            return getServiceUnitFileName.invoke(null, packageName, launcherName).toString();
+        } catch (InvocationTargetException | IllegalAccessException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static Method initGetServiceUnitFileName() {
+        try {
+            return Class.forName(
+                    "jdk.jpackage.internal.LinuxLaunchersAsServices").getMethod(
+                            "getServiceUnitFileName", String.class, String.class);
+        } catch (ClassNotFoundException ex) {
+            if (TKit.isLinux()) {
+                throw new RuntimeException(ex);
+            } else {
+                return null;
+            }
+        } catch (NoSuchMethodException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "lib/server/libjvm.so"));
 
@@ -677,4 +724,6 @@ public final class LinuxHelper {
 
     // Values grabbed from https://linux.die.net/man/1/xdg-icon-resource
     private final static Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
+
+    private final static Method getServiceUnitFileName = initGetServiceUnitFileName();
 }

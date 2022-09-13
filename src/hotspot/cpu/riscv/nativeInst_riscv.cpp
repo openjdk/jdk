@@ -89,7 +89,7 @@ bool NativeInstruction::is_movptr_at(address instr) {
          is_addi_at(instr + instruction_size) && // Addi
          is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
          is_addi_at(instr + instruction_size * 3) && // Addi
-         is_slli_shift_at(instr + instruction_size * 4, 5) && // Slli Rd, Rs, 5
+         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
          (is_addi_at(instr + instruction_size * 5) ||
           is_jalr_at(instr + instruction_size * 5) ||
           is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
@@ -124,7 +124,7 @@ address NativeCall::destination() const {
   address destination = MacroAssembler::target_addr_for_insn(instruction_address());
 
   // Do we use a trampoline stub for this call?
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // Else we get assertion if nmethod is zombie.
+  CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
   if (nm != NULL && nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
@@ -328,7 +328,7 @@ bool NativeInstruction::is_lwu_to_zr(address instr) {
 }
 
 // A 16-bit instruction with all bits ones is permanently reserved as an illegal instruction.
-bool NativeInstruction::is_sigill_zombie_not_entrant() {
+bool NativeInstruction::is_sigill_not_entrant() {
   // jvmci
   return uint_at(0) == 0xffffffff;
 }
@@ -339,20 +339,20 @@ void NativeIllegalInstruction::insert(address code_pos) {
 }
 
 bool NativeInstruction::is_stop() {
-  return uint_at(0) == 0xffffffff; // an illegal instruction
+  return uint_at(0) == 0xc0101073; // an illegal instruction, 'csrrw x0, time, x0'
 }
 
 //-------------------------------------------------------------------
 
 // MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant_or_zombie)
+// nmethod::make_not_entrant)
 
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
 
   assert(nativeInstruction_at(verified_entry)->is_jump_or_nop() ||
-         nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
+         nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
          "riscv cannot replace non-jump with jump");
 
   // Patch this nmethod atomically.
@@ -371,7 +371,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
     *(unsigned int*)verified_entry = insn;
   } else {
     // We use an illegal instruction for marking a method as
-    // not_entrant or zombie.
+    // not_entrant.
     NativeIllegalInstruction::insert(verified_entry);
   }
 

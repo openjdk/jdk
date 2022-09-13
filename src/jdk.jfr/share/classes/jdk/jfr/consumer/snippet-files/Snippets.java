@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package example2;
+package jdk.jfr.snippets.consumer;
 
 import java.io.IOException;
 import java.nio.file.Path;

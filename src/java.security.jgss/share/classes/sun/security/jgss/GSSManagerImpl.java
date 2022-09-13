@@ -40,7 +40,7 @@ public class GSSManagerImpl extends GSSManager {
     private static final Boolean USE_NATIVE = GetBooleanAction
             .privilegedGetProperty("sun.security.jgss.native");
 
-    private ProviderList list;
+    private final ProviderList list;
 
     // Used by java SPNEGO impl to make sure native is disabled
     public GSSManagerImpl(GSSCaller caller, boolean useNative) {
@@ -76,7 +76,7 @@ public class GSSManagerImpl extends GSSManager {
             nameType = GSSName.NT_HOSTBASED_SERVICE;
         }
 
-        // Iterate thru all mechs in GSS
+        // Iterate through all mechs in GSS
         for (int i = 0; i < mechs.length; i++) {
             // what nametypes does this mech support?
             Oid mech = mechs[i];
@@ -98,8 +98,7 @@ public class GSSManagerImpl extends GSSManager {
         // Trim the list if needed
         if (pos < retVal.length) {
             Oid[] temp = new Oid[pos];
-            for (int i = 0; i < pos; i++)
-                temp[i] = retVal[i];
+            System.arraycopy(retVal, 0, temp, 0, pos);
             retVal = temp;
         }
 

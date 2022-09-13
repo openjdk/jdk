@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
-TemplateInterpreterGenerator::TemplateInterpreterGenerator(StubQueue* _code): AbstractInterpreterGenerator(_code) {
+TemplateInterpreterGenerator::TemplateInterpreterGenerator(): AbstractInterpreterGenerator() {
   _unimplemented_bytecode    = NULL;
   _illegal_bytecode_sequence = NULL;
   generate_all();
@@ -177,8 +177,8 @@ void TemplateInterpreterGenerator::generate_all() {
 
 
 
-#define method_entry(kind)                                              \
-  { CodeletMark cm(_masm, "method entry point (kind = " #kind ")"); \
+#define method_entry(kind)                                                                   \
+  { CodeletMark cm(_masm, "method entry point (kind = " #kind ")");                          \
     Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind); \
   }
 

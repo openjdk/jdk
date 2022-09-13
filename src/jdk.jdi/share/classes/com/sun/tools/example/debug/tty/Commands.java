@@ -366,6 +366,8 @@ class Commands {
         ThreadIterator threadIter = new ThreadIterator(tg);
 
         MessageOutput.println("Thread Group:", tg.name());
+
+        // Iterate over all the threads to figure out the max field widths needed
         int maxIdLength = 0;
         int maxNameLength = 0;
         while (threadIter.hasNext()) {
@@ -376,6 +378,7 @@ class Commands {
                                      thr.name().length());
         }
 
+        // Iterate over all threads in the threadgroup.
         threadIter = new ThreadIterator(tg);
         while (threadIter.hasNext()) {
             ThreadReference thr = threadIter.next();
@@ -463,7 +466,7 @@ class Commands {
 
     void commandThreads(StringTokenizer t) {
         if (!t.hasMoreTokens()) {
-            printThreadGroup(ThreadInfo.group());
+            printThreadGroup(ThreadInfo.group()); // print threads in the current threadgroup
             return;
         }
         String name = t.nextToken();
@@ -471,7 +474,7 @@ class Commands {
         if (tg == null) {
             MessageOutput.println("is not a valid threadgroup name", name);
         } else {
-            printThreadGroup(tg);
+            printThreadGroup(tg); // print threads in specified group (and its subgroups)
         }
     }
 
@@ -515,8 +518,8 @@ class Commands {
 
     void commandRun(StringTokenizer t) {
         /*
-         * The 'run' command makes little sense in a
-         * that doesn't support restarts or multiple VMs. However,
+         * The 'run' command makes little sense in
+         * that it doesn't support restarts or multiple VMs. However,
          * this is an attempt to emulate the behavior of the old
          * JDB as much as possible. For new users and implementations
          * it is much more straightforward to launch immedidately
@@ -568,6 +571,7 @@ class Commands {
         MessageOutput.println("The load command is no longer supported.");
     }
 
+    /* Note: no longer used, but kept around as sample code. */
     private List<ThreadReference> allThreads(ThreadGroupReference group) {
         List<ThreadReference> list = new ArrayList<ThreadReference>();
         list.addAll(group.threads());
@@ -714,6 +718,10 @@ class Commands {
                 MessageOutput.println("killed", thread.toString());
             } catch (InvalidTypeException e) {
                 MessageOutput.println("Invalid exception object");
+            } catch (IllegalThreadStateException its) {
+                MessageOutput.println("Illegal thread state");
+            } catch (UnsupportedOperationException uoe) {
+                MessageOutput.println("Operation is not supported on the target VM");
             }
         } else {
             MessageOutput.println("Expression must evaluate to an object");

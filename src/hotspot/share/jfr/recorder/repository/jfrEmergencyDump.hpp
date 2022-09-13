@@ -26,20 +26,16 @@
 #define SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
 
 #include "memory/allStatic.hpp"
-#include "utilities/ostream.hpp"
+
+class outputStream;
 
 //
 // Responsible for creating an hs_err<pid>.jfr file in exceptional shutdown situations (crash, OOM)
 //
 class JfrEmergencyDump : AllStatic {
- private:
-  static char _dump_path[JVM_MAXPATHLEN];
-
-  static bool open_emergency_dump_file();
-
  public:
-  static void set_dump_path(const char* dump_path);
   static const char* get_dump_path();
+  static void set_dump_path(const char* dump_path);
   static const char* chunk_path(const char* repository_path);
   static void on_vm_error(const char* repository_path);
   static void on_vm_error_report(outputStream* st, const char* repository_path);

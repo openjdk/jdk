@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,10 +118,11 @@ class UnixUriUtils {
         if (sb.charAt(sb.length()-1) != '/') {
             try {
                 up.checkRead();
-                int mode = UnixNativeDispatcher.stat(up);
-                if ((mode & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR)
+                UnixFileAttributes attrs = UnixFileAttributes.getIfExists(up);
+                if (attrs != null
+                        && ((attrs.mode() & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR))
                     sb.append('/');
-            } catch (SecurityException ignore) { }
+            } catch (UnixException | SecurityException ignore) { }
         }
 
         try {

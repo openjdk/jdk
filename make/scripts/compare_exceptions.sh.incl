@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ fi
 # Diff exceptions
 
 if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
-  if [ "$HOTSPOT_BUILD_TIME" = "" -o "$USE_PRECOMPILED_HEADER" = "true" ]; then
+  if [ "$USE_PRECOMPILED_HEADER" = "true" ]; then
     ACCEPTED_BIN_DIFF="
         ./lib/server/libjvm.so
         ./hotspot/gtest/server/libjvm.so

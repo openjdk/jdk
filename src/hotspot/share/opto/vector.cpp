@@ -163,6 +163,17 @@ static JVMState* clone_jvms(Compile* C, SafePointNode* sfpt) {
   for (uint i = 0; i < size; i++) {
     map->init_req(i, sfpt->in(i));
   }
+  Node* mem = map->memory();
+  if (!mem->is_MergeMem()) {
+    // Since we are not in parsing, the SafePointNode does not guarantee that the memory
+    // input is necessarily a MergeMemNode. But we need to ensure that there is that
+    // MergeMemNode, since the GraphKit assumes the memory input of the map to be a
+    // MergeMemNode, so that it can directly access the memory slices.
+    PhaseGVN& gvn = *C->initial_gvn();
+    Node* mergemem = MergeMemNode::make(mem);
+    gvn.set_type_bottom(mergemem);
+    map->set_memory(mergemem);
+  }
   new_jvms->set_map(map);
   return new_jvms;
 }
@@ -247,7 +258,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     }
   }
 
-  ciInstanceKlass* iklass = vec_box->box_type()->klass()->as_instance_klass();
+  ciInstanceKlass* iklass = vec_box->box_type()->instance_klass();
   int n_fields = iklass->nof_nonstatic_fields();
   assert(n_fields == 1, "sanity");
 
@@ -348,7 +359,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   GraphKit kit(jvms);
   PhaseGVN& gvn = kit.gvn();
 
-  ciInstanceKlass* box_klass = box_type->klass()->as_instance_klass();
+  ciInstanceKlass* box_klass = box_type->instance_klass();
   BasicType bt = vect_type->element_basic_type();
   int num_elem = vect_type->length();
 
@@ -420,7 +431,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     Node* obj = vec_unbox->obj();
     const TypeInstPtr* tinst = gvn.type(obj)->isa_instptr();
-    ciInstanceKlass* from_kls = tinst->klass()->as_instance_klass();
+    ciInstanceKlass* from_kls = tinst->instance_klass();
     const TypeVect* vt = vec_unbox->bottom_type()->is_vect();
     BasicType bt = vt->element_basic_type();
     BasicType masktype = bt;

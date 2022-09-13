@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,7 +467,7 @@ class DigestAuthentication extends AuthenticationInfo {
         String algorithm = p.findValue("algorithm");
         String digestName = algorithm;
         if (algorithm == null || algorithm.isEmpty()) {
-            algorithm = "MD5";  // The default, accoriding to rfc2069
+            algorithm = "MD5";  // The default, according to rfc2069
             digestName = "MD5";
         } else {
             algorithm = algorithm.toUpperCase(Locale.ROOT);

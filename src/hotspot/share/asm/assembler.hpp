@@ -120,7 +120,7 @@ class Label {
 #endif // PRODUCT
 
   /**
-   * Returns the position of the the Label in the code buffer
+   * Returns the position of the Label in the code buffer
    * The position is a 'locator', which encodes both offset and section.
    */
   int loc() const {
@@ -429,11 +429,11 @@ class AbstractAssembler : public ResourceObj  {
     }
     return ptr;
   }
-  address array_constant(BasicType bt, GrowableArray<jvalue>* c) {
+  address array_constant(BasicType bt, GrowableArray<jvalue>* c, int alignment) {
     CodeSection* c1 = _code_section;
     int len = c->length();
     int size = type2aelembytes(bt) * len;
-    address ptr = start_a_const(size, MIN2(round_up_power_of_2(size), 8));
+    address ptr = start_a_const(size, alignment);
     if (ptr != NULL) {
       for (int i = 0; i < len; i++) {
         jvalue e = c->at(i);

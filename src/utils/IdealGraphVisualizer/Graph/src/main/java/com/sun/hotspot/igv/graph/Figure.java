@@ -43,6 +43,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     public static final int SLOT_OFFSET = 8;
     public static final int TOP_CFG_HEIGHT = 7;
     public static final int BOTTOM_CFG_HEIGHT = 6;
+    public static final int WARNING_WIDTH = 16;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
     private Source source;
@@ -52,6 +53,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     private List<Figure> successors;
     private List<InputGraph> subgraphs;
     private Color color;
+    private String warning;
     private int id;
     private String idString;
     private String[] lines;
@@ -123,6 +125,9 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
                 }
             }
             widthCash = max + INSET;
+            if (getWarning() != null) {
+                widthCash += WARNING_WIDTH;
+            }
             widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
             widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
     }
@@ -153,6 +158,14 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     public Color getColor() {
         return color;
+    }
+
+    public void setWarning(String warning) {
+        this.warning = getProperties().resolveString(warning);
+    }
+
+    public String getWarning() {
+        return warning;
     }
 
     public boolean hasInputList() {

@@ -124,13 +124,24 @@ public class InflaterInputStream extends FilterInputStream {
     }
 
     /**
-     * Reads uncompressed data into an array of bytes. If {@code len} is not
-     * zero, the method will block until some input can be decompressed; otherwise,
-     * no bytes are read and {@code 0} is returned.
+     * Reads uncompressed data into an array of bytes, returning the number of inflated
+     * bytes. If {@code len} is not zero, the method will block until some input can be
+     * decompressed; otherwise, no bytes are read and {@code 0} is returned.
+     * <p>
+     * If this method returns a nonzero integer <i>n</i> then {@code buf[off]}
+     * through {@code buf[off+}<i>n</i>{@code -1]} contain the uncompressed
+     * data.  The content of elements {@code buf[off+}<i>n</i>{@code ]} through
+     * {@code buf[off+}<i>len</i>{@code -1]} is undefined, contrary to the
+     * specification of the {@link java.io.InputStream InputStream} superclass,
+     * so an implementation is free to modify these elements during the inflate
+     * operation. If this method returns {@code -1} or throws an exception then
+     * the content of {@code buf[off]} through {@code buf[off+}<i>len</i>{@code
+     * -1]} is undefined.
+     *
      * @param b the buffer into which the data is read
      * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
-     * @return the actual number of bytes read, or -1 if the end of the
+     * @return the actual number of bytes inflated, or -1 if the end of the
      *         compressed input is reached or a preset dictionary is needed
      * @throws     NullPointerException If {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
@@ -155,7 +166,12 @@ public class InflaterInputStream extends FilterInputStream {
                     reachEOF = true;
                     return -1;
                 }
-                if (inf.needsInput()) {
+                if (inf.needsInput() && !inf.hasPendingOutput()) {
+                    // Even if needsInput() is true, the native inflater may have some
+                    // buffered data which couldn't fit in to the output buffer during the
+                    // last call to inflate. Consume that buffered data first before calling
+                    // fill() to avoid an EOF error if no more input is available and the
+                    // next call to inflate will finish the inflation.
                     fill();
                 }
             } while ((n = inf.inflate(b, off, len)) == 0);
@@ -264,21 +280,22 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Marks the current position in this input stream.
      *
-     * <p> The {@code mark} method of {@code InflaterInputStream}
+     * @implSpec The {@code mark} method of {@code InflaterInputStream}
      * does nothing.
      *
      * @param   readlimit   the maximum limit of bytes that can be read before
      *                      the mark position becomes invalid.
      * @see     java.io.InputStream#reset()
      */
-    public synchronized void mark(int readlimit) {
+    @Override
+    public void mark(int readlimit) {
     }
 
     /**
      * Repositions this stream to the position at the time the
      * {@code mark} method was last called on this input stream.
      *
-     * <p> The method {@code reset} for class
+     * @implSpec The method {@code reset} for class
      * {@code InflaterInputStream} does nothing except throw an
      * {@code IOException}.
      *
@@ -286,7 +303,8 @@ public class InflaterInputStream extends FilterInputStream {
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.IOException
      */
-    public synchronized void reset() throws IOException {
+    @Override
+    public void reset() throws IOException {
         throw new IOException("mark/reset not supported");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,14 @@ import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
+import java.util.concurrent.ForkJoinPool;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.security.ProtectionDomain;
 import java.security.Signature;
@@ -60,6 +63,8 @@ public class SharedSecrets {
     private static JavaLangRefAccess javaLangRefAccess;
     private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
+    private static JavaIOPrintStreamAccess javaIOPrintStreamAccess;
+    private static JavaIOPrintWriterAccess javaIOPrintWriterAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
@@ -72,6 +77,8 @@ public class SharedSecrets {
     private static JavaNetURLAccess javaNetURLAccess;
     private static JavaNioAccess javaNioAccess;
     private static JavaUtilCollectionAccess javaUtilCollectionAccess;
+    private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
+    private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
@@ -92,6 +99,34 @@ public class SharedSecrets {
                 Class.forName("java.util.ImmutableCollections$Access", true, null);
                 access = javaUtilCollectionAccess;
             } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJavaUtilConcurrentTLRAccess(JavaUtilConcurrentTLRAccess access) {
+        javaUtilConcurrentTLRAccess = access;
+    }
+
+    public static JavaUtilConcurrentTLRAccess getJavaUtilConcurrentTLRAccess() {
+        var access = javaUtilConcurrentTLRAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.util.concurrent.ThreadLocalRandom$Access", true, null);
+                access = javaUtilConcurrentTLRAccess;
+            } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJavaUtilConcurrentFJPAccess(JavaUtilConcurrentFJPAccess access) {
+        javaUtilConcurrentFJPAccess = access;
+    }
+
+    public static JavaUtilConcurrentFJPAccess getJavaUtilConcurrentFJPAccess() {
+        var access = javaUtilConcurrentFJPAccess;
+        if (access == null) {
+            ensureClassInitialized(ForkJoinPool.class);
+            access = javaUtilConcurrentFJPAccess;
         }
         return access;
     }
@@ -239,6 +274,32 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(Console.class);
             access = javaIOAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaIOCPrintWriterAccess(JavaIOPrintWriterAccess a) {
+        javaIOPrintWriterAccess = a;
+    }
+
+    public static JavaIOPrintWriterAccess getJavaIOPrintWriterAccess() {
+        var access = javaIOPrintWriterAccess;
+        if (access == null) {
+            ensureClassInitialized(PrintWriter.class);
+            access = javaIOPrintWriterAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaIOCPrintStreamAccess(JavaIOPrintStreamAccess a) {
+        javaIOPrintStreamAccess = a;
+    }
+
+    public static JavaIOPrintStreamAccess getJavaIOPrintStreamAccess() {
+        var access = javaIOPrintStreamAccess;
+        if (access == null) {
+            ensureClassInitialized(PrintStream.class);
+            access = javaIOPrintStreamAccess;
         }
         return access;
     }
@@ -406,10 +467,12 @@ public class SharedSecrets {
     }
 
     public static JavaSecuritySpecAccess getJavaSecuritySpecAccess() {
-        if (javaSecuritySpecAccess == null) {
+        var access = javaSecuritySpecAccess;
+        if (access == null) {
             ensureClassInitialized(EncodedKeySpec.class);
+            access = javaSecuritySpecAccess;
         }
-        return javaSecuritySpecAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSpecAccess(JavaxCryptoSpecAccess jcsa) {
@@ -417,10 +480,12 @@ public class SharedSecrets {
     }
 
     public static JavaxCryptoSpecAccess getJavaxCryptoSpecAccess() {
-        if (javaxCryptoSpecAccess == null) {
+        var access = javaxCryptoSpecAccess;
+        if (access == null) {
             ensureClassInitialized(SecretKeySpec.class);
+            access = javaxCryptoSpecAccess;
         }
-        return javaxCryptoSpecAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {

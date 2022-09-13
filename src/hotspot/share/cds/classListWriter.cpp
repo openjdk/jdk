@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"

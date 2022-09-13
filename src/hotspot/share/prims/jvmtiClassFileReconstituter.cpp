@@ -41,8 +41,8 @@ JvmtiConstantPoolReconstituter::JvmtiConstantPoolReconstituter(InstanceKlass* ik
   set_error(JVMTI_ERROR_NONE);
   _ik = ik;
   _cpool = constantPoolHandle(Thread::current(), ik->constants());
-  _symmap = new SymbolHashMap();
-  _classmap = new SymbolHashMap();
+  _symmap = new ConstantPool::SymbolHash();
+  _classmap = new ConstantPool::SymbolHash();
   _cpool_size = _cpool->hash_entries_to(_symmap, _classmap);
   if (_cpool_size == 0) {
     set_error(JVMTI_ERROR_OUT_OF_MEMORY);
@@ -363,7 +363,7 @@ u2 JvmtiClassFileReconstituter::inner_classes_attribute_length() {
 }
 
 // Write an annotation attribute.  The VM stores them in raw form, so all we need
-// to do is add the attrubute name and fill in the length.
+// to do is add the attribute name and fill in the length.
 // JSR202|   *Annotations_attribute {
 // JSR202|     u2 attribute_name_index;
 // JSR202|     u4 attribute_length;

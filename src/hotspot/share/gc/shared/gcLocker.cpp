@@ -30,8 +30,8 @@
 #include "memory/universe.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 
 volatile jint GCLocker::_jni_lock_count = 0;
@@ -60,7 +60,7 @@ void GCLocker::verify_critical_count() {
       jtiwh.rewind();
       for (; JavaThread *thr = jtiwh.next(); ) {
         if (thr->in_critical()) {
-          log_error(gc, verify)(INTPTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
+          log_error(gc, verify)(PTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
         }
       }
     }

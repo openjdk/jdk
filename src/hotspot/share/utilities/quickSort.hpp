@@ -117,7 +117,7 @@ class QuickSort : AllStatic {
   // impact depends on the comparator.
   template<class T, class C>
   static void sort(T* array, size_t length, C comparator, bool idempotent) {
-    // Switch "idempotent" from function paramter to template parameter
+    // Switch "idempotent" from function parameter to template parameter
     if (idempotent) {
       inner_sort<true>(array, length, comparator);
     } else {

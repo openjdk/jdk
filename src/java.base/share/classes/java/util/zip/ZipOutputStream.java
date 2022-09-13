@@ -34,7 +34,7 @@ import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
 import sun.nio.cs.UTF_8;
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 
 /**
  * This class implements an output stream filter for writing files in the
@@ -55,8 +55,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * some in jdk7.
      */
     private static final boolean inhibitZip64 =
-        Boolean.parseBoolean(
-            GetPropertyAction.privilegedGetProperty("jdk.util.zip.inhibitZip64"));
+        GetBooleanAction.privilegedGetProperty("jdk.util.zip.inhibitZip64");
 
     private static class XEntry {
         final ZipEntry entry;
@@ -700,8 +699,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             writeShort(45);                // version needed to extract
             writeInt(0);                   // number of this disk
             writeInt(0);                   // central directory start disk
-            writeLong(xentries.size());    // number of directory entires on disk
-            writeLong(xentries.size());    // number of directory entires
+            writeLong(xentries.size());    // number of directory entries on disk
+            writeLong(xentries.size());    // number of directory entries
             writeLong(len);                // length of central directory
             writeLong(off);                // offset of central directory
 

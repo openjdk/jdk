@@ -392,7 +392,7 @@ public abstract class SSLSocket extends Socket
      * @see #getSupportedCipherSuites()
      * @see #getEnabledCipherSuites()
      */
-    public abstract void setEnabledCipherSuites(String suites []);
+    public abstract void setEnabledCipherSuites(String[] suites);
 
 
     /**
@@ -433,12 +433,12 @@ public abstract class SSLSocket extends Socket
      *            when the protocols parameter is null.
      * @see #getEnabledProtocols()
      */
-    public abstract void setEnabledProtocols(String protocols[]);
+    public abstract void setEnabledProtocols(String[] protocols);
 
 
     /**
      * Returns the SSL Session in use by this connection.  These can
-     * be long lived, and frequently correspond to an entire login session
+     * be long-lived, and frequently correspond to an entire login session
      * for some user.  The session specifies a particular cipher suite
      * which is being actively used by all connections in that session,
      * as well as the identities of the session's client and server.
@@ -744,10 +744,8 @@ public abstract class SSLSocket extends Socket
         }
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else if (params.getWantClientAuth()) {
-            setWantClientAuth(true);
         } else {
-            setWantClientAuth(false);
+            setWantClientAuth(params.getWantClientAuth());
         }
     }
 

@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +57,9 @@ class Http2ClientImpl {
 
     private final HttpClientImpl client;
 
+    // only accessed from within synchronized blocks
+    private boolean stopping;
+
     Http2ClientImpl(HttpClientImpl client) {
         this.client = client;
     }
@@ -65,7 +67,8 @@ class Http2ClientImpl {
     /* Map key is "scheme:host:port" */
     private final Map<String,Http2Connection> connections = new ConcurrentHashMap<>();
 
-    private final Set<String> failures = Collections.synchronizedSet(new HashSet<>());
+    // only accessed from within synchronized blocks
+    private final Set<String> failures = new HashSet<>();
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
@@ -160,6 +163,11 @@ class Http2ClientImpl {
 
         String key = c.key();
         synchronized(this) {
+            if (stopping) {
+                if (debug.on()) debug.log("stopping - closing connection: %s", c);
+                close(c);
+                return false;
+            }
             if (!c.isOpen()) {
                 if (debug.on())
                     debug.log("skipping offered closed or closing connection: %s", c);
@@ -182,9 +190,7 @@ class Http2ClientImpl {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
         synchronized (this) {
-            Http2Connection c1 = connections.get(c.key());
-            if (c1 != null && c1.equals(c)) {
-                connections.remove(c.key());
+            if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
@@ -193,16 +199,24 @@ class Http2ClientImpl {
 
     private EOFException STOPPED;
     void stop() {
+        synchronized (this) {stopping = true;}
         if (debug.on()) debug.log("stopping");
         STOPPED = new EOFException("HTTP/2 client stopped");
         STOPPED.setStackTrace(new StackTraceElement[0]);
-        connections.values().forEach(this::close);
-        connections.clear();
+        do {
+            connections.values().forEach(this::close);
+        } while (!connections.isEmpty());
     }
 
     private void close(Http2Connection h2c) {
+        // close all streams
+        try { h2c.closeAllStreams(); } catch (Throwable t) {}
+        // send GOAWAY
         try { h2c.close(); } catch (Throwable t) {}
+        // attempt graceful shutdown
         try { h2c.shutdown(STOPPED); } catch (Throwable t) {}
+        // double check and close any new streams
+        try { h2c.closeAllStreams(); } catch (Throwable t) {}
     }
 
     HttpClientImpl client() {

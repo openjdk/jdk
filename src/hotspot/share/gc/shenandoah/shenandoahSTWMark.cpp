@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,8 @@ void ShenandoahSTWMark::mark() {
     heap->verifier()->verify_roots_no_forwarded();
   }
 
+  start_mark();
+
   uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
 
@@ -116,6 +118,7 @@ void ShenandoahSTWMark::mark() {
   }
 
   heap->mark_complete_marking_context();
+  end_mark();
 
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());

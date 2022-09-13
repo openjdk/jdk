@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,7 +29,7 @@
 #include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
 
-// This file specializes the assember with interpreter-specific macros.
+// This file specializes the assembler with interpreter-specific macros.
 
 class InterpreterMacroAssembler: public MacroAssembler {
 
@@ -72,7 +72,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Helper routine for frame allocation/deallocation.
   // Compute the delta by which the caller's SP has to
-  // be adjusted to accomodate for the non-argument locals.
+  // be adjusted to accommodate for the non-argument locals.
   void compute_extra_locals_size_in_bytes(Register args_size, Register locals_size, Register delta);
 
   // dispatch routines

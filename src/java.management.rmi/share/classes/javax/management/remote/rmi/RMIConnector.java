@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2216,7 +2216,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         if (defaultClassLoader != null)
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
-                    t.setContextClassLoader(defaultClassLoader);
+                    if (t.getContextClassLoader() != defaultClassLoader) {
+                        t.setContextClassLoader(defaultClassLoader);
+                    }
                     return null;
                 }
             });
@@ -2227,7 +2229,10 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     private void popDefaultClassLoader(final ClassLoader old) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                Thread.currentThread().setContextClassLoader(old);
+                Thread t = Thread.currentThread();
+                if (t.getContextClassLoader() != old) {
+                    t.setContextClassLoader(old);
+                }
                 return null;
             }
         });

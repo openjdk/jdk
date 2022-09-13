@@ -43,11 +43,13 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/os.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/heapDumper.hpp"
@@ -59,6 +61,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
 #include <stdio.h>
@@ -414,7 +417,7 @@ extern "C" JNIEXPORT void dump_vtable(address p) {
 
 
 extern "C" JNIEXPORT void nm(intptr_t p) {
-  // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatability)
+  // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatibility)
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
   if (cb == NULL) {
@@ -493,7 +496,7 @@ extern "C" JNIEXPORT void pp(void* p) {
     // In order to avoid that, switch off SIGSEGV handling with "handle SIGSEGV nostop" before
     // invoking pp()
     if (MemTracker::enabled()) {
-      // Does it point into a known mmaped region?
+      // Does it point into a known mmapped region?
       if (VirtualMemoryTracker::print_containing_region(p, tty)) {
         return;
       }
@@ -527,7 +530,10 @@ extern "C" JNIEXPORT void ps() { // print stack
     if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
-    RegisterMap reg_map(p);
+    RegisterMap reg_map(p,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
@@ -643,6 +649,37 @@ extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
   }
 }
 
+// check and decode a single u5 value
+extern "C" JNIEXPORT u4 u5decode(intptr_t addr) {
+  Command c("u5decode");
+  u1* arr = (u1*)addr;
+  size_t off = 0, lim = 5;
+  if (!UNSIGNED5::check_length(arr, off, lim)) {
+    return 0;
+  }
+  return UNSIGNED5::read_uint(arr, off, lim);
+}
+
+// Sets up a Reader from addr/limit and prints count items.
+// A limit of zero means no set limit; stop at the first null
+// or after count items are printed.
+// A count of zero or less is converted to -1, which means
+// there is no limit on the count of items printed; the
+// printing stops when an null is printed or at limit.
+// See documentation for UNSIGNED5::Reader::print(count).
+extern "C" JNIEXPORT intptr_t u5p(intptr_t addr,
+                                  intptr_t limit,
+                                  int count) {
+  Command c("u5p");
+  u1* arr = (u1*)addr;
+  if (limit && limit < addr)  limit = addr;
+  size_t lim = !limit ? 0 : (limit - addr);
+  size_t endpos = UNSIGNED5::print_count(count > 0 ? count : -1,
+                                         arr, (size_t)0, lim);
+  return addr + endpos;
+}
+
+
 // int versions of all methods to avoid having to type type casts in the debugger
 
 void pp(intptr_t p)          { pp((void*)p); }
@@ -708,6 +745,15 @@ extern "C" JNIEXPORT void pns2() { // print native stack
 }
 #endif
 
+
+// Returns true iff the address p is readable and *(intptr_t*)p != errvalue
+extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
+  return p != NULL && SafeFetchN((intptr_t*)const_cast<void*>(p), errvalue) != errvalue;
+}
+
+extern "C" bool dbg_is_good_oop(oopDesc* o) {
+  return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Test multiple STATIC_ASSERT forms in various scopes.

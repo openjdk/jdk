@@ -128,7 +128,8 @@ public class CompilerToVMHelper {
 
     public static HotSpotResolvedJavaMethod lookupMethodInPool(
             ConstantPool constantPool, int cpi, byte opcode) {
-        return CTVM.lookupMethodInPool((HotSpotConstantPool) constantPool, cpi, opcode);
+        HotSpotResolvedJavaMethodImpl caller = null;
+        return CTVM.lookupMethodInPool((HotSpotConstantPool) constantPool, cpi, opcode, null);
     }
 
     public static void resolveInvokeDynamicInPool(
@@ -172,7 +173,7 @@ public class CompilerToVMHelper {
             speculations = new byte[0];
             failedSpeculationsAddress = 0L;
         }
-        return CTVM.installCode(target, compiledCode, code, failedSpeculationsAddress, speculations);
+        return CTVM.installCode(compiledCode, code, failedSpeculationsAddress, speculations);
     }
 
     public static void resetCompilationStatistics() {
@@ -243,7 +244,7 @@ public class CompilerToVMHelper {
     }
 
     public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror) {
-        CTVM.invalidateHotSpotNmethod(nmethodMirror);
+        CTVM.invalidateHotSpotNmethod(nmethodMirror, true);
     }
 
     public static long[] collectCounters() {

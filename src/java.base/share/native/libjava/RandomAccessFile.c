@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ Java_java_io_RandomAccessFile_read0(JNIEnv *env, jobject this) {
 }
 
 JNIEXPORT jint JNICALL
-Java_java_io_RandomAccessFile_readBytes(JNIEnv *env,
+Java_java_io_RandomAccessFile_readBytes0(JNIEnv *env,
     jobject this, jbyteArray bytes, jint off, jint len) {
     return readBytes(env, this, bytes, off, len, raf_fd);
 }
@@ -84,7 +84,7 @@ Java_java_io_RandomAccessFile_write0(JNIEnv *env, jobject this, jint byte) {
 }
 
 JNIEXPORT void JNICALL
-Java_java_io_RandomAccessFile_writeBytes(JNIEnv *env,
+Java_java_io_RandomAccessFile_writeBytes0(JNIEnv *env,
     jobject this, jbyteArray bytes, jint off, jint len) {
     writeBytes(env, this, bytes, off, len, JNI_FALSE, raf_fd);
 }
@@ -106,7 +106,7 @@ Java_java_io_RandomAccessFile_getFilePointer(JNIEnv *env, jobject this) {
 }
 
 JNIEXPORT jlong JNICALL
-Java_java_io_RandomAccessFile_length(JNIEnv *env, jobject this) {
+Java_java_io_RandomAccessFile_length0(JNIEnv *env, jobject this) {
 
     FD fd;
     jlong length = jlong_zero;
@@ -141,8 +141,8 @@ Java_java_io_RandomAccessFile_seek0(JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-Java_java_io_RandomAccessFile_setLength(JNIEnv *env, jobject this,
-                                        jlong newLength)
+Java_java_io_RandomAccessFile_setLength0(JNIEnv *env, jobject this,
+                                         jlong newLength)
 {
     FD fd;
     jlong cur;

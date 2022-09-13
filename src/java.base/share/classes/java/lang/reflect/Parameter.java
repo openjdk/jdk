@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.lang.reflect;
 import java.lang.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import sun.reflect.annotation.AnnotationSupport;
 
@@ -162,6 +163,20 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
+     * access flags} for the parameter represented by this object,
+     * possibly empty}
+     *
+     * @see #getModifiers()
+     * @jvms 4.7.24 The MethodParameters Attribute
+     * @since 20
+     */
+    public Set<AccessFlag> accessFlags() {
+        return AccessFlag.maskToAccessFlags(getModifiers(),
+                                            AccessFlag.Location.METHOD_PARAMETER);
+    }
+
+    /**
      * Returns the name of the parameter.  If the parameter's name is
      * {@linkplain #isNamePresent() present}, then this method returns
      * the name provided by the class file. Otherwise, this method
@@ -219,7 +234,7 @@ public final class Parameter implements AnnotatedElement {
     public Class<?> getType() {
         Class<?> tmp = parameterClassCache;
         if (null == tmp) {
-            tmp = executable.getParameterTypes()[index];
+            tmp = executable.getSharedParameterTypes()[index];
             parameterClassCache = tmp;
         }
         return tmp;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
  * For efficiency this writer buffers the input. Use <code>flush()</code> function
  * to explicitly write the data to underlying stream.
  *
- * This writer is designed in such a way that it atleast buffers the input to the
+ * This writer is designed in such a way that it at least buffers the input to the
  * <code>size</code> specified. Unless <code>flush</code> is called, it guarantees that
  * data in chunks of size equal to or more than <code>size</code> specified will be written.
  *
@@ -64,9 +64,9 @@ public class XMLWriter extends Writer {
      }
 
      /**
-      * Creates the instnace of <code>XMLWriter</code>.
+      * Creates the instance of <code>XMLWriter</code>.
       *
-      * atleast buffers the input to the
+      * at least buffers the input to the
       * <code>size</code> specified.
       */
      public XMLWriter(Writer writer, int size){

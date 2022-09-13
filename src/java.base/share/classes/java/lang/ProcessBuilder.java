@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 import jdk.internal.event.ProcessStartEvent;
 import sun.security.action.GetPropertyAction;
 
@@ -1114,12 +1113,8 @@ public final class ProcessBuilder
                                      redirectErrorStream);
             ProcessStartEvent event = new ProcessStartEvent();
             if (event.isEnabled()) {
-                StringJoiner command = new StringJoiner(" ");
-                for (String s: cmdarray) {
-                    command.add(s);
-                }
                 event.directory = dir;
-                event.command = command.toString();
+                event.command = String.join(" ", cmdarray);
                 event.pid = process.pid();
                 event.commit();
             }
@@ -1296,6 +1291,10 @@ public final class ProcessBuilder
                     redirects[1] = new RedirectPipeImpl();  // placeholder for new output
                 }
                 processes.add(builder.start(redirects));
+                if (prevOutput instanceof RedirectPipeImpl redir) {
+                    // Wrap the fd so it can be closed
+                    new Process.PipeInputStream(redir.getFd()).close();
+                }
                 prevOutput = redirects[1];
             }
         } catch (Exception ex) {

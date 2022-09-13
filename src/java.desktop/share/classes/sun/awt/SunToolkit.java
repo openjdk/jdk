@@ -298,7 +298,7 @@ public abstract class SunToolkit extends Toolkit
      * Fetch the peer associated with the given target (as specified
      * in the peer creation method).  This can be used to determine
      * things like what the parent peer is.  If the target is null
-     * or the target can't be found (either because the a peer was
+     * or the target can't be found (either because the peer was
      * never created for it or the peer was disposed), a null will
      * be returned.
      */

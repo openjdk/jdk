@@ -279,7 +279,7 @@ class Instruction: public CompilationResourceObj {
 #ifndef PRODUCT
   int          _printable_bci;                   // the bci of the instruction for printing
 #endif
-  int          _use_count;                       // the number of instructions refering to this value (w/o prev/next); only roots can have use count = 0 or > 1
+  int          _use_count;                       // the number of instructions referring to this value (w/o prev/next); only roots can have use count = 0 or > 1
   int          _pin_state;                       // set of PinReason describing the reason for pinning
   ValueType*   _type;                            // the instruction value type
   Instruction* _next;                            // the next instruction if any (NULL for BlockEnd instructions)

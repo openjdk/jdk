@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,18 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "utilities/debug.hpp"
 
-StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames) : _reg_map(thread, update, process_frames) {
+StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames, bool allow_missing_reg)
+  : _reg_map(thread,
+             update ? RegisterMap::UpdateMap::include : RegisterMap::UpdateMap::skip,
+             process_frames ? RegisterMap::ProcessFrames::include : RegisterMap::ProcessFrames::skip,
+             RegisterMap::WalkContinuation::skip) {
   assert(thread->has_last_Java_frame(), "sanity check");
   _fr = thread->last_frame();
   _is_done = false;
+#ifndef PRODUCT
+  if (allow_missing_reg) {
+    _reg_map.set_skip_missing(true);
+  }
+#endif
 }
 

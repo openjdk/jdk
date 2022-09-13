@@ -252,9 +252,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                         if (editor instanceof AquaCustomComboTextField) {
                             ((AquaCustomComboTextField)editor).selectAll();
                         }
-                    } else {
-                        action.actionPerformed(e);
                     }
+                    action.actionPerformed(e);
                 }
             });
         }
@@ -617,13 +616,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
             size.height += margin.top + margin.bottom;
         } else {
             size = super.getMinimumSize(c);
-        }
-
-        final Border border = c.getBorder();
-        if (border != null) {
-            final Insets insets = border.getBorderInsets(c);
-            size.height += insets.top + insets.bottom;
-            size.width += insets.left + insets.right;
         }
 
         cachedMinimumSize.setSize(size.width, size.height);

@@ -27,14 +27,15 @@
 #include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
 G1SegmentedArraySegment::G1SegmentedArraySegment(uint slot_size, uint num_slots, G1SegmentedArraySegment* next, MEMFLAGS flag) :
   _slot_size(slot_size),
   _num_slots(num_slots),
-  _mem_flag(flag),
   _next(next),
-  _next_allocate(0) {
+  _next_allocate(0),
+  _mem_flag(flag) {
   _bottom = ((char*) this) + header_size();
 }
 
@@ -48,6 +49,11 @@ G1SegmentedArraySegment* G1SegmentedArraySegment::create_segment(uint slot_size,
 }
 
 void G1SegmentedArraySegment::delete_segment(G1SegmentedArraySegment* segment) {
+  // Wait for concurrent readers of the segment to exit before freeing; but only if the VM
+  // isn't exiting.
+  if (!VM_Exit::vm_exited()) {
+    GlobalCounter::write_synchronize();
+  }
   segment->~G1SegmentedArraySegment();
   FREE_C_HEAP_ARRAY(_mem_flag, segment);
 }
@@ -124,7 +130,7 @@ G1SegmentedArraySegment* G1SegmentedArray::create_new_segment(G1SegmentedArraySe
     // Successfully installed the segment into the list.
     Atomic::inc(&_num_segments, memory_order_relaxed);
     Atomic::add(&_mem_size, next->mem_size(), memory_order_relaxed);
-    Atomic::add(&_num_available_slots, next->num_slots(), memory_order_relaxed);
+    Atomic::add(&_num_total_slots, next->num_slots(), memory_order_relaxed);
     return next;
   }
 }
@@ -137,7 +143,7 @@ G1SegmentedArray::G1SegmentedArray(const G1SegmentedArrayAllocOptions* alloc_opt
   _num_segments(0),
   _mem_size(0),
   _free_segment_list(free_segment_list),
-  _num_available_slots(0),
+  _num_total_slots(0),
   _num_allocated_slots(0) {
   assert(_free_segment_list != nullptr, "precondition!");
 }
@@ -182,7 +188,7 @@ void G1SegmentedArray::drop_all() {
   _last = nullptr;
   _num_segments = 0;
   _mem_size = 0;
-  _num_available_slots = 0;
+  _num_total_slots = 0;
   _num_allocated_slots = 0;
 }
 

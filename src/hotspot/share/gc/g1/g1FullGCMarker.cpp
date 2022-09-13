@@ -41,7 +41,7 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _objarray_stack(),
     _preserved_stack(preserved_stack),
     _mark_closure(worker_id, this, G1CollectedHeap::heap()->ref_processor_stw()),
-    _verify_closure(VerifyOption_G1UseFullMarking),
+    _verify_closure(VerifyOption::G1UseFullMarking),
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
     _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {

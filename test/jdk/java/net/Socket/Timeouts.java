@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 8221481
  * @library /test/lib
  * @build jdk.test.lib.Utils
- * @run testng/timeout=180 Timeouts
+ * @compile --enable-preview -source ${jdk.version} Timeouts.java
+ * @run testng/othervm/timeout=180 --enable-preview Timeouts
  * @summary Test Socket timeouts
  */
 
@@ -49,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 import jdk.test.lib.Utils;
@@ -392,6 +394,8 @@ public class Timeouts {
      * Test timed accept with the thread interrupt status set.
      */
     public void testTimedAccept8() throws IOException {
+        if (Thread.currentThread().isVirtual())
+            throw new SkipException("Main test is a virtual thread");
         try (ServerSocket ss = boundServerSocket()) {
             ss.setSoTimeout(2000);
             Thread.currentThread().interrupt();
@@ -415,6 +419,8 @@ public class Timeouts {
      * Test interrupt of thread blocked in timed accept.
      */
     public void testTimedAccept9() throws IOException {
+        if (Thread.currentThread().isVirtual())
+            throw new SkipException("Main test is a virtual thread");
         try (ServerSocket ss = boundServerSocket()) {
             ss.setSoTimeout(4000);
             // interrupt thread after 1 second
