@@ -165,9 +165,9 @@ static JVMState* clone_jvms(Compile* C, SafePointNode* sfpt) {
   }
   Node* mem = map->memory();
   if (!mem->is_MergeMem()) {
-    // Since we are not in parsing, the SafeNode does not guarantee that the memory
+    // Since we are not in parsing, the SafePointNode does not guarantee that the memory
     // input is necessarily a MergeMemNode. But we need to ensure that there is that
-    // MereMemNode, since the GraphKit assumes the memory input of the map to be a
+    // MergeMemNode, since the GraphKit assumes the memory input of the map to be a
     // MergeMemNode, so that it can directly access the memory slices.
     PhaseGVN& gvn = *C->initial_gvn();
     Node* mergemem = MergeMemNode::make(mem);
