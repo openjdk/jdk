@@ -1608,6 +1608,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       guarantee(false, "Unknown Continuation native intrinsic");
     }
 
+#ifdef ASSERT
     if (method->is_continuation_enter_intrinsic()) {
       assert(interpreted_entry_offset != -1, "Must be set");
       assert(exception_offset != -1,         "Must be set");
@@ -1618,6 +1619,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(frame_complete != -1,    "Must be set");
     assert(stack_slots != -1,       "Must be set");
     assert(vep_offset != -1,        "Must be set");
+#endif
 
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,
