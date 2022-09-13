@@ -581,10 +581,9 @@ public:
   // remember what objects need handling. Not for use during marking.
   inline void raw_mark_in_bitmap(oop obj);
 
-  // Clears marks for all objects in the given region in the marking
-  // bitmap. This should only be used to clean the bitmap during a
-  // safepoint.
-  void clear_bitmap_for_region(HeapRegion* hr);
+  // Clears marking data including marks for all objects in the given region.
+  // This should only be used during a safepoint.
+  void clear_mark_data_for_region(HeapRegion* hr);
 
   // Verify that there are no collection set oops on the stacks (taskqueues /
   // global mark stack) and fingers (global / per-task).

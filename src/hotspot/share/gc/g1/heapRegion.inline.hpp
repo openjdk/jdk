@@ -196,7 +196,7 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 
   _garbage_bytes = 0;
 
-  set_top_at_mark_start(bottom());
+  reset_top_at_mark_start();
 
   reset_after_full_gc_common();
 }
@@ -317,7 +317,13 @@ inline void HeapRegion::note_end_of_scrubbing() {
   reset_parsable_bottom();
 }
 
-inline void HeapRegion::note_end_of_clearing() {
+inline void HeapRegion::init_top_at_mark_start() {
+  reset_top_at_mark_start();
+  _parsable_bottom = bottom();
+  _garbage_bytes = 0;
+}
+
+inline void HeapRegion::reset_top_at_mark_start() {
   // We do not need a release store here because
   //
   // - if this method is called during concurrent bitmap clearing, we do not read

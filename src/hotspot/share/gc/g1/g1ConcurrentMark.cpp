@@ -653,7 +653,7 @@ private:
       }
       assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
 
-      r->note_end_of_clearing();
+      r->reset_top_at_mark_start();
 
       return false;
     }
@@ -1885,10 +1885,10 @@ void G1ConcurrentMark::flush_all_task_caches() {
                        hits, misses, percent_of(hits, sum));
 }
 
-void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr) {
+void G1ConcurrentMark::clear_mark_data_for_region(HeapRegion* hr) {
   assert_at_safepoint();
   _mark_bitmap.clear_range(MemRegion(hr->bottom(), hr->end()));
-  hr->note_end_of_clearing();
+  hr->reset_top_at_mark_start();
 }
 
 HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {

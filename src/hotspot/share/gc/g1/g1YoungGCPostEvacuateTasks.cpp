@@ -368,7 +368,7 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
     bool do_heap_region(HeapRegion* r) override {
       assert(r->bottom() == r->top_at_mark_start(),
              "TAMS should have been reset for region %u", r->hrm_index());
-      G1CollectedHeap::heap()->clear_bitmap_for_region(r);
+      G1CollectedHeap::heap()->clear_mark_data_for_region(r);
       return false;
     }
   };

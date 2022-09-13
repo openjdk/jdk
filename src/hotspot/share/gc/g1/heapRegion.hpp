@@ -243,11 +243,7 @@ private:
   // Amount of dead data in the region.
   size_t _garbage_bytes;
 
-  void init_top_at_mark_start() {
-    set_top_at_mark_start(bottom());
-    _parsable_bottom = bottom();
-    _garbage_bytes = 0;
-  }
+  inline void init_top_at_mark_start();
 
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
@@ -375,7 +371,7 @@ public:
   inline void note_end_of_scrubbing();
 
   // Notify the region that the (corresponding) bitmap has been cleared.
-  inline void note_end_of_clearing();
+  inline void reset_top_at_mark_start();
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
   // classes or dead objects in this region?
