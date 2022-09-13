@@ -780,18 +780,6 @@ class UnixPath implements Path {
             sm.checkRead(getPathForPermissionCheck());
     }
 
-    void checkRead(WatchEvent.Modifier... modifiers) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            final boolean watchSubtree = Arrays.stream(modifiers).anyMatch(ExtendedOptions.FILE_TREE::matches);
-            final String path = getPathForPermissionCheck();
-            sm.checkRead(path);
-            if (watchSubtree)
-                sm.checkRead(path + "/-");
-        }
-    }
-
     void checkWrite() {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
@@ -893,8 +881,7 @@ class UnixPath implements Path {
             throw new NullPointerException();
         if (!(watcher instanceof AbstractWatchService))
             throw new ProviderMismatchException();
-
-        checkRead(modifiers);
+        checkRead();
         return ((AbstractWatchService)watcher).register(this, events, modifiers);
     }
 }
