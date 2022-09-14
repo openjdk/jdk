@@ -35,7 +35,7 @@
 
 #define __ masm->
 
-#define BUFFER_SIZE 30*wordSize
+#define BUFFER_SIZE 40*wordSize
 
 // Common register usage:
 // rax/xmm0: result

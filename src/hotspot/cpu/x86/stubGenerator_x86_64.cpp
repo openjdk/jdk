@@ -3460,7 +3460,7 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
     framesize // inclusive of return address
   };
 
-  CodeBuffer code("jfr_write_checkpoint", 512, 64);
+  CodeBuffer code("jfr_write_checkpoint", 1024, 64);
   MacroAssembler* _masm = new MacroAssembler(&code);
   address start = __ pc();
 
@@ -3475,14 +3475,7 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
   __ reset_last_Java_frame(true);
 
   // rax is jobject handle result, unpack and process it through a barrier.
-  Label L_null_jobject;
-  __ testptr(rax, rax);
-  __ jcc(Assembler::zero, L_null_jobject);
-
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, ACCESS_READ | IN_NATIVE, T_OBJECT, rax, Address(rax, 0), c_rarg0, r15_thread);
-
-  __ bind(L_null_jobject);
+  __ resolve_jobject(rax, r15_thread, c_rarg0);
 
   __ leave();
   __ ret(0);
