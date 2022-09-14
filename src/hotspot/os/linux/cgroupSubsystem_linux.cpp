@@ -325,6 +325,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     // as to avoid memory stomping of the _mount_path pointer later on in the cgroup v1
     // block in the hybrid case.
     if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s %*s %*s", tmproot, tmpmount, tmp_fs_type) == 3) {
+      // we likely have an early match return (e.g. cgroup fs match), be sure we have cgroup2 as fstype
       if (strcmp("cgroup2", tmp_fs_type) == 0) {
         cgroupv2_mount_point_found = true;
         any_cgroup_mounts_found = true;
