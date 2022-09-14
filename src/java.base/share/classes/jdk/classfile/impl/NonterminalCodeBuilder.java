@@ -37,9 +37,11 @@ import jdk.classfile.constantpool.ConstantPoolBuilder;
 public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
     permits ChainedCodeBuilder, BlockCodeBuilderImpl {
     protected final TerminalCodeBuilder terminal;
+    protected final CodeBuilder parent;
 
-    public NonterminalCodeBuilder(CodeBuilder downstream) {
-        this.terminal = switch (downstream) {
+    public NonterminalCodeBuilder(CodeBuilder parent) {
+        this.parent = parent;
+        this.terminal = switch (parent) {
             case ChainedCodeBuilder cb -> cb.terminal;
             case BlockCodeBuilderImpl cb -> cb.terminal;
             case TerminalCodeBuilder cb -> cb;

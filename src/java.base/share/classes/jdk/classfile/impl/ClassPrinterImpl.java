@@ -48,7 +48,7 @@ import jdk.classfile.AnnotationValue;
 import jdk.classfile.AnnotationValue.*;
 import jdk.classfile.Attribute;
 import jdk.classfile.ClassModel;
-import jdk.classfile.ClassPrinter.*;
+import jdk.classfile.components.ClassPrinter.*;
 import jdk.classfile.CodeModel;
 import jdk.classfile.Instruction;
 import jdk.classfile.MethodModel;

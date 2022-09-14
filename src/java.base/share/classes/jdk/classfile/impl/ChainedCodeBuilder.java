@@ -57,7 +57,7 @@ public final class ChainedCodeBuilder
 
     @Override
     public int allocateLocal(TypeKind typeKind) {
-        return terminal.allocateLocal(typeKind);
+        return parent.allocateLocal(typeKind);
     }
 
     @Override

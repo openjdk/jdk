@@ -47,7 +47,7 @@ import jdk.classfile.CodeModel;
 import jdk.classfile.CodeTransform;
 import jdk.classfile.MethodModel;
 import jdk.classfile.MethodTransform;
-import jdk.classfile.transforms.ClassRemapper;
+import jdk.classfile.components.ClassRemapper;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;

@@ -39,7 +39,7 @@ import jdk.classfile.ClassTransform;
 import jdk.classfile.Classfile;
 import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
-import jdk.classfile.ClassPrinter;
+import jdk.classfile.components.ClassPrinter;
 import org.testng.Assert;
 import org.testng.annotations.Factory;
 import org.testng.annotations.Test;

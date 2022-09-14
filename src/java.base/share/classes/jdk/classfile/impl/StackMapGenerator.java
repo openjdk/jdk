@@ -46,7 +46,7 @@ import jdk.classfile.BufWriter;
 import jdk.classfile.Label;
 import jdk.classfile.attribute.StackMapTableAttribute;
 import jdk.classfile.Attributes;
-import jdk.classfile.ClassPrinter;
+import jdk.classfile.components.ClassPrinter;
 import jdk.classfile.attribute.CodeAttribute;
 
 /**

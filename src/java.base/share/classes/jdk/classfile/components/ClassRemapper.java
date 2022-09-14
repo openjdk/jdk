@@ -21,7 +21,7 @@
  * questions.
  *
  */
-package jdk.classfile.transforms;
+package jdk.classfile.components;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
@@ -90,89 +90,142 @@ import jdk.classfile.impl.Util;
 import jdk.classfile.instruction.ConstantInstruction.LoadConstantInstruction;
 
 /**
- *
+ * ClassRemapper is a {@link jdk.classfile.ClassTransform}, {@link jdk.classfile.FieldTransform},
+ * {@link jdk.classfile.MethodTransform} and {@link jdk.classfile.CodeTransform}
+ * re-mapping all class references in any form according to given map or map function.
+ * <p>
+ * Primitive types and arrays are never subjects of mapping and are not allowed targets of mapping.
+ * <p>
+ * Arrays of reference types are always decomposed, mapped as the base reference types and composed back to arrays.
+ * <p>
+ * Sample re-mapping class Foo to Bar:
+ * <p>
+ * {@snippet lang=java :
+ *     var classMap = Map.of(ClassDesc.of("Foo"), ClassDesc.of("Bar"));
+ *     var classRemapper = ClassRemapper.of(classMap);
+ *     for (var classModel : allMyClasses) {
+ *         var remappedClassBytes = classRemapper.remapClass(classModel);
+ *         ...
+ *     }
+ * }
+ * <p>
+ * Sample re-mapping all classes in com.mypackage and sub-packages to com.otherpackage:
+ * <p>
+ * {@snippet lang=java :
+ *     var classRemapper = ClassRemapper.of(cd ->
+ *             ClassDesc.ofDescriptor(cd.descriptorString().replace("Lcom/mypackage/", "Lcom/otherpackage/")));
+ *     for (var classModel : allMyClasses) {
+ *         var remappedClassBytes = classRemapper.remapClass(classModel);
+ *         ...
+ *     }
+ * }
  */
-public sealed interface ClassRemapper {
+public sealed interface ClassRemapper extends ClassTransform {
 
+    /**
+     * Creates new instance of ClassRemapper instructed with a class map.
+     * Map may contain only re-mapping entries, identity mapping is applied by default.
+     * @param classMap class map
+     * @return new instance of ClassRemapper
+     */
     static ClassRemapper of(Map<ClassDesc, ClassDesc> classMap) {
         return of(desc -> classMap.getOrDefault(desc, desc));
     }
 
+    /**
+     * Creates new instance of ClassRemapper instructed with a map function.
+     * Map function must return valid {@link java.lang.constant.ClassDesc} of an interface
+     * or a class, even for identity mappings.
+     * @param mapFunction class map function
+     * @return new instance of ClassRemapper
+     */
     static ClassRemapper of(Function<ClassDesc, ClassDesc> mapFunction) {
         return new ClassRemapperImpl(mapFunction);
     }
 
+    /**
+     * Access method to internal class mapping function.
+     * @param desc source class
+     * @return class target class
+     */
     ClassDesc map(ClassDesc desc);
 
-    ClassTransform classTransform();
+    /**
+     * Returns this ClassRemapper as {@link jdk.classfile.FieldTransform} instance
+     * @return this ClassRemapper as {@link jdk.classfile.FieldTransform} instance
+     */
+    FieldTransform asFieldTransform();
 
-    FieldTransform fieldTransform();
+    /**
+     * Returns this ClassRemapper as {@link jdk.classfile.MethodTransform} instance
+     * @return this ClassRemapper as {@link jdk.classfile.MethodTransform} instance
+     */
+    MethodTransform asMethodTransform();
 
-    MethodTransform methodTransform();
+    /**
+     * Returns this ClassRemapper as {@link jdk.classfile.CodeTransform} instance
+     * @return this ClassRemapper as {@link jdk.classfile.CodeTransform} instance
+     */
+    CodeTransform asCodeTransform();
 
-    CodeTransform codeTransform();
-
+    /**
+     * Remaps the whole ClassModel into a new class file, including the class name.
+     * @param clm class model to re-map
+     * @return re-mapped class file bytes
+     */
     default byte[] remapClass(ClassModel clm) {
         return Classfile.build(map(clm.thisClass().asSymbol()),
-                clb -> clm.forEachElement(classTransform().resolve(clb).consumer()));
+                clb -> clm.forEachElement(resolve(clb).consumer()));
     }
 
-    final static class ClassRemapperImpl implements ClassRemapper {
+    record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) implements ClassRemapper {
 
-        private final Function<ClassDesc, ClassDesc> mapFunction;
-
-        ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) {
-            this.mapFunction = mapFunction;
+        @Override
+        public void accept(ClassBuilder clb, ClassElement cle) {
+            switch (cle) {
+                case FieldModel fm ->
+                    clb.withField(fm.fieldName().stringValue(), map(fm.fieldTypeSymbol()), fb -> fm.forEachElement(asFieldTransform().resolve(fb).consumer()));
+                case MethodModel mm ->
+                    clb.withMethod(mm.methodName().stringValue(), mapMethodDesc(mm.methodTypeSymbol()), mm.flags().flagsMask(), mb -> mm.forEachElement(asMethodTransform().resolve(mb).consumer()));
+                case Superclass sc ->
+                    clb.withSuperclass(map(sc.superclassEntry().asSymbol()));
+                case Interfaces ins ->
+                    clb.withInterfaceSymbols(Util.mappedList(ins.interfaces(), in -> map(in.asSymbol())));
+                case SignatureAttribute sa ->
+                    clb.with(SignatureAttribute.of(mapClassSignature(sa.asClassSignature())));
+                case InnerClassesAttribute ica ->
+                    clb.with(InnerClassesAttribute.of(ica.classes().stream().map(ici ->
+                            InnerClassInfo.of(map(ici.innerClass().asSymbol()),
+                                    ici.outerClass().map(oc -> map(oc.asSymbol())),
+                                    ici.innerName().map(Utf8Entry::stringValue),
+                                    ici.flagsMask())).toList()));
+                case EnclosingMethodAttribute ema ->
+                    clb.with(EnclosingMethodAttribute.of(map(ema.enclosingClass().asSymbol()),
+                            ema.enclosingMethodName().map(Utf8Entry::stringValue),
+                            ema.enclosingMethodTypeSymbol().map(this::mapMethodDesc)));
+                case RecordAttribute ra ->
+                    clb.with(RecordAttribute.of(ra.components().stream().map(this::mapRecordComponent).toList()));
+                case ModuleAttribute ma ->
+                    clb.with(ModuleAttribute.of(ma.moduleName(), ma.moduleFlagsMask(), ma.moduleVersion().orElse(null),
+                            ma.requires(), ma.exports(), ma.opens(),
+                            ma.uses().stream().map(ce -> clb.constantPool().classEntry(map(ce.asSymbol()))).toList(),
+                            ma.provides().stream().map(mp -> ModuleProvideInfo.of(map(mp.provides().asSymbol()),
+                                    mp.providesWith().stream().map(pw -> map(pw.asSymbol())).toList())).toList()));
+                case RuntimeVisibleAnnotationsAttribute aa ->
+                    clb.with(RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                case RuntimeInvisibleAnnotationsAttribute aa ->
+                    clb.with(RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                case RuntimeVisibleTypeAnnotationsAttribute aa ->
+                    clb.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                case RuntimeInvisibleTypeAnnotationsAttribute aa ->
+                    clb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                default ->
+                    clb.with(cle);
+            }
         }
 
         @Override
-        public ClassTransform classTransform() {
-            return (ClassBuilder clb, ClassElement cle) -> {
-                switch (cle) {
-                    case FieldModel fm ->
-                        clb.withField(fm.fieldName().stringValue(), map(fm.fieldTypeSymbol()), fb -> fm.forEachElement(fieldTransform().resolve(fb).consumer()));
-                    case MethodModel mm ->
-                        clb.withMethod(mm.methodName().stringValue(), mapMethodDesc(mm.methodTypeSymbol()), mm.flags().flagsMask(), mb -> mm.forEachElement(methodTransform().resolve(mb).consumer()));
-                    case Superclass sc ->
-                        clb.withSuperclass(map(sc.superclassEntry().asSymbol()));
-                    case Interfaces ins ->
-                        clb.withInterfaceSymbols(Util.mappedList(ins.interfaces(), in -> map(in.asSymbol())));
-                    case SignatureAttribute sa ->
-                        clb.with(SignatureAttribute.of(mapClassSignature(sa.asClassSignature())));
-                    case InnerClassesAttribute ica ->
-                        clb.with(InnerClassesAttribute.of(ica.classes().stream().map(ici ->
-                                InnerClassInfo.of(map(ici.innerClass().asSymbol()),
-                                        ici.outerClass().map(oc -> map(oc.asSymbol())),
-                                        ici.innerName().map(Utf8Entry::stringValue),
-                                        ici.flagsMask())).toList()));
-                    case EnclosingMethodAttribute ema ->
-                        clb.with(EnclosingMethodAttribute.of(map(ema.enclosingClass().asSymbol()),
-                                ema.enclosingMethodName().map(Utf8Entry::stringValue),
-                                ema.enclosingMethodTypeSymbol().map(this::mapMethodDesc)));
-                    case RecordAttribute ra ->
-                        clb.with(RecordAttribute.of(ra.components().stream().map(this::mapRecordComponent).toList()));
-                    case ModuleAttribute ma ->
-                        clb.with(ModuleAttribute.of(ma.moduleName(), ma.moduleFlagsMask(), ma.moduleVersion().orElse(null),
-                                ma.requires(), ma.exports(), ma.opens(),
-                                ma.uses().stream().map(ce -> clb.constantPool().classEntry(map(ce.asSymbol()))).toList(),
-                                ma.provides().stream().map(mp -> ModuleProvideInfo.of(map(mp.provides().asSymbol()),
-                                        mp.providesWith().stream().map(pw -> map(pw.asSymbol())).toList())).toList()));
-                    case RuntimeVisibleAnnotationsAttribute aa ->
-                        clb.with(RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
-                    case RuntimeInvisibleAnnotationsAttribute aa ->
-                        clb.with(RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
-                    case RuntimeVisibleTypeAnnotationsAttribute aa ->
-                        clb.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
-                    case RuntimeInvisibleTypeAnnotationsAttribute aa ->
-                        clb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
-                    default ->
-                        clb.with(cle);
-                }
-            };
-        }
-
-        @Override
-        public FieldTransform fieldTransform() {
+        public FieldTransform asFieldTransform() {
             return (FieldBuilder fb, FieldElement fe) -> {
                 switch (fe) {
                     case SignatureAttribute sa ->
@@ -192,11 +245,11 @@ public sealed interface ClassRemapper {
         }
 
         @Override
-        public MethodTransform methodTransform() {
+        public MethodTransform asMethodTransform() {
             return (MethodBuilder mb, MethodElement me) -> {
                 switch (me) {
                     case CodeModel com ->
-                        mb.transformCode(com, codeTransform());
+                        mb.transformCode(com, asCodeTransform());
                     case ExceptionsAttribute ea ->
                         mb.with(ExceptionsAttribute.ofSymbols(ea.exceptions().stream().map(ce -> map(ce.asSymbol())).toList()));
                     case SignatureAttribute sa ->
@@ -220,7 +273,7 @@ public sealed interface ClassRemapper {
         }
 
         @Override
-        public CodeTransform codeTransform() {
+        public CodeTransform asCodeTransform() {
             return (CodeBuilder cob, CodeElement coe) -> {
                 switch (coe) {
                     case FieldInstruction fai ->

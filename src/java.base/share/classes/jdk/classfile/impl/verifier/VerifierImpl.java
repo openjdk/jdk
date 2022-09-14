@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import jdk.classfile.ClassHierarchyResolver;
 import jdk.classfile.ClassModel;
-import jdk.classfile.ClassPrinter;
+import jdk.classfile.components.ClassPrinter;
 import jdk.classfile.Classfile;
 import jdk.classfile.impl.ClassHierarchyImpl;
 import jdk.classfile.impl.RawBytecodeHelper;

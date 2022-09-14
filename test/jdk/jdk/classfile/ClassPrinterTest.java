@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import jdk.classfile.*;
 import jdk.classfile.attribute.*;
+import jdk.classfile.components.ClassPrinter;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 

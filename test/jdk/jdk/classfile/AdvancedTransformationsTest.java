@@ -38,8 +38,8 @@ import jdk.classfile.CodeModel;
 import jdk.classfile.MethodModel;
 import jdk.classfile.TypeKind;
 import jdk.classfile.impl.StackMapGenerator;
-import jdk.classfile.transforms.ClassRemapper;
-import jdk.classfile.transforms.CodeLocalsShifter;
+import jdk.classfile.components.ClassRemapper;
+import jdk.classfile.components.CodeLocalsShifter;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 import static helpers.TestUtil.assertEmpty;
@@ -51,6 +51,8 @@ import java.util.stream.Collectors;
 import jdk.classfile.Attributes;
 import jdk.classfile.ClassModel;
 import jdk.classfile.ClassTransform;
+import jdk.classfile.CodeBuilder;
+import jdk.classfile.CodeTransform;
 import jdk.classfile.FieldModel;
 import jdk.classfile.Signature;
 import jdk.classfile.attribute.ModuleAttribute;
@@ -59,9 +61,9 @@ import jdk.classfile.impl.RawBytecodeHelper;
 import jdk.classfile.instruction.InvokeInstruction;
 import jdk.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
-import jdk.classfile.transforms.LabelsRemapper;
+import jdk.classfile.components.CodeRelabeler;
 import jdk.classfile.jdktypes.ModuleDesc;
-import jdk.classfile.ClassPrinter;
+import jdk.classfile.components.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -77,20 +79,27 @@ public class AdvancedTransformationsTest {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
-                            var shifter = new CodeLocalsShifter(mm.flags(), mm.methodTypeSymbol());
-                            shifter.addLocal(TypeKind.ReferenceType);
-                            shifter.addLocal(TypeKind.LongType);
-                            shifter.addLocal(TypeKind.IntType);
-                            shifter.addLocal(TypeKind.DoubleType);
-                            mb.transformCode(com, shifter);
-                        }
-                        mb.with(me);
+                            var shifter = CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol());
+                            mb.transformCode(com, new CodeTransform() {
+                                @Override
+                                public void atStart(CodeBuilder builder) {
+                                    builder.allocateLocal(TypeKind.ReferenceType);
+                                    builder.allocateLocal(TypeKind.LongType);
+                                    builder.allocateLocal(TypeKind.IntType);
+                                    builder.allocateLocal(TypeKind.DoubleType);
+                                }
+                                @Override
+                                public void accept(CodeBuilder builder, CodeElement element) {
+                                    builder.with(element);
+                                }
+                            }.andThen(shifter));
+                        } else mb.with(me);
                     });
                 }
                 else
                     clb.with(cle);
             }));
-            remapped.verify(null); //System.out::print);
+            remapped.verify(null);
         }
     }
 
@@ -292,15 +301,14 @@ public class AdvancedTransformationsTest {
                         (mb, me) -> {
                             if (me instanceof CodeModel targetCodeModel) {
                                 var mm = targetCodeModel.parent().get();
-                                var instrumentorLocalsShifter = new CodeLocalsShifter(mm.flags(), mm.methodTypeSymbol());
                                 //instrumented methods code is taken from instrumentor
                                 mb.transformCode(instrumentorCodeMap.get(mm.methodName().stringValue() + mm.methodType().stringValue()),
-                                        //locals shifter monitors locals
-                                        instrumentorLocalsShifter
+                                        //all references to the instrumentor class are remapped to target class
+                                        instrumentorClassRemapper.asCodeTransform()
                                         .andThen((codeBuilder, instrumentorCodeElement) -> {
                                             //all invocations of target methods from instrumentor are inlined
                                             if (instrumentorCodeElement instanceof InvokeInstruction inv
-                                                && instrumentor.thisClass().asInternalName().equals(inv.owner().asInternalName())
+                                                && target.thisClass().asInternalName().equals(inv.owner().asInternalName())
                                                 && mm.methodName().stringValue().equals(inv.name().stringValue())
                                                 && mm.methodType().stringValue().equals(inv.type().stringValue())) {
 
@@ -316,23 +324,20 @@ public class AdvancedTransformationsTest {
                                                 }
                                                 storeStack.forEach(codeBuilder::with);
 
-                                                var endLabel = codeBuilder.newLabel();
                                                 //inlined target locals must be shifted based on the actual instrumentor locals
-                                                codeBuilder.transform(targetCodeModel, instrumentorLocalsShifter.fork()
-                                                        .andThen(LabelsRemapper.remapLabels())
+                                                codeBuilder.block(inlinedBlockBuilder -> inlinedBlockBuilder
+                                                        .transform(targetCodeModel, CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol())
+                                                        .andThen(CodeRelabeler.of())
                                                         .andThen((innerBuilder, shiftedTargetCode) -> {
                                                             //returns must be replaced with jump to the end of the inlined method
                                                             if (shiftedTargetCode.codeKind() == CodeElement.Kind.RETURN)
-                                                                innerBuilder.goto_(endLabel);
+                                                                innerBuilder.goto_(inlinedBlockBuilder.breakLabel());
                                                             else
                                                                 innerBuilder.with(shiftedTargetCode);
-                                                        }));
-                                                codeBuilder.labelBinding(endLabel);
+                                                        })));
                                             } else
                                                 codeBuilder.with(instrumentorCodeElement);
-                                        })
-                                        //all references to the instrumentor class are remapped to target class
-                                        .andThen(instrumentorClassRemapper.codeTransform()));
+                                        }));
                             } else
                                 mb.with(me);
                         })
@@ -346,6 +351,6 @@ public class AdvancedTransformationsTest {
                                             && !"<init>".equals(mm.methodName().stringValue())
                                             && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
                             //and instrumentor class references remapped to target class
-                            .andThen(instrumentorClassRemapper.classTransform())))));
+                            .andThen(instrumentorClassRemapper)))));
     }
 }

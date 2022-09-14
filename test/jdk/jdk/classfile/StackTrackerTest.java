@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @summary Testing StackTracker in CodeBuilder.
+ * @summary Testing CodeStackTracker in CodeBuilder.
  * @run testng StackTrackerTest
  */
 import java.util.List;
@@ -33,7 +33,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ConstantDescs;
 import jdk.classfile.*;
-import jdk.classfile.transforms.StackTracker;
+import jdk.classfile.components.CodeStackTracker;
 import static jdk.classfile.TypeKind.*;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -47,25 +47,25 @@ public class StackTrackerTest {
     public void testStackTracker() {
         Classfile.build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
-                var stackTracker = new StackTracker();
+                var stackTracker = CodeStackTracker.of(DoubleType, FloatType); //initial stack tracker pre-set
                 cob.transforming(stackTracker, stcb -> {
-                    assertEquals(stackTracker.stack().get(), List.of());
+                    assertEquals(stackTracker.stack().get(), List.of(DoubleType, FloatType));
                     stcb.aload(0);
-                    assertEquals(stackTracker.stack().get(), List.of(ReferenceType));
+                    assertEquals(stackTracker.stack().get(), List.of(ReferenceType, DoubleType, FloatType));
                     stcb.lconst_0();
-                    assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType));
+                    assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
                     stcb.trying(tryb -> {
-                        assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType));
+                        assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
                         tryb.iconst_1();
-                        assertEquals(stackTracker.stack().get(), List.of(IntType, LongType, ReferenceType));
+                        assertEquals(stackTracker.stack().get(), List.of(IntType, LongType, ReferenceType, DoubleType, FloatType));
                         tryb.ifThen(thb -> {
-                            assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType));
+                            assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
                             thb.constantInstruction(ClassDesc.of("Phee"));
-                            assertEquals(stackTracker.stack().get(), List.of(ReferenceType, LongType, ReferenceType));
+                            assertEquals(stackTracker.stack().get(), List.of(ReferenceType, LongType, ReferenceType, DoubleType, FloatType));
                             thb.athrow();
                             assertFalse(stackTracker.stack().isPresent());
                         });
-                        assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType));
+                        assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
                         tryb.return_();
                         assertFalse(stackTracker.stack().isPresent());
                     }, catchb -> catchb.catching(ClassDesc.of("Phee"), cb -> {
@@ -75,14 +75,14 @@ public class StackTrackerTest {
                     }));
                 });
                 assertTrue(stackTracker.maxStackSize().isPresent());
-                assertEquals((int)stackTracker.maxStackSize().get(), 4);
+                assertEquals((int)stackTracker.maxStackSize().get(), 7);
             }));
     }
 
     public void testTrackingLost() {
         Classfile.build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
-                var stackTracker = new StackTracker();
+                var stackTracker = CodeStackTracker.of();
                 cob.transforming(stackTracker, stcb -> {
                     assertEquals(stackTracker.stack().get(), List.of());
                     var l1 = stcb.newLabel();

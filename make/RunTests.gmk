@@ -599,7 +599,7 @@ define SetupRunMicroTestBody
         --add-exports java.base/jdk.classfile.constantpool=ALL-UNNAMED \
         --add-exports java.base/jdk.classfile.instruction=ALL-UNNAMED \
         --add-exports java.base/jdk.classfile.jdktypes=ALL-UNNAMED \
-        --add-exports java.base/jdk.classfile.transforms=ALL-UNNAMED \
+        --add-exports java.base/jdk.classfile.components=ALL-UNNAMED \
         --add-exports java.base/jdk.classfile.impl=ALL-UNNAMED
 
   ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )

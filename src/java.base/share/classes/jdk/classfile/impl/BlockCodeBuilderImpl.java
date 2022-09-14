@@ -39,7 +39,6 @@ import java.util.Objects;
 public final class BlockCodeBuilderImpl
         extends NonterminalCodeBuilder
         implements CodeBuilder.BlockCodeBuilder {
-    private final CodeBuilder parent;
     private final Label startLabel, endLabel, breakLabel;
     private boolean reachable = true;
     private boolean hasInstructions = false;
@@ -48,7 +47,6 @@ public final class BlockCodeBuilderImpl
 
     public BlockCodeBuilderImpl(CodeBuilder parent, Label breakLabel) {
         super(parent);
-        this.parent = parent;
         this.startLabel = parent.newLabel();
         this.endLabel = parent.newLabel();
         this.breakLabel = Objects.requireNonNull(breakLabel);
