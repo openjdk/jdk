@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
@@ -40,19 +41,7 @@ import org.openide.util.Utilities;
  *
  * @author Thomas Wuerthinger
  */
-public final class ShowAllAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
-
-    private DiagramViewModel model;
-
-    @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
-    }
-
-    @Override
-    public void performAction(DiagramViewModel model) {
-        model.showNot(new HashSet<Integer>());
-    }
+public final class ShowAllAction extends ContextAction<DiagramViewModel> {
 
     public ShowAllAction() {
         putValue(Action.SHORT_DESCRIPTION, "Show all nodes");
@@ -71,33 +60,13 @@ public final class ShowAllAction extends ContextAction<DiagramViewModel> impleme
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
-    }
-
-    @Override
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/expand.gif";
     }
 
     @Override
-    public void update(DiagramViewModel model) {
-        super.update(model);
-        if (this.model != model) {
-            if (this.model != null) {
-                this.model.getHiddenNodesChangedEvent().removeListener(this);
-            }
-
-            this.model = model;
-            if (this.model != null) {
-                this.model.getHiddenNodesChangedEvent().addListener(this);
-            }
-        }
-    }
-
-    @Override
-    public void changed(DiagramViewModel source) {
-        update(source);
+    public void performAction(DiagramViewModel model) {
+        model.showNot(new HashSet<Integer>());
     }
 
     @Override
@@ -106,7 +75,17 @@ public final class ShowAllAction extends ContextAction<DiagramViewModel> impleme
     }
 
     @Override
-    public Action createContextAwareInstance(Lookup lookup) {
-        return new ShowAllAction();
+    public Class<DiagramViewModel> contextClass() {
+        return DiagramViewModel.class;
+    }
+
+    @Override
+    public ChangedEvent<DiagramViewModel> getChangedEvent(DiagramViewModel model) {
+        return model.getViewChangedEvent();
+    }
+
+    @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
     }
 }

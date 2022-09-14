@@ -23,7 +23,7 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import javax.swing.Action;
@@ -34,9 +34,8 @@ import org.openide.util.*;
  *
  * @author Thomas Wuerthinger
  */
-public final class NextDiagramAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
+public final class NextDiagramAction extends ContextAction<DiagramViewModel> {
 
-    private DiagramViewModel model;
 
     public NextDiagramAction() {
         putValue(Action.SHORT_DESCRIPTION, "Show next graph of current group");
@@ -54,30 +53,9 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> imp
     }
 
     @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
-    }
-
-    @Override
     public void performAction(DiagramViewModel model) {
         if (model.getSecondPosition() != model.getPositions().size() - 1) {
             model.setPositions(model.getFirstPosition() + 1, model.getSecondPosition() + 1);
-        }
-    }
-
-    @Override
-    public void update(DiagramViewModel model) {
-        super.update(model);
-
-        if (this.model != model) {
-            if (this.model != null) {
-                this.model.getDiagramChangedEvent().removeListener(this);
-            }
-
-            this.model = model;
-            if (this.model != null) {
-                this.model.getDiagramChangedEvent().addListener(this);
-            }
         }
     }
 
@@ -87,17 +65,17 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> imp
     }
 
     @Override
-    public Action createContextAwareInstance(Lookup arg0) {
-        return new NextDiagramAction();
+    public Class<DiagramViewModel> contextClass() {
+        return DiagramViewModel.class;
     }
 
     @Override
-    public void changed(DiagramViewModel source) {
-        update(source);
+    public ChangedEvent<DiagramViewModel> getChangedEvent(DiagramViewModel model) {
+        return model.getViewChangedEvent();
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return NextDiagramAction.this;
     }
 }

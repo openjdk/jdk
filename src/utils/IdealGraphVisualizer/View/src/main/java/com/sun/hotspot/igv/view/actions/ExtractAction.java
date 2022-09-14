@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
@@ -40,24 +41,12 @@ import org.openide.util.Utilities;
  *
  * @author Thomas Wuerthinger
  */
-public final class ExtractAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
-
-    private DiagramViewModel model;
+public final class ExtractAction extends ContextAction<DiagramViewModel> {
 
     public ExtractAction() {
         putValue(Action.SHORT_DESCRIPTION, "Extract current set of selected nodes");
         // D is the Control key on most platforms, the Command (meta) key on Macintosh
         putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-X"));
-    }
-
-    @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
-    }
-
-    @Override
-    public void performAction(DiagramViewModel model) {
-        model.showOnly(model.getSelectedNodes());
     }
 
     @Override
@@ -71,8 +60,8 @@ public final class ExtractAction extends ContextAction<DiagramViewModel> impleme
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
+    public void performAction(DiagramViewModel model) {
+        model.showOnly(model.getSelectedNodes());
     }
 
     @Override
@@ -81,31 +70,22 @@ public final class ExtractAction extends ContextAction<DiagramViewModel> impleme
     }
 
     @Override
-    public void update(DiagramViewModel model) {
-        super.update(model);
-        if (this.model != model) {
-            if (this.model != null) {
-                this.model.getViewChangedEvent().removeListener(this);
-            }
-            this.model = model;
-            if (this.model != null) {
-                this.model.getViewChangedEvent().addListener(this);
-            }
-        }
-    }
-
-    @Override
-    public void changed(DiagramViewModel source) {
-        update(source);
-    }
-
-    @Override
     public boolean isEnabled(DiagramViewModel model) {
         return model != null && !model.getSelectedNodes().isEmpty();
     }
 
     @Override
-    public Action createContextAwareInstance(Lookup lookup) {
-        return new ExtractAction();
+    public Class<DiagramViewModel> contextClass() {
+        return DiagramViewModel.class;
+    }
+
+    @Override
+    public ChangedEvent<DiagramViewModel> getChangedEvent(DiagramViewModel model) {
+        return model.getViewChangedEvent();
+    }
+
+    @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
     }
 }

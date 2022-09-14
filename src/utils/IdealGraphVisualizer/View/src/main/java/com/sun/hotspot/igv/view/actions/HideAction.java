@@ -23,16 +23,12 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.Event;
-import java.awt.event.KeyEvent;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.Action;
-import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
@@ -41,9 +37,7 @@ import org.openide.util.Utilities;
  *
  * @author Thomas Wuerthinger
  */
-public final class HideAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
-
-    private DiagramViewModel model;
+public final class HideAction extends ContextAction<DiagramViewModel> {
 
     public HideAction() {
         putValue(Action.SHORT_DESCRIPTION, "Hide selected nodes");
@@ -62,11 +56,6 @@ public final class HideAction extends ContextAction<DiagramViewModel> implements
     }
 
     @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
-    }
-
-    @Override
     public void performAction(DiagramViewModel model) {
         Set<Integer> selectedNodes = model.getSelectedNodes();
         HashSet<Integer> nodes = new HashSet<>(model.getHiddenNodes());
@@ -75,32 +64,8 @@ public final class HideAction extends ContextAction<DiagramViewModel> implements
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
-    }
-
-    @Override
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/hide.gif";
-    }
-
-    @Override
-    public void update(DiagramViewModel model) {
-        super.update(model);
-        if (this.model != model) {
-            if (this.model != null) {
-                this.model.getViewChangedEvent().removeListener(this);
-            }
-            this.model = model;
-            if (this.model != null) {
-                this.model.getViewChangedEvent().addListener(this);
-            }
-        }
-    }
-
-    @Override
-    public void changed(DiagramViewModel source) {
-        update(source);
     }
 
     @Override
@@ -109,7 +74,17 @@ public final class HideAction extends ContextAction<DiagramViewModel> implements
     }
 
     @Override
-    public Action createContextAwareInstance(Lookup lookup) {
-        return new HideAction();
+    public Class<DiagramViewModel> contextClass() {
+        return DiagramViewModel.class;
+    }
+
+    @Override
+    public ChangedEvent<DiagramViewModel> getChangedEvent(DiagramViewModel model) {
+        return model.getViewChangedEvent();
+    }
+
+    @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
     }
 }

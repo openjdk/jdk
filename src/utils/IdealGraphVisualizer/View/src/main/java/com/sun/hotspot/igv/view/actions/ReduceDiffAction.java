@@ -23,15 +23,14 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.*;
 
-public final class ReduceDiffAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
-    private DiagramViewModel model;
+public final class ReduceDiffAction extends ContextAction<DiagramViewModel> {
 
     public ReduceDiffAction() {
         putValue(Action.SHORT_DESCRIPTION, "Reduce the difference selection");
@@ -49,11 +48,6 @@ public final class ReduceDiffAction extends ContextAction<DiagramViewModel> impl
     }
 
     @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
-    }
-
-    @Override
     public void performAction(DiagramViewModel model) {
         int firstPos = model.getFirstPosition();
         int secondPos = model.getSecondPosition();
@@ -63,38 +57,22 @@ public final class ReduceDiffAction extends ContextAction<DiagramViewModel> impl
     }
 
     @Override
-    public void update(DiagramViewModel model) {
-        super.update(model);
-
-        if (this.model != model) {
-            if (this.model != null) {
-                this.model.getDiagramChangedEvent().removeListener(this);
-            }
-
-            this.model = model;
-            if (this.model != null) {
-                this.model.getDiagramChangedEvent().addListener(this);
-            }
-        }
-    }
-
-    @Override
     public boolean isEnabled(DiagramViewModel model) {
         return model.getFirstPosition() != model.getSecondPosition();
     }
 
     @Override
-    public Action createContextAwareInstance(Lookup arg0) {
-        return new ReduceDiffAction();
+    public Class<DiagramViewModel> contextClass() {
+        return DiagramViewModel.class;
     }
 
     @Override
-    public void changed(DiagramViewModel source) {
-        update(source);
+    public ChangedEvent<DiagramViewModel> getChangedEvent(DiagramViewModel model) {
+        return model.getViewChangedEvent();
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
     }
 }
