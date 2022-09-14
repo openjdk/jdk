@@ -56,8 +56,6 @@ public:
   explicit G1RemoveSelfForwardsTask(G1EvacFailureRegions* evac_failure_regions);
 
   void work(uint worker_id);
-
-  void initialize();
 };
 
 #endif // SHARE_GC_G1_G1EVACFAILURE_HPP

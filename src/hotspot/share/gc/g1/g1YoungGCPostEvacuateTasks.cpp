@@ -106,15 +106,13 @@ public:
     G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
     _task(evac_failure_regions),
     _evac_failure_regions(evac_failure_regions) {
-
-    _task.initialize();
   }
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
 
-    double chunks_per_thread = (double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker;
-    return chunks_per_thread * _evac_failure_regions->num_regions_failed_evacuation();
+    double workers_per_region = (double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker;
+    return workers_per_region * _evac_failure_regions->num_regions_failed_evacuation();
   }
 
   void do_work(uint worker_id) override {

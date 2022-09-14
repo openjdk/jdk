@@ -191,7 +191,18 @@ G1RemoveSelfForwardsTask::G1RemoveSelfForwardsTask(G1EvacFailureRegions* evac_fa
   _g1h(G1CollectedHeap::heap()),
   _cm(_g1h->concurrent_mark()),
   _evac_failure_regions(evac_failure_regions),
-  _chunk_bitmap(mtGC) { }
+  _chunk_bitmap(mtGC) {
+
+  _num_evac_fail_regions = _evac_failure_regions->num_regions_failed_evacuation();
+  _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region();
+
+  _chunk_size = static_cast<uint>(HeapRegion::GrainWords / _num_chunks_per_region);
+
+  log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region",
+                      _num_chunks_per_region);
+
+  _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_fail_regions);
+}
 
 void G1RemoveSelfForwardsTask::work(uint worker_id) {
   const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
@@ -204,16 +215,4 @@ void G1RemoveSelfForwardsTask::work(uint worker_id) {
       process_chunk(worker_id, chunk_idx);
     }
   }
-}
-
-void G1RemoveSelfForwardsTask::initialize() {
-  _num_evac_fail_regions = _evac_failure_regions->num_regions_failed_evacuation();
-  _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region();
-
-  _chunk_size = static_cast<uint>(HeapRegion::GrainWords / _num_chunks_per_region);
-
-  log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region",
-                      _num_chunks_per_region);
-
-  _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_fail_regions);
 }
