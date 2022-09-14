@@ -272,18 +272,16 @@ final class ECDHClientKeyExchange {
 
             // Determine which NamedGroup we'll be using, then use
             // the creator functions.
-            NamedGroup namedGroup = null;
+            NamedGroup namedGroup;
 
             // Iteratively determine the X509Possession type's ParameterSpec.
             ECParameterSpec ecParams = x509Possession.getECParameterSpec();
-            NamedParameterSpec namedParams;
             if (ecParams != null) {
                 namedGroup = NamedGroup.valueOf(ecParams);
-            }
-
-            // Wasn't EC, try XEC.
-            if (ecParams == null) {
-                namedParams = x509Possession.getXECParameterSpec();
+            } else {
+                // Wasn't EC, try XEC.
+                NamedParameterSpec namedParams =
+                        x509Possession.getXECParameterSpec();
                 if (namedParams == null) {
                     throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Unknown named parameters in server cert for " +
