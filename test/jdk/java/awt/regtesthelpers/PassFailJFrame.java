@@ -56,6 +56,11 @@ public class PassFailJFrame {
     private static final int ROWS = 10;
     private static final int COLUMNS = 40;
 
+    /**
+     * Prefix for the user-provided failure reason.
+     */
+    private static final String FAILURE_REASON = "Failure Reason:\n";
+
     private static final List<Window> windowList = new ArrayList<>();
     private static final Timer timer = new Timer(0, null);
     private static final CountDownLatch latch = new CountDownLatch(1);
@@ -135,8 +140,8 @@ public class PassFailJFrame {
             long leftTime = tTimeout - (System.currentTimeMillis() - startTime);
             if ((leftTime < 0) || failed) {
                 timer.stop();
-                testFailedReason = "Failure Reason:\n"
-                        + "Timeout User did not perform testing.";
+                testFailedReason = FAILURE_REASON
+                                   + "Timeout User did not perform testing.";
                 timeout = true;
                 latch.countDown();
             }
@@ -166,8 +171,8 @@ public class PassFailJFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 super.windowClosing(e);
-                testFailedReason = "Failure Reason:\n"
-                        + "User closed the instruction Frame";
+                testFailedReason = FAILURE_REASON
+                                   + "User closed the instruction Frame";
                 failed = true;
                 latch.countDown();
             }
@@ -240,7 +245,7 @@ public class PassFailJFrame {
 
         JButton okButton = new JButton("OK");
         okButton.addActionListener((ae) -> {
-            testFailedReason = "Failure Reason:\n" + jTextArea.getText();
+            testFailedReason = FAILURE_REASON + jTextArea.getText();
             dialog.setVisible(false);
         });
 
@@ -403,9 +408,17 @@ public class PassFailJFrame {
      *  Forcibly fail the test.
      */
     public static void forceFail() {
+        forceFail("forceFail called");
+    }
+
+    /**
+     *  Forcibly fail the test and provide a reason.
+     *
+     * @param reason the reason why the test is failed
+     */
+    public static void forceFail(String reason) {
         failed = true;
-        testFailedReason = "Failure Reason:\n" +
-                           "forceFail called";
+        testFailedReason = FAILURE_REASON + reason;
         latch.countDown();
     }
 }
