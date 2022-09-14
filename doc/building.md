@@ -360,8 +360,8 @@ To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 The oldest supported version of Xcode is 8.
 
 You will need the Xcode command lines developers tools to be able to build
-the JDK. (Actually, *only* the command lines tools are needed, not the IDE.)
-The simplest way to install these is to run:
+the JDK. (Actually, in some cases *only* the command lines tools are needed,
+not the IDE.) The simplest way to install these is to run:
 ```
 xcode-select --install
 ```
@@ -379,6 +379,20 @@ the JDK can no longer be built, please see the section on [Problems with the
 Build Environment](#problems-with-the-build-environment), and [Getting
 Help](#getting-help) to find out if there are any recent, non-merged patches
 available for this update.
+
+If you have the Xcode command line developers tools installed, but `configure`
+gives this error:
+```
+configure: error: XCode tool 'metal' neither found in path nor with xcrun
+```
+Then you need to install the full Xcode application. After doing so you will need
+to select it, agree to its license, and run its one-time setup operation via
+something like these commands:
+```
+sudo xcode-select -s /Applications/Xcode.app
+sudo xcodebuild -license
+xcodebuild -runFirstLaunch
+```
 
 ### Microsoft Visual Studio
 
