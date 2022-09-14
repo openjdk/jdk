@@ -1778,7 +1778,7 @@ void PhaseCCP::analyze() {
     if (n->is_SafePoint()) {
       // Make sure safepoints are processed by PhaseCCP::transform even if they are
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
-      //_root_and_safepoints.push(n);
+      _root_and_safepoints.push(n);
     }
     const Type* new_type = n->Value(this);
     if (new_type != type(n)) {

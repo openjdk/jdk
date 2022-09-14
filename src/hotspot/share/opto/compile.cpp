@@ -440,6 +440,11 @@ void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_Lis
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
+#ifdef ASSERT
+  if (_modified_nodes != NULL) {
+    _modified_nodes->remove_useless_nodes(useful.member_set());
+  }
+#endif
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_useless_gc_barriers(useful, this);

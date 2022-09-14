@@ -31,20 +31,20 @@
  */
 
 public class TestRemoveUnreachableCCP {
-  
-  static void test() {
-    Byte x = 1;
-    for (int i = 0; i < 10000; i++) {
-      if ((i & 1) == 0) {
-        x = (byte)x;
-      }
+
+    static void test() {
+        Byte x = 1;
+        for (int i = 0; i < 10000; i++) {
+            if ((i & 1) == 0) {
+                x = (byte)x;
+            }
+        }
     }
-  }
-  
-  public static void main(String[] strArr) {
-    TestRemoveUnreachableCCP _instance = new TestRemoveUnreachableCCP();
-    for (int i = 0; i < 11; i++) {
-        test();
+
+    public static void main(String[] strArr) {
+        TestRemoveUnreachableCCP _instance = new TestRemoveUnreachableCCP();
+        for (int i = 0; i < 11; i++) {
+            test();
+        }
     }
-  }
 }
