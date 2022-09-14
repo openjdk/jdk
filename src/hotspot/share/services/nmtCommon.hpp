@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_NMTCOMMON_HPP
 #define SHARE_SERVICES_NMTCOMMON_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allocation.hpp" // for MEMFLAGS only
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -87,18 +87,18 @@ class NMTUtil : AllStatic {
 
   // Map memory type to index
   static inline int flag_to_index(MEMFLAGS flag) {
-    assert(flag_is_valid(flag), "Invalid flag");
+    assert(flag_is_valid(flag), "Invalid flag (%u)", (unsigned)flag);
     return static_cast<int>(flag);
   }
 
   // Map memory type to human readable name
   static const char* flag_to_name(MEMFLAGS flag) {
-    return _memory_type_names[flag_to_index(flag)];
+    return _strings[flag_to_index(flag)].human_readable;
   }
 
   // Map an index to memory type
   static MEMFLAGS index_to_flag(int index) {
-    assert(flag_index_is_valid(index), "Invalid flag");
+    assert(flag_index_is_valid(index), "Invalid flag index (%d)", index);
     return static_cast<MEMFLAGS>(index);
   }
 
@@ -115,11 +115,20 @@ class NMTUtil : AllStatic {
   // string is not a valid level.
   static NMT_TrackingLevel parse_tracking_level(const char* s);
 
+  // Given a string, return associated flag. mtNone if name is invalid.
+  // String can be either the human readable name or the
+  // stringified enum (with or without leading "mt". In all cases, case is ignored.
+  static MEMFLAGS string_to_flag(const char* name);
+
   // Returns textual representation of a tracking level.
   static const char* tracking_level_to_string(NMT_TrackingLevel level);
 
  private:
-  static const char* _memory_type_names[mt_number_of_types];
+  struct S {
+    const char* enum_s; // e.g. "mtNMT"
+    const char* human_readable; // e.g. "Native Memory Tracking"
+  };
+  static S _strings[mt_number_of_types];
 };
 
 

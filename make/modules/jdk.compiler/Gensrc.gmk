@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,52 @@
 # questions.
 #
 
-include GensrcCommonLangtools.gmk
+include GensrcCommon.gmk
+include GensrcProperties.gmk
+include Execute.gmk
 
-$(eval $(call SetupVersionProperties,JAVAC_VERSION, \
+$(eval $(call SetupVersionProperties, JAVAC_VERSION, \
     com/sun/tools/javac/resources/version.properties))
 
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
-    $(JAVAC_VERSION)))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(TOPDIR)/src/$(MODULE)/share/classes, \
+    EXTRA_FILES := $(JAVAC_VERSION), \
+    CLASS := java.util.ListResourceBundle, \
+    TYPE := langtools, \
+))
 
-$(eval $(call SetupParseProperties,PARSE_PROPERTIES, \
-	com/sun/tools/javac/resources/compiler.properties \
-	com/sun/tools/javac/resources/launcher.properties))
+TARGETS += $(COMPILE_PROPERTIES)
 
-TARGETS += $(COMPILE_PROPERTIES) $(PARSE_PROPERTIES)
+################################################################################
+#
+# Compile properties files into enum-like classes using the propertiesparser tool
+#
+
+# To avoid reevaluating the compilation setup for the tools each time this file
+# is included, the following trick is used to be able to declare a dependency on
+# the built tools.
+BUILD_TOOLS_LANGTOOLS := $(call SetupJavaCompilationCompileTarget, \
+    BUILD_TOOLS_LANGTOOLS, $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes)
+
+TOOL_PARSEPROPERTIES_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
+    propertiesparser.PropertiesParser
+
+PARSEPROPERTIES_PACKAGE := com/sun/tools/javac/resources
+PARSEPROPERTIES_FILES := compiler.properties launcher.properties
+
+PARSEPROPERTIES_SRC := $(addprefix \
+    $(MODULE_SRC)/share/classes/$(PARSEPROPERTIES_PACKAGE)/, \
+    $(PARSEPROPERTIES_FILES))
+
+PARSEPROPERTIES_ARGS := $(foreach file, $(PARSEPROPERTIES_SRC), \
+    -compile $(file) \
+    $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/$(PARSEPROPERTIES_PACKAGE)/)
+
+$(eval $(call SetupExecute, PARSEPROPERTIES, \
+    WARN := Generating classes for $(PARSEPROPERTIES_FILES), \
+    DEPS := $(PARSEPROPERTIES_SRC) $(BUILD_TOOLS_LANGTOOLS), \
+    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE), \
+    COMMAND := $(TOOL_PARSEPROPERTIES_CMD) $(PARSEPROPERTIES_ARGS), \
+))
+
+TARGETS += $(PARSEPROPERTIES)

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,9 @@
 #include "unittest.hpp"
 #include "testutils.hpp"
 
-#if INCLUDE_NMT
-
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.
 #define COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX "NMT corruption"
-
-
 
 #define DEFINE_TEST(test_function, expected_assertion_message)                            \
   TEST_VM_FATAL_ERROR_MSG(NMT, test_function, ".*" expected_assertion_message ".*") {     \
@@ -165,5 +161,3 @@ TEST_VM(NMT, test_realloc) {
     }
   }
 }
-
-#endif // INCLUDE_NMT

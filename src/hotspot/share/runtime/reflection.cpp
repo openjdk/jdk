@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,10 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/formatBuffer.hpp"
 
@@ -561,7 +561,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
         jio_snprintf(msg, len - 1,
-          "class %s (in module %s) cannot access class %s (in unnamed module @" SIZE_FORMAT_HEX ") because module %s does not read unnamed module @" SIZE_FORMAT_HEX,
+          "class %s (in module %s) cannot access class %s (in unnamed module @" SIZE_FORMAT_X ") because module %s does not read unnamed module @" SIZE_FORMAT_X,
           current_class_name, module_from_name, new_class_name, uintx(identity_hash),
           module_from_name, uintx(identity_hash));
       }
@@ -588,7 +588,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
         jio_snprintf(msg, len - 1,
-          "class %s (in unnamed module @" SIZE_FORMAT_HEX ") cannot access class %s (in module %s) because module %s does not export %s to unnamed module @" SIZE_FORMAT_HEX,
+          "class %s (in unnamed module @" SIZE_FORMAT_X ") cannot access class %s (in module %s) because module %s does not export %s to unnamed module @" SIZE_FORMAT_X,
           current_class_name, uintx(identity_hash), new_class_name, module_to_name,
           module_to_name, package_name, uintx(identity_hash));
       }
@@ -728,8 +728,15 @@ static objArrayHandle get_parameter_types(const methodHandle& method,
                                           int parameter_count,
                                           oop* return_type,
                                           TRAPS) {
-  // Allocate array holding parameter types (java.lang.Class instances)
-  objArrayOop m = oopFactory::new_objArray(vmClasses::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
+  objArrayOop m;
+  if (parameter_count == 0) {
+    // Avoid allocating an array for the empty case
+    // Still need to parse the signature for the return type below
+    m = Universe::the_empty_class_array();
+  } else {
+    // Allocate array holding parameter types (java.lang.Class instances)
+    m = oopFactory::new_objArray(vmClasses::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
+  }
   objArrayHandle mirrors(THREAD, m);
   int index = 0;
   // Collect parameter types

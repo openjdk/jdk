@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,39 +27,32 @@ package jdk.javadoc.internal.doclets.toolkit;
 
 import javax.lang.model.element.VariableElement;
 
-
 /**
  * The interface for writing field output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public interface FieldWriter extends MemberWriter {
 
     /**
-     * Get the field details tree header.
+     * Get the field details header.
      *
-     * @param memberDetailsTree the content tree representing member details
-     * @return content tree for the field details header
+     * @param content the content representing member details
+     * @return the field details header
      */
-    Content getFieldDetailsTreeHeader(Content memberDetailsTree);
+    Content getFieldDetailsHeader(Content content);
 
     /**
-     * Get the field documentation tree header.
+     * Get the field documentation header.
      *
      * @param field the constructor being documented
-     * @return content tree for the field documentation header
+     * @return the field documentation header
      */
-    Content getFieldDocTreeHeader(VariableElement field);
+    Content getFieldHeaderContent(VariableElement field);
 
     /**
      * Get the signature for the given field.
      *
      * @param field the field being documented
-     * @return content tree for the field signature
+     * @return the field signature
      */
     Content getSignature(VariableElement field);
 
@@ -67,47 +60,47 @@ public interface FieldWriter extends MemberWriter {
      * Add the deprecated output for the given field.
      *
      * @param field the field being documented
-     * @param fieldDocTree content tree to which the deprecated information will be added
+     * @param fieldContent the content to which the deprecated information will be added
      */
-    void addDeprecated(VariableElement field, Content fieldDocTree);
+    void addDeprecated(VariableElement field, Content fieldContent);
 
     /**
      * Adds the preview output for the given member.
      *
      * @param member the member being documented
-     * @param contentTree content tree to which the preview information will be added
+     * @param content the content to which the preview information will be added
      */
-    void addPreview(VariableElement member, Content contentTree);
+    void addPreview(VariableElement member, Content content);
 
     /**
      * Add the comments for the given field.
      *
      * @param field the field being documented
-     * @param fieldDocTree the content tree to which the comments will be added
+     * @param fieldContent the content to which the comments will be added
      */
-    void addComments(VariableElement field, Content fieldDocTree);
+    void addComments(VariableElement field, Content fieldContent);
 
     /**
      * Add the tags for the given field.
      *
      * @param field the field being documented
-     * @param fieldDocTree the content tree to which the tags will be added
+     * @param fieldContent the content to which the tags will be added
      */
-    void addTags(VariableElement field, Content fieldDocTree);
+    void addTags(VariableElement field, Content fieldContent);
 
     /**
-     * Get the field details tree.
+     * Get the field details.
      *
-     * @param memberDetailsTreeHeader the content tree representing member details tree header
-     * @param memberDetailsTree the content tree representing member details
-     * @return content tree for the field details
+     * @param memberDetailsHeaderContent the content representing member details header
+     * @param memberContent the content representing member details
+     * @return the field details
      */
-    Content getFieldDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
+    Content getFieldDetails(Content memberDetailsHeaderContent, Content memberContent);
 
     /**
-     * Gets the member header tree.
+     * Gets the member header.
      *
-     * @return a content tree for the member header
+     * @return the member header
      */
-    Content getMemberTreeHeader();
+    Content getMemberHeader();
 }

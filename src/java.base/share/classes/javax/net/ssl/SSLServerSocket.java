@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * The <code>backlog</code> argument is the requested maximum number of
      * pending connections on the socket. Its exact semantics are implementation
      * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
+     * or may choose to ignore the parameter altogether. The value provided
      * should be greater than <code>0</code>. If it is less than or equal to
      * <code>0</code>, then an implementation specific default will be used.
      * <P>
@@ -154,7 +154,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * The <code>backlog</code> argument is the requested maximum number of
      * pending connections on the socket. Its exact semantics are implementation
      * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
+     * or may choose to ignore the parameter altogether. The value provided
      * should be greater than <code>0</code>. If it is less than or equal to
      * <code>0</code>, then an implementation specific default will be used.
      * <P>
@@ -197,9 +197,9 @@ public abstract class SSLServerSocket extends ServerSocket {
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification, and may also include other cipher
+     * suites that the provider supports.
      *
      * @return an array of cipher suites enabled
      * @see #getSupportedCipherSuites()
@@ -223,10 +223,10 @@ public abstract class SSLServerSocket extends ServerSocket {
      * Note that the standard list of cipher suite names may be found in the
      * <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list or might not
-     * use the recommended name for a certain cipher suite.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification.  Providers  may support cipher suite
+     * names not found in this list or might not use the recommended name
+     * for a certain cipher suite.
      * <P>
      * <code>SSLSocket</code>s returned from <code>accept()</code>
      * inherit this setting.
@@ -238,7 +238,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * @see #getSupportedCipherSuites()
      * @see #getEnabledCipherSuites()
      */
-    public abstract void setEnabledCipherSuites(String suites []);
+    public abstract void setEnabledCipherSuites(String[] suites);
 
 
     /**
@@ -253,9 +253,9 @@ public abstract class SSLServerSocket extends ServerSocket {
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification, and may also include other cipher
+     * suites that the provider supports.
      *
      * @return an array of cipher suite names
      * @see #getEnabledCipherSuites()
@@ -309,7 +309,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * @see #getEnabledProtocols()
      * @see #getSupportedProtocols()
      */
-    public abstract void setEnabledProtocols(String protocols[]);
+    public abstract void setEnabledProtocols(String[] protocols);
 
 
     /**
@@ -545,10 +545,8 @@ public abstract class SSLServerSocket extends ServerSocket {
 
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else if (params.getWantClientAuth()) {
-            setWantClientAuth(true);
         } else {
-            setWantClientAuth(false);
+            setWantClientAuth(params.getWantClientAuth());
         }
     }
 

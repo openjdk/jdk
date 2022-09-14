@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,12 +160,12 @@ class UnixFileAttributeViews {
                     }
                 }
             } finally {
-                close(fd);
+                close(fd, e -> null);
             }
         }
     }
 
-    private static class Posix extends Basic implements PosixFileAttributeView {
+    static class Posix extends Basic implements PosixFileAttributeView {
         private static final String PERMISSIONS_NAME = "permissions";
         private static final String OWNER_NAME = "owner";
         private static final String GROUP_NAME = "group";
@@ -331,7 +331,7 @@ class UnixFileAttributeViews {
         }
     }
 
-    private static class Unix extends Posix {
+    static class Unix extends Posix {
         private static final String MODE_NAME = "mode";
         private static final String INO_NAME = "ino";
         private static final String DEV_NAME = "dev";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public class Test4206507 {
     public static void main(String[] args) throws UnsupportedEncodingException {
         Locale l = Locale.getDefault();
         try {
-            Locale.setDefault(new Locale("tr", "TR"));
+            Locale.setDefault(Locale.of("tr", "TR"));
             byte[] b = "".getBytes("ISO8859-9");
         } finally {
             Locale.setDefault(l);

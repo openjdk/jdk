@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ final class SupportedGroupsExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"versions\": '['{0}']'", Locale.ENGLISH);
+                "\"named groups\": '['{0}']'", Locale.ENGLISH);
 
             if (namedGroupsIds == null || namedGroupsIds.length == 0) {
                 Object[] messageFields = {
@@ -327,7 +327,7 @@ final class SupportedGroupsExtension {
      * the ClientHello handshake message.
      */
     private static final class CHSupportedGroupsProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
         // Prevent instantiation of this class.
         private CHSupportedGroupsProducer() {
             // blank
@@ -472,7 +472,7 @@ final class SupportedGroupsExtension {
      * the EncryptedExtensions handshake message.
      */
     private static final class EESupportedGroupsProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
 
         // Prevent instantiation of this class.
         private EESupportedGroupsProducer() {

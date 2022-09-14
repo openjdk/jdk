@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,10 @@ import java.util.List;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.lang.foreign.MemorySegment;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class VectorReshapeHelper {
     public static final int INVOCATIONS = 10_000;
@@ -75,13 +77,16 @@ public class VectorReshapeHelper {
     public static final String L2X_NODE  = IRNode.VECTOR_CAST_L2X;
     public static final String F2X_NODE  = IRNode.VECTOR_CAST_F2X;
     public static final String D2X_NODE  = IRNode.VECTOR_CAST_D2X;
+    public static final String UB2X_NODE = IRNode.VECTOR_UCAST_B2X;
+    public static final String US2X_NODE = IRNode.VECTOR_UCAST_S2X;
+    public static final String UI2X_NODE = IRNode.VECTOR_UCAST_I2X;
     public static final String REINTERPRET_NODE = IRNode.VECTOR_REINTERPRET;
 
     public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {
         var test = new TestFramework(testClass);
         test.setDefaultWarmup(1);
         test.addHelperClasses(VectorReshapeHelper.class);
-        test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
+        test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "--enable-preview");
         test.addFlags(flags);
         String testMethodNames = testMethods
                 .filter(p -> p.isp().length() <= VectorSpecies.ofLargestShape(p.isp().elementType()).length())
@@ -102,9 +107,9 @@ public class VectorReshapeHelper {
 
     public static <T, U> void runCastHelper(VectorOperators.Conversion<T, U> castOp,
                                             VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
-        var random = RandomGenerator.getDefault();
+        var random = Utils.getRandomInstance();
         boolean isUnsignedCast = castOp.name().startsWith("ZERO");
-        String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
+        String testMethodName = VectorSpeciesPair.makePair(isp, osp, isUnsignedCast).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
                     testMethodName,
@@ -209,25 +214,28 @@ public class VectorReshapeHelper {
     }
 
     @ForceInline
-    public static void vectorExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp, byte[] input, byte[] output) {
-        isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
+    public static void vectorExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp,
+                                          MemorySegment input, MemorySegment output) {
+        isp.fromMemorySegment(input, 0, ByteOrder.nativeOrder())
                 .reinterpretShape(osp, 0)
-                .intoByteArray(output, 0, ByteOrder.nativeOrder());
+                .intoMemorySegment(output, 0, ByteOrder.nativeOrder());
     }
 
     public static void runExpandShrinkHelper(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp) throws Throwable {
-        var random = RandomGenerator.getDefault();
+        var random = Utils.getRandomInstance();
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
                 testMethodName,
-                MethodType.methodType(void.class, byte.class.arrayType(), byte.class.arrayType()));
+                MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
         byte[] input = new byte[isp.vectorByteSize()];
         byte[] output = new byte[osp.vectorByteSize()];
+        MemorySegment msInput = MemorySegment.ofArray(input);
+        MemorySegment msOutput = MemorySegment.ofArray(output);
         for (int iter = 0; iter < INVOCATIONS; iter++) {
             random.nextBytes(input);
 
-            testMethod.invokeExact(input, output);
+            testMethod.invokeExact(msInput, msOutput);
 
             for (int i = 0; i < osp.vectorByteSize(); i++) {
                 int expected = i < isp.vectorByteSize() ? input[i] : 0;
@@ -238,26 +246,29 @@ public class VectorReshapeHelper {
     }
 
     @ForceInline
-    public static void vectorDoubleExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp, byte[] input, byte[] output) {
-        isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
+    public static void vectorDoubleExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp,
+                                                MemorySegment input, MemorySegment output) {
+        isp.fromMemorySegment(input, 0, ByteOrder.nativeOrder())
                 .reinterpretShape(osp, 0)
                 .reinterpretShape(isp, 0)
-                .intoByteArray(output, 0, ByteOrder.nativeOrder());
+                .intoMemorySegment(output, 0, ByteOrder.nativeOrder());
     }
 
     public static void runDoubleExpandShrinkHelper(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp) throws Throwable {
-        var random = RandomGenerator.getDefault();
+        var random = Utils.getRandomInstance();
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
                 testMethodName,
-                MethodType.methodType(void.class, byte.class.arrayType(), byte.class.arrayType()));
+                MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
         byte[] input = new byte[isp.vectorByteSize()];
         byte[] output = new byte[isp.vectorByteSize()];
+        MemorySegment msInput = MemorySegment.ofArray(input);
+        MemorySegment msOutput = MemorySegment.ofArray(output);
         for (int iter = 0; iter < INVOCATIONS; iter++) {
             random.nextBytes(input);
 
-            testMethod.invokeExact(input, output);
+            testMethod.invokeExact(msInput, msOutput);
 
             for (int i = 0; i < isp.vectorByteSize(); i++) {
                 int expected = i < osp.vectorByteSize() ? input[i] : 0;
@@ -275,7 +286,7 @@ public class VectorReshapeHelper {
     }
 
     public static <T, U> void runRebracketHelper(VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
-        var random = RandomGenerator.getDefault();
+        var random = Utils.getRandomInstance();
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,

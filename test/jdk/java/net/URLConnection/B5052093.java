@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,31 @@
 
 /*
  * @test
+ * @modules java.base/sun.net.www.protocol.file
  * @bug 5052093
- * @modules java.base/sun.net.www java.base/sun.net.www.protocol.file
- * @library ../../../sun/net/www/httptest/
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
- * @run main B5052093
+ * @library /test/lib
+ * @run main/othervm B5052093
  * @summary URLConnection doesn't support large files
  */
-import java.net.*;
-import java.io.*;
-import sun.net.www.protocol.file.FileURLConnection;
-import static java.net.Proxy.NO_PROXY;
 
-public class B5052093 implements HttpCallback {
-    private static TestHttpServer server;
-    private static long testSize = ((long) (Integer.MAX_VALUE)) + 2;
+import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.concurrent.Executors;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import static java.net.Proxy.NO_PROXY;
+import jdk.test.lib.net.URIBuilder;
+import sun.net.www.protocol.file.FileURLConnection;
+
+public class B5052093 {
+    private static HttpServer server;
+    static long testSize = ((long) (Integer.MAX_VALUE)) + 2;
 
     public static class LargeFile extends File {
         public LargeFile() {
@@ -55,20 +65,18 @@ public class B5052093 implements HttpCallback {
         }
     }
 
-    public void request(HttpTransaction req) {
-        try {
-            req.setResponseHeader("content-length", Long.toString(testSize));
-            req.sendResponse(200, "OK");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
-        server = new TestHttpServer(new B5052093(), 1, 10, loopback, 0);
+        server = HttpServer.create(new InetSocketAddress(loopback, 0), 10, "/", new B5052093Handler());
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
         try {
-            URL url = new URL("http://" + server.getAuthority() + "/foo");
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getAddress().getPort())
+                    .path("/foo")
+                    .build().toURL();
             URLConnection conn = url.openConnection(NO_PROXY);
             int i = conn.getContentLength();
             long l = conn.getContentLengthLong();
@@ -89,7 +97,20 @@ public class B5052093 implements HttpCallback {
                 throw new RuntimeException("Wrong content-length from file");
             }
         } finally {
-            server.terminate();
+            server.stop(1);
+        }
+    }
+}
+
+class B5052093Handler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        try {
+            exchange.getResponseHeaders().set("content-length", Long.toString(B5052093.testSize));
+            exchange.sendResponseHeaders(200, 0);
+            exchange.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -33,6 +33,11 @@ public class Helper {
     }
 
     @jdk.internal.vm.annotation.ForceInline
+    public static int StringCodingCountPositives(byte[] ba, int off, int len) {
+        return StringCoding.countPositives(ba, off, len);
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
     public static byte[] compressByte(byte[] src, int srcOff, int dstSize, int dstOff, int len) {
         byte[] dst = new byte[dstSize];
         StringUTF16.compress(src, srcOff, dst, dstOff, len);

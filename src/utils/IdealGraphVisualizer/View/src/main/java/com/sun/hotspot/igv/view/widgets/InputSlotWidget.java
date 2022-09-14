@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package com.sun.hotspot.igv.view.widgets;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.InputSlot;
 import com.sun.hotspot.igv.view.DiagramScene;
-import java.awt.Point;
 import java.util.List;
 import org.netbeans.api.visual.widget.Widget;
 
@@ -41,12 +40,6 @@ public class InputSlotWidget extends SlotWidget {
     public InputSlotWidget(InputSlot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
         super(slot, scene, parent, fw);
         inputSlot = slot;
-        //init();
-        //getFigureWidget().getLeftWidget().addChild(this);
-        Point p = inputSlot.getRelativePosition();
-        p.x -= this.calculateClientArea().width / 2;
-        p.y += Figure.SLOT_START;
-        this.setPreferredLocation(p);
     }
 
     public InputSlot getInputSlot() {
@@ -58,6 +51,12 @@ public class InputSlotWidget extends SlotWidget {
         List<InputSlot> slots = getSlot().getFigure().getInputSlots();
         assert slots.contains(getSlot());
         return calculateWidth(slots.size());
+    }
+
+    @Override
+    protected int yOffset() {
+        return getFigureWidget().getFigure().getDiagram().isCFG() ?
+            calculateClientArea().height - 1 : Figure.SLOT_START;
     }
 /*
     protected Point calculateRelativeLocation() {

@@ -1,0 +1,125 @@
+<!--
+Copyright © 1991-2021 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+
+<!--
+NOTE: Unlike the other DTDs, this file is manually maintained.
+-->
+
+<!-- ######################################################### -->
+<!-- The alias, default, special and cp elements are already defined in ldml.dtd. Defining them here as well would break locale conversion.  -->
+<!-- ######################################################### -->
+
+<!--  ICU Specific elements                                    -->
+<!-- ######################################################### -->
+<!ATTLIST special xmlns:icu CDATA #IMPLIED>
+<!ATTLIST special icu:version CDATA #IMPLIED>
+
+<!ELEMENT icu:version EMPTY>
+<!ATTLIST icu:version icu:specialVersion  CDATA #FIXED "41" >
+<!ATTLIST icu:version icu:requiredLDMLVersion CDATA #FIXED "41" >
+
+<!-- ICU Scripts -->
+
+<!ELEMENT icu:scripts (alias | icu:script* ) >
+<!ATTLIST icu:scripts draft ( true | false ) #IMPLIED >
+<!ATTLIST icu:scripts standard CDATA #IMPLIED >
+
+<!ELEMENT icu:script ( #PCDATA ) >
+<!ATTLIST icu:script type NMTOKEN #REQUIRED >
+<!ATTLIST icu:script draft ( true | false ) #IMPLIED >
+
+<!-- RBNF data -->
+<!ELEMENT icu:ruleBasedNumberFormats ( alias | (default?, icu:ruleBasedNumberFormat*)) >
+
+<!-- Either bare data or any number of cp -->
+<!ELEMENT icu:ruleBasedNumberFormat (#PCDATA | cp)* >
+<!ATTLIST icu:ruleBasedNumberFormat type NMTOKEN #IMPLIED >
+
+<!-- RBBI data -->
+<!ELEMENT icu:breakIteratorData (alias | (icu:boundaries?, icu:dictionaries?, icu:extensions?, icu:lstm?)) >
+
+<!ELEMENT icu:boundaries (alias | (icu:grapheme?, icu:word?, icu:line*, icu:sentence?, icu:title?, icu:xgc?)) >
+
+<!ELEMENT icu:dictionaries (alias | (icu:dictionary*)) >
+
+<!ELEMENT icu:extensions (alias | (icu:extension*)) >
+
+<!ELEMENT icu:extension ( #PCDATA ) >
+    <!--@ORDERED-->
+
+<!ELEMENT icu:lstm (alias | (icu:lstmdata*)) >
+
+<!ELEMENT icu:lstmdata ( #PCDATA ) >
+<!ATTLIST icu:lstmdata icu:dependency NMTOKEN #IMPLIED >
+<!ATTLIST icu:lstmdata type NMTOKEN #REQUIRED >
+
+<!ELEMENT icu:dictionary ( #PCDATA ) >
+<!ATTLIST icu:dictionary icu:dependency NMTOKEN #IMPLIED >
+<!ATTLIST icu:dictionary type NMTOKEN #REQUIRED >
+
+<!ELEMENT icu:grapheme ( #PCDATA ) >
+<!ATTLIST icu:grapheme icu:class NMTOKEN #IMPLIED >
+<!ATTLIST icu:grapheme icu:append NMTOKEN #IMPLIED >
+<!ATTLIST icu:grapheme icu:import NMTOKEN #IMPLIED >
+<!ATTLIST icu:grapheme icu:dependency NMTOKEN #IMPLIED >
+
+<!ELEMENT icu:word ( #PCDATA ) >
+<!ATTLIST icu:word icu:class NMTOKEN #IMPLIED >
+<!ATTLIST icu:word icu:append NMTOKEN #IMPLIED >
+<!ATTLIST icu:word icu:import NMTOKEN #IMPLIED >
+<!ATTLIST icu:word icu:dependency NMTOKEN #IMPLIED >
+
+<!ELEMENT icu:line ( #PCDATA ) >
+<!ATTLIST icu:line icu:class NMTOKEN #IMPLIED >
+<!ATTLIST icu:line icu:append NMTOKEN #IMPLIED >
+<!ATTLIST icu:line icu:import NMTOKEN #IMPLIED >
+<!ATTLIST icu:line icu:dependency NMTOKEN #IMPLIED >
+<!ATTLIST icu:line alt NMTOKENS #IMPLIED >
+
+<!ELEMENT icu:sentence ( #PCDATA ) >
+<!ATTLIST icu:sentence icu:class NMTOKEN #IMPLIED >
+<!ATTLIST icu:sentence icu:append NMTOKEN #IMPLIED >
+<!ATTLIST icu:sentence icu:import NMTOKEN #IMPLIED >
+<!ATTLIST icu:sentence icu:dependency NMTOKEN #IMPLIED >
+
+<!ELEMENT icu:title ( #PCDATA ) >
+<!ATTLIST icu:title icu:class NMTOKEN #IMPLIED >
+<!ATTLIST icu:title icu:append NMTOKEN #IMPLIED >
+<!ATTLIST icu:title icu:import NMTOKEN #IMPLIED >
+<!ATTLIST icu:title icu:dependency NMTOKEN #IMPLIED >
+
+<!ELEMENT icu:xgc ( #PCDATA ) >
+<!ATTLIST icu:xgc icu:class NMTOKEN #IMPLIED >
+<!ATTLIST icu:xgc icu:append NMTOKEN #IMPLIED >
+<!ATTLIST icu:xgc icu:import NMTOKEN #IMPLIED >
+<!ATTLIST icu:xgc icu:dependency NMTOKEN #IMPLIED >
+
+<!--deprecated -->
+<!ELEMENT icu:breakDictionaryData EMPTY >
+<!ATTLIST icu:breakDictionaryData icu:class NMTOKEN #IMPLIED >
+<!ATTLIST icu:breakDictionaryData icu:import NMTOKEN #IMPLIED >
+<!ATTLIST icu:breakDictionaryData icu:importFile CDATA #IMPLIED >
+
+<!-- RBT data  -->
+<!ELEMENT icu:transforms ( alias | (default?, icu:transform*)) >
+<!ELEMENT icu:transform ( #PCDATA |cp )* >
+<!ATTLIST icu:transform type NMTOKEN #REQUIRED >
+
+<!-- leap month information, all deprecated -->
+<!ELEMENT icu:isLeapMonth ( alias | (icu:nonLeapSymbol?, icu:leapSymbol? ))> <!-- deprecated -->
+<!ELEMENT icu:nonLeapSymbol ( #PCDATA ) > <!-- deprecated -->
+<!ELEMENT icu:leapSymbol ( #PCDATA ) > <!-- deprecated -->
+
+<!-- UCA Rules -->
+<!ELEMENT icu:UCARules EMPTY >
+<!ATTLIST icu:UCARules icu:uca_rules CDATA #REQUIRED >
+
+<!-- Dependencies Rules -->
+<!ELEMENT icu:depends EMPTY >
+<!ATTLIST icu:depends icu:dependency CDATA #REQUIRED >
+
+<!-- ######################################################### -->

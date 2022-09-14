@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,7 +334,7 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
             T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException
     {
-        if (PBEParameterSpec.class.isAssignableFrom(paramSpec)) {
+        if (paramSpec.isAssignableFrom(PBEParameterSpec.class)) {
             return paramSpec.cast(
                 new PBEParameterSpec(this.salt, this.iCount, this.cipherParam));
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public abstract class ServerCommunicatorAdmin {
                                         "JMX-Server-Admin-Timeout",
                                         0,
                                         false);
-            t.setName("JMX server connection timeout " + t.getId());
+            t.setName("JMX server connection timeout " + t.threadId());
             // If you change this name you will need to change a unit test
             // (NoServerTimeoutTest)
             t.setDaemon(true);

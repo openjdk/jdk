@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,8 +129,8 @@
 #endif
 
   // Are floats converted to double when stored to stack during deoptimization?
-  // On x64 it is stored without convertion so we can use normal access.
-  // On x32 it is stored with convertion only when FPU is used for floats.
+  // On x64 it is stored without conversion so we can use normal access.
+  // On x32 it is stored with conversion only when FPU is used for floats.
 #ifdef _LP64
   static constexpr bool float_in_double() {
     return false;
@@ -166,20 +166,7 @@
 
   // Does the CPU supports vector unsigned comparison instructions?
   static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
-    int vlen_in_bytes = vlen * type2aelembytes(bt);
-    if ((UseAVX > 2) && (VM_Version::supports_avx512vl() || vlen_in_bytes == 64))
-      return true;
-    else {
-      // instruction set supports only signed comparison
-      // so need to zero extend to higher integral type and perform comparison
-      // cannot cast long to higher integral type
-      // and on avx1 cannot cast 128 bit integral vectors to higher size
-
-      if ((bt != T_LONG)  &&
-          ((UseAVX >= 2) || (vlen_in_bytes <= 8)))
-        return true;
-    }
-    return false;
+    return true;
   }
 
   // Some microarchitectures have mask registers used on vectors
@@ -187,7 +174,7 @@
     return VM_Version::supports_evex();
   }
 
-  // true means we have fast l2f convers
+  // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
   static constexpr bool convL2FSupported(void) {
       return true;
@@ -195,5 +182,42 @@
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
+
+  // Returns pre-selection estimated size of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    switch(vopc) {
+      default:
+        return 0;
+      case Op_CountTrailingZerosV:
+      case Op_CountLeadingZerosV:
+        return VM_Version::supports_avx512cd() && (ety == T_INT || ety == T_LONG) ? 0 : 40;
+      case Op_PopCountVI:
+        if (is_subword_type(ety)) {
+          return VM_Version::supports_avx512_bitalg() ? 0 : 50;
+        } else {
+          assert(ety == T_INT, "sanity"); // for documentation purposes
+          return VM_Version::supports_avx512_vpopcntdq() ? 0 : 50;
+        }
+      case Op_PopCountVL:
+        return VM_Version::supports_avx512_vpopcntdq() ? 0 : 40;
+      case Op_ReverseV:
+        return VM_Version::supports_gfni() ? 0 : 30;
+      case Op_RoundVF: // fall through
+      case Op_RoundVD: {
+        return 30;
+      }
+    }
+  }
+
+  // Returns pre-selection estimated size of a scalar operation.
+  static int scalar_op_pre_select_sz_estimate(int vopc, BasicType ety) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundF: // fall through
+      case Op_RoundD: {
+        return 30;
+      }
+    }
+  }
 
 #endif // CPU_X86_MATCHER_X86_HPP

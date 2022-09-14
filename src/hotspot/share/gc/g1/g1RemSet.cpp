@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -945,8 +946,8 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
   size_t _opt_refs_scanned;
   size_t _opt_refs_memory_used;
 
-  Tickspan _strong_code_root_scan_time;
-  Tickspan _strong_code_trim_partially_time;
+  Tickspan _code_root_scan_time;
+  Tickspan _code_trim_partially_time;
 
   Tickspan _rem_set_opt_root_scan_time;
   Tickspan _rem_set_opt_trim_partially_time;
@@ -978,8 +979,8 @@ public:
     _opt_roots_scanned(0),
     _opt_refs_scanned(0),
     _opt_refs_memory_used(0),
-    _strong_code_root_scan_time(),
-    _strong_code_trim_partially_time(),
+    _code_root_scan_time(),
+    _code_trim_partially_time(),
     _rem_set_opt_root_scan_time(),
     _rem_set_opt_trim_partially_time() { }
 
@@ -996,9 +997,9 @@ public:
     if (_scan_state->claim_collection_set_region(region_idx)) {
       EventGCPhaseParallel event;
 
-      G1EvacPhaseWithTrimTimeTracker timer(_pss, _strong_code_root_scan_time, _strong_code_trim_partially_time);
-      // Scan the strong code root list attached to the current region
-      r->strong_code_roots_do(_pss->closures()->weak_codeblobs());
+      G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
+      // Scan the code root list attached to the current region
+      r->code_roots_do(_pss->closures()->weak_codeblobs());
 
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
     }
@@ -1006,8 +1007,8 @@ public:
     return false;
   }
 
-  Tickspan strong_code_root_scan_time() const { return _strong_code_root_scan_time;  }
-  Tickspan strong_code_root_trim_partially_time() const { return _strong_code_trim_partially_time; }
+  Tickspan code_root_scan_time() const { return _code_root_scan_time;  }
+  Tickspan code_root_trim_partially_time() const { return _code_trim_partially_time; }
 
   Tickspan rem_set_opt_root_scan_time() const { return _rem_set_opt_root_scan_time; }
   Tickspan rem_set_opt_trim_partially_time() const { return _rem_set_opt_trim_partially_time; }
@@ -1030,8 +1031,8 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
   p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_root_scan_time().seconds());
   p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_trim_partially_time().seconds());
 
-  p->record_or_add_time_secs(coderoots_phase, worker_id, cl.strong_code_root_scan_time().seconds());
-  p->add_time_secs(objcopy_phase, worker_id, cl.strong_code_root_trim_partially_time().seconds());
+  p->record_or_add_time_secs(coderoots_phase, worker_id, cl.code_root_scan_time().seconds());
+  p->add_time_secs(objcopy_phase, worker_id, cl.code_root_trim_partially_time().seconds());
 
   // At this time we record some metrics only for the evacuations after the initial one.
   if (scan_phase == G1GCPhaseTimes::OptScanHR) {
@@ -1259,25 +1260,45 @@ class G1MergeHeapRootsTask : public WorkerTask {
     G1MergeCardSetStats stats() const { return _stats; }
   };
 
-  // Closure to clear the prev bitmap for any old region in the collection set.
+  // Closure to make sure that the marking bitmap is clear for any old region in
+  // the collection set.
   // This is needed to be able to use the bitmap for evacuation failure handling.
   class G1ClearBitmapClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
+
     void assert_bitmap_clear(HeapRegion* hr, const G1CMBitMap* bitmap) {
       assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
-             "Bitmap should have no mark for young regions");
+             "Bitmap should have no mark for region %u", hr->hrm_index());
     }
+
+    bool should_clear_region(HeapRegion* hr) const {
+      // The bitmap for young regions must obviously be clear as we never mark through them;
+      // old regions are only in the collection set after the concurrent cycle completed,
+      // so their bitmaps must also be clear except when the pause occurs during the
+      // Concurrent Cleanup for Next Mark phase. Only at that point the region's bitmap may
+      // contain marks while being in the collection set at the same time.
+      //
+      // There is one exception: shutdown might have aborted the Concurrent Cleanup for Next
+      // Mark phase midway, which might have also left stale marks in old generation regions.
+      // There might actually have been scheduled multiple collections, but at that point we do
+      // not care that much about performance and just do the work multiple times if needed.
+      return (_g1h->collector_state()->clearing_bitmap() ||
+              _g1h->concurrent_mark_is_terminating()) &&
+              hr->is_old();
+    }
+
   public:
     G1ClearBitmapClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
     bool do_heap_region(HeapRegion* hr) {
       assert(_g1h->is_in_cset(hr), "Should only be used iterating the collection set");
-      // Young regions should always have cleared bitmaps, so only clear old.
-      if (hr->is_old()) {
-        _g1h->clear_prev_bitmap_for_region(hr);
+
+      // Evacuation failure uses the bitmap to record evacuation failed objects,
+      // so the bitmap for the regions in the collection set must be cleared if not already.
+      if (should_clear_region(hr)) {
+        _g1h->clear_bitmap_for_region(hr);
       } else {
-        assert(hr->is_young(), "Should only be young and old regions in collection set");
-        assert_bitmap_clear(hr, _g1h->concurrent_mark()->prev_mark_bitmap());
+        assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
       return false;
     }
@@ -1311,8 +1332,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     virtual bool do_heap_region(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!r->is_starts_humongous() ||
-          !g1h->region_attr(r->hrm_index()).is_humongous() ||
+      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate() ||
           r->rem_set()->is_empty()) {
         return false;
       }
@@ -1383,7 +1403,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
       uint const region_idx = _ct->region_idx_for(card_ptr);
 
-      // The second clause must come after - the log buffers might contain cards to uncommited
+      // The second clause must come after - the log buffers might contain cards to uncommitted
       // regions.
       // This code may count duplicate entries in the log buffers (even if rare) multiple
       // times.
@@ -1429,7 +1449,7 @@ public:
   {
     if (initial_evacuation) {
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-      G1BufferNodeList buffers = dcqs.take_all_completed_buffers();
+      BufferNodeList buffers = dcqs.take_all_completed_buffers();
       if (buffers._entry_count != 0) {
         _dirty_card_buffers.prepend(*buffers._head, *buffers._tail);
       }
@@ -1480,7 +1500,7 @@ public:
     }
 
     // Apply closure to log entries in the HCC.
-    if (_initial_evacuation && G1HotCardCache::default_use_cache()) {
+    if (_initial_evacuation && G1HotCardCache::use_cache()) {
       assert(merge_remset_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
       G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeHCC, worker_id);
       G1MergeLogBufferCardsClosure cl(g1h, _scan_state);
@@ -1592,7 +1612,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 }
 
 bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
-  assert(!_g1h->is_gc_active(), "Only call concurrently");
+  assert(!SafepointSynchronize::is_at_safepoint(), "Only call concurrently");
 
   CardValue* card_ptr = *card_ptr_addr;
   // Find the start address represented by the card.
@@ -1646,9 +1666,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   //   * a pointer to a "hot" card that was evicted from the "hot" cache.
   //
 
-  if (_hot_card_cache->use_cache()) {
-    assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
-
+  if (G1HotCardCache::use_cache()) {
     const CardValue* orig_card_ptr = card_ptr;
     card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {
@@ -1657,12 +1675,13 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
     } else if (card_ptr != orig_card_ptr) {
       // Original card was inserted and an old card was evicted.
       start = _ct->addr_for(card_ptr);
-      r = _g1h->heap_region_containing(start);
+      r = _g1h->heap_region_containing_or_null(start);
 
       // Check whether the region formerly in the cache should be
       // ignored, as discussed earlier for the original card.  The
-      // region could have been freed while in the cache.
-      if (!r->is_old_or_humongous_or_archive()) {
+      // region could have been freed (or even uncommitted) while
+      // in the cache.
+      if (r == nullptr || !r->is_old_or_humongous_or_archive()) {
         return false;
       }
       *card_ptr_addr = card_ptr;
@@ -1762,7 +1781,7 @@ void G1RemSet::enqueue_for_reprocessing(CardValue* card_ptr) {
   dcqs.enqueue_completed_buffer(BufferNode::make_node_from_buffer(buffer, index));
 }
 
-void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {
+void G1RemSet::print_periodic_summary_info(const char* header, uint period_count, bool show_thread_times) {
   if ((G1SummarizeRSetStatsPeriod > 0) && log_is_enabled(Trace, gc, remset) &&
       (period_count % G1SummarizeRSetStatsPeriod == 0)) {
 
@@ -1773,7 +1792,7 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
     log.trace("%s", header);
     ResourceMark rm;
     LogStream ls(log.trace());
-    _prev_period_summary.print_on(&ls);
+    _prev_period_summary.print_on(&ls, show_thread_times);
 
     _prev_period_summary.set(&current);
   }
@@ -1786,269 +1805,6 @@ void G1RemSet::print_summary_info() {
     G1RemSetSummary current;
     ResourceMark rm;
     LogStream ls(log.trace());
-    current.print_on(&ls);
+    current.print_on(&ls, true /* show_thread_times*/);
   }
-}
-
-class G1RebuildRemSetTask: public WorkerTask {
-  // Aggregate the counting data that was constructed concurrently
-  // with marking.
-  class G1RebuildRemSetHeapRegionClosure : public HeapRegionClosure {
-    G1ConcurrentMark* _cm;
-    G1RebuildRemSetClosure _update_cl;
-
-    // Applies _update_cl to the references of the given object, limiting objArrays
-    // to the given MemRegion. Returns the amount of words actually scanned.
-    size_t scan_for_references(oop const obj, MemRegion mr) {
-      size_t const obj_size = obj->size();
-      // All non-objArrays and objArrays completely within the mr
-      // can be scanned without passing the mr.
-      if (!obj->is_objArray() || mr.contains(MemRegion(cast_from_oop<HeapWord*>(obj), obj_size))) {
-        obj->oop_iterate(&_update_cl);
-        return obj_size;
-      }
-      // This path is for objArrays crossing the given MemRegion. Only scan the
-      // area within the MemRegion.
-      obj->oop_iterate(&_update_cl, mr);
-      return mr.intersection(MemRegion(cast_from_oop<HeapWord*>(obj), obj_size)).word_size();
-    }
-
-    // A humongous object is live (with respect to the scanning) either
-    // a) it is marked on the bitmap as such
-    // b) its TARS is larger than TAMS, i.e. has been allocated during marking.
-    bool is_humongous_live(oop const humongous_obj, const G1CMBitMap* const bitmap, HeapWord* tams, HeapWord* tars) const {
-      return bitmap->is_marked(humongous_obj) || (tars > tams);
-    }
-
-    // Iterator over the live objects within the given MemRegion.
-    class LiveObjIterator : public StackObj {
-      const G1CMBitMap* const _bitmap;
-      const HeapWord* _tams;
-      const MemRegion _mr;
-      HeapWord* _current;
-
-      bool is_below_tams() const {
-        return _current < _tams;
-      }
-
-      bool is_live(HeapWord* obj) const {
-        return !is_below_tams() || _bitmap->is_marked(obj);
-      }
-
-      HeapWord* bitmap_limit() const {
-        return MIN2(const_cast<HeapWord*>(_tams), _mr.end());
-      }
-
-      void move_if_below_tams() {
-        if (is_below_tams() && has_next()) {
-          _current = _bitmap->get_next_marked_addr(_current, bitmap_limit());
-        }
-      }
-    public:
-      LiveObjIterator(const G1CMBitMap* const bitmap, const HeapWord* tams, const MemRegion mr, HeapWord* first_oop_into_mr) :
-          _bitmap(bitmap),
-          _tams(tams),
-          _mr(mr),
-          _current(first_oop_into_mr) {
-
-        assert(_current <= _mr.start(),
-               "First oop " PTR_FORMAT " should extend into mr [" PTR_FORMAT ", " PTR_FORMAT ")",
-               p2i(first_oop_into_mr), p2i(mr.start()), p2i(mr.end()));
-
-        // Step to the next live object within the MemRegion if needed.
-        if (is_live(_current)) {
-          // Non-objArrays were scanned by the previous part of that region.
-          if (_current < mr.start() && !cast_to_oop(_current)->is_objArray()) {
-            _current += cast_to_oop(_current)->size();
-            // We might have positioned _current on a non-live object. Reposition to the next
-            // live one if needed.
-            move_if_below_tams();
-          }
-        } else {
-          // The object at _current can only be dead if below TAMS, so we can use the bitmap.
-          // immediately.
-          _current = _bitmap->get_next_marked_addr(_current, bitmap_limit());
-          assert(_current == _mr.end() || is_live(_current),
-                 "Current " PTR_FORMAT " should be live (%s) or beyond the end of the MemRegion (" PTR_FORMAT ")",
-                 p2i(_current), BOOL_TO_STR(is_live(_current)), p2i(_mr.end()));
-        }
-      }
-
-      void move_to_next() {
-        _current += next()->size();
-        move_if_below_tams();
-      }
-
-      oop next() const {
-        oop result = cast_to_oop(_current);
-        assert(is_live(_current),
-               "Object " PTR_FORMAT " must be live TAMS " PTR_FORMAT " below %d mr " PTR_FORMAT " " PTR_FORMAT " outside %d",
-               p2i(_current), p2i(_tams), _tams > _current, p2i(_mr.start()), p2i(_mr.end()), _mr.contains(result));
-        return result;
-      }
-
-      bool has_next() const {
-        return _current < _mr.end();
-      }
-    };
-
-    // Rebuild remembered sets in the part of the region specified by mr and hr.
-    // Objects between the bottom of the region and the TAMS are checked for liveness
-    // using the given bitmap. Objects between TAMS and TARS are assumed to be live.
-    // Returns the number of live words between bottom and TAMS.
-    size_t rebuild_rem_set_in_region(const G1CMBitMap* const bitmap,
-                                     HeapWord* const top_at_mark_start,
-                                     HeapWord* const top_at_rebuild_start,
-                                     HeapRegion* hr,
-                                     MemRegion mr) {
-      size_t marked_words = 0;
-
-      if (hr->is_humongous()) {
-        oop const humongous_obj = cast_to_oop(hr->humongous_start_region()->bottom());
-        if (is_humongous_live(humongous_obj, bitmap, top_at_mark_start, top_at_rebuild_start)) {
-          // We need to scan both [bottom, TAMS) and [TAMS, top_at_rebuild_start);
-          // however in case of humongous objects it is sufficient to scan the encompassing
-          // area (top_at_rebuild_start is always larger or equal to TAMS) as one of the
-          // two areas will be zero sized. I.e. TAMS is either
-          // the same as bottom or top(_at_rebuild_start). There is no way TAMS has a different
-          // value: this would mean that TAMS points somewhere into the object.
-          assert(hr->top() == top_at_mark_start || hr->top() == top_at_rebuild_start,
-                 "More than one object in the humongous region?");
-          humongous_obj->oop_iterate(&_update_cl, mr);
-          return top_at_mark_start != hr->bottom() ? mr.intersection(MemRegion(cast_from_oop<HeapWord*>(humongous_obj), humongous_obj->size())).byte_size() : 0;
-        } else {
-          return 0;
-        }
-      }
-
-      for (LiveObjIterator it(bitmap, top_at_mark_start, mr, hr->block_start(mr.start())); it.has_next(); it.move_to_next()) {
-        oop obj = it.next();
-        size_t scanned_size = scan_for_references(obj, mr);
-        if (cast_from_oop<HeapWord*>(obj) < top_at_mark_start) {
-          marked_words += scanned_size;
-        }
-      }
-
-      return marked_words * HeapWordSize;
-    }
-public:
-  G1RebuildRemSetHeapRegionClosure(G1CollectedHeap* g1h,
-                                   G1ConcurrentMark* cm,
-                                   uint worker_id) :
-    HeapRegionClosure(),
-    _cm(cm),
-    _update_cl(g1h, worker_id) { }
-
-    bool do_heap_region(HeapRegion* hr) {
-      if (_cm->has_aborted()) {
-        return true;
-      }
-
-      uint const region_idx = hr->hrm_index();
-      DEBUG_ONLY(HeapWord* const top_at_rebuild_start_check = _cm->top_at_rebuild_start(region_idx);)
-      assert(top_at_rebuild_start_check == NULL ||
-             top_at_rebuild_start_check > hr->bottom(),
-             "A TARS (" PTR_FORMAT ") == bottom() (" PTR_FORMAT ") indicates the old region %u is empty (%s)",
-             p2i(top_at_rebuild_start_check), p2i(hr->bottom()),  region_idx, hr->get_type_str());
-
-      size_t total_marked_bytes = 0;
-      size_t const chunk_size_in_words = G1RebuildRemSetChunkSize / HeapWordSize;
-
-      HeapWord* const top_at_mark_start = hr->prev_top_at_mark_start();
-
-      HeapWord* cur = hr->bottom();
-      while (cur < hr->end()) {
-        // After every iteration (yield point) we need to check whether the region's
-        // TARS changed due to e.g. eager reclaim.
-        HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);
-        if (top_at_rebuild_start == NULL) {
-          return false;
-        }
-
-        MemRegion next_chunk = MemRegion(hr->bottom(), top_at_rebuild_start).intersection(MemRegion(cur, chunk_size_in_words));
-        if (next_chunk.is_empty()) {
-          break;
-        }
-
-        const Ticks start = Ticks::now();
-        size_t marked_bytes = rebuild_rem_set_in_region(_cm->prev_mark_bitmap(),
-                                                        top_at_mark_start,
-                                                        top_at_rebuild_start,
-                                                        hr,
-                                                        next_chunk);
-        Tickspan time = Ticks::now() - start;
-
-        log_trace(gc, remset, tracking)("Rebuilt region %u "
-                                        "live " SIZE_FORMAT " "
-                                        "time %.3fms "
-                                        "marked bytes " SIZE_FORMAT " "
-                                        "bot " PTR_FORMAT " "
-                                        "TAMS " PTR_FORMAT " "
-                                        "TARS " PTR_FORMAT,
-                                        region_idx,
-                                        _cm->live_bytes(region_idx),
-                                        time.seconds() * 1000.0,
-                                        marked_bytes,
-                                        p2i(hr->bottom()),
-                                        p2i(top_at_mark_start),
-                                        p2i(top_at_rebuild_start));
-
-        if (marked_bytes > 0) {
-          total_marked_bytes += marked_bytes;
-        }
-        cur += chunk_size_in_words;
-
-        _cm->do_yield_check();
-        if (_cm->has_aborted()) {
-          return true;
-        }
-      }
-      // In the final iteration of the loop the region might have been eagerly reclaimed.
-      // Simply filter out those regions. We can not just use region type because there
-      // might have already been new allocations into these regions.
-      DEBUG_ONLY(HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);)
-      assert(top_at_rebuild_start == NULL ||
-             total_marked_bytes == hr->marked_bytes(),
-             "Marked bytes " SIZE_FORMAT " for region %u (%s) in [bottom, TAMS) do not match calculated marked bytes " SIZE_FORMAT " "
-             "(" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT ")",
-             total_marked_bytes, hr->hrm_index(), hr->get_type_str(), hr->marked_bytes(),
-             p2i(hr->bottom()), p2i(top_at_mark_start), p2i(top_at_rebuild_start));
-       // Abort state may have changed after the yield check.
-      return _cm->has_aborted();
-    }
-  };
-
-  HeapRegionClaimer _hr_claimer;
-  G1ConcurrentMark* _cm;
-
-  uint _worker_id_offset;
-public:
-  G1RebuildRemSetTask(G1ConcurrentMark* cm,
-                      uint n_workers,
-                      uint worker_id_offset) :
-      WorkerTask("G1 Rebuild Remembered Set"),
-      _hr_claimer(n_workers),
-      _cm(cm),
-      _worker_id_offset(worker_id_offset) {
-  }
-
-  void work(uint worker_id) {
-    SuspendibleThreadSetJoiner sts_join;
-
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-    G1RebuildRemSetHeapRegionClosure cl(g1h, _cm, _worker_id_offset + worker_id);
-    g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hr_claimer, worker_id);
-  }
-};
-
-void G1RemSet::rebuild_rem_set(G1ConcurrentMark* cm,
-                               WorkerThreads* workers,
-                               uint worker_id_offset) {
-  uint num_workers = workers->active_workers();
-
-  G1RebuildRemSetTask cl(cm,
-                         num_workers,
-                         worker_id_offset);
-  workers->run_task(&cl, num_workers);
 }

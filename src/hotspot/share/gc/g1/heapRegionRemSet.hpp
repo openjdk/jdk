@@ -51,12 +51,6 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
 
   HeapRegion* _hr;
 
-  // When splitting addresses into region and card within that region, the logical
-  // shift value to get the region.
-  static uint _split_card_shift;
-  // When splitting addresses into region and card within that region, the mask
-  // to get the offset within the region.
-  static size_t _split_card_mask;
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
@@ -73,11 +67,11 @@ public:
   }
 
   bool is_empty() const {
-    return (strong_code_roots_list_length() == 0) && cardset_is_empty();
+    return (code_roots_list_length() == 0) && cardset_is_empty();
   }
 
   bool occupancy_less_or_equal_than(size_t occ) const {
-    return (strong_code_roots_list_length() == 0) && _card_set.occupancy_less_or_equal_to(occ);
+    return (code_roots_list_length() == 0) && _card_set.occupancy_less_or_equal_to(occ);
   }
 
   // Iterate the card based remembered set for merging them into the card table.
@@ -94,6 +88,8 @@ public:
 
   // Coarsening statistics since VM start.
   static G1CardSetCoarsenStats coarsen_stats() { return G1CardSet::coarsen_stats(); }
+
+  inline uintptr_t to_card(OopOrNarrowOopStar from) const;
 
 private:
   enum RemSetState {
@@ -128,16 +124,16 @@ public:
 
   G1SegmentedArrayMemoryStats card_set_memory_stats() const;
 
-  // The actual # of bytes this hr_remset takes up. Also includes the strong code
+  // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
     return _card_set.mem_size()
-      + (sizeof(HeapRegionRemSet) - sizeof(G1CardSet)) // Avoid double-counting G1CardSet.
-      + strong_code_roots_mem_size();
+           + (sizeof(HeapRegionRemSet) - sizeof(G1CardSet)) // Avoid double-counting G1CardSet.
+           + code_roots_mem_size();
   }
 
-  size_t wasted_mem_size() {
-    return _card_set.wasted_mem_size();
+  size_t unused_mem_size() {
+    return _card_set.unused_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated
@@ -154,30 +150,29 @@ public:
 
   // Routines for managing the list of code roots that point into
   // the heap region that owns this RSet.
-  void add_strong_code_root(nmethod* nm);
-  void add_strong_code_root_locked(nmethod* nm);
-  void remove_strong_code_root(nmethod* nm);
+  void add_code_root(nmethod* nm);
+  void add_code_root_locked(nmethod* nm);
+  void remove_code_root(nmethod* nm);
 
-  // Applies blk->do_code_blob() to each of the entries in
-  // the strong code roots list
-  void strong_code_roots_do(CodeBlobClosure* blk) const;
+  // Applies blk->do_code_blob() to each of the entries in _code_roots
+  void code_roots_do(CodeBlobClosure* blk) const;
 
-  void clean_strong_code_roots(HeapRegion* hr);
+  void clean_code_roots(HeapRegion* hr);
 
-  // Returns the number of elements in the strong code roots list
-  size_t strong_code_roots_list_length() const {
+  // Returns the number of elements in _code_roots
+  size_t code_roots_list_length() const {
     return _code_roots.length();
   }
 
-  // Returns true if the strong code roots contains the given
+  // Returns true if the code roots contains the given
   // nmethod.
-  bool strong_code_roots_list_contains(nmethod* nm) {
+  bool code_roots_list_contains(nmethod* nm) {
     return _code_roots.contains(nm);
   }
 
   // Returns the amount of memory, in bytes, currently
-  // consumed by the strong code roots.
-  size_t strong_code_roots_mem_size();
+  // consumed by the code roots.
+  size_t code_roots_mem_size();
 
   static void invalidate_from_card_cache(uint start_idx, size_t num_regions) {
     G1FromCardCache::invalidate(start_idx, num_regions);

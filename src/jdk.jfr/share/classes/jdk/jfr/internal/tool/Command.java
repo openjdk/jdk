@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
-import jdk.jfr.EventType;
 
 abstract class Command {
     public static final String title = "Tool for working with Flight Recorder files";
@@ -56,6 +50,7 @@ abstract class Command {
         commands.add(new Print());
         commands.add(new Configure());
         commands.add(new Metadata());
+        commands.add(new Scrub());
         commands.add(new Summary());
         commands.add(new Assemble());
         commands.add(new Disassemble());
@@ -287,6 +282,10 @@ abstract class Command {
         displayOptionUsage(stream);
     }
 
+    protected static char quoteCharacter() {
+        return File.pathSeparatorChar == ';' ? '"' : '\'';
+    }
+
     protected final void println() {
         System.out.println();
     }
@@ -297,6 +296,12 @@ abstract class Command {
 
     protected final void println(String text) {
         System.out.println(text);
+    }
+
+    public static void checkCommonError(Deque<String> options, String typo, String correct) throws UserSyntaxException {
+        if (typo.equals(options.peek())) {
+            throw new UserSyntaxException("unknown option " + typo + ", did you mean " + correct + "?");
+        }
     }
 
     protected final boolean matches(String command) {
@@ -319,107 +324,4 @@ abstract class Command {
         return names;
     }
 
-    public static void checkCommonError(Deque<String> options, String typo, String correct) throws UserSyntaxException {
-        if (typo.equals(options.peek())) {
-            throw new UserSyntaxException("unknown option " + typo + ", did you mean " + correct + "?");
-        }
-    }
-
-    protected static final char quoteCharacter() {
-        return File.pathSeparatorChar == ';' ? '"' : '\'';
-    }
-
-    private static <T> Predicate<T> recurseIfPossible(Predicate<T> filter) {
-        return x -> filter != null && filter.test(x);
-    }
-
-    private static String acronomify(String multipleWords) {
-        boolean newWord = true;
-        String acronym = "";
-        for (char c : multipleWords.toCharArray()) {
-            if (newWord) {
-                if (Character.isAlphabetic(c) && Character.isUpperCase(c)) {
-                    acronym += c;
-                }
-            }
-            newWord = Character.isWhitespace(c);
-        }
-        return acronym;
-    }
-
-    private static boolean match(String text, String filter) {
-        if (filter.length() == 0) {
-            // empty filter string matches if string is empty
-            return text.length() == 0;
-        }
-        if (filter.charAt(0) == '*') { // recursive check
-            filter = filter.substring(1);
-            for (int n = 0; n <= text.length(); n++) {
-                if (match(text.substring(n), filter))
-                    return true;
-            }
-        } else if (text.length() == 0) {
-            // empty string and non-empty filter does not match
-            return false;
-        } else if (filter.charAt(0) == '?') {
-            // eat any char and move on
-            return match(text.substring(1), filter.substring(1));
-        } else if (filter.charAt(0) == text.charAt(0)) {
-            // eat chars and move on
-            return match(text.substring(1), filter.substring(1));
-        }
-        return false;
-    }
-
-    private static List<String> explodeFilter(String filter) throws UserSyntaxException {
-        List<String> list = new ArrayList<>();
-        for (String s : filter.split(",")) {
-            s = s.trim();
-            if (!s.isEmpty()) {
-                list.add(s);
-            }
-        }
-        return list;
-    }
-
-    protected static final Predicate<EventType> addCategoryFilter(String filterText, Predicate<EventType> eventFilter) throws UserSyntaxException {
-        List<String> filters = explodeFilter(filterText);
-        Predicate<EventType> newFilter = recurseIfPossible(eventType -> {
-            for (String category : eventType.getCategoryNames()) {
-                for (String filter : filters) {
-                    if (match(category, filter)) {
-                        return true;
-                    }
-                    if (category.contains(" ") && acronomify(category).equals(filter)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        });
-        return eventFilter == null ? newFilter : eventFilter.or(newFilter);
-    }
-
-    protected static final Predicate<EventType> addEventFilter(String filterText, final Predicate<EventType> eventFilter) throws UserSyntaxException {
-        List<String> filters = explodeFilter(filterText);
-        Predicate<EventType> newFilter = recurseIfPossible(eventType -> {
-            for (String filter : filters) {
-                String fullEventName = eventType.getName();
-                if (match(fullEventName, filter)) {
-                    return true;
-                }
-                String eventName = fullEventName.substring(fullEventName.lastIndexOf(".") + 1);
-                if (match(eventName, filter)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-        return eventFilter == null ? newFilter : eventFilter.or(newFilter);
-    }
-
-    protected static final <T, X> Predicate<T> addCache(final Predicate<T> filter, Function<T, X> cacheFunction) {
-        Map<X, Boolean> cache = new HashMap<>();
-        return t -> cache.computeIfAbsent(cacheFunction.apply(t), x -> filter.test(t));
-    }
 }

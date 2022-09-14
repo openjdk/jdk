@@ -300,7 +300,7 @@ public class BlockView extends BoxView  {
      *
      * @param axis may be either X_AXIS or Y_AXIS
      * @return the weight
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public int getResizeWeight(int axis) {
         switch (axis) {
@@ -356,7 +356,7 @@ public class BlockView extends BoxView  {
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getPreferredSpan(int axis) {
         return super.getPreferredSpan(axis);
@@ -372,7 +372,7 @@ public class BlockView extends BoxView  {
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getMinimumSpan(int axis) {
         return super.getMinimumSpan(axis);
@@ -388,7 +388,7 @@ public class BlockView extends BoxView  {
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getMaximumSpan(int axis) {
         return super.getMaximumSpan(axis);

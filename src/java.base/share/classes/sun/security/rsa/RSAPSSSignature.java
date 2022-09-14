@@ -255,7 +255,6 @@ public class RSAPSSSignature extends SignatureSpi {
      * internal signature parameters.
      */
     private void isValid(RSAKey rsaKey) throws InvalidKeyException {
-        AlgorithmParameterSpec keyParams = rsaKey.getParams();
         // validate key parameters
         if (!isCompatible(rsaKey.getParams(), this.sigParams)) {
             throw new InvalidKeyException

@@ -394,7 +394,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * is {@code SwingConstants.HORIZONTAL}.
      *
      * @param  newOrientation  <code>HORIZONTAL</code> or <code>VERTICAL</code>
-     * @exception      IllegalArgumentException    if <code>newOrientation</code>
+     * @throws      IllegalArgumentException    if <code>newOrientation</code>
      *                                              is an illegal value
      * @see #getOrientation
      */

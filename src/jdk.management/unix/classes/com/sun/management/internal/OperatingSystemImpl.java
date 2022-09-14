@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,15 +88,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                 long numPeriods = containerMetrics.getCpuNumPeriods();
                 long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
                 return getUsageDividesTotal(cpuUsageSupplier().getAsLong(), quotaNanos);
-            } else if (share > 0) {
-                long hostTicks = getHostTotalCpuTicks0();
-                int totalCPUs = getHostOnlineCpuCount0();
-                int containerCPUs = getAvailableProcessors();
-                // scale the total host load to the actual container cpus
-                hostTicks = hostTicks * containerCPUs / totalCPUs;
-                return getUsageDividesTotal(cpuUsageSupplier().getAsLong(), hostTicks);
             } else {
-                // If CPU quotas and shares are not active then find the average load for
+                // If CPU quotas are not active then find the average load for
                 // all online CPUs that are allowed to run this container.
 
                 // If the cpuset is the same as the host's one there is no need to iterate over each CPU

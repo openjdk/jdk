@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1062,8 +1062,7 @@ class PSParallelCompact : AllStatic {
   static void post_compact();
 
   // Mark live objects
-  static void marking_phase(ParCompactionManager* cm,
-                            ParallelOldTracer *gc_tracer);
+  static void marking_phase(ParallelOldTracer *gc_tracer);
 
   // Compute the dense prefix for the designated space.  This is an experimental
   // implementation currently not used in production.
@@ -1117,13 +1116,13 @@ class PSParallelCompact : AllStatic {
                                                  idx_t bit);
 
   // Summary phase utility routine to fill dead space (if any) at the dense
-  // prefix boundary.  Should only be called if the the dense prefix is
+  // prefix boundary.  Should only be called if the dense prefix is
   // non-empty.
   static void fill_dense_prefix_end(SpaceId id);
 
   static void summarize_spaces_quick();
   static void summarize_space(SpaceId id, bool maximum_compaction);
-  static void summary_phase(ParCompactionManager* cm, bool maximum_compaction);
+  static void summary_phase(bool maximum_compaction);
 
   // Adjust addresses in roots.  Does not adjust addresses in heap.
   static void adjust_roots();

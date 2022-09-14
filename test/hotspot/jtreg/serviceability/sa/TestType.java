@@ -62,7 +62,6 @@ public class TestType {
                 "type ConstantPoolCache MetaspaceObj",
                 "type ConstantPool Metadata",
                 "type CompilerThread JavaThread",
-                "type CardGeneration Generation",
                 "type ArrayKlass Klass",
                 "type InstanceKlass Klass"));
             // String to check for in the output of "type InstanceKlass"

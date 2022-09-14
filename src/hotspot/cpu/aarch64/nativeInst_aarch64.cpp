@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -160,7 +160,7 @@ address NativeCall::destination() const {
   address destination = instruction_address() + displacement();
 
   // Do we use a trampoline stub for this call?
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // Else we get assertion if nmethod is zombie.
+  CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
   if (nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
@@ -315,7 +315,7 @@ void NativeMovRegMem::set_offset(int x) {
 
 void NativeMovRegMem::verify() {
 #ifdef ASSERT
-  address dest = MacroAssembler::target_addr_for_insn(instruction_address());
+  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
 #endif
 }
 
@@ -329,7 +329,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 
 
 address NativeJump::jump_destination() const          {
-  address dest = MacroAssembler::target_addr_for_insn(instruction_address());
+  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
@@ -456,7 +456,7 @@ bool NativeInstruction::is_movk() {
   return Instruction_aarch64::extract(int_at(0), 30, 23) == 0b11100101;
 }
 
-bool NativeInstruction::is_sigill_zombie_not_entrant() {
+bool NativeInstruction::is_sigill_not_entrant() {
   return uint_at(0) == 0xd4bbd5a1; // dcps1 #0xdead
 }
 
@@ -471,13 +471,13 @@ bool NativeInstruction::is_stop() {
 //-------------------------------------------------------------------
 
 // MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant_or_zombie)
+// nmethod::make_not_entrant)
 
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
   assert(nativeInstruction_at(verified_entry)->is_jump_or_nop()
-         || nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
+         || nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
          "Aarch64 cannot replace non-jump with jump");
 
   // Patch this nmethod atomically.
@@ -488,8 +488,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
     unsigned int insn = (0b000101 << 26) | ((disp >> 2) & 0x3ffffff);
     *(unsigned int*)verified_entry = insn;
   } else {
-    // We use an illegal instruction for marking a method as
-    // not_entrant or zombie.
+    // We use an illegal instruction for marking a method as not_entrant.
     NativeIllegalInstruction::insert(verified_entry);
   }
 
@@ -543,4 +542,46 @@ address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
   }
 
   return stub;
+}
+
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+#ifdef ASSERT
+static bool is_movk_to_zr(uint32_t insn) {
+  return ((insn & 0xffe0001f) == 0xf280001f);
+}
+#endif
+
+void NativePostCallNop::patch(jint diff) {
+#ifdef ASSERT
+  assert(diff != 0, "must be");
+  uint32_t insn1 = uint_at(4);
+  uint32_t insn2 = uint_at(8);
+  assert (is_movk_to_zr(insn1) && is_movk_to_zr(insn2), "must be");
+#endif
+
+  uint32_t lo = diff & 0xffff;
+  uint32_t hi = (uint32_t)diff >> 16;
+  Instruction_aarch64::patch(addr_at(4), 20, 5, lo);
+  Instruction_aarch64::patch(addr_at(8), 20, 5, hi);
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos) {
+  // 1 1 0 1 | 0 1 0 0 | 1 0 1 imm16 0 0 0 0 1
+  // d       | 4       | a      | de | 0 | 0 |
+  // 0xd4, 0x20, 0x00, 0x00
+  uint32_t insn = 0xd4ade001;
+  uint32_t *pos = (uint32_t *) code_pos;
+  *pos = insn;
+  /**code_pos = 0xd4;
+  *(code_pos+1) = 0x60;
+  *(code_pos+2) = 0x00;
+  *(code_pos+3) = 0x00;*/
+  ICache::invalidate_range(code_pos, 4);
 }

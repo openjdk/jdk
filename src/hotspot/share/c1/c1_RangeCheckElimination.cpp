@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,7 +365,12 @@ void RangeCheckEliminator::update_bound(IntegerStack &pushed, Value v, Instructi
 bool RangeCheckEliminator::loop_invariant(BlockBegin *loop_header, Instruction *instruction) {
   assert(loop_header, "Loop header must not be null!");
   if (!instruction) return true;
-  return instruction->dominator_depth() < loop_header->dominator_depth();
+  for (BlockBegin *d = loop_header->dominator(); d != NULL; d = d->dominator()) {
+    if (d == instruction->block()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Update bound. Pushes a new bound onto the stack. Tries to do a conjunction with the current bound.
@@ -973,7 +978,7 @@ void RangeCheckEliminator::calc_bounds(BlockBegin *block, BlockBegin *loop_heade
     }
   }
 
-  // Interate over current block
+  // Iterate over current block
   InstructionList arrays;
   AccessIndexedList accessIndexed;
   Instruction *cur = block;

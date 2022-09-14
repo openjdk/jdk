@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -67,7 +67,7 @@ import com.sun.xml.internal.stream.Entity;
  * @author Eric Ye, IBM
  * @author K.Venugopal SUN Microsystems
  * @author Sunitha Reddy, SUN Microsystems
- * @LastModified: Feb 2020
+ * @LastModified: Aug 2021
  */
 public abstract class XMLScanner
         implements XMLComponent {
@@ -955,12 +955,6 @@ public abstract class XMLScanner
                     if (DEBUG_ATTR_NORMALIZATION) {
                         System.out.println("** valueF: \""
                                 + stringBuffer.toString() + "\"");
-                    }
-                } else if (c == '\n' || c == '\r') {
-                    fEntityScanner.scanChar(null);
-                    stringBuffer.append(' ');
-                    if (entityDepth == fEntityDepth && fNeedNonNormalizedValue) {
-                        fStringBuffer2.append('\n');
                     }
                 } else if (c != -1 && XMLChar.isHighSurrogate(c)) {
                     fStringBuffer3.clear();

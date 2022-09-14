@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8221530
+ * @bug 8221530 8221642
  * @summary Test uses custom launcher that starts VM using JNI that verifies
  *          reflection API with null caller class
  * @library /test/lib
@@ -61,7 +61,10 @@ public class CallerAccessTest {
 
         System.out.println("Launching: " + launcher + " shared library path: " +
                            env.get(sharedLibraryPathEnvName));
-        new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+        new OutputAnalyzer(pb.start())
+                .outputTo(System.out)
+                .errorTo(System.err)
+                .shouldHaveExitValue(0);
     }
 }
 

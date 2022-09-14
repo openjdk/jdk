@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -390,7 +390,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Gîne-Bissau</territory>
 			<territory type="GY">Guyana</territory>
-			<territory type="HK" alt="short">Hong Kong</territory>
+			<territory type="HK">Hong Kong</territory>
 			<territory type="HN">Hondûras</territory>
 			<territory type="HR">Kroatya</territory>
 			<territory type="HT">Haîtî</territory>
@@ -440,7 +440,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ML">Malî</territory>
 			<territory type="MM">Myanmar (Birmanya)</territory>
 			<territory type="MN">Mongolya</territory>
-			<territory type="MO" alt="short">Makao</territory>
+			<territory type="MO">Makao</territory>
 			<territory type="MP">Giravên Bakurê Marianan</territory>
 			<territory type="MQ">Martinique</territory>
 			<territory type="MR">Morîtanya</territory>
@@ -563,7 +563,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b c ç d e ê f g h i î j k l m n o p q r s ş t u û v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ è ĕ ë ē é ì ĭ ï ī í ñ ó ò ŏ ô ø ō œ ß ù ŭ ū ú ÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ è ĕ ë ē é ì ĭ ï ī í ñ ó ò ŏ ô ø ō œ ß ŭ ū ú ù ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Ç D E Ê F G H I Î J K L M N O P Q R S Ş T U Û V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>

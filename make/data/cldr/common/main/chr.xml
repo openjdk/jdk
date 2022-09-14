@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -90,6 +90,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="de_CH">ᏍᏫᏏ ᎦᎸᎳᏗ ᎠᏂᏓᏥ</language>
 			<language type="dgr">ᎩᏟ ᎤᏄᎳᏥ</language>
 			<language type="dje">ᏌᎹ</language>
+			<language type="doi">ᏙᎦᎵ</language>
 			<language type="dsb">ᎡᎳᏗ ᏐᏈᎠᏂ</language>
 			<language type="dua">ᏚᎠᎳ</language>
 			<language type="dv">ᏗᏪᎯ</language>
@@ -278,6 +279,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nmg">ᏆᏏᏲ</language>
 			<language type="nn">ᏃᎵᏪᏥᏂ ᎾᎵᏍᎩ</language>
 			<language type="nnh">ᎾᏥᏰᎹᏊᏂ</language>
+			<language type="no">ᏃᎵᏪᏥᏂ</language>
 			<language type="nog">ᏃᎦᏱ</language>
 			<language type="nqo">ᎾᎪ</language>
 			<language type="nr">ᏧᎦᎾᏮ ᏂᏕᏇᎴ</language>
@@ -306,6 +308,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="quc">ᎩᏤ</language>
 			<language type="rap">ᎳᏆᏄᏫ</language>
 			<language type="rar">ᎳᎶᏙᎾᎦᏂ</language>
+			<language type="rhg">ᎶᎯᏂᏯ</language>
 			<language type="rm">ᎠᏂᎶᎺᏂ</language>
 			<language type="rn">ᎷᏂᏗ</language>
 			<language type="ro">ᎶᎹᏂᎠᏂ</language>
@@ -906,21 +909,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>M/d/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -959,6 +966,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -1377,21 +1385,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>M/d/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1399,21 +1411,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1452,6 +1468,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -4238,9 +4255,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎠᏟᎢᎵᏒ</generic>
-					<standard draft="contributed">ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎠᏟᎶᏍᏗ ᎠᏟᎢᎵᏒ</standard>
-					<daylight draft="contributed">ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎪᎩ ᎠᏟᎢᎵᏒ</daylight>
+					<generic>ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎠᏟᎢᎵᏒ</generic>
+					<standard>ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎠᏟᎶᏍᏗ ᎠᏟᎢᎵᏒ</standard>
+					<daylight>ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎪᎩ ᎠᏟᎢᎵᏒ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4496,6 +4513,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ᏰᎧᏖᎵᏂᏊᎦ ᎠᏟᎢᎵᏒ</generic>
 					<standard>ᏰᎧᏖᎵᏂᏊᎦ ᎠᏟᎶᏍᏗ ᎠᏟᎢᎵᏒ</standard>
 					<daylight>ᏰᎧᏖᎵᏂᏊᎦ ᎪᎩ ᎠᏟᎢᎵᏒ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>ᏳᎧᏂ ᎠᏟᎢᎵᏒ</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -5190,6 +5212,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="LSL">
+				<displayName>ᎴᏐᏠ ᎶᏘ</displayName>
+				<displayName count="one">ᎴᏐᏠ ᎶᏘ</displayName>
+				<displayName count="other">ᎴᏐᏠ ᎶᏘᏍ</displayName>
+			</currency>
 			<currency type="LYD">
 				<displayName>ᎵᏈᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎵᏈᏯ ᎠᏕᎳ</displayName>
@@ -5767,6 +5794,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} ᎾᎿ {1}</compoundUnitPattern>
 			</compoundUnit>
@@ -5884,6 +5935,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᏌᏉ ᎢᏯᎦᎨᎵᏁᎢ ᎠᏂᎼᎵ ᎵᏔᎢ ᎢᏳᏓᎵ</displayName>
 				<unitPattern count="one">{0} ᏌᏉ ᎢᏯᎦᎨᎵᏁᎢ ᎼᎵ ᎵᏔᎢ ᎢᏳᏓᎵ</unitPattern>
 				<unitPattern count="other">{0} ᏌᏉ ᎢᏯᎦᎨᎵᏁᎢ ᎠᏂᎼᎵ ᎵᏔᎢ ᎢᏳᏓᎵ</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ᏑᏓᎴᎩ</displayName>
+				<unitPattern count="one">{0} ᏑᏓᎴᎩ</unitPattern>
+				<unitPattern count="other">{0} ᎢᏳᏓᎴᎩ</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ᏚᏙᏢᏒ ᎢᏳᏆᏗᏅᏛ ᎢᏳᏓᎵ</displayName>
@@ -6127,6 +6183,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏄᏛᏅ</unitPattern>
 				<unitPattern count="other">{0} ᏄᏛᏅᏍ</unitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>ᎠᎦᏴᎵᏩᏘ-ᏑᏟᎶᏓ ᎾᎿ 100 ᎠᎦᏴᎵᎢᏳᏟᎶᏓ</displayName>
+				<unitPattern count="one">{0} ᎠᎦᏴᎵᏩᏘ-ᏑᏟᎶᏓ ᎾᎿ 100 ᎠᎦᏴᎵᎢᏳᏟᎶᏓ</unitPattern>
+				<unitPattern count="other">{0} ᎠᎦᏴᎵᏩᏘ-ᏑᏟᎶᏓ ᎾᎿ 100 ᎠᎦᏴᎵᎢᏳᏟᎶᏓ</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ᎩᎦᎭᏥ</displayName>
 				<unitPattern count="one">{0} ᎩᎦᎭᏥ</unitPattern>
@@ -6179,6 +6240,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᏧᏓᏓᎸ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</displayName>
 				<unitPattern count="one">{0} ᎤᏓᏓᎸ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</unitPattern>
 				<unitPattern count="other">{0} ᏧᏓᏓᎸ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>ᎡᎶᎯ ᏯᏗ</displayName>
+				<unitPattern count="one">{0} ᎡᎶᎯ ᏯᏗ</unitPattern>
+				<unitPattern count="other">{0} ᎡᎶᎯ ᏯᏗ</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ᎠᎦᏴᎵ ᏗᏟᎶᏍᏗ</displayName>
@@ -6260,6 +6326,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᎡᎶᎯ ᎠᎴ ᎤᏓ ᏭᏍᏗᎬ ᎧᎵ ᎨᏒᎢ</unitPattern>
 				<unitPattern count="other">{0} ᎡᎶᎯ ᎠᎴ ᎤᏓ ᏭᏍᏗᎬ ᎧᎵ ᎨᏒᎢ</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>ᎠᏰᏟ ᎩᏄᏘᏗ ᎢᏳᏟᎶᏓ</displayName>
+				<unitPattern count="one">{0} ᎠᏰᏟ ᎩᏄᏘᏗ ᏑᏟᎶᏓ</unitPattern>
+				<unitPattern count="other">{0} ᎠᏰᏟ ᎩᏄᏘᏗ ᎢᏳᏟᎶᏓ</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ᏑᏓᎵ ᎢᏗᎳᏏᏗ ᎠᏯᏱ</displayName>
+				<unitPattern count="one">{0} ᏑᏓᎵ ᎢᏗᎳᏏᏗ ᎠᏯᏱ</unitPattern>
+				<unitPattern count="other">{0} ᏑᏓᎵ ᎢᏗᎳᏏᏗ ᎠᏯᏱ</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ᎠᎺᏉᎯ ᎢᏳᏟᎶᏓ</displayName>
 				<unitPattern count="one">{0} ᎠᎺᏉᎯ ᏑᏟᎶᏓ</unitPattern>
@@ -6284,6 +6360,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᎸᏏ</displayName>
 				<unitPattern count="one">{0} ᎸᏏ</unitPattern>
 				<unitPattern count="other">{0} ᎸᏏ</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>ᎧᏂᏕᎳ</displayName>
+				<unitPattern count="one">{0} ᎧᏂᏕᎳ</unitPattern>
+				<unitPattern count="other">{0} ᎧᏂᏕᎳ</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>ᎷᎺᏂ</displayName>
+				<unitPattern count="one">{0} ᎷᎺᏂ</unitPattern>
+				<unitPattern count="other">{0} ᎷᎺᏂ</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ᏅᏓ ᏗᏨᏍᏗ</displayName>
@@ -6322,6 +6408,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏈᏂ</unitPattern>
 				<unitPattern count="other">{0} ᏗᏈᏂ</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>ᎠᏂᏅᏯ</displayName>
+				<unitPattern count="one">{0} ᏅᏯ</unitPattern>
+				<unitPattern count="other">{0} ᎠᏂᏅᏯ</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>ᎢᏧᏓᎨᏓ</displayName>
 				<unitPattern count="one">{0} ᏑᏓᎨᏓ</unitPattern>
@@ -6358,6 +6449,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᏅᏓ ᎹᏏ</displayName>
 				<unitPattern count="one">{0} ᏅᏓ ᎹᏏ</unitPattern>
 				<unitPattern count="other">{0} ᏅᏓ ᎹᏏ</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>ᎤᏛᏒ ᎤᎦᏔ</displayName>
+				<unitPattern count="one">{0} ᎤᏛᏒ ᎤᎦᏔ</unitPattern>
+				<unitPattern count="other">{0} ᎤᏛᏒ ᎤᎦᏔ</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ᎩᎦᏩᏗ</displayName>
@@ -6572,6 +6668,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏑᏟᎶᏛ-ᎢᎳᏏᏗ</unitPattern>
 				<unitPattern count="other">{0} ᏑᏟᎶᏛ-ᎢᏗᎳᏏᏗ</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>ᎤᎧᏲᏗ ᏑᏟᎶᏓ</displayName>
+				<unitPattern count="one">{0} ᎤᎧᏲᏗ ᏑᏟᎶᏓ</unitPattern>
+				<unitPattern count="other">{0} ᎤᎧᏲᏗ ᏑᏟᎶᏓ</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>ᎢᏧᎵᎶᏓ</displayName>
 				<unitPattern count="one">{0} ᎢᏳᎵᎶᏓ</unitPattern>
@@ -6624,6 +6725,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏒᏙᏂ</unitPattern>
 				<unitPattern count="other">{0} ᏧᏒᏙᏂ</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ᎤᎦᎾᏍᏓ ᎠᏗᏙᏗ</displayName>
+				<unitPattern count="one">{0} ᎤᎦᎾᏍᏓ ᎠᏗᏙᏗ</unitPattern>
+				<unitPattern count="other">{0} ᎤᎦᎾᏍᏓ ᎠᏗᏙᏗ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ᏂᎬᎾᏛᎢ ᎤᏓᏤᎵᎦᏯ ᎤᎦᎾᏍᏓ ᎠᏗᏙᏗ</displayName>
+				<unitPattern count="one">{0} ᏂᎬᎾᏛᎢ ᎤᏓᏤᎵᎦᏯ ᎤᎦᎾᏍᏓ ᎠᏗᏙᏗ</unitPattern>
+				<unitPattern count="other">{0} ᏂᎬᎾᏛᎢ ᎤᏓᏤᎵᎦᏯ ᎤᎦᎾᏍᏓ ᎠᏗᏙᏗ</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>ᎪᎭᏍᎬ</displayName>
+				<unitPattern count="one">{0} ᎪᎭᏍᎬ</unitPattern>
+				<unitPattern count="other">{0} ᎪᎭᏍᎬ</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ᏜᎹ</displayName>
+				<unitPattern count="one">{0} ᏜᎹ</unitPattern>
+				<unitPattern count="other">{0} ᏜᎹ</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ᏥᎩᎳ</displayName>
+				<unitPattern count="one">{0} ᏥᎩᎳ</unitPattern>
+				<unitPattern count="other">{0} ᏥᎩᎳ</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ᏗᏓᏇᏄᎩᏍᏗ</displayName>
+				<unitPattern count="one">{0} ᏗᏓᏇᏄᎩᏍᏗ</unitPattern>
+				<unitPattern count="other">{0} ᏗᏓᏇᏄᎩᏍᏗ</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ᏂᎬᎾᏛᎢ ᎤᏓᏤᎵᎦᏯ ᏅᎩ ᎢᏗᎧᎵᎢ</displayName>
+				<unitPattern count="one">{0} ᏂᎬᎾᏛᎢ ᎤᏓᏤᎵᎦᏯ ᏅᎩ ᎢᏗᎧᎵᎢ</unitPattern>
+				<unitPattern count="other">{0} ᏂᎬᎾᏛᎢ ᎤᏓᏤᎵᎦᏯ ᏅᎩ ᎢᏗᎧᎵᎢ</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ᏅᎩ ᏫᏂᏚᏳᎪᏛᎢ</displayName>
 				<coordinateUnitPattern type="east">{0} ᏗᎧᎸᎬ</coordinateUnitPattern>
@@ -6633,6 +6769,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -6679,8 +6839,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ᎮᏔ ᎢᏳᏟᎶᏛ</displayName>
-				<unitPattern count="one">{0} ᎨᏑ</unitPattern>
-				<unitPattern count="other">{0} ᎨᏑ</unitPattern>
+				<unitPattern count="one">{0} ha</unitPattern>
+				<unitPattern count="other">{0} ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>ᏗᏟᎶᏍᏗ²</displayName>
@@ -6741,6 +6901,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>ᏑᏓᎴᎩ</displayName>
+				<unitPattern count="one">{0} ᏑᏓᎴᎩ</unitPattern>
+				<unitPattern count="other">{0} ᎢᏳᏓᎴᎩ</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ᏚᏙᏢᏒ/ᎢᏳᏆᏗᏅᏛ</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
@@ -6772,9 +6937,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
+				<displayName>L/100 km</displayName>
+				<unitPattern count="one">{0} L/100 km</unitPattern>
+				<unitPattern count="other">{0} L/100 km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ᎢᏧᏟᎶᏓ/ᎢᏳᎵᎶᏓ</displayName>
@@ -6899,7 +7064,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ᏌᎠ</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName>μsecs</displayName>
+				<displayName>μᏗᏎᏢ</displayName>
 				<unitPattern count="one">{0} μs</unitPattern>
 				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
@@ -6983,6 +7148,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} N</unitPattern>
 				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="one">{0} GHz</unitPattern>
@@ -7009,6 +7179,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="graphics-megapixel">
 				<displayName>ᏧᏔᎾ ᏗᏇᎦᏎᎵ</displayName>
 			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>ᎠᏗ</displayName>
 				<unitPattern count="one">{0} ᎠᏗ</unitPattern>
@@ -7027,10 +7207,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ᏌᏟ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName>ᏧᎠ</displayName>
-				<unitPattern count="one">{0} ᏧᎠ</unitPattern>
-				<unitPattern count="other">{0} ᏧᎠ</unitPattern>
-				<perUnitPattern>{0}/ᏧᎠ</perUnitPattern>
+				<displayName>cm</displayName>
+				<unitPattern count="one">{0} cm</unitPattern>
+				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>ᏌᎢᎠ</displayName>
@@ -7043,66 +7223,72 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName>ᎾᎠ</displayName>
-				<unitPattern count="one">{0} ᎾᎠ</unitPattern>
-				<unitPattern count="other">{0} ᎾᎠ</unitPattern>
+				<displayName>nm</displayName>
+				<unitPattern count="one">{0} nm</unitPattern>
+				<unitPattern count="other">{0} nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<displayName>ᏇᎢᎠ</displayName>
-				<unitPattern count="one">{0} ᏇᎢᎠ</unitPattern>
-				<unitPattern count="other">{0} ᏇᎢᎠ</unitPattern>
+				<displayName>pm</displayName>
+				<unitPattern count="one">{0} pm</unitPattern>
+				<unitPattern count="other">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>ᎢᏳᏟᎶᏓ</displayName>
-				<unitPattern count="one">{0} ᎢᏳ</unitPattern>
-				<unitPattern count="other">{0} ᎢᏳ</unitPattern>
+				<unitPattern count="one">{0} mi</unitPattern>
+				<unitPattern count="other">{0} mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>ᎢᏯᏯᏗ</displayName>
-				<unitPattern count="one">{0} ᏯᏗ</unitPattern>
-				<unitPattern count="other">{0} ᏯᏗ</unitPattern>
+				<unitPattern count="one">{0} yd</unitPattern>
+				<unitPattern count="other">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>ᎢᏗᎳᏏᏗ</displayName>
-				<unitPattern count="one">{0} ᎢᏗᎳ</unitPattern>
-				<unitPattern count="other">{0} ᎢᏗᎳ</unitPattern>
-				<perUnitPattern>{0}/ᎢᏗᎳ</perUnitPattern>
+				<unitPattern count="one">{0} ft</unitPattern>
+				<unitPattern count="other">{0} ft</unitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>ᎢᏗᏏᏔᏗᏍᏗ</displayName>
-				<unitPattern count="one">{0} ᎢᏏᏔ</unitPattern>
-				<unitPattern count="other">{0} ᎢᏏᏔ</unitPattern>
-				<perUnitPattern>{0}/ᎢᏏᏔ</perUnitPattern>
+				<unitPattern count="one">{0} in</unitPattern>
+				<unitPattern count="other">{0} in</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>ᎢᏯᏆᏎᎦ</displayName>
-				<unitPattern count="one">{0} ᎢᏆ</unitPattern>
-				<unitPattern count="other">{0} ᎢᏆ</unitPattern>
+				<unitPattern count="one">{0} pc</unitPattern>
+				<unitPattern count="other">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>ᏗᏨᏍᏗ ᏧᏕᏘ</displayName>
-				<unitPattern count="one">{0} ᏗᏧ</unitPattern>
-				<unitPattern count="other">{0} ᏗᏧ</unitPattern>
+				<unitPattern count="one">{0} ly</unitPattern>
+				<unitPattern count="other">{0} ly</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName>ᎡᎨ</displayName>
-				<unitPattern count="one">{0} ᎡᎨ</unitPattern>
-				<unitPattern count="other">{0} ᎡᎨ</unitPattern>
+				<displayName>au</displayName>
+				<unitPattern count="one">{0} au</unitPattern>
+				<unitPattern count="other">{0} au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>ᎠᏰᏟ ᎩᏄᏘᏗ ᎢᏳᏟᎶᏓ</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ᏑᏓᎵ ᎢᏗᎳᏏᏗ ᎠᏯᏱ</displayName>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName>ᎠᎺᎢ</displayName>
-				<unitPattern count="one">{0} ᎠᎺᎢ</unitPattern>
-				<unitPattern count="other">{0} ᎠᎺᎢ</unitPattern>
+				<displayName>nmi</displayName>
+				<unitPattern count="one">{0} nmi</unitPattern>
+				<unitPattern count="other">{0} nmi</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName>ᏍᏑ</displayName>
-				<unitPattern count="one">{0} ᏍᏑ</unitPattern>
-				<unitPattern count="other">{0} ᏍᏑ</unitPattern>
+				<displayName>smi</displayName>
+				<unitPattern count="one">{0} smi</unitPattern>
+				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>ᏧᏓᏓᏟ</displayName>
-				<unitPattern count="one">{0} ᏧᏓ</unitPattern>
-				<unitPattern count="other">{0} ᏧᏓ</unitPattern>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>ᏅᏓ ᏇᏗ</displayName>
@@ -7113,6 +7299,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᎸᏏ</displayName>
 				<unitPattern count="one">{0} ᎸᏏ</unitPattern>
 				<unitPattern count="other">{0} ᎸᏏ</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ᏅᏓ ᏗᏨᏍᏗ</displayName>
@@ -7151,6 +7347,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} tn</unitPattern>
 				<unitPattern count="other">{0} tn</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>ᎠᏂᏅᏯ</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>ᎢᏧᏓᎨᏓ</displayName>
 				<unitPattern count="one">{0} lb</unitPattern>
@@ -7187,6 +7388,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᏅᏓ ᎹᏏ</displayName>
 				<unitPattern count="one">{0} M☉</unitPattern>
 				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>ᎤᏛᏒ ᎤᎦᏔ</displayName>
+				<unitPattern count="one">{0} ᎤᏛᏒ ᎤᎦᏔ</unitPattern>
+				<unitPattern count="other">{0} ᎤᏛᏒ ᎤᎦᏔ</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -7233,6 +7439,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>ᎦᎾᎸᎢ</displayName>
+				<unitPattern count="one">{0} ᎦᎾᎸᎢ</unitPattern>
+				<unitPattern count="other">{0} ᎦᎾᎸᎢ</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
@@ -7242,6 +7453,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>atm</displayName>
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
@@ -7391,6 +7607,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ac ft</unitPattern>
 				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>ᎤᎧᏲᏗ ᏑᏟᎶᏓ</displayName>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>ᎢᏧᎵᎶᏓ</displayName>
 				<unitPattern count="one">{0} gal</unitPattern>
@@ -7443,6 +7662,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} bbl</unitPattern>
 				<unitPattern count="other">{0} bbl</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>ᎪᎭᏍᎬ</displayName>
+				<unitPattern count="one">{0} ᎪᎭᏍᎬ</unitPattern>
+				<unitPattern count="other">{0} ᎪᎭᏍᎬ</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ᏜᎹ ᎠᎹ</displayName>
+				<unitPattern count="one">{0} ᏜᎹ ᎠᎹ</unitPattern>
+				<unitPattern count="other">{0} ᏜᎹ ᎠᎹ</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ᏥᎩᎳ</displayName>
+				<unitPattern count="one">{0} ᏥᎩᎳ</unitPattern>
+				<unitPattern count="other">{0} ᏥᎩᎳ</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ᏗᏓᏇᏄᎩᏍᏗ</displayName>
+				<unitPattern count="one">{0} ᏗᏓᏇᏄᎩᏍᏗ</unitPattern>
+				<unitPattern count="other">{0} ᏗᏓᏇᏄᎩᏍᏗ</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ᏫᏚᏳᎪᏛ</displayName>
 				<coordinateUnitPattern type="east">{0} Ꮧ</coordinateUnitPattern>
@@ -7452,18 +7706,225 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<unitPattern count="one">{0}G</unitPattern>
+				<unitPattern count="other">{0}Gs</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>m/s²</displayName>
+				<unitPattern count="one">{0}m/s²</unitPattern>
+				<unitPattern count="other">{0}m/s²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>rev</displayName>
+				<unitPattern count="one">{0}rev</unitPattern>
+				<unitPattern count="other">{0}rev</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>rad</displayName>
+				<unitPattern count="one">{0}rad</unitPattern>
+				<unitPattern count="other">{0}rad</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>deg</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>arcmin</displayName>
+				<unitPattern count="one">{0}′</unitPattern>
+				<unitPattern count="other">{0}′</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>arcsec</displayName>
+				<unitPattern count="one">{0}″</unitPattern>
+				<unitPattern count="other">{0}″</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<unitPattern count="one">{0}ha</unitPattern>
+				<unitPattern count="other">{0}ha</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<unitPattern count="one">{0}m²</unitPattern>
+				<unitPattern count="other">{0}m²</unitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>mi²</displayName>
+				<unitPattern count="one">{0}mi²</unitPattern>
+				<unitPattern count="other">{0}mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<unitPattern count="one">{0}ac</unitPattern>
+				<unitPattern count="other">{0}ac</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>yd²</displayName>
+				<unitPattern count="one">{0}yd²</unitPattern>
+				<unitPattern count="other">{0}yd²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>ft²</displayName>
+				<unitPattern count="one">{0}ft²</unitPattern>
+				<unitPattern count="other">{0}ft²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>in²</displayName>
+				<unitPattern count="one">{0}in²</unitPattern>
+				<unitPattern count="other">{0}in²</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>ᏚᎾᎹ</displayName>
+				<unitPattern count="one">{0}ᏚᎾᎹ</unitPattern>
+				<unitPattern count="other">{0}ᏚᎾᎹ</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>ᎧᏇᏓ</displayName>
+				<unitPattern count="one">{0}kt</unitPattern>
+				<unitPattern count="other">{0}kt</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0}mg/dL</unitPattern>
+				<unitPattern count="other">{0}mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="one">{0}mmol/L</unitPattern>
+				<unitPattern count="other">{0}mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ᏑᏓᎴᎩ</displayName>
+				<unitPattern count="one">{0} ᏑᏓᎴᎩ</unitPattern>
+				<unitPattern count="other">{0} ᎢᏳᏓᎴᎩ</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0}ppm</unitPattern>
+				<unitPattern count="other">{0}ppm</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="one">{0}mol</unitPattern>
+				<unitPattern count="other">{0}mol</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>L/km</displayName>
+				<unitPattern count="one">{0}L/km</unitPattern>
+				<unitPattern count="other">{0}L/km</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0}L/100km</unitPattern>
 				<unitPattern count="other">{0}L/100km</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>mpg</displayName>
+				<unitPattern count="one">{0}mpg</unitPattern>
+				<unitPattern count="other">{0}mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg UK</displayName>
+				<unitPattern count="one">{0}m/gUK</unitPattern>
+				<unitPattern count="other">{0}m/gUK</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+				<unitPattern count="one">{0}PB</unitPattern>
+				<unitPattern count="other">{0}PB</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+				<unitPattern count="one">{0}TB</unitPattern>
+				<unitPattern count="other">{0}TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
+				<unitPattern count="one">{0}Tb</unitPattern>
+				<unitPattern count="other">{0}Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GB</displayName>
+				<unitPattern count="one">{0}GB</unitPattern>
+				<unitPattern count="other">{0}GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
+				<unitPattern count="one">{0}Gb</unitPattern>
+				<unitPattern count="other">{0}Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
+				<unitPattern count="one">{0}MB</unitPattern>
+				<unitPattern count="other">{0}MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
+				<unitPattern count="one">{0}Mb</unitPattern>
+				<unitPattern count="other">{0}Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kB</displayName>
+				<unitPattern count="one">{0}kB</unitPattern>
+				<unitPattern count="other">{0}kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
+				<unitPattern count="one">{0}kb</unitPattern>
+				<unitPattern count="other">{0}kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>B</displayName>
+				<unitPattern count="one">{0}B</unitPattern>
+				<unitPattern count="other">{0}B</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<unitPattern count="one">{0}ᎤᏍᎦᎳ</unitPattern>
+				<unitPattern count="other">{0}ᎤᏍᎦᎳ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ᎤᏕ</displayName>
@@ -7505,6 +7966,123 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}ᏌᎠ</unitPattern>
 				<unitPattern count="other">{0}ᏌᎠ</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>μᏗᏎᏢ</displayName>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>amp</displayName>
+				<unitPattern count="one">{0}A</unitPattern>
+				<unitPattern count="other">{0}A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mA</displayName>
+				<unitPattern count="one">{0}mA</unitPattern>
+				<unitPattern count="other">{0}mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ᎣᎻ</displayName>
+				<unitPattern count="one">{0}Ω</unitPattern>
+				<unitPattern count="other">{0}Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>ᎠᎾᎦᎵᏍᎩ ᎢᏳᏟᏂᏚᏓ</displayName>
+				<unitPattern count="one">{0}V</unitPattern>
+				<unitPattern count="other">{0}V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<unitPattern count="one">{0}kcal</unitPattern>
+				<unitPattern count="other">{0}kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>cal</displayName>
+				<unitPattern count="one">{0}cal</unitPattern>
+				<unitPattern count="other">{0}cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>Cal</displayName>
+				<unitPattern count="one">{0}Cal</unitPattern>
+				<unitPattern count="other">{0}Cal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>kJ</displayName>
+				<unitPattern count="one">{0}kJ</unitPattern>
+				<unitPattern count="other">{0}kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>ᏦᎤᎵ</displayName>
+				<unitPattern count="one">{0}J</unitPattern>
+				<unitPattern count="other">{0}J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kWh</displayName>
+				<unitPattern count="one">{0}kWh</unitPattern>
+				<unitPattern count="other">{0}kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+				<unitPattern count="one">{0}eV</unitPattern>
+				<unitPattern count="other">{0}eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0}Btu</unitPattern>
+				<unitPattern count="other">{0}Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="one">{0}US ᎤᏗᏞᎬ</unitPattern>
+				<unitPattern count="other">{0}US ᎤᏗᏞᎬ</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one">{0}lbf</unitPattern>
+				<unitPattern count="other">{0}lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>N</displayName>
+				<unitPattern count="one">{0}N</unitPattern>
+				<unitPattern count="other">{0}N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="one">{0}kWh/100km</unitPattern>
+				<unitPattern count="other">{0}kWh/100km</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="one">{0}GHz</unitPattern>
+				<unitPattern count="other">{0}GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="one">{0}MHz</unitPattern>
+				<unitPattern count="other">{0}MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="one">{0}kHz</unitPattern>
+				<unitPattern count="other">{0}kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Hz</displayName>
+				<unitPattern count="one">{0}Hz</unitPattern>
+				<unitPattern count="other">{0}Hz</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0}dpcm</unitPattern>
+				<unitPattern count="other">{0}dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0}dpi</unitPattern>
+				<unitPattern count="other">{0}dpi</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>ᎠᏗ</displayName>
 				<unitPattern count="one">{0}ᎠᏗ</unitPattern>
@@ -7516,29 +8094,294 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}ᎠᏟ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName>ᏧᎠ</displayName>
-				<unitPattern count="one">{0}ᏧᎠ</unitPattern>
-				<unitPattern count="other">{0}ᏧᎠ</unitPattern>
+				<displayName>cm</displayName>
+				<unitPattern count="one">{0}cm</unitPattern>
+				<unitPattern count="other">{0}cm</unitPattern>
+				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>ᏌᎢᎠ</displayName>
 				<unitPattern count="one">{0}ᏌᎢᎠ</unitPattern>
 				<unitPattern count="other">{0}ᏌᎢᎠ</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>μm</displayName>
+				<unitPattern count="one">{0}μm</unitPattern>
+				<unitPattern count="other">{0}μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nm</displayName>
+				<unitPattern count="one">{0}nm</unitPattern>
+				<unitPattern count="other">{0}nm</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>pm</displayName>
+				<unitPattern count="one">{0}pm</unitPattern>
+				<unitPattern count="other">{0}pm</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>mi</displayName>
+				<unitPattern count="one">{0}mi</unitPattern>
+				<unitPattern count="other">{0}mi</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>yd</displayName>
+				<unitPattern count="one">{0}yd</unitPattern>
+				<unitPattern count="other">{0}yd</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>ft</displayName>
+				<unitPattern count="one">{0}′</unitPattern>
+				<unitPattern count="other">{0}′</unitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>in</displayName>
+				<unitPattern count="one">{0}″</unitPattern>
+				<unitPattern count="other">{0}″</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<unitPattern count="one">{0}pc</unitPattern>
+				<unitPattern count="other">{0}pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>ly</displayName>
+				<unitPattern count="one">{0}ly</unitPattern>
+				<unitPattern count="other">{0}ly</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
+				<unitPattern count="one">{0}au</unitPattern>
+				<unitPattern count="other">{0}au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>ᎠᏰᏟ ᎩᏄᏘᏗ ᏑᏟᎶᏓ</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ᏑᏓᎵ ᎢᏗᎳᏏᏗ ᎠᏯᏱ</displayName>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>nmi</displayName>
+				<unitPattern count="one">{0}nmi</unitPattern>
+				<unitPattern count="other">{0}nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>smi</displayName>
+				<unitPattern count="one">{0}smi</unitPattern>
+				<unitPattern count="other">{0}smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pts</displayName>
+				<unitPattern count="one">{0}pt</unitPattern>
+				<unitPattern count="other">{0}pt</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one">{0}R☉</unitPattern>
+				<unitPattern count="other">{0}R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<unitPattern count="one">{0}lx</unitPattern>
+				<unitPattern count="other">{0}lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">{0}cd</unitPattern>
+				<unitPattern count="other">{0}cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0}lm</unitPattern>
+				<unitPattern count="other">{0}lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one">{0}L☉</unitPattern>
+				<unitPattern count="other">{0}L☉</unitPattern>
+			</unit>
+			<unit type="mass-metric-ton">
+				<displayName>t</displayName>
+				<unitPattern count="one">{0}t</unitPattern>
+				<unitPattern count="other">{0}t</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
+				<perUnitPattern>{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ᎤᏍᏗ ᎤᏓᎨᏒ</displayName>
 				<unitPattern count="one">{0}g</unitPattern>
 				<unitPattern count="other">{0}g</unitPattern>
+				<perUnitPattern>{0}/g</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>mg</displayName>
+				<unitPattern count="one">{0}mg</unitPattern>
+				<unitPattern count="other">{0}mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>μg</displayName>
+				<unitPattern count="one">{0}μg</unitPattern>
+				<unitPattern count="other">{0}μg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="one">{0}tn</unitPattern>
+				<unitPattern count="other">{0}tn</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>ᏅᏯ</displayName>
+				<unitPattern count="one">{0}st</unitPattern>
+				<unitPattern count="other">{0}st</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>lb</displayName>
+				<unitPattern count="one">{0}#</unitPattern>
+				<unitPattern count="other">{0}#</unitPattern>
+				<perUnitPattern>{0}/lb</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>oz</displayName>
+				<unitPattern count="one">{0}oz</unitPattern>
+				<unitPattern count="other">{0}oz</unitPattern>
+				<perUnitPattern>{0}/oz</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>oz t</displayName>
+				<unitPattern count="one">{0}oz t</unitPattern>
+				<unitPattern count="other">{0}oz t</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>ᎨᏇᏓ</displayName>
+				<unitPattern count="one">{0}CD</unitPattern>
+				<unitPattern count="other">{0}CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="one">{0}Da</unitPattern>
+				<unitPattern count="other">{0}Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="one">{0}M⊕</unitPattern>
+				<unitPattern count="other">{0}M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="one">{0}M☉</unitPattern>
+				<unitPattern count="other">{0}M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gr</displayName>
+				<unitPattern count="one">{0}gr</unitPattern>
+				<unitPattern count="other">{0}gr</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>GW</displayName>
+				<unitPattern count="one">{0}GW</unitPattern>
+				<unitPattern count="other">{0}GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>MW</displayName>
+				<unitPattern count="one">{0}MW</unitPattern>
+				<unitPattern count="other">{0}MW</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>kW</displayName>
+				<unitPattern count="one">{0}kW</unitPattern>
+				<unitPattern count="other">{0}kW</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>ᏩᏗ</displayName>
+				<unitPattern count="one">{0}W</unitPattern>
+				<unitPattern count="other">{0}W</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>mW</displayName>
+				<unitPattern count="one">{0}mW</unitPattern>
+				<unitPattern count="other">{0}mW</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>hp</displayName>
+				<unitPattern count="one">{0}hp</unitPattern>
+				<unitPattern count="other">{0}hp</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0}mmHg</unitPattern>
+				<unitPattern count="other">{0}mmHg</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>psi</displayName>
+				<unitPattern count="one">{0}psi</unitPattern>
+				<unitPattern count="other">{0}psi</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName>″ Hg</displayName>
+				<unitPattern count="one">{0}″ Hg</unitPattern>
+				<unitPattern count="other">{0}″ Hg</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>ᎦᎾᎸᎢ</displayName>
+				<unitPattern count="one">{0}ᎦᎾᎸᎢ</unitPattern>
+				<unitPattern count="other">{0}ᎦᎾᎸᎢ</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<displayName>mbar</displayName>
+				<unitPattern count="one">{0}mb</unitPattern>
+				<unitPattern count="other">{0}mb</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0}atm</unitPattern>
+				<unitPattern count="other">{0}atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0}Pa</unitPattern>
+				<unitPattern count="other">{0}Pa</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0}hPa</unitPattern>
+				<unitPattern count="other">{0}hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="one">{0}kPa</unitPattern>
+				<unitPattern count="other">{0}kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">{0}MPa</unitPattern>
+				<unitPattern count="other">{0}MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/hr</displayName>
 				<unitPattern count="one">{0}km/h</unitPattern>
 				<unitPattern count="other">{0}km/h</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>m/s</displayName>
+				<unitPattern count="one">{0}m/s</unitPattern>
+				<unitPattern count="other">{0}m/s</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>mi/hr</displayName>
+				<unitPattern count="one">{0}mph</unitPattern>
+				<unitPattern count="other">{0}mph</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>kn</displayName>
+				<unitPattern count="one">{0}kn</unitPattern>
+				<unitPattern count="other">{0}kn</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
@@ -7546,13 +8389,134 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName>°F</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>K</displayName>
+				<unitPattern count="one">{0}K</unitPattern>
+				<unitPattern count="other">{0}K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">{0}lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">{0}N⋅m</unitPattern>
+				<unitPattern count="other">{0}N⋅m</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>yd³</displayName>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ft³</displayName>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>in³</displayName>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ᎢᏳᏆᏗᏅᏛ</displayName>
 				<unitPattern count="one">{0}L</unitPattern>
 				<unitPattern count="other">{0}L</unitPattern>
+				<perUnitPattern>{0}/L</perUnitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<unitPattern count="one">{0}ac ft</unitPattern>
+				<unitPattern count="other">{0}ac ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>ᎤᎧᏲᏗ ᏑᏟᎶᏓ</displayName>
+				<unitPattern count="one">{0}bu</unitPattern>
+				<unitPattern count="other">{0}bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>gal</displayName>
+				<unitPattern count="one">{0}gal</unitPattern>
+				<unitPattern count="other">{0}gal</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp gal</displayName>
+				<unitPattern count="one">{0}galIm</unitPattern>
+				<unitPattern count="other">{0}galIm</unitPattern>
+				<perUnitPattern>{0}/galIm</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>qt</displayName>
+				<unitPattern count="one">{0}qt</unitPattern>
+				<unitPattern count="other">{0}qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0}pt</unitPattern>
+				<unitPattern count="other">{0}pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<unitPattern count="one">{0}c</unitPattern>
+				<unitPattern count="other">{0}c</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0}fl oz</unitPattern>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp fl oz</displayName>
+				<unitPattern count="one">{0}fl oz Im</unitPattern>
+				<unitPattern count="other">{0}fl oz Im</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="one">{0}tbsp</unitPattern>
+				<unitPattern count="other">{0}tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>tsp</displayName>
+				<unitPattern count="one">{0}tsp</unitPattern>
+				<unitPattern count="other">{0}tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="one">{0}bbl</unitPattern>
+				<unitPattern count="other">{0}bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dsp</displayName>
+				<unitPattern count="one">{0}dsp</unitPattern>
+				<unitPattern count="other">{0}dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dsp Imp</displayName>
+				<unitPattern count="one">{0}dsp-Imp</unitPattern>
+				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>dr</displayName>
+				<unitPattern count="one">{0}dr</unitPattern>
+				<unitPattern count="other">{0}dr</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>fl.dr.</displayName>
+				<unitPattern count="one">{0}fl.dr.</unitPattern>
+				<unitPattern count="other">{0}fl.dr.</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ᏥᎩᎳ</displayName>
+				<unitPattern count="one">{0}ᏥᎩᎳ</unitPattern>
+				<unitPattern count="other">{0}ᏥᎩᎳ</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pn</displayName>
+				<unitPattern count="one">{0}pn</unitPattern>
+				<unitPattern count="other">{0}pn</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0}qt-Imp.</unitPattern>
+				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ᏫᏚᏳᎪᏛ</displayName>
@@ -7623,6 +8587,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabelPattern type="compatibility">{0} — ᎤᏠᏯᏉᏗᏙᎵᎩ</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — ᎠᏠᏯᏍᏔᏅ</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — ᎦᏅᎯᏓ</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — ᏄᎵᏍᏔᏅᏅᎢ</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} — ᏧᏓᎴᏅᏛ</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — ᏐᎢ</characterLabelPattern>
 		<characterLabelPattern type="scripts">ᏗᎧᏁᎢᏍᏗ — {0}</characterLabelPattern>

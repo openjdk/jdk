@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,8 @@ class Request {
         os = rawout;
         do {
             startLine = readLine();
-            if (startLine == null) {
-                return;
-            }
             /* skip blank lines */
-        } while (startLine == null ? false : startLine.equals (""));
+        } while ("".equals(startLine));
     }
 
 
@@ -208,7 +205,9 @@ class Request {
                         "sun.net.httpserver.maxReqHeaders) exceeded, " +
                         ServerConfig.getMaxReqHeaders() + ".");
             }
-
+            if (k == null) {  // Headers disallows null keys, use empty string
+                k = "";       // instead to represent invalid key
+            }
             hdrs.add (k,v);
             len = 0;
         }

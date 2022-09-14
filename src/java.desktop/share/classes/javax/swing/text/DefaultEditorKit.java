@@ -142,8 +142,8 @@ public class DefaultEditorKit extends EditorKit {
      * @param doc The destination for the insertion.
      * @param pos The location in the document to place the
      *   content &gt;=0.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void read(InputStream in, Document doc, int pos)
@@ -161,8 +161,8 @@ public class DefaultEditorKit extends EditorKit {
      * @param pos The location in the document to fetch the
      *   content &gt;=0.
      * @param len The amount to write out &gt;=0.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void write(OutputStream out, Document doc, int pos, int len)
@@ -193,8 +193,8 @@ public class DefaultEditorKit extends EditorKit {
      * @param doc The destination for the insertion.
      * @param pos The location in the document to place the
      *   content &gt;=0.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void read(Reader in, Document doc, int pos)
@@ -303,8 +303,8 @@ public class DefaultEditorKit extends EditorKit {
      * @param pos The location in the document to fetch the
      *   content from &gt;=0.
      * @param len The amount to write out &gt;=0.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos is not within 0 and
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos is not within 0 and
      *   the length of the document.
      */
     public void write(Writer out, Document doc, int pos, int len)
@@ -643,6 +643,24 @@ public class DefaultEditorKit extends EditorKit {
     public static final String endLineAction = "caret-end-line";
 
     /**
+     * Name of the {@code Action} for moving the caret
+     * to the beginning of the current line or up to the
+     * beginning of the previous line if the caret is
+     * already at the beginning of the line.
+     * @see #getActions
+     */
+    public static final String beginLineUpAction = "caret-begin-line-and-up";
+
+    /**
+     * Name of the {@code Action} for moving the caret
+     * to the end of the current line or down to the
+     * end of the next line if the caret is already
+     * at the end of the line.
+     * @see #getActions
+     */
+    public static final String endLineDownAction = "caret-end-line-and-down";
+
+    /**
      * Name of the <code>Action</code> for moving the caret
      * to the beginning of a line, extending the selection.
      * @see #getActions
@@ -798,7 +816,11 @@ public class DefaultEditorKit extends EditorKit {
         new PreviousWordAction(selectionPreviousWordAction, true),
         new NextWordAction(selectionNextWordAction, true),
         new BeginLineAction(beginLineAction, false),
+        new BeginLineUpAction(beginLineUpAction, false,
+                    SwingConstants.NORTH),
         new EndLineAction(endLineAction, false),
+        new EndLineDownAction(endLineDownAction, false,
+                    SwingConstants.SOUTH),
         new BeginLineAction(selectionBeginLineAction, true),
         new EndLineAction(selectionEndLineAction, true),
         new BeginParagraphAction(beginParagraphAction, false),
@@ -2038,6 +2060,216 @@ public class DefaultEditorKit extends EditorKit {
         }
 
         private boolean select;
+    }
+
+    /*
+     * Position the caret to the end of the line and down one line.
+     * @see DefaultEditorKit#endLineAction
+     * @see DefaultEditorKit#selectEndLineAction
+     * @see DefaultEditorKit#getActions
+     */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
+    static class EndLineDownAction extends TextAction {
+
+        /**
+         * Create this action with the appropriate identifier.
+         * @param nm  the name of the action, Action.NAME.
+         * @param select whether to extend the selection when
+         *               changing the caret position.
+         * @param direction  the direction to move the caret
+         */
+        EndLineDownAction(String nm, boolean select, int direction) {
+            super(nm);
+            this.select = select;
+            this.direction = direction;
+            firstTime = true;
+        }
+
+        /** The operation to perform when this action is triggered. */
+        @SuppressWarnings("deprecation")
+        public void actionPerformed(ActionEvent e) {
+            JTextComponent target = getTextComponent(e);
+            if (target != null) {
+                try {
+                    int offs = target.getCaretPosition();
+                    int endOffs = Utilities.getRowEnd(target, offs);
+                    if (offs != endOffs) {
+                        if (select) {
+                            target.moveCaretPosition(endOffs);
+                        } else {
+                            target.setCaretPosition(endOffs);
+                        }
+                    } else {
+                        Caret caret = target.getCaret();
+                        DefaultCaret bidiCaret = (caret instanceof DefaultCaret) ?
+                                (DefaultCaret) caret : null;
+                        int dot = caret.getDot();
+                        Position.Bias[] bias = new Position.Bias[1];
+                        Point magicPosition = caret.getMagicCaretPosition();
+
+                        if (magicPosition == null &&
+                                (direction == SwingConstants.NORTH ||
+                                 direction == SwingConstants.SOUTH)) {
+                            Rectangle r = (bidiCaret != null) ?
+                                    target.getUI().modelToView(target, dot,
+                                            bidiCaret.getDotBias()) :
+                                    target.modelToView(dot);
+                            magicPosition = new Point(r.x, r.y);
+                        }
+                        NavigationFilter filter = target.getNavigationFilter();
+
+                        if (filter != null) {
+                            dot = filter.getNextVisualPositionFrom
+                                    (target, dot, (bidiCaret != null) ?
+                                            bidiCaret.getDotBias() :
+                                            Position.Bias.Forward, direction, bias);
+                        } else {
+                            dot = target.getUI().getNextVisualPositionFrom
+                                    (target, dot, (bidiCaret != null) ?
+                                            bidiCaret.getDotBias() :
+                                            Position.Bias.Forward, direction, bias);
+                        }
+                        if (bias[0] == null) {
+                            bias[0] = Position.Bias.Forward;
+                        }
+                        if (bidiCaret != null) {
+                            if (select) {
+                                bidiCaret.moveDot(dot, bias[0]);
+                            } else {
+                                bidiCaret.setDot(dot, bias[0]);
+                            }
+                        } else {
+                            if (select) {
+                                caret.moveDot(dot);
+                            } else {
+                                caret.setDot(dot);
+                            }
+                        }
+                        if (magicPosition != null &&
+                                (direction == SwingConstants.NORTH ||
+                                        direction == SwingConstants.SOUTH)) {
+                            target.getCaret().setMagicCaretPosition(magicPosition);
+                        }
+                        offs = target.getCaretPosition();
+                        endOffs = Utilities.getRowEnd(target, offs);
+                        if (select) {
+                            target.moveCaretPosition(endOffs);
+                        } else {
+                            target.setCaretPosition(endOffs);
+                        }
+                    }
+                } catch (BadLocationException ex) {
+                }
+            }
+        }
+
+        private boolean select;
+        private int direction;
+        private boolean firstTime;
+    }
+
+    /*
+     * Position the caret to the start of the line and up one line.
+     * @see DefaultEditorKit#beginLineAction
+     * @see DefaultEditorKit#selectBeginLineAction
+     * @see DefaultEditorKit#getActions
+     */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
+    static class BeginLineUpAction extends TextAction {
+
+        /**
+         * Create this action with the appropriate identifier.
+         * @param nm  the name of the action, Action.NAME.
+         * @param select whether to extend the selection when
+         *               changing the caret position.
+         * @param direction  the direction to move the caret
+         */
+        BeginLineUpAction(String nm, boolean select, int direction) {
+            super(nm);
+            this.select = select;
+            this.direction = direction;
+        }
+
+        /** The operation to perform when this action is triggered. */
+        @SuppressWarnings("deprecation")
+        public void actionPerformed(ActionEvent e) {
+            JTextComponent target = getTextComponent(e);
+            if (target != null) {
+                try {
+                    int offs = target.getCaretPosition();
+                    int begOffs = Utilities.getRowStart(target, offs);
+                    if (offs != begOffs) {
+                        if (select) {
+                            target.moveCaretPosition(begOffs);
+                        } else {
+                            target.setCaretPosition(begOffs);
+                        }
+                    } else {
+                        if (select) {
+                            target.moveCaretPosition(begOffs);
+                        } else {
+                            target.setCaretPosition(begOffs);
+                        }
+                        Caret caret = target.getCaret();
+                        DefaultCaret bidiCaret = (caret instanceof DefaultCaret) ?
+                                (DefaultCaret) caret : null;
+                        int dot = caret.getDot();
+                        Position.Bias[] bias = new Position.Bias[1];
+                        Point magicPosition = caret.getMagicCaretPosition();
+
+                        if (magicPosition == null &&
+                                (direction == SwingConstants.NORTH ||
+                                        direction == SwingConstants.SOUTH)) {
+                            Rectangle r = (bidiCaret != null) ?
+                                    target.getUI().modelToView(target, dot,
+                                            bidiCaret.getDotBias()) :
+                                    target.modelToView(dot);
+                            magicPosition = new Point(r.x, r.y);
+                        }
+
+                        NavigationFilter filter = target.getNavigationFilter();
+
+                        if (filter != null) {
+                            dot = filter.getNextVisualPositionFrom
+                                    (target, dot, (bidiCaret != null) ?
+                                            bidiCaret.getDotBias() :
+                                            Position.Bias.Forward, direction, bias);
+                        } else {
+                            dot = target.getUI().getNextVisualPositionFrom
+                                    (target, dot, (bidiCaret != null) ?
+                                            bidiCaret.getDotBias() :
+                                            Position.Bias.Forward, direction, bias);
+                        }
+                        if (bias[0] == null) {
+                            bias[0] = Position.Bias.Forward;
+                        }
+                        if (bidiCaret != null) {
+                            if (select) {
+                                bidiCaret.moveDot(dot, bias[0]);
+                            } else {
+                                bidiCaret.setDot(dot, bias[0]);
+                            }
+                        } else {
+                            if (select) {
+                                caret.moveDot(dot);
+                            } else {
+                                caret.setDot(dot);
+                            }
+                        }
+                        if (magicPosition != null &&
+                                (direction == SwingConstants.NORTH ||
+                                        direction == SwingConstants.SOUTH)) {
+                            target.getCaret().setMagicCaretPosition(magicPosition);
+                        }
+                    }
+                } catch (BadLocationException ex) {
+                }
+            }
+        }
+
+        private boolean select;
+        private int direction;
+        private boolean firstLine;
     }
 
     /*

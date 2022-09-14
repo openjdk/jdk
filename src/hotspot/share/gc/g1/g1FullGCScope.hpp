@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class G1FullGCScope : public StackObj {
   G1CollectedHeap*        _g1h;
   SvcGCMarker             _svc_marker;
   STWGCTimer              _timer;
-  G1FullGCTracer          _tracer;
+  G1FullGCTracer*         _tracer;
   IsGCActiveMark          _active;
   G1FullGCJFRTracerMark   _tracer_mark;
   ClearedAllSoftRefs      _soft_refs;
@@ -63,7 +63,8 @@ public:
   G1FullGCScope(G1MonitoringSupport* monitoring_support,
                 bool explicit_gc,
                 bool clear_soft,
-                bool do_maximal_compaction);
+                bool do_maximal_compaction,
+                G1FullGCTracer* tracer);
 
   bool is_explicit_gc();
   bool should_clear_soft_refs();
@@ -71,7 +72,7 @@ public:
   STWGCTimer* timer();
   G1FullGCTracer* tracer();
   G1HeapTransition* heap_transition();
-  size_t region_compaction_threshold();
+  size_t region_compaction_threshold() const;
 };
 
 #endif // SHARE_GC_G1_G1FULLGCSCOPE_HPP

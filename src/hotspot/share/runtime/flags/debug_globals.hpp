@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,29 @@
   product(ccstr, DummyManageableStringFlag, NULL, MANAGEABLE,               \
           "Dummy flag for testing string handling in WriteableFlags")       \
                                                                             \
+  product(bool, TestFlagFor_bool, false,                                    \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  product(int, TestFlagFor_int, 0,                                          \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  product(uint, TestFlagFor_uint, 0,                                        \
+           "Used by VM internal regression tests only")                     \
+                                                                            \
+  product(intx, TestFlagFor_intx, 0,                                        \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  product(uintx, TestFlagFor_uintx, 0,                                      \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  product(uint64_t, TestFlagFor_uint64_t, 0,                                \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  product(size_t, TestFlagFor_size_t, 0,                                    \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  product(double, TestFlagFor_double, 0.0,                                  \
+          "Used by VM internal regression tests only")                      \
 
 // end of DEBUG_RUNTIME_FLAGS
 

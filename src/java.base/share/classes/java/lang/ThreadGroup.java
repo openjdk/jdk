@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,53 +26,111 @@
 package java.lang;
 
 import java.io.PrintStream;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import jdk.internal.misc.VM;
 
 /**
- * A thread group represents a set of threads. In addition, a thread
- * group can also include other thread groups. The thread groups form
- * a tree in which every thread group except the initial thread group
- * has a parent.
- * <p>
- * A thread is allowed to access information about its own thread
- * group, but not to access information about its thread group's
- * parent thread group or any other thread groups.
+ * A thread group represents a set of threads. In addition, a thread group can
+ * also include other thread groups. The thread groups form a tree in which
+ * every thread group except the initial thread group has a parent.
+ *
+ * <p> A thread group has a name and maximum priority. The name is specified
+ * when creating the group and cannot be changed. The group's maximum priority
+ * is the maximum priority for threads created in the group. It is initially
+ * inherited from the parent thread group but may be changed using the {@link
+ * #setMaxPriority(int) setMaxPriority} method.
+ *
+ * <p> A thread group is weakly <a href="ref/package-summary.html#reachability">
+ * <em>reachable</em></a> from its parent group so that it is eligible for garbage
+ * collection when there are no {@linkplain Thread#isAlive() live} threads in the
+ * group and the thread group is otherwise <i>unreachable</i>.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be thrown.
+ *
+ * <h2><a id="virtualthreadgroup">Thread groups and virtual threads</a></h2>
+ * The Java runtime creates a special thread group for
+ * <a href="Thread.html#virtual-threads">virtual threads</a>. This group is
+ * returned by the {@link Thread#getThreadGroup() Thread.getThreadGroup} method
+ * when invoked on a virtual thread. The thread group differs to other thread
+ * groups in that its maximum priority is fixed and cannot be changed with the
+ * {@link #setMaxPriority(int) setMaxPriority} method.
+ * Virtual threads are not included in the estimated thread count returned by the
+ * {@link #activeCount() activeCount} method, are not enumerated by the {@link
+ * #enumerate(Thread[]) enumerate} method, and are not interrupted by the {@link
+ * #interrupt() interrupt} method.
+ *
+ * @apiNote
+ * Thread groups provided a way in early Java releases to group threads and provide
+ * a form of <i>job control</i> for threads. Thread groups supported the isolation
+ * of applets and defined methods intended for diagnostic purposes. It should be
+ * rare for new applications to create ThreadGroups and interact with this API.
  *
  * @since   1.0
  */
-/* The locking strategy for this code is to try to lock only one level of the
- * tree wherever possible, but otherwise to lock from the bottom up.
- * That is, from child thread groups to parents.
- * This has the advantage of limiting the number of locks that need to be held
- * and in particular avoids having to grab the lock for the root thread group,
- * (or a global lock) which would be a source of contention on a
- * multi-processor system with many thread groups.
- * This policy often leads to taking a snapshot of the state of a thread group
- * and working off of that snapshot, rather than holding the thread group locked
- * while we work on the children.
- */
 public class ThreadGroup implements Thread.UncaughtExceptionHandler {
+    /**
+     * All fields are accessed directly by the VM and from JVMTI functions.
+     * Operations that require synchronization on more than one group in the
+     * tree should synchronize on the parent group before synchronizing on
+     * the child group.
+     */
     private final ThreadGroup parent;
-    String name;
-    int maxPriority;
-    boolean destroyed;
-    boolean daemon;
+    private final String name;
+    private volatile int maxPriority;
+    private volatile boolean daemon;
 
-    int nUnstartedThreads = 0;
-    int nthreads;
-    Thread threads[];
+    // strongly reachable from this group
+    private int ngroups;
+    private ThreadGroup[] groups;
 
-    int ngroups;
-    ThreadGroup groups[];
+    // weakly reachable from this group
+    private int nweaks;
+    private WeakReference<ThreadGroup>[] weaks;
 
     /**
-     * Creates an empty Thread group that is not in any Thread group.
-     * This method is used to create the system Thread group.
+     * Creates the top-level "system" ThreadGroup.
+     *
+     * @apiNote This method is invoked by the VM early startup.
      */
-    private ThreadGroup() {     // called from C code
+    private ThreadGroup() {
+        this.parent = null;
         this.name = "system";
         this.maxPriority = Thread.MAX_PRIORITY;
-        this.parent = null;
+    }
+
+    /**
+     * Creates a ThreadGroup without any permission or other checks.
+     */
+    ThreadGroup(ThreadGroup parent, String name, int maxPriority, boolean daemon) {
+        this.parent = parent;
+        this.name = name;
+        this.maxPriority = maxPriority;
+        if (daemon)
+            this.daemon = true;
+        if (VM.isBooted()) {
+            parent.synchronizedAddWeak(this);
+        } else {
+            // keep strong reference to the "main" and other groups created
+            // early in the VM startup to avoid the use of weak references
+            // during when starting the reference handler thread.
+            parent.synchronizedAddStrong(this);
+        }
+    }
+
+    private ThreadGroup(Void unused, ThreadGroup parent, String name) {
+        this(parent, name, parent.maxPriority, parent.daemon);
+    }
+
+    private static Void checkParentAccess(ThreadGroup parent) {
+        parent.checkAccess();
+        return null;
     }
 
     /**
@@ -82,11 +140,10 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * The {@code checkAccess} method of the parent thread group is
      * called with no arguments; this may result in a security exception.
      *
-     * @param   name   the name of the new thread group.
+     * @param   name   the name of the new thread group, can be {@code null}
      * @throws  SecurityException  if the current thread cannot create a
      *               thread in the specified thread group.
      * @see     java.lang.ThreadGroup#checkAccess()
-     * @since   1.0
      */
     public ThreadGroup(String name) {
         this(Thread.currentThread().getThreadGroup(), name);
@@ -100,42 +157,19 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * called with no arguments; this may result in a security exception.
      *
      * @param     parent   the parent thread group.
-     * @param     name     the name of the new thread group.
-     * @throws    NullPointerException  if the thread group argument is
-     *               {@code null}.
+     * @param     name     the name of the new thread group, can be {@code null}
      * @throws    SecurityException  if the current thread cannot create a
      *               thread in the specified thread group.
-     * @see     java.lang.SecurityException
      * @see     java.lang.ThreadGroup#checkAccess()
-     * @since   1.0
      */
     public ThreadGroup(ThreadGroup parent, String name) {
         this(checkParentAccess(parent), parent, name);
     }
 
-    private ThreadGroup(Void unused, ThreadGroup parent, String name) {
-        this.name = name;
-        this.maxPriority = parent.maxPriority;
-        this.daemon = parent.daemon;
-        this.parent = parent;
-        parent.add(this);
-    }
-
-    /*
-     * @throws  NullPointerException  if the parent argument is {@code null}
-     * @throws  SecurityException     if the current thread cannot create a
-     *                                thread in the specified thread group.
-     */
-    private static Void checkParentAccess(ThreadGroup parent) {
-        parent.checkAccess();
-        return null;
-    }
-
     /**
      * Returns the name of this thread group.
      *
-     * @return  the name of this thread group.
-     * @since   1.0
+     * @return  the name of this thread group, may be {@code null}
      */
     public final String getName() {
         return name;
@@ -155,7 +189,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @see        java.lang.ThreadGroup#checkAccess()
      * @see        java.lang.SecurityException
      * @see        java.lang.RuntimePermission
-     * @since   1.0
      */
     public final ThreadGroup getParent() {
         if (parent != null)
@@ -164,32 +197,26 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Returns the maximum priority of this thread group. Threads that are
-     * part of this group cannot have a higher priority than the maximum
-     * priority.
+     * Returns the maximum priority of this thread group. This is the maximum
+     * priority for new threads created in the thread group.
      *
-     * @return  the maximum priority that a thread in this thread group
-     *          can have.
+     * @return  the maximum priority for new threads created in the thread group
      * @see     #setMaxPriority
-     * @since   1.0
      */
     public final int getMaxPriority() {
         return maxPriority;
     }
 
     /**
-     * Tests if this thread group is a daemon thread group. A
-     * daemon thread group is automatically destroyed when its last
-     * thread is stopped or its last thread group is destroyed.
+     * {@return the daemon status of this thread group}
+     * The daemon status is not used for anything.
      *
-     * @return  {@code true} if this thread group is a daemon thread group;
-     *          {@code false} otherwise.
-     * @since   1.0
-     *
-     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
-     *             flawed. The ability to explicitly or automatically destroy a
-     *             thread group, and the concept of daemon thread group, will be
-     *             removed in a future release.
+     * @deprecated This method originally indicated if the thread group is a
+     *             <i>daemon thread group</i> that is automatically destroyed
+     *             when its last thread terminates. The concept of daemon
+     *             thread group no longer exists.
+     *             A thread group is eligible to be GC'ed when there are no
+     *             live threads in the group and it is otherwise unreachable.
      */
     @Deprecated(since="16", forRemoval=true)
     public final boolean isDaemon() {
@@ -197,42 +224,42 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Tests if this thread group has been destroyed.
+     * Returns false.
      *
-     * @return  true if this object is destroyed
+     * @return false
+     *
+     * @deprecated This method originally indicated if the thread group is
+     *             destroyed. The ability to destroy a thread group and the
+     *             concept of a destroyed thread group no longer exists.
+     *             A thread group is eligible to be GC'ed when there are no
+     *             live threads in the group and it is otherwise unreachable.
+     *
      * @since   1.1
-     *
-     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
-     *             flawed. The ability to explicitly or automatically destroy a
-     *             thread group will be removed in a future release.
      */
     @Deprecated(since="16", forRemoval=true)
-    public synchronized boolean isDestroyed() {
-        return destroyed;
+    public boolean isDestroyed() {
+        return false;
     }
 
     /**
-     * Changes the daemon status of this thread group.
+     * Sets the daemon status of this thread group.
+     * The daemon status is not used for anything.
      * <p>
      * First, the {@code checkAccess} method of this thread group is
      * called with no arguments; this may result in a security exception.
-     * <p>
-     * A daemon thread group is automatically destroyed when its last
-     * thread is stopped or its last thread group is destroyed.
      *
-     * @param      daemon   if {@code true}, marks this thread group as
-     *                      a daemon thread group; otherwise, marks this
-     *                      thread group as normal.
+     * @param      daemon the daemon status
      * @throws     SecurityException  if the current thread cannot modify
      *               this thread group.
      * @see        java.lang.SecurityException
      * @see        java.lang.ThreadGroup#checkAccess()
-     * @since      1.0
      *
-     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
-     *             flawed. The ability to explicitly or automatically destroy a
-     *             thread group, and the concept of daemon thread group, will be
-     *             removed in a future release.
+     * @deprecated This method originally configured whether the thread group is
+     *             a <i>daemon thread group</i> that is automatically destroyed
+     *             when its last thread terminates. The concept of daemon thread
+     *             group no longer exists. A thread group is eligible to be GC'ed
+     *             when there are no live threads in the group and it is otherwise
+     *             unreachable.
      */
     @Deprecated(since="16", forRemoval=true)
     public final void setDaemon(boolean daemon) {
@@ -241,8 +268,11 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Sets the maximum priority of the group. Threads in the thread
-     * group that already have a higher priority are not affected.
+     * Sets the maximum priority of the group. The maximum priority of the
+     * <a href="ThreadGroup.html#virtualthreadgroup"><em>ThreadGroup for virtual
+     * threads</em></a> is not changed by this method (the new priority is ignored).
+     * Threads in the thread group (or subgroups) that already have a higher
+     * priority are not affected by this method.
      * <p>
      * First, the {@code checkAccess} method of this thread group is
      * called with no arguments; this may result in a security exception.
@@ -266,26 +296,18 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @see        #getMaxPriority
      * @see        java.lang.SecurityException
      * @see        java.lang.ThreadGroup#checkAccess()
-     * @since      1.0
      */
     public final void setMaxPriority(int pri) {
-        int ngroupsSnapshot;
-        ThreadGroup[] groupsSnapshot;
-        synchronized (this) {
-            checkAccess();
-            if (pri < Thread.MIN_PRIORITY || pri > Thread.MAX_PRIORITY) {
-                return;
+        checkAccess();
+        if (pri >= Thread.MIN_PRIORITY && pri <= Thread.MAX_PRIORITY) {
+            synchronized (this) {
+                if (parent == null) {
+                    maxPriority = pri;
+                } else if (this != Thread.virtualThreadGroup()) {
+                    maxPriority = Math.min(pri, parent.maxPriority);
+                }
+                subgroups().forEach(g -> g.setMaxPriority(pri));
             }
-            maxPriority = (parent != null) ? Math.min(pri, parent.maxPriority) : pri;
-            ngroupsSnapshot = ngroups;
-            if (groups != null) {
-                groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-            } else {
-                groupsSnapshot = null;
-            }
-        }
-        for (int i = 0 ; i < ngroupsSnapshot ; i++) {
-            groupsSnapshot[i].setMaxPriority(pri);
         }
     }
 
@@ -293,11 +315,10 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * Tests if this thread group is either the thread group
      * argument or one of its ancestor thread groups.
      *
-     * @param   g   a thread group.
+     * @param   g   a thread group, can be {@code null}
      * @return  {@code true} if this thread group is the thread group
      *          argument or one of its ancestor thread groups;
      *          {@code false} otherwise.
-     * @since   1.0
      */
     public final boolean parentOf(ThreadGroup g) {
         for (; g != null ; g = g.parent) {
@@ -319,7 +340,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @throws     SecurityException  if the current thread is not allowed to
      *               access this thread group.
      * @see        java.lang.SecurityManager#checkAccess(java.lang.ThreadGroup)
-     * @since      1.0
      * @deprecated This method is only useful in conjunction with
      *       {@linkplain SecurityManager the Security Manager}, which is
      *       deprecated and subject to removal in a future release.
@@ -337,9 +357,10 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Returns an estimate of the number of active threads in this thread
-     * group and its subgroups. Recursively iterates over all subgroups in
-     * this thread group.
+     * Returns an estimate of the number of {@linkplain Thread#isAlive() live}
+     * platform threads in this thread group and its subgroups. Virtual threads
+     * are not included in the estimate. This method recursively iterates over
+     * all subgroups in this thread group.
      *
      * <p> The value returned is only an estimate because the number of
      * threads may change dynamically while this method traverses internal
@@ -347,39 +368,26 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * system threads. This method is intended primarily for debugging
      * and monitoring purposes.
      *
-     * @return  an estimate of the number of active threads in this thread
+     * @return  an estimate of the number of live threads in this thread
      *          group and in any other thread group that has this thread
      *          group as an ancestor
-     *
-     * @since   1.0
      */
     public int activeCount() {
-        int result;
-        // Snapshot sub-group data so we don't hold this lock
-        // while our children are computing.
-        int ngroupsSnapshot;
-        ThreadGroup[] groupsSnapshot;
-        synchronized (this) {
-            if (destroyed) {
-                return 0;
-            }
-            result = nthreads;
-            ngroupsSnapshot = ngroups;
-            if (groups != null) {
-                groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-            } else {
-                groupsSnapshot = null;
+        int n = 0;
+        for (Thread thread : Thread.getAllThreads()) {
+            @SuppressWarnings("deprecation")
+            ThreadGroup g = thread.getThreadGroup();
+            if (parentOf(g)) {
+                n++;
             }
         }
-        for (int i = 0 ; i < ngroupsSnapshot ; i++) {
-            result += groupsSnapshot[i].activeCount();
-        }
-        return result;
+        return n;
     }
 
     /**
-     * Copies into the specified array every active thread in this
-     * thread group and its subgroups.
+     * Copies into the specified array every {@linkplain Thread#isAlive() live}
+     * platform thread in this thread group and its subgroups. Virtual threads
+     * are not enumerated by this method.
      *
      * <p> An invocation of this method behaves in exactly the same
      * way as the invocation
@@ -396,26 +404,23 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @throws  SecurityException
      *          if {@linkplain #checkAccess checkAccess} determines that
      *          the current thread cannot access this thread group
-     *
-     * @since   1.0
      */
     public int enumerate(Thread[] list) {
-        checkAccess();
-        return enumerate(list, 0, true);
+        return enumerate(list, true);
     }
 
     /**
-     * Copies into the specified array every active thread in this
-     * thread group. If {@code recurse} is {@code true},
-     * this method recursively enumerates all subgroups of this
-     * thread group and references to every active thread in these
-     * subgroups are also included. If the array is too short to
-     * hold all the threads, the extra threads are silently ignored.
+     * Copies into the specified array every {@linkplain Thread#isAlive() live}
+     * platform thread in this thread group. Virtual threads are not enumerated
+     * by this method. If {@code recurse} is {@code true}, this method recursively
+     * enumerates all subgroups of this thread group and references to every live
+     * platform thread in these subgroups are also included. If the array is too
+     * short to hold all the threads, the extra threads are silently ignored.
      *
      * <p> An application might use the {@linkplain #activeCount activeCount}
      * method to get an estimate of how big the array should be, however
      * <i>if the array is too short to hold all the threads, the extra threads
-     * are silently ignored.</i>  If it is critical to obtain every active
+     * are silently ignored.</i>  If it is critical to obtain every live
      * thread in this thread group, the caller should verify that the returned
      * int value is strictly less than the length of {@code list}.
      *
@@ -434,86 +439,50 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @throws  SecurityException
      *          if {@linkplain #checkAccess checkAccess} determines that
      *          the current thread cannot access this thread group
-     *
-     * @since   1.0
      */
     public int enumerate(Thread[] list, boolean recurse) {
+        Objects.requireNonNull(list);
         checkAccess();
-        return enumerate(list, 0, recurse);
-    }
-
-    private int enumerate(Thread[] list, int n, boolean recurse) {
-        int ngroupsSnapshot = 0;
-        ThreadGroup[] groupsSnapshot = null;
-        synchronized (this) {
-            if (destroyed) {
-                return n;
-            }
-            int nt = nthreads;
-            if (nt > list.length - n) {
-                nt = list.length - n;
-            }
-            for (int i = 0; i < nt; i++) {
-                if (threads[i].isAlive()) {
-                    list[n++] = threads[i];
+        int n = 0;
+        if (list.length > 0) {
+            for (Thread thread : Thread.getAllThreads()) {
+                @SuppressWarnings("deprecation")
+                ThreadGroup g = thread.getThreadGroup();
+                if (g == this || (recurse && parentOf(g))) {
+                    list[n++] = thread;
+                    if (n == list.length) {
+                        // list full
+                        break;
+                    }
                 }
-            }
-            if (recurse) {
-                ngroupsSnapshot = ngroups;
-                if (groups != null) {
-                    groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-                } else {
-                    groupsSnapshot = null;
-                }
-            }
-        }
-        if (recurse) {
-            for (int i = 0 ; i < ngroupsSnapshot ; i++) {
-                n = groupsSnapshot[i].enumerate(list, n, true);
             }
         }
         return n;
     }
 
     /**
-     * Returns an estimate of the number of active groups in this
-     * thread group and its subgroups. Recursively iterates over
-     * all subgroups in this thread group.
+     * Returns an estimate of the number of groups in this thread group and its
+     * subgroups. Recursively iterates over all subgroups in this thread group.
      *
      * <p> The value returned is only an estimate because the number of
      * thread groups may change dynamically while this method traverses
      * internal data structures. This method is intended primarily for
      * debugging and monitoring purposes.
      *
-     * @return  the number of active thread groups with this thread group as
+     * @return  the number of thread groups with this thread group as
      *          an ancestor
-     *
-     * @since   1.0
      */
     public int activeGroupCount() {
-        int ngroupsSnapshot;
-        ThreadGroup[] groupsSnapshot;
-        synchronized (this) {
-            if (destroyed) {
-                return 0;
-            }
-            ngroupsSnapshot = ngroups;
-            if (groups != null) {
-                groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-            } else {
-                groupsSnapshot = null;
-            }
-        }
-        int n = ngroupsSnapshot;
-        for (int i = 0 ; i < ngroupsSnapshot ; i++) {
-            n += groupsSnapshot[i].activeGroupCount();
+        int n = 0;
+        for (ThreadGroup group : synchronizedSubgroups()) {
+            n = n + group.activeGroupCount() + 1;
         }
         return n;
     }
 
     /**
-     * Copies into the specified array references to every active
-     * subgroup in this thread group and its subgroups.
+     * Copies into the specified array references to every subgroup in this
+     * thread group and its subgroups.
      *
      * <p> An invocation of this method behaves in exactly the same
      * way as the invocation
@@ -530,27 +499,23 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @throws  SecurityException
      *          if {@linkplain #checkAccess checkAccess} determines that
      *          the current thread cannot access this thread group
-     *
-     * @since   1.0
      */
     public int enumerate(ThreadGroup[] list) {
-        checkAccess();
-        return enumerate(list, 0, true);
+        return enumerate(list, true);
     }
 
     /**
-     * Copies into the specified array references to every active
-     * subgroup in this thread group. If {@code recurse} is
-     * {@code true}, this method recursively enumerates all subgroups of this
-     * thread group and references to every active thread group in these
-     * subgroups are also included.
+     * Copies into the specified array references to every subgroup in this
+     * thread group. If {@code recurse} is {@code true}, this method recursively
+     * enumerates all subgroups of this thread group and references to every
+     * thread group in these subgroups are also included.
      *
      * <p> An application might use the
      * {@linkplain #activeGroupCount activeGroupCount} method to
      * get an estimate of how big the array should be, however <i>if the
      * array is too short to hold all the thread groups, the extra thread
      * groups are silently ignored.</i>  If it is critical to obtain every
-     * active subgroup in this thread group, the caller should verify that
+     * subgroup in this thread group, the caller should verify that
      * the returned int value is strictly less than the length of
      * {@code list}.
      *
@@ -568,80 +533,43 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @throws  SecurityException
      *          if {@linkplain #checkAccess checkAccess} determines that
      *          the current thread cannot access this thread group
-     *
-     * @since   1.0
      */
     public int enumerate(ThreadGroup[] list, boolean recurse) {
+        Objects.requireNonNull(list);
         checkAccess();
         return enumerate(list, 0, recurse);
     }
 
-    private int enumerate(ThreadGroup[] list, int n, boolean recurse) {
-        int ngroupsSnapshot = 0;
-        ThreadGroup[] groupsSnapshot = null;
-        synchronized (this) {
-            if (destroyed) {
-                return n;
-            }
-            int ng = ngroups;
-            if (ng > list.length - n) {
-                ng = list.length - n;
-            }
-            if (ng > 0) {
-                System.arraycopy(groups, 0, list, n, ng);
-                n += ng;
-            }
+    /**
+     * Add a reference to each subgroup to the given array, starting at
+     * the given index. Returns the new index.
+     */
+    private int enumerate(ThreadGroup[] list, int i, boolean recurse) {
+        List<ThreadGroup> subgroups = synchronizedSubgroups();
+        for (int j = 0; j < subgroups.size() && i < list.length; j++) {
+            ThreadGroup group = subgroups.get(j);
+            list[i++] = group;
             if (recurse) {
-                ngroupsSnapshot = ngroups;
-                if (groups != null) {
-                    groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-                } else {
-                    groupsSnapshot = null;
-                }
+                i = group.enumerate(list, i, true);
             }
         }
-        if (recurse) {
-            for (int i = 0 ; i < ngroupsSnapshot ; i++) {
-                n = groupsSnapshot[i].enumerate(list, n, true);
-            }
-        }
-        return n;
+        return i;
     }
 
     /**
-     * Stops all threads in this thread group.
-     * <p>
-     * First, the {@code checkAccess} method of this thread group is
-     * called with no arguments; this may result in a security exception.
-     * <p>
-     * This method then calls the {@code stop} method on all the
-     * threads in this thread group and in all of its subgroups.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * @throws     SecurityException  if the current thread is not allowed
-     *               to access this thread group or any of the threads in
-     *               the thread group.
-     * @see        java.lang.SecurityException
-     * @see        java.lang.Thread#stop()
-     * @see        java.lang.ThreadGroup#checkAccess()
-     * @since      1.0
-     * @deprecated    This method is inherently unsafe.  See
-     *     {@link Thread#stop} for details.
+     * @deprecated This method was originally specified to stop all threads in
+     *             the thread group. It was inherently unsafe.
      */
     @Deprecated(since="1.2", forRemoval=true)
-    @SuppressWarnings("removal")
     public final void stop() {
-        if (stopOrSuspend(false))
-            Thread.currentThread().stop();
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Interrupts all threads in this thread group.
-     * <p>
-     * First, the {@code checkAccess} method of this thread group is
-     * called with no arguments; this may result in a security exception.
-     * <p>
-     * This method then calls the {@code interrupt} method on all the
-     * threads in this thread group and in all of its subgroups.
+     * Interrupts all {@linkplain Thread#isAlive() live} platform threads in
+     * this thread group and its subgroups.
      *
      * @throws     SecurityException  if the current thread is not allowed
      *               to access this thread group or any of the threads in
@@ -652,389 +580,80 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @since      1.2
      */
     public final void interrupt() {
-        int ngroupsSnapshot;
-        ThreadGroup[] groupsSnapshot;
-        synchronized (this) {
-            checkAccess();
-            for (int i = 0 ; i < nthreads ; i++) {
-                threads[i].interrupt();
+        checkAccess();
+        for (Thread thread : Thread.getAllThreads()) {
+            @SuppressWarnings("deprecation")
+            ThreadGroup g = thread.getThreadGroup();
+            if (parentOf(g)) {
+                thread.interrupt();
             }
-            ngroupsSnapshot = ngroups;
-            if (groups != null) {
-                groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-            } else {
-                groupsSnapshot = null;
-            }
-        }
-        for (int i = 0 ; i < ngroupsSnapshot ; i++) {
-            groupsSnapshot[i].interrupt();
         }
     }
 
     /**
-     * Suspends all threads in this thread group.
-     * <p>
-     * First, the {@code checkAccess} method of this thread group is
-     * called with no arguments; this may result in a security exception.
-     * <p>
-     * This method then calls the {@code suspend} method on all the
-     * threads in this thread group and in all of its subgroups.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * @throws     SecurityException  if the current thread is not allowed
-     *               to access this thread group or any of the threads in
-     *               the thread group.
-     * @see        java.lang.Thread#suspend()
-     * @see        java.lang.SecurityException
-     * @see        java.lang.ThreadGroup#checkAccess()
-     * @since      1.0
-     * @deprecated    This method is inherently deadlock-prone.  See
-     *     {@link Thread#suspend} for details.
+     * @deprecated This method was originally specified to suspend all threads
+     *             in the thread group.
      */
     @Deprecated(since="1.2", forRemoval=true)
-    @SuppressWarnings("removal")
     public final void suspend() {
-        if (stopOrSuspend(true))
-            Thread.currentThread().suspend();
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Helper method: recursively stops or suspends (as directed by the
-     * boolean argument) all of the threads in this thread group and its
-     * subgroups, except the current thread.  This method returns true
-     * if (and only if) the current thread is found to be in this thread
-     * group or one of its subgroups.
-     */
-    @SuppressWarnings({"deprecation", "removal"})
-    private boolean stopOrSuspend(boolean suspend) {
-        boolean suicide = false;
-        Thread us = Thread.currentThread();
-        int ngroupsSnapshot;
-        ThreadGroup[] groupsSnapshot = null;
-        synchronized (this) {
-            checkAccess();
-            for (int i = 0 ; i < nthreads ; i++) {
-                if (threads[i]==us)
-                    suicide = true;
-                else if (suspend)
-                    threads[i].suspend();
-                else
-                    threads[i].stop();
-            }
-
-            ngroupsSnapshot = ngroups;
-            if (groups != null) {
-                groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-            }
-        }
-        for (int i = 0 ; i < ngroupsSnapshot ; i++)
-            suicide = groupsSnapshot[i].stopOrSuspend(suspend) || suicide;
-
-        return suicide;
-    }
-
-    /**
-     * Resumes all threads in this thread group.
-     * <p>
-     * First, the {@code checkAccess} method of this thread group is
-     * called with no arguments; this may result in a security exception.
-     * <p>
-     * This method then calls the {@code resume} method on all the
-     * threads in this thread group and in all of its sub groups.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * @throws     SecurityException  if the current thread is not allowed to
-     *               access this thread group or any of the threads in the
-     *               thread group.
-     * @see        java.lang.SecurityException
-     * @see        java.lang.Thread#resume()
-     * @see        java.lang.ThreadGroup#checkAccess()
-     * @since      1.0
-     * @deprecated    This method is used solely in conjunction with
-     *       {@code Thread.suspend} and {@code ThreadGroup.suspend},
-     *       both of which have been deprecated, as they are inherently
-     *       deadlock-prone.  See {@link Thread#suspend} for details.
+     * @deprecated This method was originally specified to resume all threads
+     *             in the thread group.
      */
     @Deprecated(since="1.2", forRemoval=true)
-    @SuppressWarnings("removal")
     public final void resume() {
-        int ngroupsSnapshot;
-        ThreadGroup[] groupsSnapshot;
-        synchronized (this) {
-            checkAccess();
-            for (int i = 0 ; i < nthreads ; i++) {
-                threads[i].resume();
-            }
-            ngroupsSnapshot = ngroups;
-            if (groups != null) {
-                groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-            } else {
-                groupsSnapshot = null;
-            }
-        }
-        for (int i = 0 ; i < ngroupsSnapshot ; i++) {
-            groupsSnapshot[i].resume();
-        }
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Destroys this thread group and all of its subgroups. This thread
-     * group must be empty, indicating that all threads that had been in
-     * this thread group have since stopped.
-     * <p>
-     * First, the {@code checkAccess} method of this thread group is
-     * called with no arguments; this may result in a security exception.
+     * Does nothing.
      *
-     * @throws     IllegalThreadStateException  if the thread group is not
-     *               empty or if the thread group has already been destroyed.
-     * @throws     SecurityException  if the current thread cannot modify this
-     *               thread group.
-     * @see        java.lang.ThreadGroup#checkAccess()
-     * @since      1.0
-     *
-     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
-     *             flawed. The ability to explicitly or automatically destroy a
-     *             thread group will be removed in a future release.
+     * @deprecated This method was originally specified to destroy an empty
+     *             thread group. The ability to explicitly destroy a thread group
+     *             no longer exists. A thread group is eligible to be GC'ed when
+     *             there are no live threads in the group and it is otherwise
+     *             unreachable.
      */
     @Deprecated(since="16", forRemoval=true)
     public final void destroy() {
-        int ngroupsSnapshot;
-        ThreadGroup[] groupsSnapshot;
-        synchronized (this) {
-            checkAccess();
-            if (destroyed || (nthreads > 0)) {
-                throw new IllegalThreadStateException();
-            }
-            ngroupsSnapshot = ngroups;
-            if (groups != null) {
-                groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-            } else {
-                groupsSnapshot = null;
-            }
-            if (parent != null) {
-                destroyed = true;
-                ngroups = 0;
-                groups = null;
-                nthreads = 0;
-                threads = null;
-            }
-        }
-        for (int i = 0 ; i < ngroupsSnapshot ; i += 1) {
-            groupsSnapshot[i].destroy();
-        }
-        if (parent != null) {
-            parent.remove(this);
-        }
-    }
-
-    /**
-     * Adds the specified Thread group to this group.
-     * @param g the specified Thread group to be added
-     * @throws  IllegalThreadStateException If the Thread group has been destroyed.
-     */
-    private final void add(ThreadGroup g){
-        synchronized (this) {
-            if (destroyed) {
-                throw new IllegalThreadStateException();
-            }
-            if (groups == null) {
-                groups = new ThreadGroup[4];
-            } else if (ngroups == groups.length) {
-                groups = Arrays.copyOf(groups, ngroups * 2);
-            }
-            groups[ngroups] = g;
-
-            // This is done last so it doesn't matter in case the
-            // thread is killed
-            ngroups++;
-        }
-    }
-
-    /**
-     * Removes the specified Thread group from this group.
-     * @param g the Thread group to be removed
-     * @return if this Thread has already been destroyed.
-     */
-    private void remove(ThreadGroup g) {
-        synchronized (this) {
-            if (destroyed) {
-                return;
-            }
-            for (int i = 0 ; i < ngroups ; i++) {
-                if (groups[i] == g) {
-                    ngroups -= 1;
-                    System.arraycopy(groups, i + 1, groups, i, ngroups - i);
-                    // Zap dangling reference to the dead group so that
-                    // the garbage collector will collect it.
-                    groups[ngroups] = null;
-                    break;
-                }
-            }
-            if (nthreads == 0) {
-                notifyAll();
-            }
-            if (daemon && (nthreads == 0) &&
-                (nUnstartedThreads == 0) && (ngroups == 0))
-            {
-                destroy();
-            }
-        }
-    }
-
-
-    /**
-     * Increments the count of unstarted threads in the thread group.
-     * Unstarted threads are not added to the thread group so that they
-     * can be collected if they are never started, but they must be
-     * counted so that daemon thread groups with unstarted threads in
-     * them are not destroyed.
-     */
-    void addUnstarted() {
-        synchronized(this) {
-            if (destroyed) {
-                throw new IllegalThreadStateException();
-            }
-            nUnstartedThreads++;
-        }
-    }
-
-    /**
-     * Adds the specified thread to this thread group.
-     *
-     * <p> Note: This method is called from both library code
-     * and the Virtual Machine. It is called from VM to add
-     * certain system threads to the system thread group.
-     *
-     * @param  t
-     *         the Thread to be added
-     *
-     * @throws IllegalThreadStateException
-     *          if the Thread group has been destroyed
-     */
-    void add(Thread t) {
-        synchronized (this) {
-            if (destroyed) {
-                throw new IllegalThreadStateException();
-            }
-            if (threads == null) {
-                threads = new Thread[4];
-            } else if (nthreads == threads.length) {
-                threads = Arrays.copyOf(threads, nthreads * 2);
-            }
-            threads[nthreads] = t;
-
-            // This is done last so it doesn't matter in case the
-            // thread is killed
-            nthreads++;
-
-            // The thread is now a fully fledged member of the group, even
-            // though it may, or may not, have been started yet. It will prevent
-            // the group from being destroyed so the unstarted Threads count is
-            // decremented.
-            nUnstartedThreads--;
-        }
-    }
-
-    /**
-     * Notifies the group that the thread {@code t} has failed
-     * an attempt to start.
-     *
-     * <p> The state of this thread group is rolled back as if the
-     * attempt to start the thread has never occurred. The thread is again
-     * considered an unstarted member of the thread group, and a subsequent
-     * attempt to start the thread is permitted.
-     *
-     * @param  t
-     *         the Thread whose start method was invoked
-     */
-    void threadStartFailed(Thread t) {
-        synchronized(this) {
-            remove(t);
-            nUnstartedThreads++;
-        }
-    }
-
-    /**
-     * Notifies the group that the thread {@code t} has terminated.
-     *
-     * <p> Destroy the group if all of the following conditions are
-     * true: this is a daemon thread group; there are no more alive
-     * or unstarted threads in the group; there are no subgroups in
-     * this thread group.
-     *
-     * @param  t
-     *         the Thread that has terminated
-     */
-    void threadTerminated(Thread t) {
-        synchronized (this) {
-            remove(t);
-
-            if (nthreads == 0) {
-                notifyAll();
-            }
-            if (daemon && (nthreads == 0) &&
-                (nUnstartedThreads == 0) && (ngroups == 0))
-            {
-                destroy();
-            }
-        }
-    }
-
-    /**
-     * Removes the specified Thread from this group. Invoking this method
-     * on a thread group that has been destroyed has no effect.
-     *
-     * @param  t
-     *         the Thread to be removed
-     */
-    private void remove(Thread t) {
-        synchronized (this) {
-            if (destroyed) {
-                return;
-            }
-            for (int i = 0 ; i < nthreads ; i++) {
-                if (threads[i] == t) {
-                    System.arraycopy(threads, i + 1, threads, i, --nthreads - i);
-                    // Zap dangling reference to the dead thread so that
-                    // the garbage collector will collect it.
-                    threads[nthreads] = null;
-                    break;
-                }
-            }
-        }
     }
 
     /**
      * Prints information about this thread group to the standard
      * output. This method is useful only for debugging.
-     *
-     * @since   1.0
      */
     public void list() {
-        list(System.out, 0);
-    }
-    void list(PrintStream out, int indent) {
-        int ngroupsSnapshot;
-        ThreadGroup[] groupsSnapshot;
-        synchronized (this) {
-            for (int j = 0 ; j < indent ; j++) {
-                out.print(" ");
-            }
-            out.println(this);
-            indent += 4;
-            for (int i = 0 ; i < nthreads ; i++) {
-                for (int j = 0 ; j < indent ; j++) {
-                    out.print(" ");
-                }
-                out.println(threads[i]);
-            }
-            ngroupsSnapshot = ngroups;
-            if (groups != null) {
-                groupsSnapshot = Arrays.copyOf(groups, ngroupsSnapshot);
-            } else {
-                groupsSnapshot = null;
+        Map<ThreadGroup, List<Thread>> map = new HashMap<>();
+        for (Thread thread : Thread.getAllThreads()) {
+            ThreadGroup group = thread.getThreadGroup();
+            // group is null when thread terminates
+            if (group != null && parentOf(group)) {
+                map.computeIfAbsent(group, k -> new ArrayList<>()).add(thread);
             }
         }
-        for (int i = 0 ; i < ngroupsSnapshot ; i++) {
-            groupsSnapshot[i].list(out, indent);
+        list(map, System.out, 0);
+    }
+
+    private void list(Map<ThreadGroup, List<Thread>> map, PrintStream out, int indent) {
+        out.print(" ".repeat(indent));
+        out.println(this);
+        indent += 4;
+        List<Thread> threads = map.get(this);
+        if (threads != null) {
+            for (Thread thread : threads) {
+                out.print(" ".repeat(indent));
+                out.println(thread);
+            }
+        }
+        for (ThreadGroup group : synchronizedSubgroups()) {
+            group.list(map, out, indent);
         }
     }
 
@@ -1061,7 +680,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *     thread's name, as returned from the thread's {@link
      *     Thread#getName getName} method, and a stack backtrace,
      *     using the {@code Throwable}'s {@link
-     *     Throwable#printStackTrace printStackTrace} method, is
+     *     Throwable#printStackTrace() printStackTrace} method, is
      *     printed to the {@linkplain System#err standard error stream}.
      * </ul>
      * <p>
@@ -1071,7 +690,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @param   t   the thread that is about to exit.
      * @param   e   the uncaught exception.
-     * @since   1.0
      */
     public void uncaughtException(Thread t, Throwable e) {
         if (parent != null) {
@@ -1090,27 +708,115 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Used by VM to control lowmem implicit suspension.
+     * Does nothing.
      *
-     * @param b boolean to allow or disallow suspension
-     * @return true on success
+     * @return false
+     *
+     * @param b ignored
+     *
+     * @deprecated This method was originally intended for controlling suspension
+     *             in low memory conditions. It was never specified.
+     *
      * @since   1.1
-     * @deprecated The definition of this call depends on {@link #suspend},
-     *             which is deprecated.  Further, the behavior of this call
-     *             was never specified.
      */
     @Deprecated(since="1.2", forRemoval=true)
     public boolean allowThreadSuspension(boolean b) {
-        return true;
+        return false;
     }
 
     /**
      * Returns a string representation of this Thread group.
      *
      * @return  a string representation of this thread group.
-     * @since   1.0
      */
     public String toString() {
-        return getClass().getName() + "[name=" + getName() + ",maxpri=" + maxPriority + "]";
+        return getClass().getName()
+                + "[name=" + getName()
+                + ",maxpri=" + getMaxPriority()
+                + "]";
+    }
+
+    /**
+     * Add a strongly reachable subgroup.
+     */
+    private void synchronizedAddStrong(ThreadGroup group) {
+        synchronized (this) {
+            if (groups == null) {
+                groups = new ThreadGroup[4];
+            } else if (groups.length == ngroups) {
+                groups = Arrays.copyOf(groups, ngroups + 4);
+            }
+            groups[ngroups++] = group;
+        }
+    }
+
+    /**
+     * Add a weakly reachable subgroup.
+     */
+    private void synchronizedAddWeak(ThreadGroup group) {
+        synchronized (this) {
+            if (weaks == null) {
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                WeakReference<ThreadGroup>[] array = new WeakReference[4];
+                weaks = array;
+            } else {
+                // expunge
+                for (int i = 0; i < nweaks; ) {
+                    ThreadGroup g = weaks[i].get();
+                    if (g == null) {
+                        removeWeak(i);
+                    } else {
+                        i++;
+                    }
+                }
+                // expand to make space if needed
+                if (weaks.length == nweaks) {
+                    weaks = Arrays.copyOf(weaks, nweaks + 4);
+                }
+            }
+            weaks[nweaks++] = new WeakReference<>(group);
+        }
+    }
+
+    /**
+     * Remove the weakly reachable group at the given index of the weaks array.
+     */
+    private void removeWeak(int index) {
+        assert Thread.holdsLock(this) && index < nweaks;
+        int last = nweaks - 1;
+        if (index < nweaks)
+            weaks[index] = weaks[last];
+        weaks[last] = null;
+        nweaks--;
+    }
+
+    /**
+     * Returns a snapshot of the subgroups.
+     */
+    private List<ThreadGroup> synchronizedSubgroups() {
+        synchronized (this) {
+            return subgroups();
+        }
+    }
+
+    /**
+     * Returns a snapshot of the subgroups.
+     */
+    private List<ThreadGroup> subgroups() {
+        assert Thread.holdsLock(this);
+        List<ThreadGroup> snapshot = new ArrayList<>();
+        for (int i = 0; i < ngroups; i++) {
+            snapshot.add(groups[i]);
+        }
+        for (int i = 0; i < nweaks; ) {
+            ThreadGroup g = weaks[i].get();
+            if (g == null) {
+                removeWeak(i);
+            } else {
+                snapshot.add(g);
+                i++;
+            }
+        }
+        return snapshot;
     }
 }

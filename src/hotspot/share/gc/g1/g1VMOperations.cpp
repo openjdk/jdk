@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1VMOperations.hpp"
+#include "gc/g1/g1Trace.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
@@ -52,7 +53,7 @@ void VM_G1CollectFull::doit() {
   GCCauseSetter x(g1h, _gc_cause);
   _gc_succeeded = g1h->do_full_collection(true  /* explicit_gc */,
                                           false /* clear_all_soft_refs */,
-                                          false /* do_maximum_compaction */);
+                                          false /* do_maximal_compaction */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
@@ -172,8 +173,8 @@ void VM_G1CollectForAllocation::doit() {
 
 void VM_G1PauseConcurrent::doit() {
   GCIdMark gc_id_mark(_gc_id);
-  GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  GCTraceCPUTime tcpu(g1h->concurrent_mark()->gc_tracer_cm());
 
   // GCTraceTime(...) only supports sub-phases, so a more verbose version
   // is needed when we report the top-level pause phase.

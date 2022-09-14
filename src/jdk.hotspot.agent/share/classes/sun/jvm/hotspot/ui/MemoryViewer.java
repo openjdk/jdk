@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@ import sun.jvm.hotspot.debugger.*;
     address. */
 
 public class MemoryViewer extends JPanel {
-  public MemoryViewer(final Debugger debugger, boolean is64Bit) {
+  public MemoryViewer(final Debugger debugger, boolean isAnnotated, boolean is64Bit) {
     super();
-    final MemoryPanel memory = new MemoryPanel(debugger, is64Bit);
+    final MemoryPanel memory = new MemoryPanel(debugger, isAnnotated, is64Bit);
     memory.setBorder(GraphicsUtilities.newBorder(5));
     JPanel addressPanel = new JPanel();
     addressPanel.setLayout(new BoxLayout(addressPanel, BoxLayout.X_AXIS));

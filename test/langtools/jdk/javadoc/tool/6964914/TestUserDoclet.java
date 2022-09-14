@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,8 @@ public class TestUserDoclet implements Doclet {
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.add(javadoc.getPath());
         cmdArgs.addAll(Arrays.asList(
+                "-J-Duser.language=en",
+                "-J-Duser.country=US",
                 "-doclet", thisClassName,
                 "-docletpath", testClasses.getPath(),
                 new File(testSrc, thisClassName + ".java").getPath()

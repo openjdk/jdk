@@ -36,6 +36,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -192,22 +193,38 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
   // Determine necessary runtime invocation preservation measures
   const bool needs_frame = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR;
-  assert(preservation_level <= MacroAssembler::PRESERVATION_FRAME_LR,
-         "g1_write_barrier_pre doesn't support preservation levels higher than PRESERVATION_FRAME_LR");
+  const bool preserve_gp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS;
+  const bool preserve_fp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS;
+  int nbytes_save = 0;
 
   // May need to preserve LR. Also needed if current frame is not compatible with C calling convention.
   if (needs_frame) {
+    if (preserve_gp_registers) {
+      nbytes_save = (MacroAssembler::num_volatile_gp_regs
+                     + (preserve_fp_registers ? MacroAssembler::num_volatile_fp_regs : 0)
+                    ) * BytesPerWord;
+      __ save_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
+    }
+
     __ save_LR_CR(tmp1);
-    __ push_frame_reg_args(0, tmp2);
+    __ push_frame_reg_args(nbytes_save, tmp2);
   }
 
-  if (pre_val->is_volatile() && preloaded) { __ mr(nv_save, pre_val); } // Save pre_val across C call if it was preloaded.
+  if (pre_val->is_volatile() && preloaded && !preserve_gp_registers) {
+    __ mr(nv_save, pre_val); // Save pre_val across C call if it was preloaded.
+  }
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, R16_thread);
-  if (pre_val->is_volatile() && preloaded) { __ mr(pre_val, nv_save); } // restore
+  if (pre_val->is_volatile() && preloaded && !preserve_gp_registers) {
+    __ mr(pre_val, nv_save); // restore
+  }
 
   if (needs_frame) {
     __ pop_frame();
     __ restore_LR_CR(tmp1);
+
+    if (preserve_gp_registers) {
+      __ restore_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
+    }
   }
 
   __ bind(filtered);

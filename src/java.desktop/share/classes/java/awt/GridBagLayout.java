@@ -688,7 +688,7 @@ java.io.Serializable {
      * @param      comp         the component to be added
      * @param      constraints  an object that determines how
      *                          the component is added to the layout
-     * @exception IllegalArgumentException if {@code constraints}
+     * @throws IllegalArgumentException if {@code constraints}
      *            is not a {@code GridBagConstraint}
      */
     public void addLayoutComponent(Component comp, Object constraints) {

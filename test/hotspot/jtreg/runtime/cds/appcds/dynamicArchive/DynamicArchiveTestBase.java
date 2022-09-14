@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSTestUtils.Result;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * Base class for test cases in test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/
@@ -37,8 +37,8 @@ import sun.hotspot.WhiteBox;
 class DynamicArchiveTestBase {
     private static boolean executedIn_run = false;
     private static boolean autoMode = false;  // -Xshare:auto
-
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static String[] baseArchiveOptions = new String[] {};
 
     public static interface DynamicArchiveTest {
         public void run() throws Exception;
@@ -94,6 +94,23 @@ class DynamicArchiveTestBase {
     }
     public static String getNewArchiveName(String stem) {
         return TestCommon.getNewArchiveName(stem);
+    }
+
+    public static void setBaseArchiveOptions(String... opts) {
+        baseArchiveOptions = opts;
+    }
+
+    /**
+     * Excute a JVM to dump a base archive by
+     *  -Xshare:dump -XX:SharedArchiveFile=baseArchiveName
+     */
+    public static Result dumpBaseArchive(String baseArchiveName, String... cmdLineSuffix)
+        throws Exception
+    {
+        OutputAnalyzer output = TestCommon.dumpBaseArchive(baseArchiveName, cmdLineSuffix);
+        CDSOptions opts = new CDSOptions();
+        opts.setXShareMode("dump");
+        return new Result(opts, output);
     }
 
     /**
@@ -156,7 +173,7 @@ class DynamicArchiveTestBase {
         String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
         if (!(new File(wbJar)).exists()) {
             throw new RuntimeException("Test error: your test must have " +
-                                       "'@run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox'");
+                                       "'@run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox'");
         }
         return wbJar;
     }
@@ -274,7 +291,7 @@ class DynamicArchiveTestBase {
     private static String getTempBaseArchive() throws Exception {
         if (tempBaseArchive == null) {
             tempBaseArchive = getNewArchiveName("tempBaseArchive");
-            TestCommon.dumpBaseArchive(tempBaseArchive);
+            TestCommon.dumpBaseArchive(tempBaseArchive, baseArchiveOptions);
         }
         return tempBaseArchive;
     }

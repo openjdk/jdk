@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,7 @@ void G1SegmentedArrayMemoryStats::clear() {
   }
 }
 
-template<MEMFLAGS flag>
-void G1SegmentedArrayFreePool<flag>::update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processor) {
+void G1SegmentedArrayFreePool::update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processor) {
   uint num_free_lists = _freelist_pool.num_free_lists();
 
   for (uint i = 0; i < num_free_lists; i++) {
@@ -52,8 +51,7 @@ void G1SegmentedArrayFreePool<flag>::update_unlink_processors(G1ReturnMemoryProc
   }
 }
 
-template<MEMFLAGS flag>
-void G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::visit_free_list(G1SegmentedArrayFreeList<flag>* source) {
+void G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::visit_free_list(G1SegmentedArrayFreeList* source) {
   assert(_source == nullptr, "already visited");
   if (_return_to_vm_size > 0) {
     _source = source;
@@ -75,16 +73,15 @@ void G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::visit_free_list(G1
   }
 }
 
-template<MEMFLAGS flag>
-bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
+bool G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::return_to_vm(jlong deadline) {
   assert(!finished_return_to_vm(), "already returned everything to the VM");
   assert(_first != nullptr, "must have segment to return");
 
   size_t keep_size = 0;
   size_t keep_num = 0;
 
-  G1SegmentedArraySegment<flag>* cur = _first;
-  G1SegmentedArraySegment<flag>* last = nullptr;
+  G1SegmentedArraySegment* cur = _first;
+  G1SegmentedArraySegment* last = nullptr;
 
   while (cur != nullptr && _return_to_vm_size > 0) {
     size_t cur_size = cur->mem_size();
@@ -125,8 +122,7 @@ bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_vm(jlong
   return _source != nullptr;
 }
 
-template<MEMFLAGS flag>
-bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_os(jlong deadline) {
+bool G1SegmentedArrayFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadline) {
   assert(finished_return_to_vm(), "not finished returning to VM");
   assert(!finished_return_to_os(), "already returned everything to the OS");
 
@@ -135,10 +131,10 @@ bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_os(jlong
   size_t mem_size_deleted = 0;
 
   while (_first != nullptr) {
-    G1SegmentedArraySegment<flag>* next = _first->next();
+    G1SegmentedArraySegment* next = _first->next();
     num_delete++;
     mem_size_deleted += _first->mem_size();
-    delete _first;
+    G1SegmentedArraySegment::delete_segment(_first);
     _first = next;
 
     // To ensure progress, perform the deadline check here.
@@ -152,29 +148,25 @@ bool G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor::return_to_os(jlong
   return _first != nullptr;
 }
 
-template<MEMFLAGS flag>
-G1SegmentedArrayFreePool<flag> G1SegmentedArrayFreePool<flag>::_freelist_pool(G1CardSetConfiguration::num_mem_object_types());
+G1SegmentedArrayFreePool G1SegmentedArrayFreePool::_freelist_pool(G1CardSetConfiguration::num_mem_object_types());
 
-template<MEMFLAGS flag>
-G1SegmentedArrayFreePool<flag>::G1SegmentedArrayFreePool(uint num_free_lists) :
+G1SegmentedArrayFreePool::G1SegmentedArrayFreePool(uint num_free_lists) :
   _num_free_lists(num_free_lists) {
 
-  _free_lists = NEW_C_HEAP_ARRAY(G1SegmentedArrayFreeList < flag >, _num_free_lists, mtGC);
+  _free_lists = NEW_C_HEAP_ARRAY(G1SegmentedArrayFreeList, _num_free_lists, mtGC);
   for (uint i = 0; i < _num_free_lists; i++) {
-    new (&_free_lists[i]) G1SegmentedArrayFreeList<flag>();
+    new (&_free_lists[i]) G1SegmentedArrayFreeList();
   }
 }
 
-template<MEMFLAGS flag>
-G1SegmentedArrayFreePool<flag>::~G1SegmentedArrayFreePool() {
+G1SegmentedArrayFreePool::~G1SegmentedArrayFreePool() {
   for (uint i = 0; i < _num_free_lists; i++) {
-    _free_lists[i].~G1SegmentedArrayFreeList<flag>();
+    _free_lists[i].~G1SegmentedArrayFreeList();
   }
   FREE_C_HEAP_ARRAY(mtGC, _free_lists);
 }
 
-template<MEMFLAGS flag>
-G1SegmentedArrayMemoryStats G1SegmentedArrayFreePool<flag>::memory_sizes() const {
+G1SegmentedArrayMemoryStats G1SegmentedArrayFreePool::memory_sizes() const {
   G1SegmentedArrayMemoryStats free_list_stats;
   assert(free_list_stats.num_pools() == num_free_lists(), "must be");
   for (uint i = 0; i < num_free_lists(); i++) {
@@ -184,8 +176,7 @@ G1SegmentedArrayMemoryStats G1SegmentedArrayFreePool<flag>::memory_sizes() const
   return free_list_stats;
 }
 
-template<MEMFLAGS flag>
-size_t G1SegmentedArrayFreePool<flag>::mem_size() const {
+size_t G1SegmentedArrayFreePool::mem_size() const {
   size_t result = 0;
   for (uint i = 0; i < _num_free_lists; i++) {
     result += _free_lists[i].mem_size();
@@ -193,13 +184,10 @@ size_t G1SegmentedArrayFreePool<flag>::mem_size() const {
   return result;
 }
 
-template<MEMFLAGS flag>
-void G1SegmentedArrayFreePool<flag>::print_on(outputStream* out) {
+void G1SegmentedArrayFreePool::print_on(outputStream* out) {
   out->print_cr("  Free Pool: size %zu", free_list_pool()->mem_size());
   for (uint i = 0; i < _num_free_lists; i++) {
     FormatBuffer<> fmt("    %s", G1CardSetConfiguration::mem_object_type_name_str(i));
     _free_lists[i].print_on(out, fmt);
   }
 }
-
-template class G1SegmentedArrayFreePool<mtGCCardSet>;

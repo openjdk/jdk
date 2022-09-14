@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,6 @@
 package sun.jvm.hotspot.debugger.windbg.aarch64;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.windbg.*;
 
 class WindbgAARCH64Thread implements ThreadProxy {
@@ -67,11 +66,11 @@ class WindbgAARCH64Thread implements ThreadProxy {
   }
 
   public boolean equals(Object obj) {
-    if ((obj == null) || !(obj instanceof WindbgAARCH64Thread)) {
+    if (!(obj instanceof WindbgAARCH64Thread other)) {
       return false;
     }
 
-    return (((WindbgAARCH64Thread) obj).getThreadID() == getThreadID());
+    return (other.getThreadID() == getThreadID());
   }
 
   public int hashCode() {

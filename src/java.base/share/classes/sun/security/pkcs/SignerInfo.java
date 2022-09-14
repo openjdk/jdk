@@ -383,8 +383,15 @@ public class SignerInfo implements DerEncoder {
                 if (digestAlgName.equals("SHAKE256")
                         || digestAlgName.equals("SHAKE256-LEN")) {
                     if (digestAlgName.equals("SHAKE256-LEN")) {
-                        int v = new DerValue(digestAlgorithmId
-                                .getEncodedParams()).getInteger();
+                        // RFC8419: for EdDSA in CMS, the id-shake256-len
+                        // algorithm id must contain parameter value 512
+                        // encoded as a positive integer value
+                        byte[] params = digestAlgorithmId.getEncodedParams();
+                        if (params == null) {
+                            throw new SignatureException(
+                                    "id-shake256-len oid missing length");
+                        }
+                        int v = new DerValue(params).getInteger();
                         if (v != 512) {
                             throw new SignatureException(
                                     "Unsupported id-shake256-" + v);
@@ -527,6 +534,7 @@ public class SignerInfo implements DerEncoder {
                 if (spec == null) {
                     throw new NoSuchAlgorithmException("Missing PSSParameterSpec for RSASSA-PSS algorithm");
                 }
+
                 if (!AlgorithmId.get(spec.getDigestAlgorithm()).equals(digAlgId)) {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                 }

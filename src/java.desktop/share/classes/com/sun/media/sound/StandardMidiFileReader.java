@@ -367,6 +367,11 @@ final class SMFParser {
                     case 0xF7:
                         // sys ex
                         int sysexLength = (int) readVarInt();
+                        if (sysexLength < 0 || sysexLength > trackLength - pos) {
+                            throw new InvalidMidiDataException("Message length is out of bounds: "
+                                    + sysexLength);
+                        }
+
                         byte[] sysexData = new byte[sysexLength];
                         read(sysexData);
 
@@ -379,6 +384,10 @@ final class SMFParser {
                         // meta
                         int metaType = readUnsigned();
                         int metaLength = (int) readVarInt();
+                        if (metaLength < 0 || metaLength > trackLength - pos) {
+                            throw new InvalidMidiDataException("Message length is out of bounds: "
+                                    + metaLength);
+                        }
                         final byte[] metaData;
                         try {
                             metaData = new byte[metaLength];

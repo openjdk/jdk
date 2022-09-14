@@ -30,6 +30,7 @@ import javax.swing.Action;
 import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
+import org.openide.util.Utilities;
 
 /**
  *
@@ -51,7 +52,8 @@ public final class ZoomInAction extends CallableSystemAction {
     }
 
     public ZoomInAction() {
-        putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, Event.CTRL_MASK, false));
+        // D is the Control key on most platforms, the Command (meta) key on Macintosh
+        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-EQUALS"));
         putValue(Action.SHORT_DESCRIPTION, "Zoom in");
     }
 

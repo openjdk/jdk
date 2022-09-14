@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,12 +95,6 @@ class ChunkManager : public CHeapObj<mtMetaspace> {
   //  chunks.
   void split_chunk_and_add_splinters(Metachunk* c, chunklevel_t target_level);
 
-  // See get_chunk(s,s,s)
-  Metachunk* get_chunk_locked(size_t preferred_word_size, size_t min_word_size, size_t min_committed_words);
-
-  // Uncommit all chunks equal or below the given level.
-  void uncommit_free_chunks(chunklevel_t max_level);
-
   // Return a single chunk to the freelist without doing any merging, and adjust accounting.
   void return_chunk_simple_locked(Metachunk* c);
 
@@ -160,9 +154,6 @@ public:
   // Run verifications. slow=true: verify chunk-internal integrity too.
   DEBUG_ONLY(void verify() const;)
   DEBUG_ONLY(void verify_locked() const;)
-
-  // Returns the name of this chunk manager.
-  const char* name() const                  { return _name; }
 
   // Returns total number of chunks
   int total_num_chunks() const              { return _chunks.num_chunks(); }

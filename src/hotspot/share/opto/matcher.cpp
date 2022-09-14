@@ -41,7 +41,7 @@
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "opto/vectornode.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
@@ -322,7 +322,7 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
-  C->print_method(PHASE_BEFORE_MATCHING);
+  C->print_method(PHASE_BEFORE_MATCHING, 1);
 
   // Create new ideal node ConP #NULL even if it does exist in old space
   // to avoid false sharing if the corresponding mach node is not used.
@@ -1066,7 +1066,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
     case Op_StrInflatedCopy:
@@ -1306,13 +1306,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mach_call_rt->_name = call->as_CallRuntime()->_name;
       mach_call_rt->_leaf_no_fp = call->is_CallLeafNoFP();
     }
-    else if( mcall->is_MachCallNative() ) {
-      MachCallNativeNode* mach_call_native = mcall->as_MachCallNative();
-      CallNativeNode* call_native = call->as_CallNative();
-      mach_call_native->_name = call_native->_name;
-      mach_call_native->_arg_regs = call_native->_arg_regs;
-      mach_call_native->_ret_regs = call_native->_ret_regs;
-    }
     msfpt = mcall;
   }
   // This is a non-call safepoint
@@ -1347,8 +1340,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // These are usually backing store for register arguments for varargs.
   if( call != NULL && call->is_CallRuntime() )
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
-  if( call != NULL && call->is_CallNative() )
-    out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call, call->as_CallNative()->_shadow_space_bytes);
 
 
   // Do the normal argument list (parameters) register masks
@@ -2230,7 +2221,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
           n->outcnt() == 1 )            // Not already shared
         set_shared(n);                  // Force it to be a root
       break;
-    case Op_BoxLock:         // Cant match until we get stack-regs in ADLC
+    case Op_BoxLock:         // Can't match until we get stack-regs in ADLC
     case Op_IfFalse:
     case Op_IfTrue:
     case Op_MachProj:
@@ -2252,7 +2243,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
@@ -2261,8 +2252,10 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVD:
     case Op_FmaVF:
     case Op_MacroLogicV:
-    case Op_LoadVectorMasked:
     case Op_VectorCmpMasked:
+    case Op_CompressV:
+    case Op_CompressM:
+    case Op_ExpandV:
     case Op_VectorLoadMask:
       set_shared(n); // Force result into register (it will be anyways)
       break;
@@ -2333,9 +2326,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
   }
 
   switch(opcode) {       // Handle some opcodes special
-    case Op_StorePConditional:
-    case Op_StoreIConditional:
-    case Op_StoreLConditional:
     case Op_CompareAndExchangeB:
     case Op_CompareAndExchangeS:
     case Op_CompareAndExchangeI:
@@ -2456,6 +2446,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_CopySignD:
+    case Op_SignumVF:
+    case Op_SignumVD:
     case Op_SignumF:
     case Op_SignumD: {
       Node* pair = new BinaryNode(n->in(2), n->in(3));

@@ -32,7 +32,7 @@ name of a tool to execute.
 
 As an alternative, you can focus on a single tool.  When you do
 this, you will still see all the source code for all the tools,
-but the various Ant targets will now be focussed on the selected tool.
+but the various Ant targets will now be focused on the selected tool.
 To focus on a tool, bring up the context menu on the "langtools"
 project (i.e. right-click on the project) and select "Select Tool".
 This brings up a dialog which allows you to specify which tool you

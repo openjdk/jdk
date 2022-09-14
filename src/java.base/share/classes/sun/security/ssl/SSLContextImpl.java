@@ -1483,14 +1483,14 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                     String[] peerSupportedSignAlgs =
                             extSession.getLocalSupportedSignatureAlgorithms();
 
-                    constraints = new SSLAlgorithmConstraints(
+                    constraints = SSLAlgorithmConstraints.forSocket(
                                     sslSocket, peerSupportedSignAlgs, true);
                 } else {
                     constraints =
-                            new SSLAlgorithmConstraints(sslSocket, true);
+                            SSLAlgorithmConstraints.forSocket(sslSocket, true);
                 }
             } else {
-                constraints = new SSLAlgorithmConstraints(sslSocket, true);
+                constraints = SSLAlgorithmConstraints.forSocket(sslSocket, true);
             }
 
             checkAlgorithmConstraints(chain, constraints, checkClientTrusted);
@@ -1523,14 +1523,14 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                     String[] peerSupportedSignAlgs =
                             extSession.getLocalSupportedSignatureAlgorithms();
 
-                    constraints = new SSLAlgorithmConstraints(
+                    constraints = SSLAlgorithmConstraints.forEngine(
                                     engine, peerSupportedSignAlgs, true);
                 } else {
                     constraints =
-                            new SSLAlgorithmConstraints(engine, true);
+                            SSLAlgorithmConstraints.forEngine(engine, true);
                 }
             } else {
-                constraints = new SSLAlgorithmConstraints(engine, true);
+                constraints = SSLAlgorithmConstraints.forEngine(engine, true);
             }
 
             checkAlgorithmConstraints(chain, constraints, checkClientTrusted);
@@ -1596,7 +1596,7 @@ final class DummyX509TrustManager extends X509ExtendedTrustManager
     public void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException {
         throw new CertificateException(
-            "No X509TrustManager implementation avaiable");
+            "No X509TrustManager implementation available");
     }
 
     /*

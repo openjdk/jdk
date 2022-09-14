@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,15 +42,15 @@ import java.util.zip.ZipOutputStream;
  * from a test library, but want to use this class in a sub-process.
  *
  * For example, to build the following library class:
- * test/lib/sun/hotspot/WhiteBox.java
+ * test/lib/jdk/test/whitebox/WhiteBox.java
  *
  * You would use the following tags:
  *
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *
  * JTREG would build the class file under
- * ${JTWork}/classes/test/lib/sun/hotspot/WhiteBox.class
+ * ${JTWork}/classes/test/lib/jdk/test/whitebox/WhiteBox.class
  *
  * With you run your main test class using "@run main MyMainClass", JTREG would setup the
  * -classpath to include "${JTWork}/classes/test/lib/", so MyMainClass would be able to
@@ -62,12 +60,12 @@ import java.util.zip.ZipOutputStream;
  * You can use ClassFileInstaller to ensure that WhiteBox is available in the current
  * directory of your test:
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * Or, you can use the -jar option to store the class in the specified JAR file. If a relative
  * path name is given, the JAR file would be relative to the current directory of
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar myjar.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar myjar.jar jdk.test.whitebox.WhiteBox
  */
 public class ClassFileInstaller {
     /**
@@ -102,17 +100,13 @@ public class ClassFileInstaller {
     }
 
     // Add commonly used inner classes that are often omitted by mistake. Currently
-    // we support only jdk.test.whitebox.WhiteBox$WhiteBoxPermission and
-    // sun/hotspot/WhiteBox$WhiteBoxPermission. See JDK-8199290
+    // we support only jdk.test.whitebox.WhiteBox$WhiteBoxPermission.
+    // See JDK-8199290
     private static String[] addInnerClasses(String[] classes, int startIdx) {
         boolean seenNewWb = false;
         boolean seenNewWbInner = false;
-        boolean seenOldWb = false;
-        boolean seenOldWbInner = false;
         final String newWb = "jdk.test.whitebox.WhiteBox";
         final String newWbInner = newWb + "$WhiteBoxPermission";
-        final String oldWb = "sun.hotspot.WhiteBox";
-        final String oldWbInner = oldWb + "$WhiteBoxPermission";
 
         ArrayList<String> list = new ArrayList<>();
 
@@ -122,17 +116,11 @@ public class ClassFileInstaller {
             switch (cls) {
             case newWb:      seenNewWb      = true; break;
             case newWbInner: seenNewWbInner = true; break;
-            case oldWb:      seenOldWb      = true; break;
-            case oldWbInner: seenOldWbInner = true; break;
             }
         }
         if (seenNewWb && !seenNewWbInner) {
             list.add(newWbInner);
         }
-        if (seenOldWb && !seenOldWbInner) {
-            list.add(oldWbInner);
-        }
-
         String[] array = new String[list.size()];
         list.toArray(array);
         return array;
@@ -192,7 +180,7 @@ public class ClassFileInstaller {
      * You can call ClassFileInstaller.writeJar() from your main test class instead of
      * using "@run ClassFileInstaller -jar ...". E.g.,
      *
-     * String jarPath = ClassFileInstaller.getJarPath("myjar.jar", "sun.hotspot.WhiteBox")
+     * String jarPath = ClassFileInstaller.getJarPath("myjar.jar", "jdk.test.whitebox.WhiteBox")
      *
      * If you call this API, make sure you build ClassFileInstaller with the following tags:
      *

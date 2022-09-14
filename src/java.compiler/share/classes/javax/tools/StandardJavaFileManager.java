@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,8 +155,6 @@ import java.util.List;
  * correct to call these methods with a single {@code Path} and have it be treated as
  * an {@code Iterable} of its components.
  *
- *
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface StandardJavaFileManager extends JavaFileManager {

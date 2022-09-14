@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -91,6 +91,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="de_CH">स्विझ हाय जर्मन</language>
 			<language type="dgr">डोगरीब</language>
 			<language type="dje">झर्मा</language>
+			<language type="doi">डोग्री</language>
 			<language type="dsb">लोवर सोर्बियन</language>
 			<language type="dua">डौल</language>
 			<language type="dv">दिवेही</language>
@@ -309,6 +310,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="quc">किचे</language>
 			<language type="rap">रापान्यु</language>
 			<language type="rar">रारोटोंगान</language>
+			<language type="rhg">रोहिंग्या</language>
 			<language type="rm">रोमान्श</language>
 			<language type="rn">रुंदी</language>
 			<language type="ro">रोमानियन</language>
@@ -866,8 +868,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u093C ० १ २ ३ ४ ५ ६ ७ ८ ९ ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क {क\u093C} ख {ख\u093C} ग {ग\u093C} घ ङ च छ ज {ज\u093C} झ ञ ट ठ ड {ड\u093C} ढ {ढ\u093C} ण त थ द ध न प फ {फ\u093C} ब भ म य {य\u093C} र ल व श ष स ह ळ ऽ ा ि ी \u0941 \u0942 \u0943 \u0944 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
+		<exemplarCharacters>[\u093C ० १ २ ३ ४ ५ ६ ७ ८ ९ ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क {क\u093C} ख {ख\u093C} ग {ग\u093C} घ ङ च छ ज {ज\u093C} झ ञ ट ठ ड {ड\u093C} ढ {ढ\u093C} ण त थ द ध न प फ {फ\u093C} ब भ म य {य\u093C} र ल व श ष स ह ळ ऽ ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D \u0944]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
@@ -885,21 +887,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d-M-y G</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d-M-y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1288,10 +1294,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">a</dayPeriod>
 							<dayPeriod type="pm">p</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
@@ -1326,21 +1328,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d-MMM-y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d-M-yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1348,21 +1354,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -4293,6 +4303,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>येकातेरिनबर्ग ग्रीष्म वेळ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>युकॉन वेळ</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -4536,8 +4551,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BRL">
 				<displayName>ब्राझिलियन रियाल</displayName>
 				<displayName count="other">ब्राझिलियन रियाल्स</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol>R$</symbol>
+				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>बहामियन डॉलर</displayName>
@@ -4598,8 +4613,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="CNY">
 				<displayName>चिनी युआन</displayName>
 				<displayName count="other">चिनी युआन</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>CN¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>कोलंबियन पेसो</displayName>
@@ -4677,8 +4692,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="EUR">
 				<displayName>युरो</displayName>
 				<displayName count="other">युरोस</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<symbol>€</symbol>
+				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>फिजी डॉलर</displayName>
@@ -4695,8 +4710,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="GBP">
 				<displayName>ब्रिटिश पावंड</displayName>
 				<displayName count="other">ब्रिटिश पावंड्स</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>जॉर्जियन लारी</displayName>
@@ -4781,8 +4796,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="INR">
 				<displayName>भारतीय रुपया</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol>₹</symbol>
+				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>इराकी डिनार</displayName>
@@ -4814,8 +4829,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="JPY">
 				<displayName>जपानी येन</displayName>
 				<displayName count="other">जपानी येन</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>JP¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>केनयाई शिलिंग</displayName>
@@ -4891,6 +4906,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">लायबेरियन डॉलर्स</displayName>
 				<symbol draft="contributed">LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="LSL">
+				<displayName>लिसोथो लोटि</displayName>
+				<displayName count="other">लिसोथो लोटिस</displayName>
+				<symbol draft="contributed">LSL</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>लीबियान डिनार</displayName>
@@ -5072,8 +5092,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="RUB">
 				<displayName>रुसी रुबल</displayName>
 				<displayName count="other">रुसी रुबल्स</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<symbol>RUB</symbol>
+				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>रवांडा फ्रँक</displayName>
@@ -5224,8 +5244,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="USD">
 				<displayName>युएस डॉलर</displayName>
 				<displayName count="other">युएस डॉलर्स</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>US$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>उरुग्वेन पेसो</displayName>
@@ -5498,6 +5518,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>मिलिमोल्स/लि</displayName>
 				<unitPattern count="other">{0} मिलिमोल्स/लि</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>वस्त</displayName>
+				<unitPattern count="other">{0} वस्ती</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>पार्ट पर मिलियन</displayName>
 				<unitPattern count="other">{0} पार्ट पर मिलियन</unitPattern>
@@ -5673,6 +5697,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>किलोवॅट-वरां</displayName>
 				<unitPattern count="other">{0} किलोवॅट-वरां</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>इलॅक्ट्रॉनवॉल्ट्स</displayName>
+				<unitPattern count="other">{0} इलॅक्ट्रॉनवॉल्ट्स</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>ब्रिटिश थर्मल युनिट्स</displayName>
+				<unitPattern count="other">{0} ब्रिटिश थर्मल युनिट्स</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>युएस थर्म्स</displayName>
+				<unitPattern count="other">{0} युएस थर्म्स</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>पावंड ऑफ फोर्स</displayName>
 				<unitPattern count="other">{0} पावंड ऑफ फोर्स</unitPattern>
@@ -5680,6 +5716,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="force-newton">
 				<displayName>न्युटन</displayName>
 				<unitPattern count="other">{0} न्युटन</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>किलोवॉट-वर/१००किलोमीटर</displayName>
+				<unitPattern count="other">{0} किलोवॉट-वर/१००किलोमीटर</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>गिगाहर्ट्झ</displayName>
@@ -6328,6 +6368,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>मिमो/लि</displayName>
 				<unitPattern count="other">{0} मिमो/लि</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>वस्त</displayName>
+				<unitPattern count="other">{0} वस्त</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -6504,16 +6548,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}किवॅटवर</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
-				<displayName>eV</displayName>
+				<displayName>इलॅक्ट्रॉनवॉल्ट</displayName>
 				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
-				<displayName>Btu</displayName>
+				<displayName>BTU</displayName>
 				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
-				<displayName>US therm</displayName>
-				<unitPattern count="other">{0} US therm</unitPattern>
+				<displayName>युएस थर्म</displayName>
+				<unitPattern count="other">{0} युएस थर्म्स</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>पावंड-फोर्स</displayName>
@@ -6522,6 +6566,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="force-newton">
 				<displayName>न्युटन</displayName>
 				<unitPattern count="other">{0} न्यु</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>किवॉवर/१००किमी</displayName>
+				<unitPattern count="other">{0} किवॉवर/१००किमी</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -6685,9 +6733,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>किलोग्राम</displayName>
-				<unitPattern count="other">{0} किलोग्राम</unitPattern>
-				<perUnitPattern>{0}/किलोग्राम</perUnitPattern>
+				<displayName>किग्रा</displayName>
+				<unitPattern count="other">{0} किग्रा</unitPattern>
+				<perUnitPattern>{0}/किग्रा</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ग्राम</displayName>
@@ -7094,73 +7142,755 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<displayName>जी-फोर्स</displayName>
+				<unitPattern count="other">{0}Gs</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>मी/से²</displayName>
+				<unitPattern count="other">{0}मी/से²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>rev</displayName>
+				<unitPattern count="other">{0}rev</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>रेडियन</displayName>
+				<unitPattern count="other">{0}रे</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>अंश</displayName>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>आमि</displayName>
+				<unitPattern count="other">{0}′</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>आसे</displayName>
+				<unitPattern count="other">{0}″</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>किमी²</displayName>
+				<unitPattern count="other">{0}किमी²</unitPattern>
+				<perUnitPattern>{0}/किमी²</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>हॅक्टर</displayName>
+				<unitPattern count="other">{0}ha</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>मीटर²</displayName>
+				<unitPattern count="other">{0}मी²</unitPattern>
+				<perUnitPattern>{0}/मी²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>सेमी²</displayName>
+				<unitPattern count="other">{0}सेमी²</unitPattern>
+				<perUnitPattern>{0}/सेमी²</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>mi²</displayName>
+				<unitPattern count="other">{0}mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>एकर</displayName>
+				<unitPattern count="other">{0}ac</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>yd²</displayName>
+				<unitPattern count="other">{0}yd²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>ft²</displayName>
+				<unitPattern count="other">{0}ft²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>in²</displayName>
+				<unitPattern count="other">{0}in²</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>डुनाम</displayName>
+				<unitPattern count="other">{0}डुनाम</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>कॅरट्स</displayName>
+				<unitPattern count="other">{0}kt</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>मिग्रा/डेलि</displayName>
+				<unitPattern count="other">{0}mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>मिमो/लि</displayName>
+				<unitPattern count="other">{0}मिमो/लि</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>वस्त</displayName>
+				<unitPattern count="other">{0}वस्त</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+				<unitPattern count="other">{0}ppm</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>%</displayName>
+				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>मोल</displayName>
+				<unitPattern count="other">{0}मोल</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>लि/किमी</displayName>
+				<unitPattern count="other">{0}लि/किमी</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>लि/100किमी</displayName>
+				<unitPattern count="other">{0}लि/100किमी</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>मैल/गॅ</displayName>
+				<unitPattern count="other">{0}mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>मैल/गॅ इंप.</displayName>
+				<unitPattern count="other">{0}mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+				<unitPattern count="other">{0}PB</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+				<unitPattern count="other">{0}TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
+				<unitPattern count="other">{0}Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GB</displayName>
+				<unitPattern count="other">{0}GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
+				<unitPattern count="other">{0}Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
+				<unitPattern count="other">{0}MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
+				<unitPattern count="other">{0}Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kB</displayName>
+				<unitPattern count="other">{0}kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
+				<unitPattern count="other">{0}kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>B</displayName>
+				<unitPattern count="other">{0}B</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>बिट</displayName>
+				<unitPattern count="other">{0}बिट</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>श</displayName>
+				<unitPattern count="other">{0}श</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>दशक</displayName>
+				<unitPattern count="other">{0}दशक</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>वर्सा</displayName>
 				<unitPattern count="other">{0}व</unitPattern>
+				<perUnitPattern>{0}/वर्सां</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>म्हयनो</displayName>
 				<unitPattern count="other">{0}म्ह</unitPattern>
+				<perUnitPattern>{0}/म्ह</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>स</displayName>
 				<unitPattern count="other">{0}स</unitPattern>
+				<perUnitPattern>{0}/स</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>दीस</displayName>
 				<unitPattern count="other">{0}दी</unitPattern>
+				<perUnitPattern>{0}/दी</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>वर</displayName>
-				<unitPattern count="other">{0} व</unitPattern>
+				<unitPattern count="other">{0}व</unitPattern>
+				<perUnitPattern>{0}/वर</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>मिनीट</displayName>
 				<unitPattern count="other">{0} मि</unitPattern>
+				<perUnitPattern>{0}/मिनीट</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>सेकंद</displayName>
 				<unitPattern count="other">{0}से</unitPattern>
+				<perUnitPattern>{0}/से</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>मिलिसे</displayName>
 				<unitPattern count="other">{0}मिसे</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>μsecs</displayName>
+				<unitPattern count="other">{0}μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>नॅसे</displayName>
+				<unitPattern count="other">{0}नॅसे</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>एम्प</displayName>
+				<unitPattern count="other">{0}A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mA</displayName>
+				<unitPattern count="other">{0}mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ओम</displayName>
+				<unitPattern count="other">{0}Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>वोल्ट</displayName>
+				<unitPattern count="other">{0}V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kcal</displayName>
+				<unitPattern count="other">{0}kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>cal</displayName>
+				<unitPattern count="other">{0}cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>Cal</displayName>
+				<unitPattern count="other">{0}Cal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>kJ</displayName>
+				<unitPattern count="other">{0}kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>ज्युल</displayName>
+				<unitPattern count="other">{0}J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kWh</displayName>
+				<unitPattern count="other">{0}kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+				<unitPattern count="other">{0}eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="other">{0}Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>युएस थर्म</displayName>
+				<unitPattern count="other">{0}युएस थर्म्स</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>पावंड-फोर्स</displayName>
+				<unitPattern count="other">{0}lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>न्यु</displayName>
+				<unitPattern count="other">{0}न्यु</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>किवॉवर/१००किमी</displayName>
+				<unitPattern count="other">{0}किवॉवर/१००किमी</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="other">{0}GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="other">{0}MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="other">{0}kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Hz</displayName>
+				<unitPattern count="other">{0}Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="other">{0}em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>पिक्सेल्स</displayName>
+				<unitPattern count="other">{0}px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>मॅपि</displayName>
+				<unitPattern count="other">{0}MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="other">{0}ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="other">{0}ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="other">{0}dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="other">{0}dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>ठिपको</displayName>
+				<unitPattern count="other">{0}ठिपको</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="other">{0}R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>किमी</displayName>
-				<unitPattern count="other">{0} किमी</unitPattern>
+				<unitPattern count="other">{0}किमी</unitPattern>
+				<perUnitPattern>{0}/किमी</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>मी</displayName>
 				<unitPattern count="other">{0}मी</unitPattern>
+				<perUnitPattern>{0}/मी</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>डेमी</displayName>
+				<unitPattern count="other">{0}डेमी</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>सेमी</displayName>
-				<unitPattern count="other">{0} सेमी</unitPattern>
+				<unitPattern count="other">{0}सेमी</unitPattern>
+				<perUnitPattern>{0}/सेमी</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>मिमी</displayName>
 				<unitPattern count="other">{0} मिमी</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>μm</displayName>
+				<unitPattern count="other">{0}μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nm</displayName>
+				<unitPattern count="other">{0}nm</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>pm</displayName>
+				<unitPattern count="other">{0}pm</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>मायल्स</displayName>
+				<unitPattern count="other">{0}mi</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>यार्ड</displayName>
+				<unitPattern count="other">{0}yd</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>फूट</displayName>
+				<unitPattern count="other">{0}फूट</unitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>इंच</displayName>
+				<unitPattern count="other">{0}in</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>पासेक</displayName>
+				<unitPattern count="other">{0} pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>प्रकाश वर्सां</displayName>
+				<unitPattern count="other">{0} ly</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
+				<unitPattern count="other">{0}au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>फर्लांग</displayName>
+				<unitPattern count="other">{0}fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>फॅदम</displayName>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>nmi</displayName>
+				<unitPattern count="other">{0} nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>smi</displayName>
+				<unitPattern count="other">{0}smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>पॉयंट</displayName>
+				<unitPattern count="other">{0}pt</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>सौर त्रिज्या</displayName>
+				<unitPattern count="other">{0}R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<unitPattern count="other">{0}लक्स</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<unitPattern count="other">{0}cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="other">{0}lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="other">{0}L☉</unitPattern>
+			</unit>
+			<unit type="mass-metric-ton">
+				<displayName>t</displayName>
+				<unitPattern count="other">{0}t</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
-				<displayName>किलोग्राम</displayName>
-				<unitPattern count="other">{0} किलो</unitPattern>
+				<displayName>किग्रा</displayName>
+				<unitPattern count="other">{0}किग्रा</unitPattern>
+				<perUnitPattern>{0}/किग्रा</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ग्राम</displayName>
-				<unitPattern count="other">{0} ग्रा</unitPattern>
+				<unitPattern count="other">{0}ग्रा</unitPattern>
+				<perUnitPattern>{0}/ग्रा</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>मिग्रा</displayName>
+				<unitPattern count="other">{0}मिग्रा</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>μg</displayName>
+				<unitPattern count="other">{0}μg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>टन</displayName>
+				<unitPattern count="other">{0}टन</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>स्टोन</displayName>
+				<unitPattern count="other">{0}स्टोन</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>पौंड</displayName>
+				<unitPattern count="other">{0}#</unitPattern>
+				<perUnitPattern>{0}/पौंड</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>औंस</displayName>
+				<unitPattern count="other">{0}औंस</unitPattern>
+				<perUnitPattern>{0}/औंस</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>oz t</displayName>
+				<unitPattern count="other">{0}oz t</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>कॅरट</displayName>
+				<unitPattern count="other">{0}कॅ</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>डाल्टन</displayName>
+				<unitPattern count="other">{0}Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="other">{0}M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="other">{0}M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>कण</displayName>
+				<unitPattern count="other">{0}कण</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>GW</displayName>
+				<unitPattern count="other">{0}GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>MW</displayName>
+				<unitPattern count="other">{0}MW</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>kW</displayName>
+				<unitPattern count="other">{0}kW</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>वॅट</displayName>
+				<unitPattern count="other">{0}W</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>mW</displayName>
+				<unitPattern count="other">{0}mW</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>hp</displayName>
+				<unitPattern count="other">{0}hp</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>mmHg</displayName>
+				<unitPattern count="other">{0}mmHg</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>psi</displayName>
+				<unitPattern count="other">{0}psi</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName>″ Hg</displayName>
+				<unitPattern count="other">{0}″ Hg</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>पट्टी</displayName>
+				<unitPattern count="other">{0}पट्टी</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<displayName>mbar</displayName>
+				<unitPattern count="other">{0}mb</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="other">{0}atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="other">{0}Pa</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="other">{0}hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="other">{0}kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="other">{0}MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>किमी/व</displayName>
 				<unitPattern count="other">{0} किमी/व</unitPattern>
 			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>मी/से</displayName>
+				<unitPattern count="other">{0}मी/से</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>मा/व</displayName>
+				<unitPattern count="other">{0}मा/व</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>नॉट</displayName>
+				<unitPattern count="other">{0}नॉट</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°से</displayName>
 				<unitPattern count="other">{0}°से</unitPattern>
 			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>°F</displayName>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>K</displayName>
+				<unitPattern count="other">{0}K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>पावंड-फूट</displayName>
+				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="other">{0}N⋅m</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>किमी³</displayName>
+				<unitPattern count="other">{0}किमी³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>मी³</displayName>
+				<unitPattern count="other">{0}मी³</unitPattern>
+				<perUnitPattern>{0}/मी³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>सेमी³</displayName>
+				<unitPattern count="other">{0} सेमी³</unitPattern>
+				<perUnitPattern>{0}/सेमी³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>mi³</displayName>
+				<unitPattern count="other">{0}mi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>यार्ड³</displayName>
+				<unitPattern count="other">{0}yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>फूट³</displayName>
+				<unitPattern count="other">{0}ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>इंच³</displayName>
+				<unitPattern count="other">{0}in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ML</displayName>
+				<unitPattern count="other">{0}ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hL</displayName>
+				<unitPattern count="other">{0}hL</unitPattern>
+			</unit>
 			<unit type="volume-liter">
 				<displayName>लिटर</displayName>
-				<unitPattern count="other">{0} लि</unitPattern>
+				<unitPattern count="other">{0}लि</unitPattern>
+				<perUnitPattern>{0}/लि</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>dL</displayName>
+				<unitPattern count="other">{0}dL</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>cL</displayName>
+				<unitPattern count="other">{0}cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>मिलि</displayName>
+				<unitPattern count="other">{0}मिलि</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>pt</displayName>
+				<unitPattern count="other">{0}mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mcup</displayName>
+				<unitPattern count="other">{0}mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>एकर फू</displayName>
+				<unitPattern count="other">{0}ac ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>बुशेल</displayName>
+				<unitPattern count="other">{0}bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<unitPattern count="other">{0}गॅ</unitPattern>
+				<perUnitPattern>{0}/गॅ</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>इंप.गॅलोन</displayName>
+				<unitPattern count="other">{0}गॅलइंप.</unitPattern>
+				<perUnitPattern>{0}/गॅलइंप.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>qt</displayName>
+				<unitPattern count="other">{0}qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pt</displayName>
+				<unitPattern count="other">{0}pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>कप</displayName>
+				<unitPattern count="other">{0}क</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp fl oz</displayName>
+				<unitPattern count="other">{0}fl oz Im</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="other">{0}tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>tsp</displayName>
+				<unitPattern count="other">{0}tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>बॅरल</displayName>
+				<unitPattern count="other">{0}बॅरल</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dsp</displayName>
+				<unitPattern count="other">{0}dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dsp Imp</displayName>
+				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>थेंबो</displayName>
+				<unitPattern count="other">{0}थेंबो</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>fl.dr.</displayName>
+				<unitPattern count="other">{0}fl.dr.</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>जिगर</displayName>
+				<unitPattern count="other">{0}जिगर</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>चिमटी</displayName>
+				<unitPattern count="other">{0}चिमटी</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>दिका</displayName>

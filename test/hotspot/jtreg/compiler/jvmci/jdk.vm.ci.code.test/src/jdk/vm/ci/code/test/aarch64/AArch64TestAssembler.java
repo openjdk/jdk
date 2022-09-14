@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, Arm Limited. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,6 +254,9 @@ public class AArch64TestAssembler extends TestAssembler {
     public void emitPrologue() {
         // Must be patchable by NativeJump::patch_verified_entry
         emitNop();
+        if (config.ropProtection) {
+            code.emitInt(0xdac103be);  // pacia x30, x29
+        }
         code.emitInt(0xa9be7bfd);  // stp x29, x30, [sp, #-32]!
         code.emitInt(0x910003fd);  // mov x29, sp
 
@@ -469,6 +472,9 @@ public class AArch64TestAssembler extends TestAssembler {
         emitMov(AArch64.r0, a);
         code.emitInt(0x910003bf);  // mov sp, x29
         code.emitInt(0xa8c27bfd);  // ldp x29, x30, [sp], #32
+        if (config.ropProtection) {
+            code.emitInt(0xdac113be);  // autia x30, x29
+        }
         code.emitInt(0xd65f03c0);  // ret
     }
 
@@ -477,6 +483,9 @@ public class AArch64TestAssembler extends TestAssembler {
         assert a == AArch64.v0 : "Unimplemented move " + a;
         code.emitInt(0x910003bf);  // mov sp, x29
         code.emitInt(0xa8c27bfd);  // ldp x29, x30, [sp], #32
+        if (config.ropProtection) {
+            code.emitInt(0xdac113be);  // autia x30, x29
+        }
         code.emitInt(0xd65f03c0);  // ret
     }
 

@@ -216,7 +216,7 @@
           "The threshold that defines (>=) a hot card.")                    \
           range(0, max_jubyte)                                              \
                                                                             \
-  develop(uint, G1RemSetArrayOfCardsEntriesBase, 4,                         \
+  develop(uint, G1RemSetArrayOfCardsEntriesBase, 8,                         \
           "Maximum number of entries per region in the Array of Cards "     \
           "card set container per MB of a heap region.")                    \
           range(1, 65536)                                                   \
@@ -309,13 +309,6 @@
   product(uintx, G1MixedGCCountTarget, 8,                                   \
           "The target number of mixed GCs after a marking cycle.")          \
           range(0, max_uintx)                                               \
-                                                                            \
-  product(bool, G1EagerReclaimHumongousObjects, true, EXPERIMENTAL,         \
-          "Try to reclaim dead large objects at every young GC.")           \
-                                                                            \
-  product(bool, G1EagerReclaimHumongousObjectsWithStaleRefs, true, EXPERIMENTAL, \
-          "Try to reclaim dead large objects that have a few stale "        \
-          "references at every young GC.")                                  \
                                                                             \
   product(uint, G1EagerReclaimRemSetThreshold, 0, EXPERIMENTAL,             \
           "Maximum number of remembered set entries a humongous region "    \

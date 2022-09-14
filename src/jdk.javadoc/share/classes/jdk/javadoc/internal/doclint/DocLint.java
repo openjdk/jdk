@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,6 @@ import com.sun.tools.javac.util.DefinedBy.Api;
  * <li>From javac, as a plugin
  * <li>Directly, via a simple API
  * </ul>
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
  */
 public class DocLint extends com.sun.tools.doclint.DocLint {
 
@@ -274,6 +269,14 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
 
     // <editor-fold defaultstate="collapsed" desc="Embedding API">
 
+    /**
+     * Initialize DocLint for use with a {@code JavacTask}.
+     * {@link Env#strictReferenceChecks Strict reference checks} are <em>not</em> enabled by default.
+     *
+     * @param task            the task
+     * @param args            arguments to configure DocLint
+     * @param addTaskListener whether or not to register a {@code TaskListener} to invoke DocLint
+     */
     public void init(JavacTask task, String[] args, boolean addTaskListener) {
         env = new Env();
         env.init(task);
@@ -319,9 +322,19 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
         }
     }
 
+    /**
+     * Initialize DocLint with the given utility objects and arguments.
+     * {@link Env#strictReferenceChecks Strict reference checks} <em>are</em> enabled by default.
+     *
+     * @param trees    the {@code DocTrees} utility class
+     * @param elements the {@code Elements} utility class
+     * @param types    the {@code Types} utility class
+     * @param args     arguments to configure DocLint
+     */
     public void init(DocTrees trees, Elements elements, Types types, String... args) {
         env = new Env();
         env.init(trees, elements, types);
+        env.strictReferenceChecks = true;
         processArgs(env, args);
 
         checker = new Checker(env);
@@ -369,6 +382,10 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
             return Env.validatePackages(opt.substring(opt.indexOf(":") + 1));
         }
         return false;
+    }
+
+    public boolean isGroupEnabled(Messages.Group group, Env.AccessKind accessKind) {
+        return env.messages.isEnabled(group, accessKind);
     }
 
     private String localize(String code, Object... args) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ public class Parser implements GraphParser {
                     for (InputNode n : graph.getNodes()) {
                         if (graph.getBlock(n) == null) {
                             if (noBlock == null) {
-                                noBlock = graph.addBlock("(no block)");
+                                noBlock = graph.addArtificialBlock();
                             }
 
                             noBlock.addNode(n.getId());

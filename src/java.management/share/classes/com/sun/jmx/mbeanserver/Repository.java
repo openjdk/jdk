@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class Repository {
     /**
      * We use a global reentrant read write lock to protect the repository.
      * This seems safer and more efficient: we are using Maps of Maps,
-     * Guaranteing consistency while using Concurent objects at each level
+     * Guaranteing consistency while using Concurrent objects at each level
      * may be more difficult.
      **/
     private final ReentrantReadWriteLock lock;
@@ -239,8 +239,7 @@ public class Repository {
                               final String dom,
                               final ObjectName name,
                               final RegistrationContext context) {
-        final Map<String,NamedObject> moiTb =
-            new HashMap<String,NamedObject>();
+        final Map<String,NamedObject> moiTb = new HashMap<>();
         final String key = name.getCanonicalKeyPropertyListString();
         addMoiToTb(object,name,key,moiTb,context);
         domainTb.put(dom, moiTb);
@@ -325,7 +324,7 @@ public class Repository {
     public Repository(String domain, boolean fairLock) {
         lock = new ReentrantReadWriteLock(fairLock);
 
-        domainTb = new HashMap<String,Map<String,NamedObject>>(5);
+        domainTb = new HashMap<>(5);
 
         if (domain != null && domain.length() != 0)
             this.domain = domain.intern(); // we use == domain later on...
@@ -333,7 +332,7 @@ public class Repository {
             this.domain = ServiceName.DOMAIN;
 
         // Creates a new hashtable for the default domain
-        domainTb.put(this.domain, new HashMap<String,NamedObject>());
+        domainTb.put(this.domain, new HashMap<>());
     }
 
     /**
@@ -347,7 +346,7 @@ public class Repository {
         final List<String> result;
         try {
             // Temporary list
-            result = new ArrayList<String>(domainTb.size());
+            result = new ArrayList<>(domainTb.size());
             for (Map.Entry<String,Map<String,NamedObject>> entry :
                      domainTb.entrySet()) {
                 // Skip domains that are in the table but have no
@@ -377,7 +376,7 @@ public class Repository {
      *                can be stored in the repository with that {@code name}.
      *                If {@link RegistrationContext#registering()
      *                context.registering()} throws an exception, the
-     *                operation is abandonned, the MBean is not added to the
+     *                operation is abandoned, the MBean is not added to the
      *                repository, and a {@link RuntimeOperationsException}
      *                is thrown.
      */
@@ -507,7 +506,7 @@ public class Repository {
      */
     public Set<NamedObject> query(ObjectName pattern, QueryExp query) {
 
-        final Set<NamedObject> result = new HashSet<NamedObject>();
+        final Set<NamedObject> result = new HashSet<>();
 
         // The following filter cases are considered:
         // null, "", "*:*" : names in all domains
@@ -641,7 +640,7 @@ public class Repository {
                 // big buckets array size inside table, never cleared,
                 // thus the new !
                 if (dom == domain) // ES: OK dom and domain are interned.
-                    domainTb.put(domain, new HashMap<String,NamedObject>());
+                    domainTb.put(domain, new HashMap<>());
             }
 
             unregistering(context,name);

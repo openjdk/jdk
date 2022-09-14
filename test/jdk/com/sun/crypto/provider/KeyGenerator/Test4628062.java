@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4628062 4963723
+ * @bug 4628062 4963723 8267319
  * @summary Verify that AES KeyGenerator supports default initialization
  *      when init is not called
  * @author Valerie Peng
@@ -34,7 +34,8 @@ import java.util.*;
 
 public class Test4628062 {
 
-    private static final int[] AES_SIZES = { 16, 24, 32 }; // in bytes
+    // first value is the default key size
+    private static final int[] AES_SIZES = { 32, 16, 24 }; // in bytes
     private static final int[] HMACSHA224_SIZES = { 28 };
     private static final int[] HMACSHA256_SIZES = { 32 };
     private static final int[] HMACSHA384_SIZES = { 48 };

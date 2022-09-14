@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 package java.lang.management;
+
 import java.io.FilePermission;
 import java.io.IOException;
 import javax.management.DynamicMBean;
@@ -176,7 +177,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * </tr>
  * <tr>
  * <th scope="row"> {@link PlatformLoggingMXBean} </th>
- * <td> {@link java.util.logging.LogManager#LOGGING_MXBEAN_NAME
+ * <td> {@link java.logging/java.util.logging.LogManager#LOGGING_MXBEAN_NAME
  *             java.util.logging:type=Logging}</td>
  * </tr>
  * </tbody>
@@ -246,7 +247,8 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * @author  Mandy Chung
  * @since   1.5
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal",
+                   "doclint:reference"}) // cross-module links
 public class ManagementFactory {
     // A class with only static fields and methods.
     private ManagementFactory() {};
@@ -631,7 +633,7 @@ public class ManagementFactory {
     // using newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class)
     // even though the underlying MXBean no longer implements
     // java.util.logging.LoggingMXBean.
-    // Altough java.util.logging.LoggingMXBean is deprecated, an application
+    // Although java.util.logging.LoggingMXBean is deprecated, an application
     // that uses newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class) will
     // continue to work.
     //
@@ -925,7 +927,7 @@ public class ManagementFactory {
             // get all providers
             @SuppressWarnings("removal")
             List<PlatformMBeanProvider> providers = AccessController.doPrivileged(
-                new PrivilegedAction<List<PlatformMBeanProvider>>() {
+                new PrivilegedAction<>() {
                     @Override
                     public List<PlatformMBeanProvider> run() {
                         List<PlatformMBeanProvider> all = new ArrayList<>();
@@ -935,8 +937,7 @@ public class ManagementFactory {
                         all.add(new DefaultPlatformMBeanProvider());
                         return all;
                     }
-                }, null, new FilePermission("<<ALL FILES>>", "read"),
-                new RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass"));
+                }, null, new FilePermission("<<ALL FILES>>", "read"));
 
             // load all platform components into a map
             var map = new HashMap<String, PlatformComponent<?>>();

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +24,23 @@
  */
 #include "precompiled.hpp"
 
+#include "logging/log.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safefetch.hpp"
+#include "services/mallocHeader.inline.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
-#include "services/mallocTracker.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
+
+#include "jvm_io.h"
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+size_t MallocMemorySummary::_limits_per_category[mt_number_of_types] = { 0 };
+size_t MallocMemorySummary::_total_limit = 0;
 
 #ifdef ASSERT
 void MemoryCounter::update_peak_count(size_t count) {
@@ -63,25 +72,6 @@ size_t MemoryCounter::peak_size() const {
 }
 #endif
 
-// Total malloc invocation count
-size_t MallocMemorySnapshot::total_count() const {
-  size_t amount = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
-    amount += _malloc[index].malloc_count();
-  }
-  return amount;
-}
-
-// Total malloc'd memory amount
-size_t MallocMemorySnapshot::total() const {
-  size_t amount = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
-    amount += _malloc[index].malloc_size();
-  }
-  amount += _tracking_header.size() + total_arena();
-  return amount;
-}
-
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
   size_t amount = 0;
@@ -97,135 +87,66 @@ void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
   int chunk_idx = NMTUtil::flag_to_index(mtChunk);
   _malloc[chunk_idx].record_free(arena_size);
+  _all_mallocs.deallocate(arena_size);
 }
-
 
 void MallocMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
   ::new ((void*)_snapshot)MallocMemorySnapshot();
+  initialize_limit_handling();
 }
 
-void MallocHeader::mark_block_as_dead() {
-  _canary = _header_canary_dead_mark;
-  NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
-  set_footer(_footer_canary_dead_mark);
-}
+void MallocMemorySummary::initialize_limit_handling() {
+  // Initialize limit handling.
+  Arguments::parse_malloc_limits(&_total_limit, _limits_per_category);
 
-void MallocHeader::release() {
-  assert(MemTracker::enabled(), "Sanity");
-
-  check_block_integrity();
-
-  MallocMemorySummary::record_free(size(), flags());
-  MallocMemorySummary::record_free_malloc_header(sizeof(MallocHeader));
-  if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(size(), _bucket_idx, _pos_idx);
-  }
-
-  mark_block_as_dead();
-}
-
-void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
-  assert(bad_address >= (address)this, "sanity");
-
-  // This function prints block information, including hex dump, in case of a detected
-  // corruption. The hex dump should show both block header and corruption site
-  // (which may or may not be close together or identical). Plus some surrounding area.
-  //
-  // Note that we use os::print_hex_dump(), which is able to cope with unmapped
-  // memory (it uses SafeFetch).
-
-  st->print_cr("NMT Block at " PTR_FORMAT ", corruption at: " PTR_FORMAT ": ",
-               p2i(this), p2i(bad_address));
-  static const size_t min_dump_length = 256;
-  address from1 = align_down((address)this, sizeof(void*)) - (min_dump_length / 2);
-  address to1 = from1 + min_dump_length;
-  address from2 = align_down(bad_address, sizeof(void*)) - (min_dump_length / 2);
-  address to2 = from2 + min_dump_length;
-  if (from2 > to1) {
-    // Dump gets too large, split up in two sections.
-    os::print_hex_dump(st, from1, to1, 1);
-    st->print_cr("...");
-    os::print_hex_dump(st, from2, to2, 1);
+  if (_total_limit > 0) {
+    log_info(nmt)("MallocLimit: total limit: " SIZE_FORMAT "%s",
+                  byte_size_in_proper_unit(_total_limit),
+                  proper_unit_for_byte_size(_total_limit));
   } else {
-    // print one hex dump
-    os::print_hex_dump(st, from1, to2, 1);
+    for (int i = 0; i < mt_number_of_types; i ++) {
+      size_t catlim = _limits_per_category[i];
+      if (catlim > 0) {
+        log_info(nmt)("MallocLimit: category \"%s\" limit: " SIZE_FORMAT "%s",
+                      NMTUtil::flag_to_name((MEMFLAGS)i),
+                      byte_size_in_proper_unit(catlim),
+                      proper_unit_for_byte_size(catlim));
+      }
+    }
   }
 }
 
-// Check block integrity. If block is broken, print out a report
-// to tty (optionally with hex dump surrounding the broken block),
-// then trigger a fatal error.
-void MallocHeader::check_block_integrity() const {
-
-#define PREFIX "NMT corruption: "
-  // Note: if you modify the error messages here, make sure you
-  // adapt the associated gtests too.
-
-  // Weed out obviously wrong block addresses of NULL or very low
-  // values. Note that we should not call this for ::free(NULL),
-  // which should be handled by os::free() above us.
-  if (((size_t)p2i(this)) < K) {
-    fatal(PREFIX "Block at " PTR_FORMAT ": invalid block address", p2i(this));
+void MallocMemorySummary::total_limit_reached(size_t size, size_t limit) {
+  // Assert in both debug and release, but allow error reporting to malloc beyond limits.
+  if (!VMError::is_error_reported()) {
+    fatal("MallocLimit: reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
+          size, limit);
   }
-
-  // From here on we assume the block pointer to be valid. We could
-  // use SafeFetch but since this is a hot path we don't. If we are
-  // wrong, we will crash when accessing the canary, which hopefully
-  // generates distinct crash report.
-
-  // Weed out obviously unaligned addresses. NMT blocks, being the result of
-  // malloc calls, should adhere to malloc() alignment. Malloc alignment is
-  // specified by the standard by this requirement:
-  // "malloc returns a pointer which is suitably aligned for any built-in type"
-  // For us it means that it is *at least* 64-bit on all of our 32-bit and
-  // 64-bit platforms since we have native 64-bit types. It very probably is
-  // larger than that, since there exist scalar types larger than 64bit. Here,
-  // we test the smallest alignment we know.
-  // Should we ever start using std::max_align_t, this would be one place to
-  // fix up.
-  if (!is_aligned(this, sizeof(uint64_t))) {
-    print_block_on_error(tty, (address)this);
-    fatal(PREFIX "Block at " PTR_FORMAT ": block address is unaligned", p2i(this));
-  }
-
-  // Check header canary
-  if (_canary != _header_canary_life_mark) {
-    print_block_on_error(tty, (address)this);
-    fatal(PREFIX "Block at " PTR_FORMAT ": header canary broken.", p2i(this));
-  }
-
-#ifndef _LP64
-  // On 32-bit we have a second canary, check that one too.
-  if (_alt_canary != _header_alt_canary_life_mark) {
-    print_block_on_error(tty, (address)this);
-    fatal(PREFIX "Block at " PTR_FORMAT ": header alternate canary broken.", p2i(this));
-  }
-#endif
-
-  // Does block size seems reasonable?
-  if (_size >= max_reasonable_malloc_size) {
-    print_block_on_error(tty, (address)this);
-    fatal(PREFIX "Block at " PTR_FORMAT ": header looks invalid (weirdly large block size)", p2i(this));
-  }
-
-  // Check footer canary
-  if (get_footer() != _footer_canary_life_mark) {
-    print_block_on_error(tty, footer_address());
-    fatal(PREFIX "Block at " PTR_FORMAT ": footer canary broken at " PTR_FORMAT " (buffer overflow?)",
-          p2i(this), p2i(footer_address()));
-  }
-#undef PREFIX
 }
 
-bool MallocHeader::record_malloc_site(const NativeCallStack& stack, size_t size,
-  size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) const {
-  return MallocSiteTable::allocation_at(stack, size, bucket_idx, pos_idx, flags);
+void MallocMemorySummary::category_limit_reached(size_t size, size_t limit, MEMFLAGS flag) {
+  // Assert in both debug and release, but allow error reporting to malloc beyond limits.
+  if (!VMError::is_error_reported()) {
+    fatal("MallocLimit: category \"%s\" reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
+          NMTUtil::flag_to_name(flag), size, limit);
+  }
 }
 
-bool MallocHeader::get_stack(NativeCallStack& stack) const {
-  return MallocSiteTable::access_stack(stack, _bucket_idx, _pos_idx);
+void MallocMemorySummary::print_limits(outputStream* st) {
+  if (_total_limit != 0) {
+    st->print("MallocLimit: " SIZE_FORMAT, _total_limit);
+  } else {
+    bool first = true;
+    for (int i = 0; i < mt_number_of_types; i ++) {
+      if (_limits_per_category[i] > 0) {
+        st->print("%s%s:" SIZE_FORMAT, (first ? "MallocLimit: " : ", "),
+                  NMTUtil::flag_to_name((MEMFLAGS)i), _limits_per_category[i]);
+        first = false;
+      }
+    }
+  }
 }
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {
@@ -241,29 +162,32 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 
 // Record a malloc memory allocation
 void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
-  const NativeCallStack& stack, NMT_TrackingLevel level) {
-  assert(level != NMT_off, "precondition");
-  void*         memblock;      // the address for user data
-  MallocHeader* header = NULL;
+  const NativeCallStack& stack)
+{
+  assert(MemTracker::enabled(), "precondition");
+  assert(malloc_base != NULL, "precondition");
 
-  if (malloc_base == NULL) {
-    return NULL;
+  MallocMemorySummary::record_malloc(size, flags);
+  uint32_t mst_marker = 0;
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::allocation_at(stack, size, &mst_marker, flags);
   }
 
   // Uses placement global new operator to initialize malloc header
-
-  header = ::new (malloc_base)MallocHeader(size, flags, stack, level);
-  memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
+  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, stack, mst_marker);
+  void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.
   //                      16 bytes alignment for 64-bit systems.
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
 
 #ifdef ASSERT
-  if (level > NMT_off) {
-    // Read back
-    assert(get_size(memblock) == size,   "Wrong size");
-    assert(get_flags(memblock) == flags, "Wrong flags");
+  // Read back
+  {
+    MallocHeader* const header2 = malloc_header(memblock);
+    assert(header2->size() == size, "Wrong size");
+    assert(header2->flags() == flags, "Wrong flags");
+    header2->assert_block_integrity();
   }
 #endif
 
@@ -271,8 +195,47 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 }
 
 void* MallocTracker::record_free(void* memblock) {
-  assert(MemTracker::tracking_level() != NMT_off && memblock != NULL, "precondition");
-  MallocHeader* header = malloc_header(memblock);
-  header->release();
+  assert(MemTracker::enabled(), "Sanity");
+  assert(memblock != NULL, "precondition");
+
+  MallocHeader* const header = malloc_header(memblock);
+  header->assert_block_integrity();
+
+  MallocMemorySummary::record_free(header->size(), header->flags());
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
+  }
+
+  header->mark_block_as_dead();
+
   return (void*)header;
+}
+
+// Given a pointer, if it seems to point to the start of a valid malloced block,
+// print the block. Note that since there is very low risk of memory looking
+// accidentally like a valid malloc block header (canaries and all) this is not
+// totally failproof. Only use this during debugging or when you can afford
+// signals popping up, e.g. when writing an hs_err file.
+bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
+  assert(MemTracker::enabled(), "NMT must be enabled");
+  if (os::is_readable_pointer(p)) {
+    const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
+    const MallocHeader* mhdr = malloc_header(p);
+    char msg[256];
+    address p_corrupted;
+    if (os::is_readable_pointer(mhdr) &&
+        mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
+      st->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
+          p2i(p), mhdr->size(), NMTUtil::flag_to_name(mhdr->flags()));
+      if (tracking_level == NMT_detail) {
+        NativeCallStack ncs;
+        if (mhdr->get_stack(ncs)) {
+          ncs.print_on(st);
+          st->cr();
+        }
+      }
+      return true;
+    }
+  }
+  return false;
 }

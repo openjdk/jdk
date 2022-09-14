@@ -341,6 +341,10 @@ final class SocketTube implements FlowTube {
         void tryFlushCurrent(boolean inSelectorThread) {
             List<ByteBuffer> bufs = current;
             if (bufs == null) return;
+            if (client.isSelectorClosed()) {
+                signalError(client.selectorClosedException());
+                return;
+            }
             try {
                 assert inSelectorThread == client.isSelectorThread() :
                        "should " + (inSelectorThread ? "" : "not ")
@@ -354,6 +358,10 @@ final class SocketTube implements FlowTube {
                 if (remaining - written == 0) {
                     current = null;
                     if (writeDemand.tryDecrement()) {
+                        if (client.isSelectorClosed()) {
+                            signalError(client.selectorClosedException());
+                            return;
+                        }
                         Runnable requestMore = this::requestMore;
                         if (inSelectorThread) {
                             assert client.isSelectorThread();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ void klassVtable::initialize_vtable(GrowableArray<InstanceKlass*>* supers) {
 }
 
 // Returns true iff super_method can be overridden by a method in targetclassname
-// See JLS 3rd edition 8.4.6.1
+// See JLS 8.4.8.1
 // Assumes name-signature match
 // Note that the InstanceKlass of the method in the targetclassname has not always been created yet
 static bool can_be_overridden(Method* super_method, Handle targetclassloader, Symbol* targetclassname) {
@@ -1147,7 +1147,7 @@ void klassItable::initialize_itable(GrowableArray<Method*>* supers) {
       _klass->is_interface() ||
       _klass->itable_length() == itableOffsetEntry::size()) return;
 
-  // There's alway an extra itable entry so we can null-terminate it.
+  // There's always an extra itable entry so we can null-terminate it.
   guarantee(size_offset_table() >= 1, "too small");
   int num_interfaces = size_offset_table() - 1;
   if (num_interfaces > 0) {
@@ -1508,7 +1508,7 @@ int klassItable::compute_itable_size(Array<InstanceKlass*>* transitive_interface
   CountInterfacesClosure cic;
   visit_all_interfaces(transitive_interfaces, &cic);
 
-  // There's alway an extra itable entry so we can null-terminate it.
+  // There's always an extra itable entry so we can null-terminate it.
   int itable_size = calc_itable_size(cic.nof_interfaces() + 1, cic.nof_methods());
 
   return itable_size;

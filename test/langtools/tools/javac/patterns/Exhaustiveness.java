@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363
+ * @bug 8262891 8268871 8274363 8281100
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -207,7 +207,7 @@ public class Exhaustiveness extends TestRunner {
                public class Test {
                    private int test(S obj) {
                        return switch (obj) {
-                           case A a && a.toString().isEmpty() -> 0;
+                           case A a when a.toString().isEmpty() -> 0;
                            case B b -> 1;
                        };
                    }
@@ -241,7 +241,7 @@ public class Exhaustiveness extends TestRunner {
                    private static final boolean TEST = true;
                    private int test(S obj) {
                        return switch (obj) {
-                           case A a && !(!(TEST)) -> 0;
+                           case A a when !(!(TEST)) -> 0;
                            case B b -> 1;
                        };
                    }
@@ -270,16 +270,17 @@ public class Exhaustiveness extends TestRunner {
                public class Test {
                    private int test(S obj) {
                        return switch (obj) {
-                           case A a && false -> 0;
+                           case A a when false -> 0;
                            case B b -> 1;
                        };
                    }
                }
                """,
+               "Test.java:6:27: compiler.err.guard.has.constant.expression.false",
                "Test.java:5:16: compiler.err.not.exhaustive",
                "- compiler.note.preview.filename: Test.java, DEFAULT",
                "- compiler.note.preview.recompile",
-               "1 error");
+               "2 errors");
     }
 
     @Test
@@ -531,7 +532,7 @@ public class Exhaustiveness extends TestRunner {
                    private int test(S obj, boolean b) {
                        return switch (obj) {
                            case A a -> 0;
-                           case C c && b -> 0;
+                           case C c when b -> 0;
                            case C c -> 0;
                            case D d -> 0;
                        };
@@ -571,7 +572,7 @@ public class Exhaustiveness extends TestRunner {
                        return switch (obj) {
                            case A a -> 0;
                            case C c -> 0;
-                           case D d && b -> 0;
+                           case D d when b -> 0;
                        };
                    }
                }
@@ -620,7 +621,7 @@ public class Exhaustiveness extends TestRunner {
                    private <T extends Base & S & Marker> int test(T obj, boolean b) {
                        return switch (obj) {
                            case A a -> 0;
-                           case C c && b -> 0;
+                           case C c when b -> 0;
                            case C c -> 0;
                            case D d -> 0;
                        };
@@ -668,7 +669,7 @@ public class Exhaustiveness extends TestRunner {
                        return switch (obj) {
                            case A a -> 0;
                            case C c -> 0;
-                           case D d && b -> 0;
+                           case D d when b -> 0;
                        };
                    }
                }
@@ -680,6 +681,105 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test
+    public void testX(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B a, A b) -> 0;
+                           case R(B a, B b) -> 0;
+                       };
+                   }
+               }
+               """);
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(Object o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B a, A b) -> 0;
+                           case R(B a, B(String s)) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(Object o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B a, A b) -> 0;
+                           case R(B a, B(var o)) -> 0;
+                       };
+                   }
+               }
+               """);
+    }
     public void testTransitiveSealed(Path base) throws Exception {
         doTest(base,
                new String[0],
@@ -791,6 +891,171 @@ public class Exhaustiveness extends TestRunner {
         }
     }
 
+    @Test
+    public void testDefiniteAssignment(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private void testStatement(S obj) {
+                       int data;
+                       switch (obj) {
+                           case A a -> data = 0;
+                           case B b -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpression(S obj) {
+                       int data;
+                       int v = switch (obj) {
+                           case A a -> data = 0;
+                           case B b -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testStatementNotExhaustive(S obj) {
+                       int data;
+                       switch (obj) {
+                           case A a -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpressionNotExhaustive(S obj) {
+                       int data;
+                       int v = switch (obj) {
+                           case A a -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testStatementErrorEnum(E e) { //"E" is intentionally unresolvable
+                       int data;
+                       switch (e) {
+                           case A -> data = 0;
+                           case B -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpressionErrorEnum(E e) { //"E" is intentionally unresolvable
+                       int data;
+                       int v = switch (e) {
+                           case A -> data = 0;
+                           case B -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+               }
+               """,
+               "Test.java:34:41: compiler.err.cant.resolve.location: kindname.class, E, , , (compiler.misc.location: kindname.class, test.Test, null)",
+               "Test.java:42:42: compiler.err.cant.resolve.location: kindname.class, E, , , (compiler.misc.location: kindname.class, test.Test, null)",
+               "Test.java:22:9: compiler.err.not.exhaustive.statement",
+               "Test.java:29:17: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "4 errors");
+    }
+
+    @Test
+    public void testSuperTypesInPattern(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private void testStatement(R obj) {
+                       switch (obj) {
+                           case R(A a, A b): break;
+                           case R(A a, B b): break;
+                           case R(B a, A b): break;
+                           case R(B a, B b): break;
+                       }
+                       switch (obj) {
+                           case R(S a, A b): break;
+                           case R(S a, B b): break;
+                       }
+                       switch (obj) {
+                           case R(Object a, A b): break;
+                           case R(Object a, B b): break;
+                       }
+                   }
+               }
+               """);
+    }
+
+    public void testNonPrimitiveBooleanGuard(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B1 implements A {}
+                   final class B2 implements A {}
+
+                   void test(A arg, Boolean g) {
+                       int i = switch (arg) {
+                           case B1 b1 when g -> 1;
+                           case B2 b2 -> 2;
+                       };
+                   }
+               }
+               """,
+               "Test.java:8:17: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B1 implements A {}
+                   final class B2 implements A {}
+
+                   void test(A arg) {
+                       int i = switch (arg) {
+                           case B1 b1 when undefined() -> 1;
+                           case B2 b2 -> 2;
+                       };
+                   }
+               }
+               """,
+               "Test.java:9:29: compiler.err.cant.resolve.location.args: kindname.method, undefined, , , (compiler.misc.location: kindname.class, test.Test, null)",
+               "Test.java:8:17: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "2 errors");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
@@ -825,7 +1090,8 @@ public class Exhaustiveness extends TestRunner {
                              "-source", JAVA_VERSION,
                              "-XDrawDiagnostics",
                              "-Xlint:-preview",
-                             "--class-path", libClasses.toString())
+                             "--class-path", libClasses.toString(),
+                             "-XDshould-stop.at=FLOW")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
                     .run(expectedErrors.length > 0 ? Task.Expect.FAIL : Task.Expect.SUCCESS)

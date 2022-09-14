@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,15 +57,10 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import static jdk.javadoc.internal.tool.Main.Result.*;
 
 /**
- *  This class could be the main entry point for Javadoc when Javadoc is used as a
- *  component in a larger software system. It provides operations to
- *  construct a new javadoc processor, and to run it on a set of source
- *  files.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * This class could be the main entry point for Javadoc when Javadoc is used as a
+ * component in a larger software system. It provides operations to
+ * construct a new javadoc processor, and to run it on a set of source
+ * files.
  */
 public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     ToolEnvironment toolEnv;
@@ -98,7 +93,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     }
 
     /**
-     *  Construct a new javadoc tool.
+     * Construct a new javadoc tool.
      */
     public static JavadocTool make0(Context context) {
         JavadocLog log = null;
@@ -207,7 +202,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
 
             // Enter symbols for all files
-            toolEnv.notice("main.Building_tree");
+            toolEnv.printInfo("main.Building_tree");
             javadocEnter.main(allTrees.toList());
 
             if (log.hasErrors()) {
@@ -284,7 +279,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         for (JavaFileObject fo: files) {
             if (uniquefiles.add(fo)) { // ignore duplicates
                 if (trace)
-                    toolEnv.notice("main.Loading_source_file", fo.getName());
+                    toolEnv.printInfo("main.Loading_source_file", fo.getName());
                 trees.append(parse(fo));
             }
         }

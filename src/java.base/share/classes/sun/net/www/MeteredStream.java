@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class MeteredStream extends FilterInputStream {
 
     // Instance variables.
     /* if expected != -1, after we've read >= expected, we're "closed" and return -1
-     * from subsequest read() 's
+     * from subsequent read() 's
      */
     protected boolean closed = false;
     protected long expected;

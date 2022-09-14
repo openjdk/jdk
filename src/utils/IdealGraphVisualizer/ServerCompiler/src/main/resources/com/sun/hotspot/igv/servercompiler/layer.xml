@@ -9,9 +9,13 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Color by category"/>
         </file>
+        <file name="Show node warnings" url="filters/showWarnings.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Color by execution frequency"/>
+        </file>
         <file name="Simplify graph" url="filters/structural.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Color by execution frequency"/>
+            <attr name="after" stringvalue="Show node warnings"/>
         </file>
         <file name="Hide data subgraph" url="filters/hideData.filter">
             <attr name="enabled" boolvalue="false"/>
@@ -56,6 +60,18 @@
         <file name="Hide other edges" url="filters/hideOtherEdges.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide mixed edges"/>
+        </file>
+        <file name="Hide root block" url="filters/hideRootBlock.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide other edges"/>
+        </file>
+        <file name="Hide uncommon trap blocks" url="filters/hideUncommonTrapBlocks.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide root block"/>
+        </file>
+        <file name="Hide exception blocks" url="filters/hideExceptionBlocks.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide uncommon trap blocks"/>
         </file>
     </folder>
 </filesystem>

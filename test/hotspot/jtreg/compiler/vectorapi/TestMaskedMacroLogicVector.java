@@ -37,9 +37,6 @@ package compiler.vectorapi;
 
 import java.util.concurrent.Callable;
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.IRViolationException;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import java.util.Random;
 
@@ -283,17 +280,17 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
     public void testInt4_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
     public void testInt4_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIf = {"UseAVX", "3"}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {"AndV", " > 0 ", "XorV", " > 0 "})
     public void testInt4_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }

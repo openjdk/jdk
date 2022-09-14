@@ -3,14 +3,11 @@
 ### Apache Commons BCEL Notice
 <pre>
 
-    =========================================================================
-    ==  NOTICE file corresponding to the section 4 d of                    ==
-    ==  the Apache License, Version 2.0,                                   ==
-    ==  in this case for the Apache Commons BCEL distribution.             ==
-    =========================================================================
+    Apache Commons BCEL
+    Copyright 2004-2020 The Apache Software Foundation
 
-   This product includes software developed by
-   The Apache Software Foundation (http://www.apache.org/).
+    This product includes software developed at
+    The Apache Software Foundation (https://www.apache.org/).
 
 </pre>
 

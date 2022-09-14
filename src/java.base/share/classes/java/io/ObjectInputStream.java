@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -738,7 +738,7 @@ public class ObjectInputStream
      * restored a final set of validations can be performed.
      *
      * @param   obj the object to receive the validation callback.
-     * @param   prio controls the order of callbacks;zero is a good default.
+     * @param   prio controls the order of callbacks; zero is a good default.
      *          Use higher numbers to be called back earlier, lower numbers for
      *          later callbacks. Within a priority, callbacks are processed in
      *          no particular order.
@@ -1017,8 +1017,9 @@ public class ObjectInputStream
      * Reads a byte of data. This method will block if no input is available.
      *
      * @return  the byte read, or -1 if the end of the stream is reached.
-     * @throws  IOException If an I/O error has occurred.
+     * @throws  IOException {@inheritDoc}
      */
+    @Override
     public int read() throws IOException {
         return bin.read();
     }
@@ -1031,8 +1032,9 @@ public class ObjectInputStream
      * @param   buf the buffer into which the data is read
      * @param   off the start offset in the destination array {@code buf}
      * @param   len the maximum number of bytes read
-     * @return  the actual number of bytes read, -1 is returned when the end of
-     *          the stream is reached.
+     * @return  the total number of bytes read into the buffer, or
+     *          {@code -1} if there is no more data because the end of
+     *          the stream has been reached.
      * @throws  NullPointerException if {@code buf} is {@code null}.
      * @throws  IndexOutOfBoundsException if {@code off} is negative,
      *          {@code len} is negative, or {@code len} is greater than
@@ -1040,6 +1042,7 @@ public class ObjectInputStream
      * @throws  IOException If an I/O error has occurred.
      * @see java.io.DataInputStream#readFully(byte[],int,int)
      */
+    @Override
     public int read(byte[] buf, int off, int len) throws IOException {
         if (buf == null) {
             throw new NullPointerException();
@@ -1055,16 +1058,17 @@ public class ObjectInputStream
      * @throws  IOException if there are I/O errors while reading from the
      *          underlying {@code InputStream}
      */
+    @Override
     public int available() throws IOException {
         return bin.available();
     }
 
     /**
-     * Closes the input stream. Must be called to release any resources
-     * associated with the stream.
+     * {@inheritDoc}
      *
-     * @throws  IOException If an I/O error has occurred.
+     * @throws  IOException {@inheritDoc}
      */
+    @Override
     public void close() throws IOException {
         /*
          * Even if stream already closed, propagate redundant close to
@@ -1224,6 +1228,7 @@ public class ObjectInputStream
      * @return  the actual number of bytes skipped.
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public int skipBytes(int len) throws IOException {
         return bin.skipBytes(len);
     }
@@ -1315,6 +1320,8 @@ public class ObjectInputStream
      *     <li>each object reference previously deserialized from the stream
      *     (class is {@code null}, arrayLength is -1),
      *     <li>each regular class (class is not {@code null}, arrayLength is -1),
+     *     <li>each interface class explicitly referenced in the stream
+     *         (it is not called for interfaces implemented by classes in the stream),
      *     <li>each interface of a dynamic proxy and the dynamic proxy class itself
      *     (class is not {@code null}, arrayLength is -1),
      *     <li>each array is filtered using the array type and length of the array
@@ -1427,9 +1434,7 @@ public class ObjectInputStream
             event.commit();
         }
         if (serialFilter != null && (status == null || status == ObjectInputFilter.Status.REJECTED)) {
-            InvalidClassException ice = new InvalidClassException("filter status: " + status);
-            ice.initCause(ex);
-            throw ice;
+            throw new InvalidClassException("filter status: " + status, ex);
         }
     }
 
@@ -1993,11 +1998,11 @@ public class ObjectInputStream
             }
         } catch (ClassNotFoundException ex) {
             resolveEx = ex;
+        } catch (IllegalAccessError aie) {
+            throw new InvalidClassException(aie.getMessage(), aie);
         } catch (OutOfMemoryError memerr) {
-            IOException ex = new InvalidObjectException("Proxy interface limit exceeded: " +
-                    Arrays.toString(ifaces));
-            ex.initCause(memerr);
-            throw ex;
+            throw new InvalidObjectException("Proxy interface limit exceeded: " +
+                                             Arrays.toString(ifaces), memerr);
         }
 
         // Call filterCheck on the class before reading anything else
@@ -2010,10 +2015,8 @@ public class ObjectInputStream
             depth++;
             desc.initProxy(cl, resolveEx, readClassDesc(false));
         } catch (OutOfMemoryError memerr) {
-            IOException ex = new InvalidObjectException("Proxy interface limit exceeded: " +
-                    Arrays.toString(ifaces));
-            ex.initCause(memerr);
-            throw ex;
+            throw new InvalidObjectException("Proxy interface limit exceeded: " +
+                                             Arrays.toString(ifaces), memerr);
         } finally {
             depth--;
         }
@@ -2044,8 +2047,8 @@ public class ObjectInputStream
         try {
             readDesc = readClassDescriptor();
         } catch (ClassNotFoundException ex) {
-            throw (IOException) new InvalidClassException(
-                "failed to read class descriptor").initCause(ex);
+            throw new InvalidClassException("failed to read class descriptor",
+                                            ex);
         }
 
         Class<?> cl = null;
@@ -2071,6 +2074,30 @@ public class ObjectInputStream
             totalObjectRefs++;
             depth++;
             desc.initNonProxy(readDesc, cl, resolveEx, readClassDesc(false));
+
+            if (cl != null) {
+                // Check that serial filtering has been done on the local class descriptor's superclass,
+                // in case it does not appear in the stream.
+
+                // Find the next super descriptor that has a local class descriptor.
+                // Descriptors for which there is no local class are ignored.
+                ObjectStreamClass superLocal = null;
+                for (ObjectStreamClass sDesc = desc.getSuperDesc(); sDesc != null; sDesc = sDesc.getSuperDesc()) {
+                    if ((superLocal = sDesc.getLocalDesc()) != null) {
+                        break;
+                    }
+                }
+
+                // Scan local descriptor superclasses for a match with the local descriptor of the super found above.
+                // For each super descriptor before the match, invoke the serial filter on the class.
+                // The filter is invoked for each class that has not already been filtered
+                // but would be filtered if the instance had been serialized by this Java runtime.
+                for (ObjectStreamClass lDesc = desc.getLocalDesc().getSuperDesc();
+                     lDesc != null && lDesc != superLocal;
+                     lDesc = lDesc.getSuperDesc()) {
+                    filterCheck(lDesc.forClass(), -1);
+                }
+            }
         } finally {
             depth--;
         }
@@ -2191,9 +2218,8 @@ public class ObjectInputStream
                 Enum<?> en = Enum.valueOf((Class)cl, name);
                 result = en;
             } catch (IllegalArgumentException ex) {
-                throw (IOException) new InvalidObjectException(
-                    "enum constant " + name + " does not exist in " +
-                    cl).initCause(ex);
+                throw new InvalidObjectException("enum constant " +
+                                                 name + " does not exist in " + cl, ex);
             }
             if (!unshared) {
                 handles.setObject(enumHandle, result);
@@ -2232,9 +2258,8 @@ public class ObjectInputStream
         try {
             obj = desc.isInstantiable() ? desc.newInstance() : null;
         } catch (Exception ex) {
-            throw (IOException) new InvalidClassException(
-                desc.forClass().getName(),
-                "unable to create instance").initCause(ex);
+            throw new InvalidClassException(desc.forClass().getName(),
+                                            "unable to create instance", ex);
         }
 
         passHandle = handles.assign(unshared ? unsharedMarker : obj);
@@ -2358,16 +2383,12 @@ public class ObjectInputStream
         try {
             return (Object) ctrMH.invokeExact(fieldValues.primValues, fieldValues.objValues);
         } catch (Exception e) {
-            InvalidObjectException ioe = new InvalidObjectException(e.getMessage());
-            ioe.initCause(e);
-            throw ioe;
+            throw new InvalidObjectException(e.getMessage(), e);
         } catch (Error e) {
             throw e;
         } catch (Throwable t) {
-            ObjectStreamException ose = new InvalidObjectException(
-                    "ReflectiveOperationException during deserialization");
-            ose.initCause(t);
-            throw ose;
+            throw new InvalidObjectException("ReflectiveOperationException " +
+                                             "during deserialization", t);
         }
     }
 
@@ -2529,6 +2550,13 @@ public class ObjectInputStream
             throw new InternalError();
         }
         clear();
+        // Check that an object follows the TC_EXCEPTION typecode
+        byte tc = bin.peekByte();
+        if (tc != TC_OBJECT &&
+            tc != TC_REFERENCE) {
+            throw new StreamCorruptedException(
+                    String.format("invalid type code: %02X", tc));
+        }
         return (IOException) readObject0(Object.class, false);
     }
 

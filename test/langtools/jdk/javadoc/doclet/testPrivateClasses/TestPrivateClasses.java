@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class TestPrivateClasses extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/PublicChild.html", true,
-                // Field inheritence from non-public superclass.
+                // Field inheritance from non-public superclass.
                 """
                     <a href="#fieldInheritedFromParent" class="member-name-link">fieldInheritedFromParent</a>""",
                 // Method inheritance from non-public superclass.
@@ -156,12 +156,12 @@ public class TestPrivateClasses extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/PublicChild.html", true,
-                // Field inheritence from non-public superclass.
+                // Field inheritance from non-public superclass.
                 """
                     Fields inherited from class&nbsp;pkg.<a href="PrivateParent.html" title="class in pkg">PrivateParent</a>""",
                 """
                     <a href="PrivateParent.html#fieldInheritedFromParent">fieldInheritedFromParent</a>""",
-                // Method inheritence from non-public superclass.
+                // Method inheritance from non-public superclass.
                 """
                     Methods inherited from class&nbsp;pkg.<a href="PrivateParent.html" title="class in pkg">PrivateParent</a>""",
                 """
@@ -195,7 +195,7 @@ public class TestPrivateClasses extends JavadocTester {
                     ass="element-name type-name-label">PublicChild</span>""");
 
         checkOutput("pkg/PublicInterface.html", true,
-                // Field inheritence from non-public superinterface.
+                // Field inheritance from non-public superinterface.
                 """
                     Fields inherited from interface&nbsp;pkg.<a href="PrivateInterface.html" title="interface in pkg">PrivateInterface</a>""",
                 """

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,13 +133,6 @@ class G1YoungCollector {
 
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() const;
-
-#if TASKQUEUE_STATS
-  uint num_task_queues() const;
-  static void print_taskqueue_stats_hdr(outputStream* const st);
-  void print_taskqueue_stats() const;
-  void reset_taskqueue_stats();
-#endif // TASKQUEUE_STATS
 
 public:
   G1YoungCollector(GCCause::Cause gc_cause,

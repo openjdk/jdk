@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.ScopedMemoryAccess.Scope;
 
 /**
  * File-descriptor based I/O utilities that are shared by NIO classes.
@@ -476,7 +475,7 @@ public class IOUtil {
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     static Runnable acquireScope(ByteBuffer bb, boolean async) {
-        return NIO_ACCESS.acquireScope(bb, async);
+        return NIO_ACCESS.acquireSession(bb, async);
     }
 
     private static void releaseScope(Runnable handle) {

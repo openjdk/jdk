@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1REDIRTYCARDSQUEUE_HPP
 #define SHARE_GC_G1_G1REDIRTYCARDSQUEUE_HPP
 
-#include "gc/g1/g1BufferNodeList.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/padded.hpp"
 #include "utilities/macros.hpp"
@@ -42,7 +42,7 @@ class G1RedirtyCardsLocalQueueSet : private PtrQueueSet {
   };
 
   G1RedirtyCardsQueueSet* _shared_qset;
-  G1BufferNodeList _buffers;
+  BufferNodeList _buffers;
   Queue _queue;
 
   // Add the buffer to the local list.
@@ -84,12 +84,12 @@ public:
   // Collect buffers.  These functions are thread-safe.
   // precondition: Must not be concurrent with buffer processing.
   virtual void enqueue_completed_buffer(BufferNode* node);
-  void add_bufferlist(const G1BufferNodeList& buffers);
+  void add_bufferlist(const BufferNodeList& buffers);
 
   // Processing phase operations.
   // precondition: Must not be concurrent with buffer collection.
   BufferNode* all_completed_buffers() const;
-  G1BufferNodeList take_all_completed_buffers();
+  BufferNodeList take_all_completed_buffers();
 };
 
 #endif // SHARE_GC_G1_G1REDIRTYCARDSQUEUE_HPP

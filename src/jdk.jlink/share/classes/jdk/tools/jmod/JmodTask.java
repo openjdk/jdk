@@ -59,6 +59,7 @@ import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -682,15 +683,13 @@ public class JmodTask {
          * Returns the set of packages in the given directory tree.
          */
         Set<String> findPackages(Path dir) {
-            try {
-                return Files.find(dir, Integer.MAX_VALUE,
-                                  ((path, attrs) -> attrs.isRegularFile()),
-                                  FileVisitOption.FOLLOW_LINKS)
-                        .map(dir::relativize)
+            try (Stream<Path> stream = Files.find(dir, Integer.MAX_VALUE,
+                                  (path, attrs) -> attrs.isRegularFile(),
+                                  FileVisitOption.FOLLOW_LINKS)) {
+                return stream.map(dir::relativize)
                         .filter(path -> isResource(path.toString()))
                         .map(path -> toPackageName(path))
                         .filter(pkg -> pkg.length() > 0)
-                        .distinct()
                         .collect(Collectors.toSet());
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
@@ -705,7 +704,6 @@ public class JmodTask {
                      .filter(e -> !e.isDirectory() && isResource(e.getName()))
                      .map(e -> toPackageName(e))
                      .filter(pkg -> pkg.length() > 0)
-                     .distinct()
                      .collect(Collectors.toSet());
         }
 
@@ -1603,7 +1601,7 @@ public class JmodTask {
         return System.getProperty("java.version");
     }
 
-    private static String getMessage(String key, Object... args) {
+    static String getMessage(String key, Object... args) {
         try {
             return MessageFormat.format(ResourceBundleHelper.bundle.getString(key), args);
         } catch (MissingResourceException e) {

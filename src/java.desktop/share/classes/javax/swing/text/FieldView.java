@@ -258,7 +258,7 @@ public class FieldView extends PlainView {
      * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see View#modelToView
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,9 @@
  * questions.
  */
 
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.nio.file.Path;
-import javax.swing.Icon;
-import javax.swing.filechooser.FileSystemView;
+import java.util.Optional;
+import java.util.stream.Stream;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -46,43 +43,41 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build WinInstallerIconTest
  * @requires (os.family == "windows")
- * @requires !vm.debug
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=WinInstallerIconTest
  */
 
-/*
- * note: AWT can throw assertion from GetDiBits() extracting icon
- * bits in fastdebug mode on windows headless systems. That is why
- * we have @requires !vm.debug" above.
- */
 public class WinInstallerIconTest {
 
     @Test
-    public void test() throws IOException {
+    public void test() {
         Path customIcon = iconPath("icon");
 
-        BufferedImage[] defaultInstallerIconImg = new BufferedImage[1];
-
         // Create installer with the default icon
-        long size1 = createInstaller(null, "WithDefaultIcon");
+        var size1 = createInstaller(null, "WithDefaultIcon");
 
         // Create installer with custom icon.
-        long size2 = createInstaller(customIcon, "WithCustomIcon");
+        var size2 = createInstaller(customIcon, "WithCustomIcon");
 
         // Create another installer with custom icon.
-        long size3 = createInstaller(customIcon, null);
+        var size3 = createInstaller(customIcon, null);
 
-        TKit.assertTrue(size2 < size1, "Installer 2 built with custom icon " +
-                "should  be smaller than Installer 1 built with default icon");
+        if (Stream.of(size1, size2, size3).allMatch(Optional::<Long>isEmpty)) {
+            TKit.trace(
+                    "Not verifying sizes of installers because they were not created");
+            return;
+        }
 
-        TKit.assertTrue(size3 < size1, "Installer 3 built with custom icon " +
-                "should be smaller than Installer 1 built with default icon");
+        TKit.assertTrue(size2.get() < size1.get(), "Check installer 2 built with custom icon " +
+                "is smaller than Installer 1 built with default icon");
+
+        TKit.assertTrue(size3.get() < size1.get(), "Check installer 3 built with custom icon " +
+                "is smaller than Installer 1 built with default icon");
 
     }
 
-    private long createInstaller(Path icon, String nameSuffix) throws IOException {
+    private Optional<Long> createInstaller(Path icon, String nameSuffix) {
 
         PackageTest test = new PackageTest()
                 .forTypes(PackageType.WIN_EXE)
@@ -96,26 +91,24 @@ public class WinInstallerIconTest {
             test.addInitializer(cmd -> {
                 String name = cmd.name() + nameSuffix;
                 cmd.setArgumentValue("--name", name);
+                // Create installer bundle in the test work directory, ignore
+                // value of jpackage.test.output system property.
+                cmd.setDefaultInputOutput();
             });
         }
 
-        Path installerExePath[] = new Path[1];
+        Long installerExeByteCount[] = new Long[1];
 
         test.addBundleVerifier(cmd -> {
-            installerExePath[0] = cmd.outputBundle();
+            Path installerExePath = cmd.outputBundle();
+            installerExeByteCount[0] = installerExePath.toFile().length();
+            TKit.trace(String.format("Size of [%s] is %d bytes",
+                    installerExePath, installerExeByteCount[0]));
         });
 
         test.run(CREATE);
 
-        long size = 0L;
-        if (installerExePath[0] != null) {
-            size = installerExePath[0].toFile().length();
-            TKit.trace(" installer: " + installerExePath[0] + " - size: " + size);
-            if (nameSuffix != null) {
-                TKit.deleteIfExists(installerExePath[0]);
-            }
-        }
-        return size;
+        return Optional.ofNullable(installerExeByteCount[0]);
     }
 
     private static Path iconPath(String name) {

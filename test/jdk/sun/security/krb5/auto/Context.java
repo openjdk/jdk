@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,13 +207,26 @@ public class Context {
      */
     public static Context fromUserKtab(Subject s,
             String user, String ktab, boolean storeKey) throws Exception {
+        return fromUserKtab(s, user, ktab, false, storeKey);
+    }
+
+    /**
+     * Logins with username/keytab as a client.
+     */
+    public static Context fromUserKtabAsClient(
+            String user, String ktab, boolean storeKey) throws Exception {
+        return fromUserKtab(new Subject(), user, ktab, true, storeKey);
+    }
+
+    private static Context fromUserKtab(Subject s,
+            String user, String ktab, boolean isInitiator, boolean storeKey) throws Exception {
         Context out = new Context();
         out.name = user;
         out.s = s;
         Krb5LoginModule krb5 = new Krb5LoginModule();
         Map<String, String> map = new HashMap<>();
 
-        map.put("isInitiator", "false");
+        map.put("isInitiator", Boolean.toString(isInitiator));
         map.put("doNotPrompt", "true");
         map.put("useTicketCache", "false");
         map.put("useKeyTab", "true");

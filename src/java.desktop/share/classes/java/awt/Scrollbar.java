@@ -349,7 +349,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * </tbody>
      * </table>
      *
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -366,9 +366,9 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * indicating a horizontal or vertical scroll bar, respectively.
      *
      * @param       orientation   indicates the orientation of the scroll bar
-     * @exception   IllegalArgumentException    when an illegal value for
+     * @throws   IllegalArgumentException    when an illegal value for
      *                    the {@code orientation} argument is supplied
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -394,9 +394,9 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      *                      represented by the size of the bubble
      * @param     minimum   the minimum value of the scroll bar
      * @param     maximum   the maximum value of the scroll bar
-     * @exception IllegalArgumentException    when an illegal value for
+     * @throws IllegalArgumentException    when an illegal value for
      *                    the {@code orientation} argument is supplied
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see #setValues
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -457,7 +457,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      *               {@code Scrollbar.HORIZONTAL} or
      *               {@code Scrollbar.VERTICAL}
      * @see       java.awt.Scrollbar#getOrientation
-     * @exception   IllegalArgumentException  if the value supplied
+     * @throws   IllegalArgumentException  if the value supplied
      *                   for {@code orientation} is not a
      *                   legal value
      * @since     1.1
@@ -1062,7 +1062,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @return an array of all objects registered as
      *          <code><em>Foo</em>Listener</code>s on this component,
      *          or an empty array if no such listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *

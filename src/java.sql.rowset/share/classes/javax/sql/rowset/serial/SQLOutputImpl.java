@@ -535,7 +535,7 @@ public class SQLOutputImpl implements SQLOutput {
      */
     @SuppressWarnings("unchecked")
     public void writeStruct(Struct x) throws SQLException {
-        SerialStruct s = new SerialStruct(x,map);;
+        SerialStruct s = new SerialStruct(x,map);
         attribs.add(s);
     }
 

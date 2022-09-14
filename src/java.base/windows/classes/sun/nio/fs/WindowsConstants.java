@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ class WindowsConstants {
     // copy flags
     public static final int COPY_FILE_FAIL_IF_EXISTS       = 0x00000001;
     public static final int COPY_FILE_COPY_SYMLINK         = 0x00000800;
+    public static final int COPY_FILE_NO_BUFFERING         = 0x00001000;
 
     // move flags
     public static final int MOVEFILE_REPLACE_EXISTING       = 0x00000001;

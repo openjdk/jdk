@@ -86,7 +86,7 @@ public class CompEventOnHiddenComponent
         EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     JFrame parentWindow = new JFrame("JFrame 1");
-                    JButton component = new JButton("JButton 1");;
+                    JButton component = new JButton("JButton 1");
                     JButton smallButton = new JButton("Small Button");
 
 

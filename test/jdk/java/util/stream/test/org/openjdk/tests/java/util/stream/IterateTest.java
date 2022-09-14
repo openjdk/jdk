@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ package org.openjdk.tests.java.util.stream;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collector;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -96,5 +97,22 @@ public class IterateTest extends OpTestCase {
         checkNPE(() -> LongStream.iterate(0, x -> x < 10, null));
         checkNPE(() -> DoubleStream.iterate(0, null, x -> x + 1));
         checkNPE(() -> DoubleStream.iterate(0, x -> x < 10, null));
+    }
+
+    @Test
+    public void testParallelize() {
+        checkHasSplit(Stream.iterate(0, x -> x < 10, x -> x + 1));
+        checkHasSplit(IntStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+        checkHasSplit(LongStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+        checkHasSplit(DoubleStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+    }
+
+    private void checkHasSplit(Stream<?> stream) {
+        int[] numberOfNonEmptyParts = stream.parallel().collect(
+                Collector.of(() -> new int[1], (acc, e) -> acc[0] = 1, (acc1, acc2) -> {
+                  acc1[0] += acc2[0];
+                  return acc1;
+                }));
+        assertTrue(numberOfNonEmptyParts[0] >= 2);
     }
 }

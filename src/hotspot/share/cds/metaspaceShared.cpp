@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "jvm_io.h"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/classListParser.hpp"
@@ -65,8 +67,9 @@
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmThread.hpp"
@@ -125,20 +128,17 @@ char* MetaspaceShared::symbol_space_alloc(size_t num_bytes) {
   return _symbol_region.allocate(num_bytes);
 }
 
-// os::vm_allocation_granularity() is usually 4K for most OSes. However, on Linux/aarch64,
-// it can be either 4K or 64K and on Macosx-arm it is 16K. To generate archives that are
+// os::vm_allocation_granularity() is usually 4K for most OSes. However, some platforms
+// such as linux-aarch64 and macos-x64 ...
+// it can be either 4K or 64K and on macos-aarch64 it is 16K. To generate archives that are
 // compatible for both settings, an alternative cds core region alignment can be enabled
 // at building time:
 //   --enable-compactible-cds-alignment
-// Upon successful configuration, the compactible alignment then can be defined as in:
-//   os_linux_aarch64.hpp
-// which is the highest page size configured on the platform.
+// Upon successful configuration, the compactible alignment then can be defined in:
+//   os_linux_aarch64.cpp
+//   os_bsd_x86.cpp
 size_t MetaspaceShared::core_region_alignment() {
-#if defined(CDS_CORE_REGION_ALIGNMENT)
-  return CDS_CORE_REGION_ALIGNMENT;
-#else
-  return (size_t)os::vm_allocation_granularity();
-#endif // CDS_CORE_REGION_ALIGNMENT
+  return os::cds_core_region_alignment();
 }
 
 static bool shared_base_valid(char* shared_base) {
@@ -163,7 +163,7 @@ class DumpClassListCLDClosure : public CLDClosure {
     if (!created) {
       return;
     }
-    if (_dumped_classes.maybe_grow(MAX_TABLE_SIZE)) {
+    if (_dumped_classes.maybe_grow()) {
       log_info(cds, hashtables)("Expanded _dumped_classes table to %d", _dumped_classes.table_size());
     }
     if (ik->java_super()) {
@@ -179,7 +179,7 @@ class DumpClassListCLDClosure : public CLDClosure {
 
 public:
   DumpClassListCLDClosure(fileStream* f)
-  : CLDClosure(), _dumped_classes(INITIAL_TABLE_SIZE) {
+  : CLDClosure(), _dumped_classes(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
     _stream = f;
   }
 
@@ -556,7 +556,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.relocate_to_requested();
 
   // Write the archive file
-  FileMapInfo* mapinfo = new FileMapInfo(true);
+  const char* static_archive = Arguments::GetSharedArchivePath();
+  assert(static_archive != nullptr, "SharedArchiveFile not set?");
+  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(cloned_vtables);
@@ -579,7 +581,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   // There may be pending VM operations. We have changed some global states
   // (such as vmClasses::_klasses) that may cause these VM operations
   // to fail. For safety, forget these operations and exit the VM directly.
-  vm_direct_exit(0);
+  os::_exit(0);
 }
 
 class CollectCLDClosure : public CLDClosure {
@@ -640,8 +642,10 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
-void MetaspaceShared::link_shared_classes(TRAPS) {
-  LambdaFormInvokers::regenerate_holder_classes(CHECK);
+void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
+  if (!jcmd_request) {
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
+  }
 
   // Collect all loaded ClassLoaderData.
   CollectCLDClosure collect_cld(THREAD);
@@ -704,6 +708,30 @@ void MetaspaceShared::preload_and_dump() {
     ShouldNotReachHere();
   }
 }
+
+#if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
+void MetaspaceShared::adjust_heap_sizes_for_dumping() {
+  if (!DumpSharedSpaces || UseCompressedOops) {
+    return;
+  }
+  // CDS heap dumping requires all string oops to have an offset
+  // from the heap bottom that can be encoded in 32-bit.
+  julong max_heap_size = (julong)(4 * G);
+
+  if (MinHeapSize > max_heap_size) {
+    log_debug(cds)("Setting MinHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MinHeapSize/M);
+    FLAG_SET_ERGO(MinHeapSize, max_heap_size);
+  }
+  if (InitialHeapSize > max_heap_size) {
+    log_debug(cds)("Setting InitialHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", InitialHeapSize/M);
+    FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
+  }
+  if (MaxHeapSize > max_heap_size) {
+    log_debug(cds)("Setting MaxHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MaxHeapSize/M);
+    FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
+  }
+}
+#endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 
 void MetaspaceShared::preload_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
@@ -773,7 +801,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
   // fails verification, all other interfaces that were not specified in the classlist but
   // are implemented by K are not verified.
-  link_shared_classes(CHECK);
+  link_shared_classes(false/*not from jcmd*/, CHECK);
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -830,11 +858,10 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
   if(!HeapShared::can_write()) {
     log_info(cds)(
-      "Archived java heap is not supported as UseG1GC, "
-      "UseCompressedOops and UseCompressedClassPointers are required."
-      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-      BOOL_TO_STR(UseCompressedClassPointers));
+      "Archived java heap is not supported as UseG1GC "
+      "and UseCompressedClassPointers are required."
+      "Current settings: UseG1GC=%s, UseCompressedClassPointers=%s.",
+      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedClassPointers));
     return;
   }
   // Find all the interned strings that should be dumped.
@@ -946,12 +973,20 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     _requested_base_address = static_mapinfo->requested_base_address();
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
+      // turn AutoCreateSharedArchive off if successfully mapped
+      AutoCreateSharedArchive = false;
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
+    if (DynamicDumpSharedSpaces) {
+      warning("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+    }
     UseSharedSpaces = false;
+    // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
+    AutoCreateSharedArchive = false;
+    DynamicDumpSharedSpaces = false;
     FileMapInfo::fail_continue("Unable to map shared spaces");
     if (PrintSharedArchiveAndExit) {
       vm_exit_during_initialization("Unable to use shared archive.");
@@ -967,7 +1002,9 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
 }
 
 FileMapInfo* MetaspaceShared::open_static_archive() {
-  FileMapInfo* mapinfo = new FileMapInfo(true);
+  const char* static_archive = Arguments::GetSharedArchivePath();
+  assert(static_archive != nullptr, "SharedArchivePath is NULL");
+  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
     return NULL;
@@ -979,11 +1016,12 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   if (DynamicDumpSharedSpaces) {
     return NULL;
   }
-  if (Arguments::GetSharedDynamicArchivePath() == NULL) {
+  const char* dynamic_archive = Arguments::GetSharedDynamicArchivePath();
+  if (dynamic_archive == nullptr) {
     return NULL;
   }
 
-  FileMapInfo* mapinfo = new FileMapInfo(false);
+  FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
     return NULL;
@@ -1016,7 +1054,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
   if (dynamic_mapinfo != NULL) {
     // Ensure that the OS won't be able to allocate new memory spaces between the two
-    // archives, or else it would mess up the simple comparision in MetaspaceObj::is_shared().
+    // archives, or else it would mess up the simple comparison in MetaspaceObj::is_shared().
     assert(static_mapinfo->mapping_end_offset() == dynamic_mapinfo->mapping_base_offset(), "no gap");
   }
 
@@ -1433,7 +1471,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Finish up archived heap initialization. These must be
   // done after ReadClosure.
   static_mapinfo->patch_heap_embedded_pointers();
-  HeapShared::finish_initialization();
+  ArchiveHeapLoader::finish_initialization();
 
   // Close the mapinfo file
   static_mapinfo->close();
@@ -1520,7 +1558,7 @@ bool MetaspaceShared::use_full_module_graph() {
   if (DumpSharedSpaces) {
     result &= HeapShared::can_write();
   } else if (UseSharedSpaces) {
-    result &= HeapShared::can_use();
+    result &= ArchiveHeapLoader::can_use();
   } else {
     result = false;
   }
@@ -1541,7 +1579,7 @@ void MetaspaceShared::print_on(outputStream* st) {
     address top = (address)MetaspaceObj::shared_metaspace_top();
     st->print("[" PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "), ", p2i(base), p2i(static_top), p2i(top));
     st->print("size " SIZE_FORMAT ", ", top - base);
-    st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress, (int)ArchiveRelocationMode);
+    st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress, ArchiveRelocationMode);
   } else {
     st->print("CDS archive(s) not mapped");
   }

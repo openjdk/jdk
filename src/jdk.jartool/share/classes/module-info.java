@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,11 @@
  *
  * @toolGuide jar
  * @toolGuide jarsigner
+ *
+ * @provides java.util.spi.ToolProvider
+ *     Use {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("jar")}
+ *     to obtain an instance of a {@code ToolProvider} that provides the equivalent
+ *     of command-line access to the {@code jar} tool.
  *
  * @moduleGraph
  * @since 9

@@ -43,7 +43,7 @@ import sun.security.util.DerValue;
  * certificate that identifies the specific OCSP Responder to use when
  * performing on-line validation of that certificate.
  * <p>
- * This extension is defined in <a href="http://tools.ietf.org/html/rfc5280">
+ * This extension is defined in <a href="https://tools.ietf.org/html/rfc5280">
  * Internet X.509 PKI Certificate and Certificate Revocation List
  * (CRL) Profile</a>. The profile permits
  * the extension to be included in end-entity or CA certificates,

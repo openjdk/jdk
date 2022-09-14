@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,7 +487,7 @@ public class NumberRegression extends IntlTest {
      * interpreted as monetary separator if currency symbol is seen!
      */
     public void Test4087244 () {
-        Locale de = new Locale("pt", "PT");
+        Locale de = Locale.of("pt", "PT");
         DecimalFormat df = (DecimalFormat) NumberFormat.getCurrencyInstance(de);
         DecimalFormatSymbols sym = df.getDecimalFormatSymbols();
         sym.setMonetaryDecimalSeparator('$');

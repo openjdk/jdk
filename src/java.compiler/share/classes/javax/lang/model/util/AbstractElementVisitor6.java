@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,6 @@ import static javax.lang.model.SourceVersion.*;
  * @param <P> the type of the additional parameter to this visitor's
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
- *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  *
  * @see AbstractElementVisitor7
  * @see AbstractElementVisitor8
@@ -159,7 +155,6 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      *
      * @since 14
      */
-    @SuppressWarnings("preview")
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {
         // Use implementation from interface default method

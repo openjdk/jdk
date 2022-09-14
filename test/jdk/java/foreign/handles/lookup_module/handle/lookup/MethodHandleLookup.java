@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,22 @@
 
 package handle.lookup;
 
-import jdk.incubator.foreign.CLinker;
+import java.lang.foreign.Linker;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.VaList;
+import java.lang.foreign.ValueLayout;
 
-import jdk.incubator.foreign.VaList;
-import jdk.incubator.foreign.ValueLayout;
+import java.nio.file.Path;
+
 import org.testng.annotations.*;
 
 public class MethodHandleLookup {
@@ -50,17 +52,20 @@ public class MethodHandleLookup {
     static Object[][] restrictedMethods() {
         try {
             return new Object[][]{
-                    { MethodHandles.lookup().findStatic(CLinker.class, "systemCLinker",
-                            MethodType.methodType(CLinker.class)), "ForeignLinker::systemCLinker" },
+                    { MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
+                            MethodType.methodType(Linker.class)), "Linker::nativeLinker" },
                     { MethodHandles.lookup().findStatic(VaList.class, "ofAddress",
-                            MethodType.methodType(VaList.class, MemoryAddress.class, ResourceScope.class)),
+                            MethodType.methodType(VaList.class, MemoryAddress.class, MemorySession.class)),
                             "VaList::ofAddress/1" },
-                    { MethodHandles.lookup().findStatic(SymbolLookup.class, "loaderLookup",
-                            MethodType.methodType(SymbolLookup.class)),
-                            "SymbolLookup::loaderLookup" },
                     { MethodHandles.lookup().findStatic(MemorySegment.class, "ofAddress",
-                            MethodType.methodType(MemorySegment.class, MemoryAddress.class, long.class, ResourceScope.class)),
+                            MethodType.methodType(MemorySegment.class, MemoryAddress.class, long.class, MemorySession.class)),
                             "MemorySegment::ofAddress" },
+                    { MethodHandles.lookup().findStatic(SymbolLookup.class, "libraryLookup",
+                            MethodType.methodType(SymbolLookup.class, String.class, MemorySession.class)),
+                            "SymbolLookup::libraryLookup(String)" },
+                    { MethodHandles.lookup().findStatic(SymbolLookup.class, "libraryLookup",
+                            MethodType.methodType(SymbolLookup.class, Path.class, MemorySession.class)),
+                            "SymbolLookup::libraryLookup(Path)" },
                     { MethodHandles.lookup().findVirtual(MemoryAddress.class, "getUtf8String",
                             MethodType.methodType(String.class, long.class)),
                             "MemoryAddress::getUtf8String" },
@@ -119,6 +124,48 @@ public class MethodHandleLookup {
                             MethodType.methodType(void.class, ValueLayout.OfDouble.class, long.class, double.class)),
                             "MemoryAddress::set/double" },
                     { MethodHandles.lookup().findVirtual(MemoryAddress.class, "set",
+                            MethodType.methodType(void.class, ValueLayout.OfAddress.class, long.class, Addressable.class)),
+                            "MemoryAddress::set/address" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "getAtIndex",
+                            MethodType.methodType(char.class, ValueLayout.OfChar.class, long.class)),
+                            "MemoryAddress::getAtIndex/char" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "getAtIndex",
+                            MethodType.methodType(short.class, ValueLayout.OfShort.class, long.class)),
+                            "MemoryAddress::getAtIndex/short" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "getAtIndex",
+                            MethodType.methodType(int.class, ValueLayout.OfInt.class, long.class)),
+                            "MemoryAddress::getAtIndex/int" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "getAtIndex",
+                            MethodType.methodType(float.class, ValueLayout.OfFloat.class, long.class)),
+                            "MemoryAddress::getAtIndex/float" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "getAtIndex",
+                            MethodType.methodType(long.class, ValueLayout.OfLong.class, long.class)),
+                            "MemoryAddress::getAtIndex/long" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "getAtIndex",
+                            MethodType.methodType(double.class, ValueLayout.OfDouble.class, long.class)),
+                            "MemoryAddress::getAtIndex/double" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "getAtIndex",
+                            MethodType.methodType(MemoryAddress.class, ValueLayout.OfAddress.class, long.class)),
+                            "MemoryAddress::getAtIndex/address" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "setAtIndex",
+                            MethodType.methodType(void.class, ValueLayout.OfChar.class, long.class, char.class)),
+                            "MemoryAddress::setAtIndex/char" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "setAtIndex",
+                            MethodType.methodType(void.class, ValueLayout.OfShort.class, long.class, short.class)),
+                            "MemoryAddress::setAtIndex/short" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "setAtIndex",
+                            MethodType.methodType(void.class, ValueLayout.OfInt.class, long.class, int.class)),
+                            "MemoryAddress::setAtIndex/int" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "setAtIndex",
+                            MethodType.methodType(void.class, ValueLayout.OfFloat.class, long.class, float.class)),
+                            "MemoryAddress::setAtIndex/float" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "setAtIndex",
+                            MethodType.methodType(void.class, ValueLayout.OfLong.class, long.class, long.class)),
+                            "MemoryAddress::set/long" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "setAtIndex",
+                            MethodType.methodType(void.class, ValueLayout.OfDouble.class, long.class, double.class)),
+                            "MemoryAddress::set/double" },
+                    { MethodHandles.lookup().findVirtual(MemoryAddress.class, "setAtIndex",
                             MethodType.methodType(void.class, ValueLayout.OfAddress.class, long.class, Addressable.class)),
                             "MemoryAddress::set/address" },
             };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,11 @@ void MethodHandles::generate_adapters() {
 
   ResourceMark rm;
   TraceTime timer("MethodHandles adapters generation", TRACETIME_LOG(Info, startuptime));
-  _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size);
+  // The adapter entry is required to be aligned to CodeEntryAlignment.
+  // So we need additional bytes due to alignment.
+  int adapter_num = (int)Interpreter::method_handle_invoke_LAST - (int)Interpreter::method_handle_invoke_FIRST + 1;
+  int max_aligned_bytes = adapter_num * CodeEntryAlignment;
+  _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size + max_aligned_bytes);
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
   g.generate();
@@ -1051,14 +1055,6 @@ void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
   deps.add_dependent_nmethod(nm);
 }
 
-void MethodHandles::remove_dependent_nmethod(oop call_site, nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
-  DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-  deps.remove_dependent_nmethod(nm);
-}
-
 void MethodHandles::clean_dependency_context(oop call_site) {
   oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
   DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
@@ -1491,7 +1487,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
       NoSafepointVerifier nsv;
       MutexLocker mu2(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-      marked = deps.remove_all_dependents();
+      marked = deps.remove_and_mark_for_deoptimization_all_dependents();
     }
     if (marked > 0) {
       // At least one nmethod has been marked for deoptimization

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,21 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 /*
  * @test
  * @bug 8259610
+ * @enablePreview
+ * @key randomness
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector cast intrinsics work as intended on neon.
- * @requires vm.cpu.features ~= ".*simd.*"
+ * @requires vm.cpu.features ~= ".*asimd.*"
  * @library /test/lib /
- * @run driver compiler.vectorapi.reshape.TestVectorCastNeon
+ * @run main compiler.vectorapi.reshape.TestVectorCastNeon
  */
 public class TestVectorCastNeon {
     public static void main(String[] args) {
         VectorReshapeHelper.runMainHelper(
                 TestVectorCast.class,
                 TestCastMethods.NEON_CAST_TESTS.stream(),
-                "-XX:+UseNeon");
+                "-XX:UseSVE=0");
     }
 }
 

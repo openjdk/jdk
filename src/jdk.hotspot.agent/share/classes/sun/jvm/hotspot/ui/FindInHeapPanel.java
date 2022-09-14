@@ -195,7 +195,7 @@ public class FindInHeapPanel extends JPanel {
       for (String update : updates) {
         textArea.append(update);
       }
-      updates = new ArrayList<>();;
+      updates = new ArrayList<>();
     }
     pendingUpdate = false;
   }

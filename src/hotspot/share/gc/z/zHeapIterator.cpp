@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,10 @@ public:
     NativeAccessClosure cl(_context);
     cld->oops_do(&cl, ClassLoaderData::_claim_other);
   }
+
+  // Don't follow loom stack metadata; it's already followed in other ways through CLDs
+  virtual void do_nmethod(nmethod* nm) {}
+  virtual void do_method(Method* m) {}
 };
 
 ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :

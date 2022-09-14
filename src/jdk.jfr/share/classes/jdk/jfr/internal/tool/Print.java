@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ final class Print extends Command {
     public void execute(Deque<String> options) throws UserSyntaxException, UserDataException {
         Path file = getJFRInputFile(options);
         PrintWriter pw = new PrintWriter(System.out, false, UTF_8);
-        Predicate<EventType> eventFilter = null;
+        List<Predicate<EventType>> eventFilters = new ArrayList<>();
         int stackDepth = 5;
         EventPrintWriter eventWriter = null;
         int optionCount = options.size();
@@ -116,7 +116,7 @@ final class Print extends Command {
                 foundEventFilter = true;
                 String filter = options.remove();
                 warnForWildcardExpansion("--events", filter);
-                eventFilter = addEventFilter(filter, eventFilter);
+                eventFilters.add(Filters.createEventTypeFilter(filter));
             }
             if (acceptFilterOption(options, "--categories")) {
                 if (foundCategoryFilter) {
@@ -125,7 +125,7 @@ final class Print extends Command {
                 foundCategoryFilter = true;
                 String filter = options.remove();
                 warnForWildcardExpansion("--categories", filter);
-                eventFilter = addCategoryFilter(filter, eventFilter);
+                eventFilters.add(Filters.createCategoryFilter(filter));
             }
             if (acceptOption(options, "--stack-depth")) {
                 String value = options.pop();
@@ -156,9 +156,8 @@ final class Print extends Command {
             eventWriter = new PrettyWriter(pw); // default to pretty printer
         }
         eventWriter.setStackDepth(stackDepth);
-        if (eventFilter != null) {
-            eventFilter = addCache(eventFilter, eventType -> eventType.getId());
-            eventWriter.setEventFilter(eventFilter);
+        if (!eventFilters.isEmpty()) {
+            eventWriter.setEventFilter(Filters.matchAny(eventFilters));
         }
         try {
             eventWriter.print(file);

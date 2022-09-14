@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8' ?>
 <!DOCTYPE supplementalData SYSTEM '../../common/dtd/ldmlSupplemental.dtd'>
-<!-- Copyright © 1991-2014 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) For terms 
+<!-- Copyright © 1991-2014 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) For terms
 	of use, see http://www.unicode.org/copyright.html -->
 <supplementalData>
 	<version number='$Revision$'/>
@@ -10,7 +10,7 @@
 			<!-- This list contains ONLY those languages considered to be 'of interest' as part of CLDR, -->
 			<!-- and is maintained manually by the CLDR TC -->
 			<variable id='$language' type='choice'>
-				af agq ak am ar as asa ast az
+				ab af agq ak am ar as asa ast az
 				bas be bem bez bg bm bn bo br brx bs
 				ca ccp ce cgg chr ckb cs cu cy
 				da dav de dje doi dsb dua dyo dz
@@ -27,16 +27,16 @@
 				om or os
 				pa pcm pl prg ps pt
 				qu
-				rm rn ro rof
+				rhg rm rn ro rof
 				und
 				ru rw rwk
-				sa sah saq sat sbp sd se seh ses sg shi si sk sl smn sn so sq sr su sv sw
+				sa sah saq sat sbp sc sd se seh ses sg shi si sk sl smn sn so sq sr su sv sw
 				ta te teo tg th ti tk to tr tt twq tzm
 				ug uk ur uz
 				vai vi vo vun
 				wae wo
 				xh xog
-				yav yi yo yue
+				yav yi yo yrl yue
 				zgh zh zu
 			</variable>
 			<variable id='$languageExceptions' type='choice'>
@@ -50,7 +50,7 @@
 				zxx
 			</variable>
 			<variable id='$oldLanguages' type='choice'>
-				aa ab ace ada ady ain ale alt an anp arn arp ars av awa ay
+				aa ace ada ady ain ale alt an anp arn arp ars av awa ay
 				ba ban bho bi bin bla bug byn
 				ch chk chm cho chy crs cv
 				dak dar dgr dv dzg
@@ -79,7 +79,7 @@
 			</variable>
 			<variable id='$scriptNonUnicode' type='choice'>Afak Aran Blis Cirt Cyrs Egyd Egyh Geok Inds Jurc Kitl Kpel Latf Latg Loma Maya Moon
 				Nkgb Phlv Roro Sara Syre Syrj Syrn Teng Visp Wole
-			</variable>				
+			</variable>
 			<!--  <variable id='$language' type='choice'>$languageExceptions|$_language_cldr</variable> -->
 			<variable id='$casing' type='choice'>titlecase-words titlecase-firstword lowercase-words mixed</variable>
 			<!-- allow may expand in future to a space separated list i.e. ((newitem)?( )?)?(verbatim)? -->
@@ -407,7 +407,7 @@
 			<attributeValues dtds='ldmlBCP47' elements='type' attributes='since' type='choice'>$versionDotted</attributeValues>
 			<attributeValues dtds='ldmlBCP47' elements='version' attributes='cldrVersion' type='choice'>$double</attributeValues>
 			<attributeValues dtds='ldmlBCP47' elements='version' attributes='number' type='regex'>\$Revision.*\$</attributeValues>
-			<!--  
+			<!--
 			<attributeValues dtds='ldml' elements='subdivision' attributes='type' type='single'>$_subdivisionIso</attributeValues>
 			-->
 			<attributeValues dtds='supplementalData' elements='group' attributes='type' type='list'>$_region</attributeValues>

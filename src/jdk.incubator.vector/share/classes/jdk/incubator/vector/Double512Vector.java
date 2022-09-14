@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -357,6 +357,12 @@ final class Double512Vector extends DoubleVector {
         return super.testTemplate(Double512Mask.class, op);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public final Double512Mask test(Test op, VectorMask<Double> m) {
+        return super.testTemplate(Double512Mask.class, op, (Double512Mask) m);  // specialize
+    }
+
     // Specialized comparisons
 
     @Override
@@ -453,6 +459,22 @@ final class Double512Vector extends DoubleVector {
             super.rearrangeTemplate(Double512Shuffle.class,
                                     (Double512Shuffle) s,
                                     (Double512Vector) v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double512Vector compress(VectorMask<Double> m) {
+        return (Double512Vector)
+            super.compressTemplate(Double512Mask.class,
+                                   (Double512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double512Vector expand(VectorMask<Double> m) {
+        return (Double512Vector)
+            super.expandTemplate(Double512Mask.class,
+                                   (Double512Mask) m);  // specialize
     }
 
     @Override
@@ -644,6 +666,15 @@ final class Double512Vector extends DoubleVector {
             return xor(maskAll(true));
         }
 
+        @Override
+        @ForceInline
+        public Double512Mask compress() {
+            return (Double512Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Double512Vector.class, Double512Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
+
         // Binary operations
 
         @Override
@@ -820,8 +851,8 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m) {
-        return super.fromArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);  // specialize
+    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m, int offsetInRange) {
+        return super.fromArray0Template(Double512Mask.class, a, offset, (Double512Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -836,29 +867,15 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    DoubleVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m) {
-        return super.fromByteArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
-        return super.fromByteBuffer0Template(Double512Mask.class, bb, offset, (Double512Mask) m);  // specialize
+    DoubleVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Double> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(Double512Mask.class, ms, offset, (Double512Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -886,22 +903,8 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Double> m) {
-        super.intoByteArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
-        super.intoByteBuffer0Template(Double512Mask.class, bb, offset, (Double512Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Double> m) {
+        super.intoMemorySegment0Template(Double512Mask.class, ms, offset, (Double512Mask) m);
     }
 
 
@@ -910,3 +913,4 @@ final class Double512Vector extends DoubleVector {
     // ================================================
 
 }
+

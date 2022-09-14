@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
-VALID_TOOLCHAINS_macosx="gcc clang"
+VALID_TOOLCHAINS_macosx="clang"
 VALID_TOOLCHAINS_aix="xlc"
 VALID_TOOLCHAINS_windows="microsoft"
 
@@ -52,7 +52,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
 TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
-TOOLCHAIN_MINIMUM_VERSION_microsoft="19.10.0.0" # VS2017
+TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Minimum supported linker versions, empty means unspecified
@@ -231,34 +231,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   toolchain_var_name=VALID_TOOLCHAINS_$OPENJDK_BUILD_OS
   VALID_TOOLCHAINS=${!toolchain_var_name}
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    if test -n "$XCODEBUILD"; then
-      # On Mac OS X, default toolchain to clang after Xcode 5
-      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
-      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
-      if test $? -ne 0; then
-        AC_MSG_NOTICE([xcodebuild output: $XCODE_VERSION_OUTPUT])
-        AC_MSG_ERROR([Failed to determine Xcode version.])
-      fi
-      XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
-          $SED -e 's/^Xcode \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/' | \
-          $CUT -f 1 -d .`
-      AC_MSG_NOTICE([Xcode major version: $XCODE_MAJOR_VERSION])
-      if test $XCODE_MAJOR_VERSION -ge 5; then
-          DEFAULT_TOOLCHAIN="clang"
-      else
-          DEFAULT_TOOLCHAIN="gcc"
-      fi
-    else
-      # If Xcode is not installed, but the command line tools are
-      # then we can't run xcodebuild. On these systems we should
-      # default to clang
-      DEFAULT_TOOLCHAIN="clang"
-    fi
-  else
-    # First toolchain type in the list is the default
-    DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
-  fi
+  # First toolchain type in the list is the default
+  DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
 
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
@@ -341,10 +315,19 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # autoconf magic only relies on PATH, so update it if tools dir is specified
   OLD_PATH="$PATH"
 
-  if test "x$XCODE_VERSION_OUTPUT" != x; then
-    # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
-    TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
-    TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+  if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+    if test "x$XCODEBUILD" != x; then
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2> /dev/null | $HEAD -n 1`
+      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "^Xcode " > /dev/null
+      if test $? -ne 0; then
+        AC_MSG_NOTICE([xcodebuild -version output: $XCODE_VERSION_OUTPUT])
+        AC_MSG_ERROR([Failed to determine Xcode version])
+      fi
+
+      # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
+      TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+    fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
@@ -698,10 +681,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     AS="$CC -c"
   else
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      # On 64 bit windows, the assember is "ml64.exe"
+      # On 64 bit windows, the assembler is "ml64.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
     else
-      # otherwise, the assember is "ml.exe"
+      # otherwise, the assembler is "ml.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
     fi
   fi
@@ -772,8 +755,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     else
       UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm)
     fi
-    GNM="$NM"
-    AC_SUBST(GNM)
   fi
 
   # objcopy is used for moving debug symbols to separate files when
@@ -883,13 +864,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])
 
-      # On windows, the assember is "ml.exe". We currently don't need this so
+      # On windows, the assembler is "ml.exe". We currently don't need this so
       # do not require.
       if test "x$OPENJDK_BUILD_CPU_BITS" = "x64"; then
-        # On 64 bit windows, the assember is "ml64.exe"
+        # On 64 bit windows, the assembler is "ml64.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml64, [$VS_PATH])
       else
-        # otherwise the assember is "ml.exe"
+        # otherwise the assembler is "ml.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
       fi
 
@@ -903,8 +884,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       BUILD_LDCXX="$BUILD_LD"
     else
       if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-        UTIL_REQUIRE_PROGS(BUILD_CC, clang cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CC, clang)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++)
       else
         UTIL_REQUIRE_PROGS(BUILD_CC, cc gcc)
         UTIL_REQUIRE_PROGS(BUILD_CXX, CC g++)
@@ -990,124 +971,4 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     HOTSPOT_TOOLCHAIN_TYPE=visCPP
   fi
   AC_SUBST(HOTSPOT_TOOLCHAIN_TYPE)
-])
-
-# Setup the JTReg Regression Test Harness.
-AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
-[
-  AC_ARG_WITH(jtreg, [AS_HELP_STRING([--with-jtreg],
-      [Regression Test Harness @<:@probed@:>@])])
-
-  if test "x$with_jtreg" = xno; then
-    # jtreg disabled
-    AC_MSG_CHECKING([for jtreg test harness])
-    AC_MSG_RESULT([no, disabled])
-  elif test "x$with_jtreg" != xyes && test "x$with_jtreg" != x; then
-    if test -d "$with_jtreg"; then
-      # An explicit path is specified, use it.
-      JT_HOME="$with_jtreg"
-    else
-      case "$with_jtreg" in
-        *.zip )
-          JTREG_SUPPORT_DIR=$CONFIGURESUPPORT_OUTPUTDIR/jtreg
-          $RM -rf $JTREG_SUPPORT_DIR
-          $MKDIR -p $JTREG_SUPPORT_DIR
-          $UNZIP -qq -d $JTREG_SUPPORT_DIR $with_jtreg
-
-          # Try to find jtreg to determine JT_HOME path
-          JTREG_PATH=`$FIND $JTREG_SUPPORT_DIR | $GREP "/bin/jtreg"`
-          if test "x$JTREG_PATH" != x; then
-            JT_HOME=$($DIRNAME $($DIRNAME $JTREG_PATH))
-          fi
-          ;;
-        * )
-          ;;
-      esac
-    fi
-    UTIL_FIXUP_PATH([JT_HOME])
-    if test ! -d "$JT_HOME"; then
-      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg does not exist])
-    fi
-
-    if test ! -e "$JT_HOME/lib/jtreg.jar"; then
-      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg is not a valid jtreg home])
-    fi
-
-    AC_MSG_CHECKING([for jtreg test harness])
-    AC_MSG_RESULT([$JT_HOME])
-  else
-    # Try to locate jtreg using the JT_HOME environment variable
-    if test "x$JT_HOME" != x; then
-      # JT_HOME set in environment, use it
-      if test ! -d "$JT_HOME"; then
-        AC_MSG_WARN([Ignoring JT_HOME pointing to invalid directory: $JT_HOME])
-        JT_HOME=
-      else
-        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
-          AC_MSG_WARN([Ignoring JT_HOME which is not a valid jtreg home: $JT_HOME])
-          JT_HOME=
-        else
-          AC_MSG_NOTICE([Located jtreg using JT_HOME from environment])
-        fi
-      fi
-    fi
-
-    if test "x$JT_HOME" = x; then
-      # JT_HOME is not set in environment, or was deemed invalid.
-      # Try to find jtreg on path
-      UTIL_LOOKUP_PROGS(JTREGEXE, jtreg)
-      if test "x$JTREGEXE" != x; then
-        # That's good, now try to derive JT_HOME
-        JT_HOME=`(cd $($DIRNAME $JTREGEXE)/.. && pwd)`
-        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
-          AC_MSG_WARN([Ignoring jtreg from path since a valid jtreg home cannot be found])
-          JT_HOME=
-        else
-          AC_MSG_NOTICE([Located jtreg using jtreg executable in path])
-        fi
-      fi
-    fi
-
-    AC_MSG_CHECKING([for jtreg test harness])
-    if test "x$JT_HOME" != x; then
-      AC_MSG_RESULT([$JT_HOME])
-    else
-      AC_MSG_RESULT([no, not found])
-
-      if test "x$with_jtreg" = xyes; then
-        AC_MSG_ERROR([--with-jtreg was specified, but no jtreg found.])
-      fi
-    fi
-  fi
-
-  UTIL_FIXUP_PATH(JT_HOME)
-  AC_SUBST(JT_HOME)
-])
-
-# Setup the JIB dependency resolver
-AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JIB],
-[
-  AC_ARG_WITH(jib, [AS_HELP_STRING([--with-jib],
-      [Jib dependency management tool @<:@not used@:>@])])
-
-  if test "x$with_jib" = xno || test "x$with_jib" = x; then
-    # jib disabled
-    AC_MSG_CHECKING([for jib])
-    AC_MSG_RESULT(no)
-  elif test "x$with_jib" = xyes; then
-    AC_MSG_ERROR([Must supply a value to --with-jib])
-  else
-    JIB_HOME="${with_jib}"
-    AC_MSG_CHECKING([for jib])
-    AC_MSG_RESULT(${JIB_HOME})
-    if test ! -d "${JIB_HOME}"; then
-      AC_MSG_ERROR([--with-jib must be a directory])
-    fi
-    JIB_JAR=$(ls ${JIB_HOME}/lib/jib-*.jar)
-    if test ! -f "${JIB_JAR}"; then
-      AC_MSG_ERROR([Could not find jib jar file in ${JIB_HOME}])
-    fi
-  fi
-
-  AC_SUBST(JIB_HOME)
 ])

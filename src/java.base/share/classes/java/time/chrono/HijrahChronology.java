@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import sun.util.logging.PlatformLogger;
 
@@ -533,18 +534,14 @@ public final class HijrahChronology extends AbstractChronology implements Serial
     @Override
     public ValueRange range(ChronoField field) {
         checkCalendarInit();
-        if (field instanceof ChronoField) {
-            ChronoField f = field;
-            return switch (f) {
-                case DAY_OF_MONTH -> ValueRange.of(1, 1, getMinimumMonthLength(), getMaximumMonthLength());
-                case DAY_OF_YEAR -> ValueRange.of(1, getMaximumDayOfYear());
-                case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, 5);
-                case YEAR, YEAR_OF_ERA -> ValueRange.of(getMinimumYear(), getMaximumYear());
-                case ERA -> ValueRange.of(1, 1);
-                default -> field.range();
-            };
-        }
-        return field.range();
+        return switch (field) {
+            case DAY_OF_MONTH -> ValueRange.of(1, 1, getMinimumMonthLength(), getMaximumMonthLength());
+            case DAY_OF_YEAR -> ValueRange.of(1, getMaximumDayOfYear());
+            case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, 5);
+            case YEAR, YEAR_OF_ERA -> ValueRange.of(getMinimumYear(), getMaximumYear());
+            case ERA -> ValueRange.of(1, 1);
+            default -> field.range();
+        };
     }
 
     //-----------------------------------------------------------------------
@@ -1039,9 +1036,8 @@ public final class HijrahChronology extends AbstractChronology implements Serial
         AccessController.doPrivileged(
             (PrivilegedAction<Void>)() -> {
                 if (Files.isDirectory(CONF_PATH)) {
-                    try {
-                        Files.list(CONF_PATH)
-                            .map(p -> p.getFileName().toString())
+                    try (Stream<Path> stream = Files.list(CONF_PATH)) {
+                        stream.map(p -> p.getFileName().toString())
                             .filter(fn -> fn.matches("hijrah-config-[^\\.]+\\.properties"))
                             .map(fn -> fn.replaceAll("(hijrah-config-|\\.properties)", ""))
                             .forEach(idtype -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3466,7 +3466,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     String language = System.getProperty("user.language", "en");
                     String country  = System.getProperty("user.country","");
                     String variant  = System.getProperty("user.variant","");
-                    return new Locale(language, country, variant);
+                    return Locale.of(language, country, variant);
                 }
             });
         }

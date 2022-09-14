@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8262891 8268663
+ * @bug 8262891 8268663 8289894
  * @summary Check guards implementation.
  * @compile --enable-preview -source ${jdk.version} Guards.java
  * @run main/othervm --enable-preview Guards
@@ -49,12 +49,14 @@ public class Guards {
         runIfTrue(this::typeGuardAfterParenthesizedTrueSwitchStatement);
         runIfTrue(this::typeGuardAfterParenthesizedTrueSwitchExpression);
         runIfTrue(this::typeGuardAfterParenthesizedTrueIfStatement);
+        testGuardNPE();
     }
 
     void run(Function<Object, String> convert) {
         assertEquals("zero", convert.apply(0));
         assertEquals("one", convert.apply(1));
         assertEquals("other", convert.apply(-1));
+        assertEquals("box with empty", convert.apply(new Box("")));
         assertEquals("any", convert.apply(""));
     }
 
@@ -66,18 +68,20 @@ public class Guards {
 
     String typeTestPatternSwitchTest(Object o) {
         switch (o) {
-            case Integer i && i == 0: return "zero";
-            case Integer i && i == 1: return "one";
+            case Integer i when i == 0: return "zero";
+            case Integer i when i == 1: return "one";
             case Integer i: return "other";
+            case Box(String s) when s.isEmpty(): return "box with empty";
             case Object x: return "any";
         }
     }
 
     String typeTestPatternSwitchExpressionTest(Object o) {
         return switch (o) {
-            case Integer i && i == 0 -> "zero";
-            case Integer i && i == 1 -> { yield "one"; }
+            case Integer i when i == 0 -> "zero";
+            case Integer i when i == 1 -> { yield "one"; }
             case Integer i -> "other";
+            case Box(String s) when s.isEmpty() -> "box with empty";
             case Object x -> "any";
         };
     }
@@ -85,9 +89,10 @@ public class Guards {
     String testBooleanSwitchExpression(Object o) {
         String x;
         if (switch (o) {
-            case Integer i && i == 0 -> (x = "zero") != null;
-            case Integer i && i == 1 -> { x = "one"; yield true; }
+            case Integer i when i == 0 -> (x = "zero") != null;
+            case Integer i when i == 1 -> { x = "one"; yield true; }
             case Integer i -> { x = "other"; yield true; }
+            case Box(String s) when s.isEmpty() -> {x = "box with empty"; yield true; }
             case Object other -> (x = "any") != null;
         }) {
             return x;
@@ -99,8 +104,8 @@ public class Guards {
     String typeGuardIfTrueSwitchStatement(Object o) {
         Object o2 = "";
         switch (o) {
-            case Integer i && i == 0 && i < 1 && o2 instanceof String s: o = s + String.valueOf(i); return "true";
-            case Integer i && i == 0 || i > 1: o = String.valueOf(i); return "second";
+            case Integer i when i == 0 && i < 1 && o2 instanceof String s: o = s + String.valueOf(i); return "true";
+            case Integer i when i == 0 || i > 1: o = String.valueOf(i); return "second";
             case Object x: return "any";
         }
     }
@@ -108,17 +113,17 @@ public class Guards {
     String typeGuardIfTrueSwitchExpression(Object o) {
         Object o2 = "";
         return switch (o) {
-            case Integer i && i == 0 && i < 1 && o2 instanceof String s: o = s + String.valueOf(i); yield "true";
-            case Integer i && i == 0 || i > 1: o = String.valueOf(i); yield "second";
+            case Integer i when i == 0 && i < 1 && o2 instanceof String s: o = s + String.valueOf(i); yield "true";
+            case Integer i when i == 0 || i > 1: o = String.valueOf(i); yield "second";
             case Object x: yield "any";
         };
     }
 
     String typeGuardIfTrueIfStatement(Object o) {
         Object o2 = "";
-        if (o != null && o instanceof (Integer i && i == 0 && i < 1) && (o = i) != null && o2 instanceof String s) {
+        if (o != null && o instanceof Integer i && i == 0 && i < 1 && (o = i) != null && o2 instanceof String s) {
             return s != null ? "true" : null;
-        } else if (o != null && o instanceof (Integer i && i == 0 || i > 1) && (o = i) != null) {
+        } else if (o != null && o instanceof Integer i && (i == 0 || i > 1) && (o = i) != null) {
             return "second";
         } else {
             return "any";
@@ -127,24 +132,24 @@ public class Guards {
 
     String typeGuardAfterParenthesizedTrueSwitchStatement(Object o) {
         switch (o) {
-            case (Integer i) && i == 0: o = String.valueOf(i); return "true";
-            case ((Integer i) && i == 2): o = String.valueOf(i); return "second";
+            case (Integer i) when i == 0: o = String.valueOf(i); return "true";
+            case (Integer i) when i == 2: o = String.valueOf(i); return "second";
             case Object x: return "any";
         }
     }
 
     String typeGuardAfterParenthesizedTrueSwitchExpression(Object o) {
         return switch (o) {
-            case (Integer i) && i == 0: o = String.valueOf(i); yield "true";
-            case ((Integer i) && i == 2): o = String.valueOf(i); yield "second";
+            case (Integer i) when i == 0: o = String.valueOf(i); yield "true";
+            case (Integer i) when i == 2: o = String.valueOf(i); yield "second";
             case Object x: yield "any";
         };
     }
 
     String typeGuardAfterParenthesizedTrueIfStatement(Object o) {
-        if (o != null && o instanceof ((Integer i) && i == 0)) {
+        if (o != null && o instanceof (Integer i) && i == 0) {
             return "true";
-        } else if (o != null && o instanceof (((Integer i) && i == 2)) && (o = i) != null) {
+        } else if (o != null && o instanceof (Integer i) && i == 2 && (o = i) != null) {
             return "second";
         } else {
             return "any";
@@ -152,11 +157,41 @@ public class Guards {
     }
 
     String testPatternInGuard(Object o) {
-        if (o instanceof (CharSequence cs && cs instanceof String s)) {
+        if (o instanceof CharSequence cs && cs instanceof String s) {
             return s;
         }
         return null;
     }
+
+    void testGuardNPE() {
+        doTestGuardNPE(this::guardNPE1);
+        doTestGuardNPE(this::guardNPE2);
+    }
+
+    void doTestGuardNPE(Function<Object, String> test) {
+        assertEquals("empty", test.apply(""));
+        assertEquals("A", test.apply("A"));
+        assertEquals("other", test.apply(1));
+        assertEquals("empty", test.apply(null));
+    }
+
+    String guardNPE1(Object o) {
+        return switch (o) {
+            case null, String s when s.isEmpty() -> "empty";
+            case String s -> s;
+            case Object x -> "other";
+        };
+    }
+
+    String guardNPE2(Object o) {
+        return switch (o) {
+            case null, ((((String s)))) when s.isEmpty() -> "empty";
+            case ((((String s)))) -> s;
+            case Object x -> "other";
+        };
+    }
+
+    record Box(Object o) {}
 
     void assertEquals(String expected, String actual) {
         if (!Objects.equals(expected, actual)) {

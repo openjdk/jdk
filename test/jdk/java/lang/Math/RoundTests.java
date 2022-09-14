@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,22 @@
  * @test
  * @bug 6430675 8010430
  * @summary Check for correct implementation of {Math, StrictMath}.round
+ * @run main/othervm -XX:Tier3CompileThreshold=50 -XX:CompileThresholdScaling=0.01 -XX:+TieredCompilation RoundTests
  */
 public class RoundTests {
     public static void main(String... args) {
         int failures = 0;
+        for (int i = 0; i < 500; i++) {
+            failures += testNearFloatHalfCases();
+            failures += testNearDoubleHalfCases();
+            failures += testUnityULPCases();
+            failures += testSpecialCases();
 
-        failures += testNearFloatHalfCases();
-        failures += testNearDoubleHalfCases();
-        failures += testUnityULPCases();
-        failures += testSpecialCases();
-
-        if (failures > 0) {
-            System.err.println("Testing {Math, StrictMath}.round incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
+            if (failures > 0) {
+                System.err.println("Testing {Math, StrictMath}.round incurred "
+                                   + failures + " failures.");
+                throw new RuntimeException();
+            }
         }
     }
 
@@ -64,8 +66,8 @@ public class RoundTests {
     private static int testNearHalfCases(double input, double expected) {
         int failures = 0;
 
-        failures += Tests.test("Math.round",        input, Math.round(input),       expected);
-        failures += Tests.test("StrictMath.round",  input, StrictMath.round(input), expected);
+        failures += Tests.test("Math.round",        input, Math::round,       expected);
+        failures += Tests.test("StrictMath.round",  input, StrictMath::round, expected);
 
         return failures;
     }
@@ -145,20 +147,14 @@ public class RoundTests {
         failures += Tests.test("Math.round", -Float.MIN_VALUE,
                 Math.round(-Float.MIN_VALUE), 0.0F);
 
-        failures += Tests.test("Math.round", Double.NaN, Math.round(Double.NaN), 0.0);
-        failures += Tests.test("Math.round", Double.POSITIVE_INFINITY,
-                Math.round(Double.POSITIVE_INFINITY), Long.MAX_VALUE);
-        failures += Tests.test("Math.round", Double.NEGATIVE_INFINITY,
-                Math.round(Double.NEGATIVE_INFINITY), Long.MIN_VALUE);
-        failures += Tests.test("Math.round", -(double)Long.MIN_VALUE,
-                Math.round(-(double)Long.MIN_VALUE), Long.MAX_VALUE);
-        failures += Tests.test("Math.round", (double) Long.MIN_VALUE,
-                Math.round((double) Long.MIN_VALUE), Long.MIN_VALUE);
-        failures += Tests.test("Math.round", 0, Math.round(0), 0.0);
-        failures += Tests.test("Math.round", Double.MIN_VALUE,
-                Math.round(Double.MIN_VALUE), 0.0);
-        failures += Tests.test("Math.round", -Double.MIN_VALUE,
-                Math.round(-Double.MIN_VALUE), 0.0);
+        failures += Tests.test("Math.round", Double.NaN,               Math::round, 0.0);
+        failures += Tests.test("Math.round", Double.POSITIVE_INFINITY, Math::round, Long.MAX_VALUE);
+        failures += Tests.test("Math.round", Double.NEGATIVE_INFINITY, Math::round, Long.MIN_VALUE);
+        failures += Tests.test("Math.round", -(double)Long.MIN_VALUE,  Math::round, Long.MAX_VALUE);
+        failures += Tests.test("Math.round", (double) Long.MIN_VALUE,  Math::round, Long.MIN_VALUE);
+        failures += Tests.test("Math.round", 0,                        Math::round, 0.0);
+        failures += Tests.test("Math.round", Double.MIN_VALUE,         Math::round, 0.0);
+        failures += Tests.test("Math.round", -Double.MIN_VALUE,        Math::round, 0.0);
 
         return failures;
     }

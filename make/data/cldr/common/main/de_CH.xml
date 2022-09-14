@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -29,6 +29,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mus">Muskogee-Sprache</language>
 			<language type="nl_BE">Flämisch</language>
 			<language type="prg">Altpreussisch</language>
+			<language type="rhg">Rohingya</language>
 			<language type="zh_Hans">Chinesisch (vereinfacht)</language>
 			<language type="zh_Hans" alt="long">Hochchinesisch (vereinfacht)</language>
 			<language type="zh_Hant">Chinesisch (traditionell)</language>
@@ -61,7 +62,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -164,8 +165,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Weissrussische Rubel (2000–2016)</displayName>
 			</currency>
 			<currency type="EUR">
-				<symbol draft="contributed">EUR</symbol>
-				<symbol alt="narrow" draft="contributed">EUR</symbol>
+				<symbol>EUR</symbol>
+				<symbol alt="narrow">EUR</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>São-toméischer Dobra (2018)</displayName>
@@ -187,9 +188,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} Quadratfuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Quadratfuss</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<displayName>mg/dL</displayName>
-			</unit>
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
 				<unitPattern count="one">{0} Fuss</unitPattern>
@@ -201,9 +199,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} Fuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Fuss</unitPattern>
 				<perUnitPattern>{0} pro Fuss</perUnitPattern>
-			</unit>
-			<unit type="mass-grain">
-				<displayName>Messerspitze</displayName>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>Kubikfuss</displayName>
@@ -221,21 +216,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} gal Imp.</unitPattern>
 				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
 			</unit>
-			<unit type="volume-jigger">
-				<displayName>Schuss</displayName>
-			</unit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
 			</unit>
-			<unit type="mass-grain">
-				<displayName>Messerspitze</displayName>
-				<unitPattern count="other">{0} Msp.</unitPattern>
-			</unit>
 			<unit type="volume-gallon-imperial">
-				<unitPattern count="one">{0} gal Imp.</unitPattern>
-				<unitPattern count="other">{0} gal Imp.</unitPattern>
 				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
 			</unit>
 			<unit type="volume-dram">
@@ -261,6 +247,5 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="opsz" subtype="18">Schaugrösse</styleName>
 		<styleName type="opsz" subtype="72">Plakatgrösse</styleName>
 		<styleName type="opsz" subtype="144">Ferngrösse</styleName>
-		<styleName type="wght" subtype="500">medium</styleName>
 	</typographicNames>
 </ldml>

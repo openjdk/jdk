@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1140,7 +1140,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 
 - (BOOL)accessibilityIsSizeAttributeSettable
 {
-    // SIZE is settable in windows if [self styleMask] & NSResizableWindowMask - but windows are heavyweight so we're ok here
+    // SIZE is settable in windows if [self styleMask] & NSWindowStyleMaskResizable - but windows are heavyweight so we're ok here
     // SIZE is settable in columns if [[self tableValue] allowsColumnResizing - haven't dealt with columns yet
     return NO;
 }

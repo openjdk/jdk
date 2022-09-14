@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ void PerfMemory::initialize() {
   size_t capacity = align_up(PerfDataMemorySize,
                              os::vm_allocation_granularity());
 
-  log_debug(perf, memops)("PerfDataMemorySize = " SIZE_FORMAT ","
+  log_debug(perf, memops)("PerfDataMemorySize = %d,"
                           " os::vm_allocation_granularity = %d,"
                           " adjusted size = " SIZE_FORMAT,
                           PerfDataMemorySize,

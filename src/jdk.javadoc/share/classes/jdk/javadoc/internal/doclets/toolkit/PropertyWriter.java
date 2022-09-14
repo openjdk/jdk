@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,36 +29,30 @@ import javax.lang.model.element.ExecutableElement;
 
 /**
  * The interface for writing property output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public interface PropertyWriter extends MemberWriter {
 
     /**
-     * Get the property details tree header.
+     * Get the property details header.
      *
-     * @param memberDetailsTree the content tree representing member details
-     * @return content tree for the property details header
+     * @param memberDetails the content representing member details
+     * @return the property details header
      */
-    Content getPropertyDetailsTreeHeader(Content memberDetailsTree);
+    Content getPropertyDetailsHeader(Content memberDetails);
 
     /**
-     * Get the property documentation tree header.
+     * Get the property documentation header.
      *
      * @param property the property being documented
-     * @return content tree for the property documentation header
+     * @return the property documentation header
      */
-    Content getPropertyDocTreeHeader(ExecutableElement property);
+    Content getPropertyHeaderContent(ExecutableElement property);
 
     /**
      * Get the signature for the given property.
      *
      * @param property the property being documented
-     * @return content tree for the property signature
+     * @return the property signature
      */
     Content getSignature(ExecutableElement property);
 
@@ -66,47 +60,40 @@ public interface PropertyWriter extends MemberWriter {
      * Add the deprecated output for the given property.
      *
      * @param property the property being documented
-     * @param propertyDocTree content tree to which the deprecated information will be added
+     * @param propertyContent content to which the deprecated information will be added
      */
-    void addDeprecated(ExecutableElement property, Content propertyDocTree);
+    void addDeprecated(ExecutableElement property, Content propertyContent);
 
     /**
      * Add the preview output for the given member.
      *
      * @param member the member being documented
-     * @param contentTree content tree to which the preview information will be added
+     * @param content the content to which the preview information will be added
      */
-    void addPreview(ExecutableElement member, Content contentTree);
+    void addPreview(ExecutableElement member, Content content);
 
     /**
      * Add the comments for the given property.
      *
      * @param property the property being documented
-     * @param propertyDocTree the content tree to which the comments will be added
+     * @param propertyContent the content to which the comments will be added
      */
-    void addComments(ExecutableElement property, Content propertyDocTree);
+    void addComments(ExecutableElement property, Content propertyContent);
 
     /**
      * Add the tags for the given property.
      *
      * @param property the property being documented
-     * @param propertyDocTree the content tree to which the tags will be added
+     * @param propertyContent the content to which the tags will be added
      */
-    void addTags(ExecutableElement property, Content propertyDocTree);
+    void addTags(ExecutableElement property, Content propertyContent);
 
     /**
-     * Get the property details tree.
+     * Get the property details.
      *
-     * @param memberDetailsTreeHeader the content tree representing member details header
-     * @param memberDetailsTree the content tree representing member details
-     * @return content tree for the property details
+     * @param memberDetailsHeader the content representing member details header
+     * @param memberDetails the content representing member details
+     * @return the property details
      */
-    Content getPropertyDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
-
-    /**
-     * Gets the member header tree.
-     *
-     * @return a content tree for the member header
-     */
-    Content getMemberTreeHeader();
+    Content getPropertyDetails(Content memberDetailsHeader, Content memberDetails);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,10 +374,14 @@ class ServerImpl implements TimeSource {
 
                     /* process the selected list now  */
                     Set<SelectionKey> selected = selector.selectedKeys();
-                    Iterator<SelectionKey> iter = selected.iterator();
-                    while (iter.hasNext()) {
-                        SelectionKey key = iter.next();
-                        iter.remove ();
+                    // create a copy of the selected keys so that we can iterate over it
+                    // and at the same time not worry about the underlying Set being
+                    // modified (leading to ConcurrentModificationException) due to
+                    // any subsequent select operations that we invoke on the
+                    // selector (in this same thread).
+                    for (final SelectionKey key : selected.toArray(SelectionKey[]::new)) {
+                        // remove the key from the original selected keys (live) Set
+                        selected.remove(key);
                         if (key.equals (listenerKey)) {
                             if (terminating) {
                                 continue;
@@ -521,6 +525,18 @@ class ServerImpl implements TimeSource {
         public void run () {
             /* context will be null for new connections */
             logger.log(Level.TRACE, "exchange started");
+
+            if (dispatcherThread == Thread.currentThread()) {
+                try {
+                    // call selector to process cancelled keys
+                    selector.selectNow();
+                } catch (IOException ioe) {
+                    logger.log(Level.DEBUG, "processing of cancelled keys failed: closing");
+                    closeConnection(connection);
+                    return;
+                }
+            }
+
             context = connection.getHttpContext();
             boolean newconnection;
             SSLEngine engine = null;
@@ -618,6 +634,11 @@ class ServerImpl implements TimeSource {
                     headerValue = headers.getFirst("Content-Length");
                     if (headerValue != null) {
                         clen = Long.parseLong(headerValue);
+                        if (clen < 0) {
+                            reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                    "Illegal Content-Length value");
+                            return;
+                        }
                     }
                     if (clen == 0) {
                         requestCompleted(connection);
@@ -649,12 +670,11 @@ class ServerImpl implements TimeSource {
                     if (chdr == null) {
                         tx.close = true;
                         rheaders.set ("Connection", "close");
-                    } else if (chdr.equalsIgnoreCase ("keep-alive")) {
-                        rheaders.set ("Connection", "keep-alive");
-                        int idle=(int)(ServerConfig.getIdleInterval()/1000);
-                        int max=ServerConfig.getMaxIdleConnections();
-                        String val = "timeout="+idle+", max="+max;
-                        rheaders.set ("Keep-Alive", val);
+                    } else if (chdr.equalsIgnoreCase("keep-alive")) {
+                        rheaders.set("Connection", "keep-alive");
+                        int timeoutSeconds = (int) (ServerConfig.getIdleInterval() / 1000);
+                        String val = "timeout=" + timeoutSeconds;
+                        rheaders.set("Keep-Alive", val);
                     }
                 }
 

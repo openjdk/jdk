@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,109 +159,130 @@ abstract class SHA3 extends DigestBase {
     }
 
     /**
-     * Step mapping Theta as defined in section 3.2.1 .
-     */
-    private static long[] smTheta(long[] a) {
-        long c0 = a[0]^a[5]^a[10]^a[15]^a[20];
-        long c1 = a[1]^a[6]^a[11]^a[16]^a[21];
-        long c2 = a[2]^a[7]^a[12]^a[17]^a[22];
-        long c3 = a[3]^a[8]^a[13]^a[18]^a[23];
-        long c4 = a[4]^a[9]^a[14]^a[19]^a[24];
-        long d0 = c4 ^ Long.rotateLeft(c1, 1);
-        long d1 = c0 ^ Long.rotateLeft(c2, 1);
-        long d2 = c1 ^ Long.rotateLeft(c3, 1);
-        long d3 = c2 ^ Long.rotateLeft(c4, 1);
-        long d4 = c3 ^ Long.rotateLeft(c0, 1);
-        for (int y = 0; y < a.length; y += DM) {
-            a[y] ^= d0;
-            a[y+1] ^= d1;
-            a[y+2] ^= d2;
-            a[y+3] ^= d3;
-            a[y+4] ^= d4;
-        }
-        return a;
-    }
-
-    /**
-     * Merged Step mapping Rho (section 3.2.2) and Pi (section 3.2.3).
-     * for performance. Optimization is achieved by precalculating
-     * shift constants for the following loop
-     *   int xNext, yNext;
-     *   for (int t = 0, x = 1, y = 0; t <= 23; t++, x = xNext, y = yNext) {
-     *        int numberOfShift = ((t + 1)*(t + 2)/2) % 64;
-     *        a[y][x] = Long.rotateLeft(a[y][x], numberOfShift);
-     *        xNext = y;
-     *        yNext = (2 * x + 3 * y) % DM;
-     *   }
-     * and with inplace permutation.
-     */
-    private static long[] smPiRho(long[] a) {
-        long tmp = Long.rotateLeft(a[10], 3);
-        a[10] = Long.rotateLeft(a[1], 1);
-        a[1] = Long.rotateLeft(a[6], 44);
-        a[6] = Long.rotateLeft(a[9], 20);
-        a[9] = Long.rotateLeft(a[22], 61);
-        a[22] = Long.rotateLeft(a[14], 39);
-        a[14] = Long.rotateLeft(a[20], 18);
-        a[20] = Long.rotateLeft(a[2], 62);
-        a[2] = Long.rotateLeft(a[12], 43);
-        a[12] = Long.rotateLeft(a[13], 25);
-        a[13] = Long.rotateLeft(a[19], 8);
-        a[19] = Long.rotateLeft(a[23], 56);
-        a[23] = Long.rotateLeft(a[15], 41);
-        a[15] = Long.rotateLeft(a[4], 27);
-        a[4] = Long.rotateLeft(a[24], 14);
-        a[24] = Long.rotateLeft(a[21], 2);
-        a[21] = Long.rotateLeft(a[8], 55);
-        a[8] = Long.rotateLeft(a[16], 45);
-        a[16] = Long.rotateLeft(a[5], 36);
-        a[5] = Long.rotateLeft(a[3], 28);
-        a[3] = Long.rotateLeft(a[18], 21);
-        a[18] = Long.rotateLeft(a[17], 15);
-        a[17] = Long.rotateLeft(a[11], 10);
-        a[11] = Long.rotateLeft(a[7], 6);
-        a[7] = tmp;
-        return a;
-    }
-
-    /**
-     * Step mapping Chi as defined in section 3.2.4.
-     */
-    private static long[] smChi(long[] a) {
-        for (int y = 0; y < a.length; y+=DM) {
-            long ay0 = a[y];
-            long ay1 = a[y+1];
-            long ay2 = a[y+2];
-            long ay3 = a[y+3];
-            long ay4 = a[y+4];
-            a[y] = ay0 ^ ((~ay1) & ay2);
-            a[y+1] = ay1 ^ ((~ay2) & ay3);
-            a[y+2] = ay2 ^ ((~ay3) & ay4);
-            a[y+3] = ay3 ^ ((~ay4) & ay0);
-            a[y+4] = ay4 ^ ((~ay0) & ay1);
-        }
-        return a;
-    }
-
-    /**
-     * Step mapping Iota as defined in section 3.2.5.
-     */
-    private static long[] smIota(long[] a, int rndIndex) {
-        a[0] ^= RC_CONSTANTS[rndIndex];
-        return a;
-    }
-
-    /**
      * The function Keccak as defined in section 5.2 with
      * rate r = 1600 and capacity c = (digest length x 2).
      */
     private void keccak() {
         // convert the 200-byte state into 25 lanes
         bytes2Lanes(state, lanes);
+
+        long a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12;
+        long a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24;
+        // move data into local variables
+        a0 = lanes[0]; a1 = lanes[1]; a2 = lanes[2]; a3 = lanes[3]; a4 = lanes[4];
+        a5 = lanes[5]; a6 = lanes[6]; a7 = lanes[7]; a8 = lanes[8]; a9 = lanes[9];
+        a10 = lanes[10]; a11 = lanes[11]; a12 = lanes[12]; a13 = lanes[13]; a14 = lanes[14];
+        a15 = lanes[15]; a16 = lanes[16]; a17 = lanes[17]; a18 = lanes[18]; a19 = lanes[19];
+        a20 = lanes[20]; a21 = lanes[21]; a22 = lanes[22]; a23 = lanes[23]; a24 = lanes[24];
+
         // process the lanes through step mappings
         for (int ir = 0; ir < NR; ir++) {
-            smIota(smChi(smPiRho(smTheta(lanes))), ir);
+            // Step mapping Theta as defined in section 3.2.1.
+            long c0 = a0^a5^a10^a15^a20;
+            long c1 = a1^a6^a11^a16^a21;
+            long c2 = a2^a7^a12^a17^a22;
+            long c3 = a3^a8^a13^a18^a23;
+            long c4 = a4^a9^a14^a19^a24;
+            long d0 = c4 ^ Long.rotateLeft(c1, 1);
+            long d1 = c0 ^ Long.rotateLeft(c2, 1);
+            long d2 = c1 ^ Long.rotateLeft(c3, 1);
+            long d3 = c2 ^ Long.rotateLeft(c4, 1);
+            long d4 = c3 ^ Long.rotateLeft(c0, 1);
+            a0  ^= d0; a1  ^= d1; a2  ^= d2; a3  ^= d3; a4  ^= d4;
+            a5  ^= d0; a6  ^= d1; a7  ^= d2; a8  ^= d3; a9  ^= d4;
+            a10 ^= d0; a11 ^= d1; a12 ^= d2; a13 ^= d3; a14 ^= d4;
+            a15 ^= d0; a16 ^= d1; a17 ^= d2; a18 ^= d3; a19 ^= d4;
+            a20 ^= d0; a21 ^= d1; a22 ^= d2; a23 ^= d3; a24 ^= d4;
+
+            /**
+             * Merged Step mapping Rho (section 3.2.2) and Pi (section 3.2.3).
+             * for performance. Optimization is achieved by precalculating
+             * shift constants for the following loop
+             *   int xNext, yNext;
+             *   for (int t = 0, x = 1, y = 0; t <= 23; t++, x = xNext, y = yNext) {
+             *        int numberOfShift = ((t + 1)*(t + 2)/2) % 64;
+             *        a[y][x] = Long.rotateLeft(a[y][x], numberOfShift);
+             *        xNext = y;
+             *        yNext = (2 * x + 3 * y) % DM;
+             *   }
+             * and with inplace permutation.
+             */
+            long ay = Long.rotateLeft(a10, 3);
+            a10 = Long.rotateLeft(a1, 1);
+            a1 = Long.rotateLeft(a6, 44);
+            a6 = Long.rotateLeft(a9, 20);
+            a9 = Long.rotateLeft(a22, 61);
+            a22 = Long.rotateLeft(a14, 39);
+            a14 = Long.rotateLeft(a20, 18);
+            a20 = Long.rotateLeft(a2, 62);
+            a2 = Long.rotateLeft(a12, 43);
+            a12 = Long.rotateLeft(a13, 25);
+            a13 = Long.rotateLeft(a19, 8);
+            a19 = Long.rotateLeft(a23, 56);
+            a23 = Long.rotateLeft(a15, 41);
+            a15 = Long.rotateLeft(a4, 27);
+            a4 = Long.rotateLeft(a24, 14);
+            a24 = Long.rotateLeft(a21, 2);
+            a21 = Long.rotateLeft(a8, 55);
+            a8 = Long.rotateLeft(a16, 45);
+            a16 = Long.rotateLeft(a5, 36);
+            a5 = Long.rotateLeft(a3, 28);
+            a3 = Long.rotateLeft(a18, 21);
+            a18 = Long.rotateLeft(a17, 15);
+            a17 = Long.rotateLeft(a11, 10);
+            a11 = Long.rotateLeft(a7, 6);
+            a7 = ay;
+
+            // Step mapping Chi as defined in section 3.2.4.
+            long tmp0 = a0;
+            long tmp1 = a1;
+            long tmp2 = a2;
+            long tmp3 = a3;
+            long tmp4 = a4;
+            a0 = tmp0 ^ ((~tmp1) & tmp2);
+            a1 = tmp1 ^ ((~tmp2) & tmp3);
+            a2 = tmp2 ^ ((~tmp3) & tmp4);
+            a3 = tmp3 ^ ((~tmp4) & tmp0);
+            a4 = tmp4 ^ ((~tmp0) & tmp1);
+
+            tmp0 = a5; tmp1 = a6; tmp2 = a7; tmp3 = a8; tmp4 = a9;
+            a5 = tmp0 ^ ((~tmp1) & tmp2);
+            a6 = tmp1 ^ ((~tmp2) & tmp3);
+            a7 = tmp2 ^ ((~tmp3) & tmp4);
+            a8 = tmp3 ^ ((~tmp4) & tmp0);
+            a9 = tmp4 ^ ((~tmp0) & tmp1);
+
+            tmp0 = a10; tmp1 = a11; tmp2 = a12; tmp3 = a13; tmp4 = a14;
+            a10 = tmp0 ^ ((~tmp1) & tmp2);
+            a11 = tmp1 ^ ((~tmp2) & tmp3);
+            a12 = tmp2 ^ ((~tmp3) & tmp4);
+            a13 = tmp3 ^ ((~tmp4) & tmp0);
+            a14 = tmp4 ^ ((~tmp0) & tmp1);
+
+            tmp0 = a15; tmp1 = a16; tmp2 = a17; tmp3 = a18; tmp4 = a19;
+            a15 = tmp0 ^ ((~tmp1) & tmp2);
+            a16 = tmp1 ^ ((~tmp2) & tmp3);
+            a17 = tmp2 ^ ((~tmp3) & tmp4);
+            a18 = tmp3 ^ ((~tmp4) & tmp0);
+            a19 = tmp4 ^ ((~tmp0) & tmp1);
+
+            tmp0 = a20; tmp1 = a21; tmp2 = a22; tmp3 = a23; tmp4 = a24;
+            a20 = tmp0 ^ ((~tmp1) & tmp2);
+            a21 = tmp1 ^ ((~tmp2) & tmp3);
+            a22 = tmp2 ^ ((~tmp3) & tmp4);
+            a23 = tmp3 ^ ((~tmp4) & tmp0);
+            a24 = tmp4 ^ ((~tmp0) & tmp1);
+
+            // Step mapping Iota as defined in section 3.2.5.
+            a0 ^= RC_CONSTANTS[ir];
         }
+
+        lanes[0] = a0; lanes[1] = a1; lanes[2] = a2; lanes[3] = a3; lanes[4] = a4;
+        lanes[5] = a5; lanes[6] = a6; lanes[7] = a7; lanes[8] = a8; lanes[9] = a9;
+        lanes[10] = a10; lanes[11] = a11; lanes[12] = a12; lanes[13] = a13; lanes[14] = a14;
+        lanes[15] = a15; lanes[16] = a16; lanes[17] = a17; lanes[18] = a18; lanes[19] = a19;
+        lanes[20] = a20; lanes[21] = a21; lanes[22] = a22; lanes[23] = a23; lanes[24] = a24;
+
         // convert the resulting 25 lanes back into 200-byte state
         lanes2Bytes(lanes, state);
     }

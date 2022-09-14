@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,9 @@
  * questions.
  */
 
- /*
+/*
  * @test
  * @key headful
- * @library ../../regtesthelpers
- * @build Util
  * @bug 8033699 8154043 8167160 8208640 8226892
  * @summary  Incorrect radio button behavior when pressing tab key
  * @run main bug8033699
@@ -34,8 +32,7 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Robot;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -45,7 +42,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug8033699 {
 
@@ -59,7 +55,7 @@ public class bug8033699 {
     private static JRadioButton radioBtn3;
     private static JRadioButton radioBtnSingle;
 
-    public static void main(String args[]) throws Throwable {
+    public static void main(String[] args) throws Throwable {
         SwingUtilities.invokeAndWait(() -> {
                 changeLAF();
                 createAndShowGUI();
@@ -67,6 +63,7 @@ public class bug8033699 {
 
         robot = new Robot();
         Thread.sleep(100);
+        robot.waitForIdle();
 
         robot.setAutoDelay(100);
 
@@ -76,7 +73,7 @@ public class bug8033699 {
         // tab key test non-grouped radio button
         runTest2();
 
-        // shift tab key test grouped and non grouped radio button
+        // shift tab key test grouped and non-grouped radio button
         runTest3();
 
         // left/up key test in grouped radio button
@@ -152,16 +149,16 @@ public class bug8033699 {
         mainFrame.setLayout(new BoxLayout(mainFrame.getContentPane(), BoxLayout.Y_AXIS));
 
         mainFrame.setSize(300, 300);
-        mainFrame.setLocation(200, 200);
+        mainFrame.setLocationRelativeTo(null);
         mainFrame.setVisible(true);
         mainFrame.toFront();
     }
 
     // Radio button Group as a single component when traversing through tab key
     private static void runTest1() throws Exception {
-        hitKey(robot, KeyEvent.VK_TAB);
-        hitKey(robot, KeyEvent.VK_TAB);
-        hitKey(robot, KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_TAB);
 
         SwingUtilities.invokeAndWait(() -> {
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtnSingle) {
@@ -173,7 +170,7 @@ public class bug8033699 {
 
     // Non-Grouped Radio button as a single component when traversing through tab key
     private static void runTest2() throws Exception {
-        hitKey(robot, KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_TAB);
         SwingUtilities.invokeAndWait(() -> {
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != btnEnd) {
                 System.out.println("Non Grouped Radio Button Go To Next Component through Tab Key failed");
@@ -184,9 +181,9 @@ public class bug8033699 {
 
     // Non-Grouped Radio button and Group Radio button as a single component when traversing through shift-tab key
     private static void runTest3() throws Exception {
-        hitKey(robot, KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
-        hitKey(robot, KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
-        hitKey(robot, KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
         SwingUtilities.invokeAndWait(() -> {
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtn1) {
                 System.out.println("Radio button Group/Non Grouped Radio Button SHIFT-Tab Key Test failed");
@@ -197,8 +194,8 @@ public class bug8033699 {
 
     // Using arrow key to move focus in radio button group
     private static void runTest4() throws Exception {
-        hitKey(robot, KeyEvent.VK_DOWN);
-        hitKey(robot, KeyEvent.VK_RIGHT);
+        hitKey(KeyEvent.VK_DOWN);
+        hitKey(KeyEvent.VK_RIGHT);
         SwingUtilities.invokeAndWait(() -> {
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtn3) {
                 System.out.println("Radio button Group UP/LEFT Arrow Key Move Focus Failed");
@@ -208,8 +205,8 @@ public class bug8033699 {
     }
 
     private static void runTest5() throws Exception {
-        hitKey(robot, KeyEvent.VK_UP);
-        hitKey(robot, KeyEvent.VK_LEFT);
+        hitKey(KeyEvent.VK_UP);
+        hitKey(KeyEvent.VK_LEFT);
         SwingUtilities.invokeAndWait(() -> {
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtn1) {
                 System.out.println("Radio button Group Left/Up Arrow Key Move Focus Failed");
@@ -219,8 +216,8 @@ public class bug8033699 {
     }
 
     private static void runTest6() throws Exception {
-        hitKey(robot, KeyEvent.VK_UP);
-        hitKey(robot, KeyEvent.VK_UP);
+        hitKey(KeyEvent.VK_UP);
+        hitKey(KeyEvent.VK_UP);
         SwingUtilities.invokeAndWait(() -> {
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtn2) {
                 System.out.println("Radio button Group Circle Back To First Button Test");
@@ -230,7 +227,7 @@ public class bug8033699 {
     }
 
     private static void runTest7() throws Exception {
-        hitKey(robot, KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_TAB);
         SwingUtilities.invokeAndWait(() -> {
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != btnMiddle) {
                 System.out.println("Separate Component added in button group layout");
@@ -240,7 +237,7 @@ public class bug8033699 {
     }
 
     private static void runTest8() throws Exception {
-        hitKey(robot, KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_TAB);
         SwingUtilities.invokeAndWait(() -> {
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtnSingle) {
                 System.out.println("Separate Component added in button group layout");
@@ -249,9 +246,9 @@ public class bug8033699 {
         });
     }
 
-    private static Boolean actRB1 = false;
-    private static Boolean actRB2 = false;
-    private static Boolean actRB3 = false;
+    private static boolean actRB1 = false;
+    private static boolean actRB2 = false;
+    private static boolean actRB3 = false;
 
     // JDK-8226892: Verify that ActionListener is called when a RadioButton is selected using arrow key.
     private static void runTest9() throws Exception {
@@ -268,9 +265,9 @@ public class bug8033699 {
         radioBtn2.addActionListener(actLrRB2);
         radioBtn3.addActionListener(actLrRB3);
 
-        hitKey(robot, KeyEvent.VK_DOWN);
-        hitKey(robot, KeyEvent.VK_DOWN);
-        hitKey(robot, KeyEvent.VK_DOWN);
+        hitKey(KeyEvent.VK_DOWN);
+        hitKey(KeyEvent.VK_DOWN);
+        hitKey(KeyEvent.VK_DOWN);
 
         String failMessage = "ActionListener not invoked when selected using arrow key.";
         if (!actRB2) {
@@ -288,13 +285,13 @@ public class bug8033699 {
         radioBtn3.removeActionListener(actLrRB3);
     }
 
-    private static void hitKey(Robot robot, int keycode) {
+    private static void hitKey(int keycode) {
         robot.keyPress(keycode);
         robot.keyRelease(keycode);
         robot.waitForIdle();
     }
 
-    private static void hitKey(Robot robot, int mode, int keycode) {
+    private static void hitKey(int mode, int keycode) {
         robot.keyPress(mode);
         robot.keyPress(keycode);
         robot.keyRelease(keycode);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.security.spec.*;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.*;
 
+import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.callback.Callback;
@@ -231,6 +232,7 @@ final class P11KeyStore extends KeyStoreSpi {
         private PasswordCallbackHandler(char[] password) {
             if (password != null) {
                 this.password = password.clone();
+                P11Util.cleaner.register(this, releaserFor(this.password));
             }
         }
 
@@ -243,12 +245,10 @@ final class P11KeyStore extends KeyStoreSpi {
             pc.setPassword(password);  // this clones the password if not null
         }
 
-        @SuppressWarnings("removal")
-        protected void finalize() throws Throwable {
-            if (password != null) {
+        private static Runnable releaserFor(char[] password) {
+            return () -> {
                 Arrays.fill(password, ' ');
-            }
-            super.finalize();
+            };
         }
     }
 
@@ -455,7 +455,18 @@ final class P11KeyStore extends KeyStoreSpi {
         } catch (NullPointerException | IllegalArgumentException e) {
             throw new KeyStoreException(e);
         }
-        engineSetEntry(alias, entry, new KeyStore.PasswordProtection(password));
+
+        KeyStore.PasswordProtection passwordProtection =
+                new KeyStore.PasswordProtection(password);
+        try {
+            engineSetEntry(alias, entry, passwordProtection);
+        } finally {
+            try {
+                passwordProtection.destroy();
+            } catch (DestroyFailedException dfe) {
+                // ignore
+            }
+        }
     }
 
     /**
@@ -904,9 +915,8 @@ final class P11KeyStore extends KeyStoreSpi {
 
         token.ensureValid();
 
-        if (protParam != null &&
-            protParam instanceof KeyStore.PasswordProtection &&
-            ((KeyStore.PasswordProtection)protParam).getPassword() != null &&
+        if (protParam instanceof PasswordProtection pp &&
+            pp.getPassword() != null &&
             !token.config.getKeyStoreCompatibilityMode()) {
             throw new KeyStoreException("ProtectionParameter must be null");
         }
@@ -1007,9 +1017,8 @@ final class P11KeyStore extends KeyStoreSpi {
         token.ensureValid();
         checkWrite();
 
-        if (protParam != null &&
-            protParam instanceof KeyStore.PasswordProtection &&
-            ((KeyStore.PasswordProtection)protParam).getPassword() != null &&
+        if (protParam instanceof PasswordProtection pp &&
+            pp.getPassword() != null &&
             !token.config.getKeyStoreCompatibilityMode()) {
             throw new KeyStoreException(new UnsupportedOperationException
                                 ("ProtectionParameter must be null"));

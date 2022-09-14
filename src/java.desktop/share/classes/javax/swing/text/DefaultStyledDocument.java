@@ -182,7 +182,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      *
      * @param offset the starting offset &gt;= 0
      * @param data the element data
-     * @exception BadLocationException for an invalid starting offset
+     * @throws BadLocationException for an invalid starting offset
      */
     protected void insert(int offset, ElementSpec[] data) throws BadLocationException {
         if (data == null || data.length == 0) {
@@ -484,6 +484,18 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * A write lock is held by this operation while changes
      * are being made, and a DocumentEvent is sent to the listeners
      * after the change has been successfully completed.
+     *
+     * <p>
+     * {@code offset} and {@code length} define the range of the text
+     * over which the attributes are set.
+     * If the length is &lt;= 0, then no action is taken  and the method
+     * just returns.
+     * If the offset is &lt;=0 or &gt; the length of the text then no
+     * action is taken, and the method just returns.
+     * Otherwise if {@code offset + length} will exceed the length of
+     * the  text then the affected range is truncated.
+     * </p>
+     *
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
@@ -491,13 +503,13 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * in Swing</A> for more information.
      *
      * @param offset the offset in the document &gt;= 0
-     * @param length the length &gt;= 0
+     * @param length the length &gt; 0
      * @param s the attributes
      * @param replace true if the previous attributes should be replaced
      *  before setting the new attributes
      */
     public void setCharacterAttributes(int offset, int length, AttributeSet s, boolean replace) {
-        if (length == 0) {
+        if (length <= 0) {
             return;
         }
         try {
@@ -2548,7 +2560,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Redoes a change.
          *
-         * @exception CannotRedoException if the change cannot be redone
+         * @throws CannotRedoException if the change cannot be redone
          */
         public void redo() throws CannotRedoException {
             super.redo();
@@ -2562,7 +2574,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Undoes a change.
          *
-         * @exception CannotUndoException if the change cannot be undone
+         * @throws CannotUndoException if the change cannot be undone
          */
         public void undo() throws CannotUndoException {
             super.undo();
@@ -2604,7 +2616,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Redoes a change.
          *
-         * @exception CannotRedoException if the change cannot be redone
+         * @throws CannotRedoException if the change cannot be redone
          */
         public void redo() throws CannotRedoException {
             super.redo();
@@ -2614,7 +2626,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Undoes a change.
          *
-         * @exception CannotUndoException if the change cannot be undone
+         * @throws CannotUndoException if the change cannot be undone
          */
         public void undo() throws CannotUndoException {
             super.undo();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,13 +96,14 @@ CodeBuffer::CodeBuffer(CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(*this)
 }
 
 void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
-  // Compute maximal alignment.
-  int align = _insts.alignment();
   // Always allow for empty slop around each section.
   int slop = (int) CodeSection::end_slop();
 
+  assert(SECT_LIMIT == 3, "total_size explicitly lists all section alignments");
+  int total_size = code_size + _consts.alignment() + _insts.alignment() + _stubs.alignment() + SECT_LIMIT * slop;
+
   assert(blob() == NULL, "only once");
-  set_blob(BufferBlob::create(_name, code_size + (align+slop) * (SECT_LIMIT+1)));
+  set_blob(BufferBlob::create(_name, total_size));
   if (blob() == NULL) {
     // The assembler constructor will throw a fatal on an empty CodeBuffer.
     return;  // caller must test this
@@ -133,10 +134,9 @@ CodeBuffer::~CodeBuffer() {
     // Previous incarnations of this buffer are held live, so that internal
     // addresses constructed before expansions will not be confused.
     cb->free_blob();
+    // free any overflow storage
+    delete cb->_overflow_arena;
   }
-
-  // free any overflow storage
-  delete _overflow_arena;
 
   NOT_PRODUCT(clear_strings());
 
@@ -442,6 +442,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   address buf = dest->_total_start;
   csize_t buf_offset = 0;
   assert(dest->_total_size >= total_content_size(), "must be big enough");
+  assert(!_finalize_stubs, "non-finalized stubs");
 
   {
     // not sure why this is here, but why not...
@@ -932,6 +933,7 @@ void CodeBuffer::take_over_code_from(CodeBuffer* cb) {
     this_sect->take_over_code_from(cb_sect);
   }
   _overflow_arena = cb->_overflow_arena;
+  cb->_overflow_arena = NULL;
   // Make sure the old cb won't try to use it or free it.
   DEBUG_ONLY(cb->_blob = (BufferBlob*)badAddress);
 }
@@ -977,6 +979,22 @@ void CodeBuffer::log_section_sizes(const char* name) {
     }
     xtty->print_cr("</blob>");
   }
+}
+
+void CodeBuffer::finalize_stubs() {
+  if (!pd_finalize_stubs()) {
+    return;
+  }
+  _finalize_stubs = false;
+}
+
+void CodeBuffer::shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset) {
+  if (_shared_stub_to_interp_requests == NULL) {
+    _shared_stub_to_interp_requests = new SharedStubToInterpRequests(8);
+  }
+  SharedStubToInterpRequest request(callee, call_offset);
+  _shared_stub_to_interp_requests->push(request);
+  _finalize_stubs = true;
 }
 
 #ifndef PRODUCT

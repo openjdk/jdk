@@ -1,0 +1,53 @@
+Tips and tasks when updating harfbuzz sources to a newer version.
+-----------------------------------------------------------------
+
+We only use files from the src directory and even then only the ones we need.
+So just C++ include and source files and only the ones needed for the library,
+and even then just the ones we use. Do NOT just copy everything.
+
+So one way to update is to
+
+- copy over from the updated harfbuzz the exact same files we already have
+- it isn't a flat directory so watch out for that
+- any that are no longer available (copy fails) we remove but these may come
+  back later if they were actually renamed
+- look for files in the destination that were NOT updated - perhaps they
+  are gone in the upstream - or renamed. Remove them if they are really
+  obsolete, or add their replacements/renames.
+- iterate over : build and see what new file is missing that causes a build failure
+- when this is done we have something buildable
+- make sure it builds on all supported platforms.
+- Harfbuzz is not modular so it is not easy,
+- The main thing is we do NOT want any
+   * "test" programs (test in the name, have a main are clues)
+   * support for (eg) GLib, DirectWrite, Graphite, GDI, ICU, Uniscribe
+   * aggregators like harfbuzz.cc - since it includes things from the above
+     as well as hb-ft.cc which we specifically exclude in the Makefile
+  * but we do use core text support on macOS.
+  * I really wish that "src" were just library source but I expect the authors
+    have their reasons.
+
+- we do not apply any header file changes so this is not an issue
+- verify the license text is unchanged (extra steps are needed if it is) and update
+   src/java.desktop/share/legal/harfbuzz.md with the new version
+- clean up trailing white space and tabs to follow jcheck rules.
+  Use "expand" and "sed" to remove tabs and trailing white space from the
+  imported sources.
+- test using all the automated jtreg tests on all platforms
+- do manual verification of Arabic, Hebrew, Thai, Indic against previous releases. 
+  Look for manual related layout jtreg tests and run on Windows,Linux and Mac.
+  Use Font2DTest set to TextLayout and check the above languages. Probably
+  not going to see layout problems a code point at a time but it needs to
+  be checked.
+
+- Update make parameters as needed
+  Since we don't use configure we need to manually specify the options
+  we need in the harfbuzz section of Awt2DLibraries.gmk.
+  As well as adding new options, we may need to clean up obsolete options.
+  Note there may be platform variations in the flags.
+
+- As with other 3rd party libs we do not fix the code to eliminate compiler
+  warnings unless they are critical and clearly avoiding a bug. Even then
+  we'd report it upstream. The usual practice is do just disable the warnings
+
+- Update THIS UPDATING.txt file too if it is outdated.

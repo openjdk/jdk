@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -101,6 +100,8 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
     _is_shared = true;
   }
 
+  _has_trusted_loader = compute_has_trusted_loader();
+
   // Lazy fields get filled in only upon request.
   _super  = NULL;
   _java_mirror = NULL;
@@ -133,6 +134,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _super = NULL;
   _java_mirror = NULL;
   _field_cache = NULL;
+  _has_trusted_loader = compute_has_trusted_loader();
 }
 
 
@@ -279,31 +281,6 @@ bool ciInstanceKlass::is_boxed_value_offset(int offset) const {
   BasicType bt = box_klass_type();
   return is_java_primitive(bt) &&
          (offset == java_lang_boxing_object::value_offset(bt));
-}
-
-static bool is_klass_initialized(Symbol* klass_name) {
-  VM_ENTRY_MARK;
-  InstanceKlass* ik = SystemDictionary::find_instance_klass(klass_name, Handle(), Handle());
-  return ik != nullptr && ik->is_initialized();
-}
-
-bool ciInstanceKlass::is_box_cache_valid() const {
-  BasicType box_type = box_klass_type();
-
-  if (box_type != T_OBJECT) {
-    switch(box_type) {
-      case T_INT:     return is_klass_initialized(java_lang_Integer_IntegerCache::symbol());
-      case T_CHAR:    return is_klass_initialized(java_lang_Character_CharacterCache::symbol());
-      case T_SHORT:   return is_klass_initialized(java_lang_Short_ShortCache::symbol());
-      case T_BYTE:    return is_klass_initialized(java_lang_Byte_ByteCache::symbol());
-      case T_LONG:    return is_klass_initialized(java_lang_Long_LongCache::symbol());
-      case T_BOOLEAN:
-      case T_FLOAT:
-      case T_DOUBLE:  return true;
-      default:;
-    }
-  }
-  return false;
 }
 
 // ------------------------------------------------------------------
@@ -594,6 +571,15 @@ bool ciInstanceKlass::has_object_fields() const {
     );
 }
 
+bool ciInstanceKlass::compute_has_trusted_loader() {
+  ASSERT_IN_VM;
+  oop loader_oop = loader();
+  if (loader_oop == NULL) {
+    return true; // bootstrap class loader
+  }
+  return java_lang_ClassLoader::is_trusted_loader(loader_oop);
+}
+
 // ------------------------------------------------------------------
 // ciInstanceKlass::find_method
 //
@@ -633,8 +619,10 @@ bool ciInstanceKlass::is_leaf_type() {
 ciInstanceKlass* ciInstanceKlass::implementor() {
   ciInstanceKlass* impl = _implementor;
   if (impl == NULL) {
-    // Go into the VM to fetch the implementor.
-    {
+    if (is_shared()) {
+      impl = this; // assume a well-known interface never has a unique implementor
+    } else {
+      // Go into the VM to fetch the implementor.
       VM_ENTRY_MARK;
       MutexLocker ml(Compile_lock);
       Klass* k = get_instanceKlass()->implementor();
@@ -648,9 +636,7 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
       }
     }
     // Memoize this result.
-    if (!is_shared()) {
-      _implementor = impl;
-    }
+    _implementor = impl;
   }
   return impl;
 }

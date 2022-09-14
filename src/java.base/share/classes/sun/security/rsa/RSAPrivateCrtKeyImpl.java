@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger q;       // prime q
     private BigInteger pe;      // prime exponent p
     private BigInteger qe;      // prime exponent q
-    private BigInteger coeff;   // CRT coeffcient
+    private BigInteger coeff;   // CRT coefficient
 
     private transient KeyType type;
 
@@ -141,7 +141,7 @@ public final class RSAPrivateCrtKeyImpl
             BigInteger n, BigInteger e, BigInteger d,
             BigInteger p, BigInteger q, BigInteger pe, BigInteger qe,
             BigInteger coeff) throws InvalidKeyException {
-        RSAPrivateKey key;
+
         if ((e.signum() == 0) || (p.signum() == 0) ||
             (q.signum() == 0) || (pe.signum() == 0) ||
             (qe.signum() == 0) || (coeff.signum() == 0)) {

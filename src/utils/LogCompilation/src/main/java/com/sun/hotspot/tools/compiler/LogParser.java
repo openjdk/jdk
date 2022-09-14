@@ -973,7 +973,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             m.setHolder(type(search(atts, "holder")));
             m.setName(search(atts, "name"));
             m.setReturnType(type(search(atts, "return")));
-            String arguments = atts.getValue("arguments");;
+            String arguments = atts.getValue("arguments");
             if (arguments == null) {
                 m.setSignature("()" + sigtype(atts.getValue("return")));
             } else {

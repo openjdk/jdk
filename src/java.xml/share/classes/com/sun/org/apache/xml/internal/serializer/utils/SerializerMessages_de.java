@@ -162,7 +162,7 @@ public class SerializerMessages_de extends ListResourceBundle {
                 "Fragment kann nicht festgelegt werden, wenn der Pfad null ist" },
 
             {   MsgKey.ER_FRAG_FOR_GENERIC_URI,
-                "Fragment kann nur f\u00FCr einen generischen URI festgelegt werden" },
+                "Fragment kann nur f\u00FCr eine generische URI festgelegt werden" },
 
             {   MsgKey.ER_NO_SCHEME_IN_URI,
                 "Kein Schema gefunden in URI" },
@@ -197,7 +197,7 @@ public class SerializerMessages_de extends ListResourceBundle {
                 "Das an die SerializerFactory \u00FCbergebene Properties-Objekt verf\u00FCgt \u00FCber keine Eigenschaft \"{0}\"." },
 
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-                "Warnung: Die Codierung \"{0}\" wird nicht von der Java-Laufzeit unterst\u00FCtzt." },
+                "Warnung: Die Codierung \"{0}\" wird nicht von Java Runtime unterst\u00FCtzt." },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
              "Parameter \"{0}\" nicht erkannt."},
