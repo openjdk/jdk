@@ -1472,7 +1472,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     if (!block->is_connector()) {
       stringStream st;
       block->dump_head(C->cfg(), &st);
-      MacroAssembler(cb).block_comment(st.internal_string());
+      MacroAssembler(cb).block_comment(st.freeze());
     }
     jmp_target[i] = 0;
     jmp_offset[i] = 0;
@@ -1925,13 +1925,13 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        tty->print_raw(method_metadata_str.internal_string());
+        tty->print_raw(method_metadata_str.freeze());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      tty->print_raw(dump_asm_str.internal_string());
+      tty->print_raw(dump_asm_str.freeze());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
         xtty->tail("opto_assembly");

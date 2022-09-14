@@ -4499,7 +4499,7 @@ void Compile::process_print_inlining() {
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       PrintInliningBuffer* pib = _print_inlining_list->at(i);
-      ss.print("%s", pib->ss()->internal_string());
+      ss.print("%s", pib->ss()->freeze());
       delete pib;
       DEBUG_ONLY(_print_inlining_list->at_put(i, NULL));
     }
@@ -4510,7 +4510,7 @@ void Compile::process_print_inlining() {
     print_inlining_stream_free();
     size_t end = ss.size();
     _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
-    strncpy(_print_inlining_output, ss.internal_string(), end+1);
+    strncpy(_print_inlining_output, ss.freeze(), end+1);
     _print_inlining_output[end] = 0;
   }
 }

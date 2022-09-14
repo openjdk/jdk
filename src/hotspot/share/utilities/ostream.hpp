@@ -192,7 +192,7 @@ class ttyUnlocker: StackObj {
 // for writing to strings; buffer will expand automatically.
 // Buffer will always be zero-terminated.
 class stringStream : public outputStream {
-  DEBUG_ONLY(bool _internal_string_called = false);
+  DEBUG_ONLY(bool _is_frozen = false);
   char*  _buffer;
   size_t _written;  // Number of characters written, excluding termin. zero
   size_t _capacity;
@@ -220,10 +220,11 @@ class stringStream : public outputStream {
   // Returns internal buffer containing the accumulated string.
   // Returned buffer is only guaranteed to be valid as long as stream is not modified
   const char* base() const { return _buffer; }
-  // Return internal buffer containing the accumulated string.
-  // Ensures that further modification of stringStream leads to assertion errors.
-  const char* internal_string() NOT_DEBUG(const) {
-    DEBUG_ONLY(_internal_string_called = true);
+  // Freezes stringStream (no further modifications possible) and returns pointer to it.
+  // No-op if stream is frozen already.
+  // Returns the internal buffer containing the accumulated string.
+  const char* freeze() NOT_DEBUG(const) {
+    DEBUG_ONLY(_is_frozen = true);
     return _buffer;
   };
   void  reset();
