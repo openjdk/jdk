@@ -1177,14 +1177,13 @@ static int patch_offset_in_pc_relative(address branch, int64_t offset) {
 }
 
 static int patch_addr_in_movptr(address branch, address target) {
-  const int MOVPTR_INSTRUCTIONS_NUM = 8;                                        // lui + addi + slli + addi + slli + addi + slli + addi/jalr/load
-  int64_t lower = ((intptr_t)target << 26) >> 26;
-  int64_t upper = ((intptr_t)target - lower) >> 38;
-  Assembler::patch(branch + 0,  31, 12, upper & 0xfffff);                       // Lui.             target[57:38] + target[37] ==> branch[31:12]
-  Assembler::patch(branch + 4,  31, 20, (lower >> 26) & 0xfff);                 // Addi.            target[37:26] ==> branch[31:20]
-  Assembler::patch(branch + 12, 31, 20, (lower >> 17) & 0x1ff);                 // Addi.            target[25:17] ==> branch[31:20]
-  Assembler::patch(branch + 20, 31, 20, (lower >> 6) & 0x7ff);                  // Addi.            target[16: 6] ==> branch[31:20]
-  Assembler::patch(branch + 28, 31, 20, lower & 0x3f);                          // Addi/Jalr/Load.  target[ 5: 0] ==> branch[31:20]
+  const int MOVPTR_INSTRUCTIONS_NUM = 6;                                        // lui + addi + slli + addi + slli + addi/jalr/load
+  int32_t lower = ((intptr_t)target << 35) >> 35;
+  int64_t upper = ((intptr_t)target - lower) >> 29;
+  Assembler::patch(branch + 0,  31, 12, upper & 0xfffff);                       // Lui.             target[48:29] + target[28] ==> branch[31:12]
+  Assembler::patch(branch + 4,  31, 20, (lower >> 17) & 0xfff);                 // Addi.            target[28:17] ==> branch[31:20]
+  Assembler::patch(branch + 12, 31, 20, (lower >> 6) & 0x7ff);                  // Addi.            target[16: 6] ==> branch[31:20]
+  Assembler::patch(branch + 20, 31, 20, lower & 0x3f);                          // Addi/Jalr/Load.  target[ 5: 0] ==> branch[31:20]
   return MOVPTR_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
 }
 
@@ -1256,11 +1255,10 @@ static long get_offset_of_pc_relative(address insn_addr) {
 
 static address get_target_of_movptr(address insn_addr) {
   assert_cond(insn_addr != NULL);
-  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 38;    // Lui.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20)) << 26;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[3], 31, 20)) << 17;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[5], 31, 20)) << 6;                         // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[7], 31, 20));                              // Addi/Jalr/Load.
+  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 29;    // Lui.
+  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20)) << 17;                        // Addi.
+  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[3], 31, 20)) << 6;                         // Addi.
+  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[5], 31, 20));                              // Addi/Jalr/Load.
   return (address) target_address;
 }
 

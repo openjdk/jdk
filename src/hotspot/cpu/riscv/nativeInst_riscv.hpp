@@ -96,8 +96,6 @@ class NativeInstruction {
   //     slli
   //     addi
   //     slli
-  //     addi
-  //     slli
   //     addi/jalr/load
   static bool check_movptr_data_dependency(address instr) {
     address lui = instr;
@@ -105,9 +103,7 @@ class NativeInstruction {
     address slli1 = addi1 + instruction_size;
     address addi2 = slli1 + instruction_size;
     address slli2 = addi2 + instruction_size;
-    address addi3 = slli1 + instruction_size;
-    address slli3 = addi3 + instruction_size;
-    address last_instr = slli3 + instruction_size;
+    address last_instr = slli2 + instruction_size;
     return extract_rs1(addi1) == extract_rd(lui) &&
            extract_rs1(addi1) == extract_rd(addi1) &&
            extract_rs1(slli1) == extract_rd(addi1) &&
@@ -116,11 +112,7 @@ class NativeInstruction {
            extract_rs1(addi2) == extract_rd(addi2) &&
            extract_rs1(slli2) == extract_rd(addi2) &&
            extract_rs1(slli2) == extract_rd(slli2) &&
-           extract_rs1(addi3) == extract_rd(slli2) &&
-           extract_rs1(addi3) == extract_rd(addi3) &&
-           extract_rs1(slli3) == extract_rd(addi3) &&
-           extract_rs1(slli3) == extract_rd(slli3) &&
-           extract_rs1(last_instr) == extract_rd(slli3);
+           extract_rs1(last_instr) == extract_rd(slli2);
   }
 
   // the instruction sequence of li64 is as below:
@@ -335,8 +327,8 @@ inline NativeCall* nativeCall_before(address return_address) {
 class NativeMovConstReg: public NativeInstruction {
  public:
   enum RISCV_specific_constants {
-    movptr_instruction_size             =    8 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi, slli, addi.  See movptr().
-    movptr_with_offset_instruction_size =    7 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi, slli. See movptr_with_offset().
+    movptr_instruction_size             =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr().
+    movptr_with_offset_instruction_size =    5 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli. See movptr_with_offset().
     load_pc_relative_instruction_size   =    2 * NativeInstruction::instruction_size, // auipc, ld
     instruction_offset                  =    0,
     displacement_offset                 =    0
@@ -344,17 +336,17 @@ class NativeMovConstReg: public NativeInstruction {
 
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  {
-    // if the instruction at 7 * instruction_size is addi,
-    // it means a lui + addi + slli + addi + slli + addi + slli + addi instruction sequence,
-    // and the next instruction address should be addr_at(8 * instruction_size).
-    // However, when the instruction at 7 * instruction_size isn't addi,
-    // the next instruction address should be addr_at(7 * instruction_size)
+    // if the instruction at 5 * instruction_size is addi,
+    // it means a lui + addi + slli + addi + slli + addi instruction sequence,
+    // and the next instruction address should be addr_at(6 * instruction_size).
+    // However, when the instruction at 5 * instruction_size isn't addi,
+    // the next instruction address should be addr_at(5 * instruction_size)
     if (nativeInstruction_at(instruction_address())->is_movptr()) {
       if (is_addi_at(addr_at(movptr_with_offset_instruction_size))) {
-        // Assume: lui, addi, slli, addi, slli, addi, slli, addi
+        // Assume: lui, addi, slli, addi, slli, addi
         return addr_at(movptr_instruction_size);
       } else {
-        // Assume: lui, addi, slli, addi, slli, addi, slli
+        // Assume: lui, addi, slli, addi, slli
         return addr_at(movptr_with_offset_instruction_size);
       }
     } else if (is_load_pc_relative_at(instruction_address())) {
@@ -469,10 +461,10 @@ inline NativeJump* nativeJump_at(address addr) {
 class NativeGeneralJump: public NativeJump {
 public:
   enum RISCV_specific_constants {
-    instruction_size            =    8 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi, slli, jalr
+    instruction_size            =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, jalr
     instruction_offset          =    0,
     data_offset                 =    0,
-    next_instruction_offset     =    8 * NativeInstruction::instruction_size  // lui, addi, slli, addi, slli, addi, slli, jalr
+    next_instruction_offset     =    6 * NativeInstruction::instruction_size  // lui, addi, slli, addi, slli, jalr
   };
 
   address jump_destination() const;

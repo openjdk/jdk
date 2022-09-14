@@ -268,7 +268,7 @@ void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
 }
 
 int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 10 * 4 + 4; // 4 bytes for alignment margin
+  return 8 * 4 + 4; // 4 bytes for alignment margin
 }
 
 // Search for needle in haystack and return index or -1

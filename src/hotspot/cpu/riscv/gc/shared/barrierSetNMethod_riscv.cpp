@@ -40,7 +40,7 @@
 static int slow_path_size(nmethod* nm) {
   // The slow path code is out of line with C2.
   // Leave a jal to the stub in the fast path.
-  return nm->is_compiled_by_c2() ? 1 : 10;
+  return nm->is_compiled_by_c2() ? 1 : 8;
 }
 
 static int entry_barrier_offset(nmethod* nm) {

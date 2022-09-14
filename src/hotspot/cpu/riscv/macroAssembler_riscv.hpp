@@ -812,10 +812,10 @@ private:
 #endif
   void repne_scan(Register addr, Register value, Register count, Register tmp);
 
-  // Return true if an address is within the 57-bit RISCV64 address space.
+  // Return true if an address is within the 48-bit RISCV64 address space.
   bool is_valid_riscv64_address(address addr) {
-    // sv57: must have bits 63–57 all equal to bit 56
-    return ((uintptr_t)addr >> 56) == 0;
+    // sv48: must have bits 63–48 all equal to bit 47
+    return ((uintptr_t)addr >> 47) == 0;
   }
 
   void ld_constant(Register dest, const Address &const_addr) {
