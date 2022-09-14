@@ -185,7 +185,7 @@ class MacroAssembler: public Assembler {
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst,
                       Address src, Register tmp1, Register thread_tmp);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
-                       Register src, Register tmp1, Register thread_tmp);
+                       Register src, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp, Label &L);
@@ -205,7 +205,7 @@ class MacroAssembler: public Assembler {
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
                               Register thread_tmp = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
   void store_klass_gap(Register dst, Register src);
 
