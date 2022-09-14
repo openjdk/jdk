@@ -3005,13 +3005,7 @@ class StubGenerator: public StubCodeGenerator {
     __ reset_last_Java_frame(Rtemp);
 
     // R0 is jobject handle result, unpack and process it through a barrier.
-    Label L_null_jobject;
-    __ cbz(R0, L_null_jobject);
-
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(masm, ACCESS_READ | IN_NATIVE, T_OBJECT, R0, Address(R0, 0), Rtemp, R1, R2);
-
-    __ bind(L_null_jobject);
+    __ resolve_global_jobject(R0, Rtemp, R1);
 
     __ raw_pop(R1, R2, LR);
     __ ret();

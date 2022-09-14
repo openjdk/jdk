@@ -84,7 +84,7 @@ void ModRefBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register v
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
 
-  __ clrrdi(tmp1, value, JNIHandles::weak_tag_size);
+  __ clrrdi(tmp1, value, JNIHandles::tag_size);
   __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
 
   __ verify_oop(value, FILE_AND_LINE);

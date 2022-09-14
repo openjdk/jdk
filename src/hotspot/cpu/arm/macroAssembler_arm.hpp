@@ -356,6 +356,7 @@ public:
   }
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
   void nop() {
     mov(R0, R0);
