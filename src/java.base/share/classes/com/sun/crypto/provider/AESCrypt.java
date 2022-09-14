@@ -599,7 +599,6 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
      * Expand a user-supplied key material into a session key.
      *
      * @param k The 128/192/256-bit cipher key to use.
-     * @exception InvalidKeyException  If the key is invalid.
      */
     private void makeSessionKey(byte[] k) {
         int ROUNDS          = getRounds(k.length);
