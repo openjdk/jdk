@@ -31,51 +31,50 @@ import sun.security.util.ManifestEntryVerifier;
 import jdk.internal.util.jar.JarIndex;
 
 /**
- * The {@code JarInputStream} class, which extends {@linkplain ZipInputStream},
+ * The {@code JarInputStream} class, which extends {@link ZipInputStream},
  * is used to read the contents of a JAR file from an input stream.
- * It provides support for reading an optional {@linkplain JarFile#MANIFEST_NAME Manifest}
+ * It provides support for reading an optional {@link JarFile#MANIFEST_NAME Manifest}
  * entry. The {@code Manifest} can be used to store
  * meta-information about the JAR file and its entries.
  *
  * <h2>Accessing the Manifest</h2>
  * <p>
- * The {@linkplain #getManifest} method will return the {@code Manifest} when it is
+ * The {@link #getManifest} method will return the {@code Manifest} when it is
  * the first entry in the stream or {@code META-INF/} is the first entry and
  * the {@code Manifest} is the second entry within the stream. When the
- * {@code Manifest} is returned by {@code getManifest()}, the {@linkplain #getNextEntry()}
- * and {@linkplain #getNextJarEntry()} methods will not return the {@code Manifest}.
- * If  {@code META-INF/} is the first entry in the input stream it will be
- * also not be returned by {@linkplain #getNextEntry()} and
- * {@linkplain #getNextJarEntry()}.
+ * {@code Manifest} is returned by {@code getManifest()}, the {@link #getNextEntry()}
+ * and {@link #getNextJarEntry()} methods will not return the {@code Manifest}.
+ * If {@code META-INF/} is the first entry in the input stream it will be
+ * also not be returned by {@link #getNextEntry()} and
+ * {@link #getNextJarEntry()}.
  * </p>
  * <p>
- * {@linkplain JarEntry#getAttributes()} will return the {@code Manifest}'s
+ * {@link JarEntry#getAttributes()} will return the {@code Manifest}'s
  *  attributes for the current JAR file entry, if any, providing
  *  {@code getManifest()} returns a {@code Manifest} for the JAR file.
  * </p>
  *
  *  <h2>Verifying a JarInputStream</h2>
- *  {@linkplain #JarInputStream(InputStream, boolean)} may be used to
+ *  {@link #JarInputStream(InputStream, boolean)} may be used to
  *  verify the signatures of a signed {@code JarInputStream} assuming the
  *  following requirements are met:
  *  <ul>
  *      <li>
- *         The {@linkplain #getManifest()} returns a {@code Manifest} for the JAR
+ *         The {@link #getManifest()} returns a {@code Manifest} for the JAR
  *         file
  *      </li>
  *      <li>
- *         All signature-related entries must immediately follow the {@code Manifest}
+ *         All signature-related entries immediately follow the {@code Manifest}
  *      </li>
  *  </ul>
  *  Once the {@code JarEntry} has been completely verified, which is done by
  *  reading until the end of the entry's input stream,
- *  {@linkplain  JarEntry#getCertificates()} may be called to obtain the certificates
- *  for this entry and {@linkplain JarEntry#getCodeSigners()} may be called to obtain
+ *  {@link JarEntry#getCertificates()} may be called to obtain the certificates
+ *  for this entry and {@link JarEntry#getCodeSigners()} may be called to obtain
  *  the signers.
  * <p>
  * <b>Note:</b>If a {@code JarEntry} is modified after the Jar file is signed,
- * a {@linkplain SecurityException} will be thrown when an attempt is made to
- * read the entry.
+ * a {@link SecurityException} will be thrown when the entry is read.
  * </p>
  *
  * @author  David Connelly
