@@ -216,6 +216,12 @@ public class IRNode {
     public static final String Max_I = START + "MaxI" + MID + END;
     public static final String Min_V = START + "MinV" + MID + END;
     public static final String Max_V = START + "MaxV" + MID + END;
+    public static final String MUL_VL = START + "MulVL" + MID + END;
+
+    public static final String ADD_REDUCTION_VF = START + "AddReductionVF" + MID + END;
+    public static final String ADD_REDUCTION_VD = START + "AddReductionVD" + MID + END;
+    public static final String MUL_REDUCTION_VF = START + "MulReductionVF" + MID + END;
+    public static final String MUL_REDUCTION_VD = START + "MulReductionVD" + MID + END;
 
     public static final String FAST_LOCK   = START + "FastLock" + MID + END;
     public static final String FAST_UNLOCK = START + "FastUnlock" + MID + END;

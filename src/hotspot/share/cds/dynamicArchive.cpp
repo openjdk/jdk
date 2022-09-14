@@ -58,10 +58,6 @@ public:
     ArchivePtrMarker::mark_pointer(ptr_loc);
   }
 
-  template <typename T> T get_dumped_addr(T obj) {
-    return (T)ArchiveBuilder::get_dumped_addr((address)obj);
-  }
-
   static int dynamic_dump_method_comparator(Method* a, Method* b) {
     Symbol* a_name = a->name();
     Symbol* b_name = b->name();

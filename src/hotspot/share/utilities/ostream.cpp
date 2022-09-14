@@ -288,7 +288,7 @@ void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_
       if (rel_addr) {
         indent().print("%07" PRIxPTR ":", i);
       } else {
-        indent().print(INTPTR_FORMAT ":", p2i((unsigned char*)data + i));
+        indent().print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
       }
     }
     if (i % 2 == 0) {
