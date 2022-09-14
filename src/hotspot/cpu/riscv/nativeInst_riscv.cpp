@@ -429,6 +429,7 @@ void NativeMembar::set_kind(uint32_t order_kind) {
 }
 
 void NativePostCallNop::make_deopt() {
+  assert((((intptr_t)addr_at(0)) & 3) == 0, "bad alignment");
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
