@@ -41,6 +41,10 @@ import javax.swing.UIManager;
  * @test
  * @bug 8015739
  * @key headful
+ * @summary Tests whether background color of JInternalFrame is visible
+ * in the border region at different scales by checking the midpoints
+ * and corners of the border.
+ *
  * @requires (os.family == "windows")
  * @run main/othervm -Dsun.java2d.uiScale=1 InternalFrameBorderTest
  * @run main/othervm -Dsun.java2d.uiScale=1.25 InternalFrameBorderTest
@@ -55,6 +59,10 @@ import javax.swing.UIManager;
  * @test
  * @bug 8015739
  * @key headful
+ * @summary Tests whether background color of JInternalFrame is visible
+ * in the border region at different scales by checking the midpoints
+ * and corners of the border.
+ *
  * @requires (os.family == "mac")
  * @run main/othervm -Dsun.java2d.uiScale=1 InternalFrameBorderTest
  * @run main/othervm -Dsun.java2d.uiScale=2 InternalFrameBorderTest
@@ -64,7 +72,11 @@ import javax.swing.UIManager;
  * @test
  * @bug 8015739
  * @key headful
+ * @summary Tests whether background color of JInternalFrame is visible
+ * in the border region at different scales by checking the midpoints
+ * and corners of the border.
  * @requires (os.family == "linux")
+ *
  * @run main/othervm -Dsun.java2d.uiScale=1 InternalFrameBorderTest
  * @run main/othervm -Dsun.java2d.uiScale=2 InternalFrameBorderTest
  */
@@ -124,7 +136,8 @@ public class InternalFrameBorderTest {
                 checkCorners("BOTTOM_LEFT");
             });
             if (!errorLog.isEmpty()) {
-                throw new RuntimeException("Following error(s) occurred: \n"+ errorLog);
+                throw new RuntimeException("Following error(s) occurred: \n"
+                        + errorLog);
             }
         } finally {
             if (jFrame != null) {
@@ -176,8 +189,9 @@ public class InternalFrameBorderTest {
                     isVertical ? i : (iFrameLoc.x + MIDPOINT),
                     isHorizontal ? i : (iFrameLoc.y + MIDPOINT)))) {
                         saveScreenCapture(borderDirection + "_" + uiScale + ".png");
-                        errorLog.append("uiScale: "+ uiScale + " Red background color" +
-                                " detected at " + borderDirection +  " border\n");
+                        errorLog.append("uiScale: "+ uiScale +
+                                " Red background color" + " detected at "
+                                + borderDirection + " border\n");
             }
         }
         robot.delay(300);
