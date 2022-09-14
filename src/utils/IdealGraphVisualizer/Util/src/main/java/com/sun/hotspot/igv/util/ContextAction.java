@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.ChangedListener;
 import java.awt.EventQueue;
 import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
+import sun.jvm.hotspot.debugger.cdbg.Sym;
 
 /**
  *
@@ -79,11 +80,11 @@ public abstract class ContextAction<T> extends CallableSystemAction implements L
         }
         if (this.t != t) {
             if (this.t != null) {
-                getChangedEvent(this.t).removeListener(this);
+                removeContextListener(this.t);
             }
             this.t = t;
             if (this.t != null) {
-                getChangedEvent(this.t).addListener(this);
+                addContextListener(this.t);
             }
         }
     }
@@ -98,13 +99,13 @@ public abstract class ContextAction<T> extends CallableSystemAction implements L
         return false;
     }
 
-    public boolean isEnabled(T context) {
-        return true;
-    }
+    public abstract boolean isEnabled(T context);
 
     public abstract Class<T> contextClass();
 
     public abstract void performAction(T t);
 
-    public abstract ChangedEvent<T> getChangedEvent(T t);
+    public abstract void addContextListener(T t);
+
+    public abstract void removeContextListener(T t);
 }

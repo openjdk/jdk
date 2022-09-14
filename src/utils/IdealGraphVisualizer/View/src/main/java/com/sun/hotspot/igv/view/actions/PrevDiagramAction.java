@@ -69,12 +69,23 @@ public final class PrevDiagramAction extends ContextAction<DiagramViewModel> {
     }
 
     @Override
-    public ChangedEvent<DiagramViewModel> getChangedEvent(DiagramViewModel model) {
-        return model.getViewChangedEvent();
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
     }
 
     @Override
-    public Action createContextAwareInstance(Lookup actionContext) {
-        return this;
+    public void addContextListener(DiagramViewModel model) {
+        model.getViewChangedEvent().addListener(this);
+        model.getDiagramChangedEvent().addListener(this);
+        model.getViewPropertiesChangedEvent().addListener(this);
+        model.getHiddenNodesChangedEvent().addListener(this);
+    }
+
+    @Override
+    public void removeContextListener(DiagramViewModel model) {
+        model.getViewChangedEvent().removeListener(this);
+        model.getDiagramChangedEvent().removeListener(this);
+        model.getViewPropertiesChangedEvent().removeListener(this);
+        model.getHiddenNodesChangedEvent().removeListener(this);
     }
 }
