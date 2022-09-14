@@ -48,6 +48,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -2118,9 +2119,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
 
   // Force this write out before the read below
-  __ membar(Assembler::Membar_mask_bits(
+  if (!UseSystemMemoryBarrier) {
+    __ membar(Assembler::Membar_mask_bits(
               Assembler::LoadLoad | Assembler::LoadStore |
               Assembler::StoreLoad | Assembler::StoreStore));
+  }
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
