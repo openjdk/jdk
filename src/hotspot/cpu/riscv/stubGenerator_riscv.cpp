@@ -3868,11 +3868,11 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // we're now on the yield frame (which is in an address above us b/c sp has been pushed down)
+    __ mv(fp, t1);
     __ sub(sp, t1, 2 * wordSize); // now pointing to fp spill
-    __ mv(fp, sp);
 
     if (return_barrier_exception) {
-      __ ld(c_rarg1, Address(fp, wordSize)); // return address
+      __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
       __ verify_oop(x10);
       __ mv(x9, x10); // save return value contaning the exception oop in callee-saved R9
 
@@ -3884,13 +3884,11 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(x10, x9); // restore return value contaning the exception oop
       __ verify_oop(x10);
 
-      __ addi(fp, fp, 2 * wordSize);  // 2 extra words to match up with leave()
       __ leave();
       __ mv(x13, ra);
       __ jr(x11); // the exception handler
     } else {
       // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
-      __ addi(fp, fp, 2 * wordSize);  // 2 extra words to match up with leave()
       __ leave();
       __ ret();
     }
