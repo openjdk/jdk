@@ -82,8 +82,7 @@ public final class SSLSocketFactoryImpl extends SSLSocketFactory {
      * @param port number of the server's port
      */
     @Override
-    public Socket createSocket(String host, int port)
-    throws IOException {
+    public Socket createSocket(String host, int port) throws IOException {
         return new SSLSocketImpl(context, host, port);
     }
 

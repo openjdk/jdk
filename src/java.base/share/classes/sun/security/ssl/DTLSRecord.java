@@ -37,16 +37,14 @@ interface DTLSRecord extends Record {
     /*
      * The size of the header plus the max IV length
      */
-    int    headerPlusMaxIVSize =
-                                      headerSize        // header
+    int    headerPlusMaxIVSize =      headerSize        // header
                                     + maxIVLength;      // iv
 
     /*
      * The maximum size that may be increased when translating plaintext to
      * ciphertext fragment.
      */
-    int    maxPlaintextPlusSize =
-                                      headerSize        // header
+    int    maxPlaintextPlusSize =     headerSize        // header
                                     + maxIVLength       // iv
                                     + maxMacSize        // MAC or AEAD tag
                                     + maxPadding;       // block cipher padding
@@ -54,8 +52,7 @@ interface DTLSRecord extends Record {
     /*
      * the maximum record size
      */
-    int    maxRecordSize =
-                                      headerPlusMaxIVSize   // header + iv
+    int    maxRecordSize =            headerPlusMaxIVSize   // header + iv
                                     + maxDataSize           // data
                                     + maxPadding            // padding
                                     + maxMacSize;           // MAC or AEAD tag
@@ -70,8 +67,7 @@ interface DTLSRecord extends Record {
      *       ASN.1Cert certificate_list<0..2^24-1>;
      *   } Certificate;
      */
-    int    minCertPlaintextSize =
-                                      headerSize            // record header
+    int    minCertPlaintextSize =     headerSize            // record header
                                     + handshakeHeaderSize   // handshake header
                                     + 3;                    // cert list length
 }

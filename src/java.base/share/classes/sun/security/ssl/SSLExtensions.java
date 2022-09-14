@@ -301,10 +301,10 @@ final class SSLExtensions {
                     }
                 } else {
                     extMap.put(extension, encoded);
-                                                    // extension_type (2)
-                                                    // extension_data length(2)
                 }
                 encodedLength += encoded.length + 4;
+                // extension_type (2)
+                // extension_data length(2)
             } else if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 // The extension is not available in the context.
                 SSLLogger.fine(

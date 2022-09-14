@@ -607,7 +607,7 @@ final class CertificateMessage {
 
             X509TrustManager tm = chc.sslContext.getX509TrustManager();
 
-            // Find the key exchange algorithm used.
+            // Find out the key exchange algorithm used.
             // Use "RSA" for non-ephemeral "RSA_EXPORT".
             String keyExchangeString;
             if (chc.negotiatedCipherSuite.keyExchange ==

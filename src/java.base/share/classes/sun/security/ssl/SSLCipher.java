@@ -67,278 +67,262 @@ enum SSLCipher {
     // exportable ciphers
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_NULL("NULL", NULL_CIPHER, 0, 0, 0, 0, true, true,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new NullReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_NONE
-        ),
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new NullReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_13
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new NullWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_NONE
-        ),
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new NullWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_13
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new NullReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_NONE
+            ),
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new NullReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_13
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new NullWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_NONE
+            ),
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new NullWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_13
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_RC4_40(CIPHER_RC4, STREAM_CIPHER, 5, 16, 0, 0, true, true,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new StreamReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new StreamWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new StreamReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new StreamWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_RC2_40("RC2", BLOCK_CIPHER, 5, 16, 8, 0, false, true,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new StreamReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new StreamWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new StreamReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new StreamWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_DES_40(CIPHER_DES,  BLOCK_CIPHER, 5, 8, 8, 0, true, true,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T10BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T10BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T10BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T10BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            )
+        }),
 
     // domestic strength ciphers
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_RC4_128(CIPHER_RC4, STREAM_CIPHER, 16, 16, 0, 0, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new StreamReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_12
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new StreamWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_12
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new StreamReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_12
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new StreamWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_12
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_DES(CIPHER_DES, BLOCK_CIPHER, 8, 8, 8, 0, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T10BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        ),
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T11BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_11
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T10BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        ),
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T11BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_11
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T10BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            ),
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T11BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_11
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T10BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            ),
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T11BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_11
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_3DES(CIPHER_3DES, BLOCK_CIPHER, 24, 24, 8, 0, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T10BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        ),
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T11BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_11_12
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T10BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        ),
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T11BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_11_12
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T10BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            ),
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T11BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_11_12
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T10BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            ),
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T11BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_11_12
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_IDEA("IDEA", BLOCK_CIPHER, 16, 16, 8, 0, false, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            null,
-            ProtocolVersion.PROTOCOLS_TO_12
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            null,
-            ProtocolVersion.PROTOCOLS_TO_12
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                null,
+                ProtocolVersion.PROTOCOLS_TO_12
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                null,
+                ProtocolVersion.PROTOCOLS_TO_12
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_AES_128(CIPHER_AES, BLOCK_CIPHER, 16, 16, 16, 0, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T10BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        ),
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T11BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_11_12
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T10BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        ),
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T11BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_11_12
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T10BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            ),
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T11BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_11_12
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T10BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            ),
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T11BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_11_12
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_AES_256(CIPHER_AES, BLOCK_CIPHER, 32, 32, 16, 0, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T10BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        ),
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T11BlockReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_11_12
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T10BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_TO_10
-        ),
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T11BlockWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_11_12
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T10BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            ),
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T11BlockReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_11_12
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T10BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_TO_10
+            ),
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T11BlockWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_11_12
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_AES_128_GCM(CIPHER_AES_GCM, AEAD_CIPHER, 16, 16, 12, 4, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T12GcmReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_12
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T12GcmWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_12
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T12GcmReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_12
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T12GcmWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_12
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_AES_256_GCM(CIPHER_AES_GCM, AEAD_CIPHER, 32, 32, 12, 4, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T12GcmReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_12
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T12GcmWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_12
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T12GcmReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_12
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T12GcmWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_12
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_AES_128_GCM_IV(CIPHER_AES_GCM, AEAD_CIPHER, 16, 16, 12, 0, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T13GcmReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_13
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T13GcmWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_13
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T13GcmReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_13
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T13GcmWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_13
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_AES_256_GCM_IV(CIPHER_AES_GCM, AEAD_CIPHER, 32, 32, 12, 0, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T13GcmReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_13
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T13GcmWriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_13
-        )
-    }),
+        new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T13GcmReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_13
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T13GcmWriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_13
+            )
+        }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     B_CC20_P1305(CIPHER_CHACHA20_POLY1305, AEAD_CIPHER, 32, 32, 12,
-            12, true, false,
-            new Map.Entry[] {
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T12CC20P1305ReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_12
-        ),
-        new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
-            new T13CC20P1305ReadCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_13
-        )
-    },
-            new Map.Entry[] {
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T12CC20P1305WriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_12
-        ),
-        new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
-            new T13CC20P1305WriteCipherGenerator(),
-            ProtocolVersion.PROTOCOLS_OF_13
-        )
-    });
+        12, true, false, new Map.Entry[] {
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T12CC20P1305ReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_12
+            ),
+            new SimpleImmutableEntry<ReadCipherGenerator, ProtocolVersion[]>(
+                new T13CC20P1305ReadCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_13
+            )
+        }, new Map.Entry[] {
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T12CC20P1305WriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_12
+            ),
+            new SimpleImmutableEntry<WriteCipherGenerator, ProtocolVersion[]>(
+                new T13CC20P1305WriteCipherGenerator(),
+                ProtocolVersion.PROTOCOLS_OF_13
+            )
+        });
 
     // descriptive name including key size, e.g. AES/128
     final String description;

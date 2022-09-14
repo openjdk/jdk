@@ -284,6 +284,11 @@ final class ECDHClientKeyExchange {
             // Wasn't EC, try XEC.
             if (ecParams == null) {
                 namedParams = x509Possession.getXECParameterSpec();
+                if (namedParams == null) {
+                    throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        "Unknown named parameters in server cert for " +
+                            "ECDH client key exchange");
+                }
                 namedGroup = NamedGroup.nameOf(namedParams.getName());
             }
 

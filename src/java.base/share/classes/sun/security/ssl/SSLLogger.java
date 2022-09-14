@@ -582,9 +582,11 @@ public final class SSLLogger {
                 //        ]
                 StringBuilder builder = new StringBuilder(512);
                 builder.append("\"" + key + "\": [\n");
-                for (String string : strings) {
+                int len = strings.length;
+                for (int i = 0; i < len; i++) {
+                    String string = strings[i];
                     builder.append("      \"" + string + "\"");
-                    if (!Objects.equals(string, strings[strings.length - 1])) {
+                    if (i != len - 1) {
                         builder.append(",");
                     }
                     builder.append("\n");
