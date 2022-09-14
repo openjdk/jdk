@@ -512,23 +512,36 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
 }
 
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
-  Label done, not_weak;
-  beqz(value, done);           // Use NULL as-is.
+  assert_different_registers(value, tmp1, tmp2);
+  Label done, tagged, weak_tagged;
 
+  beqz(value, done);           // Use NULL as-is.
+  // Test for tag.
+  andi(t0, value, JNIHandles::tag_mask);
+  bnez(t0, tagged);
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp1, tmp2);
+  //verify_oop(value);
+  b(done);
+
+  bind(tagged);
   // Test for jweak tag.
   andi(t0, value, JNIHandles::weak_tag_mask);
-  beqz(t0, not_weak);
+  bnez(t0, weak_tagged);
 
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value,
+                 Address(value, -JNIHandles::global_tag_value), tmp1, tmp2);
+  b(done);
+
+  bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
                  Address(value, -JNIHandles::weak_tag_value), tmp1, tmp2);
   verify_oop(value);
-  j(done);
+  // b(done);
 
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp1, tmp2);
-  verify_oop(value);
   bind(done);
 }
 

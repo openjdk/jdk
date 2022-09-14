@@ -107,7 +107,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, 
   __ z_ltgr(tmp1, value);
   __ z_bre(Ldone);          // Use NULL result as-is.
 
-  __ z_nill(value, ~JNIHandles::weak_tag_mask);
+  __ z_nill(value, ~JNIHandles::tag_mask);
   __ z_lg(value, 0, value); // Resolve (untagged) jobject.
 
   __ verify_oop(value, FILE_AND_LINE);
@@ -116,6 +116,6 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, 
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  __ z_nill(obj, ~JNIHandles::weak_tag_mask);
+  __ z_nill(obj, ~JNIHandles::tag_mask);
   __ z_lg(obj, 0, obj); // Resolve (untagged) jobject.
 }

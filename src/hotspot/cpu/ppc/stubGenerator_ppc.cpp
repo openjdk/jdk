@@ -4545,13 +4545,7 @@ class StubGenerator: public StubCodeGenerator {
     address calls_return_pc = __ last_calls_return_pc();
     __ reset_last_Java_frame();
     // The handle is dereferenced through a load barrier.
-    Label null_jobject;
-    __ cmpdi(CCR0, R3_RET, 0);
-    __ beq(CCR0, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, R3_RET /*base*/, (intptr_t)0, R3_RET /*dst*/, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
-    __ bind(null_jobject);
+    __ resolve_jobject(R3_RET, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
     __ pop_frame();
     __ ld(tmp1, _abi0(lr), R1_SP);
     __ mtlr(tmp1);

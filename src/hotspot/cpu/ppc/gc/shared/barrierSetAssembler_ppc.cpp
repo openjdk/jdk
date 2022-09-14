@@ -116,22 +116,34 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
                                           Register tmp1, Register tmp2,
                                           MacroAssembler::PreservationLevel preservation_level) {
-  Label done, not_weak, verify;
+  Label done, verify, tagged, weak_tagged;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
 
-  __ andi_(tmp1, value, JNIHandles::weak_tag_mask);
-  __ beq(CCR0, not_weak);     // Test for jweak tag.
+  __ andi_(tmp1, value, JNIHandles::tag_mask);
+  __ bne(CCR0, tagged);     // Test for tag.
 
-  // Resolve (untagged) jobject.
-  __ clrrdi(value, value, JNIHandles::weak_tag_size);
-  load_at(masm, IN_NATIVE | ON_PHANTOM_OOP_REF, T_OBJECT,
+  // Resolve local handle
+  load_at(masm, IN_NATIVE | AS_RAW, T_OBJECT,
           value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
   __ b(verify);
 
-  __ bind(not_weak);
+
+  __ bind(tagged);
+  __ andi_(tmp1, value, JNIHandles::weak_tag_mask);
+  __ bne(CCR0, weak_tagged);      // Test for weak tag.
+
+  // Resolve global handle
+  __ clrrdi(value, value, JNIHandles::tag_size);
   load_at(masm, IN_NATIVE, T_OBJECT,
           value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+
+  // Resolve jweak.
+  __ bind(weak_tagged);
+  __ clrrdi(value, value, JNIHandles::tag_size);
+  load_at(masm, IN_NATIVE | ON_PHANTOM_OOP_REF, T_OBJECT,
+          value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+
 
   __ bind(verify);
   __ verify_oop(value, FILE_AND_LINE);
@@ -140,7 +152,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  __ clrrdi(dst, obj, JNIHandles::weak_tag_size);
+  __ clrrdi(dst, obj, JNIHandles::tag_size);
   __ ld(dst, 0, dst);         // Resolve (untagged) jobject.
 }
 
