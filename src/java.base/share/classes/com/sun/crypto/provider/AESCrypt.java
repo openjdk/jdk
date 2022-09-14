@@ -86,9 +86,9 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
             throw new InvalidKeyException
                 ("Wrong algorithm: AES or Rijndael required");
         }
-        if (!isKeySizeValid(key.length)) {
-            throw new InvalidKeyException("Invalid AES key length: " +
-                key.length + " bytes");
+
+        if (key == null) {      // Unlikely, but just double check it.
+            throw new InvalidKeyException("Empty key");
         }
 
         if (!MessageDigest.isEqual(key, lastKey)) {
@@ -599,8 +599,14 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
      * Expand a user-supplied key material into a session key.
      *
      * @param k The 128/192/256-bit cipher key to use.
+     * @exception InvalidKeyException  If the key is invalid.
      */
-    private void makeSessionKey(byte[] k) {
+    private void makeSessionKey(byte[] k) throws InvalidKeyException {
+        if (!isKeySizeValid(k.length)) {
+            throw new InvalidKeyException("Invalid AES key length: " +
+                    k.length + " bytes");
+        }
+
         int ROUNDS          = getRounds(k.length);
         int ROUND_KEY_COUNT = (ROUNDS + 1) * 4;
 
