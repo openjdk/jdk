@@ -245,7 +245,7 @@ void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree
   stringStream shortStr;
   method->print_short_name(&shortStr);
 
-  print_attr(METHOD_NAME_PROPERTY, str.base());
+  print_attr(METHOD_NAME_PROPERTY, str.internal_string());
   print_attr(METHOD_SHORT_NAME_PROPERTY, shortStr.internal_string());
   print_attr(METHOD_BCI_PROPERTY, bci);
 
