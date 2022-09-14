@@ -197,7 +197,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  __ clear_jweak_tag(obj);
+  __ clear_jobject_tag(obj);
   __ movptr(obj, Address(obj, 0));
 }
 
