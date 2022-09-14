@@ -1295,7 +1295,8 @@ ParseArguments(int *pargc, char ***pargv,
             printUsage = JNI_TRUE;
             printTo = USE_STDOUT;
             return JNI_TRUE;
-        } else if (JLI_StrCmp(arg, "-version") == 0) {
+        } else if (JLI_StrCmp(arg, "-version") == 0 ||
+                   JLI_StrCmp(arg, "-v") == 0) {
             printVersion = JNI_TRUE;
             return JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--version") == 0) {

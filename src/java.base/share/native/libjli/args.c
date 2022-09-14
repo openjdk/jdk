@@ -459,6 +459,7 @@ int isTerminalOpt(char *arg) {
            JLI_StrCmp(arg, "--help-extra") == 0 ||
            JLI_StrCmp(arg, "-version") == 0 ||
            JLI_StrCmp(arg, "--version") == 0 ||
+           JLI_StrCmp(arg, "-v") == 0 ||
            JLI_StrCmp(arg, "-fullversion") == 0 ||
            JLI_StrCmp(arg, "--full-version") == 0;
 }
