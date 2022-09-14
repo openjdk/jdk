@@ -73,7 +73,7 @@ import jdk.internal.util.jar.JarIndex;
  *  for this entry and {@link JarEntry#getCodeSigners()} may be called to obtain
  *  the signers.
  * <p>
- * <b>Note:</b>If a {@code JarEntry} is modified after the Jar file is signed,
+ * <b>Note:</b> If a {@code JarEntry} is modified after the JAR file is signed,
  * a {@link SecurityException} will be thrown when the entry is read.
  * </p>
  *
