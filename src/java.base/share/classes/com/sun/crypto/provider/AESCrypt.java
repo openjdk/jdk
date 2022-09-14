@@ -601,7 +601,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
      * @param k The 128/192/256-bit cipher key to use.
      * @exception InvalidKeyException  If the key is invalid.
      */
-    private void makeSessionKey(byte[] k) throws InvalidKeyException {
+    private void makeSessionKey(byte[] k) {
         int ROUNDS          = getRounds(k.length);
         int ROUND_KEY_COUNT = (ROUNDS + 1) * 4;
 
@@ -688,7 +688,6 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         }
         sessionK = new int[][] { expandedKe, expandedKd };
     }
-
 
     /**
      * Return The number of rounds for a given Rijndael keysize.
