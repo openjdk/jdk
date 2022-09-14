@@ -7703,6 +7703,20 @@ instruct incI_rReg(rRegI dst, immI_1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct incI_mem(memory dst, immI_1 src, rFlagsReg cr)
+%{
+  predicate(UseIncDec);
+  match(Set dst (StoreI dst (AddI (LoadI dst) src)));
+  effect(KILL cr);
+
+  ins_cost(125); // XXX
+  format %{ "incl    $dst\t# int" %}
+  ins_encode %{
+    __ incrementl($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_imm);
+%}
+
 // XXX why does that use AddI
 instruct decI_rReg(rRegI dst, immI_M1 src, rFlagsReg cr)
 %{
@@ -7715,6 +7729,21 @@ instruct decI_rReg(rRegI dst, immI_M1 src, rFlagsReg cr)
     __ decrementl($dst$$Register);
   %}
   ins_pipe(ialu_reg);
+%}
+
+// XXX why does that use AddI
+instruct decI_mem(memory dst, immI_M1 src, rFlagsReg cr)
+%{
+  predicate(UseIncDec);
+  match(Set dst (StoreI dst (AddI (LoadI dst) src)));
+  effect(KILL cr);
+
+  ins_cost(125); // XXX
+  format %{ "decl    $dst\t# int" %}
+  ins_encode %{
+    __ decrementl($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_imm);
 %}
 
 instruct leaI_rReg_immI2_immI(rRegI dst, rRegI index, immI2 scale, immI disp)
@@ -7844,6 +7873,20 @@ instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct incL_mem(memory dst, immL1 src, rFlagsReg cr)
+%{
+  predicate(UseIncDec);
+  match(Set dst (StoreL dst (AddL (LoadL dst) src)));
+  effect(KILL cr);
+
+  ins_cost(125); // XXX
+  format %{ "incq    $dst\t# long" %}
+  ins_encode %{
+    __ incrementq($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_imm);
+%}
+
 // XXX why does that use AddL
 instruct decL_rReg(rRegL dst, immL_M1 src, rFlagsReg cr)
 %{
@@ -7856,6 +7899,21 @@ instruct decL_rReg(rRegL dst, immL_M1 src, rFlagsReg cr)
     __ decrementq($dst$$Register);
   %}
   ins_pipe(ialu_reg);
+%}
+
+// XXX why does that use AddL
+instruct decL_mem(memory dst, immL_M1 src, rFlagsReg cr)
+%{
+  predicate(UseIncDec);
+  match(Set dst (StoreL dst (AddL (LoadL dst) src)));
+  effect(KILL cr);
+
+  ins_cost(125); // XXX
+  format %{ "decq    $dst\t# long" %}
+  ins_encode %{
+    __ decrementq($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_imm);
 %}
 
 instruct leaL_rReg_immI2_immL32(rRegL dst, rRegL index, immI2 scale, immL32 disp)
