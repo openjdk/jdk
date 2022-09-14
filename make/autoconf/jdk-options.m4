@@ -699,11 +699,11 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 
 ################################################################################
 #
-# Setup signing on Macos. This can either be setup to sign with a real identity
+# Setup signing on macOS. This can either be setup to sign with a real identity
 # and enabling the hardened runtime, or it can simply add the debug entitlement
 # com.apple.security.get-task-allow without actually signing any binaries. The
 # latter is needed to be able to debug processes and dump core files on modern
-# versions of Macos. It can also be skipped completely.
+# versions of macOS. It can also be skipped completely.
 #
 # Check if codesign will run with the given parameters
 # $1: Parameters to run with
