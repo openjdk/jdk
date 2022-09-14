@@ -552,7 +552,7 @@ void CompileQueue::print_tty() {
   print(&ss);
   {
     ttyLocker ttyl;
-    tty->print("%s", ss.base());
+    tty->print("%s", ss.internal_string());
   }
 }
 
@@ -2029,7 +2029,7 @@ static void codecache_print(bool detailed)
     CodeCache::print_summary(&s, detailed);
   }
   ttyLocker ttyl;
-  tty->print("%s", s.base());
+  tty->print("%s", s.internal_string());
 }
 
 // wrapper for CodeCache::print_summary() using outputStream
@@ -2355,7 +2355,7 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
       // Lock to prevent tearing
       ttyLocker ttyl;
       xtty->begin_elem("code_cache_full");
-      xtty->print("%s", s.base());
+      xtty->print("%s", s.internal_string());
       xtty->stamp();
       xtty->end_elem();
     }

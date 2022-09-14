@@ -80,7 +80,7 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
   stringStream ss;
   ss.print("Illegal region state transition from \"%s\", at %s\n  ", region_state_to_string(_state), method);
   print_on(&ss);
-  fatal("%s", ss.base());
+  fatal("%s", ss.internal_string());
 }
 
 void ShenandoahHeapRegion::make_regular_allocation() {

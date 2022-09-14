@@ -1506,7 +1506,7 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
     }
     {
       ttyLocker ttyl;
-      tty->print("%s", s.base());
+      tty->print("%s", s.internal_string());
     }
 
     if (full_count == 1) {

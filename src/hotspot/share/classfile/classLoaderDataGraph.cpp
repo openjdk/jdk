@@ -442,7 +442,7 @@ void ClassLoaderDataGraph::print_table_statistics(outputStream* st) {
     ResourceMark rm; // loader_name_and_id
     stringStream tempst;
     tempst.print("System Dictionary for %s class loader", cld->loader_name_and_id());
-    cld->dictionary()->print_table_statistics(st, tempst.base());
+    cld->dictionary()->print_table_statistics(st, tempst.internal_string());
   }
 }
 

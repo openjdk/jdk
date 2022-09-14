@@ -559,7 +559,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     tempst.print("C1 compiled method <%s>\n"
                  " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
                  nm->method()->print_value_string(), p2i(pc), p2i(current));
-    Exceptions::log_exception(exception, tempst.base());
+    Exceptions::log_exception(exception, tempst.internal_string());
   }
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception);
@@ -1463,7 +1463,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
     Method* inlinee = vfst.method();
     inlinee->print_short_name(&ss1);
     m->print_short_name(&ss2);
-    tty->print_cr("Predicate failed trap in method %s at bci %d inlined in %s at pc " INTPTR_FORMAT, ss1.base(), vfst.bci(), ss2.base(), p2i(caller_frame.pc()));
+    tty->print_cr("Predicate failed trap in method %s at bci %d inlined in %s at pc " INTPTR_FORMAT, ss1.internal_string(), vfst.bci(), ss2.internal_string(), p2i(caller_frame.pc()));
   }
 
 

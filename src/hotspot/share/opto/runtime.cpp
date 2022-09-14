@@ -1720,9 +1720,9 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   }
   NamedCounter* c;
   if (tag == NamedCounter::RTMLockingCounter) {
-    c = new RTMLockingNamedCounter(st.base());
+    c = new RTMLockingNamedCounter(st.internal_string());
   } else {
-    c = new NamedCounter(st.base(), tag);
+    c = new NamedCounter(st.internal_string(), tag);
   }
 
   // atomically add the new counter to the head of the list.  We only
@@ -1756,5 +1756,5 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
   tempst.print(" at " INTPTR_FORMAT,  p2i(exception_pc));
   tempst.print("]");
 
-  st->print_raw_cr(tempst.base());
+  st->print_raw_cr(tempst.internal_string());
 }

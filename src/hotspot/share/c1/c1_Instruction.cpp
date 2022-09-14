@@ -975,7 +975,7 @@ Assert::Assert(Value x, Condition cond, bool unordered_is_true, Value y) : Instr
   ip2.print_instr(y);
 
   stringStream ss;
-  ss.print("Assertion %s %s %s in method %s", strStream1.base(), ip2.cond_name(cond), strStream2.base(), strStream.base());
+  ss.print("Assertion %s %s %s in method %s", strStream1.internal_string(), ip2.cond_name(cond), strStream2.internal_string(), strStream.internal_string());
 
   _message = ss.as_string();
 }

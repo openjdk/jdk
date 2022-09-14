@@ -491,7 +491,7 @@ class Compile : public Phase {
   void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     stringStream ss;
     CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
-    print_inlining_stream()->print("%s", ss.base());
+    print_inlining_stream()->print("%s", ss.internal_string());
   }
 
 #ifndef PRODUCT

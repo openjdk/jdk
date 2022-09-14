@@ -182,7 +182,7 @@ Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, Regi
   } else if (!payload->is_object() && !payload->is_constant_oop()) {
     stringStream ss;
     payload->print_on(&ss);
-    assert(false, "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.base());
+    assert(false, "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.internal_string());
 #endif
   }
   return Handle(THREAD, nullptr);
