@@ -40,9 +40,11 @@ import jdk.internal.util.jar.JarIndex;
  * <h2>Accessing the Manifest</h2>
  * <p>
  * The {@link #getManifest} method will return the {@code Manifest} when it is
- * the first entry in the stream or {@code META-INF/} is the first entry and
- * the {@code Manifest} is the second entry within the stream. When the
- * {@code Manifest} is returned by {@code getManifest()}, the {@link #getNextEntry()}
+ * the first entry in the stream, or {@code META-INF/} is the first entry and
+ * the {@code Manifest} is the second entry within the stream.
+ * </p>
+ * <p>
+ * When the {@code Manifest} is returned by {@code getManifest()}, the {@link #getNextEntry()}
  * and {@link #getNextJarEntry()} methods will not return the {@code Manifest}.
  * If {@code META-INF/} is the first entry in the input stream it will be
  * also not be returned by {@link #getNextEntry()} and
