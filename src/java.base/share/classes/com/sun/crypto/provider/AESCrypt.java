@@ -602,13 +602,6 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
      * @exception InvalidKeyException  If the key is invalid.
      */
     private void makeSessionKey(byte[] k) throws InvalidKeyException {
-        if (k == null) {
-            throw new InvalidKeyException("Empty key");
-        }
-        if (!isKeySizeValid(k.length)) {
-             throw new InvalidKeyException("Invalid AES key length: " +
-                                           k.length + " bytes");
-        }
         int ROUNDS          = getRounds(k.length);
         int ROUND_KEY_COUNT = (ROUNDS + 1) * 4;
 
