@@ -52,15 +52,15 @@ public class TestSecurityProviderServiceEvent {
 
     public static void main(String[] args) throws Exception {
         testAlg(cipherFunc, "AES", "SunJCE",
-                "SunEC", "Cipher", 2, Collections.emptyList());
+                "SunEC", "Cipher", 1, Collections.emptyList());
         testAlg(signatureFunc, "SHA256withRSA", "SunRsaSign",
-                "SunEC", "Signature", 3, List.of("MessageDigest"));
+                "SunEC", "Signature", 2, List.of("MessageDigest"));
         testAlg(messageDigestFunc, "SHA-512", "SUN",
-                "SunEC", "MessageDigest", 2, Collections.emptyList());
+                "SunEC", "MessageDigest", 1, Collections.emptyList());
         testAlg(keystoreFunc, "PKCS12", "SUN",
-                "SunEC", "KeyStore", 2, Collections.emptyList());
+                "SunEC", "KeyStore", 1, Collections.emptyList());
         testAlg(certPathBuilderFunc, "PKIX", "SUN",
-                "SunEC", "CertPathBuilder", 3, List.of("CertificateFactory"));
+                "SunEC", "CertPathBuilder", 2, List.of("CertificateFactory"));
     }
 
     private static void testAlg(BiFunction<String, String, Provider> bif, String alg,
@@ -77,7 +77,7 @@ public class TestSecurityProviderServiceEvent {
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             Asserts.assertEquals(events.size(), expected, "Incorrect number of events");
-            assertEvent(events, algType, alg, p.getName(), brokenProv, other);
+            assertEvent(events, algType, alg, p.getName(), other);
         }
     }
 
@@ -137,7 +137,7 @@ public class TestSecurityProviderServiceEvent {
     };
 
     private static void assertEvent(List<RecordedEvent> events, String type,
-            String alg, String workingProv, String brokenProv, List<String> other) {
+            String alg, String workingProv, List<String> other) {
         boolean secondaryEventOK = other.isEmpty() ? true : false;
         for (RecordedEvent e : events) {
             if (other.contains(e.getValue("type"))) {
@@ -145,15 +145,9 @@ public class TestSecurityProviderServiceEvent {
                 secondaryEventOK = true;
                 continue;
             }
+            Events.assertField(e, "provider").equal(workingProv);
             Events.assertField(e, "type").equal(type);
             Events.assertField(e, "algorithm").equal(alg);
-            if (e.getValue("provider").equals(workingProv)) {
-                Events.assertField(e, "success").equal(true);
-            } else if (e.getValue("provider").equals(brokenProv)) {
-                Events.assertField(e, "success").equal(false);
-            } else {
-                    throw new RuntimeException("Unexpected event:" + e);
-            }
         }
         if (!secondaryEventOK) {
             throw new RuntimeException("Secondary events missing");

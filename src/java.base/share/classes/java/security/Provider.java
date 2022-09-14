@@ -1290,12 +1290,11 @@ public abstract class Provider extends Properties {
             }
         }
 
-        if (SecurityProviderServiceEvent.isTurnedOn()) {
+        if (s != null && SecurityProviderServiceEvent.isTurnedOn()) {
             var e  = new SecurityProviderServiceEvent();
             e.provider = getName();
             e.type = type;
             e.algorithm = algorithm;
-            e.success = (s != null);
             e.commit();
         }
 

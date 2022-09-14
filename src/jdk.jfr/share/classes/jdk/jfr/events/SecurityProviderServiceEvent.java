@@ -45,7 +45,4 @@ public final class SecurityProviderServiceEvent extends AbstractJDKEvent {
 
     @Label("Security Provider")
     public String provider;
-
-    @Label("Success")
-    public boolean success;
 }

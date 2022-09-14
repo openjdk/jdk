@@ -42,6 +42,4 @@ public final class SecurityProviderServiceEvent extends Event {
     public String type;
     public String algorithm;
     public String provider;
-    public boolean success;
-
 }
