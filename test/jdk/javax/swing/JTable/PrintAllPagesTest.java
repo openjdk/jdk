@@ -109,6 +109,6 @@ public class PrintAllPagesTest {
 
         f = new JFrame("Table test");
         f.add(scrollpane);
-        f.setSize(1000, 800);
+        f.setSize(500, 400);
     }
 }
