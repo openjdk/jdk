@@ -4548,7 +4548,7 @@ class StubGenerator: public StubCodeGenerator {
     Label null_jobject;
     __ cmpdi(CCR0, R3_RET, 0);
     __ beq(CCR0, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
+    DecoratorSet decorators = ACCESS_READ | IN_NATIVE | ON_STRONG_OOP_REF;
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->load_at(_masm, decorators, T_OBJECT, R3_RET /*base*/, (intptr_t)0, R3_RET /*dst*/, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
     __ bind(null_jobject);

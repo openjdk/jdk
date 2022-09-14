@@ -397,7 +397,7 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ z_ltgr(tmp1, value);
   __ z_bre(Ldone);          // Use NULL result as-is.
 
-  __ z_nill(value, ~JNIHandles::weak_tag_mask);
+  __ z_nill(value, ~JNIHandles::tag_mask);
   __ z_lg(value, 0, value); // Resolve (untagged) jobject.
 
   __ z_tmll(tmp1, JNIHandles::weak_tag_mask); // Test for jweak tag.
