@@ -1098,7 +1098,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ bnez(c_rarg2, call_thaw);
 
     // Make sure the call is patchable
-    __ align(BytesPerWord);
+    __ align(4);
 
     address mark = __ pc();
     __ trampoline_call(resolve);
@@ -1126,7 +1126,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ bnez(c_rarg2, call_thaw);
 
   // Make sure the call is patchable
-  __ align(BytesPerWord);
+  __ align(4);
 
   address mark = __ pc();
   __ trampoline_call(resolve);
