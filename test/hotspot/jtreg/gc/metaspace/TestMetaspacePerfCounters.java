@@ -244,15 +244,17 @@ public class TestMetaspacePerfCounters {
 
         final int MaxAttempts = 10;
 
-        int attempts = 0;
-        do {
+        for (int attempts = 0; ; attempts++) {
             snap1.get(ns);
             VarHandle.fullFence();
             snap2.get(ns);
-        } while ((!snap1.equals(snap2)) && (++attempts < MaxAttempts));
 
-        if (attempts == MaxAttempts) {
-            throw new Exception("Failed to get stable reading of metaspace performance counters after " + MaxAttempts + " tries");
+            if (snap1.equals(snap2)) {
+              // Got a consistent snapshot for examination.
+              break;
+            } else if (attempts == MaxAttempts) {
+              throw new Exception("Failed to get stable reading of metaspace performance counters after " + attempts + " tries");
+            }
         }
 
         assertGTE(snap1.minCapacity, 0L);
