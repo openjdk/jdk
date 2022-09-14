@@ -273,9 +273,9 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 }
 
 void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
-  // We always scrub the region to make sure the entire region is
-  // parsable after the self-forwarding pointer removal.
-  reset_parsable_bottom();
+  // PB must be bottom - we only evacuate old gen regions after scrubbing, and
+  // young gen regions never have their PB set to anything other than bottom.
+  assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
 

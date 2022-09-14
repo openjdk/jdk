@@ -1885,10 +1885,9 @@ void G1ConcurrentMark::flush_all_task_caches() {
                        hits, misses, percent_of(hits, sum));
 }
 
-void G1ConcurrentMark::clear_mark_data_for_region(HeapRegion* hr) {
+void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr) {
   assert_at_safepoint();
   _mark_bitmap.clear_range(MemRegion(hr->bottom(), hr->end()));
-  hr->reset_top_at_mark_start();
 }
 
 HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {

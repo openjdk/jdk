@@ -2944,8 +2944,8 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
                                                create_g1_evac_summary(&_old_evac_stats));
 }
 
-void G1CollectedHeap::clear_mark_data_for_region(HeapRegion* hr) {
-  concurrent_mark()->clear_mark_data_for_region(hr);
+void G1CollectedHeap::clear_bitmap_for_region(HeapRegion* hr) {
+  concurrent_mark()->clear_bitmap_for_region(hr);
 }
 
 void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {

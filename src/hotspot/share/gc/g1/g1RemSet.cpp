@@ -1281,7 +1281,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // Evacuation failure uses the bitmap to record evacuation failed objects,
       // so the bitmap for the regions in the collection set must be cleared if not already.
       if (should_clear_region(hr)) {
-        _g1h->clear_mark_data_for_region(hr);
+        _g1h->clear_bitmap_for_region(hr);
+        hr->reset_top_at_mark_start();
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
