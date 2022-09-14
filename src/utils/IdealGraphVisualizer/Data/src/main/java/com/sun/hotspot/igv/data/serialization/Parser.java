@@ -208,13 +208,14 @@ public class Parser implements GraphParser {
     // <graph>
     private ElementHandler<InputGraph, Group> graphHandler = new XMLParser.ElementHandler<InputGraph, Group>(GRAPH_ELEMENT) {
 
+        private InputGraph previous;
+
         @Override
         protected InputGraph start() throws SAXException {
             String name = readAttribute(GRAPH_NAME_PROPERTY);
             InputGraph curGraph = new InputGraph(name);
             if (differenceEncoding.get(getParentObject())) {
                 InputGraph previous = lastParsedGraph.get(getParentObject());
-                lastParsedGraph.put(getParentObject(), curGraph);
                 if (previous != null) {
                     for (InputNode n : previous.getNodes()) {
                         curGraph.addNode(n);
@@ -241,6 +242,11 @@ public class Parser implements GraphParser {
             //       defined and nodes are assigned to them.
 
             final InputGraph graph = getObject();
+            final InputGraph previous = lastParsedGraph.get(getParentObject());
+            if (graph.isSameContent(previous)) {
+                graph.getProperties().setProperty("_isDuplicate", "true");
+            }
+            lastParsedGraph.put(getParentObject(), graph);
             final Group parent = getParentObject();
             if (graph.getBlocks().size() > 0) {
                 boolean blocksContainNodes = false;
