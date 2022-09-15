@@ -52,6 +52,8 @@ static uint _num_workers = 0;
 const size_t _storage_entries = 1000000;
 
 class OopStorageParIterPerf : public ::testing::Test {
+  ThreadInVMfromUnknown thread_in_vm_from_unknown;
+
   OopStorage* _storage;
 
 public:
@@ -159,7 +161,6 @@ public:
 Tickspan OopStorageParIterPerf::run_task(Task* task, uint nthreads) {
   tty->print_cr("Running test with %u threads", nthreads);
   VM_ParStateTime op(workers(), task, nthreads);
-  ThreadInVMfromNative invm(JavaThread::current());
   Ticks start_time = Ticks::now();
   VMThread::execute(&op);
   return Ticks::now() - start_time;

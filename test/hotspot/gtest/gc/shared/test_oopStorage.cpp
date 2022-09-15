@@ -172,6 +172,8 @@ static OopBlock* active_head(const OopStorage& storage) {
 }
 
 class OopStorageTest : public ::testing::Test {
+  ThreadInVMfromUnknown thread_in_vm_from_unknown;
+
   OopStorage* _storage;
 
 public:
@@ -609,7 +611,6 @@ TEST_VM_F(OopStorageTest, simple_iterate) {
       CountingIterateClosure cl;
       VM_CountAtSafepoint<false> op(&storage(), &cl);
       {
-        ThreadInVMfromNative invm(JavaThread::current());
         VMThread::execute(&op);
       }
       EXPECT_EQ(allocated, cl._non_const_count);
@@ -622,7 +623,6 @@ TEST_VM_F(OopStorageTest, simple_iterate) {
       CountingIterateClosure cl;
       VM_CountAtSafepoint<true> op(&storage(), &cl);
       {
-        ThreadInVMfromNative invm(JavaThread::current());
         VMThread::execute(&op);
       }
       EXPECT_EQ(allocated, cl._const_count);
@@ -836,7 +836,6 @@ TEST_VM_F(OopStorageTestIteration, iterate_safepoint) {
   VerifyState vstate(mark_non_const, _entries, _states);
   VM_Verify<false> op(&storage(), &vstate);
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
   }
   EXPECT_TRUE(op.result());
@@ -847,7 +846,6 @@ TEST_VM_F(OopStorageTestIteration, const_iterate_safepoint) {
   VerifyState vstate(mark_const, _entries, _states);
   VM_Verify<true> op(&storage(), &vstate);
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
   }
   EXPECT_TRUE(op.result());
@@ -858,7 +856,6 @@ TEST_VM_F(OopStorageTestIteration, oops_do) {
   VerifyState vstate(mark_non_const, _entries, _states);
   VM_VerifyUsingOopsDo op(&storage(), &vstate);
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
   }
   vstate.check();
@@ -952,7 +949,6 @@ TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_iterate) {
   Task<false, false> task("test", &storage(), &vstate);
   VM_ParStateVerify op(workers(), &task);
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
   }
   vstate.check();
@@ -963,7 +959,6 @@ TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_const_iterate) {
   Task<false, true> task("test", &storage(), &vstate);
   VM_ParStateVerify op(workers(), &task);
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
   }
   vstate.check();
@@ -974,7 +969,6 @@ TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_oops_do) {
   TaskUsingOopsDo<false, false> task("test", &storage(), &vstate);
   VM_ParStateVerify op(workers(), &task);
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
   }
   vstate.check();
@@ -985,7 +979,6 @@ TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_const_oops_do) {
   TaskUsingOopsDo<false, true> task("test", &storage(), &vstate);
   VM_ParStateVerify op(workers(), &task);
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
   }
   vstate.check();
@@ -1033,7 +1026,6 @@ TEST_VM_F(OopStorageTestWithAllocation, delete_empty_blocks) {
   EXPECT_EQ(initial_active_size, storage().block_count());
   EXPECT_EQ(3u, empty_block_count(storage()));
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     while (storage().delete_empty_blocks()) {}
   }
   EXPECT_EQ(0u, empty_block_count(storage()));
@@ -1059,7 +1051,6 @@ TEST_VM_F(OopStorageTestWithAllocation, allocation_status) {
   }
 
   {
-    ThreadInVMfromNative invm(JavaThread::current());
     while (storage().delete_empty_blocks()) {}
   }
   EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, storage().allocation_status(retained));
