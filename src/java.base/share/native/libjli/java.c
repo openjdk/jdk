@@ -234,7 +234,8 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         jboolean javaargs,                      /* JAVA_ARGS */
         jboolean cpwildcard,                    /* classpath wildcard*/
         jboolean javaw,                         /* windows-only javaw */
-        jint ergo                               /* unused */
+        jint ergo,                              /* unused */
+        char **orig_argv                        /* original argv as it was passed to main */
 )
 {
     int mode = LM_UNKNOWN;
@@ -283,7 +284,8 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
                                jvmpath, sizeof(jvmpath),
-                               jvmcfg,  sizeof(jvmcfg));
+                               jvmcfg,  sizeof(jvmcfg),
+                               orig_argv);
 
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;

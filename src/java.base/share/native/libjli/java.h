@@ -97,7 +97,8 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         jboolean javaargs,                      /* JAVA_ARGS */
         jboolean cpwildcard,                    /* classpath wildcard */
         jboolean javaw,                         /* windows-only javaw */
-        jint     ergo_class                     /* ergnomics policy */
+        jint     ergo_class,                    /* ergnomics policy */
+        char** orig_argv                        /* main args unprocessed */
 );
 
 /*
@@ -130,7 +131,8 @@ GetApplicationHomeFromDll(char *buf, jint bufsize);
 void CreateExecutionEnvironment(int *argc, char ***argv,
                                 char *jrepath, jint so_jrepath,
                                 char *jvmpath, jint so_jvmpath,
-                                char *jvmcfg,  jint so_jvmcfg);
+                                char *jvmcfg,  jint so_jvmcfg,
+                                char **orig_argv);
 
 /* Reports an error message to stderr or a window as appropriate. */
 JNIEXPORT void JNICALL

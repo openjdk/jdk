@@ -361,7 +361,8 @@ void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jrepath[], jint so_jrepath,
                            char jvmpath[], jint so_jvmpath,
-                           char jvmcfg[],  jint so_jvmcfg) {
+                           char jvmcfg[],  jint so_jvmcfg,
+                           char **orig_argv) {
     /* Compute/set the name of the executable */
     SetExecname(*pargv);
 
