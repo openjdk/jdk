@@ -35,7 +35,7 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector cast intrinsics work as intended on neon.
- * @requires vm.cpu.features ~= ".*simd.*"
+ * @requires vm.cpu.features ~= ".*asimd.*"
  * @library /test/lib /
  * @run main compiler.vectorapi.reshape.TestVectorCastNeon
  */

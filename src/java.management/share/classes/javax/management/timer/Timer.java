@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ public class Timer extends NotificationBroadcasterSupport
      * that were given to addNotification.
      */
     public synchronized MBeanNotificationInfo[] getNotificationInfo() {
-        Set<String> notifTypes = new TreeSet<String>();
+        Set<String> notifTypes = new TreeSet<>();
         for (Object[] entry : timerTable.values()) {
             TimerNotification notif = (TimerNotification)
                 entry[TIMER_NOTIF_INDEX];
@@ -771,7 +771,7 @@ public class Timer extends NotificationBroadcasterSupport
      * <BR>The vector is empty if there is no timer notification registered for this timer MBean.
      */
     public synchronized Vector<Integer> getAllNotificationIDs() {
-        return new Vector<Integer>(timerTable.keySet());
+        return new Vector<>(timerTable.keySet());
     }
 
     /**
@@ -788,7 +788,7 @@ public class Timer extends NotificationBroadcasterSupport
 
         String s;
 
-        Vector<Integer> v = new Vector<Integer>();
+        Vector<Integer> v = new Vector<>();
 
         for (Map.Entry<Integer,Object[]> entry : timerTable.entrySet()) {
             Object[] obj = entry.getValue();
@@ -988,8 +988,7 @@ public class Timer extends NotificationBroadcasterSupport
         Integer notifID;
         Date date;
 
-        ArrayList<Object[]> values =
-            new ArrayList<Object[]>(timerTable.values());
+        ArrayList<Object[]> values = new ArrayList<>(timerTable.values());
 
         for (Object[] obj : values) {
 

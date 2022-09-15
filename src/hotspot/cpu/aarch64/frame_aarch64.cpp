@@ -188,13 +188,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_pc == NULL ||  sender_blob == NULL) {
-      return false;
-    }
-
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
       return false;
     }
 
@@ -739,9 +734,15 @@ extern "C" void pf(uintptr_t sp, uintptr_t fp, uintptr_t pc,
                    uintptr_t bcx, uintptr_t thread) {
   if (!reg_map) {
     reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtInternal);
-    ::new (reg_map) RegisterMap((JavaThread*)thread, false);
+    ::new (reg_map) RegisterMap((JavaThread*)thread,
+                                RegisterMap::UpdateMap::skip,
+                                RegisterMap::ProcessFrames::include,
+                                RegisterMap::WalkContinuation::skip);
   } else {
-    *reg_map = RegisterMap((JavaThread*)thread, false);
+    *reg_map = RegisterMap((JavaThread*)thread,
+                           RegisterMap::UpdateMap::skip,
+                           RegisterMap::ProcessFrames::include,
+                           RegisterMap::WalkContinuation::skip);
   }
 
   {

@@ -29,8 +29,8 @@
 address RegisterMap::pd_location(VMReg reg) const {
   if (reg->is_XMMRegister()) {
     int reg_base = reg->value() - ConcreteRegisterImpl::max_fpr;
-    int base_reg_enc = (reg_base / XMMRegisterImpl::max_slots_per_register);
-    assert(base_reg_enc >= 0 && base_reg_enc < XMMRegisterImpl::number_of_registers, "invalid XMMRegister: %d", base_reg_enc);
+    int base_reg_enc = (reg_base / XMMRegister::max_slots_per_register);
+    assert(base_reg_enc >= 0 && base_reg_enc < XMMRegister::number_of_registers, "invalid XMMRegister: %d", base_reg_enc);
     VMReg base_reg = as_XMMRegister(base_reg_enc)->as_VMReg();
     intptr_t offset_in_bytes = (reg->value() - base_reg->value()) * VMRegImpl::stack_slot_size;
     if (base_reg_enc > 15) {

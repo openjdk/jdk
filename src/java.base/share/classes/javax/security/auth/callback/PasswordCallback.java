@@ -155,8 +155,6 @@ public class PasswordCallback implements Callback, java.io.Serializable {
     }
 
     private static Runnable cleanerFor(char[] password) {
-        return () -> {
-            Arrays.fill(password, ' ');
-        };
+        return () -> Arrays.fill(password, ' ');
     }
 }
