@@ -37,7 +37,7 @@ class WindbgAARCH64Thread implements ThreadProxy {
   // The address argument must be the address of the OSThread::_thread_id
   WindbgAARCH64Thread(WindbgDebugger debugger, Address addr) {
     this.debugger = debugger;
-    this.sysId    = (long)addr.getCIntegerAt(0, 4, true);
+    this.sysId    = addr.getCIntegerAt(0, 4, true);
     gotID         = false;
   }
 
