@@ -10206,6 +10206,7 @@ instruct andL_rReg_imm255(rRegL dst, rRegL src, immL_255 mask)
 
   format %{ "movzbl  $dst, $src\t# long & 0xFF" %}
   ins_encode %{
+    // movzbl zeroes out the upper 32-bit and does not need REX.W
     __ movzbl($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg);
@@ -10216,8 +10217,9 @@ instruct andL_rReg_imm65535(rRegL dst, rRegL src, immL_65535 mask)
 %{
   match(Set dst (AndL src mask));
 
-  format %{ "movzwq  $dst, $src\t# long & 0xFFFF" %}
+  format %{ "movzwl  $dst, $src\t# long & 0xFFFF" %}
   ins_encode %{
+    // movzwl zeroes out the upper 32-bit and does not need REX.W
     __ movzwl($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg);

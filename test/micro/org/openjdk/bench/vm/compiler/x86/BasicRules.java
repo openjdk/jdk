@@ -29,21 +29,35 @@ import org.openjdk.jmh.infra.Blackhole;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 1, jvmArgsAppend = "-XX:-UseSuperWord")
+@Fork(value = 3, jvmArgsAppend = "-XX:-UseSuperWord")
+@Warmup(time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(time = 1, timeUnit = TimeUnit.SECONDS)
 public class BasicRules {
-    static final int[] a = new int[1024];
+    static final int[] INT_ARRAY = new int[1024];
+    static final long[] LONG_ARRAY = new long[1024];
 
     @Benchmark
-    public void inc_mem() {
-        for (int i = 0; i < a.length; i++) {
-            a[i]++;
+    public void andL_rReg_imm255(Blackhole bh) {
+        for (int i = 0; i < LONG_ARRAY.length; i++) {
+            long v = LONG_ARRAY[i];
+            bh.consume(v);
+            bh.consume(v & 0xFFL);
+        }
+    }
+
+    @Benchmark
+    public void andL_rReg_imm65535(Blackhole bh) {
+        for (int i = 0; i < LONG_ARRAY.length; i++) {
+            long v = LONG_ARRAY[i];
+            bh.consume(v);
+            bh.consume(v & 0xFFFFL);
         }
     }
 
     @Benchmark
     public void add_mem_con(Blackhole bh) {
-        for (int i = 0; i < a.length; i++) {
-            bh.consume(a[i] + 100);
+        for (int i = 0; i < INT_ARRAY.length; i++) {
+            bh.consume(INT_ARRAY[i] + 100);
         }
     }
 }
