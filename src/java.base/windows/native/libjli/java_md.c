@@ -158,8 +158,10 @@ void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char *jrepath, jint so_jrepath,
                            char *jvmpath, jint so_jvmpath,
-                           char *jvmcfg,  jint so_jvmcfg) {
+                           char *jvmcfg,  jint so_jvmcfg,
+                           char **orig_argv) {
 
+    (void) orig_argv; /* Not used under Windows */
     char *jvmtype;
     int i = 0;
     char** argv = *pargv;

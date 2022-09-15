@@ -49,6 +49,7 @@ WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
     int jargc;
     char** jargv;
     const jboolean const_javaw = JNI_TRUE;
+    char** argv = NULL;
 
     __initenv = _environ;
 
@@ -171,5 +172,6 @@ main(int argc, char **argv)
                    (const_progname != NULL) ? const_progname : *margv,
                    (const_launcher != NULL) ? const_launcher : *margv,
                    jargc > 0,
-                   const_cpwildcard, const_javaw, 0);
+                   const_cpwildcard, const_javaw, 0,
+                   argv);
 }

@@ -86,15 +86,7 @@ static jboolean expand(JLI_List args, const char *str, const char *var_name);
 
 JNIEXPORT void JNICALL
 JLI_InitArgProcessing(jboolean hasJavaArgs, jboolean disableArgFile) {
-    // No expansion for relaunch
-    if (argsCount != 1) {
-        relaunch = JNI_TRUE;
-        stopExpansion = JNI_TRUE;
-        argsCount = 1;
-    } else {
-        stopExpansion = disableArgFile;
-    }
-
+    stopExpansion = disableArgFile;
     expectingNoDashArg = JNI_FALSE;
 
     // for tools, this value remains 0 all the time.
@@ -469,10 +461,6 @@ JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
 
     if (firstAppArgIndex == 0) {
         // Not 'java', return
-        return JNI_FALSE;
-    }
-
-    if (relaunch) {
         return JNI_FALSE;
     }
 

@@ -295,7 +295,8 @@ void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jrepath[], jint so_jrepath,
                            char jvmpath[], jint so_jvmpath,
-                           char jvmcfg[],  jint so_jvmcfg) {
+                           char jvmcfg[],  jint so_jvmcfg,
+                           char **orig_argv) {
 
     char * jvmtype = NULL;
     char **argv = *pargv;
@@ -450,9 +451,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         (void) fflush(stderr);
 #ifdef SETENV_REQUIRED
         if (mustsetenv) {
-            execve(newexec, argv, newenvp);
+            execve(newexec, orig_argv, newenvp);
         } else {
-            execv(newexec, argv);
+            execv(newexec, orig_argv);
         }
 #else /* !SETENV_REQUIRED */
         execv(newexec, argv);

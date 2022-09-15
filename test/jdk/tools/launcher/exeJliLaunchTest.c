@@ -40,5 +40,6 @@ main(int argc, char **argv)
                    0, NULL,
                    "1", "0",
                    *argv, *argv,
-                   0, 0, 0, 0);
+                   0, 0, 0, 0,
+                   argv);
 }
