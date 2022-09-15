@@ -216,24 +216,28 @@ public class InputGraphTest {
     @Test
     public void testIsSameContent() {
 
-        Group parentA = new Group(null);
         InputGraph a = new InputGraph("graph");
-        parentA.addElement(a);
+        a.addNode(N1);
+        a.addNode(N2);
+        a.addEdge(E12);
 
         InputGraph b = new InputGraph("graph");
-        parentA.addElement(b);
+        b.addNode(N1);
+        b.addNode(N2);
+        b.addEdge(E12);
 
-        Group parentB = new Group(null);
         InputGraph c = new InputGraph("graph");
-        parentB.addElement(c);
+        c.addNode(N3);
+        c.addNode(N4);
+        c.addEdge(E34);
 
         assertTrue(a.isSameContent(b));
         assertFalse(b.isSameContent(c));
 
-        a.addNode(new InputNode(1));
+        a.addNode(N3);
         assertFalse(a.isSameContent(b));
 
-        b.addNode(new InputNode(1));
+        b.addNode(N3);
         assertTrue(a.isSameContent(b));        
     }
 
