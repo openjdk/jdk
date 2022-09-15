@@ -611,8 +611,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
     register_control(ctrl, _ltree_root, unc);
     Node* halt = new HaltNode(ctrl, frame, "uncommon trap returned which should never happen" PRODUCT_ONLY(COMMA /*reachable*/false));
     register_control(halt, _ltree_root, ctrl);
-    C->root()->add_req(halt);
-    _igvn._worklist.push(C->root());
+    _igvn.add_input_to(C->root(), halt);
 
     _igvn.replace_input_of(inner_head, LoopNode::EntryControl, iftrue);
     set_idom(inner_head, iftrue, dom_depth(inner_head));
@@ -5131,8 +5130,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           Node* halt = new HaltNode(if_f, frame, "never-taken loop exit reached");
           _igvn.register_new_node_with_optimizer(halt);
           set_loop(halt, l);
-          C->root()->add_req(halt);
-          _igvn._worklist.push(C->root());
+          _igvn.add_input_to(C->root(), halt);
         }
         set_loop(C->root(), _ltree_root);
       }
