@@ -278,6 +278,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         hashData.append(getQualifiedSignature(interfaceMethodType));
         hashData.append(implementation.internalMemberName().toString());
         hashData.append(getQualifiedSignature(dynamicMethodType));
+        hashData.append(isSerializable ? "true" : "false");
 
         for (Class<?> clazz : altInterfaces) {
             hashData.append(clazz.getName());
