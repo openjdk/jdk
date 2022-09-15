@@ -34,8 +34,6 @@
 // a description of how to extend it, see the stubRoutines.hpp file.
 
 address StubRoutines::x86::_verify_mxcsr_entry = NULL;
-address StubRoutines::x86::_chacha20_counter_addmask_avx2 = NULL;
-address StubRoutines::x86::_chacha20_counter_addmask_avx512 = NULL;
 address StubRoutines::x86::_upper_word_mask_addr = NULL;
 address StubRoutines::x86::_shuffle_byte_flip_mask_addr = NULL;
 address StubRoutines::x86::_k256_adr = NULL;

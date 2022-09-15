@@ -387,6 +387,10 @@ class StubGenerator: public StubCodeGenerator {
   // Ghash single and multi block operations using AVX instructions
   address generate_avx_ghash_processBlocks();
 
+  // ChaCha20 stubs
+  void generate_chapoly_stubs();
+  address generate_chacha20Block_avx();
+  address generate_chacha20Block_avx512();
 
   // BASE64 stubs
 

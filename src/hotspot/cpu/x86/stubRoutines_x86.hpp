@@ -138,10 +138,6 @@ class x86 {
   // table for CRC32C
   static juint* _crc32c_table;
 
-  // ChaCha20 add masks
-  static address _chacha20_counter_addmask_avx2;
-  static address _chacha20_counter_addmask_avx512;
-
   // upper word mask for sha1
   static address _upper_word_mask_addr;
   // byte flip mask for sha1
@@ -210,8 +206,6 @@ class x86 {
   static address crc_table_avx512_addr()  { return (address)_crc_table_avx512; }
   static address crc32c_table_avx512_addr()  { return (address)_crc32c_table_avx512; }
 #endif // _LP64
-  static address chacha20_counter_addmask_avx2() { return _chacha20_counter_addmask_avx2; }
-  static address chacha20_counter_addmask_avx512() { return _chacha20_counter_addmask_avx512; }
   static address upper_word_mask_addr() { return _upper_word_mask_addr; }
   static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
   static address k256_addr()      { return _k256_adr; }

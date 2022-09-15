@@ -2742,12 +2742,6 @@ void MacroAssembler::evmovdqul(XMMRegister dst, KRegister mask, AddressLiteral s
 void MacroAssembler::evmovdquq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
-  } else {
-    lea(rscratch, src);
-    Assembler::evmovdqul(dst, Address(rscratch, 0), vector_len);
-  }
-}
-
   if (reachable(src)) {
     Assembler::evmovdquq(dst, mask, as_Address(src), merge, vector_len);
   } else {
