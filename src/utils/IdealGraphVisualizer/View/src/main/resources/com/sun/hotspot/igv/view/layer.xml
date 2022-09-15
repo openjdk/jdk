@@ -7,17 +7,10 @@
         </file>
     </folder>
     <folder name="Actions">
-        <folder name="File">
-            <file name="com-sun-hotspot-igv-view-actions-ExportAction.instance">
-                <attr name="position" intvalue="1100"/>
-            </file>
-        </folder>
         <folder name="Search">
             <file name="org-netbeans-modules-quicksearch-QuickSearchAction.instance"><attr name="position" intvalue="2001"/></file>
         </folder>
         <folder name="View">
-            <file name="com-sun-hotspot-igv-view-actions-ZoomOutAction.instance"><attr name="position" intvalue="2001"/></file>
-            <file name="com-sun-hotspot-igv-view-actions-ZoomInAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-OverviewAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-PredSuccAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ShowEmptyBlocksAction.instance"><attr name="position" intvalue="2001"/></file>
@@ -27,24 +20,10 @@
         </folder>
     </folder>
     <folder name="Menu">
-        <folder name="View">
-            <file name="com-sun-hotspot-igv-view-actions-ZoomOutAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ZoomOutAction.instance"/>
-                <attr name="position" intvalue="500"/>
-            </file>
-            <file name="com-sun-hotspot-igv-view-actions-ZoomInAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ZoomInAction.instance"/>
-                <attr name="position" intvalue="450"/>
-            </file>
-        </folder>
         <folder name="File">
             <file name="ExportActionSeparator.instance">
                 <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
                 <attr name="position" intvalue="700"/>
-            </file>
-            <file name="com-sun-hotspot-igv-view-actions-ExportAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-view-actions-ExportAction.instance"/>
-                <attr name="position" intvalue="710"/>
             </file>
         </folder>
     </folder>

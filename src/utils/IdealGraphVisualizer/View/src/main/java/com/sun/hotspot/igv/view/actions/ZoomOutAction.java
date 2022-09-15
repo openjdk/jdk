@@ -28,15 +28,32 @@ import java.awt.Event;
 import java.awt.event.KeyEvent;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.Utilities;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ZoomOutAction")
+@ActionRegistration(displayName = "#CTL_ZoomOutAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 500),
+        @ActionReference(path = "Shortcuts", name = "D-MINUS")
+})
+@NbBundle.Messages({
+        "CTL_ZoomOutAction=Zoom out",
+        "HINT_ZoomOutAction=Zoom out of the graph"
+})
 public final class ZoomOutAction extends CallableSystemAction {
+
+    public ZoomOutAction() {
+        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_ZoomOutAction());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+    }
 
     @Override
     public void performAction() {
@@ -46,15 +63,9 @@ public final class ZoomOutAction extends CallableSystemAction {
         }
     }
 
-    public ZoomOutAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Zoom out");
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-MINUS"));
-    }
-
     @Override
     public String getName() {
-        return "Zoom out";
+        return Bundle.CTL_ZoomOutAction();
     }
 
     @Override

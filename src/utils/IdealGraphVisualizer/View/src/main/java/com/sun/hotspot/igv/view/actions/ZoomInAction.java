@@ -28,15 +28,32 @@ import java.awt.Event;
 import java.awt.event.KeyEvent;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.Utilities;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ZoomInAction")
+@ActionRegistration(displayName = "#CTL_ZoomInAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 450),
+        @ActionReference(path = "Shortcuts", name = "D-EQUALS")
+})
+@NbBundle.Messages({
+        "CTL_ZoomInAction=Zoom in",
+        "HINT_ZoomInAction=Zoom into the graph"
+})
 public final class ZoomInAction extends CallableSystemAction {
+
+    public ZoomInAction() {
+        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_ZoomInAction());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+    }
 
     @Override
     public void performAction() {
@@ -48,13 +65,7 @@ public final class ZoomInAction extends CallableSystemAction {
 
     @Override
     public String getName() {
-        return "Zoom in";
-    }
-
-    public ZoomInAction() {
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-EQUALS"));
-        putValue(Action.SHORT_DESCRIPTION, "Zoom in");
+        return Bundle.CTL_ZoomInAction();
     }
 
     @Override

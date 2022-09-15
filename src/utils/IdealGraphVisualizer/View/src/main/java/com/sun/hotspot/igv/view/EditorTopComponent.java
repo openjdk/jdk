@@ -169,7 +169,7 @@ public final class EditorTopComponent extends TopComponent {
         content.add(new ExportGraph());
         content.add(diagramViewModel);
         content.add(diagramProvider);
-        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
+        this.associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
         diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
         diagramViewModel.selectGraph(diagram.getGraph());

@@ -31,15 +31,15 @@ import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfGraphics2D;
 import com.lowagie.text.pdf.PdfTemplate;
 import com.lowagie.text.pdf.PdfWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.w3c.dom.DOMImplementation;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 
 
 public class ExportGraph implements ExportCookie {
@@ -66,7 +66,7 @@ public class ExportGraph implements ExportCookie {
         com.lowagie.text.Document document = new Document(new Rectangle(width, height));
         PdfWriter writer = null;
         try {
-            writer = PdfWriter.getInstance(document, new FileOutputStream(f));
+            writer = PdfWriter.getInstance(document, Files.newOutputStream(f.toPath()));
             writer.setCloseStream(true);
             document.open();
             PdfContentByte contentByte = writer.getDirectContent();
