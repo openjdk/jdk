@@ -892,13 +892,13 @@ use with `--with-macosx-codesign-identity=<identity>`. The identity refers to a
 signing identity from Apple that needs to be preinstalled on the build host.
 
 When not signing for distribution with the hardened option, the JDK build will
-still attempt to perform `adhoc` signing, to add the special entitlement
+still attempt to perform `adhoc` signing to add the special entitlement
 `com.apple.security.get-task-allow` to each binary. This entitlement is required
-to be able to attach to a process or dump its core. Note that adding this
-entitlement makes the build invalid for notarization, so it is only added when
-signing in `debug` mode. To explicitly enable this kind of adhoc signing, use
-configure parameter `--with-macosx-codesign=debug`. It will be enabled by
-default in most cases.
+to be able to dump core files from a process. Note that adding this entitlement
+makes the build invalid for notarization, so it is only added when signing in
+`debug` mode. To explicitly enable this kind of adhoc signing, use configure
+parameter `--with-macosx-codesign=debug`. It will be enabled by default in most
+cases.
 
 It's also possible to completely disable any explicit codesign operations done
 by the JDK build using the configure parameter `--without-macosx-codesign`.
@@ -906,7 +906,7 @@ The exact behavior then depends on the architecture. For macOS on x64, it (at
 least at the time of this writing) results in completely unsigned binaries that
 should still work fine for development and debugging purposes. On aarch64, the
 Xcode linker will apply a default "adhoc" signing, without any entitlements.
-Such a build will not allow being attached to or dumping core.
+Such a build does not allow dumping core files.
 
 The default mode "auto" will try for `hardened` signing if the debug level is
 `release` and either the default identity or the specified identity is valid.
