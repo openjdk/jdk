@@ -211,9 +211,7 @@ int ClassLoaderData::ChunkedHandleList::count() const {
 
 inline void ClassLoaderData::ChunkedHandleList::oops_do_chunk(OopClosure* f, Chunk* c, const juint size) {
   for (juint i = 0; i < size; i++) {
-    if (c->_data[i] != NULL) {
-      f->do_oop(&c->_data[i]);
-    }
+    f->do_oop(&c->_data[i]);
   }
 }
 

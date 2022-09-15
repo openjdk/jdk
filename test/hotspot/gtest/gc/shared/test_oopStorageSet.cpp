@@ -26,6 +26,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -33,6 +34,8 @@
 #include "unittest.hpp"
 
 class OopStorageSetTest : public ::testing::Test {
+  ThreadInVMfromUnknown thread_in_vm_from_unknown;
+
 protected:
   // Returns index of s in storages, or size if not found.
   template <uint count>
