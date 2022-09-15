@@ -506,6 +506,7 @@ class Compile : public Phase {
 
   // Dump inlining replay data to the stream.
   void dump_inline_data(outputStream* out);
+  void dump_inline_data_reduced(outputStream* out);
 
  private:
   // Matching, CFG layout, allocation, code generation

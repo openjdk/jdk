@@ -1683,10 +1683,8 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
          "should be in vm thread");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  GCCause::Cause gc_cause = heap->gc_cause();
   assert(!heap->is_gc_active(), "not reentrant");
 
-  PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
   if (ScavengeBeforeFullGC) {
@@ -1744,7 +1742,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                                         Threads::number_of_non_daemon_threads());
     ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);
 
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(&_gc_tracer);
     GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause, true);
 
     heap->pre_full_gc_dump(&_gc_timer);

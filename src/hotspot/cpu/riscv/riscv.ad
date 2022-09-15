@@ -2102,7 +2102,7 @@ encode %{
     Assembler::CompressibleRegion cr(&_masm);
     int64_t con = (int64_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
-    __ li(dst_reg, con);
+    __ mv(dst_reg, con);
   %}
 
   enc_class riscv_enc_mov_p(iRegP dst, immP src) %{
@@ -2119,7 +2119,7 @@ encode %{
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
         assert(rtype == relocInfo::none, "unexpected reloc type");
-        __ li(dst_reg, $src$$constant);
+        __ mv(dst_reg, $src$$constant);
       }
     }
   %}
@@ -2128,7 +2128,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Assembler::CompressibleRegion cr(&_masm);
     Register dst_reg = as_Register($dst$$reg);
-    __ li(dst_reg, 1);
+    __ mv(dst_reg, 1);
   %}
 
   enc_class riscv_enc_mov_byte_map_base(iRegP dst) %{
@@ -2255,7 +2255,7 @@ encode %{
 
     __ bind(miss);
     if (!$primary) {
-      __ li(cr_reg, 1);
+      __ mv(cr_reg, 1);
     }
 
     __ bind(done);
@@ -2396,7 +2396,7 @@ encode %{
       // Check if the owner is self by comparing the value in the
       // markWord of object (disp_hdr) with the stack pointer.
       __ sub(disp_hdr, disp_hdr, sp);
-      __ li(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
+      __ mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
       // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto cont,
       // hence we can store 0 as the displaced header in the box, which indicates that it is a
       // recursive lock.
@@ -8853,7 +8853,7 @@ instruct cmpF_branch(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "float_b$cmp $op1, $op2 \t#@cmpF_branch"%}
+  format %{ "float_b$cmp $op1, $op2, $lbl \t#@cmpF_branch"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg), *($lbl$$label));
@@ -8870,7 +8870,7 @@ instruct cmpF_loop(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "float_b$cmp $op1, $op2\t#@cmpF_loop"%}
+  format %{ "float_b$cmp $op1, $op2, $lbl\t#@cmpF_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg), *($lbl$$label));
@@ -8888,7 +8888,7 @@ instruct cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "double_b$cmp $op1, $op2\t#@cmpD_branch"%}
+  format %{ "double_b$cmp $op1, $op2, $lbl\t#@cmpD_branch"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
@@ -8906,7 +8906,7 @@ instruct cmpD_loop(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST);
-  format %{ "double_b$cmp $op1, $op2\t#@cmpD_loop"%}
+  format %{ "double_b$cmp $op1, $op2, $lbl\t#@cmpD_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
@@ -9181,7 +9181,7 @@ instruct far_cmpFlag_branch(cmpOp cmp, rFlagsReg cr, label lbl) %{
   effect(USE lbl);
 
   ins_cost(BRANCH_COST);
-  format %{ "far_b$cmp $cr, zr, L\t#@far_cmpFlag_branch"%}
+  format %{ "far_b$cmp $cr, zr, $lbl\t#@far_cmpFlag_branch"%}
 
   ins_encode %{
     __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($cr$$reg), *($lbl$$label), /* is_far */ true);
@@ -9390,7 +9390,7 @@ instruct far_cmpF_branch(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_float_b$cmp $op1, $op2\t#@far_cmpF_branch"%}
+  format %{ "far_float_b$cmp $op1, $op2, $lbl\t#@far_cmpF_branch"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
@@ -9406,7 +9406,7 @@ instruct far_cmpF_loop(cmpOp cmp, fRegF op1, fRegF op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_float_b$cmp $op1, $op2\t#@far_cmpF_loop"%}
+  format %{ "far_float_b$cmp $op1, $op2, $lbl\t#@far_cmpF_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode, as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
@@ -9423,7 +9423,7 @@ instruct far_cmpD_branch(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_double_b$cmp $op1, $op2\t#@far_cmpD_branch"%}
+  format %{ "far_double_b$cmp $op1, $op2, $lbl\t#@far_cmpD_branch"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
@@ -9439,7 +9439,7 @@ instruct far_cmpD_loop(cmpOp cmp, fRegD op1, fRegD op2, label lbl)
   effect(USE lbl);
 
   ins_cost(XFER_COST + BRANCH_COST * 2);
-  format %{ "far_double_b$cmp $op1, $op2\t#@far_cmpD_loop"%}
+  format %{ "far_double_b$cmp $op1, $op2, $lbl\t#@far_cmpD_loop"%}
 
   ins_encode %{
     __ float_cmp_branch($cmp$$cmpcode | C2_MacroAssembler::double_branch_mask, as_FloatRegister($op1$$reg),
