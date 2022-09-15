@@ -89,6 +89,8 @@ public class DockerBasicTest {
             new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version")
             .addDockerOpts("-v", "/sys/fs/cgroup:/cgroups-in:ro");
 
+        // Duplicated cgroup mounts should be handled by the container detection
+        // code and should not cause any error/warning output.
         DockerTestUtils.dockerRunJava(opts)
             .shouldHaveExitValue(0)
             .shouldNotContain("[os,container]");
