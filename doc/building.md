@@ -881,32 +881,31 @@ For more details on how to run tests, please see **Testing the JDK**
 
 ### macOS
 
-On modern versions of macOS, signing and notarizing applications are required
-before distribution. For more background on what this means and how it works,
-see Apple's documentation. To help support this, the JDK build can be configured
-to automatically sign all native binaries and the JDK bundle with all the
-options needed for successful notarization, as well as all the entitlements
-required by the JDK. To enable `hardened` signing, use configure parameter
+Modern versions of macOS require applications to be signed and notarizied before
+distribution. See Apple's documentation for more background on what this means
+and how it works. To help support this, the JDK build can be configured to
+automatically sign all native binaries, and the JDK bundle, with all the options
+needed for successful notarization, as well as all the entitlements required by
+the JDK. To enable `hardened` signing, use configure parameter
 `--with-macosx-codesign=hardened` and configure the signing identity you wish to
 use with `--with-macosx-codesign-identity=<identity>`. The identity refers to a
 signing identity from Apple that needs to be preinstalled on the build host.
 
-When not signing with the hardened option for distribution, the JDK build will
+When not signing for distribution with the hardened option, the JDK build will
 still attempt to perform `adhoc` signing, to add the special entitlement
 `com.apple.security.get-task-allow` to each binary. This entitlement is required
-to be able to debug a process or dump its core. Note that adding this
+to be able to attach to a process or dump its core. Note that adding this
 entitlement makes the build invalid for notarization, so it is only added when
-signing in `debug` mode. To explicitly enable this kind of adhoc signing use
+signing in `debug` mode. To explicitly enable this kind of adhoc signing, use
 configure parameter `--with-macosx-codesign=debug`. It will be enabled by
 default in most cases.
 
 If no macosx codesign option is specified, the default is to try for `hardened`
 signing if the debug level is `release` and either the default identity or the
-specified identity is valid, if not `debug` signing is chosen if it works and if
-nothing works, the codesign step is skipped. Note that on `aarch64`, the Xcode
-linker will always perform a default `adhoc` signing without any entitlements,
-causing debugging and core dumps not to work, unless this is signature replaced
-by the `debug` sign operation.
+specified identity is valid. If hardened isn't possible, then `debug` signing is
+chosen if it works. If nothing works, the codesign step is skipped. Note that on
+`aarch64`, the Xcode linker will always perform a default `adhoc` signing
+without any entitlements, causing attaching and core dumps not to work.
 
 ## Cross-compiling
 
