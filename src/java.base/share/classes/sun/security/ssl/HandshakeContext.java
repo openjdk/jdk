@@ -31,17 +31,8 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
@@ -436,7 +427,7 @@ abstract class HandshakeContext implements ConnectionContext {
                 // action and SSLEngine.getHandshakeStatus() to indicate the
                 // FINISHED handshake status.
                 //
-                // To workaround this special user case, the follow-on call to
+                // To work around this special user case, the follow-on call to
                 // SSLEngine.wrap() method will return HandshakeStatus.FINISHED
                 // status if needed.
                 //
@@ -585,10 +576,8 @@ abstract class HandshakeContext implements ConnectionContext {
     }
 
     List<SNIServerName> getRequestedServerNames() {
-        if (requestedServerNames == null) {
-            return Collections.emptyList();
-        }
-        return requestedServerNames;
+        return Objects.requireNonNullElse(requestedServerNames,
+                Collections.emptyList());
     }
 }
 
