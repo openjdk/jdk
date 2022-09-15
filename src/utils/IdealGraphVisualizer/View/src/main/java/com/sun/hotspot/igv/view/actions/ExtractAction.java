@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,50 +23,48 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedEvent;
-import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.Event;
-import java.awt.event.KeyEvent;
 import javax.swing.Action;
-import javax.swing.KeyStroke;
-import org.openide.util.HelpCtx;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
-import org.openide.util.actions.CallableSystemAction;
-import org.openide.util.Utilities;
+import org.openide.util.NbBundle.Messages;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
+
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ExtractAction")
+@ActionRegistration(displayName = "#CTL_ExtractAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 350),
+        @ActionReference(path = "Shortcuts", name = "D-X")
+})
+@Messages({
+        "CTL_ExtractAction=Extract action",
+        "HINT_ExtractAction=Extract current set of selected nodes"
+})
 public final class ExtractAction extends ContextAction<DiagramViewModel> {
 
     public ExtractAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Extract current set of selected nodes");
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-X"));
+        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_ExtractAction());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/extract.gif"; // NOI18N
     }
 
     @Override
     public String getName() {
-        return "Extract action";
-    }
-
-    @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+        return Bundle.CTL_ExtractAction();
     }
 
     @Override
     public void performAction(DiagramViewModel model) {
         model.showOnly(model.getSelectedNodes());
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/extract.gif";
     }
 
     @Override
@@ -77,6 +75,11 @@ public final class ExtractAction extends ContextAction<DiagramViewModel> {
     @Override
     public Class<DiagramViewModel> contextClass() {
         return DiagramViewModel.class;
+    }
+
+    @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
     }
 
     @Override
@@ -93,10 +96,5 @@ public final class ExtractAction extends ContextAction<DiagramViewModel> {
         model.getDiagramChangedEvent().removeListener(this);
         model.getViewPropertiesChangedEvent().removeListener(this);
         model.getHiddenNodesChangedEvent().removeListener(this);
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup actionContext) {
-        return this;
     }
 }

@@ -23,28 +23,44 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import javax.swing.Action;
-import javax.swing.ImageIcon;
-import org.openide.util.*;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
+import org.openide.util.NbBundle.Messages;
 
+
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ExpandDiffAction")
+@ActionRegistration(displayName = "#CTL_ExpandDiffAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 250),
+        @ActionReference(path = "Shortcuts", name = "DS-RIGHT"),
+        @ActionReference(path = "Shortcuts", name = "D-UP")
+})
+@Messages({
+        "CTL_ExpandDiffAction=Expand difference selection",
+        "HINT_ExpandDiffAction=Expand the difference selection"
+})
 public final class ExpandDiffAction extends ContextAction<DiagramViewModel> {
 
     public ExpandDiffAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Expand the difference selection");
-        putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/expand_right.png")));
+        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_ExpandDiffAction());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/expand_right.png"; // NOI18N
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(ExpandDiffAction.class, "CTL_ExpandDiffAction");
-    }
-
-    @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+        return Bundle.CTL_ExpandDiffAction();
     }
 
     @Override
@@ -65,6 +81,11 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> {
     }
 
     @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
+    }
+
+    @Override
     public void addContextListener(DiagramViewModel model) {
         model.getViewChangedEvent().addListener(this);
         model.getDiagramChangedEvent().addListener(this);
@@ -78,10 +99,5 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> {
         model.getDiagramChangedEvent().removeListener(this);
         model.getViewPropertiesChangedEvent().removeListener(this);
         model.getHiddenNodesChangedEvent().removeListener(this);
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup actionContext) {
-        return this;
     }
 }

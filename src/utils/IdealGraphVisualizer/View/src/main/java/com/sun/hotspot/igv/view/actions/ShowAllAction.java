@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,45 +23,44 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedEvent;
-import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.util.HashSet;
 import javax.swing.Action;
-import javax.swing.KeyStroke;
-import org.openide.util.HelpCtx;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
-import org.openide.util.Utilities;
+import org.openide.util.NbBundle.Messages;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
+
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ShowAllAction")
+@ActionRegistration(displayName = "#CTL_ShowAllAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 300),
+        @ActionReference(path = "Shortcuts", name = "D-A")
+})
+@Messages({
+        "CTL_ShowAllAction=Show all",
+        "HINT_ShowAllAction=Show all nodes"
+})
 public final class ShowAllAction extends ContextAction<DiagramViewModel> {
 
     public ShowAllAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Show all nodes");
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-A"));
-    }
-
-    @Override
-    public String getName() {
-        return "Show all";
-    }
-
-    @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_ShowAllAction());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/expand.gif";
+        return "com/sun/hotspot/igv/view/images/expand.gif"; // NOI18N
+    }
+
+    @Override
+    public String getName() {
+        return Bundle.CTL_ShowAllAction();
     }
 
     @Override
@@ -80,6 +79,11 @@ public final class ShowAllAction extends ContextAction<DiagramViewModel> {
     }
 
     @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
+    }
+
+    @Override
     public void addContextListener(DiagramViewModel model) {
         model.getViewChangedEvent().addListener(this);
         model.getDiagramChangedEvent().addListener(this);
@@ -93,10 +97,5 @@ public final class ShowAllAction extends ContextAction<DiagramViewModel> {
         model.getDiagramChangedEvent().removeListener(this);
         model.getViewPropertiesChangedEvent().removeListener(this);
         model.getHiddenNodesChangedEvent().removeListener(this);
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup actionContext) {
-        return this;
     }
 }

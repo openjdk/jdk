@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,43 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import javax.swing.Action;
-import javax.swing.ImageIcon;
-import org.openide.util.*;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
+import org.openide.util.NbBundle.Messages;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.NextDiagramAction")
+@ActionRegistration(displayName = "#CTL_NextDiagramAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 150),
+        @ActionReference(path = "Shortcuts", name = "D-RIGHT")
+})
+@Messages({
+        "CTL_NextDiagramAction=Show next graph",
+        "HINT_NextDiagramAction=Show next graph of current group"
+})
 public final class NextDiagramAction extends ContextAction<DiagramViewModel> {
 
 
     public NextDiagramAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Show next graph of current group");
-        putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/next_diagram.png")));
+        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_NextDiagramAction());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/next_diagram.png"; // NOI18N
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_NextDiagramAction");
-    }
-
-    @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+        return Bundle.CTL_NextDiagramAction();
     }
 
     @Override
@@ -70,6 +80,11 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> {
     }
 
     @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return NextDiagramAction.this;
+    }
+
+    @Override
     public void addContextListener(DiagramViewModel model) {
         model.getViewChangedEvent().addListener(this);
         model.getDiagramChangedEvent().addListener(this);
@@ -83,10 +98,5 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> {
         model.getDiagramChangedEvent().removeListener(this);
         model.getViewPropertiesChangedEvent().removeListener(this);
         model.getHiddenNodesChangedEvent().removeListener(this);
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup actionContext) {
-        return NextDiagramAction.this;
     }
 }

@@ -95,6 +95,11 @@ public abstract class ContextAction<T> extends CallableSystemAction implements L
     }
 
     @Override
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+    @Override
     protected boolean asynchronous() {
         return false;
     }

@@ -103,7 +103,7 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(ExportAction.class, "CTL_ExportAction");
+        return NbBundle.getMessage(ExportAction.class, "Export current graph...");
     }
 
     @Override

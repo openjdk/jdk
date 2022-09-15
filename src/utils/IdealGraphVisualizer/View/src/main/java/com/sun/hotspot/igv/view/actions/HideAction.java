@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,30 +28,40 @@ import com.sun.hotspot.igv.view.DiagramViewModel;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.Action;
-import org.openide.util.HelpCtx;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
-import org.openide.util.Utilities;
+import org.openide.util.NbBundle.Messages;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
+
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.HideAction")
+@ActionRegistration(displayName = "#CTL_HideAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 400),
+        @ActionReference(path = "Shortcuts", name = "D-H")
+})
+@Messages({
+        "CTL_HideAction=Hide nodes",
+        "HINT_HideAction=Hide selected nodes"
+})
 public final class HideAction extends ContextAction<DiagramViewModel> {
 
     public HideAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Hide selected nodes");
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-H"));
+        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_HideAction());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/hide.gif"; // NOI18N
     }
 
     @Override
     public String getName() {
-        return "Hide";
-    }
-
-    @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+        return Bundle.CTL_HideAction();
     }
 
     @Override
@@ -63,11 +73,6 @@ public final class HideAction extends ContextAction<DiagramViewModel> {
     }
 
     @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/hide.gif";
-    }
-
-    @Override
     public boolean isEnabled(DiagramViewModel model) {
         return model != null && !model.getSelectedNodes().isEmpty();
     }
@@ -75,6 +80,11 @@ public final class HideAction extends ContextAction<DiagramViewModel> {
     @Override
     public Class<DiagramViewModel> contextClass() {
         return DiagramViewModel.class;
+    }
+
+    @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return this;
     }
 
     @Override
@@ -91,10 +101,5 @@ public final class HideAction extends ContextAction<DiagramViewModel> {
         model.getDiagramChangedEvent().removeListener(this);
         model.getViewPropertiesChangedEvent().removeListener(this);
         model.getHiddenNodesChangedEvent().removeListener(this);
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup actionContext) {
-        return this;
     }
 }
