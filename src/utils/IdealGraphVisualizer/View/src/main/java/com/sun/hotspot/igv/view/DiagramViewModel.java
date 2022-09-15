@@ -423,11 +423,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
         this.graphs = result;
         setPositions(positions);
-
-        System.out.println("----------------");
-        System.out.println(result);
-        System.out.println(positions);
-        System.out.println("=================");
     }
 
     public InputGraph getFirstGraph() {

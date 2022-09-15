@@ -208,8 +208,6 @@ public class Parser implements GraphParser {
     // <graph>
     private ElementHandler<InputGraph, Group> graphHandler = new XMLParser.ElementHandler<InputGraph, Group>(GRAPH_ELEMENT) {
 
-        private InputGraph previous;
-
         @Override
         protected InputGraph start() throws SAXException {
             String name = readAttribute(GRAPH_NAME_PROPERTY);
