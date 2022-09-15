@@ -60,7 +60,7 @@ import org.testng.annotations.Test;
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  * *                   -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
  */
-public class Response1xxTest {
+public class Response1xxTest implements HttpServerAdapters {
     private static final String EXPECTED_RSP_BODY = "Hello World";
 
     private ServerSocket serverSocket;
@@ -68,12 +68,12 @@ public class Response1xxTest {
     private String http1RequestURIBase;
 
 
-    private HttpServerAdapters.HttpTestServer http2Server; // h2c
+    private HttpTestServer http2Server; // h2c
     private String http2RequestURIBase;
 
 
     private SSLContext sslContext;
-    private HttpServerAdapters.HttpTestServer https2Server;  // h2
+    private HttpTestServer https2Server;  // h2
     private String https2RequestURIBase;
 
     @BeforeClass
@@ -84,7 +84,7 @@ public class Response1xxTest {
         http1RequestURIBase = URIBuilder.newBuilder().scheme("http").loopback()
                 .port(serverSocket.getLocalPort()).build().toString();
 
-        http2Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2Server = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
         http2Server.addHandler(new Http2Handler(), "/http2/102");
         http2Server.addHandler(new Http2Handler(), "/http2/103");
         http2Server.addHandler(new Http2Handler(), "/http2/100");
@@ -102,7 +102,7 @@ public class Response1xxTest {
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
         }
-        https2Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost",
+        https2Server = HttpTestServer.of(new Http2TestServer("localhost",
                 true, sslContext));
         https2Server.addHandler(new Http2Handler(), "/http2/101");
         https2RequestURIBase = URIBuilder.newBuilder().scheme("https").loopback()
@@ -254,10 +254,10 @@ public class Response1xxTest {
         }
     }
 
-    private static class Http2Handler implements HttpServerAdapters.HttpTestHandler {
+    private static class Http2Handler implements HttpTestHandler {
 
         @Override
-        public void handle(final HttpServerAdapters.HttpTestExchange exchange) throws IOException {
+        public void handle(final HttpTestExchange exchange) throws IOException {
             final URI requestURI = exchange.getRequestURI();
             final int informationResponseCode;
             if (requestURI.getPath().endsWith("/102")) {
@@ -298,10 +298,10 @@ public class Response1xxTest {
         }
     }
 
-    private static class OnlyInformationalHandler implements HttpServerAdapters.HttpTestHandler {
+    private static class OnlyInformationalHandler implements HttpTestHandler {
 
         @Override
-        public void handle(final HttpServerAdapters.HttpTestExchange exchange) throws IOException {
+        public void handle(final HttpTestExchange exchange) throws IOException {
             // we only send informational response and then return
             for (int i = 0; i < 5; i++) {
                 exchange.sendResponseHeaders(102, -1);
@@ -317,10 +317,10 @@ public class Response1xxTest {
         }
     }
 
-    private static class OKHandler implements HttpServerAdapters.HttpTestHandler {
+    private static class OKHandler implements HttpTestHandler {
 
         @Override
-        public void handle(final HttpServerAdapters.HttpTestExchange exchange) throws IOException {
+        public void handle(final HttpTestExchange exchange) throws IOException {
             exchange.sendResponseHeaders(200, -1);
         }
     }
