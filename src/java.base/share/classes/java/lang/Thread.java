@@ -1639,7 +1639,7 @@ public class Thread implements Runnable {
      *       monitors that it had locked (as a natural consequence of the
      *       {@code ThreadDeath} exception propagating up the stack).  If
      *       any of the objects previously protected by these monitors were in
-     *       an inconsistent state, the damaged objects become visible to
+     *       an inconsistent state, the damaged objects became visible to
      *       other threads, potentially resulting in arbitrary behavior.
      *       Usages of {@code stop} should be replaced by code that simply
      *       modifies some variable to indicate that the target thread should
