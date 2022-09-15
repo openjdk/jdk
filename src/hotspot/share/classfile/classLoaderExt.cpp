@@ -85,18 +85,17 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
 
   class ModulePathsGatherer : public ModuleClosure {
     JavaThread* _current;
-    int _total_count;
     GrowableArray<char*>* _module_paths;
    public:
     ModulePathsGatherer(JavaThread* current, GrowableArray<char*>* module_paths) :
-      _current(current), _total_count(0), _module_paths(module_paths) {}
+      _current(current), _module_paths(module_paths) {}
     void do_module(ModuleEntry* m) {
       char* path = m->location()->as_C_string();
       if (strncmp(path, "file:", 5) == 0) {
         path = ClassLoader::skip_uri_protocol(path);
         char* path_copy = NEW_RESOURCE_ARRAY(char, strlen(path) + 1);
         strcpy(path_copy, path);
-        _module_paths->at_put_grow(_total_count++, path_copy);
+        _module_paths->append(path_copy);
       }
     }
   };
