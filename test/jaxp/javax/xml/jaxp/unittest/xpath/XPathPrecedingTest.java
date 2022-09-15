@@ -40,7 +40,7 @@ import java.io.InputStream;
 /*
  * @test
  * @bug 8289508
- * @library /javax/xml/jaxp/unittest 
+ * @library /javax/xml/jaxp/unittest
  * @run testng/othervm xpath.XPathPrecedingTest
  * @summary Tests for XPath preceding and preceding-sibling axis specifiers.
  */
@@ -82,13 +82,13 @@ public class XPathPrecedingTest {
     public Object[][] getXPathPreceding() {
         return new Object[][]{
                 // test preceding
- 
+
                 // any nodes
                 {"/store/book[1]/author/preceding::*", "/store/book[1]/title"},
 
                 // abbreviated text
                 {"/store/book[1]/isbn/preceding::*[1]", "/store/book[1]/author"},
-				{"(/store/book[1]/isbn/preceding::*)[1]", "/store/book[1]/title"},
+                {"(/store/book[1]/isbn/preceding::*)[1]", "/store/book[1]/title"},
                 {"//isbn/preceding::book", "//book[1]"},
                 {"//book[2]/preceding::book", "//book[1]"},
                 {"/store/book[preceding::book]", "//book[2]"},
@@ -98,7 +98,7 @@ public class XPathPrecedingTest {
                 {"//author[@id='2']/../preceding::book", "//book[1]"},
                 {"//author[@id='2']/preceding::node()/preceding::book", "//book[1]"},
                 {"//author[@id='1']/preceding::title", "//book[1]/title"},
- 
+
                 //test preceding-sibling
 
                 // any node

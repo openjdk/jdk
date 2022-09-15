@@ -75,7 +75,7 @@ public class XPathAncestorsTest {
     }
 
     /*
-     * DataProvider:provides XPath expression using ancestor/ancestor-or-self 
+     * DataProvider:provides XPath expression using ancestor/ancestor-or-self
      * and the expected node(s) from the expression
      */
     @DataProvider(name = "ancestors_axes")
@@ -157,8 +157,8 @@ public class XPathAncestorsTest {
     }
 
     /**
-     * Verifies XPath ancestor and ancestor-or-self axis specifiers 
-	 * by comparing expression and expected result.
+     * Verifies XPath ancestor and ancestor-or-self axis specifiers
+     * by comparing expression and expected result.
      * @param exp      XPath expression
      * @param expected expected result
      * @throws Exception if test failed
