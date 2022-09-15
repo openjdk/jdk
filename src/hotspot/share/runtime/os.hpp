@@ -763,6 +763,7 @@ class os: AllStatic {
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
+  static void print_stack(outputStream* st, address sp, int unitsize);
   static void print_instructions(outputStream* st, address pc, int unitsize);
 
   static void print_user_info(outputStream* st);

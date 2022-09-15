@@ -212,9 +212,8 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
-  intptr_t *sp = (intptr_t *)uc->Sp;
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
+  address sp = (address)uc->Sp;
+  print_stack(st, sp, sizeof(intptr_t));
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
