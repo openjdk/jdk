@@ -771,7 +771,7 @@ public class FileChannelImpl
 
         // Adjust count only if remaining > 0, i.e.,
         // sz > position which means sz > 0
-        if (remaining < count && remaining > 0)
+        if (remaining > 0 && remaining < count)
             count = remaining;
 
         // System calls supporting fast transfers might not work on files

@@ -45,11 +45,11 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8293502
  * @requires (os.family == "linux")
- * @summary Ensure that copying from /proc/mounts works
+ * @summary Ensure that copying from a file in /proc works
  * @run testng/othervm CopyProcFile
  */
 public class CopyProcFile {
-    static final String SOURCE = "/proc/mounts";
+    static final String SOURCE = "/proc/cpuinfo";
     static final String BUFFERED_COPY = "bufferedCopy";
     static final String TARGET = "target";
 
@@ -77,7 +77,8 @@ public class CopyProcFile {
     // copy src to dst using Files::copy
     static long copy(String src, String dst) {
         try {
-            return Files.size(Files.copy(Path.of(src), Path.of(dst)));
+            Path target = Files.copy(Path.of(src), Path.of(dst));
+            return Files.size(target);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -96,8 +97,7 @@ public class CopyProcFile {
     // copy src to dst using FileChannel::transferTo
     static long transferToNIO(String src, String dst) {
         try (FileChannel fci = FileChannel.open(Path.of(src), READ);
-             FileChannel fco = FileChannel.open(Path.of(dst), CREATE_NEW,
-                                                WRITE);) {
+             FileChannel fco = FileChannel.open(Path.of(dst), CREATE_NEW, WRITE);) {
             return fci.transferTo(0, Long.MAX_VALUE, fco);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -107,8 +107,7 @@ public class CopyProcFile {
     // copy src to dst using FileChannel::transferFrom
     static long transferFrom(String src, String dst) {
         try (FileChannel fci = FileChannel.open(Path.of(src), READ);
-             FileChannel fco = FileChannel.open(Path.of(dst), CREATE_NEW,
-                                                WRITE);) {
+             FileChannel fco = FileChannel.open(Path.of(dst), CREATE_NEW, WRITE);) {
             return fco.transferFrom(fci, 0, Long.MAX_VALUE);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -117,8 +116,10 @@ public class CopyProcFile {
 
     @BeforeTest(alwaysRun=true)
     public void createBufferedCopy() {
+        System.out.printf("Using source file \"%s\"%n", SOURCE);
         try {
             theSize = bufferedCopy(SOURCE, BUFFERED_COPY);
+            System.out.printf("Copied %d bytes from %s%n", theSize, SOURCE);
             if (Files.mismatch(Path.of(BUFFERED_COPY), Path.of(SOURCE)) != -1)
                 throw new RuntimeException("Copy does not match source");
         } catch (Exception e) {
