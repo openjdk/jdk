@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 7172359
- * @summary  Verifies HTML parser StackOverflowError on invalid HTML: <li> tag 
+ * @summary  Verifies HTML parser StackOverflowError on invalid HTML: <li> tag
  *           inside an <option>
  * @run main ParserCrash
  */
@@ -37,7 +37,7 @@ public class ParserCrash {
      * li element inside an option will crash javax.swing.text.html.parser.Parser
      */
     public static void main( String[] argv ) throws Exception {
-        String badHtml = 
+        String badHtml =
          "<html><body><form><select><option><li></option></select></form></body></html>";
 
         HTMLEditorKit kit = new HTMLEditorKit();
