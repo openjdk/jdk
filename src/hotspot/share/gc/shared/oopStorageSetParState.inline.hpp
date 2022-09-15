@@ -30,7 +30,8 @@
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomic.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/accessDecorators.hpp"
 #include "utilities/debug.hpp"
 
 template <bool concurrent, bool is_const>
@@ -54,7 +55,7 @@ public:
 
   virtual void do_oop(oop* p) {
     _cl->do_oop(p);
-    if (Atomic::load(p) == NULL) {
+    if (NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p) == nullptr) {
       _num_dead++;              // Count both already NULL and cleared by closure.
     }
   }
