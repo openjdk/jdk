@@ -900,12 +900,18 @@ signing in `debug` mode. To explicitly enable this kind of adhoc signing, use
 configure parameter `--with-macosx-codesign=debug`. It will be enabled by
 default in most cases.
 
-If no macosx codesign option is specified, the default is to try for `hardened`
-signing if the debug level is `release` and either the default identity or the
-specified identity is valid. If hardened isn't possible, then `debug` signing is
-chosen if it works. If nothing works, the codesign step is skipped. Note that on
-`aarch64`, the Xcode linker will always perform a default `adhoc` signing
-without any entitlements, causing attaching and core dumps not to work.
+It's also possible to completely disable any explicit codesign operations done
+by the JDK build using the configure parameter `--without-macosx-codesign`.
+The exact behavior then depends on the architecture. For macOS on x64, it (at
+least at the time of this writing) results in completely unsigned binaries that
+should still work fine for development and debugging purposes. On aarch64, the
+Xcode linker will apply a default "adhoc" signing, without any entitlements.
+Such a build will not allow being attached to or dumping core.
+
+The default mode "auto" will try for `hardened` signing if the debug level is
+`release` and either the default identity or the specified identity is valid.
+If hardened isn't possible, then `debug` signing is chosen if it works. If
+nothing works, the codesign build step is disabled.
 
 ## Cross-compiling
 
