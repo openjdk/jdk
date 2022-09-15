@@ -2829,6 +2829,7 @@ address MacroAssembler::trampoline_call(Address entry) {
         }
       }
     }
+    target = pc();
   }
 
   address call_pc = pc();
@@ -2838,11 +2839,7 @@ address MacroAssembler::trampoline_call(Address entry) {
   }
 #endif
   relocate(entry.rspec());
-  if (!far_branches()) {
-    jal(entry.target());
-  } else {
-    jal(pc());
-  }
+  jal(target);
 
   postcond(pc() != badAddress);
   return call_pc;
