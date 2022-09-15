@@ -93,6 +93,6 @@ public class DockerBasicTest {
         // code and should not cause any error/warning output.
         DockerTestUtils.dockerRunJava(opts)
             .shouldHaveExitValue(0)
-            .shouldNotContain("[os,container]");
+            .shouldNotMatch("os,container*");
     }
 }
