@@ -1123,17 +1123,17 @@ void VM_Version::get_processor_features() {
   }
 
   // ChaCha20 Intrinsics
-  // As long as the system supports SSE2+AVX as a baseline we can do a
+  // As long as the system supports AVX as a baseline we can do a
   // SIMD-enabled block function.  StubGenerator makes the determination
   // based on the VM capabilities whether to use an AVX2 or AVX512-enabled
   // version.
-  if ((UseSSE >= 2) && (UseAVX >= 1) ) {
+  if (UseAVX >= 1) {
       if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
           UseChaCha20Intrinsics = true;
       }
   } else if (UseChaCha20Intrinsics) {
       if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-          warning("ChaCha20 intrinsic requires SSE2 and AVX instructions");
+          warning("ChaCha20 intrinsic requires AVX instructions");
       }
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
