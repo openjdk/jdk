@@ -77,10 +77,10 @@ public class TestJavaFxMode extends JavadocTester {
         checkExit(Exit.OK);
         checkOrder("pkg/A.html",
                 "Property Summary",
-                "javafx.beans.property.Property", """
+                """
                     <a href="#propProperty" class="member-name-link">prop</a>""",
                 "Field Summary",
-                "javafx.beans.property.Property", """
+                """
                     <a href="#prop" class="member-name-link">prop</a>""",
                 "Method Summary",
                 """

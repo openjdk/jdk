@@ -833,7 +833,7 @@ public abstract class JavadocTester {
      */
     public void checkOrder(String path, String... strings) {
         new OutputChecker(path)
-                .setExpectOrdered(false) // TODO, fix tests (6 failures) and change to true
+                .setExpectOrdered(true) // be explicit
                 .check(strings);
     }
 
