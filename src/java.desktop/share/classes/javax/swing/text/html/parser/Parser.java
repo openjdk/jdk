@@ -781,7 +781,7 @@ class Parser implements DTDConstants {
             }
 
             endTag(true);
-            return legalElementContext(elem);
+            return true;
         }
 
         // At this point we know that something is screwed up.
