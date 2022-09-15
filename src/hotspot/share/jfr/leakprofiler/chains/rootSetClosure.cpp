@@ -48,30 +48,48 @@ template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(oop* ref) {
   assert(ref != NULL, "invariant");
   assert(is_aligned(ref, HeapWordSize), "invariant");
-  if (*ref != NULL) {
+  if (NativeAccess<>::oop_load(ref) != nullptr) {
     _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
   }
 }
 
 template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
-  assert(ref != NULL, "invariant");
-  assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
-  if (!CompressedOops::is_null(*ref)) {
-    _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
-  }
+  fatal("Unexpected to have narrowOops in roots");
 }
 
 class RootSetClosureMarkScope : public MarkScope {};
 
 template <typename Delegate>
+class NonBarrieredRootClosure : public OopClosure {
+  Delegate* _delegate;
+
+public:
+  NonBarrieredRootClosure(Delegate* delegate) : _delegate(delegate) {}
+
+  void do_oop(oop* ref) {
+    assert(ref != NULL, "invariant");
+    assert(is_aligned(ref, HeapWordSize), "invariant");
+    if (*ref != NULL) {
+      _delegate->do_root(UnifiedOopRef::encode_non_barriered(ref));
+    }
+  }
+
+  void do_oop(narrowOop* p) { fatal("Unexpected to have narrowOops in roots"); }
+};
+
+template <typename Delegate>
 void RootSetClosure<Delegate>::process() {
   RootSetClosureMarkScope mark_scope;
+
   CLDToOopClosure cldt_closure(this, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt_closure);
-  // We don't follow code blob oops, because they have misaligned oops.
-  Threads::oops_do(this, NULL);
+
   OopStorageSet::strong_oops_do(this);
+
+  // We don't follow code blob oops, because they have misaligned oops.
+  NonBarrieredRootClosure<Delegate> nbrc(_delegate);
+  Threads::oops_do(&nbrc, NULL);
 }
 
 template class RootSetClosure<BFSClosure>;
