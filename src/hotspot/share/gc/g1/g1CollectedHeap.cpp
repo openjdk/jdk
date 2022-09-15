@@ -144,6 +144,16 @@ void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   workers()->run_task(cl, num_workers);
 }
 
+uint G1CollectedHeap::get_chunks_per_region() {
+  uint log_region_size = HeapRegion::LogOfHRGrainBytes;
+  // Limit the expected input values to current known possible values of the
+  // (log) region size. Adjust as necessary after testing if changing the permissible
+  // values for region size.
+  assert(log_region_size >= 20 && log_region_size <= 29,
+         "expected value in [20,29], but got %u", log_region_size);
+  return 1u << (log_region_size / 2 - 4);
+}
+
 HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
   return new HeapRegion(hrs_index, bot(), mr, &_card_set_config);
@@ -3290,11 +3300,13 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
   return NULL;
 }
 
-void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
-  // All objects failing evacuation are live. What we'll do is
-  // that we'll update the marking info so that they are
-  // all below TAMS and explicitly marked.
+void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+  assert(!_cm->is_marked_in_bitmap(obj), "must be");
+
   _cm->raw_mark_in_bitmap(obj);
+  if (collector_state()->in_concurrent_start_gc()) {
+    _cm->add_to_liveness(worker_id, obj, obj_size);
+  }
 }
 
 // Optimized nmethod scanning

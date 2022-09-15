@@ -511,7 +511,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
   fatal("DEBUG MESSAGE: %s", msg);
 }
 
-void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
+void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
   Label done, not_weak;
   beqz(value, done);           // Use NULL as-is.
 
@@ -521,13 +521,13 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
-                 Address(value, -JNIHandles::weak_tag_value), tmp, thread);
+                 Address(value, -JNIHandles::weak_tag_value), tmp1, tmp2);
   verify_oop(value);
   j(done);
 
   bind(not_weak);
   // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp, thread);
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp1, tmp2);
   verify_oop(value);
   bind(done);
 }
@@ -1708,24 +1708,24 @@ SkipIfEqual::~SkipIfEqual() {
   _masm = NULL;
 }
 
-void MacroAssembler::load_mirror(Register dst, Register method, Register tmp) {
+void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, Register tmp2) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ld(dst, Address(xmethod, Method::const_offset()));
   ld(dst, Address(dst, ConstMethod::constants_offset()));
   ld(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
   ld(dst, Address(dst, mirror_offset));
-  resolve_oop_handle(dst, tmp);
+  resolve_oop_handle(dst, tmp1, tmp2);
 }
 
-void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2) {
   // OopHandle::resolve is an indirection.
-  assert_different_registers(result, tmp);
-  access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp, noreg);
+  assert_different_registers(result, tmp1, tmp2);
+  access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp1, tmp2);
 }
 
 // ((WeakHandle)result).resolve()
-void MacroAssembler::resolve_weak_handle(Register result, Register tmp) {
-  assert_different_registers(result, tmp);
+void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Register tmp2) {
+  assert_different_registers(result, tmp1, tmp2);
   Label resolved;
 
   // A null weak handle resolves to null.
@@ -1735,20 +1735,20 @@ void MacroAssembler::resolve_weak_handle(Register result, Register tmp) {
   // Only IN_HEAP loads require a thread_tmp register
   // WeakHandle::resolve is an indirection like jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 result, Address(result), tmp, noreg /* tmp_thread */);
+                 result, Address(result), tmp1, tmp2);
   bind(resolved);
 }
 
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Register dst, Address src,
-                                    Register tmp1, Register thread_tmp) {
+                                    Register tmp1, Register tmp2) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2);
   } else {
-    bs->load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->load_at(this, decorators, type, dst, src, tmp1, tmp2);
   }
 }
 
@@ -1946,13 +1946,13 @@ void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
-                                   Register thread_tmp, DecoratorSet decorators) {
-  access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+                                   Register tmp2, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2);
 }
 
 void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register tmp1,
-                                            Register thread_tmp, DecoratorSet decorators) {
-  access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL, dst, src, tmp1, thread_tmp);
+                                            Register tmp2, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL, dst, src, tmp1, tmp2);
 }
 
 // Used for storing NULLs.
