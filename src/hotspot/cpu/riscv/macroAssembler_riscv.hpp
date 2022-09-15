@@ -174,9 +174,9 @@ class MacroAssembler: public Assembler {
   virtual void check_and_handle_earlyret(Register java_thread);
   virtual void check_and_handle_popframe(Register java_thread);
 
-  void resolve_weak_handle(Register result, Register tmp);
-  void resolve_oop_handle(Register result, Register tmp = x15);
-  void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
   void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
@@ -184,9 +184,9 @@ class MacroAssembler: public Assembler {
   void set_narrow_oop(Register dst, jobject obj);
   void set_narrow_klass(Register dst, Klass* k);
 
-  void load_mirror(Register dst, Register method, Register tmp = x15);
+  void load_mirror(Register dst, Register method, Register tmp1, Register tmp2);
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst,
-                      Address src, Register tmp1, Register thread_tmp);
+                      Address src, Register tmp1, Register tmp2);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register src, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src);
@@ -204,9 +204,9 @@ class MacroAssembler: public Assembler {
   void encode_heap_oop(Register d, Register s);
   void encode_heap_oop(Register r) { encode_heap_oop(r, r); };
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                     Register tmp2 = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                              Register tmp2 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
