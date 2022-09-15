@@ -192,7 +192,11 @@ jint reuseport_supported()
     /* Do a simple dummy call, and try to figure out from that */
     int one = 1;
     int rv, s;
-    s = socket(PF_INET, SOCK_STREAM, 0);
+    if (ipv6_available()) {
+      s = socket(PF_INET6, SOCK_STREAM, 0);
+    } else {
+      s = socket(PF_INET, SOCK_STREAM, 0);
+    }
     if (s < 0) {
         return JNI_FALSE;
     }

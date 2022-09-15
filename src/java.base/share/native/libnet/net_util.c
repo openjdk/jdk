@@ -79,7 +79,10 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     IPv4_available = IPv4_supported();
     IPv6_available = IPv6_supported() & (!preferIPv4Stack);
 
-    /* check if SO_REUSEPORT is supported on this platform */
+    /*
+     * Check if SO_REUSEPORT is supported on this platform.
+     * Must be called after IPv6_available is initialized.
+     */
     REUSEPORT_available = reuseport_supported();
     platformInit();
 
