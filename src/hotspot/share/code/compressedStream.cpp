@@ -126,7 +126,9 @@ bool CompressedSparseDataReadStream::read_zero() {
 }
 
 uint8_t CompressedSparseDataReadStream::read_byte_impl() {
-  return (_buffer[_position++] << byte_pos_) | (_buffer[_position] >> (8 - byte_pos_));
+  uint8_t b1 = _buffer[_position] << byte_pos_;
+  uint8_t b2 = _buffer[++_position] >> (8 - byte_pos_);
+  return b1 | b2;
 }
 
 jint CompressedSparseDataReadStream::read_int() {
