@@ -54,7 +54,7 @@ public class TestDisabledColorChooser  {
             SwingUtilities.invokeAndWait(() -> {
                 new TestDisabledColorChooser();
             });
-		
+
             robot.waitForIdle();
             robot.delay(1000);
 
@@ -90,7 +90,7 @@ public class TestDisabledColorChooser  {
         frame.add(Colorchooser);
         frame.pack();
         frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
     }
 }
