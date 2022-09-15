@@ -41,7 +41,6 @@ import java.io.InputStream;
  * @test
  * @bug 8289508
  * @library /javax/xml/jaxp/unittest
- * 
  * @run testng/othervm xpath.XPathAncestorsTest
  * @summary Tests for XPath ancestor and ancestor-or-self axis specifiers.
  */
@@ -85,34 +84,34 @@ public class XPathAncestorsTest {
                 //test ancestor
 
                 // abbreviated text
-                {"//author/ancestor::book/ancestor::store", "/store"}, 
+                {"//author/ancestor::book/ancestor::store", "/store"},
                 {"//isbn/ancestor::store", "/store"},
-                {"//ancestor::book[1]", "//book[1]"}, 
+                {"//ancestor::book[1]", "//book[1]"},
 
                 // any node
-                {"//book/ancestor::*", "/store"}, 
-                {"//author/ancestor::*[ancestor::store]/ancestor::store", "/store"}, 
-                {"//author/ancestor::node()[ancestor::store]", "//book"}, 
+                {"//book/ancestor::*", "/store"},
+                {"//author/ancestor::*[ancestor::store]/ancestor::store", "/store"},
+                {"//author/ancestor::node()[ancestor::store]", "//book"},
 
                 // dot reference
-                {"//author/ancestor::book/..", "/store"}, 
-                {"//author/ancestor::*[ancestor::store]/..", "/store"}, 
-                {"//ancestor::book/..", "/store"}, 
+                {"//author/ancestor::book/..", "/store"},
+                {"//author/ancestor::*[ancestor::store]/..", "/store"},
+                {"//ancestor::book/..", "/store"},
 
                 // attributes
-                {"//author/ancestor::*[@id]/parent::*", "/store"}, 
-                {"//author/parent::*[@id]/ancestor::*", "/store"}, 
-                {"//author[@id='1']/ancestor::book[1]", "//book[1]"}, 
-                {"//author[@*]/ancestor::book[1]", "//book[1]"}, 
+                {"//author/ancestor::*[@id]/parent::*", "/store"},
+                {"//author/parent::*[@id]/ancestor::*", "/store"},
+                {"//author[@id='1']/ancestor::book[1]", "//book[1]"},
+                {"//author[@*]/ancestor::book[1]", "//book[1]"},
 
                 //test ancestor-or-self
 
                 // any node, indexing, id
-                {"/store/ancestor-or-self::*", "/store"}, 
-                {"//book[*]/ancestor-or-self::book[1]", "//book[1]"}, 
-                {"/store/book[@*]/ancestor-or-self::book[1]", "//book[1]"}, 
-                {"//book[@id='1']/ancestor-or-self::book[1]", "//book[1]"}, 
-                {"//author[@id='2']/ancestor-or-self::book", "//book[2]"}, 
+                {"/store/ancestor-or-self::*", "/store"},
+                {"//book[*]/ancestor-or-self::book[1]", "//book[1]"},
+                {"/store/book[@*]/ancestor-or-self::book[1]", "//book[1]"},
+                {"//book[@id='1']/ancestor-or-self::book[1]", "//book[1]"},
+                {"//author[@id='2']/ancestor-or-self::book", "//book[2]"},
                 {"//book[1]/ancestor-or-self::store", "/store"},
 
         };
@@ -158,7 +157,8 @@ public class XPathAncestorsTest {
     }
 
     /**
-     * Verifies XPath ancestor and ancestor-or-self axis specifiers by comparing expression and expected result.
+     * Verifies XPath ancestor and ancestor-or-self axis specifiers 
+	 * by comparing expression and expected result.
      * @param exp      XPath expression
      * @param expected expected result
      * @throws Exception if test failed

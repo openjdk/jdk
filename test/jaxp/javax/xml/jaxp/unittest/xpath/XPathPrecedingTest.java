@@ -40,8 +40,7 @@ import java.io.InputStream;
 /*
  * @test
  * @bug 8289508
- * @library /javax/xml/jaxp/unittest
- * 
+ * @library /javax/xml/jaxp/unittest 
  * @run testng/othervm xpath.XPathPrecedingTest
  * @summary Tests for XPath preceding and preceding-sibling axis specifiers.
  */
@@ -76,14 +75,14 @@ public class XPathPrecedingTest {
     }
 
     /*
-     * DataProvider: provides XPath expression using preceding/preceding-sibling 
+     * DataProvider: provides XPath expression using preceding/preceding-sibling
      * and the expected node(s) from the expression
      */
     @DataProvider(name = "preceding_axes")
     public Object[][] getXPathPreceding() {
         return new Object[][]{
                 // test preceding
-                
+ 
                 // any nodes
                 {"/store/book[1]/author/preceding::*", "/store/book[1]/title"},
 
@@ -99,7 +98,7 @@ public class XPathPrecedingTest {
                 {"//author[@id='2']/../preceding::book", "//book[1]"},
                 {"//author[@id='2']/preceding::node()/preceding::book", "//book[1]"},
                 {"//author[@id='1']/preceding::title", "//book[1]/title"},
-                
+ 
                 //test preceding-sibling
 
                 // any node
@@ -112,7 +111,7 @@ public class XPathPrecedingTest {
 
                 // id
                 {"/store/book[1]/isbn[preceding-sibling::author[@id='1']]", "/store/book[1]/isbn"},
-                
+
         };
     }
 
@@ -144,20 +143,20 @@ public class XPathPrecedingTest {
                 {"//author[@id='2']/preceding-sibling::book"},
                 {"//author[@id='2']/preceding-sibling::node()/preceding-sibling::author"},
 
-				// attribute / namespace
-				{"/store/book[2]/@id/preceding-sibling::*"},
-				{"/store/book/@lang/preceding-sibling::*"},
-				{"/store/book[2]/namespace::*/preceding-sibling::*"},
+                // attribute / namespace
+                {"/store/book[2]/@id/preceding-sibling::*"},
+                {"/store/book/@lang/preceding-sibling::*"},
+                {"/store/book[2]/namespace::*/preceding-sibling::*"},
 
-				// text node
-				{"/store/book[2]/isbn/text()/preceding-sibling::*"},
+                // text node
+                {"/store/book[2]/isbn/text()/preceding-sibling::*"},
 
         };
     }
 
     /**
-     * Verifies XPath preceding and preceding-sibling axis specifiers by 
-	 * comparing expression and expected result.
+     * Verifies XPath preceding and preceding-sibling axis specifiers by
+     * comparing expression and expected result.
      * @param exp      XPath expression
      * @param expected expected result
      * @throws Exception if test failed
