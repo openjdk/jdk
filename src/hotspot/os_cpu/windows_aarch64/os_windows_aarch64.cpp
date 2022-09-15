@@ -213,7 +213,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   const CONTEXT* uc = (const CONTEXT*)context;
 
   address sp = (address)uc->Sp;
-  print_stack(st, sp);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may

@@ -935,7 +935,7 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
 }
 
-void os::print_stack(outputStream* st, address sp) {
+void os::print_tos(outputStream* st, address sp) {
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
   print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
 }

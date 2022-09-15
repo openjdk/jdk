@@ -456,7 +456,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   const ucontext_t* uc = (const ucontext_t*)context;
 
   address sp = (address)os::Aix::ucontext_get_sp(uc);
-  print_stack(st, sp);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
