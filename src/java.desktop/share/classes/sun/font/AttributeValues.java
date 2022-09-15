@@ -854,7 +854,7 @@ public final class AttributeValues implements Cloneable {
                     ((AttributeMap) map).getValues() != null) {
                 av = ((AttributeMap)map).getValues();
             } else if (map.get(TextAttribute.TRACKING) != null) {
-                av = AttributeValues.fromMap((Map<Attribute, ?>)map); // yuck
+                av = AttributeValues.fromMap((Map<Attribute, ?>)map);
             }
             if (av != null) {
                 return av.tracking;
