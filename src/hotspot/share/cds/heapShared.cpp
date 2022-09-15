@@ -321,7 +321,7 @@ oop HeapShared::archive_object(oop obj) {
     if (_original_object_table != NULL) {
       _original_object_table->put(archived_oop, obj);
     }
-    relocate_native_pointers(obj, archived_oop);
+    mark_native_pointers(obj, archived_oop);
     if (log_is_enabled(Debug, cds, heap)) {
       ResourceMark rm;
       log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT " : %s",
@@ -355,23 +355,28 @@ void HeapShared::archive_klass_objects() {
   }
 }
 
-void HeapShared::relocate_native_pointers(oop orig_obj, oop archived_obj) {
+void HeapShared::mark_native_pointers(oop orig_obj, oop archived_obj) {
   if (java_lang_Class::is_instance(orig_obj)) {
-    relocate_one_native_pointer(archived_obj, java_lang_Class::klass_offset());
-    relocate_one_native_pointer(archived_obj, java_lang_Class::array_klass_offset());
+    mark_one_native_pointer(archived_obj, java_lang_Class::klass_offset());
+    mark_one_native_pointer(archived_obj, java_lang_Class::array_klass_offset());
   }
 }
 
-void HeapShared::relocate_one_native_pointer(oop archived_obj, int offset) {
+void HeapShared::mark_one_native_pointer(oop archived_obj, int offset) {
   Metadata* ptr = archived_obj->metadata_field_acquire(offset);
   if (ptr != NULL) {
+    // Set the native pointer to the requested address (at runtime, if the metadata
+    // is mapped at the default location, it will be at this address).
     address buffer_addr = ArchiveBuilder::current()->get_buffered_addr((address)ptr);
     address requested_addr = ArchiveBuilder::current()->to_requested(buffer_addr);
     archived_obj->metadata_field_put(offset, (Metadata*)requested_addr);
+
+    // Remember this pointer. At runtime, if the metadata is mapped at a non-default
+    // location, the pointer needs to be patched (see ArchiveHeapLoader::patch_native_pointers()).
     _native_pointers->append(archived_obj->field_addr<Metadata*>(offset));
 
     log_debug(cds, heap, mirror)(
-        "Relocate oop metadata field at %d from " PTR_FORMAT " ==> " PTR_FORMAT,
+        "Marked metadata field at %d: " PTR_FORMAT " ==> " PTR_FORMAT,
          offset, p2i(ptr), p2i(requested_addr));
   }
 }

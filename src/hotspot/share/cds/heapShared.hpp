@@ -313,8 +313,8 @@ private:
   static void init_loaded_heap_relocation(LoadedArchiveHeapRegion* reloc_info,
                                           int num_loaded_regions);
   static void fill_failed_loaded_region();
-  static void relocate_native_pointers(oop orig_obj, oop archived_obj);
-  static void relocate_one_native_pointer(oop archived_obj, int offset);
+  static void mark_native_pointers(oop orig_obj, oop archived_obj);
+  static void mark_one_native_pointer(oop archived_obj, int offset);
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache(bool create_orig_table) {
