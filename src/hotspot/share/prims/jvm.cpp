@@ -3282,6 +3282,9 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
   oop ref_oop = JNIHandles::resolve_non_null(ref);
+  // PhantomReference has it's own implementation of refersTo().
+  // See: JVM_PhantomReferenceRefersTo
+  assert(!java_lang_ref_Reference::is_phantom(ref_oop), "precondition");
   oop referent = java_lang_ref_Reference::weak_referent_no_keepalive(ref_oop);
   return referent == JNIHandles::resolve(o);
 JVM_END

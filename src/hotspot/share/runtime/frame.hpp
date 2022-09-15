@@ -120,8 +120,6 @@ class frame {
   address raw_pc() const;
 
   void set_pc(address newpc);
-  void set_pc_preserve_deopt(address newpc);
-  void set_pc_preserve_deopt(address newpc, CodeBlob* cb);
 
   intptr_t* sp() const           { assert_absolute(); return _sp; }
   void set_sp( intptr_t* newsp ) { _sp = newsp; }
