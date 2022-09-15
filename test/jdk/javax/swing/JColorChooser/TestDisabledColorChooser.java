@@ -36,7 +36,10 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.Point;
 import java.awt.Robot;
-import javax.swing.*;
+import javax.swing.JColorChooser;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class TestDisabledColorChooser  {
     private static JFrame frame;
