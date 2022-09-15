@@ -84,6 +84,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     private DiagramViewer scene;
     private InstanceContent content;
+    private InstanceContent graphContent;
     private EnableSeaLayoutAction seaLayoutAction;
     private EnableBlockLayoutAction blockLayoutAction;
     private EnableCFGLayoutAction cfgLayoutAction;
@@ -207,11 +208,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         scene = new DiagramScene(actions, actionsWithSelection, rangeSliderModel);
         content = new InstanceContent();
+        graphContent = new InstanceContent();
+        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
         content.add(exportCookie);
         content.add(rangeSliderModel);
-        content.add(graphProvider);
         content.add(diagramProvider);
-        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(content)}));
 
         rangeSliderModel.getDiagramChangedEvent().addListener(diagramChangedListener);
         rangeSliderModel.selectGraph(diagram.getGraph());
@@ -479,14 +480,14 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         }
     }
 
-    private EditorInputGraphProvider graphProvider = new EditorInputGraphProvider(EditorTopComponent.this);
-
     private ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
 
         @Override
         public void changed(DiagramViewModel source) {
             updateDisplayName();
-            graphProvider.getChangedEvent().fire();
+            Collection<Object> list = new ArrayList<>();
+            list.add(new EditorInputGraphProvider(EditorTopComponent.this));
+            graphContent.set(list, null);
             diagramProvider.getChangedEvent().fire();
         }
 

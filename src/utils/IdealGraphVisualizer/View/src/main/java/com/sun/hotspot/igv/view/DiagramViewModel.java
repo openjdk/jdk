@@ -60,6 +60,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
     private InputGraph inputGraph;
+    private ChangedEvent<DiagramViewModel> groupChangedEvent;
     private ChangedEvent<DiagramViewModel> diagramChangedEvent;
     private ChangedEvent<DiagramViewModel> viewChangedEvent;
     private ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
@@ -95,14 +96,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         boolean viewChanged = false;
         boolean viewPropertiesChanged = false;
 
-        if (group != newModel.group) {
-            if (group != null) {
-                group.getChangedEvent().removeListener(groupContentChangedListener);
-            }
-            this.group = newModel.group;
-            if (group != null) {
-                group.getChangedEvent().addListener(groupContentChangedListener);
-            }
+        boolean groupChanged = (group == newModel.group);
+        this.group = newModel.group;
+        if (groupChanged) {
             filterGraphs();
         }
 
@@ -126,6 +122,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.showCFG = newModel.showCFG;
         viewPropertiesChanged |= (showNodeHull != newModel.showNodeHull);
         this.showNodeHull = newModel.showNodeHull;
+
+        if (groupChanged) {
+            groupChangedEvent.fire();
+        }
 
         if (diagramChanged) {
             diagramChangedEvent.fire();
@@ -213,7 +213,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.showNodeHull = true;
         this.showEmptyBlocks = true;
         this.group = g;
-        group.getChangedEvent().addListener(groupContentChangedListener);
         filterGraphs();
         assert filterChain != null;
         this.filterChain = filterChain;
@@ -228,11 +227,26 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         hiddenNodesChangedEvent = new ChangedEvent<>(this);
         viewPropertiesChangedEvent = new ChangedEvent<>(this);
 
+        groupChangedEvent = new ChangedEvent<>(this);
+        groupChangedEvent.addListener(groupChangedListener);
+        groupChangedEvent.fire();
 
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
     }
+    private final ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
 
+        private Group oldGroup;
+
+        @Override
+        public void changed(DiagramViewModel source) {
+            if (oldGroup != null) {
+                oldGroup.getChangedEvent().removeListener(groupContentChangedListener);
+            }
+            group.getChangedEvent().addListener(groupContentChangedListener);
+            oldGroup = group;
+        }
+    };
     private final ChangedListener<Group> groupContentChangedListener = new ChangedListener<Group>() {
 
         @Override
@@ -497,7 +511,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     void close() {
         filterChain.getChangedEvent().removeListener(filterChainChangedListener);
         sequenceFilterChain.getChangedEvent().removeListener(filterChainChangedListener);
-        getChangedEvent().fire();
     }
 
     Iterable<InputGraph> getGraphsForward() {

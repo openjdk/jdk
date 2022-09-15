@@ -174,7 +174,6 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
         SwingUtilities.invokeLater(() -> {
             final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
             if (provider != null) {
-                provider.getChangedEvent().addListener((InputGraphProvider graphProvider) -> resultChanged(null));
                 InputGraph graph = provider.getGraph();
                 if (graph != null) {
                     Group g = graph.getGroup();
