@@ -37,10 +37,6 @@ import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.*;
 import javax.swing.*;
@@ -66,20 +62,18 @@ import org.openide.windows.TopComponent;
  */
 public final class EditorTopComponent extends TopComponent {
 
-    private DiagramViewer scene;
-    private InstanceContent graphContent;
-    private OverviewAction overviewAction;
-    private JComponent satelliteComponent;
-    private JPanel centerPanel;
-    private CardLayout cardLayout;
-    private JPanel topPanel;
-    private Toolbar quickSearchToolbar;
+    private final DiagramViewer scene;
+    private final InstanceContent graphContent;
+    private final JComponent satelliteComponent;
+    private final JPanel centerPanel;
+    private final CardLayout cardLayout;
+    private final Toolbar quickSearchToolbar;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
 
-    private DiagramProvider diagramProvider = new DiagramProvider() {
+    private final DiagramProvider diagramProvider = new DiagramProvider() {
 
         @Override
         public Diagram getDiagram() {
@@ -92,7 +86,7 @@ public final class EditorTopComponent extends TopComponent {
         }
     };
 
-    private ChangedEvent<DiagramProvider> diagramChangedEvent = new ChangedEvent<>(diagramProvider);
+    private final ChangedEvent<DiagramProvider> diagramChangedEvent = new ChangedEvent<>(diagramProvider);
 
 
     private void updateDisplayName() {
@@ -106,8 +100,8 @@ public final class EditorTopComponent extends TopComponent {
         LookupHistory.init(InputGraphProvider.class);
         LookupHistory.init(DiagramProvider.class);
         this.setFocusable(true);
-        FilterChain filterChain = null;
-        FilterChain sequence = null;
+        FilterChain filterChain;
+        FilterChain sequence;
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         if (provider == null) {
             filterChain = new FilterChain();
@@ -135,7 +129,6 @@ public final class EditorTopComponent extends TopComponent {
                 ZoomInAction.get(ZoomInAction.class),
         };
 
-
         Action[] actionsWithSelection = new Action[]{
                 ExtractAction.get(ExtractAction.class),
                 HideAction.get(HideAction.class),
@@ -144,14 +137,7 @@ public final class EditorTopComponent extends TopComponent {
                 ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
         };
 
-
-        ToolbarPool.getDefault().setPreferredIconSize(16);
-        Toolbar toolBar = new Toolbar();
-        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
-        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
-
-        JPanel container = new JPanel();
-        container.setLayout(new BorderLayout());
+        JPanel container = new JPanel(new BorderLayout());
 
         DiagramViewModel diagramViewModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
         RangeSlider rangeSlider = new RangeSlider();
@@ -171,6 +157,18 @@ public final class EditorTopComponent extends TopComponent {
         content.add(diagramProvider);
         this.associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
+        ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
+
+            @Override
+            public void changed(DiagramViewModel source) {
+                updateDisplayName();
+                Collection<Object> list = new ArrayList<>();
+                list.add(new EditorInputGraphProvider(EditorTopComponent.this));
+                graphContent.set(list, null);
+                diagramProvider.getChangedEvent().fire();
+            }
+
+        };
         diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
         diagramViewModel.selectGraph(diagram.getGraph());
 
@@ -192,8 +190,9 @@ public final class EditorTopComponent extends TopComponent {
         this.add(centerPanel, BorderLayout.CENTER);
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
-        toolBar = new Toolbar();
+        Toolbar toolBar = new Toolbar();
         toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
 
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
@@ -256,7 +255,7 @@ public final class EditorTopComponent extends TopComponent {
         JPanel toolbarPanel = new JPanel(new GridLayout(1, 0));
         toolbarPanel.add(toolBar);
 
-        topPanel = new JPanel();
+        JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
         topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
@@ -318,19 +317,6 @@ public final class EditorTopComponent extends TopComponent {
             close();
         }
     }
-
-    private ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
-
-        @Override
-        public void changed(DiagramViewModel source) {
-            updateDisplayName();
-            Collection<Object> list = new ArrayList<>();
-            list.add(new EditorInputGraphProvider(EditorTopComponent.this));
-            graphContent.set(list, null);
-            diagramProvider.getChangedEvent().fire();
-        }
-
-    };
 
     public void setSelection(PropertyMatcher matcher) {
 
@@ -434,7 +420,7 @@ public final class EditorTopComponent extends TopComponent {
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
-        jCheckBox1 = new javax.swing.JCheckBox();
+        JCheckBox jCheckBox1 = new JCheckBox();
 
         org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, "jCheckBox1");
         jCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -443,7 +429,4 @@ public final class EditorTopComponent extends TopComponent {
         setLayout(new java.awt.BorderLayout());
 
     }// </editor-fold>//GEN-END:initComponents
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JCheckBox jCheckBox1;
-    // End of variables declaration//GEN-END:variables
 }
