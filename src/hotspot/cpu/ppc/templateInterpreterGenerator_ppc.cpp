@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,7 +81,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // first C-argument and to return the result_handler in
   // R3_RET. Since native_entry will copy the jni-pointer to the
   // first C-argument slot later on, it is OK to occupy this slot
-  // temporarilly. Then we copy the argument list on the java
+  // temporarily. Then we copy the argument list on the java
   // expression stack into native varargs format on the native stack
   // and load arguments into argument registers. Integer arguments in
   // the varargs vector will be sign-extended to 8 bytes.
@@ -1184,7 +1184,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   address entry = __ pc();
 
-  const bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  const bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // -----------------------------------------------------------------------------
   // Allocate a new frame that represents the native callee (i2n frame).
@@ -1436,7 +1436,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ li(R0/*thread_state*/, _thread_in_native_trans);
   __ release();
   __ stw(R0/*thread_state*/, thread_(thread_state));
-  __ fence();
+  if (!UseSystemMemoryBarrier) {
+    __ fence();
+  }
 
   // Now before we return to java we must look for a current safepoint
   // (a new safepoint can not start since we entered native_trans).
@@ -1578,7 +1580,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                   return_pc /* return pc */);
   __ merge_frames(/*top_frame_sp*/ R21_sender_SP, noreg, R11_scratch1, R12_scratch2);
 
-  // Load the PC of the the exception handler into LR.
+  // Load the PC of the exception handler into LR.
   __ mtlr(R3_RET);
 
   // Load exception into R3_ARG1 and clear pending exception in thread.
@@ -1608,7 +1610,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 // Generic interpreted method entry to (asm) interpreter.
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
   address entry = __ pc();
   // Generate the code to allocate the interpreter stack frame.
   Register Rsize_of_parameters = R4_ARG2, // Written by generate_fixed_frame.
@@ -2030,7 +2032,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ stw(R11_scratch1, in_bytes(JavaThread::popframe_condition_offset()), R16_thread);
 
     // Return from the current method into the deoptimization blob. Will eventually
-    // end up in the deopt interpeter entry, deoptimization prepared everything that
+    // end up in the deopt interpreter entry, deoptimization prepared everything that
     // we will reexecute the call that called us.
     __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*reload return_pc*/ return_pc, R11_scratch1, R12_scratch2);
     __ mtlr(return_pc);

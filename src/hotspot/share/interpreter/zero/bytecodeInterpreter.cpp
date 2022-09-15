@@ -48,6 +48,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -308,7 +309,7 @@ JRT_END
 /*
  * Macros for caching and flushing the interpreter state. Some local
  * variables need to be flushed out to the frame before we do certain
- * things (like pushing frames or becomming gc safe) and some need to
+ * things (like pushing frames or becoming gc safe) and some need to
  * be recached later (like after popping a frame). We could use one
  * macro to cache or decache everything, but this would be less then
  * optimal because we don't always need to cache or decache everything
@@ -588,8 +589,8 @@ void BytecodeInterpreter::run(interpreterState istate) {
 /* 0xE0 */ &&opc_fast_iload,    &&opc_fast_iload2,      &&opc_fast_icaload,   &&opc_fast_invokevfinal,
 /* 0xE4 */ &&opc_default,       &&opc_default,          &&opc_fast_aldc,      &&opc_fast_aldc_w,
 /* 0xE8 */ &&opc_return_register_finalizer,
-                                &&opc_invokehandle,     &&opc_default,        &&opc_default,
-/* 0xEC */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
+                                &&opc_invokehandle,     &&opc_nofast_getfield,&&opc_nofast_putfield,
+/* 0xEC */ &&opc_nofast_aload_0,&&opc_nofast_iload,     &&opc_default,        &&opc_default,
 
 /* 0xF0 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
 /* 0xF4 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
@@ -626,13 +627,18 @@ void BytecodeInterpreter::run(interpreterState istate) {
         markWord displaced = rcvr->mark().set_unlocked();
         mon->lock()->set_displaced_header(displaced);
         bool call_vm = UseHeavyMonitors;
+        bool inc_monitor_count = true;
         if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
           // Is it simple recursive case?
           if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
             mon->lock()->set_displaced_header(markWord::from_pointer(NULL));
           } else {
+            inc_monitor_count = false;
             CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
           }
+        }
+        if (inc_monitor_count) {
+          THREAD->inc_held_monitor_count();
         }
       }
       THREAD->clr_do_not_unlock();
@@ -720,13 +726,18 @@ void BytecodeInterpreter::run(interpreterState istate) {
       markWord displaced = lockee->mark().set_unlocked();
       entry->lock()->set_displaced_header(displaced);
       bool call_vm = UseHeavyMonitors;
+      bool inc_monitor_count = true;
       if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
         // Is it simple recursive case?
         if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
           entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
         } else {
+          inc_monitor_count = false;
           CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
         }
+      }
+      if (inc_monitor_count) {
+        THREAD->inc_held_monitor_count();
       }
       UPDATE_PC_AND_TOS(1, -1);
       goto run;
@@ -755,7 +766,7 @@ run:
       // need at entry to the loop.
       // DEBUGGER_SINGLE_STEP_NOTIFY();
       /* Using this labels avoids double breakpoints when quickening and
-       * when returing from transition frames.
+       * when returning from transition frames.
        */
   opcode_switch:
       assert(istate == orig, "Corrupted istate");
@@ -852,6 +863,13 @@ run:
         UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
       }
 
+      CASE(_nofast_iload):
+      {
+        // Normal, non-rewritable iload handling.
+        SET_STACK_SLOT(LOCALS_SLOT(pc[1]), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(2, 1);
+      }
+
       CASE(_fast_iload):
       CASE(_fload):
           SET_STACK_SLOT(LOCALS_SLOT(pc[1]), 0);
@@ -912,8 +930,9 @@ run:
             case Bytecodes::_fast_igetfield:
               REWRITE_AT_PC(Bytecodes::_fast_iaccess_0);
               break;
-            case Bytecodes::_getfield: {
-              /* Otherwise, do nothing here, wait until it gets rewritten to _fast_Xgetfield.
+            case Bytecodes::_getfield:
+            case Bytecodes::_nofast_getfield: {
+              /* Otherwise, do nothing here, wait until/if it gets rewritten to _fast_Xgetfield.
                * Unfortunately, this punishes volatile field access, because it never gets
                * rewritten. */
               break;
@@ -923,6 +942,15 @@ run:
               break;
           }
         }
+        // Normal aload_0 handling.
+        VERIFY_OOP(LOCALS_OBJECT(0));
+        SET_STACK_OBJECT(LOCALS_OBJECT(0), 0);
+        UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);
+      }
+
+      CASE(_nofast_aload_0):
+      {
+        // Normal, non-rewritable aload_0 handling.
         VERIFY_OOP(LOCALS_OBJECT(0));
         SET_STACK_OBJECT(LOCALS_OBJECT(0), 0);
         UPDATE_PC_AND_TOS_AND_CONTINUE(1, 1);
@@ -1564,7 +1592,7 @@ run:
             Klass* rhsKlass = rhsObject->klass(); // EBX (subclass)
             Klass* elemKlass = ObjArrayKlass::cast(arrObj->klass())->element_klass(); // superklass EAX
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch
             //
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
@@ -1628,13 +1656,18 @@ run:
           markWord displaced = lockee->mark().set_unlocked();
           entry->lock()->set_displaced_header(displaced);
           bool call_vm = UseHeavyMonitors;
+          bool inc_monitor_count = true;
           if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
             // Is it simple recursive case?
             if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
               entry->lock()->set_displaced_header(markWord::from_pointer(NULL));
             } else {
+              inc_monitor_count = false;
               CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
             }
+          }
+          if (inc_monitor_count) {
+            THREAD->inc_held_monitor_count();
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
         } else {
@@ -1657,14 +1690,19 @@ run:
             most_recent->set_obj(NULL);
 
             // If it isn't recursive we either must swap old header or call the runtime
+            bool dec_monitor_count = true;
             bool call_vm = UseHeavyMonitors;
             if (header.to_pointer() != NULL || call_vm) {
               markWord old_header = markWord::encode(lock);
               if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
                 // restore object for the slow case
                 most_recent->set_obj(lockee);
+                dec_monitor_count = false;
                 InterpreterRuntime::monitorexit(most_recent);
               }
+            }
+            if (dec_monitor_count) {
+              THREAD->dec_held_monitor_count();
             }
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
           }
@@ -1681,6 +1719,7 @@ run:
        *  constant pool index in the instruction.
        */
       CASE(_getfield):
+      CASE(_nofast_getfield):
       CASE(_getstatic):
         {
           u2 index;
@@ -1691,9 +1730,16 @@ run:
           // split all the bytecode cases out so c++ compiler has a chance
           // for constant prop to fold everything possible away.
 
+          // Interpreter runtime does not expect "nofast" opcodes,
+          // prepare the vanilla opcode for it.
+          Bytecodes::Code code = (Bytecodes::Code)opcode;
+          if (code == Bytecodes::_nofast_getfield) {
+            code = Bytecodes::_getfield;
+          }
+
           cache = cp->entry_at(index);
-          if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
+          if (!cache->is_resolved(code)) {
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, code),
                     handle_exception);
             cache = cp->entry_at(index);
           }
@@ -1707,7 +1753,8 @@ run:
             obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
             // Check if we can rewrite non-volatile _getfield to one of the _fast_Xgetfield.
-            if (REWRITE_BYTECODES && !cache->is_volatile()) {
+            if (REWRITE_BYTECODES && !cache->is_volatile() &&
+                  ((Bytecodes::Code)opcode != Bytecodes::_nofast_getfield)) {
               // Rewrite current BC to _fast_Xgetfield.
               REWRITE_AT_PC(fast_get_type(cache->flag_state()));
             }
@@ -1799,12 +1846,21 @@ run:
          }
 
       CASE(_putfield):
+      CASE(_nofast_putfield):
       CASE(_putstatic):
         {
           u2 index = Bytes::get_native_u2(pc+1);
           ConstantPoolCacheEntry* cache = cp->entry_at(index);
-          if (!cache->is_resolved((Bytecodes::Code)opcode)) {
-            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
+
+          // Interpreter runtime does not expect "nofast" opcodes,
+          // prepare the vanilla opcode for it.
+          Bytecodes::Code code = (Bytecodes::Code)opcode;
+          if (code == Bytecodes::_nofast_putfield) {
+            code = Bytecodes::_putfield;
+          }
+
+          if (!cache->is_resolved(code)) {
+            CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, code),
                     handle_exception);
             cache = cp->entry_at(index);
           }
@@ -1829,7 +1885,8 @@ run:
             CHECK_NULL(obj);
 
             // Check if we can rewrite non-volatile _putfield to one of the _fast_Xputfield.
-            if (REWRITE_BYTECODES && !cache->is_volatile()) {
+            if (REWRITE_BYTECODES && !cache->is_volatile() &&
+                  ((Bytecodes::Code)opcode != Bytecodes::_nofast_putfield)) {
               // Rewrite current BC to _fast_Xputfield.
               REWRITE_AT_PC(fast_put_type(cache->flag_state()));
             }
@@ -2009,7 +2066,7 @@ run:
             Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass(); // ebx
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch.
             //
             if (objKlass != klassOf && !objKlass->is_subtype_of(klassOf)) {
@@ -2035,7 +2092,7 @@ run:
             Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass();
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch.
             //
             if ( objKlass == klassOf || objKlass->is_subtype_of(klassOf)) {
@@ -2395,7 +2452,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             if (cache->is_vfinal()) {
               callee = cache->f2_as_vfinal_method();
-              if (REWRITE_BYTECODES) {
+              if (REWRITE_BYTECODES && !UseSharedSpaces && !Arguments::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }
@@ -2994,6 +3051,8 @@ run:
         SET_STACK_OBJECT(ts->earlyret_oop(), 0);
         MORE_STACK(1);
         break;
+      default:
+        ShouldNotReachHere();
     }
 
     ts->clr_earlyret_value();
@@ -3021,7 +3080,7 @@ run:
     // We'd like a HandleMark here to prevent any subsequent HandleMarkCleaner
     // in any following VM entries from freeing our live handles, but illegal_state_oop
     // isn't really allocated yet and so doesn't become live until later and
-    // in unpredicatable places. Instead we must protect the places where we enter the
+    // in unpredictable places. Instead we must protect the places where we enter the
     // VM. It would be much simpler (and safer) if we could allocate a real handle with
     // a NULL oop in it and then overwrite the oop later as needed. This isn't
     // unfortunately isn't possible.
@@ -3079,13 +3138,18 @@ run:
           end->set_obj(NULL);
 
           // If it isn't recursive we either must swap old header or call the runtime
+          bool dec_monitor_count = true;
           if (header.to_pointer() != NULL) {
             markWord old_header = markWord::encode(lock);
             if (lockee->cas_set_mark(header, old_header) != old_header) {
               // restore object for the slow case
               end->set_obj(lockee);
+              dec_monitor_count = false;
               InterpreterRuntime::monitorexit(end);
             }
+          }
+          if (dec_monitor_count) {
+            THREAD->dec_held_monitor_count();
           }
 
           // One error is plenty
@@ -3145,17 +3209,22 @@ run:
             base->set_obj(NULL);
 
             // If it isn't recursive we either must swap old header or call the runtime
+            bool dec_monitor_count = true;
             if (header.to_pointer() != NULL) {
               markWord old_header = markWord::encode(lock);
               if (rcvr->cas_set_mark(header, old_header) != old_header) {
                 // restore object for the slow case
                 base->set_obj(rcvr);
+                dec_monitor_count = false;
                 InterpreterRuntime::monitorexit(base);
                 if (THREAD->has_pending_exception()) {
                   if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
                   THREAD->clear_pending_exception();
                 }
               }
+            }
+            if (dec_monitor_count) {
+              THREAD->dec_held_monitor_count();
             }
           }
         }
@@ -3174,7 +3243,7 @@ run:
     // If we notify it again JVMDI will be all confused about how many frames
     // are still on the stack (4340444).
     //
-    // NOTE Further! It turns out the the JVMTI spec in fact expects to see
+    // NOTE Further! It turns out the JVMTI spec in fact expects to see
     // method_exit events whenever we leave an activation unless it was done
     // for popframe. This is nothing like jvmdi. However we are passing the
     // tests at the moment (apparently because they are jvmdi based) so rather
@@ -3242,7 +3311,7 @@ finish:
   return;
 }
 
-// This constructor should only be used to contruct the object to signal
+// This constructor should only be used to construct the object to signal
 // interpreter initialization. All other instances should be created by
 // the frame manager.
 BytecodeInterpreter::BytecodeInterpreter(messages msg) {

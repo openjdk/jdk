@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "jimage.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -74,7 +75,6 @@
 #include "services/threadService.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 
@@ -507,15 +507,15 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
 }
 
 void ClassLoader::setup_bootstrap_search_path(JavaThread* current) {
-  const char* sys_class_path = Arguments::get_sysclasspath();
-  assert(sys_class_path != NULL, "System boot class path must not be NULL");
+  const char* bootcp = Arguments::get_boot_class_path();
+  assert(bootcp != NULL, "Boot class path must not be NULL");
   if (PrintSharedArchiveAndExit) {
-    // Don't print sys_class_path - this is the bootcp of this current VM process, not necessarily
-    // the same as the bootcp of the shared archive.
+    // Don't print bootcp - this is the bootcp of this current VM process, not necessarily
+    // the same as the boot classpath of the shared archive.
   } else {
-    trace_class_path("bootstrap loader class path=", sys_class_path);
+    trace_class_path("bootstrap loader class path=", bootcp);
   }
-  setup_bootstrap_search_path_impl(current, sys_class_path);
+  setup_bootstrap_search_path_impl(current, bootcp);
 }
 
 #if INCLUDE_CDS
@@ -673,7 +673,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
       }
       set_base_piece = false;
     } else {
-      // Every entry on the system boot class path after the initial base piece,
+      // Every entry on the boot class path after the initial base piece,
       // which is set by os::set_boot_path(), is considered an appended entry.
       update_class_path_entry_list(current, path, false, true, false);
     }
@@ -1011,25 +1011,9 @@ oop ClassLoader::get_system_package(const char* name, TRAPS) {
 objArrayOop ClassLoader::get_system_packages(TRAPS) {
   ResourceMark rm(THREAD);
   // List of pointers to PackageEntrys that have loaded classes.
-  GrowableArray<PackageEntry*>* loaded_class_pkgs = new GrowableArray<PackageEntry*>(50);
-  {
-    MutexLocker ml(THREAD, Module_lock);
-
-    PackageEntryTable* pe_table =
+  PackageEntryTable* pe_table =
       ClassLoaderData::the_null_class_loader_data()->packages();
-
-    // Collect the packages that have at least one loaded class.
-    for (int x = 0; x < pe_table->table_size(); x++) {
-      for (PackageEntry* package_entry = pe_table->bucket(x);
-           package_entry != NULL;
-           package_entry = package_entry->next()) {
-        if (package_entry->has_loaded_class()) {
-          loaded_class_pkgs->append(package_entry);
-        }
-      }
-    }
-  }
-
+  GrowableArray<PackageEntry*>* loaded_class_pkgs = pe_table->get_system_packages();
 
   // Allocate objArray and fill with java.lang.String
   objArrayOop r = oopFactory::new_objArray(vmClasses::String_klass(),
@@ -1177,7 +1161,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     // class is still loaded from the runtime image even if it might
     // appear in the _patch_mod_entries. The runtime shared class visibility
     // check will determine if a shared class is visible based on the runtime
-    // environemnt, including the runtime --patch-module setting.
+    // environment, including the runtime --patch-module setting.
     //
     // DynamicDumpSharedSpaces requires UseSharedSpaces to be enabled. Since --patch-module
     // is not supported with UseSharedSpaces, it is not supported with DynamicDumpSharedSpaces.
@@ -1562,7 +1546,7 @@ void ClassLoader::create_javabase() {
   JavaThread* current = JavaThread::current();
 
   // Create java.base's module entry for the boot
-  // class loader prior to loading j.l.Ojbect.
+  // class loader prior to loading j.l.Object.
   ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
 
   // Get module entry table
@@ -1585,7 +1569,7 @@ void ClassLoader::create_javabase() {
 }
 
 // Please keep following two functions at end of this file. With them placed at top or in middle of the file,
-// they could get inlined by agressive compiler, an unknown trick, see bug 6966589.
+// they could get inlined by aggressive compiler, an unknown trick, see bug 6966589.
 void PerfClassTraceTime::initialize() {
   if (!UsePerfData) return;
 

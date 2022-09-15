@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,8 @@ public class threads001 {
     private int runThis (String argv[], PrintStream out) {
 
         Debugee debuggee;
+        boolean usingWrapper = System.getProperty("main.wrapper") != null;
+        boolean usingVThreadWrapper = "Virtual".equals(System.getProperty("main.wrapper"));
 
         argsHandler     = new ArgumentHandler(argv);
         logHandler      = new Log(out, argsHandler);
@@ -232,12 +234,31 @@ public class threads001 {
 
                 log2("      checking up sizes of Lists of thread groups returned");
                 threads = group2.threads();
+                log2("group2: " + group2);
+                log2("group2 threads: " + threads);
                 if (threads.size() != 1) {
                     log3("ERROR: threads.size() != 1 for group2: " + threads.size() );
                     expresult = 1;
                 }
+
                 threads = group1.threads();
-                if (threads.size() < 2) {
+                log2("group1: " + group1);
+                log2("group1 threads: " + threads);
+
+                /*
+                 * This test initially expected group1 to have 2 Threads: "main" and "Thread2".
+                 * With the added wrapper support, it will also contain the original main thread.
+                 * However, when run with vthread wrapper, it will only have "Thread2" since "main"
+                 * and original main thread will be vthreads, which are always considered to be in
+                 * the "VirtualThreads" ThreadGroup, and threfore do not show up in group1.
+                 */
+                int expectedNumThreads;
+                if (usingVThreadWrapper) {
+                    expectedNumThreads = 1;
+                } else {
+                    expectedNumThreads = usingWrapper ? 3 : 2;
+                }
+                if (threads.size() < expectedNumThreads) {
                     log3("ERROR: threads.size() < 2 for group1 : " + threads.size() );
                     expresult = 1;
                 }
@@ -245,17 +266,33 @@ public class threads001 {
                 log2("      checking up names of threads 'main' and 'Thread2' in List returned");
                 ListIterator li = threads.listIterator();
                 int nMain    = 0;
+                int nOldMain = 0;
                 int nThread2 = 0;
                 for ( int i2 = 0; li.hasNext(); i2++ ) {
                     String s1 = ( (ThreadReference) li.next()).name();
                     if (s1.equals("main"))
                         nMain += 1;
+                    if (s1.equals(nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME))
+                        nOldMain += 1;
                     if (s1.equals("Thread2"))
                         nThread2 += 1;
                 }
-                if (nMain != 1) {
+                if (nMain != 1 && !usingVThreadWrapper) {
                     log3("ERROR: # of 'main' threads != 1  : " + nMain);
                     expresult = 1;
+                }
+                if (expectedNumThreads == 3) {
+                    if (nOldMain != 1) {
+                        log3("ERROR: # of '" + nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME +
+                             "' threads != 1  : " + nOldMain);
+                        expresult = 1;
+                    }
+                } else {
+                    if (nOldMain != 0) {
+                        log3("ERROR: # of '" + nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME +
+                             "n' threads != 0  : " + nOldMain);
+                        expresult = 1;
+                    }
                 }
                 if (nThread2 != 1) {
                     log3("ERROR: # of 'Thread2' threads != 1  : " + nThread2);

@@ -4587,6 +4587,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * {@link #newKeySet() newKeySet()},
      * {@link #newKeySet(int) newKeySet(int)}.
      *
+     * @param <K> the type of keys
+     * @param <V> the type of values in the backing map
+     *
      * @since 1.8
      */
     public static final class KeySetView<K,V> extends CollectionView<K,V,K>

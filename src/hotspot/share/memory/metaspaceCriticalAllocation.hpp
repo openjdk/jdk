@@ -52,7 +52,7 @@ class ClassLoaderData;
 // survived that situation in theory. The motivation is that we are at this point so close
 // to being out of memory, and the VM is not having a good time, so the user really ought
 // to increase the amount of available metaspace anyway, instead of GC:ing around more
-// to satisfy a very small number of additional allocations. But it does solve pathologial
+// to satisfy a very small number of additional allocations. But it does solve pathological
 // unbounded starvation scenarios where OOM can get thrown even though most of metaspace
 // is full of dead metadata.
 //
@@ -77,7 +77,7 @@ class MetaspaceCriticalAllocation : public AllStatic {
 
 public:
   static void block_if_concurrent_purge();
-  static void satisfy();
+  static void process();
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size, Metaspace::MetadataType type);
 };
 

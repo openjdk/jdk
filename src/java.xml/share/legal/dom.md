@@ -1,5 +1,20 @@
 ## DOM Level 3 Core Specification v1.0
 
+### W3C Software Notice
+<pre>
+Copyright © 2004 World Wide Web Consortium, (Massachusetts Institute of Technology,
+European Research Consortium for Informatics and Mathematics, Keio University).
+All Rights Reserved.
+
+The DOM bindings are published under the W3C Software Copyright Notice and License.
+The software license requires "Notice of any changes or modifications to the W3C
+files, including the date changes were made." Consequently, modified versions of
+the DOM bindings must document that they do not conform to the W3C standard; in the
+case of the IDL definitions, the pragma prefix can no longer be 'w3c.org'; in the
+case of the Java language binding, the package names can no longer be in the
+'org.w3c' package.
+</pre>
+
 ### W3C License
 <pre>
 

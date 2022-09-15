@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Intel Corporation. All rights reserved.
+ * Copyright (c) 2018, 2022, Intel Corporation. All rights reserved.
  * Intel Short Vector Math Library (SVML) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,7 +28,6 @@
 #include "globals_vectorApiSupport_linux.S.inc"
 #ifdef __VECTOR_API_MATH_INTRINSICS_LINUX
 # -- Machine type EM64t
-	.file "svml_d_log.c"
 	.text
 ..TXTST0:
 .L_2__routine_start___jsvml_log1_ha_e9_0:

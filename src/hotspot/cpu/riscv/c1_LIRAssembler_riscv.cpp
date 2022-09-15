@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -291,7 +291,7 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {
     __ mv(reg, zr);
   } else {
-    __ movoop(reg, o, /* immediate */ true);
+    __ movoop(reg, o);
   }
 }
 
@@ -307,13 +307,6 @@ int LIR_Assembler::initial_frame_size_in_bytes() const {
 }
 
 int LIR_Assembler::emit_exception_handler() {
-  // if the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci ==> add a nop
-  // (was bug 5/14/1999 -gri)
-  __ nop();
-
   // generate code for exception handler
   address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
@@ -359,10 +352,10 @@ int LIR_Assembler::emit_unwind_handler() {
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(x10);
   if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
-    __ mv(x9, x10);   // Perserve the exception
+    __ mv(x9, x10);   // Preserve the exception
   }
 
-  // Preform needed unlocking
+  // Perform needed unlocking
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::r10_opr);
@@ -399,13 +392,6 @@ int LIR_Assembler::emit_unwind_handler() {
 }
 
 int LIR_Assembler::emit_deopt_handler() {
-  // if the last instruciton is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bck => add a nop
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // generate code for exception handler
   address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
@@ -1071,7 +1057,7 @@ void LIR_Assembler::type_profile_helper(Register mdo, ciMethodData *md, ciProfil
     __ ld(t1, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
     __ bne(recv, t1, next_test);
     Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)));
-    __ add_memory_int64(data_addr, DataLayout::counter_increment);
+    __ increment(data_addr, DataLayout::counter_increment);
     __ j(*update_done);
     __ bind(next_test);
   }
@@ -1083,7 +1069,7 @@ void LIR_Assembler::type_profile_helper(Register mdo, ciMethodData *md, ciProfil
     __ ld(t1, recv_addr);
     __ bnez(t1, next_test);
     __ sd(recv, recv_addr);
-    __ li(t1, DataLayout::counter_increment);
+    __ mv(t1, DataLayout::counter_increment);
     __ sd(t1, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i))));
     __ j(*update_done);
     __ bind(next_test);
@@ -1510,6 +1496,10 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
   if (UseHeavyMonitors) {
+    if (op->info() != NULL) {
+      add_debug_info_for_null_check_here(op->info());
+      __ null_check(obj);
+    }
     __ j(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
@@ -1577,7 +1567,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ add_memory_int64(data_addr, DataLayout::counter_increment);
+          __ increment(data_addr, DataLayout::counter_increment);
           return;
         }
       }
@@ -1593,7 +1583,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           __ mov_metadata(t1, known_klass->constant_encoding());
           __ sd(t1, recv_addr);
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ add_memory_int64(data_addr, DataLayout::counter_increment);
+          __ increment(data_addr, DataLayout::counter_increment);
           return;
         }
       }
@@ -1603,13 +1593,13 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       type_profile_helper(mdo, md, data, recv, &update_done);
       // Receiver did not match any saved receiver and there is no empty row for it.
       // Increment total counter to indicate polymorphic case.
-      __ add_memory_int64(counter_addr, DataLayout::counter_increment);
+      __ increment(counter_addr, DataLayout::counter_increment);
 
       __ bind(update_done);
     }
   } else {
     // Static call
-    __ add_memory_int64(counter_addr, DataLayout::counter_increment);
+    __ increment(counter_addr, DataLayout::counter_increment);
   }
 }
 
@@ -1644,7 +1634,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
 
     if (TypeEntries::is_type_none(current_klass)) {
       __ beqz(t1, none);
-      __ li(t0, (u1)TypeEntries::null_seen);
+      __ mv(t0, (u1)TypeEntries::null_seen);
       __ beq(t0, t1, none);
       // There is a chance that the checks above (re-reading profiling
       // data from memory) fail if another thread has just set the
@@ -1694,7 +1684,7 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
     Label ok;
     __ ld(t0, mdo_addr);
     __ beqz(t0, ok);
-    __ li(t1, (u1)TypeEntries::null_seen);
+    __ mv(t1, (u1)TypeEntries::null_seen);
     __ beq(t0, t1, ok);
     // may have been set by another thread
     __ membar(MacroAssembler::LoadLoad);
@@ -2260,7 +2250,7 @@ void LIR_Assembler::store_parameter(jint c, int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
   assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
-  __ li(t0, c);
+  __ mv(t0, c);
   __ sd(t0, Address(sp, offset_from_rsp_in_bytes));
 }
 

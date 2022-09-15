@@ -24,12 +24,13 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -265,8 +266,13 @@ void WriteClosure::do_oop(oop* o) {
     _dump_region->append_intptr_t(0);
   } else {
     assert(HeapShared::can_write(), "sanity");
-    _dump_region->append_intptr_t(
-      UseCompressedOops ? (intptr_t)CompressedOops::encode_not_null(*o) : (intptr_t)((void*)(*o)));
+    intptr_t p;
+    if (UseCompressedOops) {
+      p = (intptr_t)CompressedOops::encode_not_null(*o);
+    } else {
+      p = cast_from_oop<intptr_t>(HeapShared::to_requested_address(*o));
+    }
+    _dump_region->append_intptr_t(p);
   }
 }
 
@@ -310,19 +316,19 @@ void ReadClosure::do_tag(int tag) {
 void ReadClosure::do_oop(oop *p) {
   if (UseCompressedOops) {
     narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-    if (CompressedOops::is_null(o) || !HeapShared::is_fully_available()) {
+    if (CompressedOops::is_null(o) || !ArchiveHeapLoader::is_fully_available()) {
       *p = NULL;
     } else {
-      assert(HeapShared::can_use(), "sanity");
-      assert(HeapShared::is_fully_available(), "must be");
-      *p = HeapShared::decode_from_archive(o);
+      assert(ArchiveHeapLoader::can_use(), "sanity");
+      assert(ArchiveHeapLoader::is_fully_available(), "must be");
+      *p = ArchiveHeapLoader::decode_from_archive(o);
     }
   } else {
     intptr_t dumptime_oop = nextPtr();
-    if (dumptime_oop == 0 || !HeapShared::is_fully_available()) {
+    if (dumptime_oop == 0 || !ArchiveHeapLoader::is_fully_available()) {
       *p = NULL;
     } else {
-      intptr_t runtime_oop = dumptime_oop + HeapShared::runtime_delta();
+      intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::runtime_delta();
       *p = cast_to_oop(runtime_oop);
     }
   }

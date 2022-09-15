@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,17 +161,6 @@ class BitMap {
   idx_t count_one_bits_within_word(idx_t beg, idx_t end) const;
   idx_t count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const;
 
-  // Verification.
-
-  // Verify size_in_bits does not exceed max_size_in_bits().
-  static void verify_size(idx_t size_in_bits) NOT_DEBUG_RETURN;
-  // Verify bit is less than size().
-  void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
-  // Verify bit is not greater than size().
-  void verify_limit(idx_t bit) const NOT_DEBUG_RETURN;
-  // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
-  void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
-
   // Allocation Helpers.
 
   // Allocates and clears the bitmap memory.
@@ -190,7 +179,7 @@ class BitMap {
 
   // Resize the backing bitmap memory.
   //
-  // Old bits are transfered to the new memory
+  // Old bits are transferred to the new memory
   // and the extended memory is cleared.
   template <class Allocator>
   void resize(const Allocator& allocator, idx_t new_size_in_bits, bool clear);
@@ -284,6 +273,17 @@ class BitMap {
   void clear_large();
   inline void clear();
 
+  // Verification.
+
+  // Verify size_in_bits does not exceed max_size_in_bits().
+  static void verify_size(idx_t size_in_bits) NOT_DEBUG_RETURN;
+  // Verify bit is less than size().
+  void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
+  // Verify bit is not greater than size().
+  void verify_limit(idx_t bit) const NOT_DEBUG_RETURN;
+  // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
+  void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
+
   // Iteration support.  Applies the closure to the index for each set bit,
   // starting from the least index in the range to the greatest, in order.
   // The iteration terminates if the closure returns false.  Returns true if
@@ -292,8 +292,11 @@ class BitMap {
   // bits at indices greater than the current index will affect which further
   // indices the closure will be applied to.
   // precondition: beg and end form a valid range.
-  bool iterate(BitMapClosure* cl, idx_t beg, idx_t end);
-  bool iterate(BitMapClosure* cl);
+  template <class BitMapClosureType>
+  bool iterate(BitMapClosureType* cl, idx_t beg, idx_t end);
+
+  template <class BitMapClosureType>
+  bool iterate(BitMapClosureType* cl);
 
   // Looking for 1's and 0's at indices equal to or greater than "l_index",
   // stopping if none has been found before "r_index", and returning
@@ -351,7 +354,7 @@ class BitMap {
 #endif
 };
 
-// A concrete implementation of the the "abstract" BitMap class.
+// A concrete implementation of the "abstract" BitMap class.
 //
 // The BitMapView is used when the backing storage is managed externally.
 class BitMapView : public BitMap {
@@ -370,7 +373,7 @@ class ResourceBitMap : public BitMap {
 
   // Resize the backing bitmap memory.
   //
-  // Old bits are transfered to the new memory
+  // Old bits are transferred to the new memory
   // and the extended memory is cleared.
   void resize(idx_t new_size_in_bits);
 
@@ -415,7 +418,7 @@ class CHeapBitMap : public BitMap {
 
   // Resize the backing bitmap memory.
   //
-  // Old bits are transfered to the new memory
+  // Old bits are transferred to the new memory
   // and the extended memory is (optionally) cleared.
   void resize(idx_t new_size_in_bits, bool clear = true);
 

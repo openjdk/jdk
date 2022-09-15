@@ -29,6 +29,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
+ * @key sound
  * @bug 5013897
  * @summary Verify that plughw: provides mono and 8-bit lines
  */

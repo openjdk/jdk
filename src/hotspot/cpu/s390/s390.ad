@@ -39,7 +39,7 @@
 //    On more recent models (from z9 on), I-fetch is done on a Octoword
 //    (32 bytes at a time) basis. To avoid I-fetching unnecessary
 //    instructions, branch targets should be 32-byte aligend. If this
-//    exact alingment cannot be achieved, having the branch target in
+//    exact alignment cannot be achieved, having the branch target in
 //    the first doubleword still provides some benefit.
 //  - Avoid branch targets at the end of cache lines (> 64 bytes distance).
 //    Sequential instruction prefetching after the branch target starts
@@ -47,7 +47,7 @@
 //    branch target. When I-fetching crosses a cache line, there may be
 //    a small stall. The worst case: the branch target (at the end of
 //    a cache line) is a L1 I-cache miss and the next line as well.
-//    Then, the entire target line must be filled first (to contine at the
+//    Then, the entire target line must be filled first (to continue at the
 //    branch target). Only then can the next sequential line be filled.
 //  - Avoid multiple poorly predicted branches in a row.
 //
@@ -637,11 +637,6 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
 
 int MachCallRuntimeNode::ret_addr_offset() {
   return 12 + MacroAssembler::call_far_patchable_ret_addr_offset();
-}
-
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
 }
 
 // Compute padding required for nodes which need alignment
@@ -1510,6 +1505,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
@@ -1518,6 +1517,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 }
 
 const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -3663,7 +3666,7 @@ operand cmpOp() %{
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used to simplify
 // instruction definitions by not requiring the AD writer to specify
-// seperate instructions for every form of operand when the
+// separate instructions for every form of operand when the
 // instruction accepts multiple operand types with the same basic
 // encoding and format.  The classic case of this is memory operands.
 // Indirect is not included since its use is limited to Compare & Swap
@@ -5284,54 +5287,6 @@ instruct castVV(iRegL dst) %{
   size(0);
   format %{ "# castVV of $dst" %}
   ins_encode(/*empty*/);
-  ins_pipe(pipe_class_dummy);
-%}
-
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(MEMORY_REF_COST);
-  size(Z_DISP3_SIZE);
-  format %{ "LG      $dst,$mem\t # LoadPLocked" %}
-  opcode(LG_ZOPC, LG_ZOPC);
-  ins_encode(z_form_rt_mem_opt(dst, mem));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off. Needed to pass
-// option tests.  Mem_ptr must be a memory operand, else this node
-// does not get Flag_needs_anti_dependence_check set by adlc. If this
-// is not set this node can be rematerialized which leads to errors.
-instruct storePConditional(indirect mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
-  match(Set cr (StorePConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java. Mem_ptr must be a memory
-// operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set
-// this node can be rematerialized which leads to errors.
-instruct storeLConditional(indirect mem_ptr, rarg5RegL oldval, iRegL newval, flagsReg cr) %{
-  match(Set cr (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -10339,7 +10294,7 @@ instruct encode_ascii_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch (incI_eReg movI);
 //   // require that the destination register of the increment
 //   // match the destination register of the move
@@ -10755,7 +10710,7 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
 // returns the bit position of the leftmost 1 in the 64bit source register.
 // As the bits are numbered from left to right (0..63), the returned
 // position index is equivalent to the number of leading zeroes.
-// If no 1-bit is found (i.e. the regsiter contains zero), the instruction
+// If no 1-bit is found (i.e. the register contains zero), the instruction
 // returns position 64. That's exactly what we need.
 
 instruct countLeadingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr) %{

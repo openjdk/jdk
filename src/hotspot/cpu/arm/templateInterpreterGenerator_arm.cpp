@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -790,7 +790,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // Incoming registers:
   //
@@ -887,7 +887,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ldr(Rtemp, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     __ cmp(Rtemp, Rstack_top);
     __ b(L, eq);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 3");
     __ bind(L);
   }
 #endif
@@ -929,7 +929,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sub(SP, SP, AsmOperand(Rsize_of_params, lsl, LogBytesPerLong));
 
 #ifdef __ABI_HARD__
-  // Allocate more stack space to accomodate all GP as well as FP registers:
+  // Allocate more stack space to accommodate all GP as well as FP registers:
   // 4 * wordSize
   // 8 * BytesPerLong
   int reg_arguments = align_up((4*wordSize) + (8*BytesPerLong), StackAlignmentInBytes);
@@ -1122,7 +1122,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // Rmethod: Method*
   // Rthread: thread
@@ -1241,7 +1241,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ ldr(Rtemp, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     __ cmp(Rtemp, Rstack_top);
     __ b(L, eq);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 4");
     __ bind(L);
   }
 #endif
@@ -1456,7 +1456,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // restore exception
   __ get_vm_result(Rexception_obj, Rtemp);
 
-  // Inbetween activations - previous activation type unknown yet
+  // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects
   // the following registers set up:
   //

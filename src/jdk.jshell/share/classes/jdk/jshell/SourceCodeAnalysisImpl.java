@@ -127,6 +127,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
@@ -453,7 +454,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             // the context of the identifier is an import, look for
                             // package names that start with the identifier.
                             // If and when Java allows imports from the default
-                            // package to the the default package which would allow
+                            // package to the default package which would allow
                             // JShell to change to use the default package, and that
                             // change is done, then this should use some variation
                             // of membersOf(at, at.getElements().getPackageElement("").asType(), false)
@@ -512,7 +513,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                                              IS_VOID.negate() :
                                              TRUE;
                             case PARAMETERIZED_TYPE -> FALSE; // TODO: JEP 218: Generics over Primitive Types
-                            case TYPE_PARAMETER, CLASS, INTERFACE, ENUM -> FALSE;
+                            case TYPE_PARAMETER, CLASS, INTERFACE, ENUM, RECORD -> FALSE;
                             default -> TRUE;
                         };
                         addElements(primitivesOrVoid(at), accept, smartFilter, result);
@@ -526,7 +527,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private static final Set<Kind> CLASS_KINDS = EnumSet.of(
-            Kind.ANNOTATION_TYPE, Kind.CLASS, Kind.ENUM, Kind.INTERFACE
+            Kind.ANNOTATION_TYPE, Kind.CLASS, Kind.ENUM, Kind.INTERFACE, Kind.RECORD
     );
 
     private Predicate<Element> smartFilterFromList(AnalyzeTask at, TreePath base, Collection<? extends Tree> types, Tree current) {
@@ -876,11 +877,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                 long start = sp.getStartPosition(topLevel, tree);
                 long end = sp.getEndPosition(topLevel, tree);
-                long prevEnd = deepest[0] != null ? sp.getEndPosition(topLevel, deepest[0].getLeaf()) : -1;
 
                 if (start <= wrapEndPos && wrapEndPos <= end &&
-                    (start != end || prevEnd != end || deepest[0] == null ||
-                     deepest[0].getParentPath().getLeaf() != getCurrentPath().getLeaf())) {
+                    (deepest[0] == null || deepest[0].getLeaf() == getCurrentPath().getLeaf())) {
                     deepest[0] = new TreePath(getCurrentPath(), tree);
                     return super.scan(tree, p);
                 }
@@ -934,7 +933,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         Scope scope = at.trees().getScope(tp);
         return el -> {
             switch (el.getKind()) {
-                case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE:
+                case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: case RECORD:
                     return at.trees().isAccessible(scope, (TypeElement) el);
                 case PACKAGE:
                 case EXCEPTION_PARAMETER: case PARAMETER: case LOCAL_VARIABLE: case RESOURCE_VARIABLE:
@@ -1683,15 +1682,39 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private String elementHeader(AnalyzeTask at, Element el, boolean includeParameterNames, boolean useFQN) {
         switch (el.getKind()) {
-            case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: {
+            case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE, RECORD: {
                 TypeElement type = (TypeElement)el;
                 String fullname = type.getQualifiedName().toString();
                 Element pkg = at.getElements().getPackageOf(el);
                 String name = pkg == null || useFQN ? fullname :
                         proc.maps.fullClassNameAndPackageToClass(fullname, ((PackageElement)pkg).getQualifiedName().toString());
+                String typeParameters = typeParametersOpt(at, type.getTypeParameters(), includeParameterNames);
+                String recordParameters;
 
-                return name + typeParametersOpt(at, type.getTypeParameters(), includeParameterNames);
+                if (el.getKind() == ElementKind.RECORD) {
+                    StringBuilder params = new StringBuilder();
+                    String sep = "";
+
+                    params.append("(");
+
+                    for (RecordComponentElement component : type.getRecordComponents()) {
+                        params.append(sep);
+                        params.append(component.asType());
+                        params.append(" ");
+                        params.append(component.getSimpleName());
+                        sep = ", ";
+                    }
+
+                    params.append(")");
+
+                    recordParameters = params.toString();
+                } else {
+                    recordParameters = "";
+                }
+
+                return name + typeParameters + recordParameters;
             }
+
             case TYPE_PARAMETER: {
                 TypeParameterElement tp = (TypeParameterElement)el;
                 String name = tp.getSimpleName().toString();
@@ -1792,7 +1815,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     @Override
     public String analyzeType(String code, int cursor) {
         switch (guessKind(code)) {
-            case IMPORT: case METHOD: case CLASS: case ENUM:
+            case IMPORT: case METHOD: case CLASS: case ENUM: case RECORD:
             case INTERFACE: case ANNOTATION_TYPE: case VARIABLE:
                 return null;
             default:

@@ -34,7 +34,7 @@ public class ArchivedEnumApp {
             check(mod);
         }
         if (Modifier.values().length != 4) {
-            throw new RuntimeException("Modifier.$VALUES.length expeced: 4, actual: " + Modifier.values().length);
+            throw new RuntimeException("Modifier.$VALUES.length expected: 4, actual: " + Modifier.values().length);
         }
 
         // All 4 enums must exist in synthetic Modifier.$VALUES

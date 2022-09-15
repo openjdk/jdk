@@ -31,8 +31,8 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox PrintContainerInfo
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox PrintContainerInfo
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver TestPids
  */
 import java.util.List;

@@ -51,6 +51,14 @@ public final class CfgFile {
         return value;
     }
 
+    public String getValueUnchecked(String section, String key) {
+        Objects.requireNonNull(section);
+        Objects.requireNonNull(key);
+
+        return Optional.ofNullable(data.get(section)).map(v -> v.get(key)).orElse(
+                null);
+    }
+
     private CfgFile(Map<String, Map<String, String>> data, String id) {
         this.data = data;
         this.id = id;

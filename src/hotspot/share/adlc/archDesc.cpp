@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -445,7 +445,7 @@ void ArchDesc::build_chain_rule(OperandForm *oper) {
     }
   }
   else if ((oper->_matrule) && (oper->_matrule->_next)) {
-    // Regardles of whether the first matchrule is a chain rule, check the list
+    // Regardless of whether the first matchrule is a chain rule, check the list
     rule = oper->_matrule;
     do {
       rule = rule->_next;
@@ -711,7 +711,7 @@ void ArchDesc::dump() {
 
 
 //------------------------------init_keywords----------------------------------
-// Load the kewords into the global name table
+// Load the keywords into the global name table
 void ArchDesc::initKeywords(FormDict& names) {
   // Insert keyword strings into Global Name Table.  Keywords have a NULL value
   // field for quick easy identification when checking identifiers.

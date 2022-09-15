@@ -34,6 +34,7 @@ import javax.sound.midi.Sequencer;
 
 /**
  * @test
+ * @key sound
  * @bug 4913027
  * @summary several Sequencer methods should specify behaviour on closed Sequencer
  */

@@ -847,7 +847,7 @@ public abstract class FontConfiguration {
             start = end + 1;
         }
         if (sequence.length() > start) {
-            parts.add(sequence.substring(start, sequence.length()));
+            parts.add(sequence.substring(start));
         }
         return parts;
     }

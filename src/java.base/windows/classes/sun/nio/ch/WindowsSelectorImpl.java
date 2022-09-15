@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ class WindowsSelectorImpl extends SelectorImpl {
     // array,  where the corresponding entry is occupied by the wakeupSocket
     private SelectionKeyImpl[] channelArray = new SelectionKeyImpl[INIT_CAP];
 
-    // The global native poll array holds file decriptors and event masks
+    // The global native poll array holds file descriptors and event masks
     private PollArrayWrapper pollWrapper;
 
     // The number of valid entries in  poll array, including entries occupied

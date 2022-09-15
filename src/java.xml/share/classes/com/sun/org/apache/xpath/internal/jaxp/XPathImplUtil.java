@@ -43,6 +43,7 @@ import javax.xml.xpath.XPathNodes;
 import javax.xml.xpath.XPathVariableResolver;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.traversal.NodeIterator;
@@ -52,6 +53,8 @@ import org.xml.sax.SAXException;
 /**
  * This class contains several utility methods used by XPathImpl and
  * XPathExpressionImpl
+ *
+ * @LastModified: Jan 2022
  */
 class XPathImplUtil {
     XPathFunctionResolver functionResolver;
@@ -63,6 +66,7 @@ class XPathImplUtil {
     // extensions function need to throw XPathFunctionException
     boolean featureSecureProcessing = false;
     JdkXmlFeatures featureManager;
+    XMLSecurityManager xmlSecMgr;
 
     /**
      * Evaluate an XPath context using the internal XPath engine

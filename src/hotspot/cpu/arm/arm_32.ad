@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 register %{
 //----------Architecture Description Register Definitions----------------------
 // General Registers
@@ -446,11 +446,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   // bl or movw; movt; blx
   bool far = maybe_far_call(this);
   return (far ? 3 : 1) * NativeInstruction::instruction_size;
-}
-
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
 }
 %}
 

@@ -61,7 +61,7 @@ endef
 # EXTRA_FILES Also include these specifically named files
 # EXCLUDE   Exclude files matching this pattern.
 # CLASS   The super class for the generated classes.
-# TYPE    Wether to use "langtools" or normal compiler.
+# TYPE    Whether to use "langtools" or normal compiler.
 # MODULE_PATH_ROOT   Module path root, defaults to $(TOPDIR)/src.
 # KEEP_ALL_TRANSLATIONS Set to true to skip filtering of excluded translations.
 SetupCompileProperties = $(NamedParamsMacroTemplate)

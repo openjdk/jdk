@@ -317,8 +317,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             if (te != null
                     && !utils.isConstructor(element)
                     && !utils.isTypeElement(element)) {
-                var name = new HtmlTree(TagName.SPAN);
-                name.setStyle(HtmlStyle.typeNameLabel);
+
+                var name = HtmlTree.SPAN(HtmlStyle.typeNameLabel);
                 name.add(name(te) + ".");
                 typeContent.add(name);
             }
@@ -384,11 +384,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         if (tElement != typeElement) {
             throw new IllegalStateException();
         }
-        Table table = getSummaryTable();
-        if (table.needsScript()) {
-            writer.getMainBodyScript().append(table.getScript());
-        }
-        return table;
+        return getSummaryTable();
     }
 
     @Override

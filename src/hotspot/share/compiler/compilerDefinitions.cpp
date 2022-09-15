@@ -24,14 +24,16 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
+#include "include/jvm_io.h"
 #include "runtime/arguments.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
+#include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "compiler/compilerDefinitions.hpp"
-#include "gc/shared/gcConfig.hpp"
 #include "utilities/defaultStream.hpp"
 
 const char* compilertype2name_tab[compiler_number_of_types] = {
@@ -130,11 +132,18 @@ intx CompilerConfig::scaled_compile_threshold(intx threshold, double scale) {
   } else {
     double v = threshold * scale;
     assert(v >= 0, "must be");
-    if (v > max_intx) {
+    if (g_isnan(v) || !g_isfinite(v)) {
       return max_intx;
-    } else {
-      return (intx)(v);
     }
+    int exp;
+    (void) frexp(v, &exp);
+    int max_exp = sizeof(intx) * BitsPerByte - 1;
+    if (exp > max_exp) {
+      return max_intx;
+    }
+    intx r = (intx)(v);
+    assert(r >= 0, "must be");
+    return r;
   }
 }
 
@@ -214,10 +223,6 @@ bool CompilerConfig::is_compilation_mode_selected() {
                     || !FLAG_IS_DEFAULT(UseJVMCICompiler));
 }
 
-bool CompilerConfig::is_interpreter_only() {
-  return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
-}
-
 static bool check_legacy_flags() {
   JVMFlag* compile_threshold_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(CompileThreshold));
   if (JVMFlagAccess::check_constraint(compile_threshold_flag, JVMFlagLimit::get_constraint(compile_threshold_flag)->constraint_func(), false) != JVMFlag::SUCCESS) {
@@ -267,12 +272,11 @@ void CompilerConfig::set_legacy_emulation_flags() {
         FLAG_SET_ERGO(Tier0BackedgeNotifyFreqLog, MAX2<intx>(10, osr_threshold_log));
       }
       // Adjust the tiered policy flags to approximate the legacy behavior.
-      if (CompilerConfig::is_c1_only()) {
-        FLAG_SET_ERGO(Tier3InvocationThreshold, threshold);
-        FLAG_SET_ERGO(Tier3MinInvocationThreshold, threshold);
-        FLAG_SET_ERGO(Tier3CompileThreshold, threshold);
-        FLAG_SET_ERGO(Tier3BackEdgeThreshold, osr_threshold);
-      } else {
+      FLAG_SET_ERGO(Tier3InvocationThreshold, threshold);
+      FLAG_SET_ERGO(Tier3MinInvocationThreshold, threshold);
+      FLAG_SET_ERGO(Tier3CompileThreshold, threshold);
+      FLAG_SET_ERGO(Tier3BackEdgeThreshold, osr_threshold);
+      if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
         FLAG_SET_ERGO(Tier4InvocationThreshold, threshold);
         FLAG_SET_ERGO(Tier4MinInvocationThreshold, threshold);
         FLAG_SET_ERGO(Tier4CompileThreshold, threshold);
@@ -286,7 +290,10 @@ void CompilerConfig::set_legacy_emulation_flags() {
   // Scale CompileThreshold
   // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves CompileThreshold unchanged.
   if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0 && CompileThreshold > 0) {
-    FLAG_SET_ERGO(CompileThreshold, scaled_compile_threshold(CompileThreshold));
+    intx scaled_value = scaled_compile_threshold(CompileThreshold);
+    if (CompileThresholdConstraintFunc(scaled_value, true) != JVMFlag::VIOLATES_CONSTRAINT) {
+      FLAG_SET_ERGO(CompileThreshold, scaled_value);
+    }
   }
 }
 
@@ -338,6 +345,20 @@ void CompilerConfig::set_compilation_policy_flags() {
     if (FLAG_IS_DEFAULT(Tier4BackEdgeThreshold)) {
       FLAG_SET_DEFAULT(Tier4BackEdgeThreshold, 15000);
     }
+
+    if (FLAG_IS_DEFAULT(Tier3InvocationThreshold)) {
+      FLAG_SET_DEFAULT(Tier3InvocationThreshold, Tier4InvocationThreshold);
+    }
+    if (FLAG_IS_DEFAULT(Tier3MinInvocationThreshold)) {
+      FLAG_SET_DEFAULT(Tier3MinInvocationThreshold, Tier4MinInvocationThreshold);
+    }
+    if (FLAG_IS_DEFAULT(Tier3CompileThreshold)) {
+      FLAG_SET_DEFAULT(Tier3CompileThreshold, Tier4CompileThreshold);
+    }
+    if (FLAG_IS_DEFAULT(Tier3BackEdgeThreshold)) {
+      FLAG_SET_DEFAULT(Tier3BackEdgeThreshold, Tier4BackEdgeThreshold);
+    }
+
   }
 
   // Scale tiered compilation thresholds.
@@ -568,13 +589,6 @@ void CompilerConfig::ergo_initialize() {
   // Do JVMCI specific settings
   set_jvmci_specific_flags();
 #endif
-
-  if (FLAG_IS_DEFAULT(SweeperThreshold)) {
-    if ((SweeperThreshold * ReservedCodeCacheSize / 100) > (1.2 * M)) {
-      // Cap default SweeperThreshold value to an equivalent of 1.2 Mb
-      FLAG_SET_ERGO(SweeperThreshold, (1.2 * M * 100) / ReservedCodeCacheSize);
-    }
-  }
 
   if (UseOnStackReplacement && !UseLoopCounter) {
     warning("On-stack-replacement requires loop counters; enabling loop counters");

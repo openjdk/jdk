@@ -100,7 +100,7 @@ class outputStream : public ResourceObj {
    void print_raw(const char* str, size_t len)   { write(str,         len); }
    void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
    void print_raw_cr(const char* str, size_t len){ write(str,         len); cr(); }
-   void print_data(void* data, size_t len, bool with_ascii);
+   void print_data(void* data, size_t len, bool with_ascii, bool rel_addr=true);
    void put(char ch);
    void sp(int count = 1);
    void cr();
@@ -248,12 +248,25 @@ class fileStream : public outputStream {
 class fdStream : public outputStream {
  protected:
   int  _fd;
+  static fdStream _stdout_stream;
+  static fdStream _stderr_stream;
  public:
   fdStream(int fd = -1) : _fd(fd) { }
   bool is_open() const { return _fd != -1; }
   void set_fd(int fd) { _fd = fd; }
   int fd() const { return _fd; }
   virtual void write(const char* c, size_t len);
+  void flush() {};
+
+  // predefined streams for unbuffered IO to stdout, stderr
+  static fdStream* stdout_stream() { return &_stdout_stream; }
+  static fdStream* stderr_stream() { return &_stderr_stream; }
+};
+
+// A /dev/null equivalent stream
+class nullStream : public outputStream {
+public:
+  void write(const char* c, size_t len) {}
   void flush() {};
 };
 

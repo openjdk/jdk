@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "services/memTracker.hpp"
 
 // Lifecycle management for TSM ParkEvents.

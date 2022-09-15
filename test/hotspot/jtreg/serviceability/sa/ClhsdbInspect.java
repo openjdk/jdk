@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,13 @@ public class ClhsdbInspect {
 
             String jstackOutput = test.run(theApp.getPid(), cmds, null, null);
 
+            // the key is a literal, searched in the jstack output; the value is a regex searched in the clhsdb output
             Map<String, String> tokensMap = new HashMap<>();
             tokensMap.put("(a java.lang.Class for LingeredAppWithLock)",
                           "instance of Oop for java/lang/Class");
             tokensMap.put("Method*=", "Type is Method");
-            tokensMap.put("(a java.lang.ref.ReferenceQueue$Lock)",
-                          "instance of Oop for java/lang/ref/ReferenceQueue\\$Lock");
+            tokensMap.put("(a java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionObject)",
+                          "instance of Oop for java/util/concurrent/locks/AbstractQueuedSynchronizer\\$ConditionObject");
 
             String[] lines = jstackOutput.split("\\R");
 
@@ -89,6 +90,7 @@ public class ClhsdbInspect {
                       }
                   }
 
+                if (addressString == null) throw new NullPointerException("Token '" + key + "' not found in jstack output");
                 String cmd = "inspect " + addressString;
                 cmds.add(cmd);
                 expStrMap.put(cmd, List.of(tokensMap.get(key)));

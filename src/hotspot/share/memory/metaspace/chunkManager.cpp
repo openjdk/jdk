@@ -152,7 +152,7 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
   if (c == NULL) {
     c = _chunks.search_chunk_ascending(preferred_level, max_level, min_committed_words);
   }
-  // if we did not get anything yet, there are no free chunks commmitted enough. Repeat search but look for uncommitted chunks too:
+  // if we did not get anything yet, there are no free chunks committed enough. Repeat search but look for uncommitted chunks too:
   // 4) Search best or smaller chunks, can be uncommitted:
   if (c == NULL) {
     c = _chunks.search_chunk_ascending(preferred_level, max_level, 0);

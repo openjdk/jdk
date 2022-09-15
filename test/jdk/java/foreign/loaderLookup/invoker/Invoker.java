@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 package invoker;
 
-import jdk.incubator.foreign.*;
+import java.lang.foreign.*;
 
 public class Invoker {
-    public static void invoke(NativeSymbol symbol) throws Throwable {
-        var linker = CLinker.systemCLinker();
+    public static void invoke(Addressable symbol) throws Throwable {
+        var linker = Linker.nativeLinker();
         var handle = linker.downcallHandle(symbol, FunctionDescriptor.ofVoid());
         handle.invokeExact();
     }

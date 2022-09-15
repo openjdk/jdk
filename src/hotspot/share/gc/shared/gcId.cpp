@@ -25,9 +25,9 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "gc/shared/gcId.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 
 uint GCId::_next_id = 0;
 

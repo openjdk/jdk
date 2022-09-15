@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public abstract class IdentityProcessorVerification<T> extends WithHelperPublish
 
   /**
    * Test class must specify the expected time it takes for the publisher to
-   * shut itself down when the the last downstream {@code Subscription} is cancelled.
+   * shut itself down when the last downstream {@code Subscription} is cancelled.
    *
    * The processor will be required to be able to buffer {@code TestEnvironment.TEST_BUFFER_SIZE} elements.
    */
@@ -72,7 +72,7 @@ public abstract class IdentityProcessorVerification<T> extends WithHelperPublish
 
   /**
    * Test class must specify the expected time it takes for the publisher to
-   * shut itself down when the the last downstream {@code Subscription} is cancelled.
+   * shut itself down when the last downstream {@code Subscription} is cancelled.
    *
    * The processor will be required to be able to buffer {@code TestEnvironment.TEST_BUFFER_SIZE} elements.
    *
@@ -85,7 +85,7 @@ public abstract class IdentityProcessorVerification<T> extends WithHelperPublish
 
   /**
    * Test class must specify the expected time it takes for the publisher to
-   * shut itself down when the the last downstream {@code Subscription} is cancelled.
+   * shut itself down when the last downstream {@code Subscription} is cancelled.
    *
    * @param publisherReferenceGCTimeoutMillis used to determine after how much time a reference to a Subscriber should be already dropped by the Publisher.
    * @param processorBufferSize            number of elements the processor is required to be able to buffer.

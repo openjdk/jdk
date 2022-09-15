@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,7 +452,10 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     ttyLocker ttyl;
     tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
     iframe()->print_on(tty);
-    RegisterMap map(thread);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::include,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
     if (WizardMode && Verbose) method()->print_codes();
@@ -486,6 +489,7 @@ int vframeArrayElement::on_stack_size(int callee_parameters,
 
 
 intptr_t* vframeArray::unextended_sp() const {
+  assert(owner_thread()->is_in_usable_stack((address) _original.unextended_sp()), INTPTR_FORMAT, p2i(_original.unextended_sp()));
   return _original.unextended_sp();
 }
 
@@ -533,14 +537,14 @@ void vframeArray::fill_in(JavaThread* thread,
       // in frame_amd64.cpp and the values of the phantom high half registers
       // in amd64.ad.
       //      if (VMReg::Name(i) < SharedInfo::stack0 && is_even(i)) {
-        intptr_t* src = (intptr_t*) reg_map->location(VMRegImpl::as_VMReg(i));
+        intptr_t* src = (intptr_t*) reg_map->location(VMRegImpl::as_VMReg(i), _caller.sp());
         _callee_registers[i] = src != NULL ? *src : NULL_WORD;
         //      } else {
         //      jint* src = (jint*) reg_map->location(VMReg::Name(i));
         //      _callee_registers[i] = src != NULL ? *src : NULL_WORD;
         //      }
 #else
-      jint* src = (jint*) reg_map->location(VMRegImpl::as_VMReg(i));
+      jint* src = (jint*) reg_map->location(VMRegImpl::as_VMReg(i), _caller.sp());
       _callee_registers[i] = src != NULL ? *src : NULL_WORD;
 #endif
       if (src == NULL) {
@@ -566,7 +570,10 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   // Find the skeletal interpreter frames to unpack into
   JavaThread* current = JavaThread::current();
 
-  RegisterMap map(current, false);
+  RegisterMap map(current,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);
   int index;

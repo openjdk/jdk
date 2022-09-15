@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class FirstGCTest extends MetaspaceBaseGC {
                     + "the amount of committed space significantly differs "
                     + "from the expected amount");
             System.err.println("%## Real    : " + committedAmount);
-            System.err.println("%## Exepcted: " + metaspaceSize);
+            System.err.println("%## Expected: " + metaspaceSize);
             throw new Fault("GC happened at the wrong moment");
         } else {
             // -XX:MetaspaceSize is not given, check for default values

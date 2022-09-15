@@ -374,10 +374,14 @@ class ServerImpl implements TimeSource {
 
                     /* process the selected list now  */
                     Set<SelectionKey> selected = selector.selectedKeys();
-                    Iterator<SelectionKey> iter = selected.iterator();
-                    while (iter.hasNext()) {
-                        SelectionKey key = iter.next();
-                        iter.remove ();
+                    // create a copy of the selected keys so that we can iterate over it
+                    // and at the same time not worry about the underlying Set being
+                    // modified (leading to ConcurrentModificationException) due to
+                    // any subsequent select operations that we invoke on the
+                    // selector (in this same thread).
+                    for (final SelectionKey key : selected.toArray(SelectionKey[]::new)) {
+                        // remove the key from the original selected keys (live) Set
+                        selected.remove(key);
                         if (key.equals (listenerKey)) {
                             if (terminating) {
                                 continue;
@@ -666,12 +670,11 @@ class ServerImpl implements TimeSource {
                     if (chdr == null) {
                         tx.close = true;
                         rheaders.set ("Connection", "close");
-                    } else if (chdr.equalsIgnoreCase ("keep-alive")) {
-                        rheaders.set ("Connection", "keep-alive");
-                        int idle=(int)(ServerConfig.getIdleInterval()/1000);
-                        int max=ServerConfig.getMaxIdleConnections();
-                        String val = "timeout="+idle+", max="+max;
-                        rheaders.set ("Keep-Alive", val);
+                    } else if (chdr.equalsIgnoreCase("keep-alive")) {
+                        rheaders.set("Connection", "keep-alive");
+                        int timeoutSeconds = (int) (ServerConfig.getIdleInterval() / 1000);
+                        String val = "timeout=" + timeoutSeconds;
+                        rheaders.set("Keep-Alive", val);
                     }
                 }
 

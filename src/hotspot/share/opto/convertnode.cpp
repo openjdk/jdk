@@ -295,10 +295,244 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
   return this_type;
 }
 
+#ifdef ASSERT
 static inline bool long_ranges_overlap(jlong lo1, jlong hi1,
                                        jlong lo2, jlong hi2) {
   // Two ranges overlap iff one range's low point falls in the other range.
   return (lo2 <= lo1 && lo1 <= hi2) || (lo1 <= lo2 && lo2 <= hi1);
+}
+#endif
+
+template<class T> static bool subtract_overflows(T x, T y) {
+  T s = java_subtract(x, y);
+  return (x >= 0) && (y < 0) && (s < 0);
+}
+
+template<class T> static bool subtract_underflows(T x, T y) {
+  T s = java_subtract(x, y);
+  return (x < 0) && (y > 0) && (s > 0);
+}
+
+template<class T> static bool add_overflows(T x, T y) {
+  T s = java_add(x, y);
+  return (x > 0) && (y > 0) && (s < 0);
+}
+
+template<class T> static bool add_underflows(T x, T y) {
+  T s = java_add(x, y);
+  return (x < 0) && (y < 0) && (s >= 0);
+}
+
+template<class T> static bool ranges_overlap(T xlo, T ylo, T xhi, T yhi, T zlo, T zhi,
+                                             const Node* n, bool pos) {
+  assert(xlo <= xhi && ylo <= yhi && zlo <= zhi, "should not be empty types");
+  T x_y_lo;
+  T x_y_hi;
+  bool x_y_lo_overflow;
+  bool x_y_hi_overflow;
+
+  if (n->is_Sub()) {
+    x_y_lo = java_subtract(xlo, yhi);
+    x_y_hi = java_subtract(xhi, ylo);
+    x_y_lo_overflow = pos ? subtract_overflows(xlo, yhi) : subtract_underflows(xlo, yhi);
+    x_y_hi_overflow = pos ? subtract_overflows(xhi, ylo) : subtract_underflows(xhi, ylo);
+  } else {
+    assert(n->is_Add(), "Add or Sub only");
+    x_y_lo = java_add(xlo, ylo);
+    x_y_hi = java_add(xhi, yhi);
+    x_y_lo_overflow = pos ? add_overflows(xlo, ylo) : add_underflows(xlo, ylo);
+    x_y_hi_overflow = pos ? add_overflows(xhi, yhi) : add_underflows(xhi, yhi);
+  }
+  assert(!pos || !x_y_lo_overflow || x_y_hi_overflow, "x_y_lo_overflow => x_y_hi_overflow");
+  assert(pos || !x_y_hi_overflow || x_y_lo_overflow, "x_y_hi_overflow => x_y_lo_overflow");
+
+  // Two ranges overlap iff one range's low point falls in the other range.
+  // nbits = 32 or 64
+  if (pos) {
+    // (zlo + 2**nbits  <= x_y_lo && x_y_lo <= zhi ** nbits)
+    if (x_y_lo_overflow) {
+      if (zlo <= x_y_lo && x_y_lo <= zhi) {
+        return true;
+      }
+    }
+
+    // (x_y_lo <= zlo + 2**nbits && zlo + 2**nbits <= x_y_hi)
+    if (x_y_hi_overflow) {
+      if ((!x_y_lo_overflow || x_y_lo <= zlo) && zlo <= x_y_hi) {
+        return true;
+      }
+    }
+  } else {
+    // (zlo - 2**nbits <= x_y_hi && x_y_hi <= zhi - 2**nbits)
+    if (x_y_hi_overflow) {
+      if (zlo <= x_y_hi && x_y_hi <= zhi) {
+        return true;
+      }
+    }
+
+    // (x_y_lo <= zhi - 2**nbits && zhi - 2**nbits <= x_y_hi)
+    if (x_y_lo_overflow) {
+      if (x_y_lo <= zhi && (!x_y_hi_overflow || zhi <= x_y_hi)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+static bool ranges_overlap(const TypeInteger* tx, const TypeInteger* ty, const TypeInteger* tz,
+                           const Node* n, bool pos, BasicType bt) {
+  jlong xlo = tx->lo_as_long();
+  jlong xhi = tx->hi_as_long();
+  jlong ylo = ty->lo_as_long();
+  jlong yhi = ty->hi_as_long();
+  jlong zlo = tz->lo_as_long();
+  jlong zhi = tz->hi_as_long();
+
+  if (bt == T_INT) {
+    // See if x+y can cause positive overflow into z+2**32
+    // See if x+y can cause negative overflow into z-2**32
+    bool res =  ranges_overlap(checked_cast<jint>(xlo), checked_cast<jint>(ylo),
+                               checked_cast<jint>(xhi), checked_cast<jint>(yhi),
+                               checked_cast<jint>(zlo), checked_cast<jint>(zhi), n, pos);
+#ifdef ASSERT
+    jlong vbit = CONST64(1) << BitsPerInt;
+    if (n->Opcode() == Op_SubI) {
+      jlong ylo0 = ylo;
+      ylo = -yhi;
+      yhi = -ylo0;
+    }
+    assert(res == long_ranges_overlap(xlo+ylo, xhi+yhi, pos ? zlo+vbit : zlo-vbit, pos ? zhi+vbit : zhi-vbit), "inconsistent result");
+#endif
+    return res;
+  }
+  assert(bt == T_LONG, "only int or long");
+  // See if x+y can cause positive overflow into z+2**64
+  // See if x+y can cause negative overflow into z-2**64
+  return ranges_overlap(xlo, ylo, xhi, yhi, zlo, zhi, n, pos);
+}
+
+#ifdef ASSERT
+static bool compute_updates_ranges_verif(const TypeInteger* tx, const TypeInteger* ty, const TypeInteger* tz,
+                                         jlong& rxlo, jlong& rxhi, jlong& rylo, jlong& ryhi,
+                                         const Node* n) {
+  jlong xlo = tx->lo_as_long();
+  jlong xhi = tx->hi_as_long();
+  jlong ylo = ty->lo_as_long();
+  jlong yhi = ty->hi_as_long();
+  jlong zlo = tz->lo_as_long();
+  jlong zhi = tz->hi_as_long();
+  if (n->is_Sub()) {
+    swap(ylo, yhi);
+    ylo = -ylo;
+    yhi = -yhi;
+  }
+
+  rxlo = MAX2(xlo, zlo - yhi);
+  rxhi = MIN2(xhi, zhi - ylo);
+  rylo = MAX2(ylo, zlo - xhi);
+  ryhi = MIN2(yhi, zhi - xlo);
+  if (rxlo > rxhi || rylo > ryhi) {
+    return false;
+  }
+  if (n->is_Sub()) {
+    swap(rylo, ryhi);
+    rylo = -rylo;
+    ryhi = -ryhi;
+  }
+  assert(rxlo == (int) rxlo && rxhi == (int) rxhi, "x should not overflow");
+  assert(rylo == (int) rylo && ryhi == (int) ryhi, "y should not overflow");
+  return true;
+}
+#endif
+
+template<class T> static bool compute_updates_ranges(T xlo, T ylo, T xhi, T yhi, T zlo, T zhi,
+                                                     jlong& rxlo, jlong& rxhi, jlong& rylo, jlong& ryhi,
+                                                     const Node* n) {
+  assert(xlo <= xhi && ylo <= yhi && zlo <= zhi, "should not be empty types");
+
+  // Now it's always safe to assume x+y does not overflow.
+  // This is true even if some pairs x,y might cause overflow, as long
+  // as that overflow value cannot fall into [zlo,zhi].
+
+  // Confident that the arithmetic is "as if infinite precision",
+  // we can now use n's range to put constraints on those of x and y.
+  // The "natural" range of x [xlo,xhi] can perhaps be narrowed to a
+  // more "restricted" range by intersecting [xlo,xhi] with the
+  // range obtained by subtracting y's range from the asserted range
+  // of the I2L conversion.  Here's the interval arithmetic algebra:
+  //    x == n-y == [zlo,zhi]-[ylo,yhi] == [zlo,zhi]+[-yhi,-ylo]
+  //    => x in [zlo-yhi, zhi-ylo]
+  //    => x in [zlo-yhi, zhi-ylo] INTERSECT [xlo,xhi]
+  //    => x in [xlo MAX zlo-yhi, xhi MIN zhi-ylo]
+  // And similarly, x changing place with y.
+  if (n->is_Sub()) {
+    if (add_overflows(zlo, ylo) || add_underflows(zhi, yhi) || subtract_underflows(xhi, zlo) ||
+        subtract_overflows(xlo, zhi)) {
+      return false;
+    }
+    rxlo = add_underflows(zlo, ylo) ? xlo : MAX2(xlo, java_add(zlo, ylo));
+    rxhi = add_overflows(zhi, yhi) ? xhi : MIN2(xhi, java_add(zhi, yhi));
+    ryhi = subtract_overflows(xhi, zlo) ? yhi : MIN2(yhi, java_subtract(xhi, zlo));
+    rylo = subtract_underflows(xlo, zhi) ? ylo : MAX2(ylo, java_subtract(xlo, zhi));
+  } else {
+    assert(n->is_Add(), "Add or Sub only");
+    if (subtract_overflows(zlo, yhi) || subtract_underflows(zhi, ylo) ||
+        subtract_overflows(zlo, xhi) || subtract_underflows(zhi, xlo)) {
+      return false;
+    }
+    rxlo = subtract_underflows(zlo, yhi) ? xlo : MAX2(xlo, java_subtract(zlo, yhi));
+    rxhi = subtract_overflows(zhi, ylo) ? xhi : MIN2(xhi, java_subtract(zhi, ylo));
+    rylo = subtract_underflows(zlo, xhi) ? ylo : MAX2(ylo, java_subtract(zlo, xhi));
+    ryhi = subtract_overflows(zhi, xlo) ? yhi : MIN2(yhi, java_subtract(zhi, xlo));
+  }
+
+  if (rxlo > rxhi || rylo > ryhi) {
+    return false; // x or y is dying; don't mess w/ it
+  }
+
+  return true;
+}
+
+static bool compute_updates_ranges(const TypeInteger* tx, const TypeInteger* ty, const TypeInteger* tz,
+                                   const TypeInteger*& rx, const TypeInteger*& ry,
+                                   const Node* n, const BasicType in_bt, BasicType out_bt) {
+
+  jlong xlo = tx->lo_as_long();
+  jlong xhi = tx->hi_as_long();
+  jlong ylo = ty->lo_as_long();
+  jlong yhi = ty->hi_as_long();
+  jlong zlo = tz->lo_as_long();
+  jlong zhi = tz->hi_as_long();
+  jlong rxlo, rxhi, rylo, ryhi;
+
+  if (in_bt == T_INT) {
+#ifdef ASSERT
+    jlong expected_rxlo, expected_rxhi, expected_rylo, expected_ryhi;
+    bool expected = compute_updates_ranges_verif(tx, ty, tz,
+                                                 expected_rxlo, expected_rxhi,
+                                                 expected_rylo, expected_ryhi, n);
+#endif
+    if (!compute_updates_ranges(checked_cast<jint>(xlo), checked_cast<jint>(ylo),
+                                checked_cast<jint>(xhi), checked_cast<jint>(yhi),
+                                checked_cast<jint>(zlo), checked_cast<jint>(zhi),
+                                rxlo, rxhi, rylo, ryhi, n)) {
+      assert(!expected, "inconsistent");
+      return false;
+    }
+    assert(expected && rxlo == expected_rxlo && rxhi == expected_rxhi && rylo == expected_rylo && ryhi == expected_ryhi, "inconsistent");
+  } else {
+    if (!compute_updates_ranges(xlo, ylo, xhi, yhi, zlo, zhi,
+                            rxlo, rxhi, rylo, ryhi, n)) {
+      return false;
+    }
+  }
+
+  int widen =  MAX2(tx->widen_limit(), ty->widen_limit());
+  rx = TypeInteger::make(rxlo, rxhi, widen, out_bt);
+  ry = TypeInteger::make(rylo, ryhi, widen, out_bt);
+  return true;
 }
 
 #ifdef _LP64
@@ -319,9 +553,9 @@ static Node* find_or_make_convI2L(PhaseIterGVN* igvn, Node* parent,
 #endif
 
 bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
-                            BasicType bt) {
+                            BasicType in_bt, BasicType out_bt) {
   int op = z->Opcode();
-  if (op == Op_AddI || op == Op_SubI) {
+  if (op == Op_Add(in_bt) || op == Op_Sub(in_bt)) {
     Node* x = z->in(1);
     Node* y = z->in(2);
     assert (x != z && y != z, "dead loop in ConvI2LNode::Ideal");
@@ -331,62 +565,14 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
     if (phase->type(y) == Type::TOP) {
       return false;
     }
-    const TypeInt*  tx = phase->type(x)->is_int();
-    const TypeInt*  ty = phase->type(y)->is_int();
+    const TypeInteger* tx = phase->type(x)->is_integer(in_bt);
+    const TypeInteger* ty = phase->type(y)->is_integer(in_bt);
 
-    jlong xlo = tx->is_int()->_lo;
-    jlong xhi = tx->is_int()->_hi;
-    jlong ylo = ty->is_int()->_lo;
-    jlong yhi = ty->is_int()->_hi;
-    jlong zlo = tz->lo_as_long();
-    jlong zhi = tz->hi_as_long();
-    jlong vbit = CONST64(1) << BitsPerInt;
-    int widen =  MAX2(tx->_widen, ty->_widen);
-    if (op == Op_SubI) {
-      jlong ylo0 = ylo;
-      ylo = -yhi;
-      yhi = -ylo0;
-    }
-    // See if x+y can cause positive overflow into z+2**32
-    if (long_ranges_overlap(xlo+ylo, xhi+yhi, zlo+vbit, zhi+vbit)) {
+    if (ranges_overlap(tx, ty, tz, z, true, in_bt) ||
+        ranges_overlap(tx, ty, tz, z, false, in_bt)) {
       return false;
     }
-    // See if x+y can cause negative overflow into z-2**32
-    if (long_ranges_overlap(xlo+ylo, xhi+yhi, zlo-vbit, zhi-vbit)) {
-      return false;
-    }
-    // Now it's always safe to assume x+y does not overflow.
-    // This is true even if some pairs x,y might cause overflow, as long
-    // as that overflow value cannot fall into [zlo,zhi].
-
-    // Confident that the arithmetic is "as if infinite precision",
-    // we can now use z's range to put constraints on those of x and y.
-    // The "natural" range of x [xlo,xhi] can perhaps be narrowed to a
-    // more "restricted" range by intersecting [xlo,xhi] with the
-    // range obtained by subtracting y's range from the asserted range
-    // of the I2L conversion.  Here's the interval arithmetic algebra:
-    //    x == z-y == [zlo,zhi]-[ylo,yhi] == [zlo,zhi]+[-yhi,-ylo]
-    //    => x in [zlo-yhi, zhi-ylo]
-    //    => x in [zlo-yhi, zhi-ylo] INTERSECT [xlo,xhi]
-    //    => x in [xlo MAX zlo-yhi, xhi MIN zhi-ylo]
-    jlong rxlo = MAX2(xlo, zlo - yhi);
-    jlong rxhi = MIN2(xhi, zhi - ylo);
-    // And similarly, x changing place with y:
-    jlong rylo = MAX2(ylo, zlo - xhi);
-    jlong ryhi = MIN2(yhi, zhi - xlo);
-    if (rxlo > rxhi || rylo > ryhi) {
-      return false;  // x or y is dying; don't mess w/ it
-    }
-    if (op == Op_SubI) {
-      jlong rylo0 = rylo;
-      rylo = -ryhi;
-      ryhi = -rylo0;
-    }
-    assert(rxlo == (int)rxlo && rxhi == (int)rxhi, "x should not overflow");
-    assert(rylo == (int)rylo && ryhi == (int)ryhi, "y should not overflow");
-    rx = TypeInteger::make(rxlo, rxhi, widen, bt);
-    ry = TypeInteger::make(rylo, ryhi, widen, bt);
-    return true;
+    return compute_updates_ranges(tx, ty, tz, rx, ry, z, in_bt, out_bt);
   }
   return false;
 }
@@ -425,7 +611,7 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* z = in(1);
   const TypeInteger* rx = NULL;
   const TypeInteger* ry = NULL;
-  if (Compile::push_thru_add(phase, z, this_type, rx, ry, T_LONG)) {
+  if (Compile::push_thru_add(phase, z, this_type, rx, ry, T_INT, T_LONG)) {
     if (igvn == NULL) {
       // Postpone this optimization to iterative GVN, where we can handle deep
       // AddI chains without an exponential number of recursive Ideal() calls.

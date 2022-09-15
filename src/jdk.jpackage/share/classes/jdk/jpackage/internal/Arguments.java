@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,6 +314,10 @@ public class Arguments {
 
         MODULE_PATH ("module-path", "p", OptionCategories.MODULAR),
 
+        LAUNCHER_AS_SERVICE ("launcher-as-service", OptionCategories.PROPERTY, () -> {
+            setOptionValue("launcher-as-service", true);
+        }),
+
         MAC_SIGN ("mac-sign", "s", OptionCategories.PLATFORM_MAC, () -> {
             setOptionValue("mac-sign", true);
         }),
@@ -586,6 +590,7 @@ public class Arguments {
         boolean hasRuntime = allOptions.contains(
                 CLIOptions.PREDEFINED_RUNTIME_IMAGE);
         boolean installerOnly = !imageOnly && hasAppImage;
+        boolean isMac = Platform.isMac();
         runtimeInstaller = !imageOnly && hasRuntime && !hasAppImage &&
                 !hasMainModule && !hasMainJar;
 
@@ -595,10 +600,16 @@ public class Arguments {
                 throw new PackagerException("ERR_UnsupportedOption",
                         option.getIdWithPrefix());
             }
-            if (imageOnly) {
+            if ((imageOnly && !isMac) || (imageOnly && !hasAppImage && isMac)) {
                 if (!ValidOptions.checkIfImageSupported(option)) {
                     throw new PackagerException("ERR_InvalidTypeOption",
                         option.getIdWithPrefix(), type);
+                }
+            } else if (imageOnly && hasAppImage && isMac) { // Signing app image
+                if (!ValidOptions.checkIfSigningSupported(option)) {
+                    throw new PackagerException(
+                            "ERR_InvalidOptionWithAppImageSigning",
+                            option.getIdWithPrefix());
                 }
             } else if (installerOnly || runtimeInstaller) {
                 if (!ValidOptions.checkIfInstallerSupported(option)) {
@@ -638,8 +649,8 @@ public class Arguments {
         if (hasMainJar && hasMainModule) {
             throw new PackagerException("ERR_BothMainJarAndModule");
         }
-        if (imageOnly && !hasMainJar && !hasMainModule) {
-            throw new PackagerException("ERR_NoEntryPoint");
+        if (imageOnly && !hasAppImage && !hasMainJar && !hasMainModule) {
+                throw new PackagerException("ERR_NoEntryPoint");
         }
     }
 

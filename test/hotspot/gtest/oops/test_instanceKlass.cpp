@@ -30,6 +30,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "unittest.hpp"
 
 // Tests for InstanceKlass::is_class_loader_instance_klass() function
@@ -44,6 +45,7 @@ TEST_VM(InstanceKlass, string_klass) {
 }
 
 TEST_VM(InstanceKlass, class_loader_printer) {
+  ThreadInVMfromNative scope(JavaThread::current());
   ResourceMark rm;
   oop loader = SystemDictionary::java_platform_loader();
   stringStream st;

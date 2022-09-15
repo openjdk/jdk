@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,22 +162,23 @@ void MethodLiveness::init_basic_blocks() {
       case Bytecodes::_ifnull:
       case Bytecodes::_ifnonnull:
         // Two way branch.  Set predecessors at each destination.
-        dest = _block_map->at(bytes.next_bci());
-        assert(dest != NULL, "must be a block immediately following this one.");
-        dest->add_normal_predecessor(current_block);
-
+        if (bytes.next_bci() < method_len) {
+          dest = _block_map->at(bytes.next_bci());
+          assert(dest != NULL, "must be a block immediately following this one.");
+          dest->add_normal_predecessor(current_block);
+        }
         dest = _block_map->at(bytes.get_dest());
-        assert(dest != NULL, "branch desination must start a block.");
+        assert(dest != NULL, "branch destination must start a block.");
         dest->add_normal_predecessor(current_block);
         break;
       case Bytecodes::_goto:
         dest = _block_map->at(bytes.get_dest());
-        assert(dest != NULL, "branch desination must start a block.");
+        assert(dest != NULL, "branch destination must start a block.");
         dest->add_normal_predecessor(current_block);
         break;
       case Bytecodes::_goto_w:
         dest = _block_map->at(bytes.get_far_dest());
-        assert(dest != NULL, "branch desination must start a block.");
+        assert(dest != NULL, "branch destination must start a block.");
         dest->add_normal_predecessor(current_block);
         break;
       case Bytecodes::_tableswitch:
@@ -187,11 +188,11 @@ void MethodLiveness::init_basic_blocks() {
           int len = tableswitch.length();
 
           dest = _block_map->at(bci + tableswitch.default_offset());
-          assert(dest != NULL, "branch desination must start a block.");
+          assert(dest != NULL, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
           while (--len >= 0) {
             dest = _block_map->at(bci + tableswitch.dest_offset_at(len));
-            assert(dest != NULL, "branch desination must start a block.");
+            assert(dest != NULL, "branch destination must start a block.");
             dest->add_normal_predecessor(current_block);
           }
           break;
@@ -204,12 +205,12 @@ void MethodLiveness::init_basic_blocks() {
           int npairs = lookupswitch.number_of_pairs();
 
           dest = _block_map->at(bci + lookupswitch.default_offset());
-          assert(dest != NULL, "branch desination must start a block.");
+          assert(dest != NULL, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
           while(--npairs >= 0) {
             LookupswitchPair pair = lookupswitch.pair_at(npairs);
             dest = _block_map->at( bci + pair.offset());
-            assert(dest != NULL, "branch desination must start a block.");
+            assert(dest != NULL, "branch destination must start a block.");
             dest->add_normal_predecessor(current_block);
           }
           break;
@@ -219,7 +220,7 @@ void MethodLiveness::init_basic_blocks() {
         {
           assert(bytes.is_wide()==false, "sanity check");
           dest = _block_map->at(bytes.get_dest());
-          assert(dest != NULL, "branch desination must start a block.");
+          assert(dest != NULL, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
           BasicBlock *jsrExit = _block_map->at(current_block->limit_bci());
           assert(jsrExit != NULL, "jsr return bci must start a block.");
@@ -229,7 +230,7 @@ void MethodLiveness::init_basic_blocks() {
       case Bytecodes::_jsr_w:
         {
           dest = _block_map->at(bytes.get_far_dest());
-          assert(dest != NULL, "branch desination must start a block.");
+          assert(dest != NULL, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
           BasicBlock *jsrExit = _block_map->at(current_block->limit_bci());
           assert(jsrExit != NULL, "jsr return bci must start a block.");
