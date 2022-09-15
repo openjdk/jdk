@@ -50,12 +50,12 @@ public class XPathPrecedingTest {
     private static final String XML = """
             <store>
                <book id="1" lang="en">
-                  <title/>
+                  <title>Book1</title>
                   <author id="1"/>
                   <isbn>1234</isbn>
                </book>
-               <book id="2" lang="en">
-                  <title/>
+               <book id="2" lang="en" xlmns="www.foo.com">
+                  <title>Book2</title>
                   <author id="2"/>
                   <isbn>5678</isbn>
                </book>
@@ -85,10 +85,11 @@ public class XPathPrecedingTest {
                 // test preceding
                 
                 // any nodes
-                {"/store/book[1]/author/preceding::*", "//book[1]/title"},
+                {"/store/book[1]/author/preceding::*", "/store/book[1]/title"},
 
                 // abbreviated text
-                {"//author/preceding::title", "//title"},
+                {"/store/book[1]/isbn/preceding::*[1]", "/store/book[1]/author"},
+				{"(/store/book[1]/isbn/preceding::*)[1]", "/store/book[1]/title"},
                 {"//isbn/preceding::book", "//book[1]"},
                 {"//book[2]/preceding::book", "//book[1]"},
                 {"/store/book[preceding::book]", "//book[2]"},
@@ -142,11 +143,21 @@ public class XPathPrecedingTest {
                 {"/store/book[1]/author/preceding-sibling::isbn"},
                 {"//author[@id='2']/preceding-sibling::book"},
                 {"//author[@id='2']/preceding-sibling::node()/preceding-sibling::author"},
+
+				// attribute / namespace
+				{"/store/book[2]/@id/preceding-sibling::*"},
+				{"/store/book/@lang/preceding-sibling::*"},
+				{"/store/book[2]/namespace::*/preceding-sibling::*"},
+
+				// text node
+				{"/store/book[2]/isbn/text()/preceding-sibling::*"},
+
         };
     }
 
     /**
-     * Verifies XPath preceding and preceding-sibling axis specifiers by comparing expression and expected result.
+     * Verifies XPath preceding and preceding-sibling axis specifiers by 
+	 * comparing expression and expected result.
      * @param exp      XPath expression
      * @param expected expected result
      * @throws Exception if test failed
