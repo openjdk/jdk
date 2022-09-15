@@ -766,7 +766,10 @@ bool OopStorage::reduce_deferred_updates() {
 
 static inline void check_release_entry(const oop* entry) {
   assert(entry != NULL, "Releasing NULL");
-  assert(*entry == NULL, "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
+  // Can't use checks against NULL, since ZGC uses colored nulls.
+  // Can't use load barrier to fetch uncolored null, since ClassLoaderData::purge
+  // is called without the STS joiner => load barriers are not allowed.
+  // assert(*entry == NULL, "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
 }
 
 void OopStorage::release(const oop* ptr) {
