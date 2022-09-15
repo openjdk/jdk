@@ -60,5 +60,12 @@ public class BasicRules {
             bh.consume(INT_ARRAY[i] + 100);
         }
     }
+
+    @Benchmark
+    public void divL_10(Blackhole bh) {
+        for (int i = 0; i < LONG_ARRAY.length; i++) {
+            bh.consume(LONG_ARRAY[i] / 10L);
+        }
+    }
 }
 
