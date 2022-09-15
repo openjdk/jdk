@@ -675,7 +675,6 @@ void PhaseChaitin::Register_Allocate() {
           set_pair(i, hi, lo);
         }
       }
-      if( lrg._is_oop ) _node_oops.set(i);
     } else {
       set_bad(i);
     }

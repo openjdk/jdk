@@ -96,18 +96,6 @@ OptoReg::Name PhaseRegAlloc::offset2reg(int stk_offset) const {
   return (OptoReg::Name) reg;
 }
 
-//------------------------------set_oop----------------------------------------
-void PhaseRegAlloc::set_oop( const Node *n, bool is_an_oop ) {
-  if( is_an_oop ) {
-    _node_oops.set(n->_idx);
-  }
-}
-
-//------------------------------is_oop-----------------------------------------
-bool PhaseRegAlloc::is_oop( const Node *n ) const {
-  return _node_oops.test(n->_idx) != 0;
-}
-
 // Allocate _node_regs table with at least "size" elements
 void PhaseRegAlloc::alloc_node_regs(int size) {
   _node_regs_max_index = size + (size >> 1) + NodeRegsOverflowSize;

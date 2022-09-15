@@ -930,10 +930,8 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
-    } else if (C->regalloc()->is_oop(local)) {
-      assert(t->base() == Type::OopPtr || t->base() == Type::InstPtr ||
-             t->base() == Type::AryPtr,
-             "Unexpected type: %s", t->msg());
+    } else if (t->base() == Type::OopPtr || t->base() == Type::InstPtr ||
+               t->base() == Type::AryPtr) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::oop ));
     } else {
       assert(t->base() == Type::Int || t->base() == Type::Half ||

@@ -46,7 +46,6 @@ class PhaseRegAlloc : public Phase {
 protected:
   OptoRegPair  *_node_regs;
   uint         _node_regs_max_index;
-  VectorSet    _node_oops;         // Mapping from node indices to oopiness
 
   void alloc_node_regs(int size);  // allocate _node_regs table with at least "size" elements
 
@@ -101,9 +100,6 @@ public:
     assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
     _node_regs[idx].set_ptr(reg);
   }
-  // Set and query if a node produces an oop
-  void set_oop( const Node *n, bool );
-  bool is_oop( const Node *n ) const;
 
   // Convert a register number to a stack offset
   int reg2offset          ( OptoReg::Name reg ) const;
