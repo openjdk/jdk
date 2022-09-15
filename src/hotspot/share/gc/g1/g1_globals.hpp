@@ -372,6 +372,11 @@
            number of free regions and the expected survival rates in each   \
            section of the heap.")                                           \
                                                                             \
+  product(uint, G1RestoreRetainedRegionChunksPerWorker, 16, DIAGNOSTIC,     \
+          "The number of chunks assigned per worker thread for "            \
+          "retained region restore purposes.")                              \
+          range(1, 256)                                                     \
+                                                                            \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \
                     product,                                                \

@@ -149,7 +149,7 @@ Address |   |                            |    |   Caller is still in the chunk.
 
 static const bool TEST_THAW_ONE_CHUNK_FRAME = false; // force thawing frames one-at-a-time for testing
 
-#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation peformance debugging only
+#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation performance debugging only
 #if CONT_JFR
   #define CONT_JFR_ONLY(code) code
 #else
@@ -430,7 +430,7 @@ private:
   static inline void relativize_interpreted_frame_metadata(const frame& f, const frame& hf);
 
 protected:
-  void freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp);
+  void freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_JFR_ONLY(COMMA bool chunk_is_allocated));
   bool freeze_fast_new_chunk(stackChunkOop chunk);
 
 #ifdef ASSERT
@@ -540,11 +540,6 @@ freeze_result Freeze<ConfigT>::try_freeze_fast() {
     return freeze_exception;
   }
 
-  EventContinuationFreezeOld e;
-  if (e.should_commit()) {
-    e.set_id(cast_from_oop<u8>(_cont.continuation()));
-    e.commit();
-  }
   // TODO R REMOVE when deopt change is fixed
   assert(!_thread->cont_fastpath() || _barriers, "");
   log_develop_trace(continuations)("-- RETRYING SLOW --");
@@ -610,7 +605,7 @@ void FreezeBase::freeze_fast_existing_chunk() {
     patch_stack_pd(bottom_sp, chunk->sp_address());
     // we don't patch the return pc at this time, so as not to make the stack unwalkable for async walks
 
-    freeze_fast_copy(chunk, chunk_start_sp);
+    freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
   } else { // the chunk is empty
     DEBUG_ONLY(_empty = true;)
     const int chunk_start_sp = chunk->sp();
@@ -620,7 +615,7 @@ void FreezeBase::freeze_fast_existing_chunk() {
     chunk->set_max_thawing_size(cont_size());
     chunk->set_argsize(_cont.argsize());
 
-    freeze_fast_copy(chunk, chunk_start_sp);
+    freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
   }
 }
 
@@ -643,15 +638,14 @@ bool FreezeBase::freeze_fast_new_chunk(stackChunkOop chunk) {
   const int chunk_start_sp = cont_size() + frame::metadata_words;
   assert(chunk_start_sp == chunk->stack_size(), "");
 
-  DEBUG_ONLY(CONT_JFR_ONLY(chunk_is_allocated = true;))
   DEBUG_ONLY(_orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
 
-  freeze_fast_copy(chunk, chunk_start_sp);
+  freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA true));
 
   return true;
 }
 
-void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp) {
+void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_JFR_ONLY(COMMA bool chunk_is_allocated)) {
   assert(chunk != nullptr, "");
   assert(!chunk->has_mixed_frames(), "");
   assert(!chunk->is_gc_mode(), "");
@@ -706,11 +700,11 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp) {
   chunk->verify();
 
 #if CONT_JFR
-  EventContinuationFreezeYoung e;
+  EventContinuationFreezeFast e;
   if (e.should_commit()) {
     e.set_id(cast_from_oop<u8>(chunk));
     DEBUG_ONLY(e.set_allocate(chunk_is_allocated);)
-    e.set_size(cont_size << LogBytesPerWord);
+    e.set_size(cont_size() << LogBytesPerWord);
     e.commit();
   }
 #endif
@@ -723,6 +717,14 @@ NOINLINE freeze_result FreezeBase::freeze_slow() {
 
   log_develop_trace(continuations)("freeze_slow  #" INTPTR_FORMAT, _cont.hash());
   assert(_thread->thread_state() == _thread_in_vm || _thread->thread_state() == _thread_blocked, "");
+
+#if CONT_JFR
+  EventContinuationFreezeSlow e;
+  if (e.should_commit()) {
+    e.set_id(cast_from_oop<u8>(_cont.continuation()));
+    e.commit();
+  }
+#endif
 
   init_rest();
 
@@ -1444,7 +1446,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
   bool fast = UseContinuationFastPath && current->cont_fastpath();
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
-    CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
+    CONT_JFR_ONLY(freeze.jfr_info().post_jfr_event(&event, oopCont, current);)
     freeze_epilog(current, cont);
     return 0;
   }
@@ -1458,7 +1460,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
     freeze_result res = fast ? freeze.try_freeze_fast() : freeze.freeze_slow();
 
-    CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
+    CONT_JFR_ONLY(freeze.jfr_info().post_jfr_event(&event, oopCont, current);)
     freeze_epilog(current, cont, res);
     cont.done(); // allow safepoint in the transition back to Java
     return res;
@@ -1815,7 +1817,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   assert(_cont.chunk_invariant(), "");
 
 #if CONT_JFR
-  EventContinuationThawYoung e;
+  EventContinuationThawFast e;
   if (e.should_commit()) {
     e.set_id(cast_from_oop<u8>(chunk));
     e.set_size(thaw_size << LogBytesPerWord);
@@ -1848,12 +1850,13 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
     chunk->print_on(true, &ls);
   }
 
-  // Does this need ifdef JFR around it? Or can we remove all the conditional JFR inclusions (better)?
-  EventContinuationThawOld e;
+#if CONT_JFR
+  EventContinuationThawSlow e;
   if (e.should_commit()) {
     e.set_id(cast_from_oop<u8>(_cont.continuation()));
     e.commit();
   }
+#endif
 
   DEBUG_ONLY(_frames = 0;)
   _align_size = 0;
