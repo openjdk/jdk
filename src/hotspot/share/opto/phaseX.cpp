@@ -1982,8 +1982,8 @@ Node *PhaseCCP::transform( Node *n ) {
     useful.push(new_node);
   }
 
-  while ( transform_stack.is_nonempty() ) {
-    Node *clone = transform_stack.pop();
+  while (transform_stack.is_nonempty()) {
+    Node* clone = transform_stack.pop();
     uint cnt = clone->req();
     for( uint i = 0; i < cnt; i++ ) {          // For all inputs do
       Node *input = clone->in(i);

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
- *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +25,7 @@
  * @test
  * @bug 8287217
  * @summary CCP must remove nodes that are not traversed, else their type can be inconsistent
- * @run main/othervm -Xcomp -Xbatch -XX:CompileCommand=compileOnly,TestRemoveUnreachableCCP::test
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestRemoveUnreachableCCP::test
  *                   TestRemoveUnreachableCCP
  */
 
@@ -42,7 +41,6 @@ public class TestRemoveUnreachableCCP {
     }
 
     public static void main(String[] strArr) {
-        TestRemoveUnreachableCCP _instance = new TestRemoveUnreachableCCP();
         for (int i = 0; i < 11; i++) {
             test();
         }
