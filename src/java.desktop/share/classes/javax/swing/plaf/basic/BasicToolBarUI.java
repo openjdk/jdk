@@ -63,7 +63,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * The instance of {@code DragWindow}.
      */
     protected DragWindow dragWindow;
-    private Container dockingSource;
+    protected Container dockingSource;
     private int dockingSensitivity = 0;
     /**
      * The index of the focused component.
