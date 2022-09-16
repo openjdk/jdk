@@ -101,7 +101,7 @@ public class I18NArgTest extends TestHelper {
         // When pass "-Dfoo.bar=<unicodestr>" via the JDK_JAVA_OPTIONS environment variable,
         // we expect that system property value to be passed along to the main method with the
         // correct encoding
-        // If <unicodestr> contains space or tab, it should beenclosed with double quotes.
+        // If <unicodestr> contains space or tab, it should be enclosed with double quotes.
         if (unicodeStr.contains(" ") || unicodeStr.contains("\t")) {
             unicodeStr = "\"" + unicodeStr + "\"";
         }
