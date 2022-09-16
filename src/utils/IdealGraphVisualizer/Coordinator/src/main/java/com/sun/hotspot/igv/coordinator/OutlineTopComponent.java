@@ -130,8 +130,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
         final GroupCallback callback = g -> {
             synchronized(OutlineTopComponent.this) {
-                getDocument().addElement(g);
                 g.setParent(getDocument());
+                getDocument().addElement(g);
             }
         };
 
