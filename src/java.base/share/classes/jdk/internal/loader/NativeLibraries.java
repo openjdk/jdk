@@ -335,16 +335,14 @@ public final class NativeLibraries {
         private boolean throwExceptionIfFail() {
             if (loadLibraryOnlyIfPresent) return true;
 
-            boolean fileExists = AccessController.doPrivileged(new PrivilegedAction<>() {
+            // If the file exists but fails to load, UnsatisfiedLinkException thrown by the VM
+            // will include the error message from dlopen to provide diagnostic information
+            return AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Boolean run() {
                     File file = new File(name);
                     return file.exists();
                 }
             });
-
-            // If the file exists but fails to load, UnsatisfiedLinkException thrown by the VM
-            // will include the error message from dlopen to provide diagnostic information
-            return fileExists;
         }
 
         /*
