@@ -301,10 +301,11 @@ public abstract class ClassLoader {
     // is parallel capable and the appropriate lock object for class loading.
     private final ConcurrentHashMap<String, Object> parallelLockMap;
 
-    // Synchronization for parallel class loading for this class loader.
-    // Maps a class name to the thread that is currently loading the class
-    // when the current class loader is NOT parallel capable.
-    private final ConcurrentHashMap<String, Thread> parallelClassLoadMap;
+    // Synchronization for class loading when the current class loader is NOT
+    // parallel capable.  The non-parallel capable class loader locks
+    // the ClassLoader lock. Maps a class name to the thread that is currently
+    // loading the class in case the ClassLoader lock is broken.
+    private final ConcurrentHashMap<String, Thread> threadLoadingClassMap;
 
     // Maps packages to certs
     private final ConcurrentHashMap<String, Certificate[]> package2certs;
@@ -386,12 +387,12 @@ public abstract class ClassLoader {
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
             assertionLock = new Object();
-            parallelClassLoadMap = null;
+            threadLoadingClassMap = null;
         } else {
             // no finer-grained lock; lock on the classloader instance
             parallelLockMap = null;
             assertionLock = this;
-            parallelClassLoadMap = new ConcurrentHashMap<>();
+            threadLoadingClassMap = new ConcurrentHashMap<>();
         }
         this.package2certs = new ConcurrentHashMap<>();
         this.nameAndId = nameAndId(this);
@@ -760,27 +761,16 @@ public abstract class ClassLoader {
         return null;
     }
 
-    // The parallelClassLoadMap is a concurrent hashtable that keeps track of the classes
-    // that are currently being loaded by this class loader.  The class name is mapped to
+    // The threadLoadingClassMap is a concurrent hashtable that keeps track of the threads
+    // that are currently loading each class by this class loader.  The class name is mapped to
     // the thread that is first seen loading that class, then removed when loading is complete
     // for that class or throws an exception.
-    private enum LoadedState { CLAIMED, LOADING, CCE };
-
-    private final LoadedState getParallelLoadClass(String name) {
-        Thread thread = Thread.currentThread();
-        Thread pt = parallelClassLoadMap.putIfAbsent(name, thread);
-        if (pt == null) {
-            return LoadedState.CLAIMED;
-        } else if (pt == thread) {
-            return LoadedState.CCE;
-        } else {
-            // Another thread is loading this class.
-            return LoadedState.LOADING;
-        }
+    private final Thread curThreadLoadingClass(String name, Thread thread) {
+        return threadLoadingClassMap.putIfAbsent(name, thread);
     }
 
-    private final void removeParallelLoadClass(String name) {
-        parallelClassLoadMap.remove(name);
+    private final void removeThreadLoadingClass(String name) {
+        threadLoadingClassMap.remove(name);
         // Notify threads waiting on the class loader lock
         // that this class has been loaded or failed.
         notifyAll();
@@ -793,10 +783,11 @@ public abstract class ClassLoader {
     // To minimize surprises, this thread waits while the first thread
     // that started to load a class completes the loading or fails.
     @SuppressWarnings("removal")
-    private LoadedState waitForParallelLoadClass(String name) {
-        LoadedState state;
+    private Thread waitForThreadLoadingClass(String name, Thread currentThread) {
+        Thread thread;
         boolean interrupted = false;
-        while ((state = getParallelLoadClass(name)) == LoadedState.LOADING) {
+        while ((thread = curThreadLoadingClass(name, currentThread)) != currentThread) {
+            // Some other thread is loading this class name
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -808,12 +799,12 @@ public abstract class ClassLoader {
             // reassert the interrupt status before exiting.
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
-                   Thread.currentThread().interrupt();
+                    currentThread.interrupt();
                     return null;
                 }
             });
         }
-        return state;
+        return thread;
     }
 
     // This function is called by VM to load a class for a non-parallel-capable ClassLoader.
@@ -826,25 +817,26 @@ public abstract class ClassLoader {
     {
         // The JVM calls loadClass directly for parallel-capable class loaders
         assert (parallelLockMap == null);
-        LoadedState state = getParallelLoadClass(name);
-        if (state == LoadedState.LOADING) {
-            // notify loading threads
+        Thread currentThread = Thread.currentThread();
+        Thread thread = curThreadLoadingClass(name, currentThread);
+        if (thread != currentThread) {
+            // notify loading thread once
             notifyAll();
-            state = waitForParallelLoadClass(name);
+            thread = waitForThreadLoadingClass(name, currentThread);
         }
-        // Now load class.
-        if (state == LoadedState.CLAIMED) {
+        // Now load class if no other thread is loading it.
+        if (thread == null) {
             Class<?> loadedClass = null;
             try {
                 loadedClass = loadClass(name);
             } finally {
-                removeParallelLoadClass(name);
+                removeThreadLoadingClass(name);
             }
             return loadedClass;
         } else {
             // A class circularity error is detected while loading this class
-            assert (state == LoadedState.CCE);
-            removeParallelLoadClass(name);
+            assert(thread == currentThread);
+            removeThreadLoadingClass(name);
             throw new ClassCircularityError(name);
         }
     }
