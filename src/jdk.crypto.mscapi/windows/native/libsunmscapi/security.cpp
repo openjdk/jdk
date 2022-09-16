@@ -162,7 +162,7 @@ void ThrowException(JNIEnv *env, const char *exceptionName, DWORD dwError)
     if (res == 0) {
         strcpy(szMessage, "Unknown error");
     }
-    snprintf(szMessage2, sizeof(szMessage2), "error %lu, %s", msg, dwError, szMessage);
+    snprintf(szMessage2, sizeof(szMessage2), "error %lu, %s", dwError, szMessage);
 
     ThrowExceptionWithMessage(env, exceptionName, szMessage2);
 }
