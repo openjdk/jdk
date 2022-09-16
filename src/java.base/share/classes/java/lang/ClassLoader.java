@@ -301,7 +301,9 @@ public abstract class ClassLoader {
     // is parallel capable and the appropriate lock object for class loading.
     private final ConcurrentHashMap<String, Object> parallelLockMap;
 
-    // Synchronization for parallel class loading in this class loader.
+    // Synchronization for parallel class loading for this class loader.
+    // Maps a class name to the thread that is currently loading the class
+    // when the current class loader is NOT parallel capable.
     private final ConcurrentHashMap<String, Thread> parallelClassLoadMap;
 
     // Maps packages to certs
@@ -758,6 +760,10 @@ public abstract class ClassLoader {
         return null;
     }
 
+    // The parallelClassLoadMap is a concurrent hashtable that keeps track of the classes
+    // that are currently being loaded by this class loader.  The class name is mapped to
+    // the thread that is first seen loading that class, then removed when loading is complete
+    // for that class or throws an exception.
     private enum LoadedState { CLAIMED, LOADING, CCE };
 
     private final LoadedState getParallelLoadClass(String name) {
