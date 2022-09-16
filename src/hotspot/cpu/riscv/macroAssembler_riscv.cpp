@@ -2701,7 +2701,7 @@ void MacroAssembler::la_patchable(Register reg1, const Address &dest, int32_t &o
   // RISC-V doesn't compute a page-aligned address, in order to partially
   // compensate for the use of *signed* offsets in its base+disp12
   // addressing mode (RISC-V's PC-relative reach remains asymmetric
-  // [-(2G + 2K), 2G - 2k).
+  // [-(2G + 2K), 2G - 2K).
   if (offset_high >= -((1L << 31) + (1L << 11)) && offset_low < (1L << 31) - (1L << 11)) {
     int64_t distance = dest.target() - pc();
     auipc(reg1, (int32_t)distance + 0x800);
