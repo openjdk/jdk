@@ -152,16 +152,19 @@ void ThrowExceptionWithMessageAndErrcode(JNIEnv *env, const char *exceptionName,
  */
 void ThrowException(JNIEnv *env, const char *exceptionName, DWORD dwError)
 {
-    char szMessage[1024];
+    char szMessage[500];
     szMessage[0] = '\0';
+    char szMessage2[1024];
+    szMessage2[0] = '\0';
 
     DWORD res = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
         NULL, szMessage, sizeof(szMessage), NULL);
     if (res == 0) {
         strcpy(szMessage, "Unknown error");
     }
+    snprintf(szMessage2, sizeof(szMessage2), "error %lu, %s", msg, dwError, szMessage);
 
-    ThrowExceptionWithMessage(env, exceptionName, szMessage);
+    ThrowExceptionWithMessage(env, exceptionName, szMessage2);
 }
 
 /*
