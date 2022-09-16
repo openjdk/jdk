@@ -29,19 +29,8 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <unistd.h>
-#ifdef MACOSX
-#include <sys/mount.h>
-#include <sys/param.h>
-#endif
 #include <sys/stat.h>
 #include <sys/statvfs.h>
-
-#if defined(__linux__)
-#include <linux/fs.h>
-#include <sys/ioctl.h>
-#include <sys/sendfile.h>
-#include <dlfcn.h>
-#endif
 
 #if defined(_ALLBSD_SOURCE)
 #define lseek64 lseek
@@ -56,10 +45,8 @@
 #define fstat64 fstat
 #define fdatasync fsync
 #define mmap64 mmap
-#endif
-
-#if defined(_AIX)
-#include <string.h>
+#define statvfs64 statvfs
+#define fstatvfs64 fstatvfs
 #endif
 
 #include "jni.h"
@@ -68,23 +55,16 @@
 #include "jlong.h"
 #include "nio.h"
 #include "nio_util.h"
-#include "sun_nio_ch_FileDispatcherImpl.h"
+#include "sun_nio_ch_UnixFileDispatcherImpl.h"
 #include "java_lang_Integer.h"
 #include "java_lang_Long.h"
 #include <assert.h>
 
-#if defined(__linux__)
-typedef ssize_t copy_file_range_func(int, loff_t*, int, loff_t*, size_t,
-                                     unsigned int);
-static copy_file_range_func* my_copy_file_range_func = NULL;
-#endif
-
 static int preCloseFD = -1;     /* File descriptor to which we dup other fd's
                                    before closing them for real */
 
-
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_init(JNIEnv *env, jclass cl)
+Java_sun_nio_ch_UnixFileDispatcherImpl_init(JNIEnv *env, jclass cl)
 {
     int sp[2];
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
@@ -93,14 +73,10 @@ Java_sun_nio_ch_FileDispatcherImpl_init(JNIEnv *env, jclass cl)
     }
     preCloseFD = sp[0];
     close(sp[1]);
-#if defined(__linux__)
-    my_copy_file_range_func =
-        (copy_file_range_func*) dlsym(RTLD_DEFAULT, "copy_file_range");
-#endif
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_read0(JNIEnv *env, jclass clazz,
+Java_sun_nio_ch_UnixFileDispatcherImpl_read0(JNIEnv *env, jclass clazz,
                              jobject fdo, jlong address, jint len)
 {
     jint fd = fdval(env, fdo);
@@ -110,7 +86,7 @@ Java_sun_nio_ch_FileDispatcherImpl_read0(JNIEnv *env, jclass clazz,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo,
+Java_sun_nio_ch_UnixFileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo,
                             jlong address, jint len, jlong offset)
 {
     jint fd = fdval(env, fdo);
@@ -120,7 +96,7 @@ Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_readv0(JNIEnv *env, jclass clazz,
+Java_sun_nio_ch_UnixFileDispatcherImpl_readv0(JNIEnv *env, jclass clazz,
                               jobject fdo, jlong address, jint len)
 {
     jint fd = fdval(env, fdo);
@@ -129,7 +105,7 @@ Java_sun_nio_ch_FileDispatcherImpl_readv0(JNIEnv *env, jclass clazz,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_write0(JNIEnv *env, jclass clazz,
+Java_sun_nio_ch_UnixFileDispatcherImpl_write0(JNIEnv *env, jclass clazz,
                               jobject fdo, jlong address, jint len)
 {
     jint fd = fdval(env, fdo);
@@ -139,7 +115,7 @@ Java_sun_nio_ch_FileDispatcherImpl_write0(JNIEnv *env, jclass clazz,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fdo,
+Java_sun_nio_ch_UnixFileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fdo,
                             jlong address, jint len, jlong offset)
 {
     jint fd = fdval(env, fdo);
@@ -149,7 +125,7 @@ Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fd
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz,
+Java_sun_nio_ch_UnixFileDispatcherImpl_writev0(JNIEnv *env, jclass clazz,
                                        jobject fdo, jlong address, jint len)
 {
     jint fd = fdval(env, fdo);
@@ -169,7 +145,7 @@ handle(JNIEnv *env, jlong rv, char *msg)
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_seek0(JNIEnv *env, jclass clazz,
+Java_sun_nio_ch_UnixFileDispatcherImpl_seek0(JNIEnv *env, jclass clazz,
                                          jobject fdo, jlong offset)
 {
     jint fd = fdval(env, fdo);
@@ -183,52 +159,23 @@ Java_sun_nio_ch_FileDispatcherImpl_seek0(JNIEnv *env, jclass clazz,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_UnixFileDispatcherImpl_force0(JNIEnv *env, jobject this,
                                           jobject fdo, jboolean md)
 {
     jint fd = fdval(env, fdo);
     int result = 0;
 
-#ifdef MACOSX
-    result = fcntl(fd, F_FULLFSYNC);
-    if (result == -1) {
-        struct statfs fbuf;
-        int errno_fcntl = errno;
-        if (fstatfs(fd, &fbuf) == 0) {
-            if ((fbuf.f_flags & MNT_LOCAL) == 0) {
-                /* Try fsync() in case file is not local. */
-                result = fsync(fd);
-            }
-        } else {
-            /* fstatfs() failed so restore errno from fcntl(). */
-            errno = errno_fcntl;
-        }
-    }
-#else /* end MACOSX, begin not-MACOSX */
     if (md == JNI_FALSE) {
         result = fdatasync(fd);
     } else {
-#ifdef _AIX
-        /* On AIX, calling fsync on a file descriptor that is opened only for
-         * reading results in an error ("EBADF: The FileDescriptor parameter is
-         * not a valid file descriptor open for writing.").
-         * However, at this point it is not possibly anymore to read the
-         * 'writable' attribute of the corresponding file channel so we have to
-         * use 'fcntl'.
-         */
-        int getfl = fcntl(fd, F_GETFL);
-        if (getfl >= 0 && (getfl & O_ACCMODE) == O_RDONLY) {
-            return 0;
-        }
-#endif /* _AIX */
         result = fsync(fd);
     }
-#endif /* not-MACOSX */
+
     return handle(env, result, "Force failed");
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_UnixFileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
                                              jobject fdo, jlong size)
 {
     return handle(env,
@@ -237,7 +184,7 @@ Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
+Java_sun_nio_ch_UnixFileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
 {
     jint fd = fdval(env, fdo);
     struct stat64 fbuf;
@@ -258,7 +205,7 @@ Java_sun_nio_ch_FileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
+Java_sun_nio_ch_UnixFileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
                                       jboolean block, jlong pos, jlong size,
                                       jboolean shared)
 {
@@ -287,16 +234,16 @@ Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
     lockResult = fcntl(fd, cmd, &fl);
     if (lockResult < 0) {
         if ((cmd == F_SETLK64) && (errno == EAGAIN || errno == EACCES))
-            return sun_nio_ch_FileDispatcherImpl_NO_LOCK;
+            return sun_nio_ch_UnixFileDispatcherImpl_NO_LOCK;
         if (errno == EINTR)
-            return sun_nio_ch_FileDispatcherImpl_INTERRUPTED;
+            return sun_nio_ch_UnixFileDispatcherImpl_INTERRUPTED;
         JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
     }
     return 0;
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_UnixFileDispatcherImpl_release0(JNIEnv *env, jobject this,
                                          jobject fdo, jlong pos, jlong size)
 {
     jint fd = fdval(env, fdo);
@@ -328,14 +275,14 @@ static void closeFileDescriptor(JNIEnv *env, int fd) {
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_close0(JNIEnv *env, jclass clazz, jobject fdo)
+Java_sun_nio_ch_UnixFileDispatcherImpl_close0(JNIEnv *env, jclass clazz, jobject fdo)
 {
     jint fd = fdval(env, fdo);
     closeFileDescriptor(env, fd);
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_preClose0(JNIEnv *env, jclass clazz, jobject fdo)
+Java_sun_nio_ch_UnixFileDispatcherImpl_preClose0(JNIEnv *env, jclass clazz, jobject fdo)
 {
     jint fd = fdval(env, fdo);
     if (preCloseFD >= 0) {
@@ -345,7 +292,7 @@ Java_sun_nio_ch_FileDispatcherImpl_preClose0(JNIEnv *env, jclass clazz, jobject 
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_dup0(JNIEnv *env, jobject this, jobject fdo1, jobject fdo2)
+Java_sun_nio_ch_UnixFileDispatcherImpl_dup0(JNIEnv *env, jobject this, jobject fdo1, jobject fdo2)
 {
     if (dup2(fdval(env, fdo1), fdval(env, fdo2)) < 0) {
         JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
@@ -353,30 +300,20 @@ Java_sun_nio_ch_FileDispatcherImpl_dup0(JNIEnv *env, jobject this, jobject fdo1,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_closeIntFD(JNIEnv *env, jclass clazz, jint fd)
+Java_sun_nio_ch_UnixFileDispatcherImpl_closeIntFD(JNIEnv *env, jclass clazz, jint fd)
 {
     closeFileDescriptor(env, fd);
 }
 
-JNIEXPORT jboolean JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_canTransferToFromOverlappedMap0(JNIEnv *env, jclass clazz)
-{
-#ifdef MACOSX
-    return JNI_FALSE;
-#else
-    return JNI_TRUE;
-#endif
-}
-
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_allocationGranularity0(JNIEnv *env, jclass klass)
+Java_sun_nio_ch_UnixFileDispatcherImpl_allocationGranularity0(JNIEnv *env, jclass klass)
 {
     jlong pageSize = sysconf(_SC_PAGESIZE);
     return pageSize;
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject fdo,
+Java_sun_nio_ch_UnixFileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject fdo,
                                         jint prot, jlong off, jlong len,
                                         jboolean map_sync)
 {
@@ -386,15 +323,15 @@ Java_sun_nio_ch_FileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject fdo,
     int flags = 0;
 
     // should never be called with map_sync and prot == PRIVATE
-    assert((prot != sun_nio_ch_FileDispatcherImpl_MAP_PV) || !map_sync);
+    assert((prot != sun_nio_ch_UnixFileDispatcherImpl_MAP_PV) || !map_sync);
 
-    if (prot == sun_nio_ch_FileDispatcherImpl_MAP_RO) {
+    if (prot == sun_nio_ch_UnixFileDispatcherImpl_MAP_RO) {
         protections = PROT_READ;
         flags = MAP_SHARED;
-    } else if (prot == sun_nio_ch_FileDispatcherImpl_MAP_RW) {
+    } else if (prot == sun_nio_ch_UnixFileDispatcherImpl_MAP_RW) {
         protections = PROT_WRITE | PROT_READ;
         flags = MAP_SHARED;
-    } else if (prot == sun_nio_ch_FileDispatcherImpl_MAP_PV) {
+    } else if (prot == sun_nio_ch_UnixFileDispatcherImpl_MAP_PV) {
         protections =  PROT_WRITE | PROT_READ;
         flags = MAP_PRIVATE;
     }
@@ -451,7 +388,7 @@ Java_sun_nio_ch_FileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject fdo,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_unmap0(JNIEnv *env, jclass klass,
+Java_sun_nio_ch_UnixFileDispatcherImpl_unmap0(JNIEnv *env, jclass klass,
                                           jlong address, jlong len)
 {
     void *a = (void *)jlong_to_ptr(address);
@@ -461,184 +398,12 @@ Java_sun_nio_ch_FileDispatcherImpl_unmap0(JNIEnv *env, jclass klass,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_maxDirectTransferSize0(JNIEnv* env, jclass klass) {
-#if defined(__linux__)
-    return 0x7ffff000; // 2,147,479,552 maximum for sendfile()
-#else
-    return java_lang_Integer_MAX_VALUE;
-#endif
-}
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
-                                               jobject srcFDO,
-                                               jlong position, jlong count,
-                                               jobject dstFDO, jboolean append)
-{
-    jint srcFD = fdval(env, srcFDO);
-    jint dstFD = fdval(env, dstFDO);
-
-#if defined(__linux__)
-    // copy_file_range fails with EBADF when appending, and sendfile
-    // fails with EINVAL
-    if (append == JNI_TRUE)
-        return IOS_UNSUPPORTED_CASE;
-
-    off64_t offset = (off64_t)position;
-    jlong n;
-    if (my_copy_file_range_func != NULL) {
-        size_t len = (size_t)count;
-        n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, len, 0);
-        if (n < 0) {
-            switch (errno) {
-                case EINTR:
-                    return IOS_INTERRUPTED;
-                case EINVAL:
-                case ENOSYS:
-                case EXDEV:
-                    // ignore and try sendfile()
-                    break;
-                default:
-                    JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
-                    return IOS_THROWN;
-            }
-        }
-        if (n >= 0)
-            return n;
-    }
-
-    n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
-    if (n < 0) {
-        if (errno == EAGAIN)
-            return IOS_UNAVAILABLE;
-        if ((errno == EINVAL) && ((ssize_t)count >= 0))
-            return IOS_UNSUPPORTED_CASE;
-        if (errno == EINTR) {
-            return IOS_INTERRUPTED;
-        }
-        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
-        return IOS_THROWN;
-    }
-    return n;
-#elif defined(_ALLBSD_SOURCE)
-    off_t numBytes;
-    int result;
-
-    numBytes = count;
-
-    result = sendfile(srcFD, dstFD, position, &numBytes, NULL, 0);
-
-    if (numBytes > 0)
-        return numBytes;
-
-    if (result == -1) {
-        if (errno == EAGAIN)
-            return IOS_UNAVAILABLE;
-        if (errno == EOPNOTSUPP || errno == ENOTSOCK || errno == ENOTCONN)
-            return IOS_UNSUPPORTED_CASE;
-        if ((errno == EINVAL) && ((ssize_t)count >= 0))
-            return IOS_UNSUPPORTED_CASE;
-        if (errno == EINTR)
-            return IOS_INTERRUPTED;
-        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
-        return IOS_THROWN;
-    }
-
-    return result;
-#elif defined(_AIX)
-    jlong max = (jlong)java_lang_Integer_MAX_VALUE;
-    struct sf_parms sf_iobuf;
-    jlong result;
-
-    if (position > max)
-        return IOS_UNSUPPORTED_CASE;
-
-    if (count > max)
-        count = max;
-
-    memset(&sf_iobuf, 0, sizeof(sf_iobuf));
-    sf_iobuf.file_descriptor = srcFD;
-    sf_iobuf.file_offset = (off_t)position;
-    sf_iobuf.file_bytes = count;
-
-    result = send_file(&dstFD, &sf_iobuf, SF_SYNC_CACHE);
-
-    /* AIX send_file() will return 0 when this operation complete successfully,
-     * return 1 when partial bytes transferred and return -1 when an error has
-     * occurred.
-     */
-    if (result == -1) {
-        if (errno == EWOULDBLOCK)
-            return IOS_UNAVAILABLE;
-        if ((errno == EINVAL) && ((ssize_t)count >= 0))
-            return IOS_UNSUPPORTED_CASE;
-        if (errno == EINTR)
-            return IOS_INTERRUPTED;
-        if (errno == ENOTSOCK)
-            return IOS_UNSUPPORTED;
-        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
-        return IOS_THROWN;
-    }
-
-    if (sf_iobuf.bytes_sent > 0)
-        return (jlong)sf_iobuf.bytes_sent;
-
-    return IOS_UNSUPPORTED_CASE;
-#else
-    return IOS_UNSUPPORTED;
-#endif
-}
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_transferFrom0(JNIEnv *env, jobject this,
-                                                 jobject srcFDO, jobject dstFDO,
-                                                 jlong position, jlong count,
-                                                 jboolean append)
-{
-#if defined(__linux__)
-    if (my_copy_file_range_func == NULL)
-        return IOS_UNSUPPORTED;
-    // copy_file_range fails with EBADF when appending
-    if (append == JNI_TRUE)
-        return IOS_UNSUPPORTED_CASE;
-
-    jint srcFD = fdval(env, srcFDO);
-    jint dstFD = fdval(env, dstFDO);
-
-    off64_t offset = (off64_t)position;
-    size_t len = (size_t)count;
-    jlong n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, len, 0);
-    if (n < 0) {
-        if (errno == EAGAIN)
-            return IOS_UNAVAILABLE;
-        if (errno == ENOSYS)
-            return IOS_UNSUPPORTED_CASE;
-        if ((errno == EBADF || errno == EINVAL || errno == EXDEV) &&
-            ((ssize_t)count >= 0))
-            return IOS_UNSUPPORTED_CASE;
-        if (errno == EINTR) {
-            return IOS_INTERRUPTED;
-        }
-        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
-        return IOS_THROWN;
-    }
-    return n;
-#else
-    return IOS_UNSUPPORTED;
-#endif
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
+Java_sun_nio_ch_UnixFileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
                                               jobject fdo)
 {
     jint fd = fdval(env, fdo);
     jint result;
-#ifdef MACOSX
-    struct statvfs file_stat;
-#else
     struct statvfs64 file_stat;
-#endif
 
 #if defined(O_DIRECT) || defined(F_NOCACHE) || defined(DIRECTIO_ON)
 #ifdef O_DIRECT
@@ -666,11 +431,7 @@ Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
         return result;
     }
 #endif
-#ifdef MACOSX
-    result = fstatvfs(fd, &file_stat);
-#else
     result = fstatvfs64(fd, &file_stat);
-#endif
     if(result == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
         return result;
