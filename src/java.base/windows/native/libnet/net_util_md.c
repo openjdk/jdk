@@ -227,7 +227,7 @@ jint  IPv6_supported()
     return JNI_TRUE;
 }
 
-jint reuseport_supported()
+jint reuseport_supported(int ipv6_available)
 {
     /* SO_REUSEPORT is not supported on Windows */
     return JNI_FALSE;
