@@ -452,7 +452,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     private void closeOnRemovedOrEmptyGroup() {
-        Group group = getDiagram().getGraph().getGroup();
+        Group group = getDiagramModel().getGroup();
         if (!group.getParent().getElements().contains(group) ||
             group.getGraphs().isEmpty()) {
             close();
