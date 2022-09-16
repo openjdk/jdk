@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,12 +96,14 @@ class GCTracer : public ResourceObj {
   SharedGCInfo _shared_gc_info;
 
  public:
+  bool should_report_cpu_time_event() const;
   void report_gc_start(GCCause::Cause cause, const Ticks& timestamp);
   void report_gc_end(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const;
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
   void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
+  void report_cpu_time_event(double user_time, double system_time, double real_time) const;
 
  protected:
   GCTracer(GCName name) : _shared_gc_info(name) {}
@@ -109,12 +111,14 @@ class GCTracer : public ResourceObj {
   virtual void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  private:
+  bool should_send_cpu_time_event() const;
   void send_garbage_collection_event() const;
   void send_gc_heap_summary_event(GCWhen::Type when, const GCHeapSummary& heap_summary) const;
   void send_meta_space_summary_event(GCWhen::Type when, const MetaspaceSummary& meta_space_summary) const;
   void send_metaspace_chunk_free_list_summary(GCWhen::Type when, Metaspace::MetadataType mdtype, const MetaspaceChunkFreeListSummary& summary) const;
   void send_reference_stats_event(ReferenceType type, size_t count) const;
   void send_phase_events(TimePartitions* time_partitions) const;
+  void send_cpu_time_event(double user_time, double system_time, double real_time) const;
 };
 
 class YoungGCTracer : public GCTracer {

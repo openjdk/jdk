@@ -428,7 +428,7 @@ abstract class UnixFileSystem
     }
 
     // The flags that control how a file is copied or moved
-    private static class Flags {
+    protected static class Flags {
         boolean replaceExisting;
         boolean atomicMove;
         boolean followLinks;
@@ -668,8 +668,11 @@ abstract class UnixFileSystem
             // set to true when file and attributes copied
             boolean complete = false;
             try {
+                // set to true when data copied
                 boolean copied = false;
-                if (!directCopyNotSupported) {
+
+                // Some forms of direct copy do not work on zero size files
+                if (!directCopyNotSupported && attrs.size() > 0) {
                     // copy bytes to target using platform function
                     long comp = Blocker.begin();
                     try {

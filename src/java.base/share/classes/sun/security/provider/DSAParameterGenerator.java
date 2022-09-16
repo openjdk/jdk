@@ -105,10 +105,9 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
     @Override
     protected void engineInit(AlgorithmParameterSpec genParamSpec,
             SecureRandom random) throws InvalidAlgorithmParameterException {
-        if (!(genParamSpec instanceof DSAGenParameterSpec)) {
+        if (!(genParamSpec instanceof DSAGenParameterSpec dsaGenParams)) {
             throw new InvalidAlgorithmParameterException("Invalid parameter");
         }
-        DSAGenParameterSpec dsaGenParams = (DSAGenParameterSpec)genParamSpec;
 
         // directly initialize using the already validated values
         this.valueL = dsaGenParams.getPrimePLength();
@@ -124,7 +123,7 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
      */
     @Override
     protected AlgorithmParameters engineGenerateParameters() {
-        AlgorithmParameters algParams = null;
+        AlgorithmParameters algParams;
         try {
             if (this.random == null) {
                 this.random = new SecureRandom();
@@ -142,13 +141,12 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
                 new DSAParameterSpec(paramP, paramQ, paramG);
             algParams = AlgorithmParameters.getInstance("DSA", "SUN");
             algParams.init(dsaParamSpec);
-        } catch (InvalidParameterSpecException e) {
+        } catch (InvalidParameterSpecException | NoSuchAlgorithmException |
+                NoSuchProviderException e) {
             // this should never happen
             throw new RuntimeException(e.getMessage());
-        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            // this should never happen, because we provide it
-            throw new RuntimeException(e.getMessage());
         }
+
 
         return algParams;
     }
@@ -203,7 +201,7 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
         if (primeCertainty < 0) {
             throw new ProviderException("Invalid valueL: " + valueL);
         }
-        BigInteger resultP, resultQ, seed = null;
+        BigInteger resultP, resultQ, seed;
         int counter;
         while (true) {
             do {
@@ -251,9 +249,8 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
                 if (resultP.compareTo(twoLm1) > -1
                     && resultP.isProbablePrime(primeCertainty)) {
                     /* Step 11.8 */
-                    BigInteger[] result = {resultP, resultQ, seed,
+                    return new BigInteger[]{resultP, resultQ, seed,
                                            BigInteger.valueOf(counter)};
-                    return result;
                 }
                 /* Step 11.9 */
                 offset = offset.add(BigInteger.valueOf(n)).add(BigInteger.ONE);

@@ -2482,8 +2482,7 @@ bool LibraryCallKit::inline_vector_convert() {
   // through a vector or predicate register.
   if (is_mask &&
       ((src_type->isa_vectmask() == NULL && dst_type->isa_vectmask()) ||
-       (dst_type->isa_vectmask() == NULL && src_type->isa_vectmask()) ||
-       num_elem_from != num_elem_to)) {
+       (dst_type->isa_vectmask() == NULL && src_type->isa_vectmask()))) {
     return false;
   }
 
