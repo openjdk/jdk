@@ -212,8 +212,7 @@ class PerfCounterSnapshot {
         capacity = getCapacity(ns);
     }
 
-    public boolean equals(Object object) {
-        PerfCounterSnapshot other = (PerfCounterSnapshot)object;
+    public boolean consistentWith(PerfCounterSnapshot other) {
         return (minCapacity == other.minCapacity) && (maxCapacity == other.maxCapacity) &&
             (used == other.used) && (capacity == other.capacity);
     }
@@ -249,7 +248,7 @@ public class TestMetaspacePerfCounters {
             VarHandle.fullFence();
             snap2.get(ns);
 
-            if (snap1.equals(snap2)) {
+            if (snap1.consistentWith(snap2)) {
               // Got a consistent snapshot for examination.
               break;
             } else if (attempts == MaxAttempts) {
