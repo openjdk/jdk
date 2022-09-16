@@ -1351,7 +1351,7 @@ public class CSS implements Serializable {
       return colorstr;
     }
 
-    private static Pattern hex   = Pattern.compile("\\p{XDigit}+");
+    private static Pattern hex = Pattern.compile("\\p{XDigit}+");
 
     /**
      * Convert a "#FFF", "#FFFF", "#FFFFFF" or "#FFFFFFFF" hex string to a Color.
@@ -1391,7 +1391,7 @@ public class CSS implements Serializable {
             final String g = digits.substring(1, 2);
             final String b = digits.substring(2, 3);
             digits = String.format("%s%s%s%s%s%sff", r, r, g, g, b, b);
-        } else if (n==4 && hex.matcher(digits).matches()) {
+        } else if (n == 4 && hex.matcher(digits).matches()) {
             final String r = digits.substring(0, 1);
             final String g = digits.substring(1, 2);
             final String b = digits.substring(2, 3);
@@ -1405,7 +1405,7 @@ public class CSS implements Serializable {
         try {
             Integer intValue = Integer.parseUnsignedInt(digits, 16);
             int l = intValue.intValue();
-            return new Color((l >> 24) & 0xFF,(l >> 16) & 0xFF, (l >> 8) & 0xFF, l & 0xFF);
+            return new Color((l >> 24) & 0xFF, (l >> 16) & 0xFF, (l >> 8) & 0xFF, l & 0xFF);
         } catch (NumberFormatException nfe) {
             return null;
         }
