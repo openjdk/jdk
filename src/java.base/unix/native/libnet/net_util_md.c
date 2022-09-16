@@ -95,15 +95,6 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     }
 }
 
-
-jfieldID
-NET_GetFileDescriptorID(JNIEnv *env)
-{
-    jclass cls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    CHECK_NULL_RETURN(cls, NULL);
-    return (*env)->GetFieldID(env, cls, "fd", "I");
-}
-
 jint  IPv4_supported()
 {
     int fd = socket(AF_INET, SOCK_STREAM, 0) ;

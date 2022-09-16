@@ -205,14 +205,6 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
     JNU_ThrowByNameWithMessageAndLastError(env, name, defaultDetail);
 }
 
-jfieldID
-NET_GetFileDescriptorID(JNIEnv *env)
-{
-    jclass cls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    CHECK_NULL_RETURN(cls, NULL);
-    return (*env)->GetFieldID(env, cls, "fd", "I");
-}
-
 jint  IPv4_supported()
 {
     SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
@@ -483,19 +475,6 @@ NET_SocketClose(int fd) {
         }
     }
     ret = closesocket (fd);
-    return ret;
-}
-
-JNIEXPORT int JNICALL
-NET_Timeout(int fd, long timeout) {
-    int ret;
-    fd_set tbl;
-    struct timeval t;
-    t.tv_sec = timeout / 1000;
-    t.tv_usec = (timeout % 1000) * 1000;
-    FD_ZERO(&tbl);
-    FD_SET(fd, &tbl);
-    ret = select (fd + 1, &tbl, 0, 0, &t);
     return ret;
 }
 

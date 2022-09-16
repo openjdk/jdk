@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,6 @@
 
 /* true if SO_RCVTIMEO is supported by underlying provider */
 extern jboolean isRcvTimeoutSupported;
-
-void NET_ThrowCurrent(JNIEnv *env, char *msg);
 
 typedef union {
     struct sockaddr     sa;
@@ -117,10 +115,6 @@ struct ipv6bind {
         ((IN6_IS_ADDR_LOOPBACK(&(x)->sa6.sin6_addr)) || \
          (IN6_IS_ADDR_V4MAPPED_LOOPBACK(&(x)->sa6.sin6_addr))) \
 )
-
-JNIEXPORT int JNICALL NET_SocketClose(int fd);
-
-JNIEXPORT int JNICALL NET_Timeout(int fd, long timeout);
 
 int NET_Socket(int domain, int type, int protocol);
 
