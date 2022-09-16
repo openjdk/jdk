@@ -222,14 +222,14 @@ import sun.nio.cs.UTF_8;
  * <p> <i>Relativization</i>, finally, can be regarded as the inverse of resolution.
  * Let <i>u</i> be any normalized absolute URI ending with a slash character ({@code '/'})
  * and <i>v</i> be any normalized relative URI not beginning with a period character ({@code '.'})
- * or slash character ({@code '/'}). Then, the following statement is true.
+ * or slash character ({@code '/'}). Then, the following statement is true:
  *
  * <blockquote>
  *   <i>u</i>{@code .relativize(}<i>u</i>{@code .resolve(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}
  * </blockquote>
  *
  * Let <i>u</i> be any normalized absolute URI ending with a slash character ({@code '/'})
- * and <i>v</i> be any normalized absolute URI. Then, the following statement is true.
+ * and <i>v</i> be any normalized absolute URI. Then, the following statement is true:
  *
  * <blockquote>
  *   <i>u</i>{@code .resolve(}<i>u</i>{@code .relativize(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}
