@@ -302,7 +302,7 @@ public abstract class ClassLoader {
     private final ConcurrentHashMap<String, Object> parallelLockMap;
 
     // Synchronization for parallel class loading in this class loader.
-    private final ConcurrentHashMap<String, Thread> placeholders;
+    private final ConcurrentHashMap<String, Thread> parallelClassLoadMap;
 
     // Maps packages to certs
     private final ConcurrentHashMap<String, Certificate[]> package2certs;
@@ -384,12 +384,12 @@ public abstract class ClassLoader {
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
             assertionLock = new Object();
-            placeholders = null;
+            parallelClassLoadMap = null;
         } else {
             // no finer-grained lock; lock on the classloader instance
             parallelLockMap = null;
             assertionLock = this;
-            placeholders = new ConcurrentHashMap<>();
+            parallelClassLoadMap = new ConcurrentHashMap<>();
         }
         this.package2certs = new ConcurrentHashMap<>();
         this.nameAndId = nameAndId(this);
@@ -760,9 +760,9 @@ public abstract class ClassLoader {
 
     private enum LoadedState { CLAIMED, LOADING, CCE };
 
-    private final LoadedState getPlaceholder(String name) {
+    private final LoadedState getParallelLoadClass(String name) {
         Thread thread = Thread.currentThread();
-        Thread pt = placeholders.putIfAbsent(name, thread);
+        Thread pt = parallelClassLoadMap.putIfAbsent(name, thread);
         if (pt == null) {
             return LoadedState.CLAIMED;
         } else if (pt == thread) {
@@ -773,23 +773,24 @@ public abstract class ClassLoader {
         }
     }
 
-    private final void removePlaceholder(String name) {
-        placeholders.remove(name);
+    private final void removeParallelLoadClass(String name) {
+        parallelClassLoadMap.remove(name);
         // Notify threads waiting on the class loader lock
         // that this class has been loaded or failed.
         notifyAll();
     }
 
     // We only get here if the application has released the
-    // classloader lock when another thread was in the middle of loading a
+    // classloader lock (wait) when another thread was in the middle of loading a
     // superclass/superinterface for this class, and now
     // this thread is also trying to load this class.
     // To minimize surprises, this thread waits while the first thread
     // that started to load a class completes the loading or fails.
-    private LoadedState waitForPlaceholder(String name) {
+    @SuppressWarnings("removal")
+    private LoadedState waitForParallelLoadClass(String name) {
         LoadedState state;
         boolean interrupted = false;
-        while ((state = getPlaceholder(name)) == LoadedState.LOADING) {
+        while ((state = getParallelLoadClass(name)) == LoadedState.LOADING) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -799,43 +800,46 @@ public abstract class ClassLoader {
         }
         if (interrupted) {
             // reassert the interrupt status before exiting.
-            Thread.currentThread().interrupt();
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
+                   Thread.currentThread().interrupt();
+                    return null;
+                }
+            });
         }
         return state;
     }
 
-    // Called by VM to load a class. For a non-parallel capable ClassLoader,
-    // wait on the class loader lock if another class has already started loading
-    // this class and we own the class loader lock.
-    private final Class<?> loadClassInternal(String name)
+    // This function is called by VM to load a class for a non-parallel-capable ClassLoader.
+    // It checks if another thread has released the class loader lock (wait) while loading a class
+    // by this name, and will notify the other thread to continue and complete loading the class.
+    // For class circularity checks to be detected, the same thread must completely load the class and
+    // its superclasses.
+    private final synchronized Class<?> loadClassInternal(String name)
         throws ClassNotFoundException
     {
-        // Call loadClass directly for parallel-capable class loaders
-        if (parallelLockMap != null) {
-            return loadClass(name);
+        // The JVM calls loadClass directly for parallel-capable class loaders
+        assert (parallelLockMap == null);
+        LoadedState state = getParallelLoadClass(name);
+        if (state == LoadedState.LOADING) {
+            // notify loading threads
+            notifyAll();
+            state = waitForParallelLoadClass(name);
         }
-        synchronized (this) {
-            LoadedState state = getPlaceholder(name);
-            if (state == LoadedState.LOADING) {
-                // notify loading threads
-                notifyAll();
-                state = waitForPlaceholder(name);
+        // Now load class.
+        if (state == LoadedState.CLAIMED) {
+            Class<?> loadedClass = null;
+            try {
+                loadedClass = loadClass(name);
+            } finally {
+                removeParallelLoadClass(name);
             }
-            // Now load class.
-            if (state == LoadedState.CLAIMED) {
-                Class<?> loadedClass = null;
-                try {
-                    loadedClass = loadClass(name);
-                } finally {
-                    removePlaceholder(name);
-                }
-                return loadedClass;
-            } else {
-                // A class circularity error is detected while loading this class
-                assert (state == LoadedState.CCE);
-                removePlaceholder(name);
-                throw new ClassCircularityError(name);
-            }
+            return loadedClass;
+        } else {
+            // A class circularity error is detected while loading this class
+            assert (state == LoadedState.CCE);
+            removeParallelLoadClass(name);
+            throw new ClassCircularityError(name);
         }
     }
 

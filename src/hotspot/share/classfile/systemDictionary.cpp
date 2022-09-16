@@ -1290,14 +1290,26 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
 
     InstanceKlass* spec_klass = vmClasses::ClassLoader_klass();
 
-    // Call private unsynchronized loadClassInternal(String) directly for all class loaders.
-    JavaCalls::call_virtual(&result,
-                            class_loader,
-                            spec_klass,
-                            SymbolTable::new_permanent_symbol("loadClassInternal"),
-                            vmSymbols::string_class_signature(),
-                            string,
-                            CHECK_NULL);
+    if (is_parallelCapable(class_loader)) {
+      // Call loadClass(String) directly for parallel capable class loaders.
+      JavaCalls::call_virtual(&result,
+                              class_loader,
+                              spec_klass,
+                              vmSymbols::loadClass_name(),
+                              vmSymbols::string_class_signature(),
+                              string,
+                              CHECK_NULL);
+    } else {
+      // Call private unsynchronized loadClassInternal(String) for other class loaders.
+      // loadClassInternal synchronizes parallel loading for this class.
+      JavaCalls::call_virtual(&result,
+                              class_loader,
+                              spec_klass,
+                              vmSymbols::loadClassInternal_name(),
+                              vmSymbols::string_class_signature(),
+                              string,
+                              CHECK_NULL);
+    }
 
     assert(result.get_type() == T_OBJECT, "just checking");
     oop obj = result.get_oop();

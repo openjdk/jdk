@@ -414,6 +414,7 @@
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
+  template(loadClassInternal_name,                    "loadClassInternal")                        \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
   template(enterSpecial_name,                         "enterSpecial")                             \
