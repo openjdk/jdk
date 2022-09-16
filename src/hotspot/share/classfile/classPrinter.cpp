@@ -50,7 +50,21 @@ public:
     : _class_name_pattern(class_name_pattern),
       _method_name_pattern(method_name_pattern),
       _method_signature_pattern(method_signature_pattern),
-      _flags(flags), _st(st), _num(0), _last_printed_methods(false) {}
+      _flags(flags), _st(st), _num(0), _last_printed_methods(false)
+  {
+    if (has_mode(_flags, PRINT_METHOD_HANDLE)) {
+      _flags |= (PRINT_METHOD_NAME | PRINT_BYTECODE);
+    }
+    if (has_mode(_flags, PRINT_DYNAMIC)) {
+      _flags |= (PRINT_METHOD_NAME | PRINT_BYTECODE);
+    }
+    if (has_mode(_flags, PRINT_BYTECODE_ADDR)) {
+      _flags |= (PRINT_METHOD_NAME | PRINT_BYTECODE);
+    }
+    if (has_mode(_flags, PRINT_BYTECODE)) {
+      _flags |= (PRINT_METHOD_NAME);
+    }
+  }
 
   virtual void do_klass(Klass* k) {
     if (!k->is_instance_klass()) {
@@ -124,13 +138,25 @@ bool ClassPrinter::matches(const char* pattern, Symbol* symbol) {
   }
 }
 
+void ClassPrinter::print_help() {
+  tty->print_cr("flags (bitmask):");
+  tty->print_cr("   0x%02x  - print names of methods", PRINT_METHOD_NAME);
+  tty->print_cr("   0x%02x  - print bytecodes", PRINT_BYTECODE);
+  tty->print_cr("   0x%02x  - print the address of bytecodes", PRINT_BYTECODE_ADDR);
+  tty->print_cr("   0x%02x  - print info for invokedynamic", PRINT_DYNAMIC);
+  tty->print_cr("   0x%02x  - print info for invokehandle",  PRINT_METHOD_HANDLE);
+  tty->cr();
+}
+
 void ClassPrinter::print_classes(const char* class_name_pattern, int flags) {
+  print_help();
   KlassPrintClosure closure(class_name_pattern, NULL, NULL, flags, tty);
   ClassLoaderDataGraph::classes_do(&closure);
 }
 
 void ClassPrinter::print_methods(const char* class_name_pattern,
                                  const char* method_name_pattern, int flags) {
+  print_help();
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, NULL,
                             flags | PRINT_METHOD_NAME, tty);
   ClassLoaderDataGraph::classes_do(&closure);
@@ -140,6 +166,7 @@ void ClassPrinter::print_methods(const char* class_name_pattern,
 void ClassPrinter::print_methods(const char* class_name_pattern,
                                  const char* method_name_pattern,
                                  const char* method_signature_pattern, int flags) {
+  print_help();
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
                             flags | PRINT_METHOD_NAME, tty);
   ClassLoaderDataGraph::classes_do(&closure);

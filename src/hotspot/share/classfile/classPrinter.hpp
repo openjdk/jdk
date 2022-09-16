@@ -45,6 +45,7 @@ class ClassPrinter : public AllStatic {
   static bool matches(const char *pattern, const char *candidate, int p, int c);
   static bool matches(const char* pattern, Symbol* symbol);
   static bool matches_klass(const char* pattern, InstanceKlass* ik);
+  static void print_help();
 
 public:
 

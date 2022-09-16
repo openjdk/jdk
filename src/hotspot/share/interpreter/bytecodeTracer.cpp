@@ -395,9 +395,9 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
   }
 }
 
-void BytecodePrinter::print_dynamic(int orig_i, int i, constantTag tag, outputStream* st) {
+void BytecodePrinter::print_dynamic(int orig_i, int bsm_cpindex, constantTag tag, outputStream* st) {
   ConstantPool* constants = method()->constants();
-  int bsm = constants->bootstrap_method_ref_index_at(i);
+  int bsm = constants->bootstrap_method_ref_index_at(bsm_cpindex);
   const char* ref_kind = "";
   switch (constants->method_handle_ref_kind_at(bsm)) {
   case JVM_REF_getField         : ref_kind = "REF_getField"; break;
@@ -412,13 +412,13 @@ void BytecodePrinter::print_dynamic(int orig_i, int i, constantTag tag, outputSt
   default                       : ShouldNotReachHere();
   }
   st->print("  BSM: %s", ref_kind);
-  print_field_or_method(-i, constants->method_handle_index_at(bsm), st);
-  int argc = constants->bootstrap_argument_count_at(i);
+  print_field_or_method(-1, constants->method_handle_index_at(bsm), st);
+  int argc = constants->bootstrap_argument_count_at(bsm_cpindex);
   st->print("  arguments[%d] = {", argc);
   if (argc > 0) {
     st->cr();
     for (int arg_i = 0; arg_i < argc; arg_i++) {
-      int arg = constants->bootstrap_argument_index_at(i, arg_i);
+      int arg = constants->bootstrap_argument_index_at(bsm_cpindex, arg_i);
       st->print("    ");
       print_constant_nocheck(arg, st);
     }
