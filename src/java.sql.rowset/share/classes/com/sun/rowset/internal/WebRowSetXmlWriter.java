@@ -569,7 +569,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     }
 
     private void writeBoolean(boolean b) throws java.io.IOException {
-        writer.write(Boolean.valueOf(b).toString());
+        writer.write(Boolean.toString(b));
     }
 
     private void writeFloat(float f) throws java.io.IOException {

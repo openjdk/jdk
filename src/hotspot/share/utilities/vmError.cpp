@@ -43,7 +43,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -184,11 +184,9 @@ char* VMError::error_string(char* buf, int buflen) {
                  os::current_process_id(), os::current_thread_id());
   } else if (_filename != NULL && _lineno > 0) {
     // skip directory names
-    char separator = os::file_separator()[0];
-    const char *p = strrchr(_filename, separator);
     int n = jio_snprintf(buf, buflen,
                          "Internal Error at %s:%d, pid=%d, tid=" UINTX_FORMAT,
-                         p ? p + 1 : _filename, _lineno,
+                         get_filename_only(), _lineno,
                          os::current_process_id(), os::current_thread_id());
     if (n >= 0 && n < buflen && _message) {
       if (strlen(_detail_msg) > 0) {
@@ -332,7 +330,10 @@ static frame next_frame(frame fr, Thread* t) {
       return invalid;
     }
     if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-      RegisterMap map(JavaThread::cast(t), false); // No update
+      RegisterMap map(JavaThread::cast(t),
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip); // No update
       return fr.sender(&map);
     } else {
       // is_first_C_frame() does only simple checks for frame pointer,
@@ -356,10 +357,13 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
     while (count++ < StackPrintLimit) {
       fr.print_on_error(st, buf, buf_size);
       if (fr.pc()) { // print source file and line, if available
-        char buf[128];
+        char filename[128];
         int line_no;
-        if (Decoder::get_source_info(fr.pc(), buf, sizeof(buf), &line_no)) {
-          st->print("  (%s:%d)", buf, line_no);
+        if (count == 1 && _lineno != 0) {
+          // We have source information of the first frame for internal errors. There is no need to parse it from the symbols.
+          st->print("  (%s:%d)", get_filename_only(), _lineno);
+        } else if (Decoder::get_source_info(fr.pc(), filename, sizeof(filename), &line_no, count != 1)) {
+          st->print("  (%s:%d)", filename, line_no);
         }
       }
       st->cr();
@@ -667,10 +671,8 @@ void VMError::report(outputStream* st, bool _verbose) {
        }
        if (_filename != NULL && _lineno > 0) {
 #ifdef PRODUCT
-         // In product mode chop off pathname?
-         char separator = os::file_separator()[0];
-         const char *p = strrchr(_filename, separator);
-         const char *file = p ? p+1 : _filename;
+         // In product mode chop off pathname
+         const char *file = get_filename_only();
 #else
          const char *file = _filename;
 #endif
@@ -990,13 +992,11 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-#ifndef _WIN32
   STEP("printing user info")
 
      if (ExtensiveErrorReports && _verbose) {
-       os::Posix::print_user_info(st);
+       os::print_user_info(st);
      }
-#endif
 
   STEP("printing all threads")
 
@@ -1073,7 +1073,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        }
 
        if (Universe::is_fully_initialized()) {
-         st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+         st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
          st->cr();
        }
      }
@@ -1155,14 +1155,12 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-#ifndef _WIN32
   STEP("printing locale settings")
 
      if (_verbose) {
-       os::Posix::print_active_locale(st);
+       os::print_active_locale(st);
        st->cr();
      }
-#endif
 
   STEP("printing signal handlers")
 
@@ -1292,7 +1290,7 @@ void VMError::print_vm_info(outputStream* st) {
     GCLogPrecious::print_on_error(st);
     Universe::heap()->print_on_error(st);
     st->cr();
-    st->print_cr("Polling page: " INTPTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+    st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
     st->cr();
   }
 
@@ -1346,10 +1344,10 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
   // STEP("printing locale settings")
-#ifndef _WIN32
-  os::Posix::print_active_locale(st);
+
+  os::print_active_locale(st);
   st->cr();
-#endif
+
 
   // STEP("printing signal handlers")
 

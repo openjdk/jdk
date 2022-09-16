@@ -34,6 +34,7 @@
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
@@ -374,8 +375,14 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   current->set_deopt_mark(dmark);
 
   frame stub_frame = current->last_frame(); // Makes stack walkable as side effect
-  RegisterMap map(current, true);
-  RegisterMap dummy_map(current, false);
+  RegisterMap map(current,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
+  RegisterMap dummy_map(current,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
   // Set the deoptee nmethod
@@ -613,7 +620,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
     ContinuationEntry::from_frame(deopt_sender)->set_argsize(0);
   }
 
-  assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
+  assert(CodeCache::find_blob(frame_pcs[0]) != NULL, "bad pc");
 
 #if INCLUDE_JVMCI
   if (exceptionObject() != NULL) {
@@ -792,7 +799,10 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
     // Verify that the just-unpacked frames match the interpreter's
     // notions of expression stack and locals
     vframeArray* cur_array = thread->vframe_array_last();
-    RegisterMap rm(thread, false);
+    RegisterMap rm(thread,
+                   RegisterMap::UpdateMap::skip,
+                   RegisterMap::ProcessFrames::include,
+                   RegisterMap::WalkContinuation::skip);
     rm.set_include_argument_oops(false);
     bool is_top_frame = true;
     int callee_size_of_parameters = 0;
@@ -948,10 +958,10 @@ Deoptimization::DeoptAction Deoptimization::_unloaded_action
 template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
-  static InstanceKlass* find_cache_klass(Symbol* klass_name) {
-    ResourceMark rm;
+  static InstanceKlass* find_cache_klass(Thread* thread, Symbol* klass_name) {
+    ResourceMark rm(thread);
     char* klass_name_str = klass_name->as_C_string();
-    InstanceKlass* ik = SystemDictionary::find_instance_klass(klass_name, Handle(), Handle());
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(thread, klass_name, Handle(), Handle());
     guarantee(ik != NULL, "%s must be loaded", klass_name_str);
     guarantee(ik->is_initialized(), "%s must be initialized", klass_name_str);
     CacheType::compute_offsets(ik);
@@ -966,7 +976,7 @@ template<typename PrimitiveType, typename CacheType, typename BoxType> class Box
 protected:
   static BoxCache<PrimitiveType, CacheType, BoxType> *_singleton;
   BoxCache(Thread* thread) {
-    InstanceKlass* ik = BoxCacheBase<CacheType>::find_cache_klass(CacheType::symbol());
+    InstanceKlass* ik = BoxCacheBase<CacheType>::find_cache_klass(thread, CacheType::symbol());
     objArrayOop cache = CacheType::cache(ik);
     assert(cache->length() > 0, "Empty cache");
     _low = BoxType::value(cache->obj_at(0));
@@ -1022,7 +1032,7 @@ class BooleanBoxCache : public BoxCacheBase<java_lang_Boolean> {
 protected:
   static BooleanBoxCache *_singleton;
   BooleanBoxCache(Thread *thread) {
-    InstanceKlass* ik = find_cache_klass(java_lang_Boolean::symbol());
+    InstanceKlass* ik = find_cache_klass(thread, java_lang_Boolean::symbol());
     _true_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_TRUE(ik)));
     _false_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_FALSE(ik)));
   }
@@ -1658,7 +1668,10 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   // it also patches the return pc but we do not care about that
   // since we return a continuation to the deopt_blob below.
   JavaThread* thread = JavaThread::current();
-  RegisterMap reg_map(thread, false);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.cb()->as_compiled_method_or_null() == cm, "expect top frame compiled method");
@@ -1691,7 +1704,10 @@ void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id,
          SafepointSynchronize::is_at_safepoint(),
          "can only deoptimize other thread at a safepoint/handshake");
   // Compute frame and register map based on thread and sp.
-  RegisterMap reg_map(thread, false);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame fr = thread->last_frame();
   while (fr.id() != id) {
     fr = fr.sender(&reg_map);
@@ -1729,7 +1745,7 @@ Deoptimization::get_method_data(JavaThread* thread, const methodHandle& m,
   if (mdo == NULL && create_if_missing && !HAS_PENDING_EXCEPTION) {
     // Build an MDO.  Ignore errors like OutOfMemory;
     // that simply means we won't have an MDO to update.
-    Method::build_interpreter_method_data(m, THREAD);
+    Method::build_profiling_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // Only metaspace OOM is expected. No Java code executed.
       assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
@@ -1868,18 +1884,21 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
 #if INCLUDE_JVMCI
   // JVMCI might need to get an exception from the stack, which in turn requires the register map to be valid
-  RegisterMap reg_map(current, true);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
 #else
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
 #endif
   frame stub_frame = current->last_frame();
   frame fr = stub_frame.sender(&reg_map);
-  // Make sure the calling nmethod is not getting deoptimized and removed
-  // before we are done with it.
-  nmethodLocker nl(fr.pc());
 
   // Log a message
-  Events::log_deopt_message(current, "Uncommon trap: trap_request=" PTR32_FORMAT " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
+  Events::log_deopt_message(current, "Uncommon trap: trap_request=" INT32_FORMAT_X_0 " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
               trap_request, p2i(fr.pc()), fr.pc() - fr.cb()->code_begin());
 
   {
@@ -1933,7 +1952,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     // Ensure that we can record deopt. history:
     // Need MDO to record RTM code generation state.
-    bool create_if_missing = ProfileTraps || UseCodeAging RTM_OPT_ONLY( || UseRTMLocking );
+    bool create_if_missing = ProfileTraps RTM_OPT_ONLY( || UseRTMLocking );
 
     methodHandle profiled_method;
 #if INCLUDE_JVMCI

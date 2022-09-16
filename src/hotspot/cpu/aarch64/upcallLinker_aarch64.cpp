@@ -29,7 +29,6 @@
 #include "prims/upcallLinker.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -40,7 +39,7 @@
 // for callee saved regs, according to the caller's ABI
 static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   int size = 0;
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < Register::number_of_registers; i++) {
     Register reg = as_Register(i);
     if (reg == rfp || reg == sp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
@@ -48,7 +47,7 @@ static int compute_reg_save_area_size(const ABIDescriptor& abi) {
     }
   }
 
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
     FloatRegister reg = as_FloatRegister(i);
     if (!abi.is_volatile_reg(reg)) {
       // Only the lower 64 bits of vector registers need to be preserved.
@@ -67,7 +66,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   int offset = reg_save_area_offset;
 
   __ block_comment("{ preserve_callee_saved_regs ");
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < Register::number_of_registers; i++) {
     Register reg = as_Register(i);
     if (reg == rfp || reg == sp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
@@ -76,7 +75,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
     }
   }
 
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
     FloatRegister reg = as_FloatRegister(i);
     if (!abi.is_volatile_reg(reg)) {
       __ strd(reg, Address(sp, offset));
@@ -95,7 +94,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   int offset = reg_save_area_offset;
 
   __ block_comment("{ restore_callee_saved_regs ");
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < Register::number_of_registers; i++) {
     Register reg = as_Register(i);
     if (reg == rfp || reg == sp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
@@ -104,7 +103,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
     }
   }
 
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
     FloatRegister reg = as_FloatRegister(i);
     if (!abi.is_volatile_reg(reg)) {
       __ ldrd(reg, Address(sp, offset));

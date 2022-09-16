@@ -239,18 +239,18 @@ MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jint con;
-  if ((con = in(1)->find_int_con(0)) != 0) {
-    swap_edges(1, 2);
-    // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_int_con(0)) == 0) {
+  const jint con = in(2)->find_int_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == 0) return NULL;   // By zero is handled by Value call
-  if (con == 1) return NULL;   // By one  is handled by Identity call
+  // Now we have a constant Node on the right and the constant in con.
+  if (con == 1) {
+    // By one is handled by Identity call
+    return NULL;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -270,20 +270,11 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     unsigned int bit2 = abs_con - bit1;
     bit2 = bit2 & (0 - bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      if (!phase->C->post_loop_opts_phase()) {
-        // Defer this because it breaks loop range check hoisting
-        phase->C->record_for_post_loop_opts_igvn(this);
-        return MulNode::Ideal(phase, can_reshape);
-      }
       Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit1))));
       Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddINode(n2, n1);
     } else if (is_power_of_2(abs_con + 1)) {
-      if (!phase->C->post_loop_opts_phase()) {
-        // Defer this because it breaks loop range check hoisting
-        phase->C->record_for_post_loop_opts_igvn(this);
-        return MulNode::Ideal(phase, can_reshape);
-      }
+      // Sleezy: power-of-2 - 1.  Next time be generic.
       unsigned int temp = abs_con + 1;
       Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(temp))));
       res = new SubINode(n1, in(1));
@@ -343,18 +334,18 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jlong con;
-  if ((con = in(1)->find_long_con(0)) != 0) {
-    swap_edges(1, 2);
-    // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_long_con(0)) == 0) {
+  const jlong con = in(2)->find_long_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == CONST64(0)) return NULL;  // By zero is handled by Value call
-  if (con == CONST64(1)) return NULL;  // By one  is handled by Identity call
+  // Now we have a constant Node on the right and the constant in con.
+  if (con == 1) {
+    // By one is handled by Identity call
+    return NULL;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -369,24 +360,17 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
+
     // Check for constant with 2 bits set
     julong bit2 = abs_con-bit1;
     bit2 = bit2 & (0-bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      if (!phase->C->post_loop_opts_phase()) {
-        // Defer this because it breaks loop range check hoisting
-        phase->C->record_for_post_loop_opts_igvn(this);
-        return MulNode::Ideal(phase, can_reshape);
-      }
       Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1))));
       Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddLNode(n2, n1);
+
     } else if (is_power_of_2(abs_con+1)) {
-      if (!phase->C->post_loop_opts_phase()) {
-        // Defer this because it breaks loop range check hoisting
-        phase->C->record_for_post_loop_opts_igvn(this);
-        return MulNode::Ideal(phase, can_reshape);
-      }
+      // Sleezy: power-of-2 -1.  Next time be generic.
       julong temp = abs_con + 1;
       Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2i_exact(temp))));
       res = new SubLNode(n1, in(1));

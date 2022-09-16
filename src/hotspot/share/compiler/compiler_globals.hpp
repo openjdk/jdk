@@ -305,7 +305,7 @@
   product(ccstrlist, CompileCommand, "",                                    \
           "Prepend to .hotspot_compiler; e.g. log,java/lang/String.<init>") \
                                                                             \
-  develop(bool, ReplayCompiles, false,                                      \
+  product(bool, ReplayCompiles, false, DIAGNOSTIC,                          \
           "Enable replay of compilations from ReplayDataFile")              \
                                                                             \
   product(ccstr, ReplayDataFile, NULL,                                      \
@@ -316,7 +316,7 @@
           "File containing inlining replay information"                     \
           "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-  develop(intx, ReplaySuppressInitializers, 2,                              \
+  product(intx, ReplaySuppressInitializers, 2, DIAGNOSTIC,                  \
           "Control handling of class initialization during replay: "        \
           "0 - don't do anything special; "                                 \
           "1 - treat all class initializers as empty; "                     \
@@ -325,7 +325,7 @@
           "    pretend they are empty after starting replay")               \
           range(0, 3)                                                       \
                                                                             \
-  develop(bool, ReplayIgnoreInitErrors, false,                              \
+  product(bool, ReplayIgnoreInitErrors, false, DIAGNOSTIC,                  \
           "Ignore exceptions thrown during initialization for replay")      \
                                                                             \
   product(bool, DumpReplayDataOnError, true,                                \

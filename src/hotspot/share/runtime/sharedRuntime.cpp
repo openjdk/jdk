@@ -72,7 +72,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
-#include "utilities/hashtable.inline.hpp"
+#include "utilities/resourceHash.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
@@ -97,6 +97,7 @@ SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
 #endif // COMPILER2
 
+nmethod*            SharedRuntime::_cont_doYield_stub;
 
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_stubs() {
@@ -1072,8 +1073,6 @@ Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, 
 Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
   CompiledMethod* caller = vfst.nm();
 
-  nmethodLocker caller_lock(caller);
-
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
     CompiledICLocker ic_locker(caller);
@@ -1151,7 +1150,10 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
   if (has_receiver) {
     // This register map must be update since we need to find the receiver for
     // compiled frames. The receiver might be in a register.
-    RegisterMap reg_map2(current);
+    RegisterMap reg_map2(current,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::include,
+                         RegisterMap::WalkContinuation::skip);
     frame stubFrame   = current->last_frame();
     // Caller-frame is a compiled frame
     frame callerFrame = stubFrame.sender(&reg_map2);
@@ -1224,7 +1226,10 @@ methodHandle SharedRuntime::find_callee_method(TRAPS) {
     // No Java frames were found on stack since we did the JavaCall.
     // Hence the stack can only contain an entry_frame.  We need to
     // find the target method from the stub frame.
-    RegisterMap reg_map(current, false);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame fr = current->last_frame();
     assert(fr.is_runtime_frame(), "must be a runtimeStub");
     fr = fr.sender(&reg_map);
@@ -1286,7 +1291,6 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     // Patch call site to C2I adapter if callee nmethod is deoptimized or unloaded.
     callee = NULL;
   }
-  nmethodLocker nl_callee(callee);
 #ifdef ASSERT
   address dest_entry_point = callee == NULL ? 0 : callee->entry_point(); // used below
 #endif
@@ -1358,17 +1362,15 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
 methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS) {
   JavaThread* current = THREAD;
   ResourceMark rm(current);
-  RegisterMap cbl_map(current, false);
+  RegisterMap cbl_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame caller_frame = current->last_frame().sender(&cbl_map);
 
   CodeBlob* caller_cb = caller_frame.cb();
   guarantee(caller_cb != NULL && caller_cb->is_compiled(), "must be called from compiled method");
   CompiledMethod* caller_nm = caller_cb->as_compiled_method_or_null();
-
-  // make sure caller is not getting deoptimized
-  // and removed before we are done with it.
-  // CLEANUP - with lazy deopt shouldn't need this lock
-  nmethodLocker caller_lock(caller_nm);
 
   // determine call info & receiver
   // note: a) receiver is NULL for static calls
@@ -1384,7 +1386,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
          (!is_virtual && invoke_code == Bytecodes::_invokedynamic) ||
          ( is_virtual && invoke_code != Bytecodes::_invokestatic ), "inconsistent bytecode");
 
-  assert(caller_nm->is_alive() && !caller_nm->is_unloading(), "It should be alive");
+  assert(!caller_nm->is_unloading(), "It should not be unloading");
 
 #ifndef PRODUCT
   // tracing/debugging/statistics
@@ -1456,7 +1458,10 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 // Inline caches exist only in compiled code
 JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* current))
 #ifdef ASSERT
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1486,7 +1491,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
   // place the callee method in the callee_target. It is stashed
   // there because if we try and find the callee by normal means a
   // safepoint is possible and have trouble gc'ing the compiled args.
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1536,7 +1544,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_abstract(JavaThread*
   DEBUG_ONLY( invoke.verify(); )
 
   // Find the compiled caller frame.
-  RegisterMap reg_map(current);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stubFrame = current->last_frame();
   assert(stubFrame.is_runtime_frame(), "must be");
   frame callerFrame = stubFrame.sender(&reg_map);
@@ -1566,7 +1577,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread* curren
     current->set_vm_result_2(callee_method());
 
     if (current->is_interp_only_mode()) {
-      RegisterMap reg_map(current, false);
+      RegisterMap reg_map(current,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
       frame stub_frame = current->last_frame();
       assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
       frame caller = stub_frame.sender(&reg_map);
@@ -1720,7 +1734,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   if (call_info.resolved_method()->can_be_statically_bound()) {
     methodHandle callee_method = SharedRuntime::reresolve_call_site(CHECK_(methodHandle()));
     if (TraceCallFixup) {
-      RegisterMap reg_map(current, false);
+      RegisterMap reg_map(current,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
       frame caller_frame = current->last_frame().sender(&reg_map);
       ResourceMark rm(current);
       tty->print("converting IC miss to reresolve (%s) call to", Bytecodes::name(bc));
@@ -1746,7 +1763,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
 
   if (ICMissHistogram) {
     MutexLocker m(VMStatistic_lock);
-    RegisterMap reg_map(current, false);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame f = current->last_frame().real_sender(&reg_map);// skip runtime stub
     // produce statistics under the lock
     trace_ic_miss(f.pc());
@@ -1764,7 +1784,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   // Transitioning IC caches may require transition stubs. If we run out
   // of transition stubs, we have to drop locks and perform a safepoint
   // that refills them.
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame caller_frame = current->last_frame().sender(&reg_map);
   CodeBlob* cb = caller_frame.cb();
   CompiledMethod* caller_nm = cb->as_compiled_method();
@@ -1808,7 +1831,10 @@ static bool clear_ic_at_addr(CompiledMethod* caller_nm, address call_addr, bool 
 methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
   JavaThread* current = THREAD;
   ResourceMark rm(current);
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
   frame caller = stub_frame.sender(&reg_map);
@@ -1851,10 +1877,6 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
       // Location of call instruction
       call_addr = caller_nm->call_instruction_address(pc);
     }
-    // Make sure nmethod doesn't get deoptimized and removed until
-    // this is done with it.
-    // CLEANUP - with lazy deopt shouldn't need this lock
-    nmethodLocker nmlock(caller_nm);
 
     // Check relocations for the matching call to 1) avoid false positives,
     // and 2) determine the type.
@@ -2272,7 +2294,7 @@ class MethodArityHistogram {
 
   static void add_method_to_histogram(nmethod* nm) {
     Method* method = (nm == NULL) ? NULL : nm->method();
-    if ((method != NULL) && nm->is_alive()) {
+    if (method != NULL) {
       ArgumentCount args(method->signature());
       int arity   = args.size() + (method->is_static() ? 0 : 1);
       int argsize = method->size_of_parameters();
@@ -2368,6 +2390,12 @@ void SharedRuntime::print_call_statistics(uint64_t comp_total) {
 }
 #endif
 
+#ifndef PRODUCT
+static int _lookups; // number of calls to lookup
+static int _equals;  // number of buckets checked with matching hash
+static int _hits;    // number of successful lookups
+static int _compact; // number of equals calls with compact signature
+#endif
 
 // A simple wrapper class around the calling convention information
 // that allows sharing of adapters for the same calling convention.
@@ -2554,147 +2582,55 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
     }
     return true;
   }
-};
 
+  static bool equals(AdapterFingerPrint* const& fp1, AdapterFingerPrint* const& fp2) {
+    NOT_PRODUCT(_equals++);
+    return fp1->equals(fp2);
+  }
+
+  static unsigned int compute_hash(AdapterFingerPrint* const& fp) {
+    return fp->compute_hash();
+  }
+};
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
-class AdapterHandlerTable : public BasicHashtable<mtCode> {
-  friend class AdapterHandlerTableIterator;
+ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
+                  ResourceObj::C_HEAP, mtCode,
+                  AdapterFingerPrint::compute_hash,
+                  AdapterFingerPrint::equals> _adapter_handler_table;
 
- private:
+// Find a entry with the same fingerprint if it exists
+static AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt) {
+  NOT_PRODUCT(_lookups++);
+  assert_lock_strong(AdapterHandlerLibrary_lock);
+  AdapterFingerPrint fp(total_args_passed, sig_bt);
+  AdapterHandlerEntry** entry = _adapter_handler_table.get(&fp);
+  if (entry != nullptr) {
+#ifndef PRODUCT
+    if (fp.is_compact()) _compact++;
+    _hits++;
+#endif
+    return *entry;
+  }
+  return nullptr;
+}
 
 #ifndef PRODUCT
-  static int _lookups; // number of calls to lookup
-  static int _buckets; // number of buckets checked
-  static int _equals;  // number of buckets checked with matching hash
-  static int _hits;    // number of successful lookups
-  static int _compact; // number of equals calls with compact signature
+static void print_table_statistics() {
+  auto size = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
+    return sizeof(*key) + sizeof(*a);
+  };
+  TableStatistics ts = _adapter_handler_table.statistics_calculate(size);
+  ts.print(tty, "AdapterHandlerTable");
+  tty->print_cr("AdapterHandlerTable (table_size=%d, entries=%d)",
+                _adapter_handler_table.table_size(), _adapter_handler_table.number_of_entries());
+  tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d compact %d",
+                _lookups, _equals, _hits, _compact);
+}
 #endif
-
-  AdapterHandlerEntry* bucket(int i) {
-    return (AdapterHandlerEntry*)BasicHashtable<mtCode>::bucket(i);
-  }
-
- public:
-  AdapterHandlerTable()
-    : BasicHashtable<mtCode>(293, (sizeof(AdapterHandlerEntry))) { }
-
-  // Create a new entry suitable for insertion in the table
-  AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry, address c2i_no_clinit_check_entry) {
-    AdapterHandlerEntry* entry = (AdapterHandlerEntry*)BasicHashtable<mtCode>::new_entry(fingerprint->compute_hash());
-    entry->init(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
-    return entry;
-  }
-
-  // Insert an entry into the table
-  void add(AdapterHandlerEntry* entry) {
-    int index = hash_to_index(entry->hash());
-    add_entry(index, entry);
-  }
-
-  void free_entry(AdapterHandlerEntry* entry) {
-    entry->deallocate();
-    BasicHashtable<mtCode>::free_entry(entry);
-  }
-
-  // Find a entry with the same fingerprint if it exists
-  AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt) {
-    NOT_PRODUCT(_lookups++);
-    AdapterFingerPrint fp(total_args_passed, sig_bt);
-    unsigned int hash = fp.compute_hash();
-    int index = hash_to_index(hash);
-    for (AdapterHandlerEntry* e = bucket(index); e != NULL; e = e->next()) {
-      NOT_PRODUCT(_buckets++);
-      if (e->hash() == hash) {
-        NOT_PRODUCT(_equals++);
-        if (fp.equals(e->fingerprint())) {
-#ifndef PRODUCT
-          if (fp.is_compact()) _compact++;
-          _hits++;
-#endif
-          return e;
-        }
-      }
-    }
-    return NULL;
-  }
-
-#ifndef PRODUCT
-  void print_statistics() {
-    ResourceMark rm;
-    int longest = 0;
-    int empty = 0;
-    int total = 0;
-    int nonempty = 0;
-    for (int index = 0; index < table_size(); index++) {
-      int count = 0;
-      for (AdapterHandlerEntry* e = bucket(index); e != NULL; e = e->next()) {
-        count++;
-      }
-      if (count != 0) nonempty++;
-      if (count == 0) empty++;
-      if (count > longest) longest = count;
-      total += count;
-    }
-    tty->print_cr("AdapterHandlerTable: empty %d longest %d total %d average %f",
-                  empty, longest, total, total / (double)nonempty);
-    tty->print_cr("AdapterHandlerTable: lookups %d buckets %d equals %d hits %d compact %d",
-                  _lookups, _buckets, _equals, _hits, _compact);
-  }
-#endif
-};
-
-
-#ifndef PRODUCT
-
-int AdapterHandlerTable::_lookups;
-int AdapterHandlerTable::_buckets;
-int AdapterHandlerTable::_equals;
-int AdapterHandlerTable::_hits;
-int AdapterHandlerTable::_compact;
-
-#endif
-
-class AdapterHandlerTableIterator : public StackObj {
- private:
-  AdapterHandlerTable* _table;
-  int _index;
-  AdapterHandlerEntry* _current;
-
-  void scan() {
-    while (_index < _table->table_size()) {
-      AdapterHandlerEntry* a = _table->bucket(_index);
-      _index++;
-      if (a != NULL) {
-        _current = a;
-        return;
-      }
-    }
-  }
-
- public:
-  AdapterHandlerTableIterator(AdapterHandlerTable* table): _table(table), _index(0), _current(NULL) {
-    scan();
-  }
-  bool has_next() {
-    return _current != NULL;
-  }
-  AdapterHandlerEntry* next() {
-    if (_current != NULL) {
-      AdapterHandlerEntry* result = _current;
-      _current = _current->next();
-      if (_current == NULL) scan();
-      return result;
-    } else {
-      return NULL;
-    }
-  }
-};
-
 
 // ---------------------------------------------------------------------------
 // Implementation of AdapterHandlerLibrary
-AdapterHandlerTable* AdapterHandlerLibrary::_adapters = NULL;
 AdapterHandlerEntry* AdapterHandlerLibrary::_abstract_method_handler = NULL;
 AdapterHandlerEntry* AdapterHandlerLibrary::_no_arg_handler = NULL;
 AdapterHandlerEntry* AdapterHandlerLibrary::_int_arg_handler = NULL;
@@ -2712,7 +2648,8 @@ extern "C" void unexpected_adapter_call() {
   ShouldNotCallThis();
 }
 
-static void post_adapter_creation(const AdapterBlob* new_adapter, const AdapterHandlerEntry* entry) {
+static void post_adapter_creation(const AdapterBlob* new_adapter,
+                                  const AdapterHandlerEntry* entry) {
   if (Forte::is_enabled() || JvmtiExport::should_post_dynamic_code_generated()) {
     char blob_id[256];
     jio_snprintf(blob_id,
@@ -2739,9 +2676,6 @@ void AdapterHandlerLibrary::initialize() {
   AdapterBlob* obj_obj_arg_blob = NULL;
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
-    assert(_adapters == NULL, "Initializing more than once");
-
-    _adapters = new AdapterHandlerTable();
 
     // Create a special handler for abstract methods.  Abstract methods
     // are never compiled so an i2c entry is somewhat meaningless, but
@@ -2754,7 +2688,6 @@ void AdapterHandlerLibrary::initialize() {
                                                                 wrong_method_abstract, wrong_method_abstract);
 
     _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
-
     _no_arg_handler = create_adapter(no_arg_blob, 0, NULL, true);
 
     BasicType obj_args[] = { T_OBJECT };
@@ -2789,7 +2722,9 @@ AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* finger
                                                       address c2i_entry,
                                                       address c2i_unverified_entry,
                                                       address c2i_no_clinit_check_entry) {
-  return _adapters->new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  // Insert an entry into the table
+  return new AdapterHandlerEntry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry,
+                                 c2i_no_clinit_check_entry);
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandle& method) {
@@ -2875,10 +2810,9 @@ class AdapterSignatureIterator : public SignatureIterator {
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
   // Use customized signature handler.  Need to lock around updates to
-  // the AdapterHandlerTable (it is not safe for concurrent readers
+  // the _adapter_handler_table (it is not safe for concurrent readers
   // and a single writer: this could be fixed if it becomes a
   // problem).
-  assert(_adapters != NULL, "Uninitialized");
 
   // Fast-path for trivial adapters
   AdapterHandlerEntry* entry = get_simple_adapter(method);
@@ -2900,7 +2834,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
     // Lookup method signature's fingerprint
-    entry = _adapters->lookup(total_args_passed, sig_bt);
+    entry = lookup(total_args_passed, sig_bt);
 
     if (entry != NULL) {
 #ifdef ASSERT
@@ -2910,7 +2844,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
         assert(comparison_blob == NULL, "no blob should be created when creating an adapter for comparison");
         assert(comparison_entry->compare_code(entry), "code must match");
         // Release the one just created and return the original
-        _adapters->free_entry(comparison_entry);
+        delete comparison_entry;
       }
 #endif
       return entry;
@@ -2982,7 +2916,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     ttyLocker ttyl;
     entry->print_adapter_on(tty);
     tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
-                  _adapters->number_of_entries(), fingerprint->as_basic_args_string(),
+                  _adapter_handler_table.number_of_entries(), fingerprint->as_basic_args_string(),
                   fingerprint->as_string(), insts_size);
     tty->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(entry->get_c2i_entry()));
     if (Verbose || PrintStubCode) {
@@ -2999,7 +2933,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   // Add the entry only if the entry contains all required checks (see sharedRuntime_xxx.cpp)
   // The checks are inserted only if -XX:+VerifyAdapterCalls is specified.
   if (contains_all_checks || !VerifyAdapterCalls) {
-    _adapters->add(entry);
+    assert_lock_strong(AdapterHandlerLibrary_lock);
+    _adapter_handler_table.put(fingerprint, entry);
   }
   return entry;
 }
@@ -3029,7 +2964,7 @@ void AdapterHandlerEntry::relocate(address new_base) {
 }
 
 
-void AdapterHandlerEntry::deallocate() {
+AdapterHandlerEntry::~AdapterHandlerEntry() {
   delete _fingerprint;
 #ifdef ASSERT
   FREE_C_HEAP_ARRAY(unsigned char, _saved_code);
@@ -3069,6 +3004,9 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
+
+  // Check if memory should be freed before allocation
+  CodeCache::gc_on_allocation();
 
   assert(method->is_native(), "must be native");
   assert(method->is_special_native_intrinsic() ||
@@ -3301,7 +3239,10 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   }
   assert(i - max_locals == active_monitor_count*2, "found the expected number of monitors");
 
-  RegisterMap map(current, false);
+  RegisterMap map(current,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   frame sender = fr.sender(&map);
   if (sender.is_interpreted_frame()) {
     current->push_cont_fastpath(sender.sp());
@@ -3315,25 +3256,30 @@ JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
 JRT_END
 
 bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
-  AdapterHandlerTableIterator iter(_adapters);
-  while (iter.has_next()) {
-    AdapterHandlerEntry* a = iter.next();
-    if (b == CodeCache::find_blob(a->get_i2c_entry())) return true;
-  }
-  return false;
+  bool found = false;
+  auto findblob = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
+    return (found = (b == CodeCache::find_blob(a->get_i2c_entry())));
+  };
+  assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
+  _adapter_handler_table.iterate(findblob);
+  return found;
 }
 
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
-  AdapterHandlerTableIterator iter(_adapters);
-  while (iter.has_next()) {
-    AdapterHandlerEntry* a = iter.next();
+  bool found = false;
+  auto findblob = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
     if (b == CodeCache::find_blob(a->get_i2c_entry())) {
+      found = true;
       st->print("Adapter for signature: ");
-      a->print_adapter_on(tty);
-      return;
+      a->print_adapter_on(st);
+      return true;
+    } else {
+      return false; // keep looking
     }
-  }
-  assert(false, "Should have found handler");
+  };
+  assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
+  _adapter_handler_table.iterate(findblob);
+  assert(found, "Should have found handler");
 }
 
 void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
@@ -3356,7 +3302,7 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
 #ifndef PRODUCT
 
 void AdapterHandlerLibrary::print_statistics() {
-  _adapters->print_statistics();
+  print_table_statistics();
 }
 
 #endif /* PRODUCT */
@@ -3375,7 +3321,10 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* curren
 
   assert(fr.is_java_frame(), "Must start on Java frame");
 
-  RegisterMap map(JavaThread::current(), false, false); // don't walk continuations
+  RegisterMap map(JavaThread::current(),
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip); // don't walk continuations
   for (; !fr.is_first_frame(); fr = fr.sender(&map)) {
     if (!fr.is_java_frame()) {
       continue;

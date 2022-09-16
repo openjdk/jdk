@@ -332,7 +332,7 @@ int Method::bci_from(address bcp) const {
   // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
   // may call this after interrupting a nested ResourceMark.
   assert(is_native() && bcp == code_base() || contains(bcp) || VMError::is_error_reported(),
-         "bcp doesn't belong to this method. bcp: " INTPTR_FORMAT, p2i(bcp));
+         "bcp doesn't belong to this method. bcp: " PTR_FORMAT, p2i(bcp));
 
   return bcp - code_base();
 }
@@ -401,6 +401,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   NOT_PRODUCT(it->push(&_name);)
 }
 
+#if INCLUDE_CDS
 // Attempt to return method to original state.  Clear any pointers
 // (to objects outside the shared spaces).  We won't be able to predict
 // where they should point in a new JVM.  Further initialize some
@@ -410,6 +411,11 @@ void Method::remove_unshareable_info() {
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
+
+void Method::restore_unshareable_info(TRAPS) {
+  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+}
+#endif
 
 void Method::set_vtable_index(int index) {
   if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
@@ -574,9 +580,9 @@ void Method::print_invocation_count() {
 #endif
 }
 
-// Build a MethodData* object to hold information about this method
-// collected in the interpreter.
-void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
+// Build a MethodData* object to hold profiling information collected on this
+// method when requested.
+void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
   // Do not profile the method if metaspace has hit an OOM previously
   // allocating profiling data. Callers clear pending exception so don't
   // add one here.
@@ -599,7 +605,7 @@ void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
     method->set_method_data(method_data);
     if (PrintMethodData && (Verbose || WizardMode)) {
       ResourceMark rm(THREAD);
-      tty->print("build_interpreter_method_data for ");
+      tty->print("build_profiling_method_data for ");
       method->print_name(tty);
       tty->cr();
       // At the end of the run, the MDO, full of data, will be dumped.
@@ -637,10 +643,6 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
 
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
-  }
-
-  if (LogTouchedMethods) {
-    mh->log_touched(current);
   }
 
   return mh->method_counters();
@@ -971,7 +973,7 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
     Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, method_holder()->class_loader());
     Handle prot  (thread, method_holder()->protection_domain());
-    return SystemDictionary::find_instance_klass(klass_name, loader, prot) != NULL;
+    return SystemDictionary::find_instance_klass(thread, klass_name, loader, prot) != NULL;
   } else {
     return true;
   }
@@ -1165,9 +1167,6 @@ void Method::unlink_code(CompiledMethod *compare) {
   // We need to check if either the _code or _from_compiled_code_entry_point
   // refer to this nmethod because there is a race in setting these two fields
   // in Method* as seen in bugid 4947125.
-  // If the vep() points to the zombie nmethod, the memory for the nmethod
-  // could be flushed and the compiler and vtable stubs could still call
-  // through it.
   if (code() == compare ||
       from_compiled_entry() == compare->verified_entry_point()) {
     clear_code();
@@ -1238,10 +1237,11 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 
   // ONLY USE the h_method now as make_adapter may have blocked
 
-  if (h_method->is_continuation_enter_intrinsic()) {
+  if (h_method->is_continuation_native_intrinsic()) {
     // the entry points to this method will be set in set_code, called when first resolving this method
     _from_interpreted_entry = NULL;
     _from_compiled_entry = NULL;
+    _i2i_entry = NULL;
   }
 }
 
@@ -1264,10 +1264,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   mh->set_adapter_entry(adapter);
   mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
-}
-
-void Method::restore_unshareable_info(TRAPS) {
-  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
@@ -1325,11 +1321,17 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   mh->_from_compiled_entry = code->verified_entry_point();
   OrderAccess::storestore();
 
-  if (mh->is_continuation_enter_intrinsic()) {
+  if (mh->is_continuation_native_intrinsic()) {
     assert(mh->_from_interpreted_entry == NULL, "initialized incorrectly"); // see link_method
 
-    // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
-    mh->_i2i_entry = ContinuationEntry::interpreted_entry();
+    if (mh->is_continuation_enter_intrinsic()) {
+      // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
+      mh->_i2i_entry = ContinuationEntry::interpreted_entry();
+    } else if (mh->is_continuation_yield_intrinsic()) {
+      mh->_i2i_entry = mh->get_i2c_entry();
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
     Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
   } else if (!mh->is_method_handle_intrinsic()) {
@@ -2345,9 +2347,9 @@ void Method::print_on(outputStream* st) const {
   ResourceMark rm;
   assert(is_method(), "must be method");
   st->print_cr("%s", internal_name());
-  st->print_cr(" - this oop:          " INTPTR_FORMAT, p2i(this));
+  st->print_cr(" - this oop:          " PTR_FORMAT, p2i(this));
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
-  st->print   (" - constants:         " INTPTR_FORMAT " ", p2i(constants()));
+  st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
   st->print   (" - access:            0x%x  ", access_flags().as_int()); access_flags().print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
@@ -2361,26 +2363,26 @@ void Method::print_on(outputStream* st) const {
   if (highest_comp_level() != CompLevel_none)
     st->print_cr(" - highest level:     %d", highest_comp_level());
   st->print_cr(" - vtable index:      %d",   _vtable_index);
-  st->print_cr(" - i2i entry:         " INTPTR_FORMAT, p2i(interpreter_entry()));
+  st->print_cr(" - i2i entry:         " PTR_FORMAT, p2i(interpreter_entry()));
   st->print(   " - adapters:          ");
   AdapterHandlerEntry* a = ((Method*)this)->adapter();
   if (a == NULL)
-    st->print_cr(INTPTR_FORMAT, p2i(a));
+    st->print_cr(PTR_FORMAT, p2i(a));
   else
     a->print_adapter_on(st);
-  st->print_cr(" - compiled entry     " INTPTR_FORMAT, p2i(from_compiled_entry()));
+  st->print_cr(" - compiled entry     " PTR_FORMAT, p2i(from_compiled_entry()));
   st->print_cr(" - code size:         %d",   code_size());
   if (code_size() != 0) {
-    st->print_cr(" - code start:        " INTPTR_FORMAT, p2i(code_base()));
-    st->print_cr(" - code end (excl):   " INTPTR_FORMAT, p2i(code_base() + code_size()));
+    st->print_cr(" - code start:        " PTR_FORMAT, p2i(code_base()));
+    st->print_cr(" - code end (excl):   " PTR_FORMAT, p2i(code_base() + code_size()));
   }
   if (method_data() != NULL) {
-    st->print_cr(" - method data:       " INTPTR_FORMAT, p2i(method_data()));
+    st->print_cr(" - method data:       " PTR_FORMAT, p2i(method_data()));
   }
   st->print_cr(" - checked ex length: %d",   checked_exceptions_length());
   if (checked_exceptions_length() > 0) {
     CheckedExceptionElement* table = checked_exceptions_start();
-    st->print_cr(" - checked ex start:  " INTPTR_FORMAT, p2i(table));
+    st->print_cr(" - checked ex start:  " PTR_FORMAT, p2i(table));
     if (Verbose) {
       for (int i = 0; i < checked_exceptions_length(); i++) {
         st->print_cr("   - throws %s", constants()->printable_name_at(table[i].class_cp_index));
@@ -2389,7 +2391,7 @@ void Method::print_on(outputStream* st) const {
   }
   if (has_linenumber_table()) {
     u_char* table = compressed_linenumber_table();
-    st->print_cr(" - linenumber start:  " INTPTR_FORMAT, p2i(table));
+    st->print_cr(" - linenumber start:  " PTR_FORMAT, p2i(table));
     if (Verbose) {
       CompressedLineNumberReadStream stream(table);
       while (stream.read_pair()) {
@@ -2400,7 +2402,7 @@ void Method::print_on(outputStream* st) const {
   st->print_cr(" - localvar length:   %d",   localvariable_table_length());
   if (localvariable_table_length() > 0) {
     LocalVariableTableElement* table = localvariable_table_start();
-    st->print_cr(" - localvar start:    " INTPTR_FORMAT, p2i(table));
+    st->print_cr(" - localvar start:    " PTR_FORMAT, p2i(table));
     if (Verbose) {
       for (int i = 0; i < localvariable_table_length(); i++) {
         int bci = table[i].start_bci;
@@ -2417,8 +2419,8 @@ void Method::print_on(outputStream* st) const {
     code()->print_value_on(st);
   }
   if (is_native()) {
-    st->print_cr(" - native function:   " INTPTR_FORMAT, p2i(native_function()));
-    st->print_cr(" - signature handler: " INTPTR_FORMAT, p2i(signature_handler()));
+    st->print_cr(" - native function:   " PTR_FORMAT, p2i(native_function()));
+    st->print_cr(" - signature handler: " PTR_FORMAT, p2i(signature_handler()));
   }
 }
 
@@ -2446,85 +2448,6 @@ void Method::print_value_on(outputStream* st) const {
   if (WizardMode) st->print("#%d", _vtable_index);
   if (WizardMode) st->print("[%d,%d]", size_of_parameters(), max_locals());
   if (WizardMode && code() != NULL) st->print(" ((nmethod*)%p)", code());
-}
-
-// LogTouchedMethods and PrintTouchedMethods
-
-// TouchedMethodRecord -- we can't use a HashtableEntry<Method*> because
-// the Method may be garbage collected. Let's roll our own hash table.
-class TouchedMethodRecord : CHeapObj<mtTracing> {
-public:
-  // It's OK to store Symbols here because they will NOT be GC'ed if
-  // LogTouchedMethods is enabled.
-  TouchedMethodRecord* _next;
-  Symbol* _class_name;
-  Symbol* _method_name;
-  Symbol* _method_signature;
-};
-
-static const int TOUCHED_METHOD_TABLE_SIZE = 20011;
-static TouchedMethodRecord** _touched_method_table = NULL;
-
-void Method::log_touched(Thread* current) {
-
-  const int table_size = TOUCHED_METHOD_TABLE_SIZE;
-  Symbol* my_class = klass_name();
-  Symbol* my_name  = name();
-  Symbol* my_sig   = signature();
-
-  unsigned int hash = my_class->identity_hash() +
-                      my_name->identity_hash() +
-                      my_sig->identity_hash();
-  juint index = juint(hash) % table_size;
-
-  MutexLocker ml(current, TouchedMethodLog_lock);
-  if (_touched_method_table == NULL) {
-    _touched_method_table = NEW_C_HEAP_ARRAY2(TouchedMethodRecord*, table_size,
-                                              mtTracing, CURRENT_PC);
-    memset(_touched_method_table, 0, sizeof(TouchedMethodRecord*)*table_size);
-  }
-
-  TouchedMethodRecord* ptr = _touched_method_table[index];
-  while (ptr) {
-    if (ptr->_class_name       == my_class &&
-        ptr->_method_name      == my_name &&
-        ptr->_method_signature == my_sig) {
-      return;
-    }
-    if (ptr->_next == NULL) break;
-    ptr = ptr->_next;
-  }
-  TouchedMethodRecord* nptr = NEW_C_HEAP_OBJ(TouchedMethodRecord, mtTracing);
-  my_class->increment_refcount();
-  my_name->increment_refcount();
-  my_sig->increment_refcount();
-  nptr->_class_name         = my_class;
-  nptr->_method_name        = my_name;
-  nptr->_method_signature   = my_sig;
-  nptr->_next               = NULL;
-
-  if (ptr == NULL) {
-    // first
-    _touched_method_table[index] = nptr;
-  } else {
-    ptr->_next = nptr;
-  }
-}
-
-void Method::print_touched_methods(outputStream* out) {
-  MutexLocker ml(Thread::current()->is_VM_thread() ? NULL : TouchedMethodLog_lock);
-  out->print_cr("# Method::print_touched_methods version 1");
-  if (_touched_method_table) {
-    for (int i = 0; i < TOUCHED_METHOD_TABLE_SIZE; i++) {
-      TouchedMethodRecord* ptr = _touched_method_table[i];
-      while(ptr) {
-        ptr->_class_name->print_symbol_on(out);       out->print(".");
-        ptr->_method_name->print_symbol_on(out);      out->print(":");
-        ptr->_method_signature->print_symbol_on(out); out->cr();
-        ptr = ptr->_next;
-      }
-    }
-  }
 }
 
 // Verification

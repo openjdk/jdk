@@ -115,10 +115,8 @@ inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp) {
   _pc = (address)(ptr_sp[-1]);
 
   // Here's a sticky one. This constructor can be called via AsyncGetCallTrace
-  // when last_Java_sp is non-null but the pc fetched is junk. If we are truly
-  // unlucky the junk value could be to a zombied method and we'll die on the
-  // find_blob call. This is also why we can have no asserts on the validity
-  // of the pc we find here. AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
+  // when last_Java_sp is non-null but the pc fetched is junk.
+  // AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
   // -> pd_last_frame should use a specialized version of pd_last_frame which could
   // call a specilaized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious
@@ -275,13 +273,11 @@ inline intptr_t* frame::interpreter_frame_expression_stack() const {
 // Entry frames
 
 inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
- return (JavaCallWrapper**)addr_at(entry_frame_call_wrapper_offset);
+  return (JavaCallWrapper**)addr_at(entry_frame_call_wrapper_offset);
 }
 
 
 // Compiled frames
-PRAGMA_DIAG_PUSH
-PRAGMA_NONNULL_IGNORED
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   oop* result_adr = (oop *)map->location(x10->as_VMReg(), nullptr);
   guarantee(result_adr != NULL, "bad register save location");
@@ -293,7 +289,6 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   guarantee(result_adr != NULL, "bad register save location");
   *result_adr = obj;
 }
-PRAGMA_DIAG_POP
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
   if (_cb == NULL) return NULL;

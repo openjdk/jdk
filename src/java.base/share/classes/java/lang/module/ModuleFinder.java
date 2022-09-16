@@ -54,15 +54,12 @@ import jdk.internal.module.SystemModuleFinders;
  *
  * <p> Example usage: </p>
  *
- * <pre>{@code
- *     Path dir1, dir2, dir3;
- *
+ * {@snippet :
+ *     Path dir1 = ..., dir2 = ..., dir3 = ...;
  *     ModuleFinder finder = ModuleFinder.of(dir1, dir2, dir3);
- *
  *     Optional<ModuleReference> omref = finder.find("jdk.foo");
  *     omref.ifPresent(mref -> ... );
- *
- * }</pre>
+ * }
  *
  * <p> The {@link #find(String) find} and {@link #findAll() findAll} methods
  * defined here can fail for several reasons. These include I/O errors, errors

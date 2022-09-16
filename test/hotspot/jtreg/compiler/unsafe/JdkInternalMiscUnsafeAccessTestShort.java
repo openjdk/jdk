@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,14 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestShort {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attempts with delay on failure.
+    // Be mindful of worst-case total time on test, which would be at
+    // roughly (delay*attempts) milliseconds.
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 100);
+    static final int WEAK_DELAY_MS = Math.max(1, Integer.getInteger("weakDelay", 1));
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -84,6 +91,16 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(short[].class);
         int ascale = UNSAFE.arrayIndexScale(short[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay() {
+        try {
+            if (WEAK_DELAY_MS > 0) {
+                Thread.sleep(WEAK_DELAY_MS);
+            }
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static short static_v;
@@ -258,40 +275,72 @@ public class JdkInternalMiscUnsafeAccessTestShort {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetShortPlain(base, offset, (short)0x0123, (short)0x4567);
+                if (!success) weakDelay();
             }
-            assertEquals(success, true, "weakCompareAndSetPlain short");
+            assertEquals(success, true, "success weakCompareAndSetPlain short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x4567, "weakCompareAndSetPlain short value");
+            assertEquals(x, (short)0x4567, "success weakCompareAndSetPlain short value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetShortPlain(base, offset, (short)0x0123, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetPlain short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x4567, "failing weakCompareAndSetPlain short value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetShortAcquire(base, offset, (short)0x4567, (short)0x0123);
+                if (!success) weakDelay();
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire short");
+            assertEquals(success, true, "success weakCompareAndSetAcquire short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x0123, "weakCompareAndSetAcquire short");
+            assertEquals(x, (short)0x0123, "success weakCompareAndSetAcquire short");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetShortAcquire(base, offset, (short)0x4567, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "failing weakCompareAndSetAcquire short value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetShortRelease(base, offset, (short)0x0123, (short)0x4567);
+                if (!success) weakDelay();
             }
-            assertEquals(success, true, "weakCompareAndSetRelease short");
+            assertEquals(success, true, "success weakCompareAndSetRelease short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x4567, "weakCompareAndSetRelease short");
+            assertEquals(x, (short)0x4567, "success weakCompareAndSetRelease short");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetShortRelease(base, offset, (short)0x0123, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetRelease short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x4567, "failing weakCompareAndSetRelease short value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetShort(base, offset, (short)0x4567, (short)0x0123);
+                if (!success) weakDelay();
             }
-            assertEquals(success, true, "weakCompareAndSet short");
+            assertEquals(success, true, "success weakCompareAndSet short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x0123, "weakCompareAndSet short");
+            assertEquals(x, (short)0x0123, "success weakCompareAndSet short");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetShort(base, offset, (short)0x4567, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSet short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "failing weakCompareAndSet short value");
         }
 
         UNSAFE.putShort(base, offset, (short)0x4567);

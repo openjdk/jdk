@@ -30,9 +30,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -354,8 +352,8 @@ public class Table extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        return toContent().write(out, atNewline);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        return toContent().write(out, newline, atNewline);
     }
 
     /**

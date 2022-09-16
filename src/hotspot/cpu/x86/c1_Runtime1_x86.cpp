@@ -29,6 +29,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -76,11 +77,11 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   int call_offset = -1;
   if (!align_stack) {
-    set_last_Java_frame(thread, noreg, rbp, NULL);
+    set_last_Java_frame(thread, noreg, rbp, NULL, rscratch1);
   } else {
     address the_pc = pc();
     call_offset = offset();
-    set_last_Java_frame(thread, noreg, rbp, the_pc);
+    set_last_Java_frame(thread, noreg, rbp, the_pc, rscratch1);
     andptr(rsp, -(StackAlignmentInBytes));    // Align stack
   }
 
@@ -110,7 +111,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   // check for pending exceptions
   { Label L;
-    cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     jcc(Assembler::equal, L);
     // exception pending => remove activation and forward to exception handler
     movptr(rax, Address(thread, Thread::pending_exception_offset()));
@@ -320,10 +321,6 @@ enum reg_save_layout {
 // describe FPU registers.  In all other cases it should be sufficient
 // to simply save their current value.
 //
-// Register is a class, but it would be assigned numerical value.
-// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
-PRAGMA_DIAG_PUSH
-PRAGMA_NONNULL_IGNORED
 static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
                                 bool save_fpu_registers = true) {
 
@@ -418,7 +415,6 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 
   return map;
 }
-PRAGMA_DIAG_POP
 
 #define __ this->
 
@@ -734,7 +730,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   // check that fields in JavaThread for exception oop and issuing pc are
   // empty before writing to them
   Label oop_empty;
-  __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), (int32_t) NULL_WORD);
+  __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), NULL_WORD);
   __ jcc(Assembler::equal, oop_empty);
   __ stop("exception oop already set");
   __ bind(oop_empty);
@@ -890,7 +886,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   __ get_thread(thread);
   __ push(thread);
 #endif // _LP64
-  __ set_last_Java_frame(thread, noreg, rbp, NULL);
+  __ set_last_Java_frame(thread, noreg, rbp, NULL, rscratch1);
   // do the call
   __ call(RuntimeAddress(target));
   OopMapSet* oop_maps = new OopMapSet();
@@ -916,7 +912,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 
   // check for pending exceptions
   { Label L;
-    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::equal, L);
     // exception pending => remove activation and forward to exception handler
 
@@ -940,13 +936,13 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 #ifdef ASSERT
     // check that fields in JavaThread for exception oop and issuing pc are empty
     Label oop_empty;
-    __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), NULL_WORD);
     __ jcc(Assembler::equal, oop_empty);
     __ stop("exception oop must be empty");
     __ bind(oop_empty);
 
     Label pc_empty;
-    __ cmpptr(Address(thread, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, JavaThread::exception_pc_offset()), NULL_WORD);
     __ jcc(Assembler::equal, pc_empty);
     __ stop("exception pc must be empty");
     __ bind(pc_empty);
@@ -1151,9 +1147,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         // load the klass and check the has finalizer flag
         Label register_finalizer;
-        Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
         Register t = rsi;
-        __ load_klass(t, rax, tmp_load_klass);
+        __ load_klass(t, rax, rscratch1);
         __ movl(t, Address(t, Klass::access_flags_offset()));
         __ testl(t, JVM_ACC_HAS_FINALIZER);
         __ jcc(Assembler::notZero, register_finalizer);

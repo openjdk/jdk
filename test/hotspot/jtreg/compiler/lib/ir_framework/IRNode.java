@@ -176,6 +176,7 @@ public class IRNode {
     public static final String CMP_UL = START + "CmpUL" + MID + END;
     public static final String CMP_U3 = START + "CmpU3" + MID + END;
     public static final String CMP_UL3 = START + "CmpUL3" + MID + END;
+    public static final String CMP_I = START + "CmpI" + MID + END;
     public static final String MUL = START + "Mul(I|L|F|D)" + MID + END;
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
@@ -211,11 +212,15 @@ public class IRNode {
     public static final String VECTOR_BLEND = START + "VectorBlend" + MID + END;
     public static final String REVERSE_BYTES_V = START + "ReverseBytesV" + MID + END;
 
+    public static final String Min_I = START + "MinI" + MID + END;
+    public static final String Max_I = START + "MaxI" + MID + END;
     public static final String Min_V = START + "MinV" + MID + END;
     public static final String Max_V = START + "MaxV" + MID + END;
 
     public static final String FAST_LOCK   = START + "FastLock" + MID + END;
     public static final String FAST_UNLOCK = START + "FastUnlock" + MID + END;
+
+    public static final String POPULATE_INDEX = START + "PopulateIndex" + MID + END;
 
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.

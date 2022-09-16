@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@
 
 void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                             Register addr, Register count, RegSet saved_regs) {
-  assert_cond(masm != NULL);
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
   if (!dest_uninitialized) {
     Label done;
@@ -88,7 +87,6 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 
 void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                              Register start, Register count, Register tmp, RegSet saved_regs) {
-  assert_cond(masm != NULL);
   __ push_reg(saved_regs, sp);
   assert_different_registers(start, count, tmp);
   assert_different_registers(c_rarg0, count);
@@ -109,7 +107,6 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   // directly to skip generating the check by
   // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
 
-  assert_cond(masm != NULL);
   assert(thread == xthread, "must be");
 
   Label done;
@@ -157,12 +154,8 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   __ j(done);
 
   __ bind(runtime);
-  // save the live input values
-  RegSet saved = RegSet::of(pre_val);
-  if (tosca_live) { saved += RegSet::of(x10); }
-  if (obj != noreg) { saved += RegSet::of(obj); }
 
-  __ push_reg(saved, sp);
+  __ push_call_clobbered_registers();
 
   if (expand_call) {
     assert(pre_val != c_rarg1, "smashed arg");
@@ -171,7 +164,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
   }
 
-  __ pop_reg(saved, sp);
+  __ pop_call_clobbered_registers();
 
   __ bind(done);
 
@@ -183,7 +176,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register thread,
                                                   Register tmp,
                                                   Register tmp2) {
-  assert_cond(masm != NULL);
   assert(thread == xthread, "must be");
   assert_different_registers(store_addr, new_val, thread, tmp, tmp2,
                              t0);
@@ -258,7 +250,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                     Register dst, Address src, Register tmp1, Register tmp_thread) {
-  assert_cond(masm != NULL);
   bool on_oop = is_reference_type(type);
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
@@ -281,19 +272,18 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
 }
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                         Address dst, Register val, Register tmp1, Register tmp2) {
-  assert_cond(masm != NULL);
+                                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   // flatten object address if needed
   if (dst.offset() == 0) {
-    if (dst.base() != x13) {
-      __ mv(x13, dst.base());
+    if (dst.base() != tmp3) {
+      __ mv(tmp3, dst.base());
     }
   } else {
-    __ la(x13, dst);
+    __ la(tmp3, dst);
   }
 
   g1_write_barrier_pre(masm,
-                       x13 /* obj */,
+                       tmp3 /* obj */,
                        tmp2 /* pre_val */,
                        xthread /* thread */,
                        tmp1  /* tmp */,
@@ -301,7 +291,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                        false /* expand_call */);
 
   if (val == noreg) {
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), noreg, noreg, noreg);
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), noreg, noreg, noreg, noreg);
   } else {
     // G1 barrier needs uncompressed oop for region cross check.
     Register new_val = val;
@@ -309,9 +299,9 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
       new_val = t1;
       __ mv(new_val, val);
     }
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), val, noreg, noreg);
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
     g1_write_barrier_post(masm,
-                          x13 /* store_adr */,
+                          tmp3 /* store_adr */,
                           new_val /* new_val */,
                           xthread /* thread */,
                           tmp1 /* tmp */,
@@ -378,6 +368,15 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   Label done;
   Label runtime;
+
+  // Is marking still active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {  // 4-byte width
+    __ lwu(tmp, in_progress);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ lbu(tmp, in_progress);
+  }
+  __ beqz(tmp, done);
 
   // Can we store original value in the thread's buffer?
   __ ld(tmp, queue_index);

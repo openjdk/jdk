@@ -32,6 +32,8 @@
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/frame.inline.hpp"
@@ -255,7 +257,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // BugId 4454115: A read from a MappedByteBuffer can fault
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         bool is_unsafe_arraycopy = thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc);
         if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
@@ -566,7 +568,7 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
   st->print(  "EIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EIP]);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EFL]);
-  st->print(", CR2=" PTR64_FORMAT, (uint64_t)uc->uc_mcontext.cr2);
+  st->print(", CR2=" UINT64_FORMAT_X_0, (uint64_t)uc->uc_mcontext.cr2);
 #endif // AMD64
   st->cr();
   st->cr();
@@ -650,83 +652,6 @@ void os::verify_stack_alignment() {
 #endif
 }
 #endif
-
-
-/*
- * IA32 only: execute code at a high address in case buggy NX emulation is present. I.e. avoid CS limit
- * updates (JDK-8023956).
- */
-void os::workaround_expand_exec_shield_cs_limit() {
-#if defined(IA32)
-  assert(Linux::initial_thread_stack_bottom() != NULL, "sanity");
-  size_t page_size = os::vm_page_size();
-
-  /*
-   * JDK-8197429
-   *
-   * Expand the stack mapping to the end of the initial stack before
-   * attempting to install the codebuf.  This is needed because newer
-   * Linux kernels impose a distance of a megabyte between stack
-   * memory and other memory regions.  If we try to install the
-   * codebuf before expanding the stack the installation will appear
-   * to succeed but we'll get a segfault later if we expand the stack
-   * in Java code.
-   *
-   */
-  if (os::is_primordial_thread()) {
-    address limit = Linux::initial_thread_stack_bottom();
-    if (! DisablePrimordialThreadGuardPages) {
-      limit += StackOverflow::stack_red_zone_size() +
-               StackOverflow::stack_yellow_zone_size();
-    }
-    os::Linux::expand_stack_to(limit);
-  }
-
-  /*
-   * Take the highest VA the OS will give us and exec
-   *
-   * Although using -(pagesz) as mmap hint works on newer kernel as you would
-   * think, older variants affected by this work-around don't (search forward only).
-   *
-   * On the affected distributions, we understand the memory layout to be:
-   *
-   *   TASK_LIMIT= 3G, main stack base close to TASK_LIMT.
-   *
-   * A few pages south main stack will do it.
-   *
-   * If we are embedded in an app other than launcher (initial != main stack),
-   * we don't have much control or understanding of the address space, just let it slide.
-   */
-  char* hint = (char*)(Linux::initial_thread_stack_bottom() -
-                       (StackOverflow::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(hint, page_size);
-
-  if (codebuf == NULL) {
-    // JDK-8197429: There may be a stack gap of one megabyte between
-    // the limit of the stack and the nearest memory region: this is a
-    // Linux kernel workaround for CVE-2017-1000364.  If we failed to
-    // map our codebuf, try again at an address one megabyte lower.
-    hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(hint, page_size);
-  }
-
-  if ((codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true))) {
-    return; // No matter, we tried, best effort.
-  }
-
-  MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
-
-  log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
-
-  // Some code to exec: the 'ret' instruction
-  codebuf[0] = 0xC3;
-
-  // Call the code in the codebuf
-  __asm__ volatile("call *%0" : : "r"(codebuf));
-
-  // keep the page mapped so CS limit isn't reduced.
-#endif
-}
 
 int os::extra_bang_size_in_bytes() {
   // JDK-8050147 requires the full cache line bang for x86.
