@@ -4176,17 +4176,13 @@ bool PhaseIdealLoop::process_expensive_nodes() {
         }
         // Do the actual moves
         if (n1->in(0) != c1) {
-          _igvn.hash_delete(n1);
-          n1->set_req(0, c1);
-          _igvn.hash_insert(n1);
-          _igvn._worklist.push(n1);
+          _igvn.replace_input_of(n1, 0, c1);
+          _igvn.hash_insert(n1); // TODO try removing this?
           progress = true;
         }
         if (n2->in(0) != c2) {
-          _igvn.hash_delete(n2);
-          n2->set_req(0, c2);
-          _igvn.hash_insert(n2);
-          _igvn._worklist.push(n2);
+          _igvn.replace_input_of(n2, 0, c2);
+          _igvn.hash_insert(n2); // TODO try removing this?
           progress = true;
         }
       }
@@ -5114,8 +5110,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           assert(cfg != NULL, "must find the control user of m");
           uint k = 0;             // Probably cfg->in(0)
           while( cfg->in(k) != m ) k++; // But check in case cfg is a Region
-          cfg->set_req( k, if_t ); // Now point to NeverBranch
-          _igvn._worklist.push(cfg);
+          _igvn.replace_input_of(cfg, k, if_t); // Now point to NeverBranch
 
           // Now create the never-taken loop exit
           Node *if_f = new CProjNode( iff, 1 );
