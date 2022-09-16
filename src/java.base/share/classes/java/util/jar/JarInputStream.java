@@ -41,7 +41,7 @@ import jdk.internal.util.jar.JarIndex;
  * <p>
  * The {@link #getManifest} method will return the {@code Manifest} when it is
  * the first entry in the stream, or {@code META-INF/} is the first entry and
- * the {@code Manifest} is the second entry within the stream.
+ * the {@code Manifest} is the second entry in the stream.
  * </p>
  * <p>
  * When the {@code Manifest} is returned by {@code getManifest()}, the {@link #getNextEntry()}
@@ -74,10 +74,10 @@ import jdk.internal.util.jar.JarIndex;
  *  {@link JarEntry#getCertificates()} may be called to obtain the certificates
  *  for this entry and {@link JarEntry#getCodeSigners()} may be called to obtain
  *  the signers.
- * <p>
- * <b>Note:</b> If a {@code JarEntry} is modified after the JAR file is signed,
+ * @apiNote
+ * If a {@code JarEntry} is modified after the JAR file is signed,
  * a {@link SecurityException} will be thrown when the entry is read.
- * </p>
+ * 
  *
  * @author  David Connelly
  * @see     Manifest
