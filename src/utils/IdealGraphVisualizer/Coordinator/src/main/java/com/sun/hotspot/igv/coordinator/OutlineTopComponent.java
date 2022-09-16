@@ -144,32 +144,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         binaryServer = new Server(getDocument(), callback, true);
     }
 
-    // Fetch and select the latest active graph.
-    private void updateGraphSelection() {
-        // Wait for LookupHistory to be updated with the last active graph
-        // before selecting it.
-        SwingUtilities.invokeLater(() -> {
-            final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
-            if (provider != null) {
-                try {
-                    InputGraph graph = provider.getGraph();
-                    if (graph.isDiffGraph()) {
-                        EditorTopComponent editor = EditorTopComponent.getActive();
-                        if (editor != null) {
-                            InputGraph firstGraph = editor.getModel().getFirstGraph();
-                            InputGraph secondGraph = editor.getModel().getSecondGraph();
-                            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)});
-                        }
-                    } else {
-                        manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(graph)});
-                    }
-                } catch (Exception e) {
-                    Exceptions.printStackTrace(e);
-                }
-            }
-        });
-    }
-
     public void clear() {
         document.clear();
         FolderNode.clearGraphNodeMap();
@@ -189,7 +163,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized OutlineTopComponent getDefault() {
         if (instance == null) {
@@ -224,7 +198,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         Lookup.Template<InputGraphProvider> tpl = new Lookup.Template<InputGraphProvider>(InputGraphProvider.class);
         result = Utilities.actionsGlobalContext().lookup(tpl);
         result.addLookupListener(this);
-        updateGraphSelection();
+        resultChanged(null);
         this.requestActive();
     }
 
@@ -258,11 +232,33 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     @Override
     public void resultChanged(LookupEvent lookupEvent) {
-        // Highlight the focused graph, if available, in the outline.
-        if (result.allItems().isEmpty()) {
-            return;
-        }
-        updateGraphSelection();
+        // Wait for LookupHistory to be updated with the last active graph
+        // before selecting it.
+        SwingUtilities.invokeLater(() -> {
+            GraphNode[] selection = new  GraphNode[]{};
+            final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
+            if (provider != null) {
+                // Try to fetch and select the latest active graph.
+                InputGraph graph = provider.getGraph();
+                if (graph != null) {
+                    if (graph.isDiffGraph()) {
+                        EditorTopComponent editor = EditorTopComponent.getActive();
+                        if (editor != null) {
+                            InputGraph firstGraph = editor.getModel().getFirstGraph();
+                            InputGraph secondGraph = editor.getModel().getSecondGraph();
+                            selection = new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)};
+                        }
+                    } else {
+                        selection = new GraphNode[]{FolderNode.getGraphNode(graph)};
+                    }
+                }
+            }
+            try {
+                manager.setSelectedNodes(selection);
+            } catch (Exception e) {
+                Exceptions.printStackTrace(e);
+            }
+        });
     }
 
     @Override

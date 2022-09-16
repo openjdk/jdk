@@ -91,7 +91,7 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized ControlFlowTopComponent getDefault() {
         if (instance == null) {
@@ -143,8 +143,10 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
                 InputGraph graph = provider.getGraph();
                 if (graph != null) {
                     scene.setGraph(graph);
+                    return;
                 }
             }
+            scene.setGraph(new InputGraph(""));
         });
     }
 

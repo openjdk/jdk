@@ -209,7 +209,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         scene = new DiagramScene(actions, actionsWithSelection, rangeSliderModel);
         content = new InstanceContent();
         graphContent = new InstanceContent();
-        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
+        this.associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
         content.add(exportCookie);
         content.add(rangeSliderModel);
         content.add(diagramProvider);
@@ -429,7 +429,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public static EditorTopComponent getActive() {
-        return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
+        try {
+            return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** This method is called from within the constructor to
