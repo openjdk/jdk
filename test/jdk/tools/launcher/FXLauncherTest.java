@@ -448,7 +448,8 @@ public class FXLauncherTest extends TestHelper {
             // do nothing
         }
         if (fxClass != null) {
-            throw new RuntimeException("JavaFX modules erroneously included in the JDK");
+            System.out.println("JavaFX modules erroneously included in the JDK. Skip the test.");
+            return;
         }
 
         FXLauncherTest fxt = new FXLauncherTest();
