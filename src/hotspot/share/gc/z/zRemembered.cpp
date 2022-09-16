@@ -34,6 +34,7 @@
 #include "gc/z/zVerify.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetForwardingYoung("Concurrent Mark Root Remset Forw", ZGenerationId::young);
@@ -322,25 +323,50 @@ public:
 
 class ZRememberedScanPageTask : public ZRestartableTask {
 private:
-  ZGenerationPagesParallelIterator _iterator;
-  const ZRemembered&               _remembered;
+  const ZRemembered&        _remembered;
+  ZOldPagesParallelIterator _old_pages_parallel_iterator;
 
 public:
   ZRememberedScanPageTask(const ZRemembered& remembered) :
       ZRestartableTask("ZRememberedScanPageTask"),
-      _iterator(remembered._page_table, ZGenerationId::old, remembered._page_allocator),
-      _remembered(remembered) {}
+      _remembered(remembered),
+      _old_pages_parallel_iterator(remembered._page_table) {
+    _remembered._page_allocator->enable_safe_destroy();
+    _remembered._page_allocator->enable_safe_recycle();
+  }
+
+  ~ZRememberedScanPageTask() {
+    _remembered._page_allocator->disable_safe_recycle();
+    _remembered._page_allocator->disable_safe_destroy();
+    // We are done scanning the set of old pages.
+    // Clear the set for the next young collection.
+    _remembered._page_table->clear_found_old_previous_set();
+  }
 
   virtual void work() {
-    _iterator.do_pages([&](ZPage* page) {
+    for (ZPage* page; _old_pages_parallel_iterator.next(&page);) {
       if (_remembered.should_scan_page(page)) {
         // Visit all entries pointing into young gen
         _remembered.scan_page(page);
         // ... and as a side-effect clear the previous entries
         page->clear_remset_previous("after scan page");
       }
-      return !ZGeneration::young()->should_worker_stop();
-    });
+
+      // The remset scanning maintains the "maybe old" pages optimization.
+      //
+      // We maintain two sets of old pages: The first is the currently active
+      // set, where old pages are registered into. The second is the old
+      // read-only copy. The two sets flip during young mark start. This
+      // analogous to how we set and clean remembered set bits.
+      //
+      // The iterator reads from the read-only copy, and then here, we install
+      // entries in the current active set.
+      _remembered._page_table->register_found_old(page);
+
+      if (ZGeneration::young()->should_worker_stop()) {
+        break;
+      }
+    }
   }
 };
 
@@ -368,4 +394,5 @@ void ZRemembered::scan_field(volatile zpointer* p) const {
 
 void ZRemembered::flip() const {
   ZRememberedSet::flip();
+  _page_table->flip_found_old_sets();
 }

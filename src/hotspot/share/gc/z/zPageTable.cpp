@@ -29,8 +29,107 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
+// When scanning the remembered set during the young generation marking, we
+// want to visit all old pages. And we want that to be done in parallel and
+// fast.
+//
+// Walking over the entire page table and letting the workers claim indices
+// have been shown to have scalability issues.
+//
+// So, we have the "found old" optimization, which allows us to perform much
+// fewer claimes (order of old pages, instead of order of slots in the page
+// table), and it allows us to read fewer pages.
+//
+// The set of "found old pages" isn't precise, and can contain stale entries
+// referring to slots of freed pages, or even slots where young pages have
+// been installed. However, it will not lack any of the old pages.
+//
+// The data is maintained very similar to when and how we maintain the
+// remembered set bits: We keep two separates sets, one for read-only access
+// by the young marking, and a currently active set where we register new
+// pages. When pages get relocated, or die, the page table slot for that page
+// must be cleared. This clearing is done just like we do with the remset
+// scanning: The old entries are not copied to the current active set, only
+// slots that were found to actually contain old pages are registered in the
+// active set.
+
+ZPageTable::FoundOld::FoundOld() :
+    _bitmaps{{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
+             {ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */}},
+    _current{0} {}
+
+void ZPageTable::FoundOld::flip() {
+  _current ^= 1;
+}
+
+void ZPageTable::FoundOld::clear_previous() {
+  previous_bitmap()->clear_large();
+}
+
+void ZPageTable::FoundOld::register_page(ZPage* page) {
+  assert(page->is_old(), "Only register old pages");
+  current_bitmap()->par_set_bit(untype(page->start()) >> ZGranuleSizeShift, memory_order_relaxed);
+}
+
+CHeapBitMap* ZPageTable::FoundOld::current_bitmap() {
+  return &_bitmaps[_current];
+}
+
+CHeapBitMap* ZPageTable::FoundOld::previous_bitmap() {
+  return &_bitmaps[_current ^ 1];
+}
+
+ZOldPagesParallelIterator::ZOldPagesParallelIterator(ZPageTable* page_table) :
+    _page_table(page_table),
+    _claimed(0) {}
+
+// This iterator uses the "found old" optimization.
+bool ZOldPagesParallelIterator::next(ZPage** page_addr)  {
+  BitMap* const bm = _page_table->_found_old.previous_bitmap();
+
+  BitMap::idx_t prev = Atomic::load(&_claimed);
+
+  for (;;) {
+    if (prev == bm->size()) {
+      return false;
+    }
+
+    BitMap::idx_t page_index = bm->get_next_one_offset(_claimed);
+    if (page_index == bm->size()) {
+      BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
+      return false;
+    }
+
+    BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
+    if (res != prev) {
+      // Someone else claimed
+      prev = res;
+      continue;
+    }
+
+    // Found bit
+
+    ZPage* const page = _page_table->at(page_index);
+    if (page == nullptr) {
+      continue;
+    }
+
+    // Found page
+
+    if (!page->is_old()) {
+      continue;
+    }
+
+    // Found old page
+
+    *page_addr = page;
+    return true;
+  }
+}
+
 ZPageTable::ZPageTable() :
-    _map(ZAddressOffsetMax) {}
+    _map(ZAddressOffsetMax),
+    _found_old() {}
 
 void ZPageTable::insert(ZPage* page) {
   const zoffset offset = page->start();
@@ -42,6 +141,10 @@ void ZPageTable::insert(ZPage* page) {
 
   assert(_map.get(offset) == NULL, "Invalid entry");
   _map.put(offset, size, page);
+
+  if (page->is_old()) {
+    register_found_old(page);
+  }
 }
 
 void ZPageTable::remove(ZPage* page) {
@@ -58,6 +161,27 @@ void ZPageTable::replace(ZPage* old_page, ZPage* new_page) {
 
   assert(_map.get(offset) == old_page, "Invalid entry");
   _map.release_put(offset, size, new_page);
+
+  if (new_page->is_old()) {
+    register_found_old(new_page);
+  }
+}
+
+void ZPageTable::flip_found_old_sets() {
+  _found_old.flip();
+}
+
+void ZPageTable::clear_found_old_previous_set() {
+  _found_old.clear_previous();
+}
+
+void ZPageTable::register_found_old(ZPage* page) {
+  assert(page->is_old(), "Should only register old pages");
+  _found_old.register_page(page);
+}
+
+ZOldPagesParallelIterator ZPageTable::old_pages_parallel_iterator() {
+  return ZOldPagesParallelIterator(this);
 }
 
 ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator) :
