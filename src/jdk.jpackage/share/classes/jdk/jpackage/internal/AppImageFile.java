@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -61,10 +63,11 @@ public final class AppImageFile {
     // These values will be loaded from AppImage xml file.
     private final String creatorVersion;
     private final String creatorPlatform;
+    private final String appVersion;
     private final String launcherName;
     private final String mainClass;
     private final List<LauncherInfo> addLauncherInfos;
-    private final boolean signed;
+    private boolean signed;
     private final boolean appStore;
 
     private static final String FILENAME = ".jpackage.xml";
@@ -73,15 +76,20 @@ public final class AppImageFile {
             Platform.LINUX, "linux", Platform.WINDOWS, "windows", Platform.MAC,
             "macOS");
 
-    private AppImageFile(Path appImageDir, String launcherName, String mainClass,
-            List<LauncherInfo> launcherInfos, String creatorVersion,
-            String creatorPlatform, String signedStr, String appStoreStr) {
+    private AppImageFile(Path appImageDir, String appVersion, String launcherName,
+            String mainClass, List<LauncherInfo> launcherInfos,
+            String creatorVersion, String creatorPlatform, String signedStr,
+            String appStoreStr) {
         boolean isValid = true;
         if (!Objects.equals(getVersion(), creatorVersion)) {
             isValid = false;
         }
 
         if (!Objects.equals(getPlatform(), creatorPlatform)) {
+            isValid = false;
+        }
+
+        if (appVersion == null || appVersion.length() == 0) {
             isValid = false;
         }
 
@@ -111,9 +119,11 @@ public final class AppImageFile {
 
         if (!isValid) {
             throw new RuntimeException(MessageFormat.format(I18N.getString(
-                "error.invalid-app-image"), appImageDir));
+                "error.invalid-app-image"), appImageDir,
+                AppImageFile.getPathInAppImage(appImageDir)));
         }
 
+        this.appVersion = appVersion;
         this.launcherName = launcherName;
         this.mainClass = mainClass;
         this.addLauncherInfos = launcherInfos;
@@ -133,6 +143,13 @@ public final class AppImageFile {
     }
 
     /**
+     * Returns application version. Never returns null or empty value.
+     */
+    String getAppVersion() {
+        return appVersion;
+    }
+
+    /**
      * Returns main application launcher name. Never returns null or empty value.
      */
     String getLauncherName() {
@@ -146,11 +163,15 @@ public final class AppImageFile {
         return mainClass;
     }
 
+    public void setIsSigned(boolean v) {
+        signed = v;
+    }
+
     public boolean isSigned() {
         return signed;
     }
 
-    boolean isAppStore() {
+    public boolean isAppStore() {
         return appStore;
     }
 
@@ -166,50 +187,94 @@ public final class AppImageFile {
     }
 
     /**
-     * Saves file with application image info in application image.
+     * Saves file with application image info in application image using params
+     * or appImage. Both params or appImage cannot be valid.
      * @param appImageDir - path to application image
+     * @param params - parameters used to generate application image
+     * @param appImage - instance of already existing application image file
      * @throws IOException
+     * @throws IllegalArgumentException - If both params and appImage are null or
+     *                                    If both params and appImage are not null
      */
-    static void save(Path appImageDir, Map<String, Object> params)
-            throws IOException {
+    static void save(Path appImageDir,
+            Map<String, Object> params,
+            AppImageFile appImage) throws IOException {
+        if ((params == null && appImage == null) ||
+            (params != null && appImage != null)) {
+                throw new IllegalArgumentException();
+        }
+
+        final String appVersionSave;
+        final String mainLauncherSave;
+        final String mainClassSave;
+        final String signedSave;
+        final String appStoreSave;
+        final List<LauncherInfo> addLauncherInfoSave;
+        if (params != null) {
+            appVersionSave = VERSION.fetchFrom(params);
+            mainLauncherSave = APP_NAME.fetchFrom(params);
+            mainClassSave = MAIN_CLASS.fetchFrom(params);
+            signedSave = SIGN_BUNDLE.fetchFrom(params).toString();
+            appStoreSave = APP_STORE.fetchFrom(params).toString();
+            addLauncherInfoSave = null;
+        } else {
+            appVersionSave = appImage.getAppVersion();
+            mainLauncherSave = appImage.getLauncherName();
+            mainClassSave = appImage.getMainClass();
+            signedSave = String.valueOf(appImage.isSigned());
+            appStoreSave = String.valueOf(appImage.isAppStore());
+            addLauncherInfoSave = appImage.getAddLaunchers();
+        }
+
         IOUtils.createXml(getPathInAppImage(appImageDir), xml -> {
             xml.writeStartElement("jpackage-state");
             xml.writeAttribute("version", getVersion());
             xml.writeAttribute("platform", getPlatform());
 
             xml.writeStartElement("app-version");
-            xml.writeCharacters(VERSION.fetchFrom(params));
+            xml.writeCharacters(appVersionSave);
             xml.writeEndElement();
 
             xml.writeStartElement("main-launcher");
-            xml.writeCharacters(APP_NAME.fetchFrom(params));
+            xml.writeCharacters(mainLauncherSave);
             xml.writeEndElement();
 
             xml.writeStartElement("main-class");
-            xml.writeCharacters(MAIN_CLASS.fetchFrom(params));
+            xml.writeCharacters(mainClassSave);
             xml.writeEndElement();
 
             xml.writeStartElement("signed");
-            xml.writeCharacters(SIGN_BUNDLE.fetchFrom(params).toString());
+            xml.writeCharacters(signedSave);
             xml.writeEndElement();
 
             xml.writeStartElement("app-store");
-            xml.writeCharacters(APP_STORE.fetchFrom(params).toString());
+            xml.writeCharacters(appStoreSave);
             xml.writeEndElement();
 
-            List<Map<String, ? super Object>> addLaunchers =
-                ADD_LAUNCHERS.fetchFrom(params);
+            if (addLauncherInfoSave != null) {
+                for (var li : addLauncherInfoSave) {
+                    addLauncherInfo(xml, li);
+                }
+            } else {
+                List<Map<String, ? super Object>> addLaunchers =
+                    ADD_LAUNCHERS.fetchFrom(params);
 
-            for (var launcherParams : addLaunchers) {
-                var li = new LauncherInfo(launcherParams);
-                xml.writeStartElement("add-launcher");
-                xml.writeAttribute("name", li.getName());
-                xml.writeAttribute("shortcut", Boolean.toString(li.isShortcut()));
-                xml.writeAttribute("menu", Boolean.toString(li.isMenu()));
-                xml.writeAttribute("service", Boolean.toString(li.isService()));
-                xml.writeEndElement();
+                for (var launcherParams : addLaunchers) {
+                    var li = new LauncherInfo(launcherParams);
+                    addLauncherInfo(xml, li);
+                }
             }
         });
+    }
+
+    static void addLauncherInfo(XMLStreamWriter xml, LauncherInfo li)
+            throws XMLStreamException {
+        xml.writeStartElement("add-launcher");
+        xml.writeAttribute("name", li.getName());
+        xml.writeAttribute("shortcut", Boolean.toString(li.isShortcut()));
+        xml.writeAttribute("menu", Boolean.toString(li.isMenu()));
+        xml.writeAttribute("service", Boolean.toString(li.isService()));
+        xml.writeEndElement();
     }
 
     /**
@@ -223,6 +288,9 @@ public final class AppImageFile {
             Document doc = readXml(appImageDir);
 
             XPath xPath = XPathFactory.newInstance().newXPath();
+
+            String appVersion = xpathQueryNullable(xPath,
+                    "/jpackage-state/app-version/text()", doc);
 
             String mainLauncher = xpathQueryNullable(xPath,
                     "/jpackage-state/main-launcher/text()", doc);
@@ -252,8 +320,9 @@ public final class AppImageFile {
                  launcherInfos.add(new LauncherInfo(launcherNodes.item(i)));
             }
 
-            return new AppImageFile(appImageDir, mainLauncher, mainClass,
-                    launcherInfos, version, platform, signedStr, appStoreStr);
+            return new AppImageFile(appImageDir, appVersion, mainLauncher,
+                    mainClass, launcherInfos, version, platform, signedStr,
+                    appStoreStr);
         } catch (XPathExpressionException ex) {
             // This should never happen as XPath expressions should be correct
             throw new RuntimeException(ex);
