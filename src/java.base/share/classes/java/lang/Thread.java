@@ -1633,11 +1633,11 @@ public class Thread implements Runnable {
      *
      * @throws  UnsupportedOperationException always
      *
-     * @deprecated This method was originally specified to "stop" a thread
-     *       by causing it to throw a {@link ThreadDeath}. It was inherently
-     *       unsafe. Stopping a thread caused it to unlock all of the
-     *       monitors that it had locked (as a natural consequence of the
-     *       {@code ThreadDeath} exception propagating up the stack).  If
+     * @deprecated This method was originally specified to "stop" a victim
+     *       thread by causing the victim thread to throw a {@link ThreadDeath}.
+     *       It was inherently unsafe. Stopping a thread caused it to unlock
+     *       all of the monitors that it had locked (as a natural consequence
+     *       of the {@code ThreadDeath} exception propagating up the stack). If
      *       any of the objects previously protected by these monitors were in
      *       an inconsistent state, the damaged objects became visible to
      *       other threads, potentially resulting in arbitrary behavior.
