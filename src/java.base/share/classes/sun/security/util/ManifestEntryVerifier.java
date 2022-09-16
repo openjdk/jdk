@@ -295,7 +295,7 @@ public class ManifestEntryVerifier {
             params.setExtendedExceptionMsg(JarFile.MANIFEST_NAME,
                 name + " entry");
             DisabledAlgorithmConstraints.jarConstraints()
-                   .permits(algorithm, params);
+                .permits(algorithm, params, false);
             return true;
         } catch (GeneralSecurityException e) {
             if (debug != null) {
