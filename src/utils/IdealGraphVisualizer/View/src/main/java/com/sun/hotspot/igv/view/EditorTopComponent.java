@@ -465,6 +465,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     public void componentClosed() {
         super.componentClosed();
         rangeSliderModel.close();
+        LookupHistory.terminate(InputGraphProvider.class);
     }
 
     @Override

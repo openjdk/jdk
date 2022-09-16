@@ -25,8 +25,8 @@ package com.sun.hotspot.igv.coordinator;
 
 import com.sun.hotspot.igv.connection.Server;
 import com.sun.hotspot.igv.coordinator.actions.*;
+import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
@@ -48,8 +48,8 @@ import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
-import org.openide.util.*;
-import org.openide.util.actions.NodeAction;
+import org.openide.util.Exceptions;
+import org.openide.util.NbBundle;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
@@ -57,13 +57,12 @@ import org.openide.windows.WindowManager;
  *
  * @author Thomas Wuerthinger
  */
-public final class OutlineTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener {
+public final class OutlineTopComponent extends TopComponent implements ExplorerManager.Provider, ChangedListener<InputGraphProvider> {
 
     public static OutlineTopComponent instance;
     public static final String PREFERRED_ID = "OutlineTopComponent";
-    private Lookup.Result result = null;
     private ExplorerManager manager;
-    private GraphDocument document;
+    private final GraphDocument document;
     private FolderNode root;
     private Server server;
     private Server binaryServer;
@@ -100,13 +99,13 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         this.add(toolbar, BorderLayout.NORTH);
 
         toolbar.add(ImportAction.get(ImportAction.class));
-        toolbar.add(((NodeAction) SaveAsAction.get(SaveAsAction.class)).createContextAwareInstance(this.getLookup()));
+        toolbar.add(SaveAsAction.get(SaveAsAction.class).createContextAwareInstance(this.getLookup()));
 
         saveAllAction = SaveAllAction.get(SaveAllAction.class);
         saveAllAction.setEnabled(false);
         toolbar.add(saveAllAction);
 
-        toolbar.add(((NodeAction) RemoveAction.get(RemoveAction.class)).createContextAwareInstance(this.getLookup()));
+        toolbar.add(RemoveAction.get(RemoveAction.class).createContextAwareInstance(this.getLookup()));
 
         removeAllAction = RemoveAllAction.get(RemoveAllAction.class);
         removeAllAction.setEnabled(false);
@@ -129,14 +128,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     private void initReceivers() {
 
-        final GroupCallback callback = new GroupCallback() {
-
-            @Override
-            public void started(Group g) {
-                synchronized(OutlineTopComponent.this) {
-                    getDocument().addElement(g);
-                    g.setParent(getDocument());
-                }
+        final GroupCallback callback = g -> {
+            synchronized(OutlineTopComponent.this) {
+                getDocument().addElement(g);
+                g.setParent(getDocument());
             }
         };
 
@@ -195,16 +190,13 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     @Override
     public void componentOpened() {
-        Lookup.Template<InputGraphProvider> tpl = new Lookup.Template<InputGraphProvider>(InputGraphProvider.class);
-        result = Utilities.actionsGlobalContext().lookup(tpl);
-        result.addLookupListener(this);
-        resultChanged(null);
+        LookupHistory.addListener(InputGraphProvider.class, this);
         this.requestActive();
     }
 
     @Override
     public void componentClosed() {
-        result.removeLookupListener(this);
+        LookupHistory.removeListener(InputGraphProvider.class, this);
     }
 
     @Override
@@ -231,15 +223,14 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     @Override
-    public void resultChanged(LookupEvent lookupEvent) {
+    public void changed(InputGraphProvider lastProvider) {
         // Wait for LookupHistory to be updated with the last active graph
         // before selecting it.
         SwingUtilities.invokeLater(() -> {
             GraphNode[] selection = new  GraphNode[]{};
-            final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
-            if (provider != null) {
+            if (lastProvider != null) {
                 // Try to fetch and select the latest active graph.
-                InputGraph graph = provider.getGraph();
+                InputGraph graph = lastProvider.getGraph();
                 if (graph != null) {
                     if (graph.isDiffGraph()) {
                         EditorTopComponent editor = EditorTopComponent.getActive();
