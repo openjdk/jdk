@@ -45,6 +45,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -748,7 +749,7 @@ void TemplateInterpreterGenerator::lock_method() {
     // get receiver (assume this is frequent case)
     __ ldr(r0, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
     __ br(Assembler::EQ, done);
-    __ load_mirror(r0, rmethod);
+    __ load_mirror(r0, rmethod, r5, rscratch2);
 
 #ifdef ASSERT
     {
@@ -824,7 +825,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ stp(zr, r19_sender_sp, Address(sp, 8 * wordSize));
 
   // Get mirror
-  __ load_mirror(r10, rmethod);
+  __ load_mirror(r10, rmethod, r5, rscratch2);
   if (! native_call) {
     __ ldr(rscratch1, Address(rmethod, Method::const_offset()));
     __ ldrh(rscratch1, Address(rscratch1, ConstMethod::max_stack_offset()));
@@ -894,7 +895,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Load the value of the referent field.
   const Address field_address(local_0, referent_offset);
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ rscratch2, /*tmp2*/ rscratch1);
+  bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ rscratch1, /*tmp2*/ rscratch2);
 
   // areturn
   __ andr(sp, r19_sender_sp, -16);  // done with stack
@@ -1266,7 +1267,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
     __ tbz(t, exact_log2(JVM_ACC_STATIC), L);
     // get mirror
-    __ load_mirror(t, rmethod);
+    __ load_mirror(t, rmethod, r10, rscratch2);
     // copy mirror into activation frame
     __ str(t, Address(rfp, frame::interpreter_frame_oop_temp_offset * wordSize));
     // pass handle to mirror
@@ -1343,7 +1344,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ stlrw(rscratch1, rscratch2);
 
   // Force this write out before the read below
-  __ dmb(Assembler::ISH);
+  if (!UseSystemMemoryBarrier) {
+    __ dmb(Assembler::ISH);
+  }
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
@@ -1402,7 +1405,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ br(Assembler::NE, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.
     __ pop(ltos);
-    __ resolve_jobject(r0, rthread, t);
+    __ resolve_jobject(r0, t, rscratch2);
     __ str(r0, Address(rfp, frame::interpreter_frame_oop_temp_offset*wordSize));
     // keep stack depth as expected by pushing oop which will eventually be discarded
     __ push(ltos);

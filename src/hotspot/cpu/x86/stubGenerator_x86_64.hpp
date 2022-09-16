@@ -271,22 +271,34 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_arraycopy_stubs();
 
+
+  // MD5 stubs
+
+  // ofs and limit are use for multi-block byte array.
+  // int com.sun.security.provider.MD5.implCompress(byte[] b, int ofs)
+  address generate_md5_implCompress(bool multi_block, const char *name);
+
+
+  // SHA stubs
+
+  // ofs and limit are use for multi-block byte array.
+  // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
+  address generate_sha1_implCompress(bool multi_block, const char *name);
+
+  // ofs and limit are use for multi-block byte array.
+  // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
+  address generate_sha256_implCompress(bool multi_block, const char *name);
+  address generate_sha512_implCompress(bool multi_block, const char *name);
+
+  // Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
+  address generate_pshuffle_byte_flip_mask_sha512();
+
+  address generate_upper_word_mask();
+  address generate_shuffle_byte_flip_mask();
+  address generate_pshuffle_byte_flip_mask();
+
+
   // AES intrinsic stubs
-
-  enum {
-    AESBlockSize = 16
-  };
-
-  address generate_key_shuffle_mask();
-
-  address generate_counter_shuffle_mask();
-
-  // Utility routine for loading a 128-bit key word in little endian format
-  // can optionally specify that the shuffle mask is already in an xmmregister
-  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg);
-
-  // Utility routine for increase 128bit counter (iv in CTR mode)
-  void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block);
 
   address generate_aescrypt_encryptBlock();
 
@@ -300,69 +312,83 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_electronicCodeBook_encryptAESCrypt();
 
+  void aesecb_encrypt(Register source_addr, Register dest_addr, Register key, Register len);
+
   address generate_electronicCodeBook_decryptAESCrypt();
 
-  // ofs and limit are use for multi-block byte array.
-  // int com.sun.security.provider.MD5.implCompress(byte[] b, int ofs)
-  address generate_md5_implCompress(bool multi_block, const char *name);
-
-  address generate_upper_word_mask();
-
-  address generate_shuffle_byte_flip_mask();
-
-  // ofs and limit are use for multi-block byte array.
-  // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-  address generate_sha1_implCompress(bool multi_block, const char *name);
-
-  address generate_pshuffle_byte_flip_mask();
-
-  // Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
-  address generate_pshuffle_byte_flip_mask_sha512();
-
-  // ofs and limit are use for multi-block byte array.
-  // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-  address generate_sha256_implCompress(bool multi_block, const char *name);
-  address generate_sha512_implCompress(bool multi_block, const char *name);
-
-  address ghash_polynomial512_addr();
+  void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
 
   // Vector AES Galois Counter Mode implementation
   address generate_galoisCounterMode_AESCrypt();
+  void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
+                      Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
 
-  // This mask is used for incrementing counter value(linc0, linc4, etc.)
-  address counter_mask_addr();
 
  // Vector AES Counter implementation
   address generate_counterMode_VectorAESCrypt();
+  void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
+                      Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
 
   // This is a version of CTR/AES crypt which does 6 blocks in a loop at a time
   // to hide instruction latency
   address generate_counterMode_AESCrypt_Parallel();
 
-  void roundDec(XMMRegister xmm_reg);
-
-  void roundDeclast(XMMRegister xmm_reg);
-
-  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg);
-
   address generate_cipherBlockChaining_decryptVectorAESCrypt();
 
-  // Polynomial x^128+x^127+x^126+x^121+1
-  address ghash_polynomial_addr();
+  address generate_key_shuffle_mask();
 
+  void roundDec(XMMRegister xmm_reg);
+  void roundDeclast(XMMRegister xmm_reg);
+  void roundEnc(XMMRegister key, int rnum);
+  void lastroundEnc(XMMRegister key, int rnum);
+  void roundDec(XMMRegister key, int rnum);
+  void lastroundDec(XMMRegister key, int rnum);
+  void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
+  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl, Register rscratch);
+  void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
+                                  XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
+                                  XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
+                                  bool final_reduction, int index, XMMRegister counter_inc_mask);
+  // Load key and shuffle operation
+  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
+  void ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
+
+  // Utility routine for loading a 128-bit key word in little endian format
+  // can optionally specify that the shuffle mask is already in an xmmregister
+  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
+  void load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
+
+  // Utility routine for increase 128bit counter (iv in CTR mode)
+  void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block);
+
+  void generate_aes_stubs();
+
+
+  // GHASH stubs
+
+  void generate_ghash_stubs();
+
+  void schoolbookAAD(int i, Register subkeyH, XMMRegister data, XMMRegister tmp0,
+                     XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3);
+  void gfmul(XMMRegister tmp0, XMMRegister t);
+  void generateHtbl_one_block(Register htbl, Register rscratch);
+  void generateHtbl_eight_blocks(Register htbl);
+  void avx_ghash(Register state, Register htbl, Register data, Register blocks);
+
+  // Used by GHASH and AES stubs.
+  address ghash_polynomial_addr();
   address ghash_shufflemask_addr();
+  address ghash_long_swap_mask_addr(); // byte swap x86 long
+  address ghash_byte_swap_mask_addr(); // byte swap x86 byte array
+
+  // Single and multi-block ghash operations
+  address generate_ghash_processBlocks();
 
   // Ghash single and multi block operations using AVX instructions
   address generate_avx_ghash_processBlocks();
 
-  // byte swap x86 long
-  address generate_ghash_long_swap_mask();
 
-  // byte swap x86 byte array
-  address generate_ghash_byte_swap_mask();
-
-  // Single and multi-block ghash operations
-  address generate_ghash_processBlocks();
+  // BASE64 stubs
 
   address base64_shuffle_addr();
   address base64_avx2_shuffle_addr();

@@ -523,6 +523,14 @@ public:
   // Run the given batch task using the workers.
   void run_batch_task(G1BatchedTask* cl);
 
+  // Return "optimal" number of chunks per region we want to use for claiming areas
+  // within a region to claim.
+  // The returned value is a trade-off between granularity of work distribution and
+  // memory usage and maintenance costs of that table.
+  // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
+  // and so on seems to be such a good trade-off.
+  static uint get_chunks_per_region();
+
   G1Allocator* allocator() {
     return _allocator;
   }
@@ -1216,6 +1224,7 @@ public:
 
   bool is_marked(oop obj) const;
 
+  inline static bool is_obj_filler(const oop obj);
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;
@@ -1229,8 +1238,8 @@ public:
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
 
-  // Mark the live object that failed evacuation in the prev bitmap.
-  void mark_evac_failure_object(oop obj) const;
+  // Mark the live object that failed evacuation in the bitmap.
+  void mark_evac_failure_object(uint worker_id, oop obj, size_t obj_size) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 

@@ -171,9 +171,9 @@ class MacroAssembler: public Assembler {
   virtual void check_and_handle_earlyret(Register java_thread);
   virtual void check_and_handle_popframe(Register java_thread);
 
-  void resolve_weak_handle(Register result, Register tmp);
-  void resolve_oop_handle(Register result, Register tmp = x15);
-  void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
   void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
@@ -181,9 +181,9 @@ class MacroAssembler: public Assembler {
   void set_narrow_oop(Register dst, jobject obj);
   void set_narrow_klass(Register dst, Klass* k);
 
-  void load_mirror(Register dst, Register method, Register tmp = x15);
+  void load_mirror(Register dst, Register method, Register tmp1, Register tmp2);
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst,
-                      Address src, Register tmp1, Register thread_tmp);
+                      Address src, Register tmp1, Register tmp2);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register src, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src);
@@ -201,9 +201,9 @@ class MacroAssembler: public Assembler {
   void encode_heap_oop(Register d, Register s);
   void encode_heap_oop(Register r) { encode_heap_oop(r, r); };
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                     Register tmp2 = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                              Register tmp2 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
@@ -473,17 +473,26 @@ class MacroAssembler: public Assembler {
   void double_blt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
   void double_bgt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
 
-  void push_reg(RegSet regs, Register stack) { if (regs.bits()) { push_reg(regs.bits(), stack); } }
-  void pop_reg(RegSet regs, Register stack) { if (regs.bits()) { pop_reg(regs.bits(), stack); } }
+private:
+  int push_reg(unsigned int bitset, Register stack);
+  int pop_reg(unsigned int bitset, Register stack);
+  int push_fp(unsigned int bitset, Register stack);
+  int pop_fp(unsigned int bitset, Register stack);
+#ifdef COMPILER2
+  int push_v(unsigned int bitset, Register stack);
+  int pop_v(unsigned int bitset, Register stack);
+#endif // COMPILER2
+
+public:
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
-  int  push_reg(unsigned int bitset, Register stack);
-  int  pop_reg(unsigned int bitset, Register stack);
+  void push_reg(RegSet regs, Register stack) { if (regs.bits()) push_reg(regs.bits(), stack); }
+  void pop_reg(RegSet regs, Register stack)  { if (regs.bits()) pop_reg(regs.bits(), stack); }
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
+  void pop_fp(FloatRegSet regs, Register stack)  { if (regs.bits()) pop_fp(regs.bits(), stack); }
 #ifdef COMPILER2
-  void push_vp(VectorRegSet regs, Register stack) { if (regs.bits()) push_vp(regs.bits(), stack); }
-  void pop_vp(VectorRegSet regs, Register stack) { if (regs.bits()) pop_vp(regs.bits(), stack); }
+  void push_v(VectorRegSet regs, Register stack) { if (regs.bits()) push_v(regs.bits(), stack); }
+  void pop_v(VectorRegSet regs, Register stack)  { if (regs.bits()) pop_v(regs.bits(), stack); }
 #endif // COMPILER2
 
   // Push and pop everything that might be clobbered by a native
@@ -782,12 +791,6 @@ class MacroAssembler: public Assembler {
   // if [src1 == src2], dst = 0;
   // if [src1 < src2], dst = -1;
   void cmp_l2i(Register dst, Register src1, Register src2, Register tmp = t0);
-
-  int push_fp(unsigned int bitset, Register stack);
-  int pop_fp(unsigned int bitset, Register stack);
-
-  int push_vp(unsigned int bitset, Register stack);
-  int pop_vp(unsigned int bitset, Register stack);
 
   // vext
   void vmnot_m(VectorRegister vd, VectorRegister vs);
