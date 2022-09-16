@@ -237,7 +237,7 @@ package-deb:
     - cp -a build/linux-amd64/images/jdk /rivos/
     - cp -a build/linux-rv64/images/jdk /rivos/sysroot/riscv/rivos
     # remove *.debuginfo files, they take a lot of space
-    - find /rivos/jdk /rivos/sysroot/riscv/rivos/jdk -name '*.debuginfo' -exec rm -f {} \; -print
+    - find /rivos/jdk /rivos/sysroot/riscv/rivos/jdk -type f -name '*.debuginfo' -exec rm -f {} \; -print
 
 package-deb-dbg:
   extends: .deploy-deb
@@ -262,6 +262,9 @@ package-deb-dbg:
     - mkdir -p /rivos/sysroot/riscv/rivos
     - cp -a build/linux-amd64/images/jdk /rivos/
     - cp -a build/linux-rv64/images/jdk /rivos/sysroot/riscv/rivos
+    # remove non *.debuginfo files, we only want *.debuginfo for the -dbg package
+    - find /rivos/jdk /rivos/sysroot/riscv/rivos/jdk \( -xtype f -or -xtype l \) -not -name '*.debuginfo' -exec rm -f {} \; -print
+    - find /rivos/jdk /rivos/sysroot/riscv/rivos/jdk -type d -print | sort -r | xargs -I{} bash -c "rmdir {} || true"
 
 deploy-module-ubuntu:
   extends: .deploy-module
