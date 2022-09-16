@@ -1351,7 +1351,7 @@ public class CSS implements Serializable {
       return colorstr;
     }
 
-    private static Pattern hex = Pattern.compile("\\p{XDigit}+");
+    private static final Pattern hex = Pattern.compile("\\p{XDigit}+");
 
     /**
      * Convert a "#FFF", "#FFFF", "#FFFFFF" or "#FFFFFFFF" hex string to a Color.
