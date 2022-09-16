@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ final class CertificateAuthoritiesExtension {
                 byte[] encodedPrincipal = x500Principal.getEncoded();
                 sizeAccount += encodedPrincipal.length;
                 if (sizeAccount > 0xFFFF) {  // the size limit of this extension
-                    // If there too many trusts CAs such that they exceed the
+                    // If there are too many trusts CAs such that they exceed the
                     // size limit of the extension, enabling this extension
                     // does not really make sense as there is no way to
                     // indicate the peer certificate selection accurately.
