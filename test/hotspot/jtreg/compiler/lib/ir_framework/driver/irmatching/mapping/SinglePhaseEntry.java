@@ -29,9 +29,9 @@ import compiler.lib.ir_framework.CompilePhase;
  * This class represents a mapping entry for an IR node that is only applicable for a single compile phase. This phase
  * also implicitly represents the default phase when the user specifies {@link CompilePhase#DEFAULT}.
  */
-class SinglePhaseEntry extends SingleRegexEntry {
+public class SinglePhaseEntry extends SingleRegexEntry {
 
-    SinglePhaseEntry(CompilePhase phase, String regex) {
+    public SinglePhaseEntry(CompilePhase phase, String regex) {
         super(phase, regex);
     }
 

@@ -39,29 +39,30 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  * treated as a compile phase and specified in {@link CompilePhase}) output of a method.
  *
  * <p>
- * To perform a matching on a C2 IR node, the user can directly use the strings defined in {@link IRNode} which most of
- * the time represent real IR nodes as found in the C2 compiler as node classes (there are some exceptions). The IR node
- * definitions in {@link IRNode} represent special placeholder strings which are replaced by the IR framework by regexes
- * (defined in package {@link compiler.lib.ir_framework.driver.irmatching.regexes}) depending on which compile phase
- * (defined with {@link IR#phase()} the {@link IR @IR} rule should be applied on. If an {@link IRNode} cannot be applied
- * for a compile phase (e.g. the IR node does not exist in this phase), a format violation will be reported.
+ * To perform a matching on a C2 IR node, the user can directly use the public static final strings defined in
+ * {@link IRNode} which mostly represent either a real IR node or group of IR nodes as found in the C2 compiler as node
+ * classes (there are rare exceptions). These strings represent special placeholder strings (referred to as
+ * "IR placeholder string" or just "IR node") which are replaced by the framework by regexes depending on which compile
+ * phases (defined with {@link IR#phase()) the IR rule should be applied on. If an IR node placeholder string cannot be
+ * used for a specific compile phase (e.g. the IR node does not exist in this phase), a format violation will be reported.
  *
  * <p>
- * The exact mapping from {@link IRNode} placeholder strings to regexes for compile phases and default phases (see next
- * section) is defined in {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings}.
+ * The exact mapping from an IR node placeholder string to regexes for different compile phases together with a default
+ * phase (see next section) is defined in a static block directly below the corresponding IR node placeholder string in
+ * {@link IRNode}.
  *
  * <p>
  * The user can also directly specify user-defined regexes in combination with a required compile phase (there is no
  * default compile phase known by the framework for custom regexes). If such a user-defined regex represents a not yet
- * supported C2 IR node, it is highly encouraged to directly add a new entry to {@link IRNode} for it together with a
- * mapping in {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings} instead.
+ * supported C2 IR node, it is highly encouraged to directly add a new IR node placeholder string definition to
+ * {@link IRNode} for it instead together with a static regex mapping block.
  *
  * <p>
  * When not specifying any compile phase with {@link IR#phase()} (or explicitly setting {@link CompilePhase#DEFAULT}),
  * the framework will perform IR matching on a default compile phase which for most IR nodes is
  * {@link CompilePhase#PRINT_IDEAL} (output of flag -XX:+PrintIdeal, the state of the machine independent ideal graph
- * after applying optimizations). The default phase for each {@link IRNode} is defined in class
- * {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings}.
+ * after applying optimizations). The default phase for each IR node is defined in the static regex mapping block below
+ * each IR node placeholder string in {@link IRNode}.
  *
  * <p>
  * The {@link IR @IR} annotations provides two kinds of checks:

@@ -31,9 +31,9 @@ import compiler.lib.ir_framework.RegexType;
  * independent (i.e. before matching creates a machine dependent Mach Graph). All these compile phases on the ideal graph
  * specify {@link RegexType#IDEAL_INDEPENDENT} as regex type.
  */
-class IdealIndependentEntry extends SingleRegexEntry {
+public class IdealIndependentEntry extends SingleRegexEntry {
 
-    protected IdealIndependentEntry(CompilePhase defaultCompilePhase, String regex) {
+    public IdealIndependentEntry(CompilePhase defaultCompilePhase, String regex) {
         super(defaultCompilePhase, regex);
     }
 

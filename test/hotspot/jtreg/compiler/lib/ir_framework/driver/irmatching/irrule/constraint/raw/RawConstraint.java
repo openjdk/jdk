@@ -28,8 +28,6 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
-import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants;
 import compiler.lib.ir_framework.shared.TestFormat;
 
 /**
@@ -63,17 +61,17 @@ abstract public class RawConstraint {
     }
 
     public CompilePhase getCompilePhaseForDefault() {
-        return IRNodeMappings.getDefaultPhaseForIRNode(rawNodeString);
+        return IRNode.getDefaultPhaseForIRNode(rawNodeString);
     }
 
     protected String parseRegex(CompilePhase compilePhase) {
         if (IRNode.isIRNode(rawNodeString)) {
-            String parsedNodeString = IRNodeMappings.getRegexForPhaseOfIRNode(rawNodeString, compilePhase);
+            String parsedNodeString = IRNode.getRegexForPhaseOfIRNode(rawNodeString, compilePhase);
             if (compositeNode) {
                 TestFormat.checkNoReport(!userPostfixString.isEmpty(),
                                          "Provided empty string for composite node " + rawNodeString
                                          + " at constraint " + constraintIndex);
-                parsedNodeString = parsedNodeString.replaceAll(DefaultRegexConstants.IS_REPLACED, userPostfixString);
+                parsedNodeString = parsedNodeString.replaceAll(IRNode.IS_REPLACED, userPostfixString);
             }
             return parsedNodeString;
         }

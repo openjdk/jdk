@@ -36,7 +36,7 @@ import java.util.Map;
  *
  * @see PhaseInterval
  */
-class MultiPhaseRangeEntry extends IRNodeMapEntry {
+public class MultiPhaseRangeEntry extends IRNodeMapEntry {
     private final Map<PhaseInterval, String> intervalToRegex;
 
     public MultiPhaseRangeEntry(CompilePhase defaultCompilePhase, Map<PhaseInterval, String> intervalToRegex) {

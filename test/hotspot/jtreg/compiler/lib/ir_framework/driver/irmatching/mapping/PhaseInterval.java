@@ -25,7 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.mapping;
 
 import compiler.lib.ir_framework.CompilePhase;
 
-class PhaseInterval {
+public class PhaseInterval {
     private final CompilePhase start;
     private final CompilePhase end;
 

@@ -179,10 +179,10 @@ public class IREncodingPrinter {
     private boolean isDefaultRegexUnsupported(IR irAnno) {
         try {
             for (String s : irAnno.failOn()) {
-                IRNode.checkDefaultIRNodeSupported(s);
+                IRNode.checkIRNodeSupported(s);
             }
             for (String s : irAnno.counts()) {
-                IRNode.checkDefaultIRNodeSupported(s);
+                IRNode.checkIRNodeSupported(s);
             }
         } catch (CheckedTestFrameworkException e) {
             TestFrameworkSocket.write("Skip Rule " + ruleIndex + ": " + e.getMessage(), TestFrameworkSocket.DEFAULT_REGEX_TAG, true);

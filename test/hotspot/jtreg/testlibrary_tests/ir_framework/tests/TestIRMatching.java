@@ -25,7 +25,6 @@ package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
-import compiler.lib.ir_framework.driver.irmatching.regexes.IdealIndependentDefaultRegexes;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
@@ -1269,7 +1268,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IdealIndependentDefaultRegexes.COUNTED_LOOP + "|" + "call",
+    @IR(failOn = "CountedLoop|call",
         phase = {CompilePhase.PRINT_IDEAL, CompilePhase.PRINT_OPTO_ASSEMBLY})
     public void both2() {
         for (int i = 0; i < 100; i++) {
@@ -1297,7 +1296,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IdealIndependentDefaultRegexes.COUNTED_LOOP + "|" + "call", "10"},
+    @IR(counts = {"CountedLoop|call", "10"},
         phase = {CompilePhase.PRINT_IDEAL, CompilePhase.PRINT_OPTO_ASSEMBLY})
     public void both5() {
         for (int i = 0; i < 100; i++) {

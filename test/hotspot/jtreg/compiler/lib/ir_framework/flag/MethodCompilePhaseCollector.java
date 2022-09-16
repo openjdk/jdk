@@ -30,7 +30,6 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CountsAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.FailOnAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
-import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.lang.reflect.Method;
@@ -58,9 +57,9 @@ class MethodCompilePhaseCollector {
     }
 
     /**
-     * Collect the compile phases for {@code irAnno} by looking at the phases attribute.
-     * If we find {@link CompilePhase#DEFAULT}, we collect the default phases of all IR nodes in each constraint as
-     * specified in {@link IRNodeMappings}. If we find a user defined IR node (not specified in {@link IRNode}) or a
+     * Collect the compile phases for {@code irAnno} by looking at the {@link IR#phase()} attribute. If we find
+     * {@link CompilePhase#DEFAULT}, we collect the default compile phases of all IR nodes in each constraint as
+     * specified in {@link IRNode}. If we find a user defined IR node (not specified in {@link IRNode}) or a
      * duplicated compile phase, we throw a {@link TestFormatException}.
      */
     public void collectCompilePhases(IR irAnno) {

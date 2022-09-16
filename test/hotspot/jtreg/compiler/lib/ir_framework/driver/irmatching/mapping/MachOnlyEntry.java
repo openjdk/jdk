@@ -30,9 +30,9 @@ import compiler.lib.ir_framework.RegexType;
  * This class represents a mapping entry for an IR node that is only applied on mach graph phases (i.e. after matching
  * created a Mach Graph). All compile phases on the mach graph specify {@link RegexType#MACH} as regex type.
  */
-class MachOnlyEntry extends SingleRegexEntry {
+public class MachOnlyEntry extends SingleRegexEntry {
 
-    protected MachOnlyEntry(CompilePhase defaultCompilePhase, String regex) {
+    public MachOnlyEntry(CompilePhase defaultCompilePhase, String regex) {
         super(defaultCompilePhase, regex);
     }
 

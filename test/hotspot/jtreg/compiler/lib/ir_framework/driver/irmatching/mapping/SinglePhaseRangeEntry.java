@@ -32,7 +32,7 @@ import compiler.lib.ir_framework.CompilePhase;
  *
  * @see PhaseInterval
  */
-class SinglePhaseRangeEntry extends IRNodeMapEntry {
+public class SinglePhaseRangeEntry extends IRNodeMapEntry {
     private final String regex;
     private final PhaseInterval interval;
 

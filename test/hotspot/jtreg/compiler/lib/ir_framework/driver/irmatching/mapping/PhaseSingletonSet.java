@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.CompilePhase;
  *
  * @see PhaseInterval
  */
-class PhaseSingletonSet extends PhaseInterval {
+public class PhaseSingletonSet extends PhaseInterval {
     public PhaseSingletonSet(CompilePhase phase) {
         super(phase, phase);
     }

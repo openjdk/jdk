@@ -34,7 +34,7 @@ import compiler.lib.ir_framework.IRNode;
  * @see IRNode
  * @see IRNodeMappings
  */
-abstract class IRNodeMapEntry {
+public abstract class IRNodeMapEntry {
     private final CompilePhase defaultCompilePhase;
 
     IRNodeMapEntry(CompilePhase defaultCompilePhase) {
