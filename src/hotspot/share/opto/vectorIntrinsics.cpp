@@ -2488,6 +2488,7 @@ bool LibraryCallKit::inline_vector_convert() {
 
   Node* op = opd1;
   if (is_cast) {
+    assert(!is_mask || num_elem_from == num_elem_to, "vector mask cast needs the same elem num");
     int cast_vopc = VectorCastNode::opcode(elem_bt_from, !is_ucast);
 
     // Make sure that vector cast is implemented to particular type/size combination if it is
