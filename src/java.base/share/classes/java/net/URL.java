@@ -1092,13 +1092,7 @@ public final class URL implements java.io.Serializable {
      *             int, java.lang.String)
      */
     public URLConnection openConnection() throws java.io.IOException {
-        URLConnection url = null;
-        try {
-            url = handler.openConnection(this);
-        } catch (IllegalArgumentException e) {
-            throw new MalformedURLException(e.getMessage());
-        }
-        return url;
+        return handler.openConnection(this);
     }
 
     /**
@@ -1148,13 +1142,7 @@ public final class URL implements java.io.Serializable {
                 sm.checkConnect(epoint.getAddress().getHostAddress(),
                                 epoint.getPort());
         }
-        URLConnection url = null;
-        try {
-            url = handler.openConnection(this, p);
-        } catch (IllegalArgumentException e) {
-            throw new MalformedURLException(e.getMessage());
-        }
-        return url;
+        return handler.openConnection(this, p);
     }
 
     /**
