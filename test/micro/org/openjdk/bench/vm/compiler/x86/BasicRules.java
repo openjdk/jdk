@@ -35,6 +35,8 @@ import org.openjdk.jmh.infra.Blackhole;
 public class BasicRules {
     static final int[] INT_ARRAY = new int[1024];
     static final long[] LONG_ARRAY = new long[1024];
+    static final int INT_IMM = 100;
+    static final long LONG_IMM = 100;
 
     @Benchmark
     public void andL_rReg_imm255(Blackhole bh) {
@@ -65,6 +67,62 @@ public class BasicRules {
     public void divL_10(Blackhole bh) {
         for (int i = 0; i < LONG_ARRAY.length; i++) {
             bh.consume(LONG_ARRAY[i] / 10L);
+        }
+    }
+
+    @Benchmark
+    public void salI_rReg_1(Blackhole bh) {
+        for (int i = 0; i < INT_ARRAY.length; i++) {
+            bh.consume(INT_ARRAY[i] << 1);
+        }
+    }
+
+    @Benchmark
+    public void sarI_rReg_1(Blackhole bh) {
+        for (int i = 0; i < INT_ARRAY.length; i++) {
+            bh.consume(INT_ARRAY[i] >> 1);
+        }
+    }
+
+    @Benchmark
+    public void shrI_rReg_1(Blackhole bh) {
+        for (int i = 0; i < INT_ARRAY.length; i++) {
+            bh.consume(INT_ARRAY[i] >>> 1);
+        }
+    }
+
+    @Benchmark
+    public void salL_rReg_1(Blackhole bh) {
+        for (int i = 0; i < LONG_ARRAY.length; i++) {
+            bh.consume(LONG_ARRAY[i] << 1);
+        }
+    }
+
+    @Benchmark
+    public void sarL_rReg_1(Blackhole bh) {
+        for (int i = 0; i < LONG_ARRAY.length; i++) {
+            bh.consume(LONG_ARRAY[i] >> 1);
+        }
+    }
+
+    @Benchmark
+    public void shrL_rReg_1(Blackhole bh) {
+        for (int i = 0; i < LONG_ARRAY.length; i++) {
+            bh.consume(LONG_ARRAY[i] >>> 1);
+        }
+    }
+
+    @Benchmark
+    public void subI_rReg_imm(Blackhole bh) {
+        for (int i = 0; i < INT_ARRAY.length; i++) {
+            bh.consume(INT_ARRAY[i] - INT_IMM);
+        }
+    }
+
+    @Benchmark
+    public void subL_rReg_imm(Blackhole bh) {
+        for (int i = 0; i < LONG_ARRAY.length; i++) {
+            bh.consume(LONG_ARRAY[i] - LONG_IMM);
         }
     }
 }
