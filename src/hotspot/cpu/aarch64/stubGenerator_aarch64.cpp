@@ -4067,23 +4067,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Generate constant data for use with the ChaCha20 block function.
-  // The constant data is broken into two 128-bit segments to be loaded
-  // onto FloatRegisters.  The first 128 bits are a counter add overlay
-  // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
-  // The second 128-bits is a table constant used for 8-bit left rotations.
-  address cc20_gen_constdata() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "cc20_gen_constdata");
-    address start = __ pc();
-    __ emit_data64(0x0000000100000000, relocInfo::none);
-    __ emit_data64(0x0000000300000002, relocInfo::none);
-
-    __ emit_data64(0x0605040702010003, relocInfo::none);
-    __ emit_data64(0x0E0D0C0F0A09080B, relocInfo::none);
-    return start;
-  }
-
   // ChaCha20 block function.  This version parallelizes by loading
   // individual 32-bit state elements into vectors for four blocks
   // (e.g. all four blocks' worth of state[0] in one register, etc.)
@@ -4092,13 +4075,23 @@ class StubGenerator: public StubCodeGenerator {
   // keystream (byte[1024]) = c_rarg1
   // return - number of bytes of keystream (always 256)
   address generate_chacha20Block_blockpar() {
+    Label L_twoRounds, L_cc20_const;
+    // The constant data is broken into two 128-bit segments to be loaded
+    // onto FloatRegisters.  The first 128 bits are a counter add overlay
+    // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
+    // The second 128-bits is a table constant used for 8-bit left rotations.
+    __ BIND(L_cc20_const);
+    __ emit_int64(0x0000000100000000UL);
+    __ emit_int64(0x0000000300000002UL);
+    __ emit_int64(0x0605040702010003UL);
+    __ emit_int64(0x0E0D0C0F0A09080BUL);
+
     __ align(CodeEntryAlignment);
      StubCodeMark mark(this, "StubRoutines", "chacha20Block");
     address start = __ pc();
     __ enter();
 
     int i, j;
-    Label L_twoRounds;
     const Register state = c_rarg0;
     const Register keystream = c_rarg1;
     const Register loopCtr = r10;
@@ -4137,8 +4130,7 @@ class StubGenerator: public StubCodeGenerator {
     // which is applied to the vector holding the counter (state[12]).
     // The second 16 bytes is the index register for the 8-bit left
     // rotation tbl instruction.
-    __ lea(tmpAddr, ExternalAddress(
-                StubRoutines::aarch64::chacha20_constdata()));
+    __ adr(tmpAddr, L_cc20_const);
     __ ldpq(origCtrState, lrot8Tbl, Address(tmpAddr));
     __ addv(workSt[12], __ T4S, workSt[12], origCtrState);
 
@@ -8038,7 +8030,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
-        StubRoutines::aarch64::_chacha20_constants = cc20_gen_constdata();
         StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
     }
 
