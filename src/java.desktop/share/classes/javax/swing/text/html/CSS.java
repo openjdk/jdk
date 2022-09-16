@@ -1404,19 +1404,19 @@ public class CSS implements Serializable {
             return parseRGB(str);
         } else if (strlc.startsWith("rgba(")) {
             return parseRGBA(str);
-        } else if (str.charAt(0) == '#') {
+        } else if (strlc.charAt(0) == '#') {
             return hexToColor(str);
         } else {
-            Color color = colorNamed.get(strlc);
+            Color color = colorNames.get(strlc);
             if (color != null) {
-                return new Color(color.getRGB(), true);
+                return color;
             }
             // sometimes get specified without leading #
             return hexToColor(str);
         }
     }
 
-    private static Map<String, Color> colorNamed =
+    private static final Map<String, Color> colorNames =
         Map.ofEntries(
             Map.entry("aliceblue", new Color(240, 248, 255)),
             Map.entry("antiquewhite", new Color(250, 235, 215)),
