@@ -73,15 +73,16 @@ public class GcProvoker{
                 System.out.println("provokeGc: Heap shrinking, retry. eden: " + edenSize + ", heap0: " + heapSize0 + ", heap: " + heapSize);
                 System.gc();
                 continue;
-            } else {
-                targetFraction = ((float) edenSize) / (heapSize);
-                if ((targetFraction < 0) || (targetFraction > 1.0)) {
-                    throw new RuntimeException("Error in fraction calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize
-                                               + ", calculated eden fraction: " + targetFraction + ")");
-                }
-                break;
             }
+            targetFraction = ((float) edenSize) / (heapSize);
+            if ((targetFraction < 0) || (targetFraction > 1.0)) {
+                throw new RuntimeException("Error in fraction calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize
+                                           + ", calculated eden fraction: " + targetFraction + ")");
+            }
+            break; // We have found eden as a fraction of heap.
         }
+        // Previously these allocations and GC call were in a loop.
+        // That appears unnecesary as the goal is simply to cause a GC:
         allocateHeap(targetFraction);
         allocateHeap(targetFraction);
         System.gc();
