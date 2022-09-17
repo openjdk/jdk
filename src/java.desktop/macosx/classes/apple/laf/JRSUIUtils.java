@@ -27,44 +27,44 @@ package apple.laf;
 
 import java.security.AccessController;
 
-import apple.laf.JRSUIConstants.Hit;
-import apple.laf.JRSUIConstants.ScrollBarPart;
-import com.apple.laf.AquaImageFactory.NineSliceMetrics;
 import sun.security.action.GetPropertyAction;
 
+/**
+ * Utility class for JRSUI.
+ */
 public final class JRSUIUtils {
 
-    static boolean isLeopard = isMacOSXLeopard();
-    static boolean isSnowLeopardOrBelow = isMacOSXSnowLeopardOrBelow();
+    /**
+     * True if OSX is 10.5 exactly (ignoring patch versions).
+     */
+    public static boolean isLeopard = currentMacOSXVersionMatchesGivenVersionRange(10, 5,
+            true, false, false);
 
-    public static boolean isMacOSXBigSurOrAbove() {
-        return currentMacOSXVersionMatchesGivenVersionRange(10, 16, true,
-                false, true);
-    }
+    /**
+     * True if OSX is 10.6 or below.
+     */
+    public static boolean isSnowLeopardOrBelow = currentMacOSXVersionMatchesGivenVersionRange(10, 6,
+            true, true, false);
 
-    static boolean isMacOSXLeopard() {
-        return isCurrentMacOSXVersion(5);
-    }
+    /**
+     * True if macOS is 10.16 or higher.
+     */
+    public static boolean isBigSurOrAbove = currentMacOSXVersionMatchesGivenVersionRange(10, 16,
+            true, false, true);
 
-    static boolean isMacOSXSnowLeopardOrBelow() {
-        return currentMacOSXVersionMatchesGivenVersionRange(10, 6, true,
-                true, false);
-    }
+    // DENY
+    private JRSUIUtils() {}
 
-    static boolean isCurrentMacOSXVersion(final int version) {
-        return isCurrentMacOSXVersion(10, version);
-    }
-
-    static boolean isCurrentMacOSXVersion(final int major, final int minor) {
-        return currentMacOSXVersionMatchesGivenVersionRange(major, minor, true, false, false);
-    }
-
-    static boolean currentMacOSXVersionMatchesGivenVersionRange(
-            final int version, final boolean inclusive,
-            final boolean matchBelow, final boolean matchAbove) {
-        return currentMacOSXVersionMatchesGivenVersionRange(10, version, inclusive, matchBelow, matchAbove);
-    }
-
+    /**
+     * Method for checking macOS version compatibility (ignores the patch).
+     *
+     * @param majorVersion major release (e.g. 10 for OSX)
+     * @param minorVersion minor release
+     * @param inclusive set to true to return true for an equal version
+     * @param matchBelow set to true to return true when the version is smaller
+     * @param matchAbove set to true to return true when the version is greater
+     * @return true if the running version matches
+     */
     static boolean currentMacOSXVersionMatchesGivenVersionRange(
             final int majorVersion, final int minorVersion, final boolean inclusive,
             final boolean matchBelow, final boolean matchAbove) {
@@ -94,69 +94,8 @@ public final class JRSUIUtils {
         return false;
     }
 
-    public static class TabbedPane {
-        public static boolean useLegacyTabs() {
-            return isLeopard;
-        }
-        public static boolean shouldUseTabbedPaneContrastUI() {
-            return !isSnowLeopardOrBelow;
-        }
-    }
-
-    public static class InternalFrame {
-        public static boolean shouldUseLegacyBorderMetrics() {
-            return isSnowLeopardOrBelow;
-        }
-    }
-
-    public static class Tree {
-        public static boolean useLegacyTreeKnobs() {
-            return isLeopard;
-        }
-    }
-
-    public static class ScrollBar {
-        private static native boolean shouldUseScrollToClick();
-
-        public static boolean useScrollToClick() {
-            return shouldUseScrollToClick();
-        }
-
-        public static void getPartBounds(final double[] rect,
-                                         final JRSUIControl control,
-                                         final int x, final int y, final int w,
-                                         final int h,
-                                         final ScrollBarPart part) {
-            control.getPartBounds(rect, x, y, w, h, part.ordinal);
-        }
-
-        public static double getNativeOffsetChange(final JRSUIControl control,
-                                                   final int x, final int y,
-                                                   final int w, final int h,
-                                                   final int offset,
-                                                   final int visibleAmount,
-                                                   final int extent) {
-            return control.getScrollBarOffsetChange(x, y, w, h, offset,
-                                                    visibleAmount, extent);
-        }
-    }
-
-    public static class Images {
-        public static boolean shouldUseLegacySecurityUIPath() {
-            return isSnowLeopardOrBelow;
-        }
-    }
-
-    public static class HitDetection {
-        public static Hit getHitForPoint(final JRSUIControl control,
-                                         final int x, final int y, final int w,
-                                         final int h, final int hitX,
-                                         final int hitY) {
-            return control.getHitForPoint(x, y, w, h, hitX, hitY);
-        }
-    }
-
-    public interface NineSliceMetricsProvider {
-        public NineSliceMetrics getNineSliceMetricsForState(JRSUIState state);
-    }
+    /**
+     * Returns {@code JRSUIControlShouldScrollToClick();} from native code.
+     */
+    public static native boolean shouldUseScrollToClick();
 }

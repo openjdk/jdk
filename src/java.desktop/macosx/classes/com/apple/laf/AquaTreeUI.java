@@ -241,7 +241,7 @@ public class AquaTreeUI extends BasicTreeUI {
         if (!fIsInBounds && state == State.PRESSED) state = State.ACTIVE;
 
         painter.state.set(state);
-        if (JRSUIUtils.Tree.useLegacyTreeKnobs()) {
+        if (JRSUIUtils.isLeopard) {
             if (fAnimationFrame == -1) {
                 painter.state.set(isExpanded ? Direction.DOWN : Direction.RIGHT);
             } else {

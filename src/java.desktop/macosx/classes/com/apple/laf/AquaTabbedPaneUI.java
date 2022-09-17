@@ -531,7 +531,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     protected State getState(final int index, final boolean frameActive, final boolean isSelected) {
         if (!frameActive) return State.INACTIVE;
         if (!tabPane.isEnabled()) return State.DISABLED;
-        if (JRSUIUtils.TabbedPane.useLegacyTabs()) {
+        if (JRSUIUtils.isLeopard) {
             if (isSelected) return State.PRESSED;
             if (pressedTab == index) return State.INACTIVE;
         } else {

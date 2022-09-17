@@ -252,11 +252,11 @@ JNIEXPORT jint JNICALL Java_apple_laf_JRSUIControl_getNativeHitPart
 }
 
 /*
- * Class:     apple_laf_JRSUIUtils_ScrollBar
+ * Class:     apple_laf_JRSUIUtils
  * Method:    shouldUseScrollToClick
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_apple_laf_JRSUIUtils_00024ScrollBar_shouldUseScrollToClick
+JNIEXPORT jboolean JNICALL Java_apple_laf_JRSUIUtils_shouldUseScrollToClick
 (JNIEnv *env, jclass clazz)
 {
     return JRSUIControlShouldScrollToClick();

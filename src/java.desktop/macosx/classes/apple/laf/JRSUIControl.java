@@ -276,7 +276,7 @@ public final class JRSUIControl {
     }
 
 
-    Hit getHitForPoint(final int x, final int y, final int w, final int h, final int hitX, final int hitY) {
+    public Hit getHitForPoint(int x, int y, int w, int h, int hitX, int hitY) {
         sync();
         // reflect hitY about the midline of the control before sending to native
         final Hit hit = JRSUIConstants.getHit(getNativeHitPart(cfDictionaryPtr, priorEncodedProperties, currentEncodedProperties, x, y, w, h, hitX, 2 * y + h - hitY));
@@ -284,7 +284,7 @@ public final class JRSUIControl {
         return hit;
     }
 
-    void getPartBounds(final double[] rect, final int x, final int y, final int w, final int h, final int part) {
+    public void getPartBounds(double[] rect, int x, int y, int w, int h, int part) {
         if (rect == null) throw new NullPointerException("Cannot load null rect");
         if (rect.length != 4) throw new IllegalArgumentException("Rect must have four elements");
 
@@ -293,7 +293,7 @@ public final class JRSUIControl {
         priorEncodedProperties = currentEncodedProperties;
     }
 
-    double getScrollBarOffsetChange(final int x, final int y, final int w, final int h, final int offset, final int visibleAmount, final int extent) {
+    public double getScrollBarOffsetChange(int x, int y, int w, int h, int offset, int visibleAmount, int extent) {
         sync();
         final double offsetChange = getNativeScrollBarOffsetChange(cfDictionaryPtr, priorEncodedProperties, currentEncodedProperties, x, y, w, h, offset, visibleAmount, extent);
         priorEncodedProperties = currentEncodedProperties;

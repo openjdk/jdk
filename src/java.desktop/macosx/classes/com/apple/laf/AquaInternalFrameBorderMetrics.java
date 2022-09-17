@@ -31,7 +31,6 @@ import apple.laf.JRSUIUtils;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 public abstract class AquaInternalFrameBorderMetrics {
-    private static final boolean useLegacyBorderMetrics = JRSUIUtils.InternalFrame.shouldUseLegacyBorderMetrics();
 
     public Font font;
     public int titleBarHeight;
@@ -48,7 +47,7 @@ public abstract class AquaInternalFrameBorderMetrics {
     protected abstract void initialize();
 
     public static AquaInternalFrameBorderMetrics getMetrics(boolean isUtility) {
-        if (useLegacyBorderMetrics) {
+        if (JRSUIUtils.isSnowLeopardOrBelow) {
             return isUtility ? legacyUtilityMetrics.get() : legacyStandardMetrics.get();
         } else {
             return isUtility ? utilityMetrics.get() : standardMetrics.get();

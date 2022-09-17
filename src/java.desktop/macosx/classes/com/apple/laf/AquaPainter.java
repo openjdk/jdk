@@ -28,6 +28,7 @@ package com.apple.laf;
 import java.awt.*;
 import java.awt.image.*;
 import java.util.HashMap;
+import java.util.function.Function;
 
 import com.apple.laf.AquaImageFactory.RecyclableSlicedImageControl;
 import com.apple.laf.AquaImageFactory.NineSliceMetrics;
@@ -37,7 +38,6 @@ import sun.awt.image.*;
 import sun.java2d.*;
 import sun.print.*;
 import apple.laf.*;
-import apple.laf.JRSUIUtils.NineSliceMetricsProvider;
 import sun.awt.image.ImageCache;
 
 abstract class AquaPainter <T extends JRSUIState> {
@@ -54,15 +54,10 @@ abstract class AquaPainter <T extends JRSUIState> {
     }
 
     static <T extends JRSUIState> AquaPainter<T> create(final T state, final int minWidth, final int minHeight, final int westCut, final int eastCut, final int northCut, final int southCut, final boolean useMiddle, final boolean stretchHorizontally, final boolean stretchVertically) {
-        return create(state, new NineSliceMetricsProvider() {
-            @Override
-               public NineSliceMetrics getNineSliceMetricsForState(JRSUIState state) {
-                return new NineSliceMetrics(minWidth, minHeight, westCut, eastCut, northCut, southCut, useMiddle, stretchHorizontally, stretchVertically);
-            }
-        });
+        return create(state, s -> new NineSliceMetrics(minWidth, minHeight, westCut, eastCut, northCut, southCut, useMiddle, stretchHorizontally, stretchVertically));
     }
 
-    static <T extends JRSUIState> AquaPainter<T> create(final T state, final NineSliceMetricsProvider metricsProvider) {
+    static <T extends JRSUIState> AquaPainter<T> create(T state, Function<JRSUIState, NineSliceMetrics> metricsProvider) {
         return new AquaNineSlicingImagePainter<>(state, metricsProvider);
     }
 
@@ -95,13 +90,13 @@ abstract class AquaPainter <T extends JRSUIState> {
             extends AquaPainter<T> {
 
         private final HashMap<T, RecyclableJRSUISlicedImageControl> slicedControlImages;
-        private final NineSliceMetricsProvider metricsProvider;
+        private final Function<JRSUIState, NineSliceMetrics> metricsProvider;
 
         AquaNineSlicingImagePainter(final T state) {
             this(state, null);
         }
 
-        AquaNineSlicingImagePainter(final T state, final NineSliceMetricsProvider metricsProvider) {
+        AquaNineSlicingImagePainter(T state, Function<JRSUIState, NineSliceMetrics> metricsProvider) {
             super(new JRSUIControl(false), state);
             this.metricsProvider = metricsProvider;
             slicedControlImages = new HashMap<>();
@@ -116,7 +111,7 @@ abstract class AquaPainter <T extends JRSUIState> {
 
             RecyclableJRSUISlicedImageControl slicesRef = slicedControlImages.get(stateToPaint);
             if (slicesRef == null) {
-                final NineSliceMetrics metrics = metricsProvider.getNineSliceMetricsForState(stateToPaint);
+                NineSliceMetrics metrics = metricsProvider.apply(stateToPaint);
                 if (metrics == null) {
                     AquaSingleImagePainter.paintFromSingleCachedImage(g, control, stateToPaint, boundsRect);
                     return;

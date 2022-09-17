@@ -34,7 +34,6 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicSliderUI;
 
 import apple.laf.*;
-import apple.laf.JRSUIUtils.NineSliceMetricsProvider;
 import apple.laf.JRSUIConstants.*;
 
 import com.apple.laf.AquaUtilControlSize.*;
@@ -70,14 +69,11 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
         }
     };
 
-    static final AquaPainter<JRSUIState> trackPainter = AquaPainter.create(JRSUIStateFactory.getSliderTrack(), new NineSliceMetricsProvider() {
-        @Override
-        public NineSliceMetrics getNineSliceMetricsForState(JRSUIState state) {
-            if (state.is(Orientation.VERTICAL)) {
-                return new NineSliceMetrics(5, 7, 0, 0, 3, 3, true, false, true);
-            }
-            return new NineSliceMetrics(7, 5, 3, 3, 0, 0, true, true, false);
+    static final AquaPainter<JRSUIState> trackPainter = AquaPainter.create(JRSUIStateFactory.getSliderTrack(), state -> {
+        if (state.is(Orientation.VERTICAL)) {
+            return new NineSliceMetrics(5, 7, 0, 0, 3, 3, true, false, true);
         }
+        return new NineSliceMetrics(7, 5, 3, 3, 0, 0, true, true, false);
     });
     final AquaPainter<JRSUIState> thumbPainter = AquaPainter.create(JRSUIStateFactory.getSliderThumb());
 

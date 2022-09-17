@@ -236,7 +236,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
     protected Hit getPartHit(final int x, final int y) {
         syncState(fScrollBar);
         Insets insets = fScrollBar.getInsets();
-        return JRSUIUtils.HitDetection.getHitForPoint(painter.getControl(), insets.left, insets.top,
+        return painter.getControl().getHitForPoint(insets.left, insets.top,
                 fScrollBar.getWidth() - (insets.left + insets.right),
                 fScrollBar.getHeight() - (insets.top + insets.bottom), x, y);
     }
@@ -355,8 +355,8 @@ public class AquaScrollBarUI extends ScrollBarUI {
             // remaining 80.
             syncState(fScrollBar);
             final Rectangle limitRect = getDragBounds(); // GetThemeTrackDragRect
-            final double offsetChange = JRSUIUtils.ScrollBar.getNativeOffsetChange(painter.getControl(),
-                    limitRect.x, limitRect.y, limitRect.width, limitRect.height, offsetWeCareAbout, visibleAmt, extent);
+            double offsetChange = painter.getControl().getScrollBarOffsetChange(limitRect.x, limitRect.y,
+                    limitRect.width, limitRect.height, offsetWeCareAbout, visibleAmt, extent);
 
             // the scrollable area is the extent - visible amount;
             final int scrollableArea = extent - visibleAmt;
@@ -435,7 +435,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
             fScrollBar.setValueIsAdjusting(true);
 
             // If option-click, toggle scroll-to-here
-            boolean shouldScrollToHere = (part != ScrollBarHit.THUMB) && JRSUIUtils.ScrollBar.useScrollToClick();
+            boolean shouldScrollToHere = part != ScrollBarHit.THUMB && JRSUIUtils.shouldUseScrollToClick();
             if (e.isAltDown()) shouldScrollToHere = !shouldScrollToHere;
 
             // pretend the mouse was dragged from a point in the current thumb to the current mouse point in one big jump
@@ -609,7 +609,8 @@ public class AquaScrollBarUI extends ScrollBarUI {
         // determine the bounding rectangle for our thumb region
         syncState(fScrollBar);
         double[] rect = new double[4];
-        JRSUIUtils.ScrollBar.getPartBounds(rect, painter.getControl(), limitRect.x, limitRect.y, limitRect.width, limitRect.height, ScrollBarPart.THUMB);
+        painter.getControl().getPartBounds(rect, limitRect.x, limitRect.y, limitRect.width, limitRect.height,
+                ScrollBarPart.THUMB.ordinal());
         final Rectangle r = new Rectangle((int)rect[0], (int)rect[1], (int)rect[2], (int)rect[3]);
 
         // figure out the scroll-to-here start location based on our orientation, the

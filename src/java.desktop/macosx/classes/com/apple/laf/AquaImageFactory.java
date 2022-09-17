@@ -48,7 +48,6 @@ import com.apple.laf.AquaUtils.RecyclableObject;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import sun.awt.image.MultiResolutionCachedImage;
 import sun.lwawt.macosx.CImage;
-import sun.swing.ImageIconUIResource;
 
 public class AquaImageFactory {
     public static IconUIResource getConfirmImageIcon() {
@@ -71,14 +70,15 @@ public class AquaImageFactory {
         return getAppIconCompositedOn(AquaIcon.SystemIcon.getStopIcon());
     }
 
+    // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
     public static IconUIResource getLockImageIcon() {
-        // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
-        if (JRSUIUtils.Images.shouldUseLegacySecurityUIPath()) {
-            final Image lockIcon = CImage.createImageFromFile("/System/Library/CoreServices/SecurityAgent.app/Contents/Resources/Security.icns", kAlertIconSize, kAlertIconSize);
-            return getAppIconCompositedOn(lockIcon);
+        Image lockIcon;
+        if (JRSUIUtils.isSnowLeopardOrBelow) {
+            lockIcon = CImage.createImageFromFile("/System/Library/CoreServices/SecurityAgent.app/Contents/Resources/Security.icns", kAlertIconSize, kAlertIconSize);
+        } else {
+            lockIcon = Toolkit.getDefaultToolkit().getImage("NSImage://NSSecurity");
         }
 
-        final Image lockIcon = Toolkit.getDefaultToolkit().getImage("NSImage://NSSecurity");
         return getAppIconCompositedOn(lockIcon);
     }
 

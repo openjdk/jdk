@@ -313,6 +313,13 @@ public final class JRSUIConstants {
             super(scrollBarPart, value);
         }
 
+        /**
+         * @return the {@link Property}'s {@link #ordinal}.
+         */
+        public int ordinal() {
+            return ordinal;
+        }
+
         @Native private static final byte _none = 1;
         public static final ScrollBarPart NONE = new ScrollBarPart(_none);
         @Native private static final byte _thumb = 2;
