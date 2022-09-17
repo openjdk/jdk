@@ -59,6 +59,7 @@ public class FXLauncherTest extends TestHelper {
         TEST_SOURCES_DIR.toPath().resolve("mockfx/src");
     private static final Path MODS_DIR = Paths.get("mods");
     private static final String MODULE_DIR = MODS_DIR.toString();
+    private static final String IMPORT_MODULE_DIR = JAVAHOME + "/jmods";
 
     /* standard main class can be used as java main for fx app class */
     static final String StdMainClass = "helloworld.HelloWorld";
@@ -78,6 +79,9 @@ public class FXLauncherTest extends TestHelper {
 
     // Array of parameters to pass to fx application.
     static final String[] APP_PARMS = { "one", "two" };
+
+    // Check whether or not FX is part of jdk
+    private static Class<?> fxClass = null;
 
     // Create fx java file for test application
     static void createJavaFile(String mainmethod) {
@@ -220,10 +224,16 @@ public class FXLauncherTest extends TestHelper {
     }
 
     static void doFxCompile(String...compilerArgs) {
-        compileFXModule();
+        if (fxClass == null) {
+            compileFXModule();
+        }
 
         List<String> fxCompilerArgs = new ArrayList<>();
-        fxCompilerArgs.add("--module-path=" + MODULE_DIR);
+        if (fxClass == null) {
+            fxCompilerArgs.add("--module-path=" + MODULE_DIR);
+        } else {
+            fxCompilerArgs.add("--upgrade-module-path=" + IMPORT_MODULE_DIR);
+        }
         fxCompilerArgs.add("--add-modules=javafx.graphics");
         fxCompilerArgs.addAll(Arrays.asList(compilerArgs));
         compile(fxCompilerArgs.toArray(new String[fxCompilerArgs.size()]));
@@ -232,8 +242,13 @@ public class FXLauncherTest extends TestHelper {
     static TestResult doFxExec(String...cmds) {
         List<String> fxCmds = new ArrayList<>();
         fxCmds.addAll(Arrays.asList(cmds));
-        fxCmds.add(1, "--module-path=" + MODULE_DIR);
-        fxCmds.add(2, "--add-modules=javafx.graphics");
+        if (fxClass == null) {
+            fxCmds.add(1, "--module-path=" + MODULE_DIR);
+            fxCmds.add(2, "--add-modules=javafx.graphics");
+        } else {
+            fxCmds.add(1, "--upgrade-module-path=" + IMPORT_MODULE_DIR);
+            fxCmds.add(2, "--patch-module=javafx.graphics=" + IMPORT_MODULE_DIR + "/javafx.graphics.jmod");
+        }
         return doExec(fxCmds.toArray(new String[fxCmds.size()]));
     }
 
@@ -440,16 +455,14 @@ public class FXLauncherTest extends TestHelper {
 
     public static void main(String... args) throws Exception {
 
-        // Ensure that FX is not part of jdk
-        Class<?> fxClass = null;
+        // Check whether or not FX is part of jdk
         try {
             fxClass = Class.forName(FX_MARKER_CLASS);
         } catch (ClassNotFoundException ex) {
             // do nothing
         }
         if (fxClass != null) {
-            System.out.println("JavaFX modules erroneously included in the JDK. Skip the test.");
-            return;
+            System.out.println("JavaFX modules included in the JDK");
         }
 
         FXLauncherTest fxt = new FXLauncherTest();
