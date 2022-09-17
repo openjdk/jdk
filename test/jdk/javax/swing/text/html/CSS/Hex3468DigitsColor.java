@@ -28,7 +28,6 @@
  * @bug 8293776
  * @summary Adds CSS 4 and 8 digits hex coded Color
  * @run main Hex3468DigitsColor
- * @author Guy Abossolo Foh - ScientificWare
  */
 
 import java.awt.Color;
