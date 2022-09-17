@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
- Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -31,31 +31,32 @@
 <body>
 <h1>Java Thread Primitive Deprecation</h1>
 <hr>
-<h2>Why is <code>Thread.stop</code> deprecated?</h2>
-<p>Because it is inherently unsafe. Stopping a thread causes it to
-unlock all the monitors that it has locked. (The monitors are
-unlocked as the <code>ThreadDeath</code> exception propagates up
+<h2>Why is <code>Thread.stop</code> deprecated and the ability to
+stop a thread removed?</h2>
+<p>Because it was inherently unsafe. Stopping a thread caused it to
+unlock all the monitors that it had locked. (The monitors were
+unlocked as the <code>ThreadDeath</code> exception propagated up
 the stack.) If any of the objects previously protected by these
-monitors were in an inconsistent state, other threads may now view
+monitors were in an inconsistent state, other threads may have viewed
 these objects in an inconsistent state. Such objects are said to be
 <i>damaged</i>. When threads operate on damaged objects, arbitrary
 behavior can result. This behavior may be subtle and difficult to
 detect, or it may be pronounced. Unlike other unchecked exceptions,
-<code>ThreadDeath</code> kills threads silently; thus, the user has
-no warning that his program may be corrupted. The corruption can
+<code>ThreadDeath</code> killed threads silently; thus, the user had
+no warning that their program may be corrupted. The corruption could
 manifest itself at any time after the actual damage occurs, even
 hours or days in the future.</p>
 <hr>
-<h2>Couldn't I just catch the <code>ThreadDeath</code> exception
-and fix the damaged object?</h2>
+<h2>Couldn't I have just caught <code>ThreadDeath</code> and fixed
+the damaged object?</h2>
 <p>In theory, perhaps, but it would <em>vastly</em> complicate the
 task of writing correct multithreaded code. The task would be
 nearly insurmountable for two reasons:</p>
 <ol>
-<li>A thread can throw a <code>ThreadDeath</code> exception
+<li>A thread could throw a <code>ThreadDeath</code> exception
 <i>almost anywhere</i>. All synchronized methods and blocks would
 have to be studied in great detail, with this in mind.</li>
-<li>A thread can throw a second <code>ThreadDeath</code> exception
+<li>A thread could throw a second <code>ThreadDeath</code> exception
 while cleaning up from the first (in the <code>catch</code> or
 <code>finally</code> clause). Cleanup would have to be repeated till
 it succeeded. The code to ensure this would be quite complex.</li>
