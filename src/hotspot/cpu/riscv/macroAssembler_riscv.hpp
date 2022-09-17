@@ -652,7 +652,7 @@ public:
   //     This is only available in C1/C2-generated code (nmethod). It is a combination
   //     of a direct call, which is used if the destination of a call is in range,
   //     and a register-indirect call. It has the advantages of reaching anywhere in
-  //     the AArch64 address space and being patchable at runtime when the generated
+  //     the RISCV address space and being patchable at runtime when the generated
   //     code is being executed by other threads.
   //
   //     [Main code section]
