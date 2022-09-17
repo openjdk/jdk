@@ -26,11 +26,10 @@
 package sun.security.util;
 
 import java.lang.reflect.ReflectPermission;
-import java.net.SocketPermission;
 import java.net.NetPermission;
-import java.security.Permission;
-import java.security.SecurityPermission;
+import java.net.SocketPermission;
 import java.security.AllPermission;
+import java.security.SecurityPermission;
 import sun.security.action.GetPropertyAction;
 
 /**

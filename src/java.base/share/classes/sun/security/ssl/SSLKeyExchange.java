@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 
@@ -64,10 +62,9 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
             if (authPossession == null) {
                 return new SSLPossession[0];
-            } else if (context instanceof ServerHandshakeContext) {
+            } else if (context instanceof ServerHandshakeContext shc) {
                 // The authentication information may be used further for
                 // key agreement parameters negotiation.
-                ServerHandshakeContext shc = (ServerHandshakeContext)context;
                 shc.interimAuthn = authPossession;
             }
         }
