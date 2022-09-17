@@ -116,7 +116,7 @@ public class XPathPrecedingTest {
     }
 
     /*
-     * DataProvider: provides XPath expressions that return null
+     * DataProvider: provides XPath expressions that return empty NodeSet
      */
     @DataProvider(name = "emptyNodeSet")
     public Object[][] getEmptyNodeSet() {
