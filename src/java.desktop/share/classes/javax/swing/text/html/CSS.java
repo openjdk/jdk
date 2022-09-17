@@ -1364,7 +1364,7 @@ public class CSS implements Serializable {
             digits = digits.substring(1, Math.min(n, 9));
             n--;
         }
-        // CSS level 4
+        // CSS Color level 4
         // - defines color hex code as #[2 digits Red][2 digits Green][2 digits Blue][2 digits Alpha]. With digit 0 ... f.
         // - allows, webpage passes 3, 4, 6 or 8 digit color code.
         //   - 3 digits #[R][G][B] ........ represents #[RR][GG][BB]FF
@@ -1373,7 +1373,7 @@ public class CSS implements Serializable {
         //   - 8 digits #[RR][GG][BB][AA] . represents #[RR][GG][BB][AA]
         //
         // Becareful ! In java.awt.Color hex #[2 digits Alpha][2 digits Red][2 digits Green][2 digits Blue]
-        // Since this method is defined in CSS.java, it must only take in charge CSS Level 4 color format.
+        // Since this method is defined in CSS.java, it must only take in charge CSS Color Level 4 notations.
         //
         // According notes below the current OpenJDK implementation is
         // - 3 digits #[R][G][B]    represents #[RR][GG][BB]FF
