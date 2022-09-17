@@ -645,7 +645,8 @@ public:
   //     This is longer than a direct call. The offset has
   //     the range [-(2G + 2K), 2G - 2K). Addresses out of the range in the code cache
   //     requires indirect call.
-  //     If a jump is needed rather than a call, a far jump 'j reg' can be used instead.
+  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset' can
+  //     be used instead.
   //     All instructions are embedded at a call site.
   //
   //   - trampoline call:
@@ -660,7 +661,7 @@ public:
   //     [Stub code section]
   //     trampoline:
   //       ld    reg, pc + 8 (auipc + ld)
-  //       jalr  reg
+  //       jr    reg
   //       <64-bit destination address>
   //
   //     If the destination is in range when the generated code is moved to the code
@@ -669,10 +670,10 @@ public:
   //     The optimization does not remove the trampoline from the stub section.
 
   //     This is necessary because the trampoline may well be redirected later when
-  //     code is patched, and the new destination may not be reachable by a simple JALR
+  //     code is patched, and the new destination may not be reachable by a simple JAL
   //     instruction.
   //
-  //   - indirect call: move reg, address; jalr reg
+  //   - indirect call: movptr_with_offset + jalr
   //     This too can reach anywhere in the address space, but it cannot be
   //     patched while code is running, so it must only be modified at a safepoint.
   //     This form of call is most suitable for targets at fixed addresses, which
