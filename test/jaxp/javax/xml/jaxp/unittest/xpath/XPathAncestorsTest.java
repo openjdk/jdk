@@ -118,10 +118,10 @@ public class XPathAncestorsTest {
     }
 
     /*
-     * DataProvider: provides XPath expressions that return null
+     * DataProvider: provides XPath expressions that return empty NodeSet
      */
-    @DataProvider(name = "noResults")
-    public Object[][] getNoResults() {
+    @DataProvider(name = "emptyNodeSet")
+    public Object[][] getEmptyNodeSet() {
         return new Object[][]{
                 // test ancestor
 
@@ -177,8 +177,8 @@ public class XPathAncestorsTest {
      * @param exp XPath expression
      * @throws Exception
      */
-    @Test(dataProvider = "noResults")
-    void testNoResults(String exp) throws Exception {
+    @Test(dataProvider = "emptyNodeSet")
+    void testEmptyNodeSet(String exp) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
         Node result = xPath.evaluateExpression(exp, doc, Node.class);
         Assert.assertEquals(result, null);

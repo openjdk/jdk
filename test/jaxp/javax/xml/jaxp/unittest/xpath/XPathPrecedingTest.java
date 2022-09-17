@@ -53,7 +53,7 @@ public class XPathPrecedingTest {
                   <author id="1"/>
                   <isbn>1234</isbn>
                </book>
-               <book id="2" lang="en" xlmns="www.foo.com">
+               <book id="2" lang="en" xmlns="www.foo.com">
                   <title>Book2</title>
                   <author id="2"/>
                   <isbn>5678</isbn>
@@ -118,8 +118,8 @@ public class XPathPrecedingTest {
     /*
      * DataProvider: provides XPath expressions that return null
      */
-    @DataProvider(name = "noResults")
-    public Object[][] getNoResults() {
+    @DataProvider(name = "emptyNodeSet")
+    public Object[][] getEmptyNodeSet() {
         return new Object[][]{
                 //test preceding
 
@@ -175,8 +175,8 @@ public class XPathPrecedingTest {
      * @param exp XPath expression
      * @throws Exception
      */
-    @Test(dataProvider = "noResults")
-    void testNoResults(String exp) throws Exception {
+    @Test(dataProvider = "emptyNodeSet")
+    void testEmptyNodeSet(String exp) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
         Node result = xPath.evaluateExpression(exp, doc, Node.class);
         Assert.assertEquals(result, null);
