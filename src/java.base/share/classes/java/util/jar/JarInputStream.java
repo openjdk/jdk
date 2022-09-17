@@ -39,16 +39,20 @@ import jdk.internal.util.jar.JarIndex;
  *
  * <h2>Accessing the Manifest</h2>
  * <p>
- * The {@link #getManifest} method will return the {@code Manifest} when it is
- * the first entry in the stream, or {@code META-INF/} is the first entry and
- * the {@code Manifest} is the second entry in the stream.
- * </p>
- * <p>
- * When the {@code Manifest} is returned by {@code getManifest()}, the {@link #getNextEntry()}
- * and {@link #getNextJarEntry()} methods will not return the {@code Manifest}.
- * If {@code META-INF/} is the first entry in the input stream it will be
- * also not be returned by {@link #getNextEntry()} and
- * {@link #getNextJarEntry()}.
+ * The {@link #getManifest() getManifest} method is used to return the
+ * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">JAR Manifest</a>
+ * from the entry {@code META-INF/MANIFEST.MF} when it is the first entry
+ * in the stream (or the second entry the first entry in the stream is
+ * {@code META-INF/} and the second entry {@code META-INF/MANIFEST.MF}).
+ *</p>
+ * <p> The {@link #getNextJarEntry()} and {@link #getNextEntry()} methods are
+ * used to read JAR file entries from the stream. These methods skip over the
+ * Manifest ({@code META-INF/MANIFEST.MF}) when it is at the beginning of the
+ * stream. In other words, these methods do not return an entry for the Manifest
+ * when the Manifest is the first entry in the stream. If the first entry is
+ * {@code META-INF/} and the second entry is the Manifest then both are skipped
+ * over by these methods. Whether these methods skip over the Manifest when it
+ * appears later in the stream is not specified.
  * </p>
  * <p>
  * {@link JarEntry#getAttributes()} will return the {@code Manifest}'s
@@ -77,7 +81,6 @@ import jdk.internal.util.jar.JarIndex;
  * @apiNote
  * If a {@code JarEntry} is modified after the JAR file is signed,
  * a {@link SecurityException} will be thrown when the entry is read.
- * 
  *
  * @author  David Connelly
  * @see     Manifest
@@ -145,11 +148,13 @@ public class JarInputStream extends ZipInputStream {
     }
 
     /**
-     * Returns the {@code Manifest} for this JAR file, or
-     * {@code null} if none.
+     * Returns the {@code Manifest} for this JAR file when it is the first entry
+     * in the stream (or the second entry the first entry in the stream is
+     * {@code META-INF/} and the second entry {@code META-INF/MANIFEST.MF}), or
+     * {@code null} otherwise.
      *
-     * @return the {@code Manifest} for this JAR file, or
-     *         {@code null} if none.
+     * @return the {@code Manifest} for this JAR file when accessible, or
+     *         {@code null} otherwise.
      */
     public Manifest getManifest() {
         return man;
