@@ -81,13 +81,22 @@ abstract class AquaPainter <T extends JRSUIState> {
         return control;
     }
 
-    final void paint(final Graphics g, final Component c, final int x,
-                     final int y, final int w, final int h) {
+    final void paint(Graphics g, Component c, int x, int y, int w, int h) {
         boundsRect.setBounds(x, y, w, h);
 
-        final T nextState = state.derive();
-        final Graphics2D g2d = getGraphics2D(g);
-        if (g2d != null) paint(g2d, nextState);
+        T nextState = state.derive();
+
+        if (g instanceof PeekGraphics) {
+            // if it is a peek just dirty the region
+            g.fillRect(x, y, w, h);
+        } else if (g instanceof ProxyGraphics2D proxy && proxy.getDelegate() instanceof SunGraphics2D sg2d) {
+            // if it is a proxy, check if the proxy is a SunGraphics2D
+            paint(sg2d, nextState);
+        } else if (g instanceof Graphics2D g2d) {
+            // otherwise any Graphics2D can be used to paint
+            paint(g2d, nextState);
+        }
+
         state = nextState;
     }
 
@@ -285,26 +294,5 @@ abstract class AquaPainter <T extends JRSUIState> {
 
             return image;
         }
-    }
-
-    private Graphics2D getGraphics2D(final Graphics g) {
-        try {
-            return (SunGraphics2D)g; // doing a blind try is faster than checking instanceof
-        } catch (Exception ignored) {
-            if (g instanceof PeekGraphics) {
-                // if it is a peek just dirty the region
-                g.fillRect(boundsRect.x, boundsRect.y, boundsRect.width, boundsRect.height);
-            } else if (g instanceof ProxyGraphics2D) {
-                final ProxyGraphics2D pg = (ProxyGraphics2D)g;
-                final Graphics2D g2d = pg.getDelegate();
-                if (g2d instanceof SunGraphics2D) {
-                    return g2d;
-                }
-            } else if (g instanceof Graphics2D) {
-                return (Graphics2D) g;
-            }
-        }
-
-        return null;
     }
 }
