@@ -36,6 +36,7 @@ static JNINativeMethod methods[] = {
     { "notifyJvmtiMountEnd",     "(Z)V", (void *)&JVM_VirtualThreadMountEnd },
     { "notifyJvmtiUnmountBegin", "(Z)V", (void *)&JVM_VirtualThreadUnmountBegin },
     { "notifyJvmtiUnmountEnd",   "(Z)V", (void *)&JVM_VirtualThreadUnmountEnd },
+    { "toggleJvmtiTmpVTMSTrans", "(Z)V", (void *)&JVM_VirtualThreadToggleTmpVTMSTrans },
 };
 
 JNIEXPORT void JNICALL

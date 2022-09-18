@@ -583,6 +583,8 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @ChangesCurrentThread
     private Future<?> scheduleUnpark(long nanos) {
+        if (notifyJvmtiEvents) toggleJvmtiTmpVTMSTrans(false);
+
         Thread carrier = this.carrierThread;
         // need to switch to current platform thread to avoid nested parking
         carrier.setCurrentThread(carrier);
@@ -590,6 +592,7 @@ final class VirtualThread extends BaseVirtualThread {
             return UNPARKER.schedule(() -> unpark(), nanos, NANOSECONDS);
         } finally {
             carrier.setCurrentThread(this);
+            if (notifyJvmtiEvents) toggleJvmtiTmpVTMSTrans(true);
         }
     }
 
@@ -599,6 +602,8 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     private void cancel(Future<?> future) {
         if (!future.isDone()) {
+            if (notifyJvmtiEvents) toggleJvmtiTmpVTMSTrans(false);
+
             Thread carrier = this.carrierThread;
             // need to switch to current platform thread to avoid nested parking
             carrier.setCurrentThread(carrier);
@@ -606,6 +611,7 @@ final class VirtualThread extends BaseVirtualThread {
                 future.cancel(false);
             } finally {
                 carrier.setCurrentThread(this);
+                if (notifyJvmtiEvents) toggleJvmtiTmpVTMSTrans(true);
             }
         }
     }
@@ -625,12 +631,15 @@ final class VirtualThread extends BaseVirtualThread {
             int s = state();
             if (s == PARKED && compareAndSetState(PARKED, RUNNABLE)) {
                 if (currentThread instanceof VirtualThread vthread) {
+                    if (notifyJvmtiEvents) toggleJvmtiTmpVTMSTrans(false);
+
                     Thread carrier = vthread.carrierThread;
                     carrier.setCurrentThread(carrier);
                     try {
                         submitRunContinuation();
                     } finally {
                         carrier.setCurrentThread(vthread);
+                        if (notifyJvmtiEvents) toggleJvmtiTmpVTMSTrans(true);
                     }
                 } else {
                     submitRunContinuation();
@@ -1004,6 +1013,9 @@ final class VirtualThread extends BaseVirtualThread {
 
     @JvmtiMountTransition
     private native void notifyJvmtiUnmountEnd(boolean lastUnmount);
+
+    @JvmtiMountTransition
+    private native void toggleJvmtiTmpVTMSTrans(boolean endTmpTrans);
 
     private static native void registerNatives();
     static {

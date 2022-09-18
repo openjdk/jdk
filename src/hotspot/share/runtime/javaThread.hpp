@@ -310,6 +310,7 @@ class JavaThread: public Thread {
 #if INCLUDE_JVMTI
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
+  bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
@@ -642,8 +643,11 @@ private:
     return _carrier_thread_suspended;
   }
 
-  bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }
+  bool is_in_non_tmp_VTMS_transition() const     { return _is_in_VTMS_transition; }
+  bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition || _is_in_tmp_VTMS_transition; }
   void set_is_in_VTMS_transition(bool val);
+  bool is_in_tmp_VTMS_transition() const         { return _is_in_tmp_VTMS_transition; }
+  void toggle_is_in_tmp_VTMS_transition()        { _is_in_tmp_VTMS_transition = !_is_in_tmp_VTMS_transition; };
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
   void set_is_VTMS_transition_disabler(bool val);

@@ -1159,6 +1159,9 @@ JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboolean last_unmoun
 JNIEXPORT void JNICALL
 JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboolean last_unmount);
 
+JNIEXPORT void JNICALL
+JVM_VirtualThreadToggleTmpVTMSTrans(JNIEnv* env, jobject vthread, jboolean end_tmp_trans);
+
 /*
  * Core reflection support.
  */

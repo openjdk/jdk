@@ -1050,6 +1050,9 @@ bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
     return false;
   }
+  if (JavaThread::current()->is_in_tmp_VTMS_transition()) {
+    return false;
+  }
 
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,
                                       h_protection_domain,
@@ -1340,6 +1343,9 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
   if (state == NULL) {
     return;
   }
+  if (thread->is_in_tmp_VTMS_transition()) {
+    return;
+  }
   assert(!thread->is_in_VTMS_transition(), "class load events are not allowed in VTMS transition");
 
   EVT_TRIG_TRACE(JVMTI_EVENT_CLASS_LOAD, ("[%s] Trg Class Load triggered",
@@ -1373,6 +1379,9 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
 
   JvmtiThreadState* state = thread->jvmti_thread_state();
   if (state == NULL) {
+    return;
+  }
+  if (thread->is_in_tmp_VTMS_transition()) {
     return;
   }
   assert(!thread->is_in_VTMS_transition(), "class prepare events are not allowed in VTMS transition");
