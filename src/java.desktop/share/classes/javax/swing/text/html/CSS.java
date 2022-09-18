@@ -1372,14 +1372,14 @@ public class CSS implements Serializable {
         //   - 6 digits #[RR][GG][BB] ..... represents #[RR][GG][BB]FF
         //   - 8 digits #[RR][GG][BB][AA] . represents #[RR][GG][BB][AA]
         //
-        // Becareful ! In java.awt.Color hex #[2 digits Alpha][2 digits Red][2 digits Green][2 digits Blue]
+        // Be careful ! In java.awt.Color hex #[2 digits Alpha][2 digits Red][2 digits Green][2 digits Blue]
         // Since this method is defined in CSS.java, it must only take in charge CSS Color Level 4 notations.
         //
         // According notes below the current OpenJDK implementation is
-        // - 3 digits #[R][G][B]    represents #[RR][GG][BB]FF
-        // - 6 digits #[R][G][B]    represents #[RR][GG][BB]FF
+        // - 3 digits #[R][G][B] .......... represents #[RR][GG][BB]FF
+        // - 6 digits #[R][G][B] .......... represents #[RR][GG][BB]FF
         //
-        // Some webpage passes 3 digit color code as in #fff which is
+        // Some webpages pass 3 digit color code as in #fff which is
         // decoded as #000FFF resulting in blue background.
         // As per https://www.w3.org/TR/CSS1/#color-units,
         // The three-digit RGB notation (#rgb) is converted into six-digit form
@@ -1387,18 +1387,18 @@ public class CSS implements Serializable {
         // This makes sure that white (#ffffff) can be specified with the short notation
         // (#fff) and removes any dependencies on the color depth of the display.
         if (n == 3 && hex.matcher(digits).matches()) {
-            final String r = digits.substring(0, 1);
-            final String g = digits.substring(1, 2);
-            final String b = digits.substring(2, 3);
-            digits = String.format("%s%s%s%s%s%sff", r, r, g, g, b, b);
+            final char r = digits.charAt(0);
+            final char g = digits.charAt(1);
+            final char b = digits.charAt(2);
+            digits = String.format("%1$s%1$s%2$s%2$s%3$s%3$sff", r, g, b);
         } else if (n == 4 && hex.matcher(digits).matches()) {
-            final String r = digits.substring(0, 1);
-            final String g = digits.substring(1, 2);
-            final String b = digits.substring(2, 3);
-            final String a = digits.substring(3, 4);
-            digits = String.format("%s%s%s%s%s%s%s%s", r, r, g, g, b, b, a, a);
+            final char r = digits.charAt(0);
+            final char g = digits.charAt(1);
+            final char b = digits.charAt(2);
+            final char a = digits.charAt(3);
+            digits = String.format("%1$s%1$s%2$s%2$s%3$s%3$s%4$s%4$s", r, g, b, a);
         } else if (n == 6 && hex.matcher(digits).matches()) {
-            digits = String.format("%sff", digits);
+            digits += "ff";
         } else if (n != 8 || !hex.matcher(digits).matches()) {
             return null;
         }
