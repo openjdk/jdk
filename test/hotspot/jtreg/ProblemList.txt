@@ -162,3 +162,15 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
+
+
+# Temporarily exclude, JDK-8289607 is expected to adjust tests before JDK-8249627 is integrated
+runtime/handshake/HandshakeDirectTest.java 8289607 generic-all
+runtime/handshake/HandshakeSuspendExitTest.java 8289607 generic-all
+runtime/handshake/SuspendBlocked.java 8289607 generic-all
+runtime/jni/terminatedThread/TestTerminatedThread.java 8289607 generic-all
+serviceability/jvmti/thread/GetThreadState/thrstat02/thrstat02.java 8289607 generic-all
+vmTestbase/nsk/jdi/ThreadReference/interrupt/interrupt001/TestDescription.java 8289607 generic-all
+vmTestbase/nsk/jvmti/GetThreadState/thrstat002/TestDescription.java 8289607 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/isSuspended/issuspended001/TestDescription.java 8289607 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/isSuspended/issuspended002/TestDescription.java 8289607 generic-all
