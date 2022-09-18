@@ -33,7 +33,8 @@ import jdk.internal.util.jar.JarIndex;
 /**
  * The {@code JarInputStream} class, which extends {@link ZipInputStream},
  * is used to read the contents of a JAR file from an input stream.
- * It provides support for reading an optional {@link JarFile#MANIFEST_NAME Manifest}
+ * It provides support for reading an optional
+ * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">Manifest</a>
  * entry. The {@code Manifest} can be used to store
  * meta-information about the JAR file and its entries.
  *
@@ -53,11 +54,6 @@ import jdk.internal.util.jar.JarIndex;
  * {@code META-INF/} and the second entry is the Manifest then both are skipped
  * over by these methods. Whether these methods skip over the Manifest when it
  * appears later in the stream is not specified.
- * </p>
- * <p>
- * {@link JarEntry#getAttributes()} will return the {@code Manifest}'s
- *  attributes for the current JAR file entry, if any, providing
- *  {@code getManifest()} returns a {@code Manifest} for the JAR file.
  * </p>
  *
  *  <h2>Verifying a JarInputStream</h2>
@@ -153,7 +149,7 @@ public class JarInputStream extends ZipInputStream {
      * {@code META-INF/} and the second entry {@code META-INF/MANIFEST.MF}), or
      * {@code null} otherwise.
      *
-     * @return the {@code Manifest} for this JAR file when accessible, or
+     * @return the {@code Manifest} for this JAR file, or
      *         {@code null} otherwise.
      */
     public Manifest getManifest() {
