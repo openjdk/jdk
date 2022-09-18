@@ -1403,8 +1403,7 @@ public class CSS implements Serializable {
             return null;
         }
         try {
-            Integer intValue = Integer.parseUnsignedInt(digits, 16);
-            int l = intValue.intValue();
+            int l = Integer.parseUnsignedInt(digits, 16);
             return new Color((l >> 24) & 0xFF, (l >> 16) & 0xFF, (l >> 8) & 0xFF, l & 0xFF);
         } catch (NumberFormatException nfe) {
             return null;
