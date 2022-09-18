@@ -1194,7 +1194,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 Icon icon = chooser.getIcon(file);
                 setIcon(icon);
 
-            } else if (value instanceof Long len) {
+            } else if (value instanceof final Long len) {
                 /*
                  * This code block is relevant to Linux.
                  * File size is displayed up to 1 decimal precision.
@@ -1211,19 +1211,17 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     displayedFileSize[0] = roundToOneDecimalPlace(len);
                 } else {
                     double kbVal = roundToOneDecimalPlace(len);
-                    len = (long) kbVal;
                     if (kbVal < baseFileSize) {
                         updateMessageFormatPattern(kiloByteString);
                         displayedFileSize[0] = kbVal;
                     } else {
-                        double mbVal = roundToOneDecimalPlace(len);
-                        len = (long) mbVal;
+                        double mbVal = roundToOneDecimalPlace(Math.ceil(kbVal));
                         if (mbVal < baseFileSize) {
                             updateMessageFormatPattern(megaByteString);
                             displayedFileSize[0] = mbVal;
                         } else {
                             updateMessageFormatPattern(gigaByteString);
-                            displayedFileSize[0] = roundToOneDecimalPlace(len);
+                            displayedFileSize[0] = roundToOneDecimalPlace(Math.ceil(mbVal));
                         }
                     }
                 }
@@ -1254,7 +1252,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
          * @param fileSize the file size to round to one decimal place
          * @return file size rounded to one decimal place
          */
-        private static double roundToOneDecimalPlace(long fileSize) {
+        private static double roundToOneDecimalPlace(double fileSize) {
             return Math.ceil(fileSize / 100.0d) / 10.0d;
         }
     }
