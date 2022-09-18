@@ -222,9 +222,9 @@ abstract class ExchangeImpl<T> {
      * take necessary action that is expected by the corresponding specifications whenever
      * a protocol error happens. For example, in HTTP/1.1, such protocol error would result
      * in the connection being closed.
-     * @param errorMessage A error message which states the nature of protocol violation
+     * @param cause The cause of the protocol violation
      */
-    abstract void onProtocolError(String errorMessage);
+    abstract void onProtocolError(IOException cause);
 
     /**
      * Called when the exchange is released, so that cleanup actions may be

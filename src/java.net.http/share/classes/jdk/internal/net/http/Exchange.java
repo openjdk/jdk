@@ -563,14 +563,15 @@ final class Exchange<T> {
         // request and also let the ExchangeImpl deal with it as a protocol error
         return cf.thenCompose(r -> {
             if (r.statusCode == 101) {
-                final String errMsg = "Unexpected 101 response, when not upgrading";
+                final ProtocolException protoEx = new ProtocolException("Unexpected 101 " +
+                        "response, when not upgrading");
                 assert exchImpl != null : "Illegal state - current exchange isn't set";
                 try {
-                    exchImpl.onProtocolError(errMsg);
+                    exchImpl.onProtocolError(protoEx);
                 } catch (Throwable ignore){
                     // ignored
                 }
-                return MinimalFuture.failedFuture(new ProtocolException(errMsg));
+                return MinimalFuture.failedFuture(protoEx);
             }
             return MinimalFuture.completedFuture(r);
         });

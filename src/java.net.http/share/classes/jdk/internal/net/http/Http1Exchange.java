@@ -503,13 +503,12 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     }
 
     @Override
-    void onProtocolError(final String errorMessage) {
+    void onProtocolError(final IOException cause) {
         if (debug.on()) {
-            debug.log("closing connection due to protocol error: %s", errorMessage);
+            debug.log("cancelling exchange due to protocol error: %s", cause);
         }
-        Log.logError("closing connection due to protocol error: {0}\n", errorMessage);
-        // close the connection
-        connection.close();
+        Log.logError("cancelling exchange due to protocol error: {0}\n", cause);
+        cancelImpl(cause);
     }
 
     private void cancelImpl(Throwable cause) {
