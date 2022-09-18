@@ -231,6 +231,27 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
         }
     }
 
+    private int parseStackArg(ValueKind<?> valueKind, AllocatableValue[] locations, int index, int currentStackOffset, HotSpotCallingConventionType type) {
+        int kindSize = valueKind.getPlatformKind().getSizeInBytes();
+        locations[index] = StackSlot.get(valueKind, currentStackOffset, !type.out);
+        currentStackOffset += Math.max(kindSize, target.wordSize);
+        return currentStackOffset;
+    }
+
+    private int parseDarwinNativeStackArg(ValueKind<?> valueKind, AllocatableValue[] locations, int index, int currentStackOffset, HotSpotCallingConventionType type) {
+        int kindSize = valueKind.getPlatformKind().getSizeInBytes();
+        if (currentStackOffset % kindSize != 0) {
+            // In MacOS natural alignment is used
+            // See https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
+            currentStackOffset += kindSize - currentStackOffset % kindSize;
+        }
+        locations[index] = StackSlot.get(valueKind, currentStackOffset, !type.out);
+        // In MacOS "Function arguments may consume slots on the stack that are not multiples of 8 bytes"
+        // See https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
+        currentStackOffset += kindSize;
+        return currentStackOffset;
+    }
+
     private CallingConvention callingConvention(RegisterArray generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
                     ValueKindFactory<?> valueKindFactory) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
@@ -267,29 +288,14 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
             }
 
             if (locations[i] == null) {
-                if (type == HotSpotCallingConventionType.NativeCall) {
-                    ValueKind<?> valueKind = valueKindFactory.getValueKind(kind);
-                    int kindSize = valueKind.getPlatformKind().getSizeInBytes();
-                    if (macOS && currentStackOffset % kindSize != 0) {
-                        // In MacOS natural alignment is used
-                        // See https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
-                        currentStackOffset += kindSize - currentStackOffset % kindSize;
-                    }
-                    locations[i] = StackSlot.get(valueKind, currentStackOffset, !type.out);
-                    if (macOS) {
-                        // In MacOS "Function arguments may consume slots on the stack that are not multiples of 8 bytes"
-                        // See https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
-                        currentStackOffset += kindSize;
-                    } else {
-                        currentStackOffset += Math.max(kindSize, target.wordSize);
-                    }
+                if (macOS && type == HotSpotCallingConventionType.NativeCall) {
+                    currentStackOffset = parseDarwinNativeStackArg(valueKindFactory.getValueKind(kind), locations, i, currentStackOffset, type);
                 } else {
-                    ValueKind<?> valueKind = valueKindFactory.getValueKind(kind);
-                    locations[i] = StackSlot.get(valueKind, currentStackOffset, !type.out);
-                    currentStackOffset += Math.max(valueKind.getPlatformKind().getSizeInBytes(), target.wordSize);
+                    currentStackOffset = parseStackArg(valueKindFactory.getValueKind(kind), locations, i, currentStackOffset, type);
                 }
             }
         }
+
         JavaKind returnKind = returnType == null ? JavaKind.Void : returnType.getJavaKind();
         AllocatableValue returnLocation = returnKind == JavaKind.Void ? Value.ILLEGAL : getReturnRegister(returnKind).asValue(valueKindFactory.getValueKind(returnKind.getStackKind()));
         return new CallingConvention(currentStackOffset, returnLocation, locations);
