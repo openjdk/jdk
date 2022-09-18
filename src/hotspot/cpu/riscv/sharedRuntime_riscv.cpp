@@ -437,7 +437,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
           __ sd(t0, Address(sp, next_off), /*temp register*/esp);
 #ifdef ASSERT
           // Overwrite the unused slot with known junk
-          __ li(t0, 0xdeadffffdeadaaaaul);
+          __ mv(t0, 0xdeadffffdeadaaaaul);
           __ sd(t0, Address(sp, st_off), /*temp register*/esp);
 #endif /* ASSERT */
         } else {
@@ -456,7 +456,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
           // long/double in gpr
 #ifdef ASSERT
           // Overwrite the unused slot with known junk
-          __ li(t0, 0xdeadffffdeadaaabul);
+          __ mv(t0, 0xdeadffffdeadaaabul);
           __ sd(t0, Address(sp, st_off), /*temp register*/esp);
 #endif /* ASSERT */
           __ sd(r, Address(sp, next_off));
@@ -472,7 +472,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       } else {
 #ifdef ASSERT
         // Overwrite the unused slot with known junk
-        __ li(t0, 0xdeadffffdeadaaacul);
+        __ mv(t0, 0xdeadffffdeadaaacul);
         __ sd(t0, Address(sp, st_off), /*temp register*/esp);
 #endif /* ASSERT */
         __ fsd(r_1->as_FloatRegister(), Address(sp, next_off));
@@ -1973,7 +1973,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Now it is safe to overwrite any register
 
   // Deopt during an exception.  Save exec mode for unpack_frames.
-  __ li(xcpool, Deoptimization::Unpack_exception); // callee-saved
+  __ mv(xcpool, Deoptimization::Unpack_exception); // callee-saved
 
   // load throwing pc from JavaThread and patch it as the return address
   // of the current frame. Then clear the field in JavaThread
@@ -2034,7 +2034,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ lwu(xcpool, Address(x15, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
   Label noException;
-  __ li(t0, Deoptimization::Unpack_exception);
+  __ mv(t0, Deoptimization::Unpack_exception);
   __ bne(xcpool, t0, noException); // Was exception pending?
   __ ld(x10, Address(xthread, JavaThread::exception_oop_offset()));
   __ ld(x13, Address(xthread, JavaThread::exception_pc_offset()));
@@ -2113,7 +2113,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ sub(sp, sp, x9);
 
   // Push interpreter frames in a loop
-  __ li(t0, 0xDEADDEAD);               // Make a recognizable pattern
+  __ mv(t0, 0xDEADDEAD);               // Make a recognizable pattern
   __ mv(t1, t0);
   Label loop;
   __ bind(loop);

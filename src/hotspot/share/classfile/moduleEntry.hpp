@@ -238,7 +238,7 @@ public:
   static bool javabase_defined() { return ((_javabase_module != NULL) &&
                                            (_javabase_module->module() != NULL)); }
   static void finalize_javabase(Handle module_handle, Symbol* version, Symbol* location);
-  static void patch_javabase_entries(Handle module_handle);
+  static void patch_javabase_entries(JavaThread* current, Handle module_handle);
 
   void modules_do(void f(ModuleEntry*));
   void modules_do(ModuleClosure* closure);

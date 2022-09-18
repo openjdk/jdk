@@ -526,7 +526,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   address entry = __ pc();
   __ push(state);
   __ call_VM(noreg, runtime_entry);
-  __ fence(0xf, 0xf);
+  __ membar(MacroAssembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
@@ -1598,7 +1598,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label L_done;
 
     __ lbu(t0, Address(xbcp, 0));
-    __ li(t1, Bytecodes::_invokestatic);
+    __ mv(t1, Bytecodes::_invokestatic);
     __ bne(t1, t0, L_done);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
@@ -1735,7 +1735,7 @@ void TemplateInterpreterGenerator::count_bytecode() {
   __ push_reg(t0);
   __ push_reg(x10);
   __ mv(x10, (address) &BytecodeCounter::_counter_value);
-  __ li(t0, 1);
+  __ mv(t0, 1);
   __ amoadd_d(zr, x10, t0, Assembler::aqrl);
   __ pop_reg(x10);
   __ pop_reg(t0);

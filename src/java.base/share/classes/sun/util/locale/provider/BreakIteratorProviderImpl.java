@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
 
 package sun.util.locale.provider;
 
-import java.io.IOException;
 import java.text.BreakIterator;
+import java.text.CharacterIterator;
 import java.text.spi.BreakIteratorProvider;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.Set;
+
+import jdk.internal.util.regex.Grapheme;
 import sun.text.DictionaryBasedBreakIterator;
 import sun.text.RuleBasedBreakIterator;
 
@@ -45,10 +50,9 @@ import sun.text.RuleBasedBreakIterator;
 public class BreakIteratorProviderImpl extends BreakIteratorProvider
                                        implements AvailableLanguageTags {
 
-    private static final int CHARACTER_INDEX = 0;
-    private static final int WORD_INDEX = 1;
-    private static final int LINE_INDEX = 2;
-    private static final int SENTENCE_INDEX = 3;
+    private static final int WORD_INDEX = 0;
+    private static final int LINE_INDEX = 1;
+    private static final int SENTENCE_INDEX = 2;
 
     private final LocaleProviderAdapter.Type type;
     private final Set<String> langtags;
@@ -127,10 +131,7 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
      */
     @Override
     public BreakIterator getCharacterInstance(Locale locale) {
-        return getBreakInstance(locale,
-                                CHARACTER_INDEX,
-                                "CharacterData",
-                                "CharacterDictionary");
+        return new GraphemeBreakIterator();
     }
 
     /**
@@ -192,5 +193,152 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
     @Override
     public boolean isSupportedLocale(Locale locale) {
         return LocaleProviderAdapter.forType(type).isSupportedProviderLocale(locale, langtags);
+    }
+
+    static final class GraphemeBreakIterator extends BreakIterator {
+        CharacterIterator ci;
+        int offset;
+        List<Integer> boundaries;
+        int boundaryIndex;
+
+        GraphemeBreakIterator() {
+            setText("");
+        }
+
+        @Override
+        public int first() {
+            boundaryIndex = 0;
+            return current();
+        }
+
+        @Override
+        public int last() {
+            boundaryIndex = boundaries.size() - 1;
+            return current();
+        }
+
+        @Override
+        public int next(int n) {
+            if (n == 0) {
+                return offset;
+            }
+
+            boundaryIndex = boundaryIndex + n;
+            if (boundaryIndex < 0) {
+                boundaryIndex = 0;
+                current();
+                return DONE;
+            } else if (boundaryIndex >= boundaries.size()) {
+                boundaryIndex = boundaries.size() - 1;
+                current();
+                return DONE;
+            } else {
+                return current();
+            }
+        }
+
+        @Override
+        public int next() {
+            return next(1);
+        }
+
+        @Override
+        public int previous() {
+            return next(-1);
+        }
+
+        @Override
+        public int following(int offset) {
+            var lastBoundary = boundaries.get(boundaries.size() - 1);
+
+            if (offset < boundaries.get(0) || offset > lastBoundary) {
+                throw new IllegalArgumentException("offset is out of bounds: " + offset);
+            } else if (offset == this.offset && this.offset == lastBoundary) {
+                return DONE;
+            }
+
+            boundaryIndex = Collections.binarySearch(boundaries, Math.min(offset + 1, lastBoundary));
+            if (boundaryIndex < 0) {
+                boundaryIndex = -boundaryIndex - 1;
+            }
+
+            return current();
+        }
+
+        @Override
+        public int current() {
+            offset = boundaries.get(boundaryIndex);
+            return offset;
+        }
+
+        @Override
+        public CharacterIterator getText() {
+            return ci;
+        }
+
+        @Override
+        public void setText(CharacterIterator newText) {
+            ci = newText;
+            var text = new CharacterIteratorCharSequence(ci);
+            var end = ci.getEndIndex();
+            boundaries = new ArrayList<>();
+
+            for (int b = ci.getBeginIndex(); b < end;) {
+                boundaries.add(b);
+                b = Grapheme.nextBoundary(text, b, end);
+            }
+            boundaries.add(end);
+            boundaryIndex = 0;
+            offset = ci.getIndex();
+        }
+
+        // Had to override to suppress the bug in the BreakIterator's default impl.
+        // See the comments in the default impl.
+        @Override
+        public boolean isBoundary(int offset) {
+            if (offset < boundaries.get(0) || offset > boundaries.get(boundaries.size() - 1)) {
+                throw new IllegalArgumentException("offset is out of bounds: " + offset);
+            }
+            return Collections.binarySearch(boundaries, offset) >= 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(ci, offset, boundaries, boundaryIndex);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof GraphemeBreakIterator that &&
+                    ci.equals(that.ci) &&
+                    offset == that.offset &&
+                    boundaries.equals(that.boundaries) &&
+                    boundaryIndex == that.boundaryIndex;
+        }
+    }
+
+    // Implementation only for calling Grapheme.nextBoundary()
+    static final class CharacterIteratorCharSequence implements CharSequence {
+        CharacterIterator src;
+        CharacterIteratorCharSequence(CharacterIterator ci) {
+            src = ci;
+        }
+
+        @Override
+        public int length() {
+            return src.getEndIndex() - src.getBeginIndex();
+        }
+
+        @Override
+        public char charAt(int index) {
+            src.setIndex(index);
+            return src.current();
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            // not expected to be called
+            throw new UnsupportedOperationException();
+        }
     }
 }
