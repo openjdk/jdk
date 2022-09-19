@@ -607,6 +607,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             }
         }
 
+        XPStyle xp = XPStyle.getXP();
 
         Object[] defaults = {
             // *** Auditory Feedback
@@ -657,7 +658,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                   new WindowsDesktopProperty("win.caret.width", null),
 
             "CheckBox.font", ControlFont,
-            "CheckBox.interiorBackground", WindowBackgroundColor,
+            "CheckBox.interiorBackground", (xp != null)?
+                                            null:WindowBackgroundColor,
             "CheckBox.background", ControlBackgroundColor,
             "CheckBox.foreground", WindowTextColor,
             "CheckBox.shadow", ControlShadowColor,
