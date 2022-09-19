@@ -29,7 +29,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.TypeElement;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet;
 import static jdk.javadoc.doclet.Taglet.Location.*;
@@ -38,13 +38,13 @@ import static jdk.javadoc.doclet.Taglet.Location.*;
  * A block tag to optionally insert a reference to a module graph.
  */
 public class SealedGraph implements Taglet {
-    private static final boolean enableModuleGraph =
-        Boolean.getBoolean("enableModuleGraph");
+    private static final boolean enableSealedGraph =
+        Boolean.getBoolean("enableSealedGraph");
 
     /** Returns the set of locations in which a taglet may be used. */
     @Override
     public Set<Location> getAllowedLocations() {
-        return EnumSet.of(MODULE);
+        return EnumSet.of(TYPE);
     }
 
     @Override
@@ -59,12 +59,12 @@ public class SealedGraph implements Taglet {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element element) {
-        if (!enableModuleGraph) {
+        if (!enableSealedGraph) {
             return "";
         }
 
-        String moduleName = ((ModuleElement) element).getQualifiedName().toString();
-        String imageFile = "module-graph.svg";
+        String moduleName = ((TypeElement) element).getQualifiedName().toString();
+        String imageFile = "sealed-graph.svg";
         int thumbnailHeight = -1;
         String hoverImage = "";
         if (!moduleName.equals("java.base")) {
@@ -73,9 +73,9 @@ public class SealedGraph implements Taglet {
                 + getImage(moduleName, imageFile, -1, true)
                 + "</span>";
         }
-        return "<dt>Module Graph:</dt>"
+        return "<dt>Sealed Class Hierarchy Graph:</dt>"
             + "<dd>"
-            + "<a class=\"module-graph\" href=\"" + imageFile + "\">"
+            + "<a class=\"sealed-graph\" href=\"" + imageFile + "\">"
             + getImage(moduleName, imageFile, thumbnailHeight, false)
             + hoverImage
             + "</a>"
@@ -86,7 +86,7 @@ public class SealedGraph implements Taglet {
     private static final String BORDER = "border: solid lightgray 1px;";
 
     private String getImage(String moduleName, String file, int height, boolean useBorder) {
-        return String.format("<img style=\"%s\" alt=\"Module graph for %s\" src=\"%s\"%s>",
+        return String.format("<img style=\"%s\" alt=\"Sealed class hierarchy graph for %s\" src=\"%s\"%s>",
                              useBorder ? BORDER + " " + VERTICAL_ALIGN : VERTICAL_ALIGN,
                              moduleName,
                              file,
