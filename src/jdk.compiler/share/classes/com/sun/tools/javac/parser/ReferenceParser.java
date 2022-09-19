@@ -25,6 +25,9 @@
 
 package com.sun.tools.javac.parser;
 
+import com.sun.source.tree.AnnotatedTypeTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
@@ -193,6 +196,21 @@ public class ReferenceParser {
         if (p.token().kind != TokenKind.EOF)
             throw new ParseException("dc.ref.unexpected.input");
 
+        if (new TypeAnnotationFinder().scan(paramTypes, null) != null)
+            throw new ParseException("dc.ref.annotations.not.allowed");
+
         return paramTypes.toList();
+    }
+
+    static class TypeAnnotationFinder extends TreeScanner<Tree, Void> {
+        @Override
+        public Tree visitAnnotatedType(AnnotatedTypeTree t, Void ignore) {
+            return t;
+        }
+
+        @Override
+        public Tree reduce(Tree t1, Tree t2) {
+            return t1 != null ? t1 : t2;
+        }
     }
 }
