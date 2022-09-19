@@ -57,12 +57,13 @@ import jdk.internal.util.jar.JarIndex;
  * </p>
  *
  *  <h2>Verifying a JarInputStream</h2>
- *  {@link #JarInputStream(InputStream, boolean)} may be used to
- *  verify the signatures of a signed {@code JarInputStream} assuming the
- *  following requirements are met:
+ *
+ *  A {@code JarInputStream} may be used to verify the signatures of a
+ *  <a href="{@docRoot}/../specs/jar/jar.html#signed-jar-file">signed JAR file</a>
+ *  assuming the following requirements are met:
  *  <ul>
  *      <li>
- *         The {@link #getManifest()} returns a {@code Manifest} for the JAR
+ *         The {@link #getManifest()} method returns the {@code Manifest} for the JAR
  *         file
  *      </li>
  *      <li>
