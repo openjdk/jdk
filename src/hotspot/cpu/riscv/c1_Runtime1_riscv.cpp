@@ -861,7 +861,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ check_klass_subtype_slow_path(x14, x10, x12, x15, NULL, &miss);
 
         // fallthrough on success:
-        __ li(t0, 1);
+        __ mv(t0, 1);
         __ sd(t0, Address(sp, (result_off) * VMRegImpl::stack_slot_size)); // result
         __ pop_reg(RegSet::of(x10, x12, x14, x15), sp);
         __ ret();
@@ -1051,7 +1051,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     default:
       {
         StubFrame f(sasm, "unimplemented entry", dont_gc_arguments, does_not_return);
-        __ li(x10, (int) id);
+        __ mv(x10, (int)id);
         __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), x10);
         __ should_not_reach_here();
       }

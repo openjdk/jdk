@@ -37,11 +37,14 @@ on:
       apt-gcc-cross-version:
         required: true
         type: string
+      extra-conf-options:
+        required: false
+        type: string
 
 jobs:
   build-cross-compile:
     name: build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     strategy:
       fail-fast: false
@@ -51,20 +54,35 @@ jobs:
           - arm
           - s390x
           - ppc64le
+          - riscv64
         include:
           - target-cpu: aarch64
-            debian-arch: arm64
             gnu-arch: aarch64
+            debian-arch: arm64
+            debian-repository: https://httpredir.debian.org/debian/
+            debian-version: bullseye
           - target-cpu: arm
-            debian-arch: armhf
             gnu-arch: arm
+            debian-arch: armhf
+            debian-repository: https://httpredir.debian.org/debian/
+            debian-version: bullseye
             gnu-abi: eabihf
           - target-cpu: s390x
-            debian-arch: s390x
             gnu-arch: s390x
+            debian-arch: s390x
+            debian-repository: https://httpredir.debian.org/debian/
+            debian-version: bullseye
           - target-cpu: ppc64le
-            debian-arch: ppc64el
             gnu-arch: powerpc64le
+            debian-arch: ppc64el
+            debian-repository: https://httpredir.debian.org/debian/
+            debian-version: bullseye
+          - target-cpu: riscv64
+            gnu-arch: riscv64
+            debian-arch: riscv64
+            debian-repository: https://deb.debian.org/debian-ports
+            debian-keyring: /usr/share/keyrings/debian-ports-archive-keyring.gpg
+            debian-version: sid
 
     steps:
       - name: 'Checkout the JDK source'
@@ -94,7 +112,8 @@ jobs:
               g++-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
               gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
               g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
-              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
+              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev \
+              debian-ports-archive-keyring
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Check cache for sysroot'
@@ -115,9 +134,10 @@ jobs:
           --verbose
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
           --resolve-deps
-          buster
+          $(test -n "${{ matrix.debian-keyring }}" && echo "--keyring=${{ matrix.debian-keyring }}")
+          ${{ matrix.debian-version }}
           sysroot
-          https://httpredir.debian.org/debian/
+          ${{ matrix.debian-repository }}
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Prepare sysroot'
@@ -142,6 +162,10 @@ jobs:
           --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
           CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}
+          ${{ inputs.extra-conf-options }} || (
+          echo "Dumping config.log:" &&
+          cat config.log &&
+          exit 1)
 
       - name: 'Build'
         id: build

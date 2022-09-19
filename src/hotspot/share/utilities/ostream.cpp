@@ -286,9 +286,9 @@ void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_
   for (size_t i = 0; i < limit; ++i) {
     if (i % 16 == 0) {
       if (rel_addr) {
-        indent().print(INTPTR_FORMAT_W(07) ":", i);
+        indent().print("%07" PRIxPTR ":", i);
       } else {
-        indent().print(INTPTR_FORMAT ":", p2i((unsigned char*)data + i));
+        indent().print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
       }
     }
     if (i % 2 == 0) {
@@ -358,6 +358,7 @@ void stringStream::grow(size_t new_capacity) {
 }
 
 void stringStream::write(const char* s, size_t len) {
+  assert(_is_frozen == false, "Modification forbidden");
   assert(_capacity >= _written + 1, "Sanity");
   if (len == 0) {
     return;
@@ -397,6 +398,7 @@ void stringStream::zero_terminate() {
 }
 
 void stringStream::reset() {
+  assert(_is_frozen == false, "Modification forbidden");
   _written = 0; _precount = 0; _position = 0;
   _newlines = 0;
   zero_terminate();

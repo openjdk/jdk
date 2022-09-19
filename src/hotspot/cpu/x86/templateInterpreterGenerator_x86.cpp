@@ -43,6 +43,7 @@
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -655,20 +656,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // End of helpers
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-
-  address entry = __ pc();
-  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
-
-  __ push_cont_fastpath();
-
-  __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
-  // return value is in rax
-
-  return entry;
-}
-
 // Method entry for java.lang.ref.Reference.get.
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn
@@ -1096,10 +1083,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
           _thread_in_native_trans);
 
   // Force this write out before the read below
-  __ membar(Assembler::Membar_mask_bits(
-              Assembler::LoadLoad | Assembler::LoadStore |
-              Assembler::StoreLoad | Assembler::StoreStore));
-
+  if (!UseSystemMemoryBarrier) {
+    __ membar(Assembler::Membar_mask_bits(
+                Assembler::LoadLoad | Assembler::LoadStore |
+                Assembler::StoreLoad | Assembler::StoreStore));
+  }
 #ifndef _LP64
   if (AlwaysRestoreFPU) {
     //  Make sure the control word is correct.
