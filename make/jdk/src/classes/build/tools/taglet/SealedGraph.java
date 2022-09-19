@@ -71,17 +71,28 @@ public class SealedGraph implements Taglet {
         File dotFile = new File(sealedGraphDotPath, typeName + ".dot");
 
         try (PrintWriter out = new PrintWriter(dotFile)) {
-            out.println("digraph sealed {");
-            out.println("  node [shape=box];");
-            out.println("  rankdir=LR;");
-            out.println("  ranksep=0.5;");
-            out.println("  nodesep=0.5;");
-            out.println("  edge [arrowsize=0.5];");
-            out.println("  graph [fontname=\"Helvetica\", fontsize=10];");
-            out.println("  node [fontname=\"Helvetica\", fontsize=10];");
-            out.println("  edge [fontname=\"Helvetica\", fontsize=10];");
-            out.println("  label=\"Sealed Graph\";");
-            out.println("}");
+            out.println("""
+                digraph G {
+                labelloc="b";
+                label="The Public Sealed Hierarchy of java.lang.foreign.MemoryLayout";
+                rankdir="BT";
+                GroupLayout -> MemoryLayout;
+                StructLayout -> GroupLayout;
+                UnionLayout -> GroupLayout;
+                PaddingLayout -> MemoryLayout;
+                SequenceLayout -> MemoryLayout;
+                ValueLayout -> MemoryLayout;
+                OfAddress -> ValueLayout;
+                OfBoolean -> ValueLayout;
+                OfByte -> ValueLayout;
+                OfChar -> ValueLayout;
+                OfDouble -> ValueLayout;
+                OfFloat -> ValueLayout;
+                OfInt -> ValueLayout;
+                OfLong -> ValueLayout;
+                OfShort -> ValueLayout;
+                }
+            """);
         } catch (FileNotFoundException e) {
             // ignore
         }
