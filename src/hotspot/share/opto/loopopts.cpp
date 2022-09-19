@@ -3969,7 +3969,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     exit_test = back_control->in(0)->as_If();
   }
 
-  if (idom(region)->is_Catch()) {
+  if (idom(region)->is_Catch() || region == head) {
     return false;
   }
 
