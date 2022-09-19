@@ -137,7 +137,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
 }
 
-class G1FreeHumongousRegionClosure : public HeapRegionClosure {
+class G1FreeHumongousRegionClosure : public HeapRegionIndexClosure {
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
@@ -184,11 +184,13 @@ public:
     _freed_bytes(0) {
   }
 
-  virtual bool do_heap_region(HeapRegion* r) {
-    uint region_idx = r->hrm_index();
-    if (!is_reclaimable(region_idx)) {
+  bool do_heap_region_index(uint region_index) override {
+    if (!is_reclaimable(region_index)) {
       return false;
     }
+
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    HeapRegion* r = g1h->region_at(region_index);
 
     oop obj = cast_to_oop(r->bottom());
     guarantee(obj->is_typeArray(),
@@ -196,17 +198,16 @@ public:
               PTR_FORMAT " is not.", p2i(r->bottom()));
 
     log_debug(gc, humongous)("Reclaimed humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ")",
-                             region_idx,
+                             region_index,
                              obj->size() * HeapWordSize,
                              p2i(r->bottom())
                             );
 
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* const cm = g1h->concurrent_mark();
     cm->humongous_object_eagerly_reclaimed(r);
     assert(!cm->is_marked_in_bitmap(obj),
            "Eagerly reclaimed humongous region %u should not be marked at all but is in bitmap %s",
-           region_idx,
+           region_index,
            BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
     _humongous_objects_reclaimed++;
     do {
