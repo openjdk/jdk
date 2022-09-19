@@ -39,6 +39,7 @@ Java_jvmti_JVMTIUtils_init(JNIEnv *jni, jclass cls) {
   }
   jvmtiCapabilities caps;
   memset(&caps, 0, sizeof (caps));
+  caps.can_suspend = 1;
   caps.can_signal_thread = 1;
   jvmtiError err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
@@ -52,10 +53,34 @@ JNIEXPORT void JNICALL
 Java_jvmti_JVMTIUtils_stopThread(JNIEnv *jni, jclass cls, jthread thread, jobject exception) {
   jvmtiError err =  jvmti->StopThread(thread, exception);
   if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
-    LOG("JVMTI_ERROR_THREAD_NOT_ALIVE happened");
+    LOG("JVMTI_ERROR_THREAD_NOT_ALIVE happened\n");
     return;
   }
   check_jvmti_status(jni, err, "Error during StopThread()");
+}
+
+JNIEXPORT void JNICALL
+Java_jvmti_JVMTIUtils_suspendThread(JNIEnv *jni, jclass cls, jthread thread) {
+  jvmtiError err =  jvmti->SuspendThread(thread);
+  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+    return;
+  }
+  if (err == JVMTI_ERROR_THREAD_SUSPENDED) {
+    return;
+  }
+  check_jvmti_status(jni, err, "Error during SuspendThread");
+}
+
+JNIEXPORT void JNICALL
+Java_jvmti_JVMTIUtils_resumeThread(JNIEnv *jni, jclass cls, jthread thread) {
+  jvmtiError err =  jvmti->ResumeThread(thread);
+  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+    return;
+  }
+  if (err == JVMTI_ERROR_THREAD_NOT_SUSPENDED) {
+    return;
+  }
+  check_jvmti_status(jni, err, "Error during ResumeThread");
 }
 
 }

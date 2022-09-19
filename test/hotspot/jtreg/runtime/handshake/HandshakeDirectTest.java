@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeDirectTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:GuaranteedSafepointInterval=10 -XX:+HandshakeALot -XX:+SafepointALot HandshakeDirectTest
  */
+
+import jvmti.JVMTIUtils;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ThreadLocalRandom;
@@ -91,12 +93,12 @@ public class HandshakeDirectTest  implements Runnable {
             public void run() {
                 while (true) {
                     int i = ThreadLocalRandom.current().nextInt(0, WORKING_THREADS - 1);
-                    workingThreads[i].suspend();
+                    JVMTIUtils.suspendThread(workingThreads[i]);
                     try {
                         Thread.sleep(1); // sleep for 1 ms
                     } catch(InterruptedException ie) {
                     }
-                    workingThreads[i].resume();
+                    JVMTIUtils.resumeThread(workingThreads[i]);
                 }
             }
         };

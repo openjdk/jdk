@@ -39,4 +39,8 @@ public class JVMTIUtils {
     public static void stopThread(Thread t) {
         stopThread(t, new ThreadDeath());
     }
+
+    public static native void suspendThread(Thread t);
+    public static native void resumeThread(Thread t);
+
 }
