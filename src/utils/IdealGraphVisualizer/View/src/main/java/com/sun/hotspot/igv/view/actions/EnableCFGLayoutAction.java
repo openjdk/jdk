@@ -35,7 +35,7 @@ import org.openide.util.ImageUtilities;
 
 public class EnableCFGLayoutAction extends AbstractAction implements PropertyChangeListener {
 
-    EditorTopComponent editor;
+    private final EditorTopComponent editor;
 
     public EnableCFGLayoutAction(EditorTopComponent etc) {
         editor = etc;

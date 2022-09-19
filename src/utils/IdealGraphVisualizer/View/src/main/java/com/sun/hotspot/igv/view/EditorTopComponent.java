@@ -157,19 +157,13 @@ public final class EditorTopComponent extends TopComponent {
         content.add(diagramProvider);
         this.associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
-        ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
-
-            @Override
-            public void changed(DiagramViewModel source) {
-                updateDisplayName();
-                Collection<Object> list = new ArrayList<>();
-                list.add(new EditorInputGraphProvider(EditorTopComponent.this));
-                graphContent.set(list, null);
-                diagramProvider.getChangedEvent().fire();
-            }
-
-        };
-        diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
+        diagramViewModel.getDiagramChangedEvent().addListener(source -> {
+            updateDisplayName();
+            Collection<Object> list = new ArrayList<>();
+            list.add(new EditorInputGraphProvider(EditorTopComponent.this));
+            graphContent.set(list, null);
+            diagramProvider.getChangedEvent().fire();
+        });
         diagramViewModel.selectGraph(diagram.getGraph());
 
         Group group = getDiagram().getGraph().getGroup();
@@ -265,15 +259,15 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     public DiagramViewModel getModel() {
-        return  scene.getModel();
+        return scene.getModel();
     }
 
     private Diagram getDiagram() {
         return getModel().getDiagramToView();
     }
 
-    public void selectionMode(boolean b) {
-        if (b) {
+    public void setSelectionMode(boolean enable) {
+        if (enable) {
             scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
         } else {
             scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
@@ -303,7 +297,7 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     public static EditorTopComponent getActive() {
-        TopComponent topComponent = EditorTopComponent.getRegistry().getActivated();
+        TopComponent topComponent = getRegistry().getActivated();
         if (topComponent instanceof EditorTopComponent) {
             return (EditorTopComponent) topComponent;
         }

@@ -39,7 +39,7 @@ import org.openide.util.ImageUtilities;
  */
 public class EnableBlockLayoutAction extends AbstractAction implements PropertyChangeListener {
 
-    EditorTopComponent editor;
+    private final EditorTopComponent editor;
 
     public EnableBlockLayoutAction(EditorTopComponent etc) {
         editor = etc;

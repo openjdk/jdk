@@ -35,7 +35,7 @@ import org.openide.util.ImageUtilities;
 
 public class EnableSeaLayoutAction extends AbstractAction implements PropertyChangeListener {
 
-    EditorTopComponent editor;
+    private final EditorTopComponent editor;
     public EnableSeaLayoutAction(EditorTopComponent etc) {
         editor = etc;
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
