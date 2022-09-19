@@ -505,7 +505,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     @Override
     void onProtocolError(final IOException cause) {
         if (debug.on()) {
-            debug.log("cancelling exchange due to protocol error: %s", cause);
+            debug.log("cancelling exchange due to protocol error: %s", cause.getMessage());
         }
         Log.logError("cancelling exchange due to protocol error: {0}\n", cause);
         cancelImpl(cause);

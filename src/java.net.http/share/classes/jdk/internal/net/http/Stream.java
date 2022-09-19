@@ -1241,7 +1241,7 @@ class Stream<T> extends ExchangeImpl<T> {
     @Override
     void onProtocolError(final IOException cause) {
         if (debug.on()) {
-            debug.log("cancelling exchange on stream %d due to protocol error: %s", streamid, cause);
+            debug.log("cancelling exchange on stream %d due to protocol error: %s", streamid, cause.getMessage());
         }
         Log.logError("cancelling exchange on stream {0} due to protocol error: {1}\n", streamid, cause);
         // send a RESET frame and close the stream
