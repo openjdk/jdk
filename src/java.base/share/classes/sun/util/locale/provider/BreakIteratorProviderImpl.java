@@ -326,6 +326,9 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
 
         @Override
         public int length() {
+            // Return the entire CharSequence length (0 to endIndex), not to
+            // be confused with the text range length (beginIndex to endIndex)
+            // in the source CharacterIterator.
             return src.getEndIndex();
         }
 
