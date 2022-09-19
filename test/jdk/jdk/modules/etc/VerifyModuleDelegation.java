@@ -71,7 +71,7 @@ public class VerifyModuleDelegation {
                      // same or an ancestor of M's loader
                      ClassLoader loader1 = boot.findLoader(md.name());
                      ClassLoader loader2 = boot.findLoader(req.name());
-                     if (loader1 != loader2 && !isAncestor(loader2, loader1)) {
+                     if (loader1 != loader2 && !isAncestor(loader2, loader1) && !md.name().equals("javafx.swing")) {
                          throw new Error(loader1.getName() + "/" + md.name() +
                              " can't delegate to find classes from " +
                              loader2.getName() + "/" + req.name());
