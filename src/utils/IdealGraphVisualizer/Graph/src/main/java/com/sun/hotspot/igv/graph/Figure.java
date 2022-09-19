@@ -232,7 +232,7 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public InputNode getInputNode() {
-        return this.inputNode;
+        return inputNode;
     }
 
     public InputSlot createInputSlot() {

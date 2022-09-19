@@ -80,7 +80,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     }
 
     public List<InputGraph> getGraphs() {
-        return  Collections.unmodifiableList(graphs);
+        return Collections.unmodifiableList(graphs);
     }
 
     public Set<Integer> getAllNodes() {

@@ -319,7 +319,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public DiagramViewModel getModel() {
-        return  scene.getModel();
+        return scene.getModel();
     }
 
     private Diagram getDiagram() {
