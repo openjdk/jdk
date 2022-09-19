@@ -41,11 +41,11 @@ import jdk.internal.util.jar.JarIndex;
  * <h2>Accessing the Manifest</h2>
  * <p>
  * The {@link #getManifest() getManifest} method is used to return the
- * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">JAR Manifest</a>
+ * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">Manifest</a>
  * from the entry {@code META-INF/MANIFEST.MF} when it is the first entry
- * in the stream (or the second entry the first entry in the stream is
- * {@code META-INF/} and the second entry {@code META-INF/MANIFEST.MF}).
- *</p>
+ * in the stream (or the second entry if the first entry in the stream is
+ * {@code META-INF/} and the second entry is {@code META-INF/MANIFEST.MF}).
+ * </p>
  * <p> The {@link #getNextJarEntry()} and {@link #getNextEntry()} methods are
  * used to read JAR file entries from the stream. These methods skip over the
  * Manifest ({@code META-INF/MANIFEST.MF}) when it is at the beginning of the
@@ -55,8 +55,7 @@ import jdk.internal.util.jar.JarIndex;
  * over by these methods. Whether these methods skip over the Manifest when it
  * appears later in the stream is not specified.
  * </p>
- *
- *  <h2>Verifying a JarInputStream</h2>
+ * <h2>Verifying a JarInputStream</h2>
  *
  *  A {@code JarInputStream} may be used to verify the signatures of a
  *  <a href="{@docRoot}/../specs/jar/jar.html#signed-jar-file">signed JAR file</a>
@@ -146,8 +145,8 @@ public class JarInputStream extends ZipInputStream {
 
     /**
      * Returns the {@code Manifest} for this JAR file when it is the first entry
-     * in the stream (or the second entry the first entry in the stream is
-     * {@code META-INF/} and the second entry {@code META-INF/MANIFEST.MF}), or
+     * in the stream (or the second entry if the first entry in the stream is
+     * {@code META-INF/} and the second entry is {@code META-INF/MANIFEST.MF}), or
      * {@code null} otherwise.
      *
      * @return the {@code Manifest} for this JAR file, or
