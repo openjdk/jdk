@@ -326,7 +326,7 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
 
         @Override
         public int length() {
-            return src.getEndIndex() - src.getBeginIndex();
+            return src.getEndIndex();
         }
 
         @Override
