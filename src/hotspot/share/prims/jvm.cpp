@@ -4048,13 +4048,13 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboole
 #endif
 JVM_END
 
-JVM_ENTRY(void, JVM_VirtualThreadToggleTmpVTMSTrans(JNIEnv* env, jobject vthread, jboolean end_tmp_trans))
+JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  assert(thread->is_in_tmp_VTMS_transition() == (bool)end_tmp_trans, "sanity check");
+  assert(thread->is_in_tmp_VTMS_transition() != (bool)hide, "sanity check");
   thread->toggle_is_in_tmp_VTMS_transition();
 #else
   fatal("Should only be called with JVMTI enabled");
