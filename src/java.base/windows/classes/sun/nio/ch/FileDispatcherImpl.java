@@ -34,24 +34,19 @@ import jdk.internal.access.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
 class FileDispatcherImpl extends FileDispatcher {
-    private static final long ALLOCATION_GRANULARITY;
-    private static final int  MAX_DIRECT_TRANSFER_SIZE;
-
     private static final int MAP_INVALID = -1;
     private static final int MAP_RO = 0;
     private static final int MAP_RW = 1;
     private static final int MAP_PV = 2;
 
-    static {
-        ALLOCATION_GRANULARITY   = allocationGranularity0();
-        MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
-    }
+    private static final long ALLOCATION_GRANULARITY;
+    private static final int  MAX_DIRECT_TRANSFER_SIZE;
+
+    // set to true if fast file transmission (TransmitFile) is enabled
+    private static final boolean FAST_FILE_TRANSFER;
 
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
-
-    // set to true if fast file transmission (TransmitFile) is enabled
-    private static final boolean fastFileTransfer;
 
     FileDispatcherImpl() { }
 
@@ -130,7 +125,7 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     boolean canTransferToDirectly(java.nio.channels.SelectableChannel sc) {
-        return fastFileTransfer && sc.isBlocking();
+        return FAST_FILE_TRANSFER && sc.isBlocking();
     }
 
     boolean transferToDirectlyNeedsPositionLock() {
@@ -193,7 +188,9 @@ class FileDispatcherImpl extends FileDispatcher {
 
     static {
         IOUtil.load();
-        fastFileTransfer = isFastFileTransferRequested();
+        FAST_FILE_TRANSFER       = isFastFileTransferRequested();
+        ALLOCATION_GRANULARITY   = allocationGranularity0();
+        MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
     }
 
     //-- Native methods
