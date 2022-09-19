@@ -70,7 +70,6 @@ public class AwtFramePackTest {
 
     private static void createAWTFrame(boolean isResizable) {
         try {
-            String frameType = isResizable ? "ResizableFrame" : "NonResizableFrame";
             frame = new Frame();
             frame.setLayout(new BorderLayout());
 
@@ -95,6 +94,7 @@ public class AwtFramePackTest {
             Dimension expectedFrameSize = frame.getPreferredSize();
 
             if (!actualFrameSize.equals(expectedFrameSize)) {
+                String frameType = isResizable ? "ResizableFrame" : "NonResizableFrame";
                 System.out.println("Expected frame size: " + expectedFrameSize);
                 System.out.println("Actual frame size: " + actualFrameSize);
                 saveScreenCapture(frameType + ".png");
