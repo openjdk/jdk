@@ -89,7 +89,7 @@ public class Binary16ConversionNaN {
 
         boolean pass;
         if (BITEXACT_SIGNIFICAND && BITEXACT_SIGN) {
-            pass = (s == s2); // Bit exact
+            pass = (s == s2);               // Bit exact
         } else if (BITEXACT_SIGN) {
             pass = (isNaN(s) == isNaN(s2))  // Still NaN
                 && (sign(s)  == sign(s2));  // Sign is intact
