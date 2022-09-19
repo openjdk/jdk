@@ -420,7 +420,7 @@ public final class EditorTopComponent extends TopComponent {
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
     private void initComponents() {
-        JCheckBox jCheckBox1 = new JCheckBox();
+        jCheckBox1 = new javax.swing.JCheckBox();
 
         org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, "jCheckBox1");
         jCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -429,4 +429,7 @@ public final class EditorTopComponent extends TopComponent {
         setLayout(new java.awt.BorderLayout());
 
     }// </editor-fold>//GEN-END:initComponents
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBox jCheckBox1;
+    // End of variables declaration//GEN-END:variables
 }
