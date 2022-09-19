@@ -268,7 +268,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
                     if (delay <= 0L)
                         return q.poll();
                     if (nanos <= 0L)
-                        return null;
+                        return q.poll();
                     first = null; // don't retain ref while waiting
                     if (nanos < delay || leader != null)
                         nanos = available.awaitNanos(nanos);
