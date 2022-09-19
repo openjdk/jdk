@@ -132,9 +132,6 @@
 
 #define MAX_SECS 100000000
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 #ifdef MUSL_LIBC
 // dlvsym is not a part of POSIX
 // and musl libc doesn't implement it.
@@ -5121,20 +5118,6 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   } else {
     return (jlong)user_time * (1000000000 / clock_tics_per_sec);
   }
-}
-
-void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
-  info_ptr->may_skip_backward = false;     // elapsed time not wall time
-  info_ptr->may_skip_forward = false;      // elapsed time not wall time
-  info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
-}
-
-void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
-  info_ptr->may_skip_backward = false;     // elapsed time not wall time
-  info_ptr->may_skip_forward = false;      // elapsed time not wall time
-  info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
 }
 
 bool os::is_thread_cpu_time_supported() {

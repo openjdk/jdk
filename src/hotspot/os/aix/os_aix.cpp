@@ -2691,20 +2691,6 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   return user_sys_cpu_time ? sys_time + user_time : user_time;
 }
 
-void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
-  info_ptr->may_skip_backward = false;     // elapsed time not wall time
-  info_ptr->may_skip_forward = false;      // elapsed time not wall time
-  info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
-}
-
-void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
-  info_ptr->may_skip_backward = false;     // elapsed time not wall time
-  info_ptr->may_skip_forward = false;      // elapsed time not wall time
-  info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
-}
-
 bool os::is_thread_cpu_time_supported() {
   return true;
 }

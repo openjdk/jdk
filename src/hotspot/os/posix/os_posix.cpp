@@ -887,6 +887,23 @@ void os::naked_short_sleep(jlong ms) {
   return;
 }
 
+// for timer info max values which include all bits
+#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
+
+void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
+  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->may_skip_backward = false;     // elapsed time not wall time
+  info_ptr->may_skip_forward = false;      // elapsed time not wall time
+  info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
+}
+
+void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
+  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->may_skip_backward = false;     // elapsed time not wall time
+  info_ptr->may_skip_forward = false;      // elapsed time not wall time
+  info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
+}
+
 char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr) {
   size_t stack_size = 0;
   size_t guard_size = 0;
