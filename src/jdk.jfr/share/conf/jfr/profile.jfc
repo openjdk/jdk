@@ -113,19 +113,19 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
-    <event name="jdk.ContinuationFreezeYoung">
+    <event name="jdk.ContinuationFreezeFast">
       <setting name="enabled">false</setting>
     </event>
 
-    <event name="jdk.ContinuationFreezeOld">
+    <event name="jdk.ContinuationFreezeSlow">
       <setting name="enabled">false</setting>
     </event>
 
-    <event name="jdk.ContinuationThawYoung">
+    <event name="jdk.ContinuationThawFast">
       <setting name="enabled">false</setting>
     </event>
 
-    <event name="jdk.ContinuationThawOld">
+    <event name="jdk.ContinuationThawSlow">
       <setting name="enabled">false</setting>
     </event>
 

@@ -25,11 +25,13 @@
 
 package sun.security.provider;
 
+import java.security.ProviderException;
+import java.util.Arrays;
+import java.util.Objects;
+
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import static sun.security.provider.ByteArrayAccess.*;
-import java.nio.*;
-import java.util.*;
-import java.security.*;
+import static sun.security.provider.ByteArrayAccess.b2lLittle;
+import static sun.security.provider.ByteArrayAccess.l2bLittle;
 
 /**
  * This class implements the Secure Hash Algorithm SHA-3 developed by
@@ -194,7 +196,7 @@ abstract class SHA3 extends DigestBase {
             a15 ^= d0; a16 ^= d1; a17 ^= d2; a18 ^= d3; a19 ^= d4;
             a20 ^= d0; a21 ^= d1; a22 ^= d2; a23 ^= d3; a24 ^= d4;
 
-            /**
+            /*
              * Merged Step mapping Rho (section 3.2.2) and Pi (section 3.2.3).
              * for performance. Optimization is achieved by precalculating
              * shift constants for the following loop

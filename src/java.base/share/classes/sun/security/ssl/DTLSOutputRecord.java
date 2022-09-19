@@ -90,7 +90,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
 
     @Override
     void changeWriteCiphers(SSLWriteCipher writeCipher,
-            boolean useChangeCipherSpec) throws IOException {
+            boolean useChangeCipherSpec) {
         if (isClosed()) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
@@ -118,7 +118,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
     }
 
     @Override
-    void encodeAlert(byte level, byte description) throws IOException {
+    void encodeAlert(byte level, byte description) {
         if (isClosed()) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
@@ -135,7 +135,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
     }
 
     @Override
-    void encodeChangeCipherSpec() throws IOException {
+    void encodeChangeCipherSpec() {
         if (isClosed()) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
@@ -152,7 +152,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
 
     @Override
     void encodeHandshake(byte[] source,
-            int offset, int length) throws IOException {
+            int offset, int length) {
         if (isClosed()) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.warning("outbound has closed, ignore outbound " +
@@ -210,7 +210,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
             throw new SSLHandshakeException("sequence number overflow");
         }
 
-        // Don't process the incoming record until all of the buffered records
+        // Don't process the incoming record until all buffered records
         // get handled.  May need retransmission if no sources specified.
         if (!isEmpty() || sources == null || sources.length == 0) {
             Ciphertext ct = acquireCiphertext(destination);
@@ -356,7 +356,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
         private int retransmits = 2;            // attempts of retransmits
 
         void queueUpHandshake(byte[] buf,
-                int offset, int length) throws IOException {
+                int offset, int length) {
 
             // Cleanup if a new flight starts.
             if (flightIsReady) {
@@ -418,7 +418,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
             handshakeMemos.add(memo);
         }
 
-        void queueUpAlert(byte level, byte description) throws IOException {
+        void queueUpAlert(byte level, byte description) {
             RecordMemo memo = new RecordMemo();
 
             memo.contentType = ContentType.ALERT.id;
@@ -581,12 +581,8 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
         }
 
         boolean isEmpty() {
-            if (!flightIsReady || handshakeMemos.isEmpty() ||
-                    acquireIndex >= handshakeMemos.size()) {
-                return true;
-            }
-
-            return false;
+            return !flightIsReady || handshakeMemos.isEmpty() ||
+                    acquireIndex >= handshakeMemos.size();
         }
 
         boolean hasAlert() {
@@ -607,8 +603,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
         private void setRetransmission() {
             acquireIndex = 0;
             for (RecordMemo memo : handshakeMemos) {
-                if (memo instanceof HandshakeMemo) {
-                    HandshakeMemo hmemo = (HandshakeMemo)memo;
+                if (memo instanceof HandshakeMemo hmemo) {
                     hmemo.acquireOffset = 0;
                 }
             }
