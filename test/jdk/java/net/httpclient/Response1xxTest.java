@@ -76,6 +76,8 @@ public class Response1xxTest implements HttpServerAdapters {
     private HttpTestServer https2Server;  // h2
     private String https2RequestURIBase;
 
+    private final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+
     @BeforeClass
     public void setup() throws Exception {
         serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
@@ -114,22 +116,26 @@ public class Response1xxTest implements HttpServerAdapters {
     }
 
     @AfterClass
-    public void teardown() throws Exception {
-        if (server != null) {
-            server.stop = true;
-            System.out.println("(HTTP 1.1) Server stop requested");
-        }
-        if (serverSocket != null) {
-            serverSocket.close();
-            System.out.println("Closed (HTTP 1.1) server socket");
-        }
-        if (http2Server != null) {
-            http2Server.stop();
-            System.out.println("Stopped HTTP2 server");
-        }
-        if (https2Server != null) {
-            https2Server.stop();
-            System.out.println("Stopped (https) HTTP2 server");
+    public void teardown() throws Throwable {
+        try {
+            assertNoOutstandingClientOps();
+        } finally {
+            if (server != null) {
+                server.stop = true;
+                System.out.println("(HTTP 1.1) Server stop requested");
+            }
+            if (serverSocket != null) {
+                serverSocket.close();
+                System.out.println("Closed (HTTP 1.1) server socket");
+            }
+            if (http2Server != null) {
+                http2Server.stop();
+                System.out.println("Stopped HTTP2 server");
+            }
+            if (https2Server != null) {
+                https2Server.stop();
+                System.out.println("Stopped (https) HTTP2 server");
+            }
         }
     }
 
@@ -335,6 +341,7 @@ public class Response1xxTest implements HttpServerAdapters {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
+        TRACKER.track(client);
         final URI[] requestURIs = new URI[]{
                 new URI(http1RequestURIBase + "/test/foo"),
                 new URI(http1RequestURIBase + "/test/bar"),
@@ -361,6 +368,7 @@ public class Response1xxTest implements HttpServerAdapters {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
+        TRACKER.track(client);
         final URI[] requestURIs = new URI[]{
                 new URI(http2RequestURIBase + "/102"),
                 new URI(http2RequestURIBase + "/103"),
@@ -388,6 +396,7 @@ public class Response1xxTest implements HttpServerAdapters {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
+        TRACKER.track(client);
         final URI requestURI = new URI(http2RequestURIBase + "/only-informational");
         final Duration requestTimeout = Duration.ofSeconds(2);
         final HttpRequest request = HttpRequest.newBuilder(requestURI).timeout(requestTimeout)
@@ -408,6 +417,7 @@ public class Response1xxTest implements HttpServerAdapters {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
+        TRACKER.track(client);
         final URI requestURI = new URI(http1RequestURIBase + "/test/bye");
         final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
         System.out.println("Issuing request to " + requestURI);
@@ -427,6 +437,7 @@ public class Response1xxTest implements HttpServerAdapters {
                 .version(HttpClient.Version.HTTP_2)
                 .sslContext(sslContext)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
+        TRACKER.track(client);
         final URI requestURI = new URI(https2RequestURIBase + "/101");
         final HttpRequest request = HttpRequest.newBuilder(requestURI).build();
         System.out.println("Issuing request to " + requestURI);
@@ -444,6 +455,7 @@ public class Response1xxTest implements HttpServerAdapters {
         final HttpClient client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
+        TRACKER.track(client);
         // when using HTTP2 version against a "http://" (non-secure) URI
         // the HTTP client (implementation) internally initiates a HTTP/1.1 connection
         // and then does an "Upgrade:" to "h2c". This it does when there isn't already a
@@ -469,5 +481,15 @@ public class Response1xxTest implements HttpServerAdapters {
         System.out.println("Issuing (warmup) request to " + requestURI);
         final HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
         Assert.assertEquals(response.statusCode(), 200, "Unexpected response code");
+    }
+
+    // verifies that the HttpClient being tracked has no outstanding operations
+    private void assertNoOutstandingClientOps() throws AssertionError {
+        System.gc();
+        final AssertionError refCheckFailure = TRACKER.check(1000);
+        if (refCheckFailure != null) {
+            throw refCheckFailure;
+        }
+        // successful test completion
     }
 }
