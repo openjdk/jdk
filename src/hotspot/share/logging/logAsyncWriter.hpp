@@ -26,98 +26,13 @@
 #include "logging/log.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logMessageBuffer.hpp"
-#include "memory/resourceArea.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
-#include "utilities/linkedlist.hpp"
 
-template <typename E, MEMFLAGS F>
-class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
- private:
-  LinkedListNode<E>* _tail;
-  size_t _size;
-
- public:
-  LinkedListDeque() : _tail(NULL), _size(0) {}
-  void push_back(const E& e) {
-    if (!_tail) {
-      _tail = this->add(e);
-    } else {
-      _tail = this->insert_after(e, _tail);
-    }
-
-    ++_size;
-  }
-
-  // pop all elements to logs.
-  void pop_all(LinkedList<E>* logs) {
-    logs->move(static_cast<LinkedList<E>* >(this));
-    _tail = NULL;
-    _size = 0;
-  }
-
-  void pop_all(LinkedListDeque<E, F>* logs) {
-    logs->_size = _size;
-    logs->_tail = _tail;
-    pop_all(static_cast<LinkedList<E>* >(logs));
-  }
-
-  void pop_front() {
-    LinkedListNode<E>* h = this->unlink_head();
-    if (h == _tail) {
-      _tail = NULL;
-    }
-
-    if (h != NULL) {
-      --_size;
-      this->delete_node(h);
-    }
-  }
-
-  size_t size() const { return _size; }
-
-  const E* front() const {
-    return this->_head == NULL ? NULL : this->_head->peek();
-  }
-
-  const E* back() const {
-    return _tail == NULL ? NULL : _tail->peek();
-  }
-
-  LinkedListNode<E>* head() const {
-    return this->_head;
-  }
-};
-
-// Forward declaration
 class LogFileStreamOutput;
-
-class AsyncLogMessage {
-  LogFileStreamOutput* _output;
-  const LogDecorations _decorations;
-  char* _message;
-
-public:
-  AsyncLogMessage(LogFileStreamOutput* output, const LogDecorations& decorations, char* msg)
-    : _output(output), _decorations(decorations), _message(msg) {}
-
-  // placeholder for LinkedListImpl.
-  bool equals(const AsyncLogMessage& o) const { return false; }
-
-  LogFileStreamOutput* output() const { return _output; }
-  const LogDecorations& decorations() const { return _decorations; }
-  char* message() const { return _message; }
-};
-
-typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
-typedef ResourceHashtable<LogFileStreamOutput*,
-                          uint32_t,
-                          17, /*table_size*/
-                          ResourceObj::C_HEAP,
-                          mtLogging> AsyncLogMap;
-
 //
 // ASYNC LOGGING SUPPORT
 //
@@ -140,7 +55,98 @@ typedef ResourceHashtable<LogFileStreamOutput*,
 // change the logging configuration via jcmd, LogConfiguration::configure_output() calls flush() under the protection of the
 // ConfigurationLock. In addition flush() is called during JVM termination, via LogConfiguration::finalize.
 class AsyncLogWriter : public NonJavaThread {
+  friend class AsyncLogTest;
+  friend class AsyncLogTest_logBuffer_vm_Test;
   class AsyncLogLocker;
+  using AsyncLogMap = ResourceHashtable<LogFileStreamOutput*,
+                          uint32_t,
+                          17, /*table_size*/
+                          ResourceObj::C_HEAP,
+                          mtLogging>;
+
+  // Messsage is the envelop of a log line and its associative data.
+  // Its length is variable because of the zero-terminated c-str. It is only valid when we create it using placement new
+  // within a buffer.
+  //
+  // Example layout:
+  // ---------------------------------------------
+  // |_output|_decorations|"a log line", |pad| <- pointer aligned.
+  // |_output|_decorations|"yet another",|pad|
+  // ...
+  // |nullptr|_decorations|"",|pad| <- flush token
+  // |<- _pos
+  // ---------------------------------------------
+  class Message {
+    NONCOPYABLE(Message);
+    ~Message() = delete;
+    LogFileStreamOutput* const _output;
+    const LogDecorations _decorations;
+   public:
+    Message(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
+      : _output(output), _decorations(decorations) {
+      assert(msg != nullptr, "c-str message can not be null!");
+      PRAGMA_STRINGOP_OVERFLOW_IGNORED
+      strcpy(reinterpret_cast<char* >(this+1), msg);
+    }
+
+    // Calculate the size for a prospective Message object depending on its message length including the trailing zero
+    static constexpr size_t calc_size(size_t message_len) {
+      return align_up(sizeof(Message) + message_len + 1, sizeof(void*));
+    }
+
+    size_t size() const {
+      return calc_size(strlen(message()));
+    }
+
+    inline bool is_token() const { return _output == nullptr; }
+    LogFileStreamOutput* output() const { return _output; }
+    const LogDecorations& decorations() const { return _decorations; }
+    const char* message() const { return reinterpret_cast<const char *>(this+1); }
+  };
+
+  class Buffer : public CHeapObj<mtLogging> {
+    char* _buf;
+    size_t _pos;
+    const size_t _capacity;
+
+   public:
+    Buffer(size_t capacity) :  _pos(0), _capacity(capacity) {
+      _buf = NEW_C_HEAP_ARRAY(char, capacity, mtLogging);
+      assert(capacity >= Message::calc_size(0), "capcity must be great a token size");
+    }
+
+    ~Buffer() {
+      FREE_C_HEAP_ARRAY(char, _buf);
+    }
+
+    void push_flush_token();
+    bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
+
+    void reset() { _pos = 0; }
+
+    class Iterator {
+      const Buffer& _buf;
+      size_t _curr;
+
+    public:
+      Iterator(const Buffer& buffer): _buf(buffer), _curr(0) {}
+
+      bool hasNext() const {
+        return _curr < _buf._pos;
+      }
+
+      const Message* next() {
+        assert(hasNext(), "sanity check");
+        auto msg = reinterpret_cast<Message*>(_buf._buf + _curr);
+        _curr = MIN2(_curr + msg->size(), _buf._pos);
+        return msg;
+      }
+    };
+
+    Iterator iterator() const {
+      return Iterator(*this);
+    }
+  };
 
   static AsyncLogWriter* _instance;
   Semaphore _flush_sem;
@@ -149,14 +155,15 @@ class AsyncLogWriter : public NonJavaThread {
   bool _data_available;
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
-  AsyncLogBuffer _buffer;
 
-  // The memory use of each AsyncLogMessage (payload) consists of itself and a variable-length c-str message.
-  // A regular logging message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
-  const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + vwrite_buffer_size)};
+  // ping-pong buffers
+  Buffer* _buffer;
+  Buffer* _buffer_staging;
+
+  static const LogDecorations& None;
 
   AsyncLogWriter();
-  void enqueue_locked(const AsyncLogMessage& msg);
+  void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
   void write();
   void run() override;
   void pre_run() override {
@@ -170,6 +177,16 @@ class AsyncLogWriter : public NonJavaThread {
     Thread::print_on(st);
     st->cr();
   }
+
+  // for testing-only
+  class BufferUpdater {
+    Buffer* _buf1;
+    Buffer* _buf2;
+
+   public:
+    BufferUpdater(size_t newsize);
+    ~BufferUpdater();
+  };
 
  public:
   void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);

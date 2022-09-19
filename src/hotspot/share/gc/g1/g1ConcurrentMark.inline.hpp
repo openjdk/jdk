@@ -280,8 +280,8 @@ inline bool G1CMTask::deal_with_reference(T* p) {
   return make_reference_grey(obj);
 }
 
-inline void G1ConcurrentMark::raw_mark_in_bitmap(oop p) {
-  _mark_bitmap.par_mark(p);
+inline void G1ConcurrentMark::raw_mark_in_bitmap(oop obj) {
+  _mark_bitmap.par_mark(obj);
 }
 
 bool G1ConcurrentMark::is_marked_in_bitmap(oop p) const {

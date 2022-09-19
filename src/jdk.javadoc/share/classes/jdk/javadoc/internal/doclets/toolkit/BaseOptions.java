@@ -320,12 +320,17 @@ public abstract class BaseOptions {
 
     private final BaseConfiguration config;
 
+    /**
+     * The default amount of space between tab stops.
+     */
+    public static final int DEFAULT_TAB_STOP_LENGTH = 8;
+
     protected BaseOptions(BaseConfiguration config) {
         this.config = config;
 
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
-        sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+        sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
         groupPairs = new ArrayList<>(0);
     }
 
@@ -597,7 +602,7 @@ public abstract class BaseOptions {
                         }
                         if (sourceTabSize <= 0) {
                             messages.warning("doclet.sourcetab_warning");
-                            sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+                            sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
                         }
                         return true;
                     }
