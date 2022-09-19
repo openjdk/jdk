@@ -905,7 +905,7 @@ void VM_PopulateDumpSharedSpace::dump_heap_bitmaps() {
 
 void VM_PopulateDumpSharedSpace::dump_heap_bitmaps(GrowableArray<MemRegion>* regions,
                                                    GrowableArray<ArchiveHeapBitmapInfo>* bitmaps) {
-  for (int i=0; i<regions->length(); i++) {
+  for (int i = 0; i < regions->length(); i++) {
     MemRegion region = regions->at(i);
     ResourceBitMap oopmap = HeapShared::calculate_oopmap(region);
     ResourceBitMap ptrmap = HeapShared::calculate_ptrmap(region);

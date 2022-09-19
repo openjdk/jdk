@@ -56,10 +56,10 @@ typedef struct CDSFileMapRegion {
   size_t  _used;              // Number of bytes actually used by this region (excluding padding bytes added
                               // for alignment purposed.
   size_t  _oopmap_offset;     // Bitmap for relocating oop fields in archived heap objects.
-                              // (The base address is the botom of the BM region)
+                              // (The base address is the bottom of the BM region)
   size_t  _oopmap_size_in_bits;
   size_t  _ptrmap_offset;     // Bitmap for relocating native pointer fields in archived heap objects.
-                              // (The base address is the botom of the BM region).
+                              // (The base address is the bottom of the BM region).
   size_t  _ptrmap_size_in_bits;
   char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
 } CDSFileMapRegion;

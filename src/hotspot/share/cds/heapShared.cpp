@@ -1845,7 +1845,7 @@ ResourceBitMap HeapShared::calculate_ptrmap(MemRegion region) {
     }
   }
 
-  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers our of "
+  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers out of "
                       SIZE_FORMAT " possible locations", num_non_null_ptrs, num_bits);
   if (num_non_null_ptrs > 0) {
     return oopmap;

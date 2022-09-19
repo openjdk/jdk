@@ -1690,7 +1690,8 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
     if (size > 0) {
       int oopmap_idx = i * 2;
       int ptrmap_idx = i * 2 + 1;
-      space_at(region_idx)->init_bitmaps(bitmaps->at(i*2), bitmaps->at(i*2 + 1));
+      space_at(region_idx)->init_bitmaps(bitmaps->at(oopmap_idx),
+                                         bitmaps->at(ptrmap_idx));
     }
   }
   return total_size;
