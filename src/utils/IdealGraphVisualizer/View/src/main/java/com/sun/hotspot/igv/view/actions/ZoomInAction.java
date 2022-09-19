@@ -24,10 +24,7 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.Event;
-import java.awt.event.KeyEvent;
 import javax.swing.Action;
-import javax.swing.KeyStroke;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
@@ -36,8 +33,10 @@ import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
-import org.openide.util.Utilities;
 
+/**
+ * @author Thomas Wuerthinger
+ */
 @ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ZoomInAction")
 @ActionRegistration(displayName = "#CTL_ZoomInAction")
 @ActionReferences({

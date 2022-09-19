@@ -35,6 +35,9 @@ import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 
 
+/**
+ * @author Thomas Wuerthinger
+ */
 @ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.PrevDiagramAction")
 @ActionRegistration(displayName = "#CTL_PrevDiagramAction")
 @ActionReferences({

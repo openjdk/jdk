@@ -34,6 +34,9 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 
+/**
+ * @author Thomas Wuerthinger
+ */
 @ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.NextDiagramAction")
 @ActionRegistration(displayName = "#CTL_NextDiagramAction")
 @ActionReferences({

@@ -44,6 +44,9 @@ import org.openide.util.Utilities;
 import org.openide.util.actions.CallableSystemAction;
 
 
+/**
+ * @author Thomas Wuerthinger
+ */
 @ActionID(category = "File", id = "com.sun.hotspot.igv.view.actions.ExportAction")
 @ActionRegistration(displayName = "#CTL_ExportAction")
 @ActionReferences({
