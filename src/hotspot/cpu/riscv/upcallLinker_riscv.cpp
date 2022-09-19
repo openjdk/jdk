@@ -24,15 +24,345 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/macroAssembler.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "prims/upcallLinker.hpp"
-#include "utilities/debug.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+#define __ _masm->
+
+// for callee saved regs, according to the caller's ABI
+static int compute_reg_save_area_size(const ABIDescriptor& abi) {
+  int size = 0;
+  for (int i = 0; i < Register::number_of_registers; i++) {
+    Register reg = as_Register(i);
+    if (reg == fp || reg == sp) continue; // saved/restored by prologue/epilogue
+    if (!abi.is_volatile_reg(reg)) {
+      size += 8; // bytes
+    }
+  }
+
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
+    FloatRegister reg = as_FloatRegister(i);
+    if (!abi.is_volatile_reg(reg)) {
+      size += 8; // bytes
+    }
+  }
+
+  return size;
+}
+
+static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
+  // 1. iterate all registers in the architecture
+  //     - check if they are volatile or not for the given abi
+  //     - if NOT, we need to save it here
+
+  int offset = reg_save_area_offset;
+
+  __ block_comment("{ preserve_callee_saved_regs ");
+  for (int i = 0; i < Register::number_of_registers; i++) {
+    Register reg = as_Register(i);
+    if (reg == fp || reg == sp) continue; // saved/restored by prologue/epilogue
+    if (!abi.is_volatile_reg(reg)) {
+      __ sd(reg, Address(sp, offset));
+      offset += 8;
+    }
+  }
+
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
+    FloatRegister reg = as_FloatRegister(i);
+    if (!abi.is_volatile_reg(reg)) {
+      __ fsd(reg, Address(sp, offset));
+      offset += 8;
+    }
+  }
+
+  __ block_comment("} preserve_callee_saved_regs ");
+}
+
+static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
+  // 1. iterate all registers in the architecture
+  //     - check if they are volatile or not for the given abi
+  //     - if NOT, we need to restore it here
+
+  int offset = reg_save_area_offset;
+
+  __ block_comment("{ restore_callee_saved_regs ");
+  for (int i = 0; i < Register::number_of_registers; i++) {
+    Register reg = as_Register(i);
+    if (reg == fp || reg == sp) continue; // saved/restored by prologue/epilogue
+    if (!abi.is_volatile_reg(reg)) {
+      __ ld(reg, Address(sp, offset));
+      offset += 8;
+    }
+  }
+
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
+    FloatRegister reg = as_FloatRegister(i);
+    if (!abi.is_volatile_reg(reg)) {
+      __ fld(reg, Address(sp, offset));
+      offset += 8;
+    }
+  }
+
+  __ block_comment("} restore_callee_saved_regs ");
+}
+
+static GrowableArray<StorageClass> parse_reg_types(jobject jconv) {
+  oop conv_oop = JNIHandles::resolve_non_null(jconv);
+  objArrayOop ret_regs_oop = jdk_internal_foreign_abi_CallConv::retRegs(conv_oop);
+  int num_rets = ret_regs_oop->length();
+  GrowableArray<StorageClass> result{num_rets};
+  for (int i = 0; i < num_rets; i++) {
+    jint type = jdk_internal_foreign_abi_VMStorage::type(ret_regs_oop->obj_at(i));
+    assert(type >= static_cast<int>(StorageClass::INTEGER_8), "bad storage class.");
+    result.push(static_cast<StorageClass>(type));
+  }
+
+  return result;
+}
+
+// receive args from c function, and convert it into java calling convetion.
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                                        BasicType* in_sig_bt, int total_in_args,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
                                        bool needs_return_buffer, int ret_buf_size) {
-  ShouldNotCallThis();
-  return nullptr;
+
+  ResourceMark rm;
+  const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
+  const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
+  CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
+
+  Register shuffle_reg = t2;
+  JavaCallingConvention out_conv;
+  NativeCallingConvention in_conv(call_regs._arg_regs);
+  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv,
+                              shuffle_reg->as_VMReg());
+  int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
+  int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, upcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
+
+  if (out_arg_area < frame::arg_reg_save_area_bytes) {
+    out_arg_area = frame::arg_reg_save_area_bytes;
+  }
+
+  int reg_save_area_size = compute_reg_save_area_size(abi);
+  RegSpiller arg_spilller(call_regs._arg_regs);
+  RegSpiller result_spiller(call_regs._ret_regs);
+
+  int shuffle_area_offset = 0;
+  int res_save_area_offset = shuffle_area_offset + out_arg_area;
+  int arg_save_area_offset = res_save_area_offset + result_spiller.spill_size_bytes();
+  int reg_save_area_offset = arg_save_area_offset + arg_spilller.spill_size_bytes();
+  // build FrameData for stack traverse.
+  int frame_data_offset = reg_save_area_offset + reg_save_area_size;
+  int frame_bottom_offset = frame_data_offset + sizeof(UpcallStub::FrameData);
+
+  int ret_buf_offset = -1;
+  if (needs_return_buffer) {
+    ret_buf_offset = frame_bottom_offset;
+    frame_bottom_offset += ret_buf_size;
+  }
+
+  int frame_size = frame_bottom_offset;
+  frame_size = align_up(frame_size, StackAlignmentInBytes);
+
+  // The space we have allocated will look like:
+  //
+  //
+  // FP-> |                     |
+  //      |---------------------| = frame_bottom_offset = frame_size
+  //      | (optional)          |
+  //      | ret_buf             |
+  //      |---------------------| = ret_buf_offset
+  //      |                     |
+  //      | FrameData           |
+  //      |---------------------| = frame_data_offset
+  //      |                     |
+  //      | reg_save_area       |
+  //      |---------------------| = reg_save_area_offset
+  //      |                     |
+  //      | arg_save_area       |
+  //      |---------------------| = arg_save_area_offset
+  //      |                     |
+  //      | res_save_area       |
+  //      |---------------------| = res_save_area_offset
+  //      |                     |
+  // SP-> | out_arg_area        |   needs to be at end for shadow space
+  //
+  //
+
+  MacroAssembler* _masm = new MacroAssembler(&buffer);
+  address start = __ pc();
+  __ enter(); // set up frame
+  assert((abi._stack_alignment_bytes % 16) == 0, "must be 16 byte aligned");
+  // allocate frame (frame_size is also aligned, so stack is still aligned)
+  __ sub(sp, sp, frame_size);
+
+  // we have to always spill args since we need to do a call to get the thread
+  // (and maybe attach it). so store those registers temporarily.
+  arg_spilller.generate_spill(_masm, arg_save_area_offset);
+  preserve_callee_saved_registers(_masm, abi, reg_save_area_offset);
+
+  __ block_comment("{ on_entry");
+  __ la(c_rarg0, Address(sp, frame_data_offset));
+  __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry));
+  __ mv(xthread, x10);
+  __ reinit_heapbase();
+  __ block_comment("} on_entry");
+
+  __ block_comment("{ argument shuffle");
+  // before shuffle, restore registers.
+  arg_spilller.generate_fill(_masm, arg_save_area_offset);
+  if (needs_return_buffer) {
+    assert(ret_buf_offset != -1, "no return buffer allocated");
+    __ la(abi._ret_buf_addr_reg, Address(sp, ret_buf_offset));
+  }
+  // arg_shuffle will generate shuffle code that is used to
+  // to check how argument shuffle works, use -Xlog:foreign+upcall=trace.
+  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), abi._shadow_space_bytes, 0);
+  __ block_comment("} argument shuffle");
+
+  // move the receiver to j_rarg0.
+  __ block_comment("{ receiver ");
+  __ movptr(shuffle_reg, (intptr_t) receiver);
+  __ resolve_jobject(shuffle_reg, t0, t1);
+  __ mv(j_rarg0, shuffle_reg);
+  __ block_comment("} receiver ");
+
+  // change current callee.
+  __ mov_metadata(xmethod, entry);
+  __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+  // get entry address and do call.
+  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
+  __ jalr(t0);
+
+  // return value shuffle
+  if (!needs_return_buffer) {
+#ifdef ASSERT
+    if (call_regs._ret_regs.length() == 1) { // 0 or 1
+      VMReg j_expected_result_reg;
+      switch (ret_type) {
+        case T_BOOLEAN:
+        case T_BYTE:
+        case T_SHORT:
+        case T_CHAR:
+        case T_INT:
+        case T_LONG:
+          j_expected_result_reg = x10->as_VMReg();
+          break;
+        case T_FLOAT:
+        case T_DOUBLE:
+          j_expected_result_reg = f10->as_VMReg();
+          break;
+        default:
+          fatal("unexpected return type: %s", type2name(ret_type));
+      }
+      // No need to move for now, since CallArranger can pick a return type
+      // that goes in the same reg for both CCs. But, at least assert they are the same
+      assert(call_regs._ret_regs.at(0) == j_expected_result_reg,
+             "unexpected result register: %s != %s", call_regs._ret_regs.at(0)->name(), j_expected_result_reg->name());
+    }
+#endif
+  } else {
+    // move return value from return buffer to registers.
+    assert(ret_buf_offset != -1, "no return buffer allocated");
+    __ la(t0, Address(sp, ret_buf_offset));
+
+    GrowableArray<StorageClass> storages = parse_reg_types(jconv);
+    int offset = 0;
+    assert(storages.length() == call_regs._ret_regs.length(), "inconsistent length.");
+    for (int i = 0; i < call_regs._ret_regs.length(); i++) {
+      VMReg reg = call_regs._ret_regs.at(i);
+      StorageClass regtype = storages.at(i);
+      switch (regtype) {
+        case StorageClass::FLOAT_32:
+          __ flw(reg->as_FloatRegister(), Address(t0, offset));
+          break;
+        case StorageClass::FLOAT_64:
+          __ fld(reg->as_FloatRegister(), Address(t0, offset));
+          break;
+        case StorageClass::INTEGER_8:
+          __ lb(reg->as_Register(), Address(t0, offset));
+          break;
+        case StorageClass::INTEGER_16:
+          __ lh(reg->as_Register(), Address(t0, offset));
+          break;
+        case StorageClass::INTEGER_32:
+          __ lw(reg->as_Register(), Address(t0, offset));
+          break;
+        case StorageClass::INTEGER_64:
+          __ ld(reg->as_Register(), Address(t0, offset));
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+      offset += 8;
+    }
+  }
+
+  result_spiller.generate_spill(_masm, res_save_area_offset);
+
+  __ block_comment("{ on_exit");
+  __ la(c_rarg0, Address(sp, frame_data_offset));
+  // stack already aligned
+  __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::on_exit));
+  __ block_comment("} on_exit");
+
+  restore_callee_saved_registers(_masm, abi, reg_save_area_offset);
+
+  result_spiller.generate_fill(_masm, res_save_area_offset);
+
+  __ leave();
+  __ ret();
+
+  __ block_comment("{ exception handler");
+
+  intptr_t exception_handler_offset = __ pc() - start;
+
+  // Native caller has no idea how to handle exceptions,
+  // so we just crash here. Up to callee to catch exceptions.
+  __ verify_oop(x10); // return a exception oop in a0
+  __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception));
+  __ should_not_reach_here();
+
+  __ block_comment("} exception handler");
+  __ flush();
+
+#ifndef PRODUCT
+  stringStream ss;
+  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  const char *name = _masm->code_string(ss.as_string());
+#else // PRODUCT
+  const char* name = "upcall_stub";
+#endif // PRODUCT
+
+  UpcallStub* blob
+          = UpcallStub::create(name,
+                               &buffer,
+                               exception_handler_offset,
+                               receiver,
+                               in_ByteSize(frame_data_offset));
+
+  if (TraceOptimizedUpcallStubs) {
+    blob->print_on(tty);
+  }
+
+  return blob->code_begin();
 }

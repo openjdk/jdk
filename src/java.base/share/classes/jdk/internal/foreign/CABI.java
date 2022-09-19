@@ -32,7 +32,8 @@ public enum CABI {
     SysV,
     Win64,
     LinuxAArch64,
-    MacOsAArch64;
+    MacOsAArch64,
+    LinuxRISCV64;
 
     private static final CABI ABI;
     private static final String ARCH;
@@ -57,6 +58,13 @@ public enum CABI {
             } else {
                 // The Linux ABI follows the standard AAPCS ABI
                 ABI = LinuxAArch64;
+            }
+        } else if (ARCH.equals("riscv64")) {
+            if (OS.startsWith("Linux")) {
+                ABI = LinuxRISCV64;
+            } else {
+                // unsupported
+                ABI = null;
             }
         } else {
             // unsupported

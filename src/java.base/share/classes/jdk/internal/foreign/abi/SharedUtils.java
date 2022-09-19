@@ -33,6 +33,7 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
+import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 
@@ -239,6 +240,7 @@ public class SharedUtils {
             case SysV -> SysVx64Linker.getInstance();
             case LinuxAArch64 -> LinuxAArch64Linker.getInstance();
             case MacOsAArch64 -> MacOsAArch64Linker.getInstance();
+            case LinuxRISCV64 -> LinuxRISCV64Linker.getInstance();
         };
     }
 
@@ -350,6 +352,7 @@ public class SharedUtils {
             case SysV -> SysVx64Linker.newVaList(actions, session);
             case LinuxAArch64 -> LinuxAArch64Linker.newVaList(actions, session);
             case MacOsAArch64 -> MacOsAArch64Linker.newVaList(actions, session);
+            case LinuxRISCV64 -> LinuxRISCV64Linker.newVaList(actions, session);
         };
     }
 
@@ -359,6 +362,7 @@ public class SharedUtils {
             case SysV -> SysVx64Linker.newVaListOfAddress(ma, session);
             case LinuxAArch64 -> LinuxAArch64Linker.newVaListOfAddress(ma, session);
             case MacOsAArch64 -> MacOsAArch64Linker.newVaListOfAddress(ma, session);
+            case LinuxRISCV64 -> LinuxRISCV64Linker.newVaListOfAddress(ma, session);
         };
     }
 
@@ -368,6 +372,7 @@ public class SharedUtils {
             case SysV -> SysVx64Linker.emptyVaList();
             case LinuxAArch64 -> LinuxAArch64Linker.emptyVaList();
             case MacOsAArch64 -> MacOsAArch64Linker.emptyVaList();
+            case LinuxRISCV64 -> LinuxRISCV64Linker.emptyVaList();
         };
     }
 

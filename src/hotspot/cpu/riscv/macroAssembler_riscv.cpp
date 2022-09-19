@@ -3951,3 +3951,163 @@ void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Registe
   neg(dst, dst);
   bind(done);
 }
+
+void MacroAssembler::rt_call(address dest) {
+  CodeBlob *cb = CodeCache::find_blob(dest);
+  if (cb) {
+    far_call(RuntimeAddress(dest));
+  } else {
+    int32_t offset = 0;
+    la_patchable(t0, RuntimeAddress(dest), offset);
+    jalr(x1, t0, offset);
+  }
+}
+
+// The java_calling_convention describes stack locations as ideal slots on
+// a frame with no abi restrictions. Since we must observe abi restrictions
+// (like the placement of the register window) the slots must be biased by
+// the following value.
+static int reg2offset_in(VMReg r) {
+  // Account for saved fp and ra
+  // This should really be in_preserve_stack_slots
+  return r->reg2stack() * VMRegImpl::stack_slot_size;
+}
+
+static int reg2offset_out(VMReg r) {
+  return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
+}
+
+void MacroAssembler::move_float_to_integer_or_stack(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      lwu(t0, Address(fp, reg2offset_in(src.first())));
+      sw(t0, Address(sp, reg2offset_out(dst.first())));
+    } else if (dst.first()->is_Register()) {
+      lwu(dst.first()->as_Register(), Address(fp, reg2offset_in(src.first())));
+    } else {
+      ShouldNotReachHere();
+    }
+  } else if (src.first() != dst.first()) {
+    // java abi will not use integer reg to pass a float.
+    if (src.first()->is_FloatRegister()) {
+      if (dst.first()->is_Register())
+        fmv_x_w(dst.first()->as_Register(), src.first()->as_FloatRegister());
+      else
+        fsw(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
+    } else
+      ShouldNotReachHere();
+  }
+}
+
+void MacroAssembler::move_double_to_integer_or_stack(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      ld(t0, Address(fp, reg2offset_in(src.first())));
+      sd(t0, Address(sp, reg2offset_out(dst.first())));
+    } else if (dst.first()->is_Register()) {
+      ld(dst.first()->as_Register(), Address(fp, reg2offset_in(src.first())));
+    } else {
+      ShouldNotReachHere();
+    }
+  } else if (src.first() != dst.first()) {
+    if (src.first()->is_FloatRegister()) {
+      if (dst.first()->is_Register())
+        fmv_x_d(dst.first()->as_Register(), src.first()->as_FloatRegister());
+      else
+        fsd(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
+    } else
+      ShouldNotReachHere();
+  }
+}
+
+// On 64 bit we will store integer like items to the stack as
+// 64 bits items (riscv64 abi) even though java would only store
+// 32bits for a parameter. On 32bit it will simply be 32 bits
+// So this routine will do 32->32 on 32bit and 32->64 on 64bit
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      ld(t0, Address(fp, reg2offset_in(src.first())));
+      sd(t0, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      // stack to reg
+      lw(dst.first()->as_Register(), Address(fp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    sd(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
+  } else {
+    if (dst.first() != src.first()) {
+      // 32bits extend sign
+      addw(dst.first()->as_Register(), src.first()->as_Register(), zr);
+    }
+  }
+}
+
+// A long move
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      ld(t0, Address(fp, reg2offset_in(src.first())));
+      sd(t0, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      // stack to reg
+      ld(dst.first()->as_Register(), Address(fp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    sd(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
+  } else {
+    if (dst.first() != src.first()) {
+      mv(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+// A double move
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
+  assert(src.first()->is_stack() && dst.first()->is_stack() ||
+         src.first()->is_reg() && dst.first()->is_reg() || src.first()->is_stack() && dst.first()->is_reg(),
+         "Unexpected error");
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      ld(t0, Address(fp, reg2offset_in(src.first())));
+      sd(t0, Address(sp, reg2offset_out(dst.first())));
+    } else if (dst.first()->is_Register()) {
+      ld(dst.first()->as_Register(), Address(fp, reg2offset_in(src.first())));
+    } else {
+      ShouldNotReachHere();
+    }
+  } else if (src.first() != dst.first()) {
+    if (src.is_single_phys_reg() && dst.is_single_phys_reg()) {
+      fmv_d(dst.first()->as_FloatRegister(), src.first()->as_FloatRegister());
+    } else {
+      ShouldNotReachHere();
+    }
+  }
+}
+
+// A float arg may have to do float reg int reg conversion
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
+  assert(src.first()->is_stack() && dst.first()->is_stack() ||
+         src.first()->is_reg() && dst.first()->is_reg() || src.first()->is_stack() && dst.first()->is_reg(),
+         "Unexpected error");
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      lwu(t0, Address(fp, reg2offset_in(src.first())));
+      sw(t0, Address(sp, reg2offset_out(dst.first())));
+    } else if (dst.first()->is_Register()) {
+      lwu(dst.first()->as_Register(), Address(fp, reg2offset_in(src.first())));
+    } else {
+      ShouldNotReachHere();
+    }
+  } else if (src.first() != dst.first()) {
+    if (src.is_single_phys_reg() && dst.is_single_phys_reg()) {
+      fmv_s(dst.first()->as_FloatRegister(), src.first()->as_FloatRegister());
+    } else {
+      ShouldNotReachHere();
+    }
+  }
+}

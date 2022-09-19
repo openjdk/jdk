@@ -26,7 +26,7 @@
  * @test
  * @enablePreview
  * @library ../
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @modules java.base/jdk.internal.foreign
  *          java.base/jdk.internal.foreign.abi
  *          java.base/jdk.internal.foreign.abi.x64
@@ -36,6 +36,8 @@
  *          java.base/jdk.internal.foreign.abi.aarch64.linux
  *          java.base/jdk.internal.foreign.abi.aarch64.macos
  *          java.base/jdk.internal.foreign.abi.aarch64.windows
+ *          java.base/jdk.internal.foreign.abi.riscv64
+ *          java.base/jdk.internal.foreign.abi.riscv64.linux
  * @run testng/othervm --enable-native-access=ALL-UNNAMED VaListTest
  */
 
@@ -43,6 +45,7 @@ import java.lang.foreign.*;
 import java.lang.foreign.VaList;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
+import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import org.testng.annotations.DataProvider;
