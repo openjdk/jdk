@@ -559,6 +559,14 @@ final class Exchange<T> {
         if (upgrading) {
             return cf.thenCompose(r -> checkForUpgradeAsync(r, exchImpl));
         }
+        // websocket requests use "Connection: Upgrade" and "Upgrade: websocket" headers.
+        // however, the "upgrading" flag we maintain in this class only tracks a h2 upgrade
+        // that we internally triggered. So it will be false in the case of websocket upgrade, hence
+        // this additional check. If it's a websocket request we allow 101 responses and we don't
+        // require any additional checks when a response arrives.
+        if (request.isWebSocket()) {
+            return cf;
+        }
         // not expecting an upgrade, but if the server sends a 101 response then we fail the
         // request and also let the ExchangeImpl deal with it as a protocol error
         return cf.thenCompose(r -> {
