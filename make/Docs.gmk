@@ -299,9 +299,12 @@ define SetupApiDocsGenerationBody
 	-Djspec.version=$$(VERSION_SPECIFICATION)
 
   ifeq ($$(ENABLE_FULL_DOCS), true)
+    $1_SEALED_GENGRAPHS_DIR := $$(SUPPORT_OUTPUTDIR)/docs/$1-sealed-gengraphs
+
     # Tell the ModuleGraph and SealedGraph taglets to generate html links to
     # soon-to-be-created svg files with module/sealed graphs.
-    $1_JAVA_ARGS += -DenableModuleGraph=true -DenableSealedGraph=true
+    $1_JAVA_ARGS += -DenableModuleGraph=true -DsealedGraphDotPath=$$($1_SEALED_GENGRAPHS_DIR)
+    $$(call MakeDir, $$($1_SEALED_GENGRAPHS_DIR))
   endif
 
   # Start with basic options and tags

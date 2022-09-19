@@ -25,6 +25,9 @@
 
 package build.tools.taglet;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -38,8 +41,8 @@ import static jdk.javadoc.doclet.Taglet.Location.*;
  * A block tag to optionally insert a reference to a module graph.
  */
 public class SealedGraph implements Taglet {
-    private static final boolean enableSealedGraph =
-        Boolean.getBoolean("enableSealedGraph");
+    private static final String sealedGraphDotPath =
+        System.getProperty("sealedGraphDotPath");
 
     /** Returns the set of locations in which a taglet may be used. */
     @Override
@@ -59,25 +62,37 @@ public class SealedGraph implements Taglet {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element element) {
-        if (!enableSealedGraph) {
+        if (sealedGraphDotPath == null || sealedGraphDotPath.isEmpty()) {
             return "";
         }
 
-        String moduleName = ((TypeElement) element).getQualifiedName().toString();
-        String imageFile = "sealed-graph.svg";
-        int thumbnailHeight = -1;
-        String hoverImage = "";
-        if (!moduleName.equals("java.base")) {
-            thumbnailHeight = 100; // also appears in the stylesheet
-            hoverImage = "<span>"
-                + getImage(moduleName, imageFile, -1, true)
-                + "</span>";
+        String typeName = ((TypeElement) element).getQualifiedName().toString();
+
+        File dotFile = new File(sealedGraphDotPath, typeName + ".dot");
+
+        try (PrintWriter out = new PrintWriter(dotFile)) {
+            out.println("digraph sealed {");
+            out.println("  node [shape=box];");
+            out.println("  rankdir=LR;");
+            out.println("  ranksep=0.5;");
+            out.println("  nodesep=0.5;");
+            out.println("  edge [arrowsize=0.5];");
+            out.println("  graph [fontname=\"Helvetica\", fontsize=10];");
+            out.println("  node [fontname=\"Helvetica\", fontsize=10];");
+            out.println("  edge [fontname=\"Helvetica\", fontsize=10];");
+            out.println("  label=\"Sealed Graph\";");
+            out.println("}");
+        } catch (FileNotFoundException e) {
+            // ignore
         }
+
+        String simpleTypeName = ((TypeElement) element).getSimpleName().toString();
+        String imageFile = simpleTypeName + "-sealed-graph.svg";
+        int thumbnailHeight = -1;
         return "<dt>Sealed Class Hierarchy Graph:</dt>"
             + "<dd>"
             + "<a class=\"sealed-graph\" href=\"" + imageFile + "\">"
-            + getImage(moduleName, imageFile, thumbnailHeight, false)
-            + hoverImage
+            + getImage(simpleTypeName, imageFile, thumbnailHeight, false)
             + "</a>"
             + "</dd>";
     }
