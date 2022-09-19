@@ -298,23 +298,23 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *    3  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=100 &&          |
     *       |                                                 | -Dhttp.keepAlive.time.proxy=200              | Timeout set to 100
-    *       |                                                 | (SERVER_100 && PROXY_200)                    | 
+    *       |                                                 | (SERVER_100 && PROXY_200)                    |
     *---------------------------------------------------------------------------------------------------------------------------
     *    4  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=-100            | Default Timeout set to 5
-    *       |                                                 | (SERVER_100_NEGATIVE)                        | 
+    *       |                                                 | (SERVER_100_NEGATIVE)                        |
     *---------------------------------------------------------------------------------------------------------------------------
     *    5  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.proxy=-200             | Default Timeout set to 5
     *       |                                                 | (PROXY_200_NEGATIVE)                         |
     *---------------------------------------------------------------------------------------------------------------------------
     *    6  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=-100 &&         |
     *       |                                                 | -Dhttp.keepAlive.time.proxy=-200             | Default Timeout set to 5
-    *       |                                                 | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)  | 
+    *       |                                                 | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)  |
     *---------------------------------------------------------------------------------------------------------------------------
     *    7  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=0               | Connection Closed Immediately
-    *       |                                                 | (SERVER_ZERO)                                | 
+    *       |                                                 | (SERVER_ZERO)                                |
     *---------------------------------------------------------------------------------------------------------------------------
     *    8  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.proxy=0                | Default Timeout set to 5
-    *       |                                                 | (PROXY_ZERO)                                 | 
+    *       |                                                 | (PROXY_ZERO)                                 |
     *---------------------------------------------------------------------------------------------------------------------------
     *    9  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=0 &&            |
     *       |                                                 | -Dhttp.keepAlive.time.proxy=0                | Connection Closed Immediately
@@ -326,7 +326,7 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *   11  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=-100 &&         |
     *       |                                                 | -Dhttp.keepAlive.time.proxy=0                | Default Timeout set to 5
-    *       |                                                 | (SERVER_100_NEGATIVE && PROXY_ZERO)          | 
+    *       |                                                 | (SERVER_100_NEGATIVE && PROXY_ZERO)          |
     *---------------------------------------------------------------------------------------------------------------------------
     *   12  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=100 &&          |
     *       |                                                 |  -Dhttp.keepAlive.time.proxy=0               | Timeout set to 100
@@ -334,11 +334,11 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *   13  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=0 &&            |
     *       |                                                 | -Dhttp.keepAlive.time.proxy=200              | Connection Closed Immediately
-    *       |                                                 | (SERVER_ZERO && PROXY_200)                   | 
+    *       |                                                 | (SERVER_ZERO && PROXY_200)                   |
     *---------------------------------------------------------------------------------------------------------------------------
     *   14  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=100 &&          |
     *       |                                                 | -Dhttp.keepAlive.time.proxy=-200             | Timeout set to 100
-    *       |                                                 | (SERVER_100 && PROXY_200_NEGATIVE)           | 
+    *       |                                                 | (SERVER_100 && PROXY_200_NEGATIVE)           |
     *---------------------------------------------------------------------------------------------------------------------------
     *   15  |  Connection: keep-alive (A)                     | -Dhttp.keepAlive.time.server=-100 &&         |
     *       |                                                 | -Dhttp.keepAlive.time.proxy=200              | Default Timeout set to 5
@@ -347,14 +347,14 @@ public class KeepAliveTest {
     *   16  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | No Input Provided (NI)                   | Timeout set to 20
     *------------------------------------------------------------------------------------------------------------------------
     *   17  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=100         | Timeout set to 20
-    *       |                                                     | (SERVER_100)                             |     
+    *       |                                                     | (SERVER_100)                             |
     *---------------------------------------------------------------------------------------------------------------------------
     *   18  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.proxy=200          | Timeout set to 20
-    *       |                                                     | (PROXY_200)                              |    
+    *       |                                                     | (PROXY_200)                              |
     *---------------------------------------------------------------------------------------------------------------------------
     *   19  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=100 &&      |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=200          | Timeout set to 20
-    *       |                                                     | (SERVER_100 && PROXY_200)                |    
+    *       |                                                     | (SERVER_100 && PROXY_200)                |
     *---------------------------------------------------------------------------------------------------------------------------
     *   20  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=-100        | Timeout set to 20
     *       |                                                     | (SERVER_100_NEGATIVE)                    |
@@ -364,7 +364,7 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *   22  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=-100 &&       |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=-200           | Timeout set to 20
-    *       |                                                     | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)|  
+    *       |                                                     | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)|
     *---------------------------------------------------------------------------------------------------------------------------
     *   23  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=0      | Timeout set to 20
     *       |                                                     | (SERVER_ZERO)                       |
@@ -374,11 +374,11 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *   25  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=0       | Timeout set to 20
-    *       |                                                     | (SERVER_ZERO && PROXY_ZERO)         |   
+    *       |                                                     | (SERVER_ZERO && PROXY_ZERO)         |
     *---------------------------------------------------------------------------------------------------------------------------
     *   26  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=-200    | Timeout set to 20
-    *       |                                                     | (SERVER_ZERO && PROXY_200_NEGATIVE) |             
+    *       |                                                     | (SERVER_ZERO && PROXY_200_NEGATIVE) |
     *---------------------------------------------------------------------------------------------------------------------------
     *   27  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=-100 &&|
     *       |                                                     | -Dhttp.keepAlive.time.proxy=0       | Timeout set to 20
@@ -390,7 +390,7 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *   29  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=200     | Timeout set to 20
-    *       |                                                     | (SERVER_ZERO && PROXY_200)          |  
+    *       |                                                     | (SERVER_ZERO && PROXY_200)          |
     *---------------------------------------------------------------------------------------------------------------------------
     *   30  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=-200    | Timeout set to 20
@@ -398,7 +398,7 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *   31  |Connection: keep-alive\r\nKeep-alive: timeout=20 (B) |-Dhttp.keepAlive.time.server=-100 && |
     *       |                                                     |-Dhttp.keepAlive.time.proxy=200      | Timeout set to 20
-    *       |                                                     | (SERVER_100_NEGATIVE && PROXY_200)  |  
+    *       |                                                     | (SERVER_100_NEGATIVE && PROXY_200)  |
     *---------------------------------------------------------------------------------------------------------------------------
     *   32  |Proxy-Connection: keep-alive (C)                     | No Input Provided (NI)              | Default timeout set to 60
     *---------------------------------------------------------------------------------------------------------------------------
@@ -420,21 +420,21 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *   38  |Proxy-Connection: keep-alive (C)                     |-Dhttp.keepAlive.time.server=-100 &&       |
     *       |                                                     |-Dhttp.keepAlive.time.proxy=-200           | Default timeout set to 60
-    *       |                                                     |(SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)| 
+    *       |                                                     |(SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)|
     *---------------------------------------------------------------------------------------------------------------------------
     *   39  |Proxy-Connection: keep-alive (C)                     | -Dhttp.keepAlive.time.server=0      | Default timeout set to 60
-    *       |                                                     | (SERVER_ZERO)                       | 
+    *       |                                                     | (SERVER_ZERO)                       |
     *---------------------------------------------------------------------------------------------------------------------------
     *   40  |Proxy-Connection: keep-alive (C)                     | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
     *       |                                                     | (PROXY_ZERO)                        |
     *---------------------------------------------------------------------------------------------------------------------------
     *   41  |Proxy-Connection: keep-alive (C)                     | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
-    *       |                                                     | (SERVER_ZERO && PROXY_ZERO)         |  
+    *       |                                                     | (SERVER_ZERO && PROXY_ZERO)         |
     *--------------------------------------------------------------------------------------------------------------------------------
     *   42  |Proxy-Connection: keep-alive (C)                     | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=-200    | Default timeout set to 60
-    *       |                                                     | (SERVER_ZERO && PROXY_200_NEGATIVE) |   
+    *       |                                                     | (SERVER_ZERO && PROXY_200_NEGATIVE) |
     *---------------------------------------------------------------------------------------------------------------------------------
     *   43  |Proxy-Connection: keep-alive (C)                     | -Dhttp.keepAlive.time.server=-100 &&|
     *       |                                                     | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
@@ -442,11 +442,11 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------------
     *   44  |Proxy-Connection: keep-alive (C)                     | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
-    *       |                                                     | (SERVER_100 && PROXY_ZERO)          | 
+    *       |                                                     | (SERVER_100 && PROXY_ZERO)          |
     *---------------------------------------------------------------------------------------------------------------------------
     *   45  |Proxy-Connection: keep-alive (C)                     | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                     | -Dhttp.keepAlive.time.proxy=200     | Timeout set to 200
-    *       |                                                     | (SERVER_ZERO && PROXY_200)          |    
+    *       |                                                     | (SERVER_ZERO && PROXY_200)          |
     *---------------------------------------------------------------------------------------------------------------------------
     *   46  |Proxy-Connection: keep-alive (C)                     |-Dhttp.keepAlive.time.server=100 &&  |
     *       |                                                     |-Dhttp.keepAlive.time.proxy=-200     | Default timeout set to 60
@@ -462,7 +462,7 @@ public class KeepAliveTest {
     *       |                                                         | (SERVER_100)                        |
     *---------------------------------------------------------------------------------------------------------------------------
     *   50  |Connection:keep-alive\r\nProxy-connection:keep-alive (D) | -Dhttp.keepAlive.time.proxy=200     | Timeout set to 200
-    *       |                                                         | (PROXY_200)                         |  
+    *       |                                                         | (PROXY_200)                         |
     *------------------------------------------------------------------------------------------------------------------------------
     *   51  |Connection:keep-alive\r\nProxy-connection:keep-alive (D) | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | Timeout set to 200
@@ -476,7 +476,7 @@ public class KeepAliveTest {
     *------------------------------------------------------------------------------------------------------------------------------
     *   54  |Connection:keep-alive\r\nProxy-connection:keep-alive (D) | -Dhttp.keepAlive.time.server=-100&&        |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200           | Default timeout set to 60
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE | 
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   55  |Connection:keep-alive\r\nProxy-connection:keep-alive (D) | -Dhttp.keepAlive.time.server=0      | Default timeout set to 60
     *       |                                                         | (SERVER_ZERO)                       |
@@ -486,7 +486,7 @@ public class KeepAliveTest {
     *--------------------------------------------------------------------------------------------------------------------------------
     *   57  |Connection:keep-alive\r\nProxy-connection:keep-alive (D) | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)         |   
+    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)         |
     *--------------------------------------------------------------------------------------------------------------------------------
     *   58  |Connection:keep-alive\r\nProxy-connection:keep-alive (D) | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200    | Default timeout set to 60
@@ -502,7 +502,7 @@ public class KeepAliveTest {
     *--------------------------------------------------------------------------------------------------------------------------------
     *   61  |Connection:keep-alive\r\nProxy-connection:keep-alive (D) | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | Timeout set to 200
-    *       |                                                         | (SERVER_ZERO && PROXY_200)          | 
+    *       |                                                         | (SERVER_ZERO && PROXY_200)          |
     *------------------------------------------------------------------------------------------------------------------------------
     *   62  |Connection:keep-alive\r\nProxy-connection:keep-alive (D) | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200    | default timeout set to 60
@@ -515,27 +515,27 @@ public class KeepAliveTest {
     *   64  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| No Input Provided (NI)              | Timeout set to 120
     *-------------------------------------------------------------------------------------------------------------------------------
     *   65  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=100    | Timeout set to 120
-    *       |                                                         | (SERVER_100)                        | 
+    *       |                                                         | (SERVER_100)                        |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   66  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.proxy=200     | Timeout set to 120
     *       |                                                         | (PROXY_200)                         |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   67  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=100 && |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | Timeout set to 120
-    *       |                                                         | (SERVER_100 && PROXY_200)           |   
+    *       |                                                         | (SERVER_100 && PROXY_200)           |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   68  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=-100   | Timeout set to 120
-    *       |                                                         | (SERVER_100_NEGATIVE)               | 
+    *       |                                                         | (SERVER_100_NEGATIVE)               |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   69  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.proxy=-200    | Timeout set to 120
-    *       |                                                         | (PROXY_200_NEGATIVE)                |   
+    *       |                                                         | (PROXY_200_NEGATIVE)                |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   70  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=-100 &&       |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200           | Timeout set to 120
     *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)|
     *-------------------------------------------------------------------------------------------------------------------------------
     *   71  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=0      | Timeout set to 120
-    *       |                                                         | (SERVER_ZERO)                       | 
+    *       |                                                         | (SERVER_ZERO)                       |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   72  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.proxy=0       | Timeout set to 120
     *       |                                                         | (PROXY_ZERO)                        |
@@ -550,15 +550,15 @@ public class KeepAliveTest {
     *-------------------------------------------------------------------------------------------------------------------------------
     *   75  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=-100 &&|
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | Timeout set to 120
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO) | 
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO) |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   76  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=100 && |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | Timeout set to 120
-    *       |                                                         | (SERVER_100 && PROXY_ZERO)          |     
+    *       |                                                         | (SERVER_100 && PROXY_ZERO)          |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   77  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | Timeout set to 120
-    *       |                                                         | (SERVER_ZERO && PROXY_200)          |  
+    *       |                                                         | (SERVER_ZERO && PROXY_200)          |
     *-------------------------------------------------------------------------------------------------------------------------------
     *   78  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=100 &&         |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200            | Timeout set to 120
@@ -566,12 +566,12 @@ public class KeepAliveTest {
     *-------------------------------------------------------------------------------------------------------------------------------
     *   79  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120 (E)| -Dhttp.keepAlive.time.server=-100 &&|
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | Timeout set to 120
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)  |    
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)  |
     *-----------------------------------------------------------------------------------------------------------------------------
     *   80  |No Input (NI)                                            | No Input Provided (NI)              | default timeout set to 5
     *-----------------------------------------------------------------------------------------------------------------------------
     *   81  |No Input (NI)                                            | -Dhttp.keepAlive.time.server=100    | Timeout set to 100
-    *       |                                                         | (SERVER_100)                        |  
+    *       |                                                         | (SERVER_100)                        |
     *-----------------------------------------------------------------------------------------------------------------------------
     *   82  |No Input (NI)                                            | -Dhttp.keepAlive.time.proxy=200     | default timeout set to 5
     *       |                                                         | (PROXY_200)                         |
@@ -584,7 +584,7 @@ public class KeepAliveTest {
     *       |                                                         | (SERVER_100_NEGATIVE)               |
     *------------------------------------------------------------------------------------------------------------------------------
     *   85  |No Input (NI)                                            | -Dhttp.keepAlive.time.proxy=-200    | default timeout set to 5
-    *       |                                                         | (PROXY_200_NEGATIVE)                | 
+    *       |                                                         | (PROXY_200_NEGATIVE)                |
     *----------------------------------------------------------------------------------------------------------------------------
     *   86  |No Input (NI)                                            | -Dhttp.keepAlive.time.server=-100 &&       |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200           | default timeout set to 5
@@ -594,23 +594,23 @@ public class KeepAliveTest {
     *       |                                                         | (SERVER_ZERO)                       |
     *---------------------------------------------------------------------------------------------------------------------------------
     *   88  |No Input (NI)                                            | -Dhttp.keepAlive.time.proxy=0       | default timeout set to 5
-    *       |                                                         | (PROXY_ZERO)                        |     
+    *       |                                                         | (PROXY_ZERO)                        |
     *---------------------------------------------------------------------------------------------------------------------------------
     *   89  |No Input (NI)                                            | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)         |   
+    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)         |
     *---------------------------------------------------------------------------------------------------------------------------------
     *   90  |No Input (NI)                                            | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200    | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_200_NEGATIVE) |   
+    *       |                                                         | (SERVER_ZERO && PROXY_200_NEGATIVE) |
     *--------------------------------------------------------------------------------------------------------------------------------
     *   91  |No Input (NI)                                            | -Dhttp.keepAlive.time.server=-100 &&|
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | default timeout set to 5
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO) |    
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO) |
     *--------------------------------------------------------------------------------------------------------------------------------
-    *   92  |No Input (NI)                                            | -Dhttp.keepAlive.time.server=100 && | 
+    *   92  |No Input (NI)                                            | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | Timeout set to 100
-    *       |                                                         | (SERVER_100 && PROXY_ZERO)          | 
+    *       |                                                         | (SERVER_100 && PROXY_ZERO)          |
     *--------------------------------------------------------------------------------------------------------------------------------
     *   93  |No Input (NI)                                            | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | close connection immediately
@@ -618,26 +618,26 @@ public class KeepAliveTest {
     *--------------------------------------------------------------------------------------------------------------------------------
     *   94  |No Input (NI)                                            |-Dhttp.keepAlive.time.server=100 &&  |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=-200     | Timeout set to 100
-    *       |                                                         | (SERVER_100 && PROXY_200_NEGATIVE)  |  
+    *       |                                                         | (SERVER_100 && PROXY_200_NEGATIVE)  |
     *--------------------------------------------------------------------------------------------------------------------------------
     *   95  |No Input (NI)                                            |-Dhttp.keepAlive.time.server=-100 && |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=200      | default timeout set to 5
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)  | 
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)  |
     *--------------------------------------------------------------------------------------------------------------------------------
     *   96  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    | No Input Provided (NI)              | default timeout set to 5
     *--------------------------------------------------------------------------------------------------------------------------------
     *   97  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=100     | Timeout set to 100
-    *       |                                                         | (SERVER_100)                        |  
+    *       |                                                         | (SERVER_100)                        |
     *--------------------------------------------------------------------------------------------------------------------------------
     *   98  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.proxy=200      | default timeout set to 5
-    *       |                                                         | (PROXY_200)                         |   
+    *       |                                                         | (PROXY_200)                         |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *   99  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=100 &&  |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=200      | Timeout set to 100
-    *       |                                                         |(SERVER_100 && PROXY_200)    
+    *       |                                                         |(SERVER_100 && PROXY_200)            |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  100  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=-100    | default timeout set to 5
-    *       |                                                         |(SERVER_100_NEGATIVE)                |  
+    *       |                                                         |(SERVER_100_NEGATIVE)                |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  101  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.proxy=-200     | default timeout set to 5
     *       |                                                         |(PROXY_200_NEGATIVE)                 |
@@ -650,31 +650,31 @@ public class KeepAliveTest {
     *       |                                                         | (SERVER_ZERO)                       |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  104  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.proxy=0        | default timeout set to 5
-    *       |                                                         | (PROXY_ZERO)                        |   
+    *       |                                                         | (PROXY_ZERO)                        |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  105  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=0 &&    |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)         | 
+    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)         |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  106  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=0 &&    |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=-200     | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_ZERO_NEGATIVE)| 
+    *       |                                                         | (SERVER_ZERO && PROXY_ZERO_NEGATIVE)|
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  107  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=-100 && |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=0        | default timeout set to 5
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO) | 
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO) |
     *-------------------------------------------------------------------------------------------------------------------------------------
-    *  108  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=100 &&  | 
+    *  108  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=100 &&  |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=0        | Timeout set to 100
     *       |                                                         | (SERVER_100 && PROXY_ZERO)          |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  109  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=0 &&    |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=200      | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_200)          |     
+    *       |                                                         | (SERVER_ZERO && PROXY_200)          |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  110  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=100 &&  |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=-200     | Timeout set to 100
-    *       |                                                         |(SERVER_100 && PROXY_200_NEGATIVE)   | 
+    *       |                                                         |(SERVER_100 && PROXY_200_NEGATIVE)   |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  111  |Connection: keep-alive\r\nKeep-alive: timeout=-20 (F)    |-Dhttp.keepAlive.time.server=-100 && |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=200      | default timeout set to 5
@@ -683,42 +683,42 @@ public class KeepAliveTest {
     *  112  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | No Input Provided (NI)              | close connection immediately
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  113  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=100    | close connection immediately
-    *       |                                                         | (SERVER_100)                        | 
+    *       |                                                         | (SERVER_100)                        |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  114  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.proxy=200     | close connection immediately
     *       |                                                         | (PROXY_200)                         |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  115  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | close connection immediately
-    *       |                                                         | (SERVER_100 && PROXY_200)           |   
+    *       |                                                         | (SERVER_100 && PROXY_200)           |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  116  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=-100   | close connection immediately
-    *       |                                                         | (SERVER_100_NEGATIVE)               |    
+    *       |                                                         | (SERVER_100_NEGATIVE)               |
     *------------------------------------------------------------------------------------------------------------------------------------
     *  117  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.proxy=-200    | close connection immediately
     *       |                                                         | (PROXY_200_NEGATIVE)                |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  118  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      |-Dhttp.keepAlive.time.server=-100 &&         |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=-200             | close connection immediately
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE) | 
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE) |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  119  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=0      | close connection immediately
     *       |                                                         | (SERVER_ZERO)                       |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  120  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
-    *       |                                                         | (PROXY_ZERO)                        | 
+    *       |                                                         | (PROXY_ZERO)                        |
     *------------------------------------------------------------------------------------------------------------------------------------
     *  121  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)         |   
+    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)         |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  122  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200    | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_200_NEGATIVE) | 
+    *       |                                                         | (SERVER_ZERO && PROXY_200_NEGATIVE) |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  123  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=-100 &&|
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO) | 
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO) |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  124  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
@@ -726,51 +726,51 @@ public class KeepAliveTest {
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  125  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=0 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_200)          |     
+    *       |                                                         | (SERVER_ZERO && PROXY_200)          |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  126  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200    | close connection immediately
-    *       |                                                         | (SERVER_100 && PROXY_200_NEGATIVE)  | 
+    *       |                                                         | (SERVER_100 && PROXY_200_NEGATIVE)  |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  127  |Connection: keep-alive\r\nKeep-alive: timeout=0 (G)      | -Dhttp.keepAlive.time.server=-100 &&|
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200     | close connection immediately
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)  | 
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)  |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  128  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| No Input Provided (NI)                | default timeout set to 60
     ---------------------------------------------------------------------------------------------------------------------------------------
     *  129  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.server=100      | default timeout set to 60
-    *       |                                                         | (SERVER_100)                          | 
+    *       |                                                         | (SERVER_100)                          |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  130  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.proxy=200       | Timeout set to 200
-    *       |                                                         | (PROXY_200)                           |   
+    *       |                                                         | (PROXY_200)                           |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  131  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.server=100 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200       | Timeout set to 200
-    *       |                                                         | (SERVER_100 && PROXY_200)             |   
+    *       |                                                         | (SERVER_100 && PROXY_200)             |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  132  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.server=-100     | default timeout set to 60
-    *       |                                                         | (SERVER_100_NEGATIVE)                 |   
+    *       |                                                         | (SERVER_100_NEGATIVE)                 |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  133  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.proxy=-200      | default timeout set to 60
-    *       |                                                         | (PROXY_200_NEGATIVE)                  |   
+    *       |                                                         | (PROXY_200_NEGATIVE)                  |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  134  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)|-Dhttp.keepAlive.time.server=-100 &&        |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=-200            | default timeout set to 60
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)|   
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE)|
     *---------------------------------------------------------------------------------------------------------------------------------
     *  135  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.server=0        | default timeout set to 60
-    *       |                                                         | (SERVER_ZERO)                         | 
+    *       |                                                         | (SERVER_ZERO)                         |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  136  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.proxy=0         | close connection immediately
     *       |                                                         | (PROXY_ZERO)                          |
     *----------------------------------------------------------------------------------------------------------------------------------
     *  137  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.server=0 &&     |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0         | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)           |    
+    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)           |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  138  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.server=0 &&     |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200      | default timeout set to 60
-    *       |                                                         | (SERVER_ZERO && PROXY_200_NEGATIVE)   | 
+    *       |                                                         | (SERVER_ZERO && PROXY_200_NEGATIVE)   |
     *---------------------------------------------------------------------------------------------------------------------------------------
     *  139  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.server=-100 &&  |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0         | close connection immediately
@@ -782,7 +782,7 @@ public class KeepAliveTest {
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  141  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)| -Dhttp.keepAlive.time.server=0 &&     |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200       | Timeout set to 20
-    *       |                                                         | (SERVER_ZERO && PROXY_200)            | 
+    *       |                                                         | (SERVER_ZERO && PROXY_200)            |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  142  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)|-Dhttp.keepAlive.time.server=100 &&    |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=-200       | default timeout set to 60
@@ -790,39 +790,39 @@ public class KeepAliveTest {
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  143  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20 (H)|-Dhttp.keepAlive.time.server=-100 &&   |
     *       |                                                         |-Dhttp.keepAlive.time.proxy=200        | Timeout set to 200
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)    |  
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)    |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  144  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | No Input Provided (NI)                | close connection immediately
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  145  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=100      | close connection immediately
-    *       |                                                         | (SERVER_100)                          |    
+    *       |                                                         | (SERVER_100)                          |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  146  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.proxy=200       | close connection immediately
-    *       |                                                         | (PROXY_200)                           |   
+    *       |                                                         | (PROXY_200)                           |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  147  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=100 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200       | close connection immediately
     *       |                                                         | (SERVER_100 && PROXY_200)             |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  148  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=-100     | close connection immediately
-    *       |                                                         | (SERVER_100_NEGATIVE)                 |  
+    *       |                                                         | (SERVER_100_NEGATIVE)                 |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  149  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.proxy=-200      | close connection immediately
-    *       |                                                         | (PROXY_200_NEGATIVE)                  |    
+    *       |                                                         | (PROXY_200_NEGATIVE)                  |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  150  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=-100 &&        |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200            | close connection immediately
     *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200_NEGATIVE) |
     *------------------------------------------------------------------------------------------------------------------------------------
     *  151  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=0        | close connection immediately
-    *       |                                                         | (SERVER_ZERO)                         | 
+    *       |                                                         | (SERVER_ZERO)                         |
     *-----------------------------------------------------------------------------------------------------------------------------------
     *  152  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.proxy=0         | close connection immediately
-    *       |                                                         | (PROXY_ZERO)                          |  
+    *       |                                                         | (PROXY_ZERO)                          |
     *---------------------------------------------------------------------------------------------------------------------------------
     *  153  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=0 &&     |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0         | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)           | 
+    *       |                                                         | (SERVER_ZERO && PROXY_ZERO)           |
     *------------------------------------------------------------------------------------------------------------------------------------
     *  154  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=0 &&     |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200      | close connection immediately
@@ -830,23 +830,23 @@ public class KeepAliveTest {
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  155  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=-100 &&  |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0         | close connection immediately
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO)   |   
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_ZERO)   |
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  156  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=100 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=0         | close connection immediately
-    *       |                                                         | (SERVER_100 && PROXY_ZERO)            |   
+    *       |                                                         | (SERVER_100 && PROXY_ZERO)            |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  157  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=0 &&     |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200       | close connection immediately
-    *       |                                                         | (SERVER_ZERO && PROXY_200)            |        
+    *       |                                                         | (SERVER_ZERO && PROXY_200)            |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  158  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=100 &&   |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=-200      | close connection immediately
-    *       |                                                         | (SERVER_100 && PROXY_200_NEGATIVE)    | 
+    *       |                                                         | (SERVER_100 && PROXY_200_NEGATIVE)    |
     *--------------------------------------------------------------------------------------------------------------------------------------
     *  159  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0 (I)  | -Dhttp.keepAlive.time.server=-100 &&  |
     *       |                                                         | -Dhttp.keepAlive.time.proxy=200       | close connection immediately
-    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)    |    
+    *       |                                                         | (SERVER_100_NEGATIVE && PROXY_200)    |
     *--------------------------------------------------------------------------------------------------------------------------------------
     */
 
