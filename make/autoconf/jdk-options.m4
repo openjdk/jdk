@@ -474,6 +474,24 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
 
 ################################################################################
 #
+# jmod options.
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
+[
+  AC_ARG_WITH(jmod-compress, [AS_HELP_STRING([--with-jmod-compress],
+    [specify alternative JMOD compression])])
+  AC_MSG_CHECKING([for JMOD compression])
+  if test "x$with_jmod_compress" != "x"; then
+    JMOD_COMPRESS="$with_jmod_compress"
+    AC_MSG_RESULT([$JMOD_COMPRESS])
+  else
+    AC_MSG_RESULT([default])
+  fi
+  AC_SUBST(JMOD_COMPRESS)
+])
+
+################################################################################
+#
 # jlink options.
 # We always keep packaged modules in JDK image.
 #
