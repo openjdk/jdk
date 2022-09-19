@@ -3920,7 +3920,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     }
 
     // With an extra phi for the candidate iv?
-    if (!incr->is_Phi()) {
+    // Or the region node is the loop head
+    if (!incr->is_Phi() || incr->in(0) == head) {
       return false;
     }
 
@@ -3969,7 +3970,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     exit_test = back_control->in(0)->as_If();
   }
 
-  if (idom(region)->is_Catch() || region == head) {
+  if (idom(region)->is_Catch()) {
     return false;
   }
 
