@@ -31,13 +31,13 @@ import java.util.*;
  */
 public class InputGraph extends Properties.Entity implements FolderElement {
 
-    private Map<Integer, InputNode> nodes;
-    private List<InputEdge> edges;
+    private final Map<Integer, InputNode> nodes;
+    private final List<InputEdge> edges;
     private Folder parent;
     private Group parentGroup;
-    private Map<String, InputBlock> blocks;
-    private List<InputBlockEdge> blockEdges;
-    private Map<Integer, InputBlock> nodeToBlock;
+    private final Map<String, InputBlock> blocks;
+    private final List<InputBlockEdge> blockEdges;
+    private final Map<Integer, InputBlock> nodeToBlock;
     private boolean isDiffGraph;
 
     public InputGraph(String name, boolean isDiffGraph) {
@@ -196,7 +196,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public InputBlock addArtificialBlock() {
         InputBlock b = addBlock("(no block)");
-        b.setArtificial(true);
+        b.setArtificial();
         return b;
     }
 

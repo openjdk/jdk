@@ -54,14 +54,13 @@ import org.netbeans.api.visual.widget.Widget;
  */
 public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> implements SelectProvider, MoveProvider, RectangularSelectDecorator, RectangularSelectProvider {
 
-    private HashSet<BlockWidget> selection;
+    private final HashSet<BlockWidget> selection;
     private InputGraph oldGraph;
-    private LayerWidget edgeLayer;
-    private LayerWidget mainLayer;
-    private LayerWidget selectLayer;
-    private WidgetAction hoverAction = this.createWidgetHoverAction();
-    private WidgetAction selectAction = new DoubleClickSelectAction(this);
-    private WidgetAction moveAction = ActionFactory.createMoveAction(null, this);
+    private final LayerWidget edgeLayer;
+    private final LayerWidget mainLayer;
+    private final WidgetAction hoverAction = this.createWidgetHoverAction();
+    private final WidgetAction selectAction = new DoubleClickSelectAction(this);
+    private final WidgetAction moveAction = ActionFactory.createMoveAction(null, this);
 
     public ControlFlowScene() {
         selection = new HashSet<>();
@@ -75,7 +74,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         edgeLayer = new LayerWidget(this);
         this.addChild(edgeLayer);
 
-        selectLayer = new LayerWidget(this);
+        LayerWidget selectLayer = new LayerWidget(this);
         this.addChild(selectLayer);
 
         this.getActions().addAction(hoverAction);
@@ -229,6 +228,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         boolean changed = false;
         for (InputBlock b : this.getNodes()) {
             BlockWidget w = (BlockWidget) findWidget(b);
+            assert w.getBounds() != null;
             Rectangle r = new Rectangle(w.getBounds());
             r.setLocation(w.getLocation());
             if (r.intersects(rectangle)) {

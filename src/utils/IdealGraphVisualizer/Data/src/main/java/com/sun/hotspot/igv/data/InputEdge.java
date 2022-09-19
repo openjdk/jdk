@@ -24,7 +24,7 @@
 package com.sun.hotspot.igv.data;
 
 import java.lang.ref.WeakReference;
-import java.util.Comparator;
+import java.util.Objects;
 import java.util.WeakHashMap;
 
 /**
@@ -47,14 +47,6 @@ public class InputEdge {
     private final String label;
     private final String type;
     private State state;
-
-    public InputEdge(char toIndex, int from, int to) {
-        this((char) 0, toIndex, from, to, null, null);
-    }
-
-    public InputEdge(char fromIndex, char toIndex, int from, int to) {
-        this(fromIndex, toIndex, from, to, null, null);
-    }
 
     public InputEdge(char fromIndex, char toIndex, int from, int to, String label, String type) {
         this.toIndex = toIndex;
@@ -132,14 +124,14 @@ public class InputEdge {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof InputEdge)) {
+        if (!(o instanceof InputEdge)) {
             return false;
         }
         InputEdge conn2 = (InputEdge) o;
         boolean result = conn2.fromIndex == fromIndex && conn2.toIndex == toIndex && conn2.from == from && conn2.to == to;
         if (result && (state == State.IMMUTABLE || conn2.state == State.IMMUTABLE)) {
             // Immutable instances must be exactly the same
-            return conn2.label == label && conn2.state == state;
+            return Objects.equals(conn2.label, label) && conn2.state == state;
         }
         return result;
     }

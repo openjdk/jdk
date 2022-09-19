@@ -44,10 +44,10 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
 
     private static BytecodeViewTopComponent instance;
     private static final String PREFERRED_ID = "BytecodeViewTopComponent";
-    private ExplorerManager manager;
-    private BeanTreeView treeView;
+    private final ExplorerManager manager;
+    private final BeanTreeView treeView;
     private Lookup.Result result = null;
-    private MethodNode rootNode;
+    private final MethodNode rootNode;
 
     private BytecodeViewTopComponent() {
         initComponents();
@@ -91,7 +91,7 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized BytecodeViewTopComponent getDefault() {
         if (instance == null) {
@@ -165,20 +165,17 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
     @Override
     public void resultChanged(LookupEvent lookupEvent) {
         final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                if (p != null) {
-                    InputGraph graph = p.getGraph();
-                    if (graph != null) {
-                        Group g = graph.getGroup();
-                        rootNode.update(graph, g.getMethod());
-                        return;
-                    }
+            SwingUtilities.invokeLater(() -> {
+            if (p != null) {
+                InputGraph graph = p.getGraph();
+                if (graph != null) {
+                    Group g = graph.getGroup();
+                    rootNode.update(graph, g.getMethod());
+                    return;
                 }
-                        rootNode.update(null, null);
-                    }
-            });
+            }
+                    rootNode.update(null, null);
+                });
 
     }
 }

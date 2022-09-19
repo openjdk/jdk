@@ -37,7 +37,7 @@ import org.openide.util.Lookup;
  */
 public class DiffGraphCookie implements Node.Cookie {
 
-    private InputGraph graph;
+    private final InputGraph graph;
 
     public DiffGraphCookie(InputGraph graph) {
         this.graph = graph;
@@ -59,6 +59,7 @@ public class DiffGraphCookie implements Node.Cookie {
         InputGraph other = getCurrentGraph();
         final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
         if (viewer != null) {
+            assert other != null;
             InputGraph diffGraph = Difference.createDiffGraph(other, graph);
             viewer.view(diffGraph, true);
         }

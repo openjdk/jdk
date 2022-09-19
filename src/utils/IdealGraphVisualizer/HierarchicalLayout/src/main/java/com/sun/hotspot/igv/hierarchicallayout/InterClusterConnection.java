@@ -36,22 +36,14 @@ import java.util.List;
  */
 public class InterClusterConnection implements Link {
 
-    private Port inputSlot;
-    private Port outputSlot;
+    private final Port inputSlot;
+    private final Port outputSlot;
     private List<Point> intermediatePoints;
-    private ClusterInputSlotNode inputSlotNode;
-    private ClusterOutputSlotNode outputSlotNode;
 
     public InterClusterConnection(ClusterOutputSlotNode outputSlotNode, ClusterInputSlotNode inputSlotNode) {
-        this.outputSlotNode = outputSlotNode;
-        this.inputSlotNode = inputSlotNode;
         this.inputSlot = inputSlotNode.getInputSlot();
         this.outputSlot = outputSlotNode.getOutputSlot();
-        intermediatePoints = new ArrayList<Point>();
-    }
-
-    public ClusterOutputSlotNode getOutputSlotNode() {
-        return outputSlotNode;
+        this.intermediatePoints = new ArrayList<>();
     }
 
     public Port getTo() {

@@ -32,7 +32,7 @@ import java.util.List;
  */
 public abstract class Event<L> {
 
-    private List<L> listener;
+    private final List<L> listener;
     private boolean fireEvents;
     private boolean eventWasFired;
 

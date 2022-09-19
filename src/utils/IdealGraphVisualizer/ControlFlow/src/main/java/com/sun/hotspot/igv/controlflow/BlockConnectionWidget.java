@@ -45,12 +45,12 @@ public class BlockConnectionWidget extends ConnectionWidget implements Link {
     private static final Stroke DASHED_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5, 5}, 0);
     private static final Stroke BOLD_DASHED_STROKE = new BasicStroke(2.5f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5, 5}, 0);
 
-    private BlockWidget from;
-    private BlockWidget to;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final BlockWidget from;
+    private final BlockWidget to;
+    private final Port inputSlot;
+    private final Port outputSlot;
     private List<Point> points;
-    private InputBlockEdge edge;
+    private final InputBlockEdge edge;
     private boolean isDashed = false;
     private boolean isBold = false;
 
@@ -63,10 +63,6 @@ public class BlockConnectionWidget extends ConnectionWidget implements Link {
         inputSlot = to.getInputSlot();
         outputSlot = from.getOutputSlot();
         points = new ArrayList<>();
-    }
-
-    public InputBlockEdge getEdge() {
-        return edge;
     }
 
     public Port getTo() {

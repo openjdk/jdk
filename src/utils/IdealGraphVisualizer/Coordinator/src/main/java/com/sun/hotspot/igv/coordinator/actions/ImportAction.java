@@ -96,8 +96,7 @@ public final class ImportAction extends CallableSystemAction {
                                 try {
                                     int prog = (int) (WORKUNITS * (double) channel.position() / (double) start);
                                     handle.progress(prog);
-                                } catch (IOException ex) {
-                                }
+                                } catch (IOException ignored) {}
                             }
                             @Override
                             public void setState(String state) {
@@ -118,13 +117,10 @@ public final class ImportAction extends CallableSystemAction {
                                 try {
                                     final GraphDocument document = parser.parse();
                                     if (document != null) {
-                                        SwingUtilities.invokeLater(new Runnable(){
-                                                @Override
-                                                public void run() {
-                                                    component.requestActive();
-                                                    component.getDocument().addGraphDocument(document);
-                                                }
-                                            });
+                                        SwingUtilities.invokeLater(() -> {
+                                            component.requestActive();
+                                            component.getDocument().addGraphDocument(document);
+                                        });
                                     }
                                 } catch (IOException ex) {
                                     Exceptions.printStackTrace(ex);
@@ -134,8 +130,6 @@ public final class ImportAction extends CallableSystemAction {
                                 Logger.getLogger(getClass().getName()).log(Level.INFO, "Loaded in " + file + " in " + ((stop - startTime) / 1000.0) + " seconds");
                             }
                         });
-                } catch (FileNotFoundException ex) {
-                    Exceptions.printStackTrace(ex);
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }

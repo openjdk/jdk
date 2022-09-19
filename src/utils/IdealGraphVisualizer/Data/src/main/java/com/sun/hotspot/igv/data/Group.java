@@ -33,7 +33,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
 
     private final List<InputGraph> graphs;
     private InputMethod method;
-    private transient ChangedEvent<Group> changedEvent;
+    private final transient ChangedEvent<Group> changedEvent;
     private Folder parent;
 
     public Group(Folder parent) {

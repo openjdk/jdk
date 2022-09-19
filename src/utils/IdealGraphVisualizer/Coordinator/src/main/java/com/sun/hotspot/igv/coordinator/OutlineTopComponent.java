@@ -62,9 +62,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     public static final String PREFERRED_ID = "OutlineTopComponent";
     private Lookup.Result result = null;
     private ExplorerManager manager;
-    private GraphDocument document;
+    private final GraphDocument document;
     private FolderNode root;
-    private Server server;
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
 
@@ -97,13 +96,13 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         this.add(toolbar, BorderLayout.NORTH);
 
         toolbar.add(ImportAction.get(ImportAction.class));
-        toolbar.add(((NodeAction) SaveAsAction.get(SaveAsAction.class)).createContextAwareInstance(this.getLookup()));
+        toolbar.add((SaveAsAction.get(SaveAsAction.class)).createContextAwareInstance(this.getLookup()));
 
         saveAllAction = SaveAllAction.get(SaveAllAction.class);
         saveAllAction.setEnabled(false);
         toolbar.add(saveAllAction);
 
-        toolbar.add(((NodeAction) RemoveAction.get(RemoveAction.class)).createContextAwareInstance(this.getLookup()));
+        toolbar.add((RemoveAction.get(RemoveAction.class)).createContextAwareInstance(this.getLookup()));
 
         removeAllAction = RemoveAllAction.get(RemoveAllAction.class);
         removeAllAction.setEnabled(false);
@@ -126,18 +125,14 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     private void initReceivers() {
 
-        final GroupCallback callback = new GroupCallback() {
-
-            @Override
-            public void started(Group g) {
-                synchronized(OutlineTopComponent.this) {
-                    g.setParent(getDocument());
-                    getDocument().addElement(g);
-                }
+        final GroupCallback callback = g -> {
+            synchronized(OutlineTopComponent.this) {
+                g.setParent(getDocument());
+                getDocument().addElement(g);
             }
         };
 
-        server = new Server(callback);
+        Server server = new Server(callback);
     }
 
     // Fetch and select the latest active graph.
@@ -181,7 +176,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized OutlineTopComponent getDefault() {
         if (instance == null) {
@@ -256,7 +251,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
         // Wait for LookupHistory to be updated with the last active graph
         // before selecting it.
-        SwingUtilities.invokeLater(() -> updateGraphSelection());
+        SwingUtilities.invokeLater(this::updateGraphSelection);
     }
 
     @Override

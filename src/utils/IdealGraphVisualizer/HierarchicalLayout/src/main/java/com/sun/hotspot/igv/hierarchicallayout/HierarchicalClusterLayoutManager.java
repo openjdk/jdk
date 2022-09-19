@@ -43,10 +43,6 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
         this.combine = combine;
     }
 
-    public void doLayout(LayoutGraph graph) {
-        doLayout(graph, new HashSet<>(), new HashSet<>(), new HashSet<>());
-    }
-
     public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
         doLayout(graph);
     }
@@ -59,7 +55,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
         this.manager = manager;
     }
 
-    public void doLayout(LayoutGraph graph, Set<? extends Vertex> firstLayerHint, Set<? extends Vertex> lastLayerHint, Set<? extends Link> importantLinks) {
+    public void doLayout(LayoutGraph graph) {
 
         assert graph.verify();
 

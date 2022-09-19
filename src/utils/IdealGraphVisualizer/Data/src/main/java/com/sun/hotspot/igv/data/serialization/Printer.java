@@ -52,8 +52,7 @@ public class Printer {
 
         try {
             export(xmlWriter, document);
-        } catch (IOException ex) {
-        }
+        } catch (IOException ignored) {}
     }
 
     private void export(XMLWriter xmlWriter, GraphDocument document) throws IOException {

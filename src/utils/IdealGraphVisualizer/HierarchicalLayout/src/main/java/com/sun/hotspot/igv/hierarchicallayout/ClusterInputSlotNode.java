@@ -39,7 +39,6 @@ public class ClusterInputSlotNode implements Vertex {
     private final Port inputSlot;
     private final Port outputSlot;
     private final ClusterNode blockNode;
-    private Cluster cluster;
 
     private final String id;
 
@@ -115,7 +114,7 @@ public class ClusterInputSlotNode implements Vertex {
     }
 
     public Cluster getCluster() {
-        return cluster;
+        return null;
     }
 
     public boolean isRoot() {

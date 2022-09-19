@@ -44,11 +44,11 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class FolderNode extends AbstractNode {
 
-    private InstanceContent content;
-    private FolderChildren children;
+    private final InstanceContent content;
+    private final FolderChildren children;
     // NetBeans node corresponding to each opened graph. Used to highlight the
     // focused graph in the Outline window.
-    private static Map<InputGraph, GraphNode> graphNode = new HashMap<>();
+    private static final Map<InputGraph, GraphNode> graphNode = new HashMap<>();
 
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
 
@@ -122,12 +122,9 @@ public class FolderNode extends AbstractNode {
         if (folder instanceof FolderElement) {
             final FolderElement folderElement = (FolderElement) folder;
             this.setDisplayName(folderElement.getName());
-            content.add(new RemoveCookie() {
-                @Override
-                public void remove() {
-                    children.destroyNodes(children.getNodes());
-                    folderElement.getParent().removeElement(folderElement);
-                }
+            content.add((RemoveCookie) () -> {
+                children.destroyNodes(children.getNodes());
+                folderElement.getParent().removeElement(folderElement);
             });
         }
     }
@@ -143,7 +140,7 @@ public class FolderNode extends AbstractNode {
 
     public boolean isRootNode() {
         Folder folder = getFolder();
-        return (folder != null && folder instanceof GraphDocument);
+        return (folder instanceof GraphDocument);
     }
 
     @Override

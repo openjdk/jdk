@@ -32,9 +32,9 @@ import java.util.*;
 public class InputBlock {
 
     private List<InputNode> nodes;
-    private String name;
-    private InputGraph graph;
-    private Set<InputBlock> successors;
+    private final String name;
+    private final InputGraph graph;
+    private final Set<InputBlock> successors;
     private boolean artificial;
 
     @Override
@@ -49,7 +49,7 @@ public class InputBlock {
             return true;
         }
 
-        if (o == null || (!(o instanceof InputBlock))) {
+        if ((!(o instanceof InputBlock))) {
             return false;
         }
 
@@ -113,13 +113,11 @@ public class InputBlock {
     }
 
     void addSuccessor(InputBlock b) {
-        if (!successors.contains(b)) {
-            successors.add(b);
-        }
+        successors.add(b);
     }
 
-    void setArtificial(boolean artificial) {
-        this.artificial = artificial;
+    void setArtificial() {
+        this.artificial = true;
     }
 
     public boolean isArtificial() {

@@ -30,7 +30,7 @@ package com.sun.hotspot.igv.data;
  */
 public class ChangedEvent<T> extends Event<ChangedListener<T>> {
 
-    private T object;
+    private final T object;
 
     /**
      * Creates a new event with the specific object as the one for which the event gets fired.

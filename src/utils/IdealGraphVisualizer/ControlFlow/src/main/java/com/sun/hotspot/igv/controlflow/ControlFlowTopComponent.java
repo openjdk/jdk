@@ -43,7 +43,7 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
     private static ControlFlowTopComponent instance;
     private Lookup.Result result = null;
     private static final String PREFERRED_ID = "ControlFlowTopComponent";
-    private ControlFlowScene scene;
+    private final ControlFlowScene scene;
 
     private ControlFlowTopComponent() {
         initComponents();
@@ -86,7 +86,7 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized ControlFlowTopComponent getDefault() {
         if (instance == null) {
@@ -132,13 +132,10 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
     public void resultChanged(LookupEvent lookupEvent) {
         final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
         if (p != null) {
-            SwingUtilities.invokeLater(new Runnable() {
-
-                public void run() {
-                    InputGraph g = p.getGraph();
-                    if (g != null) {
-                        scene.setGraph(g);
-                    }
+            SwingUtilities.invokeLater(() -> {
+                InputGraph g = p.getGraph();
+                if (g != null) {
+                    scene.setGraph(g);
                 }
             });
         }

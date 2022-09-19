@@ -43,8 +43,8 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
     private class LinkWrapper implements Link {
 
-        private VertexWrapper from;
-        private VertexWrapper to;
+        private final VertexWrapper from;
+        private final VertexWrapper to;
 
         public LinkWrapper(VertexWrapper from, VertexWrapper to) {
             this.from = from;
@@ -82,9 +82,9 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
     private class VertexWrapper implements Vertex {
 
-        private N node;
-        private UniversalGraph<N, E> graph;
-        private Port slot;
+        private final N node;
+        private final UniversalGraph<N, E> graph;
+        private final Port slot;
         private Point position;
 
         public VertexWrapper(N node, UniversalGraph<N, E> graph) {
@@ -112,6 +112,7 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
         public Dimension getSize() {
             Widget w = graph.getScene().findWidget(node);
+            assert w.getBounds() != null;
             return w.getBounds().getSize();
         }
 

@@ -52,7 +52,6 @@ public final class SaveAsAction extends NodeAction {
 
     @Override
     protected void performAction(Node[] activatedNodes) {
-        final OutlineTopComponent component = OutlineTopComponent.findInstance();
         GraphDocument doc = new GraphDocument();
         for (Node node : activatedNodes) {
             if (node instanceof FolderNode) {
@@ -88,17 +87,10 @@ public final class SaveAsAction extends NodeAction {
                     Printer p = new Printer();
                     p.export(writer, doc);
                 }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-
             }
         }
-    }
-
-    protected int mode() {
-        return CookieAction.MODE_SOME;
     }
 
     @Override

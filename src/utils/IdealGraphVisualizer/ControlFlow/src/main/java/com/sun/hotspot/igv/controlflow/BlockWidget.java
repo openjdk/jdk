@@ -39,9 +39,9 @@ import org.netbeans.api.visual.widget.LabelWidget;
 public class BlockWidget extends LabelWidget implements Vertex {
 
     public static final Dimension MIN_SIZE = new Dimension(20, 20);
-    private InputBlock block;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final InputBlock block;
+    private final Port inputSlot;
+    private final Port outputSlot;
     private Cluster cluster;
     private boolean root;
     private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
@@ -120,14 +120,6 @@ public class BlockWidget extends LabelWidget implements Vertex {
 
     public boolean isRoot() {
         return root;
-    }
-
-    public void setCluster(Cluster c) {
-        cluster = c;
-    }
-
-    public void setRoot(boolean b) {
-        root = b;
     }
 
     public int compareTo(Vertex o) {
