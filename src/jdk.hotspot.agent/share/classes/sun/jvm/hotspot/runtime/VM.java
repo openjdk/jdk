@@ -1009,7 +1009,7 @@ public class VM {
         flagsMap.put(flags[i].getName(), flags[i]);
       }
     }
-    return (Flag) flagsMap.get(name);
+    return flagsMap.get(name);
   }
 
   private static final String cmdFlagTypes[] = {
