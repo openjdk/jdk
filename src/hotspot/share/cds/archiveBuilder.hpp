@@ -26,6 +26,7 @@
 #define SHARE_CDS_ARCHIVEBUILDER_HPP
 
 #include "cds/archiveUtils.hpp"
+#include "cds/classPrelinker.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/array.hpp"
@@ -228,6 +229,7 @@ private:
   SourceObjList _ro_src_objs;                 // objs to put in ro region
   ResizeableResourceHashtable<address, SourceObjInfo, ResourceObj::C_HEAP, mtClassShared> _src_obj_table;
   ResizeableResourceHashtable<address, address, ResourceObj::C_HEAP, mtClassShared> _buffered_to_src_table;
+  ClassPrelinker _prelinker;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
   GrowableArray<SpecialRefInfo>* _special_refs;
