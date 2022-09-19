@@ -64,7 +64,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     private WidgetAction moveAction = ActionFactory.createMoveAction(null, this);
 
     public ControlFlowScene() {
-        selection = new HashSet<BlockWidget>();
+        selection = new HashSet<>();
 
         this.getInputBindings().setZoomActionModifiers(0);
         this.setLayout(LayoutFactory.createAbsoluteLayout());
@@ -90,12 +90,12 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         }
         oldGraph = g;
 
-        ArrayList<InputBlock> blocks = new ArrayList<InputBlock>(this.getNodes());
+        ArrayList<InputBlock> blocks = new ArrayList<>(this.getNodes());
         for (InputBlock b : blocks) {
             removeNode(b);
         }
 
-        ArrayList<InputBlockEdge> edges = new ArrayList<InputBlockEdge>(this.getEdges());
+        ArrayList<InputBlockEdge> edges = new ArrayList<>(this.getEdges());
         for (InputBlockEdge e : edges) {
             removeEdge(e);
         }
@@ -112,7 +112,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
             this.setEdgeTarget(e, e.getTo());
         }
 
-        GraphLayout<InputBlock, InputBlockEdge> layout = new HierarchicalGraphLayout<InputBlock, InputBlockEdge>();//GridGraphLayout();
+        GraphLayout<InputBlock, InputBlockEdge> layout = new HierarchicalGraphLayout<>();
         SceneLayout sceneLayout = LayoutFactory.createSceneGraphLayout(this, layout);
         sceneLayout.invokeLayout();
 
@@ -130,7 +130,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     public void selectionChanged() {
         InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
         if (p != null) {
-            Set<InputNode> inputNodes = new HashSet<InputNode>();
+            Set<InputNode> inputNodes = new HashSet<>();
             for (BlockWidget w : selection) {
                 inputNodes.addAll(w.getBlock().getNodes());
             }

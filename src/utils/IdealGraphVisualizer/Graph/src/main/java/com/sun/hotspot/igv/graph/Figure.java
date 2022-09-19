@@ -337,7 +337,7 @@ public class Figure extends Properties.Entity implements Vertex {
 
         if (hasInputList()) {
             String inputList = " ← ";
-            List<String> inputs = new ArrayList<String>(getPredecessors().size());
+            List<String> inputs = new ArrayList<>(getPredecessors().size());
             for (Figure p : getPredecessors()) {
                 inputs.add(p.getProperties().resolveString(diagram.getTinyNodeText()));
             }

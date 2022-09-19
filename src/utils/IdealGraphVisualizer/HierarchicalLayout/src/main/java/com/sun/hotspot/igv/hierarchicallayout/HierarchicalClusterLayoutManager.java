@@ -44,7 +44,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
     }
 
     public void doLayout(LayoutGraph graph) {
-        doLayout(graph, new HashSet<Vertex>(), new HashSet<Vertex>(), new HashSet<Link>());
+        doLayout(graph, new HashSet<>(), new HashSet<>(), new HashSet<>());
     }
 
     public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
@@ -63,30 +63,28 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
 
         assert graph.verify();
 
-        HashMap<Cluster, List<Vertex>> lists = new HashMap<Cluster, List<Vertex>>();
-        HashMap<Cluster, List<Link>> listsConnection = new HashMap<Cluster, List<Link>>();
-        HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>> clusterInputSlotHash = new HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>>();
-        HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>> clusterOutputSlotHash = new HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>>();
+        HashMap<Cluster, List<Link>> listsConnection = new HashMap<>();
+        HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>> clusterInputSlotHash = new HashMap<>();
+        HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>> clusterOutputSlotHash = new HashMap<>();
 
-        HashMap<Cluster, ClusterNode> clusterNodes = new HashMap<Cluster, ClusterNode>();
-        HashMap<Cluster, Set<ClusterInputSlotNode>> clusterInputSlotSet = new HashMap<Cluster, Set<ClusterInputSlotNode>>();
-        HashMap<Cluster, Set<ClusterOutputSlotNode>> clusterOutputSlotSet = new HashMap<Cluster, Set<ClusterOutputSlotNode>>();
-        Set<Link> clusterEdges = new HashSet<Link>();
-        Set<Link> interClusterEdges = new HashSet<Link>();
-        HashMap<Link, ClusterOutgoingConnection> linkClusterOutgoingConnection = new HashMap<Link, ClusterOutgoingConnection>();
-        HashMap<Link, InterClusterConnection> linkInterClusterConnection = new HashMap<Link, InterClusterConnection>();
-        HashMap<Link, ClusterIngoingConnection> linkClusterIngoingConnection = new HashMap<Link, ClusterIngoingConnection>();
-        Set<ClusterNode> clusterNodeSet = new HashSet<ClusterNode>();
+        HashMap<Cluster, ClusterNode> clusterNodes = new HashMap<>();
+        HashMap<Cluster, Set<ClusterInputSlotNode>> clusterInputSlotSet = new HashMap<>();
+        HashMap<Cluster, Set<ClusterOutputSlotNode>> clusterOutputSlotSet = new HashMap<>();
+        Set<Link> clusterEdges = new HashSet<>();
+        Set<Link> interClusterEdges = new HashSet<>();
+        HashMap<Link, ClusterOutgoingConnection> linkClusterOutgoingConnection = new HashMap<>();
+        HashMap<Link, InterClusterConnection> linkInterClusterConnection = new HashMap<>();
+        HashMap<Link, ClusterIngoingConnection> linkClusterIngoingConnection = new HashMap<>();
+        Set<ClusterNode> clusterNodeSet = new HashSet<>();
 
         Set<Cluster> cluster = graph.getClusters();
         int z = 0;
         for (Cluster c : cluster) {
-            lists.put(c, new ArrayList<Vertex>());
-            listsConnection.put(c, new ArrayList<Link>());
-            clusterInputSlotHash.put(c, new HashMap<Port, ClusterInputSlotNode>());
-            clusterOutputSlotHash.put(c, new HashMap<Port, ClusterOutputSlotNode>());
-            clusterOutputSlotSet.put(c, new TreeSet<ClusterOutputSlotNode>());
-            clusterInputSlotSet.put(c, new TreeSet<ClusterInputSlotNode>());
+            listsConnection.put(c, new ArrayList<>());
+            clusterInputSlotHash.put(c, new HashMap<>());
+            clusterOutputSlotHash.put(c, new HashMap<>());
+            clusterOutputSlotSet.put(c, new TreeSet<>());
+            clusterInputSlotSet.put(c, new TreeSet<>());
             ClusterNode cn = new ClusterNode(c, "" + z);
             clusterNodes.put(c, cn);
             clusterNodeSet.add(cn);
@@ -146,7 +144,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
                 }
 
                 if (outputSlotNode == null) {
-                    outputSlotNode = new ClusterOutputSlotNode(clusterNodes.get(fromCluster), "Out " + fromCluster.toString() + " " + samePort.toString());
+                    outputSlotNode = new ClusterOutputSlotNode(clusterNodes.get(fromCluster), "Out " + fromCluster.toString() + " " + samePort);
                     clusterOutputSlotSet.get(fromCluster).add(outputSlotNode);
                     ClusterOutgoingConnection conn = new ClusterOutgoingConnection(outputSlotNode, l);
                     outputSlotNode.setOutgoingConnection(conn);
@@ -161,16 +159,13 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
                 }
 
                 if (inputSlotNode == null) {
-                    inputSlotNode = new ClusterInputSlotNode(clusterNodes.get(toCluster), "In " + toCluster.toString() + " " + samePort.toString());
+                    inputSlotNode = new ClusterInputSlotNode(clusterNodes.get(toCluster), "In " + toCluster.toString() + " " + samePort);
                     clusterInputSlotSet.get(toCluster).add(inputSlotNode);
                 }
 
                 ClusterIngoingConnection conn = new ClusterIngoingConnection(inputSlotNode, l);
-                inputSlotNode.setIngoingConnection(conn);
                 clusterNodes.get(toCluster).addSubEdge(conn);
-                if (samePort != null) {
-                    clusterInputSlotHash.get(toCluster).put(samePort, inputSlotNode);
-                }
+                clusterInputSlotHash.get(toCluster).put(samePort, inputSlotNode);
 
                 linkClusterIngoingConnection.put(l, conn);
 
@@ -225,7 +220,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
                 assert conn2 != null;
                 assert conn3 != null;
 
-                List<Point> points = new ArrayList<Point>();
+                List<Point> points = new ArrayList<>();
 
                 points.addAll(conn1.getControlPoints());
                 points.addAll(conn2.getControlPoints());

@@ -37,18 +37,13 @@ import java.util.List;
 public class ClusterOutgoingConnection implements Link {
 
     private List<Point> intermediatePoints;
-    private ClusterOutputSlotNode outputSlotNode;
-    private Link connection;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final Port inputSlot;
+    private final Port outputSlot;
 
     public ClusterOutgoingConnection(ClusterOutputSlotNode outputSlotNode, Link c) {
-        this.outputSlotNode = outputSlotNode;
-        this.connection = c;
-        this.intermediatePoints = new ArrayList<Point>();
-
-        outputSlot = c.getFrom();
-        inputSlot = outputSlotNode.getInputSlot();
+        this.intermediatePoints = new ArrayList<>();
+        this.outputSlot = c.getFrom();
+        this.inputSlot = outputSlotNode.getInputSlot();
     }
 
     public Port getTo() {

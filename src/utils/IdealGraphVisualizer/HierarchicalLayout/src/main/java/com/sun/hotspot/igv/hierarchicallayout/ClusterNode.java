@@ -39,14 +39,12 @@ public class ClusterNode implements Vertex {
 
     private Cluster cluster;
     private Port inputSlot;
-    private Port outputSlot;
-    private Set<Vertex> subNodes;
+    private final Set<Vertex> subNodes;
     private Dimension size;
     private Point position;
-    private Set<Link> subEdges;
-    private boolean dirty;
+    private final Set<Link> subEdges;
     private boolean root;
-    private String name;
+    private final String name;
     private final int border;
     private final Dimension nodeOffset;
     private final int headerVerticalSpace;
@@ -55,10 +53,10 @@ public class ClusterNode implements Vertex {
     public ClusterNode(Cluster cluster, String name, int border,
                        Dimension nodeOffset, int headerVerticalSpace,
                        Dimension emptySize) {
-        this.subNodes = new HashSet<Vertex>();
-        this.subEdges = new HashSet<Link>();
+        this.subNodes = new HashSet<>();
+        this.subEdges = new HashSet<>();
         this.cluster = cluster;
-        position = new Point(0, 0);
+        this.position = new Point(0, 0);
         this.name = name;
         this.border = border;
         this.nodeOffset = nodeOffset;
@@ -90,8 +88,6 @@ public class ClusterNode implements Vertex {
     }
 
     public void updateSize() {
-
-
         calculateSize();
 
         final ClusterNode widget = this;
@@ -108,22 +104,6 @@ public class ClusterNode implements Vertex {
             @Override
             public String toString() {
                 return "ClusterInput(" + name + ")";
-            }
-        };
-
-        outputSlot = new Port() {
-
-            public Point getRelativePosition() {
-                return new Point(size.width / 2, 0);//size.height);
-            }
-
-            public Vertex getVertex() {
-                return widget;
-            }
-
-            @Override
-            public String toString() {
-                return "ClusterOutput(" + name + ")";
             }
         };
     }
@@ -170,7 +150,7 @@ public class ClusterNode implements Vertex {
         }
 
         for (Link l : subEdges) {
-            List<Point> points = new ArrayList<Point>(l.getControlPoints());
+            List<Point> points = new ArrayList<>(l.getControlPoints());
             for (Point p : points) {
                 p.x -= minX;
                 p.y -= minY;
@@ -186,10 +166,6 @@ public class ClusterNode implements Vertex {
     public Port getInputSlot() {
         return inputSlot;
 
-    }
-
-    public Port getOutputSlot() {
-        return outputSlot;
     }
 
     public Dimension getSize() {
@@ -211,7 +187,7 @@ public class ClusterNode implements Vertex {
 
         for (Link e : subEdges) {
             List<Point> arr = e.getControlPoints();
-            ArrayList<Point> newArr = new ArrayList<Point>(arr.size());
+            ArrayList<Point> newArr = new ArrayList<>(arr.size());
             for (Point p : arr) {
                 if (p != null) {
                     Point p2 = new Point(p);
@@ -232,10 +208,6 @@ public class ClusterNode implements Vertex {
 
     public void setCluster(Cluster c) {
         cluster = c;
-    }
-
-    public void setDirty(boolean b) {
-        dirty = b;
     }
 
     public void setRoot(boolean b) {

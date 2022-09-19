@@ -35,8 +35,8 @@ import java.util.List;
  */
 public class ClusterEdge implements Link {
 
-    private ClusterNode from;
-    private ClusterNode to;
+    private final ClusterNode from;
+    private final ClusterNode to;
     private List<Point> points;
 
     public ClusterEdge(ClusterNode from, ClusterNode to) {

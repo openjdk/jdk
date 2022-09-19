@@ -78,24 +78,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         }
         return p;
     }
-    public static final Comparator<Slot> slotIndexComparator = new Comparator<Slot>() {
-
-        @Override
-        public int compare(Slot o1, Slot o2) {
-            return o1.wantedIndex - o2.wantedIndex;
-        }
-    };
-    public static final Comparator<Slot> slotFigureComparator = new Comparator<Slot>() {
-
-        @Override
-        public int compare(Slot o1, Slot o2) {
-            return o1.figure.getId() - o2.figure.getId();
-        }
-    };
-
-    public InputNode getAssociatedNode() {
-        return associatedNode;
-    }
+    public static final Comparator<Slot> slotIndexComparator = Comparator.comparingInt(o -> o.wantedIndex);
 
     public void setAssociatedNode(InputNode node) {
         associatedNode = node;

@@ -40,28 +40,6 @@ public class InputEdge {
         DELETED
     }
 
-    public static final Comparator<InputEdge> OUTGOING_COMPARATOR = new Comparator<InputEdge>(){
-
-        @Override
-            public int compare(InputEdge o1, InputEdge o2) {
-                if(o1.getFromIndex() == o2.getFromIndex()) {
-                    return o1.getTo() - o2.getTo();
-                }
-                return o1.getFromIndex() - o2.getFromIndex();
-            }
-    };
-
-    public static final Comparator<InputEdge> INGOING_COMPARATOR = new Comparator<InputEdge>(){
-
-        @Override
-            public int compare(InputEdge o1, InputEdge o2) {
-                if(o1.getToIndex() == o2.getToIndex()) {
-                    return o1.getFrom() - o2.getFrom();
-                }
-                return o1.getToIndex() - o2.getToIndex();
-            }
-    };
-
     private final char toIndex;
     private final char fromIndex;
     private final int from;

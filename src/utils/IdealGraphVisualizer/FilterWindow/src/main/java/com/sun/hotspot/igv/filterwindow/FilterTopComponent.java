@@ -268,13 +268,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         }
 
         public FilterChildren() {
-            sequence.getChangedEvent().addListener(new ChangedListener<FilterChain>() {
-
-                @Override
-                public void changed(FilterChain source) {
-                    addNotify();
-                }
-            });
+            sequence.getChangedEvent().addListener(source -> addNotify());
 
             setBefore(false);
         }
