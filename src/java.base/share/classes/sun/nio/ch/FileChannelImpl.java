@@ -69,7 +69,7 @@ public class FileChannelImpl
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     // Used to make native read and write calls
-    private final FileDispatcher nd;
+    private static final FileDispatcher nd = new FileDispatcherImpl();
 
     // File descriptor
     private final FileDescriptor fd;
@@ -129,7 +129,6 @@ public class FileChannelImpl
         this.writable = writable;
         this.direct = direct;
         this.parent = parent;
-        this.nd = new FileDispatcherImpl();
         if (direct) {
             assert path != null;
             this.alignment = nd.setDirectIO(fd, path);
@@ -1033,9 +1032,6 @@ public class FileChannelImpl
     private abstract static class Unmapper
         implements Runnable, UnmapperProxy
     {
-        // may be required to close file
-        private static final FileDispatcher nd = new FileDispatcherImpl();
-
         private volatile long address;
         protected final long size;
         protected final long cap;
@@ -1555,9 +1551,5 @@ public class FileChannelImpl
         }
         assert fileLockTable != null;
         fileLockTable.remove(fli);
-    }
-
-    static {
-        IOUtil.load();
     }
 }
