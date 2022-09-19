@@ -637,7 +637,7 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
   os::print_location(tty, x, true);
 }
 
-// flags must be OR'ed from ClassPrinter::Mode for the next 3 functions.
+// flags must be OR'ed from ClassPrinter::Mode for the next 5 functions.
 // Examples (in gdb):
 //   call findclass("java/lang/Object", 0x3)
 //   call findmethod("*ang/Object*", "wait", 0x7)
@@ -659,6 +659,16 @@ extern "C" JNIEXPORT void findmethod2(const char* class_name_pattern,
   Command c("findmethod2");
   ClassPrinter::print_methods(class_name_pattern, method_name_pattern,
                               method_signature_pattern, flags);
+}
+
+extern "C" JNIEXPORT void printclass(intptr_t k, int flags) {
+  Command c("printclass");
+  ClassPrinter::print_class((InstanceKlass*)k, flags);
+}
+
+extern "C" JNIEXPORT void printmethod(intptr_t m, int flags) {
+  Command c("printmethod");
+  ClassPrinter::print_method((Method*)m, flags);
 }
 
 // Need method pointer to find bcp
@@ -698,6 +708,8 @@ void help() {
   tty->print_cr("  findclass(name, flags)");
   tty->print_cr("  findmethod(classname, methodname, flags)");
   tty->print_cr("  findmethod2(classname, methodname, methodsig, flags)");
+  tty->print_cr("  printclass(klass, flags)");
+  tty->print_cr("  printmethod(method, flags)");
 
   tty->print_cr("misc.");
   tty->print_cr("  flush()       - flushes the log file");

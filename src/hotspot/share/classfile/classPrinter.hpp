@@ -29,6 +29,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class InstanceKlass;
+class Method;
 class Symbol;
 
 // ClassPrinter is intended to be called from findclass/findmethod/findmethod2
@@ -57,13 +58,17 @@ public:
     PRINT_METHOD_HANDLE     = 1 << 4, // extra information for invokehandle
   };
 
-  // flags must be OR'ed from ClassPrinter::Mode for the next 3 functions
+  // flags must be OR'ed from ClassPrinter::Mode for the next 5 functions
   static void print_classes(const char* class_name_pattern, int flags);
   static void print_methods(const char* class_name_pattern,
                             const char* method_name_pattern, int flags);
   static void print_methods(const char* class_name_pattern,
                             const char* method_name_pattern,
                             const char* method_signature_pattern, int flags);
+
+  static void print_class(InstanceKlass* k, int flags);
+  static void print_method(Method* k, int flags);
+
 
   static bool has_mode(int flags, Mode mode) {
     return (flags & static_cast<int>(mode)) != 0;

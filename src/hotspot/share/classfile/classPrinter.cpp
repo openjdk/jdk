@@ -70,15 +70,17 @@ public:
     if (!k->is_instance_klass()) {
       return;
     }
+    print_instance_klass(InstanceKlass::cast(k));
+  }
 
-    InstanceKlass* ik = InstanceKlass::cast(k);
+  void print_instance_klass(InstanceKlass* ik) {
     if (ik->is_loaded() && matches(_class_name_pattern, ik->name())) {
       ResourceMark rm;
       if (_last_printed_methods) {
         _st->cr();
       }
       _last_printed_methods = false;
-      _st->print("[%3d] " INTPTR_FORMAT " %s ", _num++, p2i(k), ik->name()->as_C_string());
+      _st->print("[%3d] " INTPTR_FORMAT " class %s ", _num++, p2i(ik), ik->name()->as_C_string());
       ik->class_loader_data()->print_value_on(_st);
       _st->cr();
 
@@ -100,14 +102,20 @@ public:
           if (print_codes && num_methods_printed++ > 0) {
             _st->cr();
           }
-          _st->print_cr(INTPTR_FORMAT " %s : %s", p2i(m),
-                        m->name()->as_C_string(), m->signature()->as_C_string());
-          if (print_codes) {
-            m->print_codes_on(_st, _flags);
-          }
+          print_method(m);
           _last_printed_methods = true;
         }
       }
+    }
+  }
+
+  void print_method(Method* m) {
+    bool print_codes = has_mode(_flags, ClassPrinter::PRINT_BYTECODE);
+    _st->print_cr(INTPTR_FORMAT " %smethod %s : %s", p2i(m),
+                  m->is_static() ? "static " : "",
+                  m->name()->as_C_string(), m->signature()->as_C_string());
+    if (print_codes) {
+      m->print_codes_on(_st, _flags);
     }
   }
 };
@@ -129,6 +137,9 @@ bool ClassPrinter::matches(const char *pattern, const char *candidate, int p, in
 }
 
 bool ClassPrinter::matches(const char* pattern, Symbol* symbol) {
+  if (pattern == NULL) {
+    return true;
+  }
   if (strchr(pattern, '*') == NULL) {
     return symbol->equals(pattern);
   } else {
@@ -170,4 +181,17 @@ void ClassPrinter::print_methods(const char* class_name_pattern,
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
                             flags | PRINT_METHOD_NAME, tty);
   ClassLoaderDataGraph::classes_do(&closure);
+}
+
+void ClassPrinter::print_class(InstanceKlass* k, int flags) {
+  print_help();
+  KlassPrintClosure closure(NULL, NULL, NULL, flags, tty);
+  closure.print_instance_klass(k);
+}
+
+void ClassPrinter::print_method(Method* m, int flags) {
+  print_help();
+  KlassPrintClosure closure(NULL, "", "", flags | PRINT_METHOD_NAME | PRINT_BYTECODE, tty);
+  closure.print_instance_klass(m->method_holder());
+  closure.print_method(m);
 }
