@@ -31,7 +31,7 @@ import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
-import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.actions.CallableSystemAction;
 
 /**
@@ -43,7 +43,7 @@ import org.openide.util.actions.CallableSystemAction;
         @ActionReference(path = "Menu/View", position = 450),
         @ActionReference(path = "Shortcuts", name = "D-EQUALS")
 })
-@NbBundle.Messages({
+@Messages({
         "CTL_ZoomInAction=Zoom in",
         "HINT_ZoomInAction=Zoom into the graph"
 })

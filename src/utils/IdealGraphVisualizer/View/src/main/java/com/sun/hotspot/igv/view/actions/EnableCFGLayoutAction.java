@@ -23,38 +23,26 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-
 import com.sun.hotspot.igv.view.EditorTopComponent;
-import org.openide.util.ImageUtilities;
+import java.beans.PropertyChangeEvent;
 
-public class EnableCFGLayoutAction extends AbstractAction implements PropertyChangeListener {
+public class EnableCFGLayoutAction extends EnableLayoutAction {
 
     private final EditorTopComponent editor;
 
     public EnableCFGLayoutAction(EditorTopComponent etc) {
         editor = etc;
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(SELECTED_KEY, false);
-        putValue(Action.SHORT_DESCRIPTION, "Show control-flow graph");
-        this.addPropertyChangeListener(this);
     }
 
-    public boolean isSelected() {
-        return (Boolean)getValue(SELECTED_KEY);
-    }
-
+    @Override
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/cfg.png";
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) { }
+    protected String getDescription() {
+        return "Show clustered sea of nodes";
+    }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {

@@ -23,42 +23,30 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-
 import com.sun.hotspot.igv.view.EditorTopComponent;
-import org.openide.util.ImageUtilities;
+import java.beans.PropertyChangeEvent;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class EnableBlockLayoutAction extends AbstractAction implements PropertyChangeListener {
+public class EnableBlockLayoutAction extends EnableLayoutAction {
 
     private final EditorTopComponent editor;
 
     public EnableBlockLayoutAction(EditorTopComponent etc) {
         editor = etc;
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(SELECTED_KEY, false);
-        putValue(Action.SHORT_DESCRIPTION, "Show clustered sea of nodes");
-        this.addPropertyChangeListener(this);
     }
 
-    public boolean isSelected() {
-        return (Boolean)getValue(SELECTED_KEY);
-    }
-
+    @Override
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/blocks.png";
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) { }
+    protected String getDescription() {
+        return "Cluster nodes into blocks";
+    }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
