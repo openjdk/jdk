@@ -80,6 +80,7 @@ JAVADOC_TAGS := \
     -taglet build.tools.taglet.JSpec\$$JLS \
     -taglet build.tools.taglet.JSpec\$$JVMS \
     -taglet build.tools.taglet.ModuleGraph \
+    -taglet build.tools.taglet.SealedGraph \
     -taglet build.tools.taglet.ToolGuide \
     -tag since \
     -tag serialData \
