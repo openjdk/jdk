@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.view.widgets;
 
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
@@ -137,7 +138,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             labelWidgets.add(lw);
             textWidget.addChild(lw);
             lw.setLabel(displayString);
-            lw.setFont(figure.getDiagram().getFont());
+            lw.setFont(Diagram.FONT);
             lw.setForeground(getTextColor());
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
@@ -181,10 +182,10 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         super.notifyStateChanged(previousState, state);
 
-        Font font = this.figure.getDiagram().getFont();
+        Font font = Diagram.FONT;
         int thickness = 1;
         if (state.isSelected()) {
-            font = this.figure.getDiagram().getBoldFont();
+            font = Diagram.BOLD_FONT;
             thickness = 2;
         }
 

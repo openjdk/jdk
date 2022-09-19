@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.graph.Slot;
@@ -101,7 +102,7 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
             int s = h - SMALLER;
             int rectW = s;
 
-            Font font = this.getSlot().getFigure().getDiagram().getSlotFont();
+            Font font = Diagram.SLOT_FONT;
             if (this.getState().isSelected()) {
                 font = font.deriveFont(Font.BOLD);
                 g.setStroke(new BasicStroke(1.5f));

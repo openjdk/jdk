@@ -34,30 +34,17 @@ import java.util.*;
 public class Diagram {
 
     private List<Figure> figures;
-    private Map<InputBlock, Block> blocks;
-    private int curId;
-    private String nodeText;
-    private String shortNodeText;
-    private String tinyNodeText;
-    private static final Font font = new Font("Arial", Font.PLAIN, 12);
-    private static final Font slotFont = new Font("Arial", Font.PLAIN, 10);
-    private static final Font boldFont = font.deriveFont(Font.BOLD);
+    private final Map<InputBlock, Block> blocks;
+    private final String nodeText;
+    private final String shortNodeText;
+    private final String tinyNodeText;
+    public static final Font FONT = new Font("Arial", Font.PLAIN, 12);
+    public static final Font SLOT_FONT = new Font("Arial", Font.PLAIN, 10);
+    public static final Font BOLD_FONT = FONT.deriveFont(Font.BOLD);
     // Whether widgets derived from this diagram should be adapted for the
     // control-flow graph view.
     private boolean cfg;
     private final Set<BlockConnection> blockConnections;
-
-    public static Font getFont() {
-        return font;
-    }
-
-    public static Font getSlotFont() {
-        return slotFont;
-    }
-
-    public static Font getBoldFont() {
-        return boldFont;
-    }
 
     public boolean isCFG() {
         return cfg;
@@ -74,11 +61,11 @@ public class Diagram {
         this.nodeText = nodeText;
         this.shortNodeText = shortNodeText;
         this.tinyNodeText = tinyNodeText;
-        this.figures = new ArrayList<Figure>();
-        this.blocks = new LinkedHashMap<InputBlock, Block>(8);
-        this.blockConnections = new HashSet<BlockConnection>();
+        this.figures = new ArrayList<>();
+        this.blocks = new LinkedHashMap<>(8);
+        this.blockConnections = new HashSet<>();
         this.cfg = false;
-        this.curId = 0;
+        int curId = 0;
 
         for (InputBlock b : graph.getBlocks()) {
             blocks.put(b,  new Block(b, this));
@@ -103,7 +90,6 @@ public class Diagram {
             Figure toFigure = figureHash.get(to);
 
             if(fromFigure == null || toFigure == null) continue;
-            assert fromFigure != null && toFigure != null;
 
             int fromIndex = e.getFromIndex();
             while (fromFigure.getOutputSlots().size() <= fromIndex) {

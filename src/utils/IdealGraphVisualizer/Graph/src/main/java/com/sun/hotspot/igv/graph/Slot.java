@@ -107,7 +107,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         } else {
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             Graphics g = image.getGraphics();
-            g.setFont(figure.getDiagram().getSlotFont().deriveFont(Font.BOLD));
+            g.setFont(Diagram.SLOT_FONT.deriveFont(Font.BOLD));
             FontMetrics metrics = g.getFontMetrics();
             return Math.max(Figure.SLOT_WIDTH, metrics.stringWidth(shortName) + 6);
         }
