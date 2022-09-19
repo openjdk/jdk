@@ -2077,11 +2077,11 @@ class StubGenerator: public StubCodeGenerator {
 #endif //ASSERT
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT;
-    bool is_oop = true;
-    int element_size = UseCompressedOops ? 4 : 8;
     if (dest_uninitialized) {
       decorators |= IS_DEST_UNINITIALIZED;
     }
+    bool is_oop = true;
+    int element_size = UseCompressedOops ? 4 : 8;
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, is_oop, from, to, count, wb_pre_saved_regs);

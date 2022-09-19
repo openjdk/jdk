@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "nativeInst_aarch64.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
@@ -33,6 +32,7 @@
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "memory/resourceArea.hpp"
+#include "nativeInst_aarch64.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"

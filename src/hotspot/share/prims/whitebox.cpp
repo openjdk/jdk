@@ -108,14 +108,14 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #endif // INCLUDE_PARALLELGC
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciEnv.hpp"
-#include "jvmci/jvmciRuntime.hpp"
-#endif // INCLUDE_JVMCI
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #endif // INCLUDE_ZGC
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif // INCLUDE_JVMCI
 
 #ifdef LINUX
 #include "osContainer_linux.hpp"

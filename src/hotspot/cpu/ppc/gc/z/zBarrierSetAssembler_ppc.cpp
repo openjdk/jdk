@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/register.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "asm/register.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "gc/z/zAddress.hpp"
@@ -32,7 +32,6 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
-#include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "memory/resourceArea.hpp"
 #include "register_ppc.hpp"

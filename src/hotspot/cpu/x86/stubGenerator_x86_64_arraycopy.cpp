@@ -1774,7 +1774,7 @@ __ BIND(L_exit);
 address StubGenerator::generate_disjoint_long_oop_copy(bool aligned, bool is_oop, address *entry,
                                                        const char *name, bool dest_uninitialized) {
 #if COMPILER2_OR_JVMCI
-  // TODO: Vectorize avx4 arraycopy for ZGC
+  // TODO: Vectorize avx3 arraycopy for ZGC
   if (!(UseZGC && is_oop) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
      return generate_disjoint_copy_avx3_masked(entry, "jlong_disjoint_arraycopy_avx3", 3,
                                                aligned, is_oop, dest_uninitialized);

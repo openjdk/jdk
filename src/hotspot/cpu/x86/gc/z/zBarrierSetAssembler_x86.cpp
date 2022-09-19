@@ -41,8 +41,8 @@
 #include "gc/z/c1/zBarrierSetC1.hpp"
 #endif // COMPILER1
 #ifdef COMPILER2
-#include "gc/z/c2/zBarrierSetC2.hpp"
 #include "c2_intelJccErratum_x86.hpp"
+#include "gc/z/c2/zBarrierSetC2.hpp"
 #include "opto/output.hpp"
 #endif // COMPILER2
 
@@ -56,9 +56,9 @@
 #define __ masm->
 
 ZBarrierSetAssembler::ZBarrierSetAssembler()
-    : _load_bad_relocations(),
-      _store_bad_relocations(),
-      _store_good_relocations() {
+  : _load_bad_relocations(),
+    _store_bad_relocations(),
+    _store_good_relocations() {
 }
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
@@ -930,6 +930,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                                          ZLoadBarrierStubC1* stub) const {
   // Stub entry
   __ bind(*stub->entry());
+
   Register ref = stub->ref()->as_register();
   Register ref_addr = noreg;
   Register tmp = noreg;

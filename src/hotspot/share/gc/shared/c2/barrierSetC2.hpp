@@ -121,7 +121,6 @@ public:
   {}
 
   DecoratorSet decorators() const { return _decorators; }
-  void add_decorators(DecoratorSet decorators) { _decorators |= decorators; }
   Node* base() const              { return _base; }
   C2AccessValuePtr& addr() const  { return _addr; }
   BasicType type() const          { return _type; }

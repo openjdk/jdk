@@ -1165,7 +1165,7 @@ void StubGenerator::setup_arg_regs_using_thread(int nargs) {
   __ mov(rsi, rdx); // c_rarg1
   __ mov(rdx, r8);  // c_rarg2
   if (nargs >= 4) {
-      __ mov(rcx, rax); // c_rarg3 (via rax)
+    __ mov(rcx, rax); // c_rarg3 (via rax)
   }
 #else
   assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,

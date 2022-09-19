@@ -27,8 +27,6 @@
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetAssembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"

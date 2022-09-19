@@ -364,7 +364,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
     __ bind(local_guard);
 
-  __ emit_int32(0);   // nmethod guard value. Skipped over in common case.
+    __ emit_int32(0);   // nmethod guard value. Skipped over in common case.
   } else {
     __ bind(*continuation);
   }
@@ -415,7 +415,7 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ eor(tmp1, tmp1, tmp2);
   __ cbnz(tmp1, error);
 
-  // make sure klass is 'reasonable', which is not zero.
+  // Make sure klass is 'reasonable', which is not zero.
   __ load_klass(obj, obj); // get klass
   __ cbz(obj, error);      // if klass is NULL it is broken
 }
