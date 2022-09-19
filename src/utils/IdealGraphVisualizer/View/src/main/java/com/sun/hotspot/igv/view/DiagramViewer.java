@@ -47,30 +47,30 @@ interface DiagramViewer {
 
     DiagramViewModel getModel();
 
-    public void paint(Graphics2D generator);
+    void paint(Graphics2D generator);
 
-    public Lookup getLookup();
+    Lookup getLookup();
 
-    public JComponent createSatelliteView();
+    JComponent createSatelliteView();
 
-    public Component getComponent();
+    Component getComponent();
 
-    public void zoomOut();
+    void zoomOut();
 
-    public void zoomIn();
+    void zoomIn();
 
-    public UndoRedo getUndoRedo();
+    UndoRedo getUndoRedo();
 
-    public void componentHidden();
+    void componentHidden();
 
-    public void componentShowing();
+    void componentShowing();
 
-    public void setSelection(Collection<Figure> list);
+    void setSelection(Collection<Figure> list);
 
-    public void centerFigures(List<Figure> list);
+    void centerFigures(List<Figure> list);
 
-    public void setInteractionMode(InteractionMode mode);
+    void setInteractionMode(InteractionMode mode);
 
-    public Rectangle getBounds();
+    Rectangle getBounds();
 
 }

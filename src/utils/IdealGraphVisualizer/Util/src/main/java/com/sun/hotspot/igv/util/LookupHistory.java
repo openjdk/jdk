@@ -40,13 +40,12 @@ public class LookupHistory {
 
     private static class LookupHistoryImpl<T> implements LookupListener {
 
-        private Class<T> klass;
-        private Result<T> result;
+        private final Class<T> klass;
         private T last;
 
         public LookupHistoryImpl(Class<T> klass) {
             this.klass = klass;
-            result = Utilities.actionsGlobalContext().lookupResult(klass);
+            Result<T> result = Utilities.actionsGlobalContext().lookupResult(klass);
             result.addLookupListener(this);
             last = Utilities.actionsGlobalContext().lookup(klass);
         }

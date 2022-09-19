@@ -35,28 +35,28 @@ import java.util.Set;
  */
 public class SelectionCoordinator {
 
-    private static SelectionCoordinator singleInstance = new SelectionCoordinator();
-    private Set<Object> selectedObjects;
-    private Set<Object> highlightedObjects;
-    private ChangedEvent<SelectionCoordinator> selectedChangedEvent;
-    private ChangedEvent<SelectionCoordinator> highlightedChangedEvent;
+    private static final SelectionCoordinator singleInstance = new SelectionCoordinator();
+    private final Set<Integer> selectedObjects;
+    private final Set<Integer> highlightedObjects;
+    private final ChangedEvent<SelectionCoordinator> selectedChangedEvent;
+    private final ChangedEvent<SelectionCoordinator> highlightedChangedEvent;
 
     public static SelectionCoordinator getInstance() {
         return singleInstance;
     }
 
     private SelectionCoordinator() {
-        selectedChangedEvent = new ChangedEvent<SelectionCoordinator>(this);
-        highlightedChangedEvent = new ChangedEvent<SelectionCoordinator>(this);
-        selectedObjects = new HashSet<Object>();
-        highlightedObjects = new HashSet<Object>();
+        selectedChangedEvent = new ChangedEvent<>(this);
+        highlightedChangedEvent = new ChangedEvent<>(this);
+        selectedObjects = new HashSet<>();
+        highlightedObjects = new HashSet<>();
     }
 
-    public Set<Object> getSelectedObjects() {
+    public Set<Integer> getSelectedObjects() {
         return Collections.unmodifiableSet(selectedObjects);
     }
 
-    public Set<Object> getHighlightedObjects() {
+    public Set<Integer> getHighlightedObjects() {
         return Collections.unmodifiableSet(highlightedObjects);
     }
 
@@ -69,14 +69,14 @@ public class SelectionCoordinator {
     }
 
 
-    public void setSelectedObjects(Set<? extends Object> s) {
+    public void setSelectedObjects(Set<Integer> s) {
         assert s != null;
         selectedObjects.clear();
         selectedObjects.addAll(s);
         getSelectedChangedEvent().fire();
     }
 
-    public void setHighlightedObjects(Set<? extends Object> s) {
+    public void setHighlightedObjects(Set<Integer> s) {
         assert s != null;
         highlightedObjects.clear();
         highlightedObjects.addAll(s);

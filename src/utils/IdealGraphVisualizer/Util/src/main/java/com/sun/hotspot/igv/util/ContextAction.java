@@ -34,7 +34,6 @@ import org.openide.util.actions.CallableSystemAction;
  */
 public abstract class ContextAction<T> extends CallableSystemAction implements LookupListener, ContextAwareAction {
 
-    private Lookup context = null;
     private Lookup.Result<T> result = null;
 
     public ContextAction() {
@@ -46,7 +45,6 @@ public abstract class ContextAction<T> extends CallableSystemAction implements L
     }
 
     private void init(Lookup context) {
-        this.context = context;
         result = context.lookupResult(contextClass());
         result.addLookupListener(this);
         resultChanged(null);

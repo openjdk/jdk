@@ -54,23 +54,17 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
-    private ChangedEvent<DiagramViewModel> groupChangedEvent;
-    private ChangedEvent<DiagramViewModel> diagramChangedEvent;
-    private ChangedEvent<DiagramViewModel> viewChangedEvent;
-    private ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
-    private ChangedEvent<DiagramViewModel> viewPropertiesChangedEvent;
+    private final ChangedEvent<DiagramViewModel> groupChangedEvent;
+    private final ChangedEvent<DiagramViewModel> diagramChangedEvent;
+    private final ChangedEvent<DiagramViewModel> viewChangedEvent;
+    private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
+    private final ChangedEvent<DiagramViewModel> viewPropertiesChangedEvent;
     private boolean showSea;
     private boolean showBlocks;
     private boolean showCFG;
     private boolean showNodeHull;
     private boolean showEmptyBlocks;
-    private ChangedListener<FilterChain> filterChainChangedListener = new ChangedListener<FilterChain>() {
-
-        @Override
-        public void changed(FilterChain source) {
-            updateDiagram();
-        }
-    };
+    private final ChangedListener<FilterChain> filterChainChangedListener = source -> updateDiagram();
 
     @Override
     public DiagramViewModel copy() {
@@ -85,9 +79,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void setData(DiagramViewModel newModel) {
         super.setData(newModel);
-        boolean diagramChanged = false;
-        boolean viewChanged = false;
-        boolean viewPropertiesChanged = false;
 
         boolean groupChanged = (group != newModel.group);
         this.group = newModel.group;
@@ -95,17 +86,17 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             filterGraphs();
         }
 
-        diagramChanged |= (filterChain != newModel.filterChain);
+        boolean diagramChanged = (filterChain != newModel.filterChain);
         this.filterChain = newModel.filterChain;
         diagramChanged |= (sequenceFilterChain != newModel.sequenceFilterChain);
         this.sequenceFilterChain = newModel.sequenceFilterChain;
         diagramChanged |= (diagram != newModel.diagram);
         this.diagram = newModel.diagram;
-        viewChanged |= (hiddenNodes != newModel.hiddenNodes);
+        boolean viewChanged = (hiddenNodes != newModel.hiddenNodes);
         this.hiddenNodes = newModel.hiddenNodes;
         viewChanged |= (selectedNodes != newModel.selectedNodes);
         this.selectedNodes = newModel.selectedNodes;
-        viewPropertiesChanged |= (showSea != newModel.showSea);
+        boolean viewPropertiesChanged = (showSea != newModel.showSea);
         this.showSea = newModel.showSea;
         viewPropertiesChanged |= (showBlocks != newModel.showBlocks);
         this.showBlocks = newModel.showBlocks;
@@ -175,7 +166,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public DiagramViewModel(InputGraph graph, FilterChain filterChain, FilterChain sequenceFilterChain) {
-        super(Arrays.asList("default"));
+        super(Collections.singletonList("default"));
 
         this.showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
         this.showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
@@ -197,6 +188,19 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         viewPropertiesChangedEvent = new ChangedEvent<>(this);
 
         groupChangedEvent = new ChangedEvent<>(this);
+        ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
+
+            private Group oldGroup;
+
+            @Override
+            public void changed(DiagramViewModel source) {
+                if (oldGroup != null) {
+                    oldGroup.getChangedEvent().removeListener(groupContentChangedListener);
+                }
+                group.getChangedEvent().addListener(groupContentChangedListener);
+                oldGroup = group;
+            }
+        };
         groupChangedEvent.addListener(groupChangedListener);
         groupChangedEvent.fire();
 
@@ -205,19 +209,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
         selectGraph(graph);
     }
-    private final ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
 
-        private Group oldGroup;
-
-        @Override
-        public void changed(DiagramViewModel source) {
-            if (oldGroup != null) {
-                oldGroup.getChangedEvent().removeListener(groupContentChangedListener);
-            }
-            group.getChangedEvent().addListener(groupContentChangedListener);
-            oldGroup = group;
-        }
-    };
     private final ChangedListener<Group> groupContentChangedListener = new ChangedListener<Group>() {
 
         @Override
@@ -260,7 +252,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setSelectedNodes(Set<Integer> nodes) {
         this.selectedNodes = nodes;
         List<Color> colors = new ArrayList<>();
-        for (String s : getPositions()) {
+        for (String ignored : getPositions()) {
             colors.add(Color.black);
         }
         if (nodes.size() >= 1) {
@@ -429,44 +421,33 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     Iterable<InputGraph> getGraphsForward() {
-        return new Iterable<InputGraph>() {
+        return () -> new Iterator<InputGraph>() {
+            int index = getFirstPosition();
 
             @Override
-            public Iterator<InputGraph> iterator() {
-                return new Iterator<InputGraph>() {
-                    int index = getFirstPosition();
+            public boolean hasNext() {
+                return index + 1 < graphs.size();
+            }
 
-                    @Override
-                    public boolean hasNext() {
-                        return index + 1 < graphs.size();
-                    }
-
-                    @Override
-                    public InputGraph next() {
-                        return graphs.get(++index);
-                    }
-                };
+            @Override
+            public InputGraph next() {
+                return graphs.get(++index);
             }
         };
     }
 
     Iterable<InputGraph> getGraphsBackward() {
-        return new Iterable<InputGraph>() {
+        return () -> new Iterator<InputGraph>() {
+            int index = getFirstPosition();
+
             @Override
-            public Iterator<InputGraph> iterator() {
-                return new Iterator<InputGraph>() {
-                    int index = getFirstPosition();
+            public boolean hasNext() {
+                return index - 1 > 0;
+            }
 
-                    @Override
-                    public boolean hasNext() {
-                        return index - 1 > 0;
-                    }
-
-                    @Override
-                    public InputGraph next() {
-                        return graphs.get(--index);
-                    }
-                };
+            @Override
+            public InputGraph next() {
+                return graphs.get(--index);
             }
         };
     }

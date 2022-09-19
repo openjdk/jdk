@@ -56,7 +56,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     public static final Color BAR_SELECTION_COLOR = new Color(255, 0, 0, 120);
     public static final Color BAR_SELECTION_COLOR_ROLLOVER = new Color(255, 0, 255, 120);
     public static final Color BAR_SELECTION_COLOR_DRAG = new Color(0, 0, 255, 120);
-    private RangeSliderModel model;
+    private final RangeSliderModel model;
     private State state;
     private Point startPoint;
     private boolean tempModel = false;
@@ -205,7 +205,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     }
 
     private float getBarStartY() {
-        return getHeight() / 2 - BAR_HEIGHT / 2;
+        return getHeight() / 2.0f - BAR_HEIGHT / 2.0f;
     }
 
     private void paintBar(Graphics2D g) {
@@ -232,7 +232,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
                 Rectangle bounds = metrics.getStringBounds(curS, g).getBounds();
                 if (bounds.width < endX - startX && bounds.height < barStartY) {
                     g.setColor(Color.black);
-                    g.drawString(curS, startX + (endX - startX) / 2 - bounds.width / 2, barStartY / 2 + bounds.height / 2);
+                    g.drawString(curS, (startX + (endX - startX) / 2.0f - bounds.width / 2.0f), barStartY / 2.0f + bounds.height / 2.0f);
                 }
             }
         }
@@ -392,7 +392,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        if (model == null || tempModel == false) {
+        if (model == null || !tempModel) {
             return;
         }
         state = State.Initial;

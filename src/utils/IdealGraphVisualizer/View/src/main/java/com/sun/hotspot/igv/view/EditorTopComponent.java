@@ -46,6 +46,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.*;
 import javax.swing.*;
@@ -77,21 +78,20 @@ import org.w3c.dom.DOMImplementation;
  */
 public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
 
-    private DiagramViewer scene;
-    private InstanceContent graphContent;
-    private EnableSeaLayoutAction seaLayoutAction;
-    private EnableBlockLayoutAction blockLayoutAction;
-    private EnableCFGLayoutAction cfgLayoutAction;
-    private OverviewAction overviewAction;
-    private PredSuccAction predSuccAction;
-    private ShowEmptyBlocksAction showEmptyBlocksAction;
-    private SelectionModeAction selectionModeAction;
-    private JComponent satelliteComponent;
-    private JPanel centerPanel;
-    private CardLayout cardLayout;
-    private JToggleButton overviewButton;
-    private JPanel topPanel;
-    private Toolbar quickSearchToolbar;
+    private final DiagramViewer scene;
+    private final InstanceContent graphContent;
+    private final EnableSeaLayoutAction seaLayoutAction;
+    private final EnableBlockLayoutAction blockLayoutAction;
+    private final EnableCFGLayoutAction cfgLayoutAction;
+    private final OverviewAction overviewAction;
+    private final PredSuccAction predSuccAction;
+    private final ShowEmptyBlocksAction showEmptyBlocksAction;
+    private final SelectionModeAction selectionModeAction;
+    private final JComponent satelliteComponent;
+    private final JPanel centerPanel;
+    private final CardLayout cardLayout;
+    private final JToggleButton overviewButton;
+    private final Toolbar quickSearchToolbar;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
@@ -121,8 +121,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     public EditorTopComponent(InputGraph graph) {
         LookupHistory.init(InputGraphProvider.class);
         this.setFocusable(true);
-        FilterChain filterChain = null;
-        FilterChain sequence = null;
+        FilterChain filterChain;
+        FilterChain sequence;
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         if (provider == null) {
             filterChain = new FilterChain();
@@ -172,6 +172,17 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         container.add(BorderLayout.NORTH, toolBar);
 
         DiagramViewModel diagramViewModel = new DiagramViewModel(graph, filterChain, sequence);
+        ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
+
+            @Override
+            public void changed(DiagramViewModel source) {
+                updateDisplayName();
+                Collection<Object> list = new ArrayList<>();
+                list.add(new EditorInputGraphProvider(EditorTopComponent.this));
+                graphContent.set(list, null);
+            }
+
+        };
         diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
         RangeSlider rangeSlider = new RangeSlider(diagramViewModel);
         if (diagramViewModel.getGroup().getGraphs().size() == 1) {
@@ -185,7 +196,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         InstanceContent content = new InstanceContent();
         content.add(exportCookie);
         content.add(diagramViewModel);
-        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
+        this.associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
         Group group = diagramViewModel.getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
@@ -278,7 +289,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         JPanel toolbarPanel = new JPanel(new GridLayout(1, 0));
         toolbarPanel.add(toolBar);
 
-        topPanel = new JPanel();
+        JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
         topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
@@ -392,18 +403,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             close();
         }
     }
-
-    private ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
-
-        @Override
-        public void changed(DiagramViewModel source) {
-            updateDisplayName();
-            Collection<Object> list = new ArrayList<>();
-            list.add(new EditorInputGraphProvider(EditorTopComponent.this));
-            graphContent.set(list, null);
-        }
-
-    };
 
     private void setSelectedFigures(List<Figure> list) {
         scene.setSelection(list);
@@ -563,7 +562,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         com.lowagie.text.Document document = new Document(new Rectangle(width, height));
         PdfWriter writer = null;
         try {
-            writer = PdfWriter.getInstance(document, new FileOutputStream(f));
+            writer = PdfWriter.getInstance(document, Files.newOutputStream(f.toPath()));
             writer.setCloseStream(true);
             document.open();
             PdfContentByte contentByte = writer.getDirectContent();
