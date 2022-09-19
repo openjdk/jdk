@@ -2,6 +2,7 @@ package java.security;
 
 import sun.nio.cs.ISO_8859_1;
 import sun.security.pkcs.PKCS8Key;
+import sun.security.util.KeyUtil;
 import sun.security.x509.X509Key;
 
 import javax.crypto.Cipher;
@@ -9,8 +10,11 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -20,205 +24,529 @@ import java.util.Base64;
  */
 public class PEMFormat {
 
+    /*
+    class PEMData {
+        final byte[] encodedBytes;
 
-    static final String DASHS = "-----";
+        PEMData(byte[] data) {
+            encodedBytes = data.clone();
+        }
 
-    static final byte[] DASHSARRAY = DASHS.getBytes(ISO_8859_1.INSTANCE);
+    }
 
+     */
+    /**
+     * The Dashs.
+     */
+    private static final byte[] DASHES = "-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] STARTHEADER = "-----BEGIN ".getBytes(ISO_8859_1.INSTANCE);
+
+    /**
+     * The Pubheader.
+     */
     static final byte[] PUBHEADER = "-----BEGIN PUBLIC KEY-----".getBytes(ISO_8859_1.INSTANCE);;
+    /**
+     * The Pubfooter.
+     */
     static final byte[] PUBFOOTER = "-----END PUBLIC KEY-----".getBytes(ISO_8859_1.INSTANCE);;
 
-    static final byte[] PKCS1HEADER = "-----BEGIN PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
-    static final byte[] PKCS1FOOTER = "-----END PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
+    /**
+     * The Pkcs 8 header.
+     */
+    static final byte[] PKCS8HEADER = "-----BEGIN PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
+    /**
+     * The Pkcs 8 footer.
+     */
+    static final byte[] PKCS8FOOTER = "-----END PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
 
+    /**
+     * The Pkcs 8 encheader.
+     */
     static final byte[] PKCS8ENCHEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
+    /**
+     * The Pkcs 8 encfooter.
+     */
     static final byte[] PKCS8ENCFOOTER = "-----END ENCRYPTED PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
 
-    static final byte[] PKCS1ECHEADER = "-----BEGIN BEGIN EC PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
-    static final byte[] PKCS1ECFOOTER = "-----END EC PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
+    /**
+     * The Pkcs 8 echeader.
+     */
+    static final byte[] PKCS8ECHEADER = "-----BEGIN BEGIN EC PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
+    /**
+     * The Pkcs 8 ecfooter.
+     */
+    static final byte[] PKCS8ECFOOTER = "-----END EC PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);;
 
-    private final Base64.Decoder decoder;
-    boolean isX509 = false;
-    boolean isENCRYPTED = false;
-    boolean isEC = false;
-    boolean isPublic = false;
+    private byte[] encodedBytes = null;
+    private EncodedKeySpec eks;
+    private Key key = null;  // See constructor for why this exists
+    private static final String algorithm = "PBEWithHmacSHA256AndAES_128";
+    //private AlgorithmParameters algoParams;
 
-    PEMFormat(Base64.Decoder d) {
-        decoder = d;
+    enum KeyType {UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE};
+    KeyType keyType = KeyType.UNKNOWN;
+
+
+    /**
+     * Constructor for
+     *
+     * @param p the p
+     */
+    PEMFormat(PEMFormat p) {
+        this.key = p.key;
+        this.encodedBytes = p.encodedBytes;
     }
 
     /**
-     * fjkdsl
-      * @return PEMFormat
+     * From pem format.
+     *
+     * @param in the in
+     * @return the pem format
+     * @throws IOException the io exception
      */
-    public static PEMFormat getDecoder() {
-        PEMFormat pem = new PEMFormat(Base64.getDecoder());
-        return pem;
+    public static PEMFormat from(InputStream in) throws IOException {
+        return new PEMFormat(in.readAllBytes());
     }
 
     /**
-     * fjdksal
-     * @param data jfdskal
-     * @return byte{}
-     * @throws GeneralSecurityException jrekslw
+     * From pem format.
+     *
+     * @param eks the data
+     * @return the pem format
+     * @throws IOException the io exception
      */
-    public byte[] decode(byte[] data) throws GeneralSecurityException {
-        int endHeader = find(data, 5, DASHSARRAY);
-        int startFooter = findReverse(data, data.length - 6, DASHSARRAY);
-        if (endHeader == -1 || startFooter == -1) {
-            throw new GeneralSecurityException("Invalid PEM format");
+    public static PEMFormat from(byte[] eks) throws IOException {
+        return new PEMFormat(eks);
+    }
+
+    /**
+     * From pem format.
+     *
+     * @param data the data
+     * @return the pem format
+     * @throws IOException the io exception
+     */
+    public static PEMFormat from(String data) throws IOException {
+        if (data.charAt(0) != '-') {
+            throw new IOException("PEM format not detected, lacks header");
         }
-        if (Arrays.compare(data, 0, endHeader,
-            PKCS1HEADER, 0, PKCS1HEADER.length) == 0 &&
-            Arrays.compare(data, startFooter, data.length,
-                PKCS1FOOTER, 0, PKCS1FOOTER.length) == 0) {
-            isX509 = true;
-        } else if (Arrays.compare(data, 0, endHeader,
-            PKCS8ENCHEADER, 0, PKCS8ENCHEADER.length) == 0 &&
-            Arrays.compare(data, startFooter, data.length,
-                PKCS8ENCFOOTER, 0, PKCS8ENCFOOTER.length) == 0) {
-            isENCRYPTED = true;
-        } else if (Arrays.compare(data, 0, endHeader,
-            PKCS1ECHEADER, 0, PKCS1ECHEADER.length) == 0 &&
-            Arrays.compare(data, startFooter, data.length,
-                PKCS1ECFOOTER, 0, PKCS1ECFOOTER.length) == 0) {
-            isEC = true;
-        } else if (Arrays.compare(data, 0, endHeader,
-            PUBHEADER, 0, PUBHEADER.length) == 0 &&
-            Arrays.compare(data, startFooter, data.length,
-                PUBFOOTER, 0, PUBFOOTER.length) == 0) {
-            isPublic = true;
+        return new PEMFormat(data.getBytes().clone());
+    }
+
+    /**
+     * Parse from key encoding.
+     *
+     * @param key the key
+     * @return the pem format
+     * @throws IOException the io exception
+     */
+    public static PEMFormat from(Key key) throws IOException {
+        return new PEMFormat(key);
+    }
+
+    /**
+     * From pem format.
+     *
+     * @param privKey the priv key
+     * @param pubKey  the pub key
+     * @return the pem format
+     */
+    public static PEMFormat from(PrivateKey privKey, PublicKey pubKey) {
+        return new PEMFormat(privKey, pubKey);
+    }
+
+    /**
+     * From pem format.
+     *
+     * @param keyPair the key pair
+     * @return the pem format
+     */
+    public static PEMFormat from(KeyPair keyPair) {
+        return new PEMFormat(keyPair.getPrivate(), keyPair.getPublic());
+    }
+
+    /**
+     * Instantiates a new Pem format.
+     *
+     * @param data the data
+     * @throws IOException the io exception
+     */
+    PEMFormat(byte[] data) throws IOException {
+        encodedBytes = data;
+    }
+
+    /**
+     * Instantiates a new Pem format.
+     *
+     * @param data    the data
+     * @param keyType the key type
+     * @throws IOException the io exception
+     */
+    PEMFormat(byte[] data, KeyType keyType) throws IOException {
+        encodedBytes = data;
+        this.keyType = keyType;
+    }
+
+    /**
+     * Instantiates a new Pem format.
+     *
+     * @param eks the eks
+     * @throws IOException the io exception
+     */
+    PEMFormat(EncodedKeySpec eks) throws IOException {
+        this.eks = eks;
+
+        if (eks instanceof X509EncodedKeySpec) {
+            keyType = KeyType.PUBLIC;
+            encodedBytes = eks.getEncoded();
+        } else if (eks instanceof PKCS8EncodedKeySpec) {
+            keyType = KeyType.PRIVATE;
+            encodedBytes = eks.getEncoded();
         } else {
-            throw new GeneralSecurityException("No supported format found");
+            throw new IOException("Unknown EncodedKeySpec");
         }
-        ByteBuffer b = ByteBuffer.wrap(data, endHeader, startFooter - endHeader);
-        // Base64.Decoder returns a byte[] ByteBuffer
-        return decoder.decode(b).array();
     }
 
     /**
-     * fjkdsla
-     * @param data fjdskl
-     * @return fjdskl
-     * @throws GeneralSecurityException fdjskl
+     * Instantiates a new Pem format.
+     *
+     * The reason we are keeping 'key' in this case is because
+     * EncryptedPrivateKeyInfo(byte[]) is only for decoding.  I haven't found
+     * a way to use it for encoding without cause an incompatible change when
+     * decoding
+     *
+     * @param key the key
      */
-    public byte[] decode(String data) throws GeneralSecurityException {
+    PEMFormat(Key key) throws IOException {
+        this.key = key;
+        encodedBytes = key.getEncoded();
+        if (key instanceof PrivateKey) {
+            keyType = KeyType.PRIVATE;
+        } else {
+            keyType = KeyType.PUBLIC;
+        }
+    }
+
+    /**
+     * Instantiates a new Pem format.
+     *
+     * @param privateKey the private key
+     * @param publicKey  the public key
+     */
+    PEMFormat(PrivateKey privateKey, PublicKey publicKey) {
+        // eks = new OASEncodedKeySpec()
+    }
+
+    private byte[] decodeEncrypted(byte[] encodedBytes, char[] password) throws IOException {
+
+        // Find the PEM between the header and footer
+        int endHeader = find(encodedBytes, STARTHEADER.length, DASHES);
+        int startFooter = findReverse(encodedBytes, encodedBytes.length - 6, DASHES);
+        if (endHeader == -1 || startFooter == -1) {
+            return null;
+        }
+
+        if (Arrays.compare(encodedBytes, 0, endHeader,
+            PKCS8ENCHEADER, 0, PKCS8ENCHEADER.length) == 0 &&
+            Arrays.compare(encodedBytes, startFooter, encodedBytes.length,
+                PKCS8ENCFOOTER, 0, PKCS8ENCFOOTER.length) == 0) {
+
+            ByteArrayOutputStream pembuf = new ByteArrayOutputStream(100);
+            byte[] data = Base64.getMimeDecoder().decode(
+                Arrays.copyOfRange(encodedBytes, endHeader, startFooter));
+            data = p8Decrypt(data, password);
+            // Rewrite as an unencrypted private key
+            pembuf.write(PKCS8HEADER);
+            pembuf.write(0x0d); // /r
+            pembuf.write(0x0a); // /n
+            pembuf.write(Base64.getMimeEncoder().encode(data));
+            pembuf.write(0x0d); // /r
+            pembuf.write(0x0a); // /n
+            pembuf.write(PKCS8FOOTER);
+
+            return pembuf.toByteArray();
+        }
+        throw new IOException("Invalid header or footer");
+    }
+
+    /**
+     * With the given PEM encodedBytes, decode and return a EncodedKeySpec that matches decoded data format.  If
+     * the decoded PEM format is not recognized an exception will be thrown.
+     *
+     * @return the EncodedKeySpec
+     * @throws IOException On format error or unrecognized formats
+     */
+    private EncodedKeySpec decode(byte[] encodedBytes) throws IOException {
+
+        // Find the PEM between the header and footer
+        int endHeader = find(encodedBytes, STARTHEADER.length, DASHES);
+        int startFooter = findReverse(encodedBytes, encodedBytes.length - 6, DASHES);
+        if (endHeader == -1 || startFooter == -1) {
+            throw new IOException("Invalid PEM format");
+        }
+
+        if (Arrays.compare(encodedBytes, 0, endHeader,
+                PKCS8HEADER, 0, PKCS8HEADER.length) == 0 &&
+                Arrays.compare(encodedBytes, startFooter, encodedBytes.length,
+                        PKCS8FOOTER, 0, PKCS8FOOTER.length) == 0) {
+            encodedBytes = Base64.getMimeDecoder().decode(
+                    Arrays.copyOfRange(encodedBytes, endHeader, startFooter));
+            return new PKCS8EncodedKeySpec(encodedBytes,
+                    KeyUtil.getAlgorithm(encodedBytes).getName());
+
+        } else if (Arrays.compare(encodedBytes, 0, endHeader,
+            PKCS8ENCHEADER, 0, PKCS8ENCHEADER.length) == 0 &&
+            Arrays.compare(encodedBytes, startFooter, encodedBytes.length,
+                PKCS8ENCFOOTER, 0, PKCS8ENCFOOTER.length) == 0) {
+            throw new IOException("Encrypted Private key must be decrypted");
+            /*
+            encodedBytes = Base64.getMimeDecoder().decode(
+                    Arrays.copyOfRange(encodedBytes, endHeader, startFooter));
+            return p8Decrypt(encodedBytes);
+
+         */
+
+        } else if (Arrays.compare(encodedBytes, 0, endHeader,
+                PUBHEADER, 0, PUBHEADER.length) == 0 &&
+                Arrays.compare(encodedBytes, startFooter, encodedBytes.length,
+                        PUBFOOTER, 0, PUBFOOTER.length) == 0) {
+            encodedBytes = Base64.getMimeDecoder().decode(
+                    Arrays.copyOfRange(encodedBytes, endHeader, startFooter));
+            return new X509EncodedKeySpec(encodedBytes,
+                    KeyUtil.getAlgorithm(encodedBytes).getName());
+        }
+
+            throw new IOException("No supported format found");
+    }
+
+    private EncodedKeySpec decode(String data) throws IOException {
         return decode(data.getBytes(ISO_8859_1.INSTANCE));
     }
-/*
-    byte[] decode(String data) throws GeneralSecurityException {
-        if (!data.startsWith(BASEHEADER)) {
 
-        }
-        int headerLen;
 
-        if (data.regionMatches(BASEHEADER.length(), PKCS1HEADER, 0, PKCS1HEADER.length()) && data.endsWith(PKCS1FOOTER)) {
-            isPKCS1 = true;
-            headerLen = BASEHEADER.length() + PKCS1HEADER.length();
-            decoder.decode(
-                ByteBuffer.wrap(data.getBytes(ISO_8859_1.INSTANCE),
-                headerLen,data.length() - headerLen - PKCS1FOOTER.length()));
+    /**
+     * Returns the encoded key.
+     *
+     * @return the encoded key. Returns a new array each time
+     * this method is called.
+     */
 
-        } else if (data.regionMatches(BASEHEADER.length(), PKCS1ECHEADER, 0, PKCS1ECHEADER.length()) && data.endsWith(PKCS1ECFOOTER)) {
-            isEC = true;
-            headerLen = BASEHEADER.length() + PKCS1ECHEADER.length();
-            return decoder.decode(
-                ByteBuffer.wrap(data.getBytes(ISO_8859_1.INSTANCE),
-                headerLen,data.length() - headerLen - PKCS1ECFOOTER.length()));
-        } else if (data.regionMatches(BASEHEADER.length(), PKCS8ENCHEADER, 0, PKCS8ENCHEADER.length()) && data.endsWith(PKCS8ENCFOOTER)) {
-            isENCRYPTED = true;
-            headerLen = BASEHEADER.length() + PKCS8ENCHEADER.length();
-            return decoder.decode(
-                ByteBuffer.wrap(data.getBytes(ISO_8859_1.INSTANCE),
-                headerLen,data.length() - headerLen - PKCS8ENCFOOTER.length()));
+    // XXX Can OAS being done with interface methods, or does OAS need to have special methods
+    private byte[] encode(EncodedKeySpec eks, char[] password, String algorithm,
+        AlgorithmParameterSpec aps) throws IOException {
+
+        Base64.Encoder encoder = Base64.getMimeEncoder();
+        ByteArrayOutputStream pembuf = new ByteArrayOutputStream(100);
+        byte[] footer;
+        byte[] data;
+
+        // Header
+        if (keyType == KeyType.ENCRYPTED_PRIVATE) {
+            pembuf.write(PKCS8ENCHEADER);
+            footer = PKCS8ENCFOOTER;
+        } else if (keyType == KeyType.PRIVATE) {
+            pembuf.write(PKCS8HEADER);
+            footer = PKCS8FOOTER;
         } else {
-            throw new GeneralSecurityException("Invalid PEM format");
+            pembuf.write(PUBHEADER);
+            footer = PUBFOOTER;
         }
 
+        pembuf.write(0x0d); // /r
+        pembuf.write(0x0a); // /n
+        pembuf.write(encoder.encode(encodedBytes));
+        pembuf.write(0x0d); // /r
+        pembuf.write(0x0a); // /n
+        pembuf.write(footer);
+
+
+        return pembuf.toByteArray();
     }
- */
 
-     /**
-     * fdsafdsa
-     * @param data fdsaf
-     * @return fdsaf
-     * @throws GeneralSecurityException fdasfsda
-     */
-     //public T pkcs8(T class, byte[]  data)
-    public PrivateKey pkcs8(byte[] data) throws GeneralSecurityException {
-        PrivateKey p;
-        try {
-            p = PKCS8Key.parseKey(data);
-        } catch (Exception e) {
-            throw new GeneralSecurityException(e);
+    // XXX Can OAS being done with interface methods, or does OAS need to have special methods
+    private byte[] encode() throws IOException {
+
+        Base64.Encoder encoder = Base64.getMimeEncoder();
+        ByteArrayOutputStream pembuf = new ByteArrayOutputStream(100);
+        byte[] footer;
+
+        // Header
+        if (keyType == KeyType.ENCRYPTED_PRIVATE) {
+            pembuf.write(PKCS8ENCHEADER);
+            footer = PKCS8ENCFOOTER;
+        } else if (keyType == KeyType.PRIVATE) {
+            pembuf.write(PKCS8HEADER);
+            footer = PKCS8FOOTER;
+        } else {
+            pembuf.write(PUBHEADER);
+            footer = PUBFOOTER;
         }
-        return p;
+
+        pembuf.write(0x0d); // /r
+        pembuf.write(0x0a); // /n
+        pembuf.write(encoder.encode(encodedBytes));
+        pembuf.write(0x0d); // /r
+        pembuf.write(0x0a); // /n
+        pembuf.write(footer);
+
+
+        return pembuf.toByteArray();
+    }
+/*
+
+// REMOVED:  Because encoding a DER byte[] doesn't seem necessary.  Users should
+// be using a Key.  It also complicates the code more that necessary
+    private byte[] encode(byte[] data) throws IOException {
+
+        Base64.Encoder encoder = Base64.getMimeEncoder();
+        ByteArrayOutputStream pembuf = new ByteArrayOutputStream(100);
+        byte[] footer;
+
+        // Header
+        pembuf.write(PKCS8ENCHEADER);
+        footer = PKCS8ENCFOOTER;
+        // XXX do encryption
+
+
+        pembuf.write(0x0d); // /r
+        pembuf.write(0x0a); // /n
+        pembuf.write(encoder.encode(data));
+        pembuf.write(0x0d); // /r
+        pembuf.write(0x0a); // /n
+        pembuf.write(footer);
+
+
+        return pembuf.toByteArray();
+    }
+*/
+    /**
+     * Gets PEM encoding
+     *
+     * @return the key spec
+     * @throws IOException the io exception
+     */
+    public byte[] getEncoded() throws IOException {
+        /*
+        if (key == null) {
+            throw new IOException("Encoding requires a Key");
+            //return encode(encodedBytes);
+        }
+
+         */
+        return encode();
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return new String(getEncoded());
+        } catch (IOException e) {
+            return "";
+        }
     }
 
     /**
-     * fdsafdsa
-     * @param data fdsaf
-     * @return fdsaf
-     * @throws GeneralSecurityException fdasfsda
+     * Gets key.
+     *
+     * @param p the p
+     * @return the key
+     * @throws IOException the io exception
      */
-    public PublicKey x509(byte[] data) throws GeneralSecurityException {
-        PublicKey p;
+    public Key getKey(Provider p) throws IOException {
+        EncodedKeySpec eks = (key == null ? decode(encodedBytes) : decode(key.getEncoded()));
         try {
-            p = X509Key.parseKey(data);
+            KeyFactory kf;
+            if (p == null) {
+                kf = KeyFactory.getInstance(eks.getAlgorithm());
+            } else {
+                kf = KeyFactory.getInstance(eks.getAlgorithm(), p);
+            }
+            if (eks instanceof PKCS8EncodedKeySpec) {
+                return kf.generatePrivate(eks);
+            } else {
+                return kf.generatePublic(eks);
+            }
         } catch (Exception e) {
-            throw new GeneralSecurityException(e);
+            throw new IOException(e);
         }
-        return p;
     }
 
-    private static String password = "foobar";
+    /**
+     * Gets key.
+     *
+     * @return the key
+     * @throws IOException the io exception
+     */
+    public Key getKey() throws IOException {
+        return getKey(null);
+    }
+
 
     /**
-     * fdsafdsa
-     * @param data fdsaf
-     * @return fdsaf
-     * @throws GeneralSecurityException fdasfsda
+     * Decrypt pem format.
+     *
+     * @param password the password
+     * @return the pem format
+     * @throws IOException the io exception
      */
-    public PrivateKey epkcs8(byte[] data) throws GeneralSecurityException {
+    public PEMFormat decrypt(char[] password) throws IOException {
+        return new PEMFormat(decodeEncrypted(encodedBytes, password), KeyType.PRIVATE);
+    }
+
+    /**
+     * Encrypt pem format.
+     *
+     * @param password the password
+     * @return the pem format
+     * @throws IOException the io exception
+     */
+    public PEMFormat encrypt(char[] password) throws IOException {
+        return encrypt(password, algorithm, null);
+    }
+
+    /**
+     * Encrypt pem format.
+     *
+     * @param password  the password
+     * @param algorithm the algorithm
+     * @param aps       the aps
+     * @return the pem format
+     * @throws IOException the io exception
+     */
+    public PEMFormat encrypt(char[] password, String algorithm,
+        AlgorithmParameterSpec aps) throws IOException {
+        if (keyType != KeyType.PRIVATE) {
+            throw new IOException("Encryption can only happen on Private Keys");
+        }
+        byte[] encoded = new EncryptedPrivateKeyInfo(key).
+            encryptKey(algorithm, password, aps);
+        return new PEMFormat(encoded, KeyType.ENCRYPTED_PRIVATE);
+    }
+
+    private byte[] p8Decrypt(byte[] data, char[] password) throws IOException {
         try {
             EncryptedPrivateKeyInfo epki = new EncryptedPrivateKeyInfo(data);
+            var ap = epki.getAlgParameters();
             //Base64.getMimeDecoder().decode(data));
-            PBEKeySpec pks = new PBEKeySpec(password.toCharArray());
+            PBEKeySpec pks = new PBEKeySpec(password);
             SecretKeyFactory skf = SecretKeyFactory.getInstance(epki.getAlgName());
             SecretKey sk = skf.generateSecret(pks);
             PKCS8EncodedKeySpec keySpec = epki.getKeySpec(sk);
-            return pkcs8(keySpec.getEncoded());
+            return keySpec.getEncoded();
         } catch (Exception e) {
-            throw new GeneralSecurityException(e);
+            throw new IOException(e);
         }
     }
 
     /**
-     * fdsafdsa
-     * @param key fdsaf
-     * @param passwd fdsaf
-     * @return fdsaf
-     * @throws GeneralSecurityException fdasfsda
+     * Find int.
+     *
+     * @param a      the a
+     * @param offset the offset
+     * @param d      the d
+     * @return the int
      */
-    public byte[] encpkcs8(PrivateKey key, char[] passwd) throws GeneralSecurityException {
-        String algo = "PBEWithHmacSHA512AndAES_256";
-        try {
-            PBEKeySpec pks = new PBEKeySpec(passwd);
-            SecretKeyFactory skf = SecretKeyFactory.getInstance(algo);
-            SecretKey sk = skf.generateSecret(pks);
-            Cipher c = Cipher.getInstance(algo);
-            c.init(Cipher.ENCRYPT_MODE, sk);
-            byte[] data = c.doFinal(key.getEncoded());
-            AlgorithmParameters ap = c.getParameters();
-            EncryptedPrivateKeyInfo epki = new EncryptedPrivateKeyInfo(ap, data);
-            //PKCS8EncodedKeySpec keySpec = epki.getKeySpec(sk);
-            return epki.getEncoded();
-        } catch (Exception e) {
-            throw new GeneralSecurityException(e);
-        }
-    }
-
-    static int find(byte[] a, int offset, byte[] d) {
+    private static int find(byte[] a, int offset, byte[] d) {
         int index = offset;
         int dindex = 0;
         while (index < a.length) {
@@ -235,7 +563,15 @@ public class PEMFormat {
         return -1;
     }
 
-    static int findReverse(byte[] a, int offset, byte[] d) {
+    /**
+     * Find reverse int.
+     *
+     * @param a      the a
+     * @param offset the offset
+     * @param d      the d
+     * @return the int
+     */
+    private static int findReverse(byte[] a, int offset, byte[] d) {
         int index = offset;
         int dindex = d.length - 1;
         while (index > 0) {
@@ -250,6 +586,17 @@ public class PEMFormat {
             index--;
         }
         return -1;
+    }
+
+    class EP8EncodedKeySpec extends EncodedKeySpec {
+        EP8EncodedKeySpec(byte[] data) {
+            super(data);
+        }
+
+        @Override
+        public String getFormat() {
+            return null;
+        }
     }
 
 }

@@ -25,8 +25,6 @@
 
 package java.security.spec;
 
-import sun.security.util.KeyUtil;
-
 import java.io.IOException;
 
 /**
