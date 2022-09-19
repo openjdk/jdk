@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "jimage.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -74,7 +75,6 @@
 #include "services/threadService.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 

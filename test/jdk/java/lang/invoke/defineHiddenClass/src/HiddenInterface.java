@@ -28,5 +28,6 @@
  */
 public interface HiddenInterface {
     default void test() {
+        record R() {}
     }
 }

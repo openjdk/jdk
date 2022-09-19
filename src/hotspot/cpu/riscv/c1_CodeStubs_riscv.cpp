@@ -290,7 +290,7 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   if (_obj->is_cpu_register()) {
     __ mv(t0, _obj->as_register());
   }
-  __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)), NULL, t1);
+  __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)), t1);
   ce->add_call_info_here(_info);
   debug_only(__ should_not_reach_here());
 }

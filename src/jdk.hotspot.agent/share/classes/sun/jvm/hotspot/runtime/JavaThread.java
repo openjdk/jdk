@@ -124,7 +124,7 @@ public class JavaThread extends Thread {
   }
 
   /** NOTE: for convenience, this differs in definition from the underlying VM.
-      Only "pure" JavaThreads return true; CompilerThreads, the CodeCacheSweeperThread,
+      Only "pure" JavaThreads return true; CompilerThreads,
       JVMDIDebuggerThreads return false.
       FIXME:
       consider encapsulating platform-specific functionality in an
@@ -327,7 +327,7 @@ public class JavaThread extends Thread {
   //
 
   public OSThread getOSThread() {
-    return (OSThread) VMObjectFactory.newObject(OSThread.class, osThreadField.getValue(addr));
+    return VMObjectFactory.newObject(OSThread.class, osThreadField.getValue(addr));
   }
 
   public Address getStackBase() {
@@ -354,7 +354,7 @@ public class JavaThread extends Thread {
       VMOopHandle vmOopHandle = VMObjectFactory.newObject(VMOopHandle.class, addr);
       obj = vmOopHandle.resolve();
     } catch (Exception e) {
-      e.printStackTrace();
+      System.out.println("WARNING: could not get Thread object: " + e);
     }
     return obj;
   }
@@ -406,7 +406,11 @@ public class JavaThread extends Thread {
   public Oop getCurrentParkBlocker() {
     Oop threadObj = getThreadObj();
     if (threadObj != null) {
-      return OopUtilities.threadOopGetParkBlocker(threadObj);
+      try {
+        return OopUtilities.threadOopGetParkBlocker(threadObj);
+      } catch (Exception e) {
+        System.out.println("Could not get current park blocker: " + e);
+      }
     }
     return null;
   }
@@ -502,32 +506,57 @@ public class JavaThread extends Thread {
   }
 
   public void printThreadInfoOn(PrintStream out){
-    Oop threadOop = this.getThreadObj();
+      String threadName = "<unknown>";
+      boolean daemon = false;
+      int priority = java.lang.Thread.MIN_PRIORITY - 1;
+      String statusName = "<unknown>";
 
-    out.print("\"");
-    out.print(this.getThreadName());
-    out.print("\" #");
-    out.print(OopUtilities.threadOopGetTID(threadOop));
-    if(OopUtilities.threadOopGetDaemon(threadOop)){
-      out.print(" daemon");
-    }
-    out.print(" prio=");
-    out.print(OopUtilities.threadOopGetPriority(threadOop));
-    out.print(" tid=");
-    out.print(this.getAddress());
-    out.print(" nid=");
-    out.print(String.format("%d ",this.getOSThread().threadId()));
-    out.print(getOSThread().getThreadState().getPrintVal());
-    out.print(" [");
-    if(this.getLastJavaSP() == null){
-      out.print(String.format(ADDRESS_FORMAT,0L));
-    } else {
-      out.print(this.getLastJavaSP().andWithMask(~0xFFF));
-    }
-    out.println("]");
-    out.print("   java.lang.Thread.State: ");
-    out.println(OopUtilities.threadOopGetThreadStatusName(threadOop));
-    out.print("   JavaThread state: _thread_");
-    out.println(this.getThreadState().toString().toLowerCase());
+      Oop threadOop = this.getThreadObj();
+      if (threadOop == null) {
+          System.out.println("Could not get the java Thread object. Thread info will be limited.");
+      } else {
+          // Some of these accesses can throw an Exception if we are in the
+          // middle of a GC, so be cautious.
+          try {
+              threadName = this.getThreadName();
+          } catch (Exception e) {}
+          try {
+              // These all rely on the FieldHolder object, so if one fails, they all fail.
+              daemon = OopUtilities.threadOopGetDaemon(threadOop);
+              priority = OopUtilities.threadOopGetPriority(threadOop);
+              statusName = OopUtilities.threadOopGetThreadStatusName(threadOop);
+          } catch (Exception e) {}
+          out.print("\"");
+          out.print(threadName);
+          out.print("\" #");
+          out.print(OopUtilities.threadOopGetTID(threadOop));
+          if (daemon) {
+              out.print(" daemon");
+          }
+          out.print(" prio=");
+          if (priority == java.lang.Thread.MIN_PRIORITY - 1) {
+              out.print("<unknown>");
+          } else {
+              out.print(priority);
+          }
+      }
+      out.print(" tid=");
+      out.print(this.getAddress());
+      out.print(" nid=");
+      out.print(String.format("%d ", this.getOSThread().threadId()));
+      out.print(getOSThread().getThreadState().getPrintVal());
+      out.print(" [");
+      if (this.getLastJavaSP() == null) {
+          out.print(String.format(ADDRESS_FORMAT, 0L));
+      } else {
+          out.print(this.getLastJavaSP().andWithMask(~0xFFF));
+      }
+      out.println("]");
+      if (threadOop != null) {
+          out.print("   java.lang.Thread.State: ");
+          out.println(statusName);
+      }
+      out.print("   JavaThread state: _thread_");
+      out.println(this.getThreadState().toString().toLowerCase());
   }
 }

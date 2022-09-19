@@ -278,16 +278,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       $(SYMBOLS_EXCLUDE_PATTERN), \
       $(ALL_JRE_FILES))
 
-  # On Macosx release builds, when there is a code signing certificate available,
-  # the final bundle layout can be signed.
-  SIGN_BUNDLE := false
-  ifeq ($(call isTargetOs, macosx)+$(DEBUG_LEVEL), true+release)
-    ifneq ($(CODESIGN), )
-      SIGN_BUNDLE := true
-    endif
-  endif
-
-  ifeq ($(SIGN_BUNDLE), true)
+  ifeq ($(MACOSX_CODESIGN_MODE), hardened)
     # Macosx release build and code signing available.
 
     ################################################################################

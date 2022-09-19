@@ -63,7 +63,7 @@ void TemplateInterpreter::initialize_code() {
   // generate interpreter
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
-    TemplateInterpreterGenerator g(_code);
+    TemplateInterpreterGenerator g;
     // Free the unused memory not occupied by the interpreter and the stubs
     _code->deallocate_unused_tail();
   }

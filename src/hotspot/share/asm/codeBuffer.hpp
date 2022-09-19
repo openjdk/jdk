@@ -27,7 +27,6 @@
 
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"

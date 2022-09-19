@@ -217,6 +217,15 @@ public class ClhsdbFindPC {
             expStrMap.put(cmdStr, List.of("Is of type JavaThread"));
             runTest(withCore, cmds, expStrMap);
 
+            // Use findpc on an address that is only 4 byte aligned and is the
+            // last 4 bytes of a 4k page. This is for testing JDK-8292201.
+            String badAddress = tid.substring(0, tid.length() - 3) + "ffc";
+            cmdStr = "findpc " + badAddress;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("In unknown location"));
+            runTest(withCore, cmds, expStrMap);
+
             // Run findpc on a java stack address. We can find one in the jstack output.
             //   "main" #1 prio=5 tid=... nid=0x277e0 waiting on condition [0x0000008025aef000]
             // The stack address is the last word between the brackets.

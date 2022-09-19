@@ -115,7 +115,7 @@ public class Klass extends Metadata implements ClassConstants {
   }
   public Klass    getSuper()            { return (Klass)    superField.getValue(this);   }
   public Klass    getJavaSuper()        { return null;  }
-  public int      getLayoutHelper()     { return (int)           layoutHelper.getValue(this); }
+  public int      getLayoutHelper()     { return            layoutHelper.getValue(this); }
   public Symbol   getName()             { return            getSymbol(name); }
   public long     getAccessFlags()      { return            accessFlags.getValue(this);  }
   // Convenience routine

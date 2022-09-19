@@ -350,7 +350,7 @@ inline void ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(oop* p) {
   // unlinking, to get a sense of what nmethods are alive. This will trigger
   // the keep alive barriers, but the oops are healed and the slow-paths
   // will not trigger. We have stronger checks in the slow-paths.
-  assert(ZResurrection::is_blocked() || (Continuations::enabled() && CodeCache::contains((void*)p)),
+  assert(ZResurrection::is_blocked() || (CodeCache::contains((void*)p)),
          "This operation is only valid when resurrection is blocked");
   const oop o = *p;
   root_barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
