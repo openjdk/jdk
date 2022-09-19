@@ -116,10 +116,7 @@ AsyncLogWriter::AsyncLogWriter()
 
 void AsyncLogWriter::write() {
   ResourceMark rm;
-  // Similar to AsyncLogMap but on resource_area
-  ResourceHashtable<LogFileStreamOutput*, uint32_t,
-                          17/*table_size*/, ResourceObj::RESOURCE_AREA,
-                          mtLogging> snapshot;
+  AsyncLogMap<ResourceObj::RESOURCE_AREA> snapshot;
 
   // lock protection. This guarantees I/O jobs don't block logsites.
   {
