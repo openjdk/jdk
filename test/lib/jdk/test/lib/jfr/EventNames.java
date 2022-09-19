@@ -146,6 +146,7 @@ public class EventNames {
     public final static String ZUnmap = PREFIX + "ZUnmap";
     public final static String GCLocker = PREFIX + "GCLocker";
     public static final String SystemGC = PREFIX + "SystemGC";
+    public static final String GCCPUTime = PREFIX + "GCCPUTime";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";

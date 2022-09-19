@@ -1120,7 +1120,7 @@ class ResetMirrorField: public FieldClosure {
 static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass* k) {
   assert(java_lang_Class::is_instance(mirror_obj), "must be");
   // this is the copy of k in the output buffer
-  Klass* copy = ArchiveBuilder::get_relocated_klass(k);
+  Klass* copy = ArchiveBuilder::get_buffered_klass(k);
 
   // This is the address of k, if the archive is loaded at the requested location
   Klass* def = ArchiveBuilder::current()->to_requested(copy);

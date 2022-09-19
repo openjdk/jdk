@@ -761,23 +761,33 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         if ((position < 0) || (count < 0))
             throw new IllegalArgumentException();
-        long sz = size();
+        final long sz = size();
         if (position > sz)
             return 0;
 
-        if ((sz - position) < count)
-            count = sz - position;
+        // Now position <= sz so remaining >= 0 and
+        // remaining == 0 if and only if sz == 0
+        long remaining = sz - position;
 
-        // Attempt a direct transfer, if the kernel supports it, limiting
-        // the number of bytes according to which platform
-        int icount = (int)Math.min(count, MAX_DIRECT_TRANSFER_SIZE);
-        long n;
-        if ((n = transferToDirectly(position, icount, target)) >= 0)
-            return n;
+        // Adjust count only if remaining > 0, i.e.,
+        // sz > position which means sz > 0
+        if (remaining > 0 && remaining < count)
+            count = remaining;
 
-        // Attempt a mapped transfer, but only to trusted channel types
-        if ((n = transferToTrustedChannel(position, count, target)) >= 0)
-            return n;
+        // System calls supporting fast transfers might not work on files
+        // which advertise zero size such as those in Linux /proc
+        if (sz > 0) {
+            // Attempt a direct transfer, if the kernel supports it, limiting
+            // the number of bytes according to which platform
+            int icount = (int)Math.min(count, MAX_DIRECT_TRANSFER_SIZE);
+            long n;
+            if ((n = transferToDirectly(position, icount, target)) >= 0)
+                return n;
+
+            // Attempt a mapped transfer, but only to trusted channel types
+            if ((n = transferToTrustedChannel(position, count, target)) >= 0)
+                return n;
+        }
 
         // Slow path for untrusted targets
         return transferToArbitraryChannel(position, count, target);
@@ -925,6 +935,8 @@ public class FileChannelImpl
         ensureOpen();
         if (!src.isOpen())
             throw new ClosedChannelException();
+        if (src instanceof FileChannelImpl fci && !fci.readable)
+            throw new NonReadableChannelException();
         if (!writable)
             throw new NonWritableChannelException();
         if ((position < 0) || (count < 0))
@@ -932,7 +944,9 @@ public class FileChannelImpl
         if (position > size())
             return 0;
 
-        if (src instanceof FileChannelImpl fci) {
+        // System calls supporting fast transfers might not work on files
+        // which advertise zero size such as those in Linux /proc
+        if (src instanceof FileChannelImpl fci && fci.size() > 0) {
             long n;
             if ((n = transferFromDirectly(fci, position, count)) >= 0)
                 return n;

@@ -132,7 +132,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   public U2Array           getOperands()   { return new U2Array(operands.getValue(getAddress())); }
   public ConstantPoolCache getCache()      {
     Address addr = cache.getValue(getAddress());
-    return (ConstantPoolCache) VMObjectFactory.newObject(ConstantPoolCache.class, addr);
+    return VMObjectFactory.newObject(ConstantPoolCache.class, addr);
   }
   public InstanceKlass     getPoolHolder() { return (InstanceKlass)poolHolder.getValue(this); }
   public int               getLength()     { return (int)length.getValue(getAddress()); }
@@ -182,7 +182,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   public ConstantTag getTagAt(long index) {
-    return new ConstantTag((byte)getTags().at((int) index));
+    return new ConstantTag(getTags().at((int) index));
   }
 
   public CPSlot getSlotAt(long index) {
@@ -513,10 +513,10 @@ public class ConstantPool extends Metadata implements ClassConstants {
     super.iterateFields(visitor);
     visitor.doMetadata(poolHolder, true);
 
-      final int length = (int) getLength();
+      final int length = getLength();
       // zero'th pool entry is always invalid. ignore it.
       for (int index = 1; index < length; index++) {
-      int ctag = (int) getTags().at((int) index);
+      int ctag = getTags().at(index);
         switch (ctag) {
         case JVM_CONSTANT_ClassIndex:
         case JVM_CONSTANT_StringIndex:
@@ -566,7 +566,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
           Map<String, Short> utf8ToIndex = new HashMap<>();
       DataOutputStream dos = new DataOutputStream(os);
       U1Array tags = getTags();
-      int len = (int)getLength();
+      int len = getLength();
       int ci = 0; // constant pool index
 
       // collect all modified UTF-8 Strings from Constant Pool
@@ -634,7 +634,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
                   // Klass already resolved. ConstantPool contains Klass*.
                   Klass refKls = (Klass)Metadata.instantiateWrapperFor(getAddressAtRaw(ci));
                   String klassName = refKls.getName().asString();
-                  Short s = (Short) utf8ToIndex.get(klassName);
+                  Short s = utf8ToIndex.get(klassName);
                   dos.writeShort(s.shortValue());
                   if (DEBUG) debugMessage("CP[" + ci  + "] = class " + s);
                   break;
@@ -645,7 +645,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
               case JVM_CONSTANT_UnresolvedClass: {
                   dos.writeByte(JVM_CONSTANT_Class);
                   String klassName = getSymbolAt(ci).asString();
-                  Short s = (Short) utf8ToIndex.get(klassName);
+                  Short s = utf8ToIndex.get(klassName);
                   dos.writeShort(s.shortValue());
                   if (DEBUG) debugMessage("CP[" + ci + "] = class " + s);
                   break;
@@ -654,7 +654,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
               case JVM_CONSTANT_String: {
                   dos.writeByte(cpConstType);
                   String str = getUnresolvedStringAt(ci).asString();
-                  Short s = (Short) utf8ToIndex.get(str);
+                  Short s = utf8ToIndex.get(str);
                   dos.writeShort(s.shortValue());
                   if (DEBUG) debugMessage("CP[" + ci + "] = string " + s);
                   break;

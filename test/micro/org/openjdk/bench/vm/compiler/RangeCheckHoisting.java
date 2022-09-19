@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,19 +21,34 @@
  * questions.
  */
 
-package java.util.regex;
+package org.openjdk.bench.vm.compiler;
 
-public class GraphemeTestAccessor {
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
 
-    public static boolean isExcludedSpacingMark(int cp) {
-        return Grapheme.isExcludedSpacingMark(cp);
+@State(Scope.Benchmark)
+public class RangeCheckHoisting {
+
+    private static final int SIZE = 65536;
+
+    @Param("6789") private int count;
+
+    private static int[] a = new int[SIZE];
+    private static int[] b = new int[SIZE];
+
+    @Benchmark
+    public void ivScaled3() {
+        for (int i = 0; i < count; i++) {
+            b[3 * i] = a[3 * i];
+        }
     }
 
-    public static int getType(int cp) {
-        return Grapheme.getType(cp);
+    @Benchmark
+    public void ivScaled7() {
+        for (int i = 0; i < count; i++) {
+            b[7 * i] = a[7 * i];
+        }
     }
 }
-
-
-
-
