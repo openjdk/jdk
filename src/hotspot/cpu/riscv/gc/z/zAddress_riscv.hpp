@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +19,16 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
-#define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+#ifndef CPU_RISCV_GC_Z_ZADDRESS_RISCV_HPP
+#define CPU_RISCV_GC_Z_ZADDRESS_RISCV_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
-const size_t ZPlatformCacheLineSize    = 64;
+const size_t ZPointerLoadShift = 16;
 
-#endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+size_t ZPlatformAddressOffsetBits();
+size_t ZPlatformAddressHeapBaseShift();
+
+#endif // CPU_RISCV_GC_Z_ZADDRESS_RISCV_HPP
