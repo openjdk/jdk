@@ -370,9 +370,6 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     @Override
-    public void componentOpened() { }
-
-    @Override
     public void componentClosed() {
         getModel().close();
     }
