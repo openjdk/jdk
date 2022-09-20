@@ -122,11 +122,11 @@ public enum TypeClass {
         }
     }
 
-    public static record FlattenedFieldDesc(TypeClass typeClass, int offset, ValueLayout layout) {
+    public static record FlattenedFieldDesc(TypeClass typeClass, long offset, ValueLayout layout) {
 
     }
 
-    private static List<FlattenedFieldDesc> getFlattenedFieldsInner(int offset, MemoryLayout layout) {
+    private static List<FlattenedFieldDesc> getFlattenedFieldsInner(long offset, MemoryLayout layout) {
         if (layout instanceof ValueLayout valueLayout) {
             TypeClass typeClass = classifyValueType(valueLayout);
             return List.of(switch (typeClass) {
@@ -188,7 +188,7 @@ public enum TypeClass {
     }
 
     private static boolean isRegisterAggregate(MemoryLayout type) {
-        return type.byteSize() <= 16;
+        return type.byteSize() <= 16L;
     }
 
     private static TypeClass classifyStructType(GroupLayout layout) {
