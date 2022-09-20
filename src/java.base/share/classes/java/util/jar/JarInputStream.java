@@ -57,9 +57,9 @@ import jdk.internal.util.jar.JarIndex;
  * </p>
  * <h2>Signed JAR Files</h2>
  *
- *  A {@code JarInputStream} may be used to verify the signatures of a
- *  <a href="{@docRoot}/../specs/jar/jar.html#signed-jar-file">signed JAR file</a>
- *  assuming the following requirements are met:
+ * A {@code JarInputStream} verifies the signatures of entries in a
+ * <a href="{@docRoot}/../specs/jar/jar.html#signed-jar-file">Signed JAR file</a>
+ * when:
  *  <ul>
  *      <li>
  *         The {@code Manifest} is the first entry in the stream (or the second
