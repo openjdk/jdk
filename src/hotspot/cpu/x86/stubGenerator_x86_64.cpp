@@ -1093,26 +1093,8 @@ address StubGenerator::generate_verify_oop() {
   __ testptr(rax, rax);
   __ jcc(Assembler::zero, exit); // if obj is NULL it is OK
 
-#if INCLUDE_ZGC
-  if (UseZGC) {
-    // Check if metadata bits indicate a bad oop
-    __ testptr(rax, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
-    __ jcc(Assembler::notZero, error);
-  }
-#endif
-
-  // Check if the oop is in the right area of memory
-  __ movptr(c_rarg2, rax);
-  __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(c_rarg2, c_rarg3);
-  __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_bits());
-  __ cmpptr(c_rarg2, c_rarg3);
-  __ jcc(Assembler::notZero, error);
-
-  // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(rax, rax, rscratch1);  // get klass
-  __ testptr(rax, rax);
-  __ jcc(Assembler::zero, error); // if klass is NULL it is broken
+   BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+   bs_asm->check_oop(_masm, rax, c_rarg2, c_rarg3, error);
 
   // return if everything seems ok
   __ bind(exit);
