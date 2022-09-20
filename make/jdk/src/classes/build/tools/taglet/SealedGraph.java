@@ -33,16 +33,21 @@ import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.ModuleElement;
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Doclet;
+import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet;
 import static jdk.javadoc.doclet.Taglet.Location.*;
 
 /**
- * A block tag to optionally insert a reference to a module graph.
+ * A block tag to optionally insert a reference to a sealed class hierarchy graph.
  */
 public class SealedGraph implements Taglet {
     private static final String sealedGraphDotPath =
         System.getProperty("sealedGraphDotPath");
+
+    private DocletEnvironment docletEnvironment;
 
     /** Returns the set of locations in which a taglet may be used. */
     @Override
@@ -61,14 +66,22 @@ public class SealedGraph implements Taglet {
     }
 
     @Override
+    public void init(DocletEnvironment env, Doclet doclet) {
+        docletEnvironment = env;
+    }
+
+    @Override
     public String toString(List<? extends DocTree> tags, Element element) {
         if (sealedGraphDotPath == null || sealedGraphDotPath.isEmpty()) {
             return "";
         }
+        if (docletEnvironment == null || !(element instanceof TypeElement typeElement)) {
+            return "";
+        }
 
-        String typeName = ((TypeElement) element).getQualifiedName().toString();
-
-        File dotFile = new File(sealedGraphDotPath, typeName + ".dot");
+        ModuleElement module = docletEnvironment.getElementUtils().getModuleOf(element);
+        File dotFile = new File(sealedGraphDotPath,
+                module.getQualifiedName() + "_" + typeElement.getQualifiedName() + ".dot");
 
         try (PrintWriter out = new PrintWriter(dotFile)) {
             out.println("""
@@ -94,26 +107,25 @@ public class SealedGraph implements Taglet {
                 }
             """);
         } catch (FileNotFoundException e) {
-            // ignore
+            // FIXME: Please handle better than just ignoring
         }
 
-        String simpleTypeName = ((TypeElement) element).getSimpleName().toString();
+        String simpleTypeName = element.getSimpleName().toString();
         String imageFile = simpleTypeName + "-sealed-graph.svg";
         int thumbnailHeight = -1;
         return "<dt>Sealed Class Hierarchy Graph:</dt>"
             + "<dd>"
             + "<a class=\"sealed-graph\" href=\"" + imageFile + "\">"
-            + getImage(simpleTypeName, imageFile, thumbnailHeight, false)
+            + getImage(simpleTypeName, imageFile, thumbnailHeight)
             + "</a>"
             + "</dd>";
     }
 
     private static final String VERTICAL_ALIGN = "vertical-align:top";
-    private static final String BORDER = "border: solid lightgray 1px;";
 
-    private String getImage(String moduleName, String file, int height, boolean useBorder) {
+    private String getImage(String moduleName, String file, int height) {
         return String.format("<img style=\"%s\" alt=\"Sealed class hierarchy graph for %s\" src=\"%s\"%s>",
-                             useBorder ? BORDER + " " + VERTICAL_ALIGN : VERTICAL_ALIGN,
+                             VERTICAL_ALIGN,
                              moduleName,
                              file,
                              (height <= 0 ? "" : " height=\"" + height + "\""));
