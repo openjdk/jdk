@@ -23,18 +23,66 @@
  */
 
 #include "precompiled.hpp"
+#include "code/nativeInst.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "utilities/debug.hpp"
 
+class NativeMethodBarrier: public NativeInstruction {
+  private:
+
+  public:
+    int get_guard_value() const {
+      // Unimplemented();
+      return -1;
+    }
+
+    void release_set_guard_value(int value) {
+      // Unimplemented();
+    }
+
+};
+
+static const int entry_barrier_offset() {
+  // TODO: Implement this procedure
+  return 0;
+}
+
+static NativeMethodBarrier* get_nmethod_barrier(nmethod* nm) {
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset();
+  auto barrier = reinterpret_cast<NativeMethodBarrier*>(barrier_address);
+
+  return barrier;
+}
+
 void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
+  // TODO: Implement
   ShouldNotReachHere();
+}
+
+void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+  if (!supports_entry_barrier(nm)) {
+    return;
+  }
+
+  NativeMethodBarrier* barrier = get_nmethod_barrier(nm);
+  barrier->release_set_guard_value(arm_value);
 }
 
 void BarrierSetNMethod::disarm(nmethod* nm) {
-  ShouldNotReachHere();
+  if (!supports_entry_barrier(nm)) {
+    return;
+  }
+
+  NativeMethodBarrier* barrier = get_nmethod_barrier(nm);
+  barrier->release_set_guard_value(disarmed_value());
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
-  ShouldNotReachHere();
-  return false;
+  if (!supports_entry_barrier(nm)) {
+    return false;
+  }
+
+  NativeMethodBarrier* barrier = get_nmethod_barrier(nm);
+  return barrier->get_guard_value() != disarmed_value();
 }
