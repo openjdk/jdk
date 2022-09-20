@@ -478,15 +478,22 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
 [
-  AC_ARG_WITH(jmod-compress, [AS_HELP_STRING([--with-jmod-compress],
-    [specify alternative JMOD compression])])
-  AC_MSG_CHECKING([for JMOD compression])
-  if test "x$with_jmod_compress" != "x"; then
-    JMOD_COMPRESS="$with_jmod_compress"
-    AC_MSG_RESULT([$JMOD_COMPRESS])
+  # Final JMODs are recompiled often during development, and java.base JMOD
+  # includes the JVM libraries. In release mode, prefer to compress JMODs fully.
+  # In debug mode, pay with a little extra space, but win a lot of CPU time back
+  # with the lightest (not still some) compression.
+  if test "x$DEBUG_LEVEL" = xrelease; then
+    DEFAULT_JMOD_COMPRESS="zip-6"
   else
-    AC_MSG_RESULT([default])
+    DEFAULT_JMOD_COMPRESS="zip-1"
   fi
+
+  UTIL_ARG_WITH(NAME: jmod-compress, TYPE: string,
+    VALID_VALUES: [zip-0 zip-1 zip-2 zip-3 zip-4 zip-5 zip-6 zip-7 zip-8 zip-9],
+    DEFAULT: $DEFAULT_JMOD_COMPRESS,
+    CHECKING_MSG: [for JMOD compression type],
+    DESC: [specify JMOD compression type (zip-[0-9])]
+  )
   AC_SUBST(JMOD_COMPRESS)
 ])
 

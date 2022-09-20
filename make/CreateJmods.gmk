@@ -237,15 +237,7 @@ ifeq ($(INTERIM_JMOD), true)
   # to compress them at all.
   JMOD_FLAGS += --compress zip-0
 else
-  ifneq ($(JMOD_COMPRESS), )
-    # User override
-    JMOD_FLAGS += --compress $(JMOD_COMPRESS)
-  else
-    # Final JMODs are recompiled often, so pay with little extra space,
-    # but win a lot of CPU time back with the lightest compression level
-    # possible.
-    JMOD_FLAGS += --compress zip-1
-  endif
+  JMOD_FLAGS += --compress $(JMOD_COMPRESS)
 endif
 
 # Create jmods in the support dir and then move them into place to keep the
