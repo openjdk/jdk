@@ -73,6 +73,7 @@ public class MultiScreenLocationTest {
 
             // check Robot.mouseMove()
             robot.mouseMove(screen.x + mouseOffset.x, screen.y + mouseOffset.y);
+            robot.waitForIdle();
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             Point point = screen.getLocation();
             point.translate(mouseOffset.x, mouseOffset.y);
