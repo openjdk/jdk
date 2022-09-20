@@ -59,6 +59,23 @@ class ConstantUtils {
     }
 
     /**
+      * Validates the correctness of an internal class name.
+      * In particular checks for the presence of invalid characters in the name.
+      *
+      * @param name the class name
+      * @return the class name passed if valid
+      * @throws IllegalArgumentException if the class name is invalid
+      */
+     static String validateInternalClassName(String name) {
+         for (int i=0; i<name.length(); i++) {
+             char ch = name.charAt(i);
+             if (ch == ';' || ch == '[' || ch == '.')
+                 throw new IllegalArgumentException("Invalid class name: " + name);
+         }
+         return name;
+     }
+
+    /**
      * Validates a member name
      *
      * @param name the name of the member
