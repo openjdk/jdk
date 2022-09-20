@@ -60,7 +60,7 @@
  *     4759463 TEST_BUG: tests against ThreadReference.interrupt() should be corrected
  *
  * @library /vmTestbase
- *          /test/lib /testlibrary
+ *          /test/lib
  * @build nsk.jdi.ThreadReference.interrupt.interrupt001
  *        nsk.jdi.ThreadReference.interrupt.interrupt001a
  * @run main/othervm
@@ -70,5 +70,5 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts} -Djava.library.path=${test.nativepath}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
