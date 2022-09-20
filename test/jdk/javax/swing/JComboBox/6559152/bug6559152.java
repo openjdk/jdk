@@ -99,9 +99,6 @@ public class bug6559152 {
     private static void test() throws Exception {
         robot.mouseMove(p.x, p.y);
         robot.waitForIdle();
-//        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-//        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-//        robot.waitForIdle();
         testImpl();
         checkResult();
     }
