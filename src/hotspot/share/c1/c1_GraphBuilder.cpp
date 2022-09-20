@@ -140,7 +140,7 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
     stringStream title;
     title.print("BlockListBuilder ");
     scope->method()->print_name(&title);
-    CFGPrinter::print_cfg(_bci2block, title.as_string(), false, false);
+    CFGPrinter::print_cfg(_bci2block, title.freeze(), false, false);
   }
 #endif
 }
@@ -2232,8 +2232,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
 void GraphBuilder::new_instance(int klass_index) {
   ValueStack* state_before = copy_state_exhandling();
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   assert(klass->is_instance_klass(), "must be an instance klass");
   NewInstance* new_instance = new NewInstance(klass->as_instance_klass(), state_before, stream()->is_unresolved_klass());
   _memory->new_instance(new_instance);
@@ -2248,8 +2247,7 @@ void GraphBuilder::new_type_array() {
 
 
 void GraphBuilder::new_object_array() {
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
   NewArray* n = new NewObjectArray(klass, ipop(), state_before);
   apush(append_split(n));
@@ -2274,8 +2272,7 @@ bool GraphBuilder::direct_compare(ciKlass* k) {
 
 
 void GraphBuilder::check_cast(int klass_index) {
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_for_exception();
   CheckCast* c = new CheckCast(klass, apop(), state_before);
   apush(append_split(c));
@@ -2295,8 +2292,7 @@ void GraphBuilder::check_cast(int klass_index) {
 
 
 void GraphBuilder::instance_of(int klass_index) {
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
   InstanceOf* i = new InstanceOf(klass, apop(), state_before);
   ipush(append_split(i));
@@ -2331,8 +2327,7 @@ void GraphBuilder::monitorexit(Value x, int bci) {
 
 
 void GraphBuilder::new_multi_array(int dimensions) {
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
 
   Values* dims = new Values(dimensions, dimensions, NULL);

@@ -1553,7 +1553,7 @@ public class JavaCompiler {
             env.tree = TransPatterns.instance(context).translateTopLevelClass(env, env.tree, localMake);
             compileStates.put(env, CompileState.TRANSPATTERNS);
 
-            if (Feature.LAMBDA.allowedInSource(source) && scanner.hasLambdas) {
+            if (scanner.hasLambdas) {
                 if (shouldStop(CompileState.UNLAMBDA))
                     return;
 

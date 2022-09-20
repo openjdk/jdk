@@ -963,7 +963,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
       CodeCache::print_summary(&s, false);
     }
     ttyLocker ttyl;
-    tty->print_raw_cr(s.as_string());
+    tty->print_raw_cr(s.freeze());
   }
 
   if (result != JVMCI::ok) {

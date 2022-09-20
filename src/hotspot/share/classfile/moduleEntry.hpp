@@ -28,6 +28,7 @@
 #include "jni.h"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
+#include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -205,8 +206,8 @@ class ModuleClosure: public StackObj {
 class ModuleEntryTable : public CHeapObj<mtModule> {
 private:
   static ModuleEntry* _javabase_module;
-  ResourceHashtable<const Symbol*, ModuleEntry*, 109, ResourceObj::C_HEAP, mtModule,
-                    Symbol::compute_hash> _table;
+  ResourceHashtable<SymbolHandle, ModuleEntry*, 109, ResourceObj::C_HEAP, mtModule,
+                    SymbolHandle::compute_hash> _table;
 
 public:
   ModuleEntryTable();
@@ -237,7 +238,7 @@ public:
   static bool javabase_defined() { return ((_javabase_module != NULL) &&
                                            (_javabase_module->module() != NULL)); }
   static void finalize_javabase(Handle module_handle, Symbol* version, Symbol* location);
-  static void patch_javabase_entries(Handle module_handle);
+  static void patch_javabase_entries(JavaThread* current, Handle module_handle);
 
   void modules_do(void f(ModuleEntry*));
   void modules_do(ModuleClosure* closure);
