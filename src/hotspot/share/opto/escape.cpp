@@ -462,7 +462,6 @@ const Node* ConnectionGraph::come_from_allocate(const Node* n) const {
         n = n->in(1);
         break;
       case Op_Proj:
-        assert(n->as_Proj()->_con == TypeFunc::Parms, "Should be proj from a call");
         n = n->in(0);
         break;
       case Op_Parm:
@@ -470,6 +469,7 @@ const Node* ConnectionGraph::come_from_allocate(const Node* n) const {
       case Op_GetAndSetP:
       case Op_LoadP:
       case Op_LoadN:
+      case Op_LoadKlass:
       case Op_LoadNKlass:
       SHENANDOAHGC_ONLY(case Op_ShenandoahLoadReferenceBarrier:)
       SHENANDOAHGC_ONLY(case Op_ShenandoahIUBarrier:)
@@ -538,6 +538,19 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
 
   const Type* phi_t  = _igvn->type(phi);
 
+  // Found a Memory edge coming from the same Region as the Phi
+  bool found_memory_edge = false;
+
+  // Is any of the users of the Phi a Call node?
+  bool has_call_as_user = false;
+
+  // Ignoring any ConP#Null, is there any of the Phi inputs Non Scalar Replaceable?
+  bool has_nonnull_nonsr_input = false;
+
+  // Ignoring ConP#Null inputs, are all the inputs to the Phi of the same Klass?
+  bool mixed_klasses = false;
+
+
   // If not an InstPtr bail out
   if (phi_t == NULL || phi_t->make_oopptr() == NULL || phi_t->make_oopptr()->isa_instptr() == NULL) {
     return false;
@@ -551,12 +564,14 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
   bool has_noescape_allocate = false;
   ciInstanceKlass* klass = phi_t->make_oopptr()->is_instptr()->instance_klass();
   for (uint in_idx = 1; in_idx < phi->req(); in_idx++) {
-    // come_from_allocate returns NULL if it the sources isn't an Allocate
+    // come_from_allocate returns NULL if the source isn't an Allocate
     const Node* input = come_from_allocate(phi->in(in_idx));
     PointsToNode* input_ptn = input != NULL ? ptnode_adr(input->_idx) : NULL;
 
     // Check if input comes from scalar replaceable Allocate
-    has_noescape_allocate |= (input_ptn != NULL && input_ptn->scalar_replaceable());
+    bool is_sr_input = (input_ptn != NULL && input_ptn->scalar_replaceable());
+    has_nonnull_nonsr_input |= !is_sr_input;
+    has_noescape_allocate |= is_sr_input;
 
     // Check if there is no write to the input after it is merged.
     // If there is a write to any input after the merge we need to bail out.
@@ -572,15 +587,33 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
     }
 
     if (klass != input_t->is_instptr()->instance_klass()) {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Inputs aren't of the same instance klass.", phi->_idx);)
-      return false;
+      mixed_klasses = true;
     }
+
+    klass = input_t->is_instptr()->instance_klass();
   }
 
   // If there was no input that can be removed then there is
   // no profit doing the reduction of inputs.
   if (!has_noescape_allocate) {
     NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. There is not any NoEscape Allocate as input.", phi->_idx);)
+    return false;
+  }
+
+  // Try to find a BOT memory Phi coming from same region
+  Node* reg = phi->in(0);
+  for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
+    Node* n = reg->fast_out(i);
+    if (n->is_Phi() && n->bottom_type() == Type::MEMORY) {
+      if (_compile->get_alias_index(n->adr_type()) == Compile::AliasIdxBot) {
+        found_memory_edge = true;
+        break;
+      }
+    }
+  }
+
+  if (!found_memory_edge && has_nonnull_nonsr_input) {
+    NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Did not find memory edge on Region.", phi->_idx);)
     return false;
   }
 
@@ -599,17 +632,15 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
   for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
     Node* use = phi->fast_out(i);
 
-    if (!use->is_AddP() && !use->is_CallStaticJava() && use->Opcode() != Op_SafePoint && !use->is_DecodeN()) {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. One of the uses is: %d %s", phi->_idx, use->_idx, use->Name());)
-      return false;
-    }
+    if (use->is_CallStaticJava() || use->Opcode() == Op_SafePoint) {
+      has_call_as_user = true;
 
-    if (use->is_CallStaticJava() && !use->as_CallStaticJava()->is_uncommon_trap()) {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. CallStaticJava is not a trap.", phi->_idx);)
-      return false;
+      if (use->is_CallStaticJava() && use->as_CallStaticJava()->is_uncommon_trap() == false) {
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. CallStaticJava is not a trap.", phi->_idx);)
+        return false;
+      }
     }
-
-    if (use->is_AddP()) {
+    else if (use->is_AddP()) {
       if (use->in(AddPNode::Offset)->find_intptr_t_con(-1) == -1) {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Did not find constant input for %d : AddP.", phi->_idx, use->_idx);)
         return false;
@@ -624,8 +655,7 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
         }
       }
     }
-
-    if (use->is_DecodeN()) {
+    else if (use->is_DecodeN()) {
       for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
         Node* use_use = use->fast_out(j);
 
@@ -644,6 +674,15 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
         }
       }
     }
+    else {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. One of the uses is: %d %s", phi->_idx, use->_idx, use->Name());)
+      return false;
+    }
+  }
+
+  if (mixed_klasses && has_call_as_user) {
+    NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Inputs aren't of the same instance klass.", phi->_idx);)
+    return false;
   }
 
   NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will reduce Phi %d during invocation %d", phi->_idx, _invocation);)
@@ -2392,6 +2431,11 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
   if (OptimizePtrCompare) {
     for (int i = 0; i < ptr_cmp_worklist.length(); i++) {
       Node *n = ptr_cmp_worklist.at(i);
+      // The CmpP/N here might be using an allocation merge (Phi).
+      // These cases will be handled during macro node elimination.
+      if (n->in(1)->is_ReducedAllocationMerge() || n->in(2)->is_ReducedAllocationMerge()) {
+        continue;
+      }
       const TypeInt* tcmp = optimize_ptr_compare(n);
       if (tcmp->singleton()) {
         Node* cmp = igvn->makecon(tcmp);

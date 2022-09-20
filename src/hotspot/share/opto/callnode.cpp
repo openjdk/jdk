@@ -1720,10 +1720,50 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
     init_req(i, input);
   }
 
+  initialize_memory_edges(C, igvn);
+
+  this->raise_bottom_type(ram_t);
+  igvn->set_type(this, ram_t);
+
+  C->add_macro_node(this);
+}
+
+void ReducedAllocationMergeNode::initialize_memory_edges(Compile* C, PhaseIterGVN* igvn) {
+  Node* region            = this->in(0);
+  ciInstanceKlass* iklass = _klass->as_instance_klass();
+  int nfields             = iklass->nof_nonstatic_fields();
+
+  // Make sure we have an entry for each base+field combination
+  register_offset_of_all_fields(NULL);
+
+  // Search for a memory edge matching base+field alias_index
+  for (uint i = 1, matches = 0; i <= _number_of_bases; i++) {
+    Node* base = this->in(i);
+    const TypeOopPtr *base_t = igvn->type(base)->isa_oopptr();
+
+    if (base_t != NULL) {
+      int base_offset = base_idx(base, 0);
+
+      for (int j = 0; j < nfields; j++) {
+        ciField* field          = iklass->nonstatic_field_at(j);
+        int offset              = field->offset();
+        const TypeOopPtr *tinst = base_t->add_offset(offset)->isa_oopptr();
+        const int alias_idx     = C->get_alias_index(tinst);
+        const int fields_offset = field_idx(offset);
+
+        for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+          Node* memory = region->fast_out(i);
+          if (memory->is_Phi() && C->get_alias_index(memory->adr_type()) == alias_idx) {
+            set_req(fields_offset + base_offset, memory);
+          }
+        }
+      }
+    }
+  }
+
   // Try to find a BOT memory Phi coming from same region
-  Node* reg = phi->region();
-  for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
-    Node* n = reg->fast_out(i);
+  for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+    Node* n = region->fast_out(i);
     if (n->is_Phi() && n->bottom_type() == Type::MEMORY) {
       if (C->get_alias_index(n->adr_type()) == Compile::AliasIdxBot) {
         register_offset_of_all_fields(n);
@@ -1731,11 +1771,6 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
       }
     }
   }
-
-  this->raise_bottom_type(ram_t);
-  igvn->set_type(this, ram_t);
-
-  C->add_macro_node(this);
 }
 
 void ReducedAllocationMergeNode::register_offset_of_all_fields(Node* memory) {
@@ -1750,21 +1785,27 @@ void ReducedAllocationMergeNode::register_offset_of_all_fields(Node* memory) {
   }
 }
 
-void ReducedAllocationMergeNode::register_offset(int offset, Node* memory, bool override) {
+void ReducedAllocationMergeNode::register_offset(int offset, Node* memory) {
   assert(offset > 0, "Offset of use should be >= 0.");
 
   if ((*_fields_and_memories)[(void*)(intptr_t)offset] == NULL) {
     _fields_and_memories->Insert((void*)(intptr_t)offset, (void*)(intptr_t)req());
 
     for (uint b_idx = 1; b_idx <= _number_of_bases; ++b_idx) {
-      add_req(memory->is_Phi() && memory->in(0) == in(0) ? memory->in(b_idx) : memory);
+      add_req( (memory != NULL && memory->is_Phi() && memory->in(0) == in(0)) ?
+                    memory->in(b_idx) :
+                    memory);
     }
   }
-  else if (override) {
+  else {
     int fidx = field_idx(offset);
 
     for (uint b_idx = 1; b_idx <= _number_of_bases; ++b_idx) {
-      set_req(fidx, memory->is_Phi() && memory->in(0) == in(0) ? memory->in(b_idx) : memory);
+      if (in(fidx) == NULL) {
+        set_req(fidx, (memory != NULL && memory->is_Phi() && memory->in(0) == in(0)) ?
+                        memory->in(b_idx) :
+                        memory);
+      }
       fidx++;
     }
   }
@@ -1776,7 +1817,7 @@ void ReducedAllocationMergeNode::register_addp(AddPNode* addp) {
 
   int offset = addp->in(AddPNode::Offset)->find_intptr_t_con(-1);
   Node* memory = addp->raw_out(0)->in(LoadNode::Memory);
-  register_offset(offset, memory, /*override*/true);
+  register_offset(offset, memory);
 }
 
 bool ReducedAllocationMergeNode::register_use(Node* n) {
@@ -1869,6 +1910,8 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(int field, PhaseIterGVN* i
   int field_index  = field_idx(field);
   const Type *t    = Type::TOP;
 
+  ttyLocker ttyl;
+
   for (uint i = 1; i <= _number_of_bases; i++) {
     Node* input = in(field_index);
 
@@ -1880,6 +1923,7 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(int field, PhaseIterGVN* i
       memory = (memory->is_Phi() && memory->in(0) == in(0)) ? memory->in(i) : memory;
       input = make_load(this->in(0)->in(i), in(i), memory, field, igvn);
       if (input == NULL) return NULL;
+      tty->print("Load for value:" ); input->dump();
     }
     // Somehow the base was eliminated and we still have a memory reference left
     else if (input->bottom_type()->base() == Type::Memory) {
@@ -1899,6 +1943,8 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(int field, PhaseIterGVN* i
 
   phi->raise_bottom_type(t);
   igvn->register_new_node_with_optimizer(phi);
+
+  tty->print("Value Phi:" ); phi->dump();
 
   return phi;
 }

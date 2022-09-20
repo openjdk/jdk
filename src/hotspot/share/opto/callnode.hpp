@@ -1140,9 +1140,10 @@ public:
     return (*_fields_and_memories)[(void*)(intptr_t)offset] != NULL;
   }
 
+  void initialize_memory_edges(Compile* C, PhaseIterGVN* igvn);
   void register_addp(AddPNode* addp);
   void register_offset_of_all_fields(Node* memory);
-  void register_offset(int offset, Node* memory, bool override = false);
+  void register_offset(int offset, Node* memory);
   bool register_use(Node* n);
 
   Node* memory_for(int field, Node* base, uint previous_matches) const;

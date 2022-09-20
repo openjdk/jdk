@@ -302,7 +302,7 @@ public class AllocationMergesTests {
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-    @IR(counts = { IRNode.ALLOC, "2" })
+    @IR(failOn = { IRNode.ALLOC })
     int testSubclasses(boolean c1, boolean c2, int x, int y, int w, int z) {
         new A();
         Root s = new Home(x, y);
@@ -320,6 +320,30 @@ public class AllocationMergesTests {
         }
 
         new G();
+
+        return s.a;
+    }
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "2" })
+    int testSubclassesTrapping(boolean c1, boolean c2, int x, int y, int w, int z) {
+        new A();
+        Root s = new Home(x, y);
+        new B();
+
+        if (c1) {
+            new C();
+            s = new Etc("Hello");
+            new D();
+        }
+        else {
+            new E();
+            s = new Usr(y, x, z);
+            new F();
+        }
+
+        dummy();
 
         return s.a;
     }
@@ -753,6 +777,10 @@ public class AllocationMergesTests {
 
 
     // ------------------ Utility for Testing ------------------- //
+
+    @DontCompile
+    static void dummy() {
+    }
 
     @DontCompile
     static int dummy(Point p) {
