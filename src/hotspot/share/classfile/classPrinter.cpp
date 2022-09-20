@@ -159,39 +159,39 @@ void ClassPrinter::print_help() {
   tty->cr();
 }
 
-void ClassPrinter::print_classes(const char* class_name_pattern, int flags) {
+void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outputStream* os) {
   print_help();
-  KlassPrintClosure closure(class_name_pattern, NULL, NULL, flags, tty);
+  KlassPrintClosure closure(class_name_pattern, NULL, NULL, flags, os);
   ClassLoaderDataGraph::classes_do(&closure);
 }
 
 void ClassPrinter::print_methods(const char* class_name_pattern,
-                                 const char* method_name_pattern, int flags) {
+                                 const char* method_name_pattern, int flags, outputStream* os) {
   print_help();
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, NULL,
-                            flags | PRINT_METHOD_NAME, tty);
+                            flags | PRINT_METHOD_NAME, os);
   ClassLoaderDataGraph::classes_do(&closure);
 
 }
 
 void ClassPrinter::print_methods(const char* class_name_pattern,
                                  const char* method_name_pattern,
-                                 const char* method_signature_pattern, int flags) {
+                                 const char* method_signature_pattern, int flags, outputStream* os) {
   print_help();
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
-                            flags | PRINT_METHOD_NAME, tty);
+                            flags | PRINT_METHOD_NAME, os);
   ClassLoaderDataGraph::classes_do(&closure);
 }
 
-void ClassPrinter::print_class(InstanceKlass* k, int flags) {
+void ClassPrinter::print_class(InstanceKlass* k, int flags, outputStream* os) {
   print_help();
-  KlassPrintClosure closure(NULL, NULL, NULL, flags, tty);
+  KlassPrintClosure closure(NULL, NULL, NULL, flags, os);
   closure.print_instance_klass(k);
 }
 
-void ClassPrinter::print_method(Method* m, int flags) {
+void ClassPrinter::print_method(Method* m, int flags, outputStream* os) {
   print_help();
-  KlassPrintClosure closure(NULL, "", "", flags | PRINT_METHOD_NAME | PRINT_BYTECODE, tty);
+  KlassPrintClosure closure(NULL, "", "", flags | PRINT_METHOD_NAME | PRINT_BYTECODE, os);
   closure.print_instance_klass(m->method_holder());
   closure.print_method(m);
 }

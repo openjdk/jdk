@@ -30,6 +30,7 @@
 
 class InstanceKlass;
 class Method;
+class outputStream;
 class Symbol;
 
 // ClassPrinter is intended to be called from findclass/findmethod/findmethod2
@@ -59,15 +60,15 @@ public:
   };
 
   // flags must be OR'ed from ClassPrinter::Mode for the next 5 functions
-  static void print_classes(const char* class_name_pattern, int flags);
+  static void print_classes(const char* class_name_pattern, int flags, outputStream* os);
   static void print_methods(const char* class_name_pattern,
-                            const char* method_name_pattern, int flags);
+                            const char* method_name_pattern, int flags, outputStream* os);
   static void print_methods(const char* class_name_pattern,
                             const char* method_name_pattern,
-                            const char* method_signature_pattern, int flags);
+                            const char* method_signature_pattern, int flags, outputStream* os);
 
-  static void print_class(InstanceKlass* k, int flags);
-  static void print_method(Method* k, int flags);
+  static void print_class(InstanceKlass* k, int flags, outputStream* os);
+  static void print_method(Method* k, int flags, outputStream* os);
 
 
   static bool has_mode(int flags, Mode mode) {

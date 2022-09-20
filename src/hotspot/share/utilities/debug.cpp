@@ -644,13 +644,13 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
 //   call findmethod2("*ang/Object*", "wait", "(J*", 0x1)
 extern "C" JNIEXPORT void findclass(const char* class_name_pattern, int flags) {
   Command c("findclass");
-  ClassPrinter::print_classes(class_name_pattern, flags);
+  ClassPrinter::print_classes(class_name_pattern, flags, tty);
 }
 
 extern "C" JNIEXPORT void findmethod(const char* class_name_pattern,
                                      const char* method_name_pattern, int flags) {
   Command c("findmethod");
-  ClassPrinter::print_methods(class_name_pattern, method_name_pattern, flags);
+  ClassPrinter::print_methods(class_name_pattern, method_name_pattern, flags, tty);
 }
 
 extern "C" JNIEXPORT void findmethod2(const char* class_name_pattern,
@@ -658,17 +658,17 @@ extern "C" JNIEXPORT void findmethod2(const char* class_name_pattern,
                                       const char* method_signature_pattern, int flags) {
   Command c("findmethod2");
   ClassPrinter::print_methods(class_name_pattern, method_name_pattern,
-                              method_signature_pattern, flags);
+                              method_signature_pattern, flags, tty);
 }
 
 extern "C" JNIEXPORT void printclass(intptr_t k, int flags) {
   Command c("printclass");
-  ClassPrinter::print_class((InstanceKlass*)k, flags);
+  ClassPrinter::print_class((InstanceKlass*)k, flags, tty);
 }
 
 extern "C" JNIEXPORT void printmethod(intptr_t m, int flags) {
   Command c("printmethod");
-  ClassPrinter::print_method((Method*)m, flags);
+  ClassPrinter::print_method((Method*)m, flags, tty);
 }
 
 // Need method pointer to find bcp
