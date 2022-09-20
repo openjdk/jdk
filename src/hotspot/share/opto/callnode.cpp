@@ -1923,7 +1923,6 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(int field, PhaseIterGVN* i
       memory = (memory->is_Phi() && memory->in(0) == in(0)) ? memory->in(i) : memory;
       input = make_load(this->in(0)->in(i), in(i), memory, field, igvn);
       if (input == NULL) return NULL;
-      tty->print("Load for value:" ); input->dump();
     }
     // Somehow the base was eliminated and we still have a memory reference left
     else if (input->bottom_type()->base() == Type::Memory) {
@@ -1943,8 +1942,6 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(int field, PhaseIterGVN* i
 
   phi->raise_bottom_type(t);
   igvn->register_new_node_with_optimizer(phi);
-
-  tty->print("Value Phi:" ); phi->dump();
 
   return phi;
 }
