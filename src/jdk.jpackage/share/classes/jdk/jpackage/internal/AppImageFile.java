@@ -61,13 +61,14 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 public final class AppImageFile {
 
     // These values will be loaded from AppImage xml file.
-    private final String creatorVersion;
-    private final String creatorPlatform;
+    private final Path appImageDir;
     private final String appVersion;
     private final String launcherName;
     private final String mainClass;
     private final List<LauncherInfo> addLauncherInfos;
-    private boolean signed;
+    private final String creatorVersion;
+    private final String creatorPlatform;
+    private final boolean signed;
     private final boolean appStore;
 
     private static final String FILENAME = ".jpackage.xml";
@@ -81,11 +82,8 @@ public final class AppImageFile {
             String creatorVersion, String creatorPlatform, String signedStr,
             String appStoreStr) {
         boolean isValid = true;
-        if (!Objects.equals(getVersion(), creatorVersion)) {
-            isValid = false;
-        }
 
-        if (!Objects.equals(getPlatform(), creatorPlatform)) {
+        if (appImageDir == null) {
             isValid = false;
         }
 
@@ -107,6 +105,14 @@ public final class AppImageFile {
             }
         }
 
+        if (!Objects.equals(getVersion(), creatorVersion)) {
+            isValid = false;
+        }
+
+        if (!Objects.equals(getPlatform(), creatorPlatform)) {
+            isValid = false;
+        }
+
         if (signedStr == null ||
                 !("true".equals(signedStr) || "false".equals(signedStr))) {
             isValid = false;
@@ -123,6 +129,7 @@ public final class AppImageFile {
                 AppImageFile.getPathInAppImage(appImageDir)));
         }
 
+        this.appImageDir = appImageDir;
         this.appVersion = appVersion;
         this.launcherName = launcherName;
         this.mainClass = mainClass;
@@ -140,6 +147,13 @@ public final class AppImageFile {
      */
     List<LauncherInfo> getAddLaunchers() {
         return addLauncherInfos;
+    }
+
+    /**
+     * Returns application image directory. Never returns null.
+     */
+    Path getAppImageDir() {
+        return appImageDir;
     }
 
     /**
@@ -163,10 +177,6 @@ public final class AppImageFile {
         return mainClass;
     }
 
-    public void setIsSigned(boolean v) {
-        signed = v;
-    }
-
     public boolean isSigned() {
         return signed;
     }
@@ -187,6 +197,27 @@ public final class AppImageFile {
     }
 
     /**
+     * Saves file with application image info in application image using values
+     * from current instance.
+     * @param appImageDir - path to application image
+     * @throws IOException
+     */
+    void save(Path appImageDir) throws IOException {
+        AppImageFile.save(appImageDir, null, this);
+    }
+
+    /**
+     * Saves file with application image info in application image.
+     * @param appImageDir - path to application image
+     * @param params - parameters used to generate application image
+     * @throws IOException
+     */
+    static void save(Path appImageDir, Map<String, Object> params)
+            throws IOException {
+        AppImageFile.save(appImageDir, params, null);
+    }
+
+    /**
      * Saves file with application image info in application image using params
      * or appImage. Both params or appImage cannot be valid.
      * @param appImageDir - path to application image
@@ -196,7 +227,7 @@ public final class AppImageFile {
      * @throws IllegalArgumentException - If both params and appImage are null or
      *                                    If both params and appImage are not null
      */
-    static void save(Path appImageDir,
+    private static void save(Path appImageDir,
             Map<String, Object> params,
             AppImageFile appImage) throws IOException {
         if ((params == null && appImage == null) ||
@@ -335,10 +366,20 @@ public final class AppImageFile {
         }
     }
 
-    private static String getAttribute(Node item, String attr) {
-        NamedNodeMap attrs = item.getAttributes();
-        Node attrNode = attrs.getNamedItem(attr);
-        return ((attrNode == null) ? null : attrNode.getNodeValue());
+    /**
+     * Returns copy of AppImageFile, but with signed set to true if AppImageFile
+     * is not marked as signed. If AppImageFile already signed it will return
+     * instance to itself.
+     * @return
+     */
+    public AppImageFile copyAsSigned() {
+        if (isSigned()) {
+            return this;
+        }
+
+        return new AppImageFile(getAppImageDir(), getAppVersion(),
+                getLauncherName(), getMainClass(), getAddLaunchers(),
+                getVersion(), getPlatform(), "true", String.valueOf(isAppStore()));
     }
 
     public static Document readXml(Path appImageDir) throws IOException {
@@ -429,6 +470,12 @@ public final class AppImageFile {
             this.shortcut = !"false".equals(getAttribute(node, "shortcut"));
             this.menu = !"false".equals(getAttribute(node, "menu"));
             this.service = !"false".equals(getAttribute(node, "service"));
+        }
+
+        private String getAttribute(Node item, String attr) {
+            NamedNodeMap attrs = item.getAttributes();
+            Node attrNode = attrs.getNamedItem(attr);
+            return ((attrNode == null) ? null : attrNode.getNodeValue());
         }
 
         public String getName() {

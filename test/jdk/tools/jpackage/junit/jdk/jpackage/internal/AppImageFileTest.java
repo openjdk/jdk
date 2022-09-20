@@ -170,6 +170,21 @@ public class AppImageFileTest {
     }
 
     @Test
+    public void testCopyAsSigned() throws IOException {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "Foo");
+        params.put("main-class", "main.Class");
+        params.put("description", "Duck App Description");
+        params.put("mac-sign", Boolean.FALSE);
+
+        AppImageFile aif = create(params);
+        Assert.assertFalse(aif.isSigned());
+
+        aif = aif.copyAsSigned();
+        Assert.assertTrue(aif.isSigned());
+    }
+
+    @Test
     public void testMacAppStore() throws IOException {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("name", "Foo");
@@ -211,7 +226,7 @@ public class AppImageFileTest {
     }
 
     private AppImageFile create(Map<String, Object> params) throws IOException {
-        AppImageFile.save(tempFolder.getRoot().toPath(), params, null);
+        AppImageFile.save(tempFolder.getRoot().toPath(), params);
         return AppImageFile.load(tempFolder.getRoot().toPath());
     }
 

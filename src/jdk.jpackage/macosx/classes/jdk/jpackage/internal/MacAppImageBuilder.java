@@ -271,19 +271,18 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             // Mark app image as signed, before we signing it.
             AppImageFile appImageFile =
                 AppImageFile.load(predefinedAppImage);
-            appImageFile.setIsSigned(true);
-            AppImageFile.save(predefinedAppImage, null, appImageFile);
+            if (!appImageFile.isSigned()) {
+                appImageFile.copyAsSigned().save(predefinedAppImage);
+            } else {
+                appImageFile = null;
+            }
 
-            boolean markUnsigned = false;
             try {
-                markUnsigned = !doSigning(params);
+                doSigning(params);
             } catch (Exception ex) {
-                markUnsigned = true;
-            } finally {
-                // Undo marking image as signed if needed.
-                if (markUnsigned) {
-                    appImageFile.setIsSigned(false);
-                    AppImageFile.save(predefinedAppImage, null, appImageFile);
+                // Restore original app image file if signing failed
+                if (appImageFile != null) {
+                    appImageFile.save(predefinedAppImage);
                 }
             }
 
@@ -382,7 +381,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
     }
 
-    private boolean doSigning(Map<String, ? super Object> params)
+    private void doSigning(Map<String, ? super Object> params)
             throws IOException {
 
         if (Optional.ofNullable(
@@ -406,10 +405,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             // Calling signAppBundle() without signingIdentity will result in
             // unsigning app bundle
             signAppBundle(params, root, null, null, null);
-            return false; // Since we unsigned app image
         }
-
-        return true;
     }
 
     private static String getLauncherName(Map<String, ? super Object> params) {

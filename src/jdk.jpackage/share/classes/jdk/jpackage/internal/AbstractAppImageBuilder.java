@@ -77,7 +77,7 @@ public abstract class AbstractAppImageBuilder {
                     appLayout.appDirectory());
         }
 
-        AppImageFile.save(root, params, null);
+        AppImageFile.save(root, params);
 
         List<String> items = APP_CONTENT.fetchFrom(params);
         for (String item : items) {
