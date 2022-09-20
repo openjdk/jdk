@@ -236,10 +236,12 @@ namespace AccessInternal {
 
   // This function implements the above DecoratorFixup rules, but without meta
   // programming for code generation that does not use templates.
-  inline DecoratorSet decorator_fixup(DecoratorSet input_decorators) {
+  inline DecoratorSet decorator_fixup(DecoratorSet input_decorators, BasicType type) {
+    // Some call-sites don't specify that the access is performed on oops
+    DecoratorSet with_oop_decorators = input_decorators |= (is_reference_type(type) ? INTERNAL_VALUE_IS_OOP : 0);
     // If no reference strength has been picked, then strong will be picked
-    DecoratorSet ref_strength_default = input_decorators |
-      (((ON_DECORATOR_MASK & input_decorators) == 0 && (INTERNAL_VALUE_IS_OOP & input_decorators) != 0) ?
+    DecoratorSet ref_strength_default = with_oop_decorators |
+      (((ON_DECORATOR_MASK & with_oop_decorators) == 0 && (INTERNAL_VALUE_IS_OOP & input_decorators) != 0) ?
        ON_STRONG_OOP_REF : DECORATORS_NONE);
     // If no memory ordering has been picked, unordered will be picked
     DecoratorSet memory_ordering_default = ref_strength_default |

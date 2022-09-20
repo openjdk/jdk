@@ -358,7 +358,7 @@ void C2Access::fixup_decorators() {
     _decorators |= MO_RELAXED; // Force the MO_RELAXED decorator with AlwaysAtomicAccess
   }
 
-  _decorators = AccessInternal::decorator_fixup(_decorators);
+  _decorators = AccessInternal::decorator_fixup(_decorators, _type);
 
   if (is_read && !is_write && anonymous) {
     // To be valid, unsafe loads may depend on other conditions than
