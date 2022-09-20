@@ -526,6 +526,21 @@ void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
   }
 }
 
+void HeapRegionManager::iterate(HeapRegionIndexClosure* blk) const {
+  uint len = reserved_length();
+
+  for (uint i = 0; i < len; i++) {
+    if (!is_available(i)) {
+      continue;
+    }
+    bool res = blk->do_heap_region_index(i);
+    if (res) {
+      blk->set_incomplete();
+      return;
+    }
+  }
+}
+
 uint HeapRegionManager::find_highest_free(bool* expanded) {
   // Loop downwards from the highest region index, looking for an
   // entry which is either free or not yet committed.  If not yet

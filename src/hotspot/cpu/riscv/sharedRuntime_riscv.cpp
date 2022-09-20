@@ -1677,7 +1677,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Unbox oop result, e.g. JNIHandles::resolve result.
   if (is_reference_type(ret_type)) {
-    __ resolve_jobject(x10, xthread, t1);
+    __ resolve_jobject(x10, x11, x12);
   }
 
   if (CheckJNICalls) {
