@@ -128,7 +128,7 @@ public sealed interface Signature {
 
         /** {@return the class name, as a symbolic descriptor} */
         default ClassDesc classDesc() {
-            return Util.toClassDesc(className());
+            return ClassDesc.ofInternalName(className());
         }
 
         /** {@return the type arguments of the class} */

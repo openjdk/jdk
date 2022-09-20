@@ -25,9 +25,9 @@
 package jdk.classfile.constantpool;
 
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import jdk.classfile.impl.ConcreteEntry;
 import jdk.classfile.impl.TemporaryConstantPool;
@@ -41,6 +41,11 @@ import jdk.classfile.impl.Util;
 sealed public interface ClassEntry
         extends LoadableConstantEntry
         permits ConcreteEntry.ConcreteClassEntry {
+
+    @Override
+    default ConstantDesc constantValue() {
+        return asSymbol();
+    }
 
     /**
      * {@return the UTF8 constant pool entry for the class name}

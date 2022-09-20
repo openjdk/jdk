@@ -9,7 +9,6 @@ import org.testng.annotations.Test;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
-import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,8 +17,8 @@ import static org.testng.Assert.*;
 
 public class ClassEntryTest {
 
-    static final List<ClassEntry> additionCE = List.copyOf(ClassEntry.addingSymbols(List.of(), new ClassDesc[] {ConstantDescs.CD_void, ConstantDescs.CD_Enum, ConstantDescs.CD_Class}));
-    static final List<ClassDesc> additionCD = List.of(ConstantDescs.CD_void, ConstantDescs.CD_Enum, ConstantDescs.CD_Class);
+    static final List<ClassEntry> additionCE = List.copyOf(ClassEntry.addingSymbols(List.of(), new ClassDesc[] {ConstantDescs.CD_Void, ConstantDescs.CD_Enum, ConstantDescs.CD_Class}));
+    static final List<ClassDesc> additionCD = List.of(ConstantDescs.CD_Void, ConstantDescs.CD_Enum, ConstantDescs.CD_Class);
     static final List<ClassEntry> base = List.copyOf(additionCE);
 
     @Test

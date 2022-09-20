@@ -147,12 +147,12 @@ public final class ClassHierarchyImpl {
                         boolean isInterface = (in.readUnsignedShort() & 0x0200) != 0;
                         in.skipBytes(2);
                         int superIndex = in.readUnsignedShort();
-                        var superClass = superIndex > 0 ? Util.toClassDesc(cpStrings[cpClasses[superIndex]]) : null;
+                        var superClass = superIndex > 0 ? ClassDesc.ofInternalName(cpStrings[cpClasses[superIndex]]) : null;
                         res = new ClassHierarchyInfo(classDesc, isInterface, superClass);
                         int interfCount = in.readUnsignedShort();
                         for (int i=0; i<interfCount; i++) {
                             //all listed interfaces are cached without resolution
-                            var intDesc = Util.toClassDesc(cpStrings[cpClasses[in.readUnsignedShort()]]);
+                            var intDesc = ClassDesc.ofInternalName(cpStrings[cpClasses[in.readUnsignedShort()]]);
                             resolvedCache.put(intDesc, new ClassHierarchyResolver.ClassHierarchyInfo(intDesc, true, null));
                         }
                     } catch (Exception ignore) {

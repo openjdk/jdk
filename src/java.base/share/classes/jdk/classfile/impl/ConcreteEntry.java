@@ -548,11 +548,6 @@ public abstract sealed class ConcreteEntry {
         }
 
         @Override
-        public ConstantDesc constantValue() {
-            return ClassDesc.ofDescriptor(Util.classToDescriptor(asInternalName()));
-        }
-
-        @Override
         public ClassEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.classEntry(ref1);
         }
@@ -876,7 +871,7 @@ public abstract sealed class ConcreteEntry {
                 staticArgs[i] = args.get(i).constantValue();
 
             return DynamicConstantDesc.ofCanonical(bootstrap().bootstrapMethod().asSymbol(),
-                                                   nameAndType().name().stringValue(), ClassDesc.of(Util.toClassString(Util.descriptorToClass(nameAndType().type().stringValue()))), staticArgs);
+                                                   nameAndType().name().stringValue(), ClassDesc.ofDescriptor(nameAndType().type().stringValue()), staticArgs);
         }
     }
 

@@ -152,26 +152,19 @@ public class Util {
         return s.substring(s.indexOf(')') + 1);
     }
 
-    public static String descriptorToClass(String type) {
-        return type.startsWith("L") && type.charAt(type.length() - 1) == ';'
-               ? type.substring(1, type.length() - 1)
-               : type;
-    }
-
-    public static String classToDescriptor(String c) {
-        return (c.startsWith("[") || (c.startsWith("L") && c.charAt(c.length() - 1) == ';'))
-                ? c
-                : "L" + c + ";";
-    }
-
     public static String toInternalName(ClassDesc cd) {
-        return descriptorToClass(cd.descriptorString());
+        var desc = cd.descriptorString();
+        return switch (desc.charAt(0)) {
+            case '[' -> desc;
+            case 'L' -> desc.substring(1, desc.length() - 1);
+            default -> throw new IllegalArgumentException(desc);
+        };
     }
 
-    public static ClassDesc toClassDesc(String internalName) {
-        return ClassDesc.ofDescriptor((internalName.charAt(0) == '[')
-                                      ? internalName
-                                      : "L" + internalName + ";");
+    public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {
+        return classInternalNameOrArrayDesc.charAt(0) == '['
+                ? ClassDesc.ofDescriptor(classInternalNameOrArrayDesc)
+                : ClassDesc.ofInternalName(classInternalNameOrArrayDesc);
     }
 
     public static<T, U> List<U> mappedList(List<? extends T> list, Function<T, U> mapper) {
