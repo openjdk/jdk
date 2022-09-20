@@ -59,14 +59,13 @@ public class CompressedSparceDataReadStream extends CompressedReadStream {
     if (readZero()) {
       return 0;
     }
-    int result = 0;
-    while (true) {
-      byte b = readByteImpl();
-      result = (result << 6) | (b & 0x3f);
-      if ((b & 0xC0) == 0x80) {
-        return result;
-      }
+    byte b = readByteImpl();
+    int result = b & 0x3f;
+    for (int i = 0; 0 != ((i == 0) ? (b & 0x40) : (b & 0x80)); i++) {
+        b = readByteImpl();
+        result |= ((b & 0x7f) << (6 + 7 * i));
     }
+    return result;
   }
 
   public boolean readBoolean() { return readInt() != 0; }

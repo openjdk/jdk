@@ -135,14 +135,18 @@ jint CompressedSparseDataReadStream::read_int() {
   if (read_zero()) {
     return 0;
   }
-  uint32_t result = 0;
-  while (true) {
-    uint8_t b = read_byte_impl();
-    result = (result << 6) | (b & 0x3f);
-    if ((b & 0xC0) == 0x80) {
-      return (jint)result;
-    }
+  // integer value encoded as a sequence of 1 to 5 bytes
+  // - the most frequent case (0 < x < 64) is encoded in one byte
+  // - the payload of the first byte is 6 bits, the payload of the following bytes is 7 bits
+  // - the most significant bit in the first byte is occupied by a zero flag
+  // - each byte has a bit indicating whether it is the last byte in the sequence
+  uint8_t b = read_byte_impl();
+  juint result = b & 0x3f;
+  for (int i = 0; (i == 0) ? (b & 0x40) : (b & 0x80); i++) {
+    b = read_byte_impl();
+    result |= ((b & 0x7f) << (6 + 7 * i));
   }
+  return (jint)result;
 }
 
 int CompressedSparseDataWriteStream::position() {
@@ -175,11 +179,13 @@ void CompressedSparseDataWriteStream::write_int(juint val) {
     write_zero();
     return;
   }
-  for (int i = 5; i > 0; i--) {
-    uint32_t v = (val >> (6 * i));
-    if (v != 0) {
-      write_byte_impl(0xC0 | (v & 0x3f));
-    }
+  int bit0 = 0x80; // first byte upper bit is set to indicate a value is not zero
+  juint next = val >> 6;
+  int bit1 = (next != 0) ? 0x40 : 0; // bit indicating a last byte
+  write_byte_impl(bit0 | bit1 | (val & 0x3f));
+  while (next != 0) {
+    bit1 = (next >> 7) ? 0x80 : 0;
+    write_byte_impl(bit1 | (next & 0x7f));
+    next >>= 7;
   }
-  write_byte_impl(0x80 | (val & 0x3f));
 }
