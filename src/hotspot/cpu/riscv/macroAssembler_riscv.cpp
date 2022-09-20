@@ -2439,6 +2439,9 @@ void MacroAssembler::far_jump(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+        || entry.rspec().type() == relocInfo::runtime_call_type
+        || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   int32_t offset = 0;
   if (far_branches()) {
     // We can use auipc + jalr here because we know that the total size of
@@ -2454,6 +2457,9 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+        || entry.rspec().type() == relocInfo::runtime_call_type
+        || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   int32_t offset = 0;
   if (far_branches()) {
     // We can use auipc + jalr here because we know that the total size of

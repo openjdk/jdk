@@ -598,8 +598,13 @@ public:
 
   // Emit a direct call/jump if the entry address will always be in range,
   // otherwise a far call/jump.
-  // Jumps that can reach anywhere in the code cache.
-  // Trashes tmp.
+  // The address must be inside the code cache.
+  // Supported entry.rspec():
+  // - relocInfo::external_word_type
+  // - relocInfo::runtime_call_type
+  // - relocInfo::none
+  // In the case of a far call/jump, the entry address is put in the tmp register.
+  // The tmp register is invalidated.
   void far_call(Address entry, Register tmp = t0);
   void far_jump(Address entry, Register tmp = t0);
 
