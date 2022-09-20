@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,14 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestChar {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attempts with delay on failure.
+    // Be mindful of worst-case total time on test, which would be at
+    // roughly (delay*attempts) milliseconds.
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 100);
+    static final int WEAK_DELAY_MS = Math.max(1, Integer.getInteger("weakDelay", 1));
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -84,6 +91,16 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(char[].class);
         int ascale = UNSAFE.arrayIndexScale(char[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay() {
+        try {
+            if (WEAK_DELAY_MS > 0) {
+                Thread.sleep(WEAK_DELAY_MS);
+            }
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static char static_v;
@@ -258,40 +275,72 @@ public class JdkInternalMiscUnsafeAccessTestChar {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetCharPlain(base, offset, '\u0123', '\u4567');
+                if (!success) weakDelay();
             }
-            assertEquals(success, true, "weakCompareAndSetPlain char");
+            assertEquals(success, true, "success weakCompareAndSetPlain char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u4567', "weakCompareAndSetPlain char value");
+            assertEquals(x, '\u4567', "success weakCompareAndSetPlain char value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetCharPlain(base, offset, '\u0123', '\u89AB');
+            assertEquals(success, false, "failing weakCompareAndSetPlain char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u4567', "failing weakCompareAndSetPlain char value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetCharAcquire(base, offset, '\u4567', '\u0123');
+                if (!success) weakDelay();
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire char");
+            assertEquals(success, true, "success weakCompareAndSetAcquire char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u0123', "weakCompareAndSetAcquire char");
+            assertEquals(x, '\u0123', "success weakCompareAndSetAcquire char");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetCharAcquire(base, offset, '\u4567', '\u89AB');
+            assertEquals(success, false, "failing weakCompareAndSetAcquire char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "failing weakCompareAndSetAcquire char value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetCharRelease(base, offset, '\u0123', '\u4567');
+                if (!success) weakDelay();
             }
-            assertEquals(success, true, "weakCompareAndSetRelease char");
+            assertEquals(success, true, "success weakCompareAndSetRelease char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u4567', "weakCompareAndSetRelease char");
+            assertEquals(x, '\u4567', "success weakCompareAndSetRelease char");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetCharRelease(base, offset, '\u0123', '\u89AB');
+            assertEquals(success, false, "failing weakCompareAndSetRelease char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u4567', "failing weakCompareAndSetRelease char value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetChar(base, offset, '\u4567', '\u0123');
+                if (!success) weakDelay();
             }
-            assertEquals(success, true, "weakCompareAndSet char");
+            assertEquals(success, true, "success weakCompareAndSet char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u0123', "weakCompareAndSet char");
+            assertEquals(x, '\u0123', "success weakCompareAndSet char");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetChar(base, offset, '\u4567', '\u89AB');
+            assertEquals(success, false, "failing weakCompareAndSet char");
+            char x = UNSAFE.getChar(base, offset);
+            assertEquals(x, '\u0123', "failing weakCompareAndSet char value");
         }
 
         UNSAFE.putChar(base, offset, '\u4567');

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +142,7 @@ class MallocMemorySnapshot : public ResourceObj {
 
  private:
   MallocMemory      _malloc[mt_number_of_types];
-  MemoryCounter     _tracking_header;
+  MemoryCounter     _all_mallocs;
 
 
  public:
@@ -150,14 +151,20 @@ class MallocMemorySnapshot : public ResourceObj {
     return &_malloc[index];
   }
 
-  inline MemoryCounter* malloc_overhead() {
-    return &_tracking_header;
+  inline size_t malloc_overhead() const {
+    return _all_mallocs.count() * sizeof(MallocHeader);
   }
 
   // Total malloc invocation count
-  size_t total_count() const;
+  size_t total_count() const {
+    return _all_mallocs.count();
+  }
+
   // Total malloc'd memory amount
-  size_t total() const;
+  size_t total() const {
+    return _all_mallocs.size() + malloc_overhead() + total_arena();
+  }
+
   // Total malloc'd memory used by arenas
   size_t total_arena() const;
 
@@ -171,7 +178,7 @@ class MallocMemorySnapshot : public ResourceObj {
     // copy is going on, because their size is adjusted using this
     // buffer in make_adjustment().
     ThreadCritical tc;
-    s->_tracking_header = _tracking_header;
+    s->_all_mallocs = _all_mallocs;
     for (int index = 0; index < mt_number_of_types; index ++) {
       s->_malloc[index] = _malloc[index];
     }
@@ -190,15 +197,46 @@ class MallocMemorySummary : AllStatic {
   // Reserve memory for placement of MallocMemorySnapshot object
   static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
+  // Malloc Limit handling (-XX:MallocLimit)
+  static size_t _limits_per_category[mt_number_of_types];
+  static size_t _total_limit;
+
+  static void initialize_limit_handling();
+  static void total_limit_reached(size_t size, size_t limit);
+  static void category_limit_reached(size_t size, size_t limit, MEMFLAGS flag);
+
+  static void check_limits_after_allocation(MEMFLAGS flag) {
+    // We can only either have a total limit or category specific limits,
+    // not both.
+    if (_total_limit != 0) {
+      size_t s = as_snapshot()->total();
+      if (s > _total_limit) {
+        total_limit_reached(s, _total_limit);
+      }
+    } else {
+      size_t per_cat_limit = _limits_per_category[(int)flag];
+      if (per_cat_limit > 0) {
+        const MallocMemory* mm = as_snapshot()->by_type(flag);
+        size_t s = mm->malloc_size() + mm->arena_size();
+        if (s > per_cat_limit) {
+          category_limit_reached(s, per_cat_limit, flag);
+        }
+      }
+    }
+  }
+
  public:
    static void initialize();
 
    static inline void record_malloc(size_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_malloc(size);
+     as_snapshot()->_all_mallocs.allocate(size);
+     check_limits_after_allocation(flag);
    }
 
    static inline void record_free(size_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_free(size);
+     as_snapshot()->_all_mallocs.deallocate(size);
    }
 
    static inline void record_new_arena(MEMFLAGS flag) {
@@ -211,6 +249,7 @@ class MallocMemorySummary : AllStatic {
 
    static inline void record_arena_size_change(ssize_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_arena_size_change(size);
+     check_limits_after_allocation(flag);
    }
 
    static void snapshot(MallocMemorySnapshot* s) {
@@ -218,23 +257,16 @@ class MallocMemorySummary : AllStatic {
      s->make_adjustment();
    }
 
-   // Record memory used by malloc tracking header
-   static inline void record_new_malloc_header(size_t sz) {
-     as_snapshot()->malloc_overhead()->allocate(sz);
-   }
-
-   static inline void record_free_malloc_header(size_t sz) {
-     as_snapshot()->malloc_overhead()->deallocate(sz);
-   }
-
    // The memory used by malloc tracking headers
    static inline size_t tracking_overhead() {
-     return as_snapshot()->malloc_overhead()->size();
+     return as_snapshot()->malloc_overhead();
    }
 
   static MallocMemorySnapshot* as_snapshot() {
     return (MallocMemorySnapshot*)_snapshot;
   }
+
+  static void print_limits(outputStream* st);
 };
 
 // Main class called from MemTracker to track malloc activities

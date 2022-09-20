@@ -154,12 +154,6 @@ public class SwitchErrors {
             case String s: break;
         }
     }
-    void nullAfterTotal(Object o) {
-        switch (o) {
-            case Object obj: break;
-            case null: break;
-        }
-    }
     void sealedNonAbstract(SealedNonAbstract obj) {
         switch (obj) {//does not cover SealedNonAbstract
             case A a -> {}

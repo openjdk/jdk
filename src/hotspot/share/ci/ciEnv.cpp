@@ -36,12 +36,12 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -64,6 +64,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbolHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -375,7 +376,7 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   VM_ENTRY_MARK;
   if (handle == NULL) {
     // Cf. universe.cpp, creation of Universe::_null_ptr_exception_instance.
-    InstanceKlass* ik = SystemDictionary::find_instance_klass(name, Handle(), Handle());
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, name, Handle(), Handle());
     jobject objh = NULL;
     if (ik != NULL) {
       oop obj = ik->allocate_instance(THREAD);
@@ -528,7 +529,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     if (!require_local) {
       kls = SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
     } else {
-      kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
+      kls = SystemDictionary::find_instance_or_array_klass(current, sym, loader, domain);
     }
     found_klass = kls;
   }
@@ -647,12 +648,10 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
   // It is known to be accessible, since it was found in the constant pool.
   ciKlass* ciKlass = get_klass(klass);
   is_accessible = true;
-#ifndef PRODUCT
   if (ReplayCompiles && ciKlass == _unloaded_ciinstance_klass) {
     // Klass was unresolved at replay dump time and therefore not accessible.
     is_accessible = false;
   }
-#endif
   return ciKlass;
 }
 
@@ -943,11 +942,9 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
            : !m->method_holder()->is_loaded())) {
         m = NULL;
       }
-#ifdef ASSERT
       if (m != NULL && ReplayCompiles && !ciReplay::is_loaded(m)) {
         m = NULL;
       }
-#endif
       if (m != NULL) {
         // We found the method.
         return get_method(m);
@@ -1071,6 +1068,9 @@ void ciEnv::register_method(ciMethod* target,
       return;
     }
 
+    // Check if memory should be freed before allocation
+    CodeCache::gc_on_allocation();
+
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
@@ -1162,12 +1162,6 @@ void ciEnv::register_method(ciMethod* target,
       nm->set_rtm_state(rtm_state);
 #endif
 
-      // Record successful registration.
-      // (Put nm into the task handle *before* publishing to the Java heap.)
-      if (task() != NULL) {
-        task()->set_code(nm);
-      }
-
       if (entry_bci == InvocationEntryBci) {
         if (TieredCompilation) {
           // If there is an old version we're done with it
@@ -1208,15 +1202,19 @@ void ciEnv::register_method(ciMethod* target,
         }
       }
     }
-  }  // safepoints are allowed again
+  }
 
+  NoSafepointVerifier nsv;
   if (nm != NULL) {
-    // JVMTI -- compiled method notification (must be done outside lock)
-    nm->post_compiled_method_load_event();
+    // Compilation succeeded, post what we know about it
+    nm->post_compiled_method(task());
+    task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
   } else {
     // The CodeCache is full.
     record_failure("code cache is full");
   }
+
+  // safepoints are allowed again
 }
 
 // ------------------------------------------------------------------
@@ -1649,6 +1647,12 @@ void ciEnv::find_dynamic_call_sites() {
 void ciEnv::dump_compile_data(outputStream* out) {
   CompileTask* task = this->task();
   if (task) {
+#ifdef COMPILER2
+    if (ReplayReduce && compiler_data() != NULL) {
+      // Dump C2 "reduced" inlining data.
+      ((Compile*)compiler_data())->dump_inline_data_reduced(out);
+    }
+#endif
     Method* method = task->method();
     int entry_bci = task->osr_bci();
     int comp_level = task->comp_level();

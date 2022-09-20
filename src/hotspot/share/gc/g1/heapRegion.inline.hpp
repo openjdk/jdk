@@ -82,35 +82,30 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
   } while (true);
 }
 
-inline HeapWord* HeapRegion::forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
-                                                              const void* addr,
-                                                              HeapWord* pb) const {
-  while (n <= addr) {
-    // When addr is not covered by the block starting at q we need to
-    // step forward until we find the correct block. With the BOT
-    // being precise, we should never have to step through more than
-    // a single card.
-    assert(!G1BlockOffsetTablePart::is_crossing_card_boundary(n, (HeapWord*)addr), "must be");
-    q = n;
-    assert(cast_to_oop(q)->klass_or_null() != nullptr,
-        "start of block must be an initialized object");
-    n += block_size(q, pb);
-  }
-  assert(q <= addr, "wrong order for q and addr");
-  assert(addr < n, "wrong order for addr and n");
-  return q;
-}
-
 inline HeapWord* HeapRegion::block_start(const void* addr) const {
   return block_start(addr, parsable_bottom_acquire());
 }
 
+inline HeapWord* HeapRegion::advance_to_block_containing_addr(const void* addr,
+                                                              HeapWord* const pb,
+                                                              HeapWord* first_block) const {
+  HeapWord* cur_block = first_block;
+  while (true) {
+    HeapWord* next_block = cur_block + block_size(cur_block, pb);
+    if (next_block > addr) {
+      assert(cur_block <= addr, "postcondition");
+      return cur_block;
+    }
+    cur_block = next_block;
+    // Because the BOT is precise, we should never step into the next card
+    // (i.e. crossing the card boundary).
+    assert(!G1BlockOffsetTablePart::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+  }
+}
+
 inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
-  HeapWord* q = _bot_part.block_start_reaching_into_card(addr);
-  // The returned address is the block that reaches into the card of addr. Walk
-  // the heap to get to the block reaching into addr.
-  HeapWord* n = q + block_size(q, pb);
-  return forward_to_block_containing_addr(q, n, addr, pb);
+  HeapWord* first_block = _bot_part.block_start_reaching_into_card(addr);
+  return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
 inline bool HeapRegion::obj_in_unparsable_area(oop obj, HeapWord* const pb) {
@@ -144,11 +139,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   return is_marked_in_bitmap(cast_to_oop(p));
 }
 
-inline bool HeapRegion::obj_is_filler(const oop obj) {
-  Klass* k = obj->klass();
-  return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
-}
-
 inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
 
@@ -164,7 +154,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   }
 
   // This object is in the parsable part of the heap, live unless scrubbed.
-  return obj_is_filler(obj);
+  return G1CollectedHeap::is_obj_filler(obj);
 }
 
 inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
@@ -206,7 +196,7 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 
   _garbage_bytes = 0;
 
-  set_top_at_mark_start(bottom());
+  reset_top_at_mark_start();
 
   reset_after_full_gc_common();
 }
@@ -327,7 +317,13 @@ inline void HeapRegion::note_end_of_scrubbing() {
   reset_parsable_bottom();
 }
 
-inline void HeapRegion::note_end_of_clearing() {
+inline void HeapRegion::init_top_at_mark_start() {
+  reset_top_at_mark_start();
+  _parsable_bottom = bottom();
+  _garbage_bytes = 0;
+}
+
+inline void HeapRegion::reset_top_at_mark_start() {
   // We do not need a release store here because
   //
   // - if this method is called during concurrent bitmap clearing, we do not read

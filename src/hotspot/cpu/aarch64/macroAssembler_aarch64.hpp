@@ -830,7 +830,7 @@ public:
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
-  void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -843,23 +843,23 @@ public:
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 
-  void resolve_weak_handle(Register result, Register tmp);
-  void resolve_oop_handle(Register result, Register tmp = r5);
-  void load_mirror(Register dst, Register method, Register tmp = r5);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
+  void load_mirror(Register dst, Register method, Register tmp1, Register tmp2);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
-                      Register tmp1, Register tmp_thread);
+                      Register tmp1, Register tmp2);
 
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
-                       Register tmp1, Register tmp_thread);
+                       Register tmp1, Register tmp2, Register tmp3);
 
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                     Register tmp2 = noreg, DecoratorSet decorators = 0);
 
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                              Register tmp2 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register tmp_thread = noreg, DecoratorSet decorators = 0);
+                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
   // currently unimplemented
   // Used for storing NULL. All other oop constants should be
@@ -1178,8 +1178,8 @@ public:
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: NULL if CodeCache is full.
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  // Return: the call PC or NULL if CodeCache is full.
+  address trampoline_call(Address entry);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
@@ -1201,8 +1201,8 @@ public:
   // The tmp register is invalidated.
   //
   // Far_jump returns the amount of the emitted code.
-  void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  void far_call(Address entry, Register tmp = rscratch1);
+  int far_jump(Address entry, Register tmp = rscratch1);
 
   static int far_codestub_branch_size() {
     if (codestub_branch_needs_far_jump()) {
@@ -1223,7 +1223,7 @@ public:
   Address allocate_metadata_address(Metadata* obj);
   Address constant_oop_address(jobject obj);
 
-  void movoop(Register dst, jobject obj, bool immediate = false);
+  void movoop(Register dst, jobject obj);
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void kernel_crc32(Register crc, Register buf, Register len,

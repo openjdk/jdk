@@ -144,6 +144,16 @@ void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   workers()->run_task(cl, num_workers);
 }
 
+uint G1CollectedHeap::get_chunks_per_region() {
+  uint log_region_size = HeapRegion::LogOfHRGrainBytes;
+  // Limit the expected input values to current known possible values of the
+  // (log) region size. Adjust as necessary after testing if changing the permissible
+  // values for region size.
+  assert(log_region_size >= 20 && log_region_size <= 29,
+         "expected value in [20,29], but got %u", log_region_size);
+  return 1u << (log_region_size / 2 - 4);
+}
+
 HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
   return new HeapRegion(hrs_index, bot(), mr, &_card_set_config);
@@ -1048,7 +1058,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  if (_hot_card_cache->use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     _hot_card_cache->reset_hot_cache();
   }
 
@@ -1099,7 +1109,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
 
   G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
 
   collector.prepare_collection();
   collector.collect();
@@ -1880,6 +1890,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     case GCCause::_wb_breakpoint:           return true;
+    case GCCause::_codecache_GC_aggressive: return true;
     case GCCause::_codecache_GC_threshold:  return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
@@ -2274,6 +2285,10 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
   _hrm.iterate(cl);
 }
 
+void G1CollectedHeap::heap_region_iterate(HeapRegionIndexClosure* cl) const {
+  _hrm.iterate(cl);
+}
+
 void G1CollectedHeap::heap_region_par_iterate_from_worker_offset(HeapRegionClosure* cl,
                                                                  HeapRegionClaimer *hrclaimer,
                                                                  uint worker_id) const {
@@ -2512,7 +2527,7 @@ public:
     if (occupied == 0) {
       tty->print_cr("  RSet is empty");
     } else {
-      tty->print_cr("hrrs " INTPTR_FORMAT, p2i(hrrs));
+      tty->print_cr("hrrs " PTR_FORMAT, p2i(hrrs));
     }
     tty->print_cr("----------");
     return false;
@@ -2853,7 +2868,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   GCIdMark gc_id_mark;
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
 
-  GCTraceCPUTime tcpu;
+  GCTraceCPUTime tcpu(_gc_tracer_stw);
 
   _bytes_used_during_gc = 0;
 
@@ -2882,10 +2897,9 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   }
 }
 
-void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
-                                        bool class_unloading_occurred) {
+void G1CollectedHeap::complete_cleaning(bool class_unloading_occurred) {
   uint num_workers = workers()->active_workers();
-  G1ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred);
+  G1ParallelCleaningTask unlink_task(num_workers, class_unloading_occurred);
   workers()->run_task(&unlink_task);
 }
 
@@ -3290,11 +3304,13 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
   return NULL;
 }
 
-void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
-  // All objects failing evacuation are live. What we'll do is
-  // that we'll update the marking info so that they are
-  // all below TAMS and explicitly marked.
+void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+  assert(!_cm->is_marked_in_bitmap(obj), "must be");
+
   _cm->raw_mark_in_bitmap(obj);
+  if (collector_state()->in_concurrent_start_gc()) {
+    _cm->add_to_liveness(worker_id, obj, obj_size);
+  }
 }
 
 // Optimized nmethod scanning
@@ -3378,7 +3394,6 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
 void G1CollectedHeap::reset_hot_card_cache() {
   _hot_card_cache->reset_hot_cache();
-  _hot_card_cache->set_use_cache(true);
 }
 
 void G1CollectedHeap::purge_code_root_memory() {
@@ -3429,14 +3444,14 @@ void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, boo
 }
 
 void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
-  if (!Continuations::is_gc_marking_cycle_active()) {
+  if (!CodeCache::is_gc_marking_cycle_active()) {
     // This is the normal case when we do not call collect when a
     // concurrent mark is ongoing. We then start a new code marking
     // cycle. If, on the other hand, a concurrent mark is ongoing, we
     // will be conservative and use the last code marking cycle. Code
     // caches marked between the two concurrent marks will live a bit
     // longer than needed.
-    Continuations::on_gc_marking_cycle_start();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_start();
+    CodeCache::arm_all_nmethods();
   }
 }

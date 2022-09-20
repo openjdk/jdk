@@ -269,10 +269,10 @@ bool os::have_special_privileges() {
 }
 
 
-// This method is  a periodic task to check for misbehaving JNI applications
+// This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here.
 // For Windows at the moment does nothing
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
   return;
 }
 
@@ -2242,6 +2242,15 @@ static void jdk_misc_signal_init() {
 
   // Add a CTRL-C handler
   SetConsoleCtrlHandler(consoleHandler, TRUE);
+
+  // Initialize sigbreakHandler.
+  // The actual work for handling CTRL-BREAK is performed by the Signal
+  // Dispatcher thread, which is created and started at a much later point,
+  // see os::initialize_jdk_signal_support(). Any CTRL-BREAK received
+  // before the Signal Dispatcher thread is started is queued up via the
+  // pending_signals[SIGBREAK] counter, and will be processed by the
+  // Signal Dispatcher thread in a delayed fashion.
+  os::signal(SIGBREAK, os::user_handler());
 }
 
 void os::signal_notify(int sig) {
@@ -2679,7 +2688,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
       CompiledMethod* nm = NULL;
       if (in_java) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
       }
 
@@ -2698,9 +2707,9 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (in_java &&
         (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
           exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant");
+          tty->print_cr("trap: not_entrant");
         }
         return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
       }
@@ -2729,7 +2738,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // Check for UD trap caused by NOP patching.
       // If it is, patch return address to be deopt handler.
       if (NativeDeoptInstruction::is_deopt_at(pc)) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         if (cb != NULL && cb->is_compiled()) {
           CompiledMethod* cm = cb->as_compiled_method();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
@@ -4321,7 +4330,8 @@ jint os::init_2(void) {
 
   SymbolEngine::recalc_search_path();
 
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal, and install CTRL-C and
+  // CTRL-BREAK handlers.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }

@@ -111,11 +111,11 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   initialize_numa_stats();
 }
 
-size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
+size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num_workers) {
   _rdc_local_qset.flush();
   flush_numa_stats();
   // Update allocation statistics.
-  _plab_allocator->flush_and_retire_stats();
+  _plab_allocator->flush_and_retire_stats(num_workers);
   _g1h->policy()->record_age_table(&_age_table);
 
   if (_evacuation_failed_info.has_failed()) {
@@ -195,7 +195,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
   // References pushed onto the work stack should never point to a humongous region
   // as they are not added to the collection set due to above precondition.
-  assert(!region_attr.is_humongous(),
+  assert(!region_attr.is_humongous_candidate(),
          "Obj " PTR_FORMAT " should not refer to humongous region %u from " PTR_FORMAT,
          p2i(obj), _g1h->addr_to_region(obj), p2i(p));
 
@@ -327,7 +327,7 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
                                                       bool previous_plab_refill_failed,
                                                       uint node_index) {
 
-  assert(dest->is_in_cset_or_humongous(), "Unexpected dest: %s region attr", dest->get_type_str());
+  assert(dest->is_in_cset_or_humongous_candidate(), "Unexpected dest: %s region attr", dest->get_type_str());
 
   // Right now we only have two types of regions (young / old) so
   // let's keep the logic here simple. We can generalize it when necessary.
@@ -579,7 +579,7 @@ const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
   return _surviving_young_words_total;
 }
 
-void G1ParScanThreadStateSet::flush() {
+void G1ParScanThreadStateSet::flush_stats() {
   assert(!_flushed, "thread local state from the per thread states should be flushed once");
 
   for (uint worker_id = 0; worker_id < _n_workers; ++worker_id) {
@@ -592,7 +592,7 @@ void G1ParScanThreadStateSet::flush() {
     // because it resets the PLAB allocator where we get this info from.
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
-    size_t copied_bytes = pss->flush(_surviving_young_words_total) * HeapWordSize;
+    size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _n_workers) * HeapWordSize;
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
@@ -623,14 +623,13 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    // Objects failing evacuation will turn into old objects since the regions
-    // are relabeled as such. We mark the failing objects in the marking bitmap
-    // and later use it to handle all failed objects.
-    _g1h->mark_evac_failure_object(old);
-
     if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);
     }
+
+    // Mark the failing object in the marking bitmap and later use the bitmap to handle
+    // evacuation failure recovery.
+    _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
 
     _preserved_marks->push_if_necessary(old, m);
 

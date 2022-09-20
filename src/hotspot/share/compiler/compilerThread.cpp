@@ -27,7 +27,6 @@
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/sweeper.hpp"
 
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,
@@ -62,34 +61,3 @@ void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
 bool CompilerThread::can_call_java() const {
   return _compiler != NULL && _compiler->is_jvmci();
 }
-
-// Create sweeper thread
-CodeCacheSweeperThread::CodeCacheSweeperThread()
-: JavaThread(&CodeCacheSweeperThread::thread_entry) {
-  _scanned_compiled_method = NULL;
-}
-
-void CodeCacheSweeperThread::thread_entry(JavaThread* thread, TRAPS) {
-  NMethodSweeper::sweeper_loop();
-}
-
-void CodeCacheSweeperThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
-  JavaThread::oops_do_no_frames(f, cf);
-  if (_scanned_compiled_method != NULL && cf != NULL) {
-    // Safepoints can occur when the sweeper is scanning an nmethod so
-    // process it here to make sure it isn't unloaded in the middle of
-    // a scan.
-    cf->do_code_blob(_scanned_compiled_method);
-  }
-}
-
-void CodeCacheSweeperThread::nmethods_do(CodeBlobClosure* cf) {
-  JavaThread::nmethods_do(cf);
-  if (_scanned_compiled_method != NULL && cf != NULL) {
-    // Safepoints can occur when the sweeper is scanning an nmethod so
-    // process it here to make sure it isn't unloaded in the middle of
-    // a scan.
-    cf->do_code_blob(_scanned_compiled_method);
-  }
-}
-
