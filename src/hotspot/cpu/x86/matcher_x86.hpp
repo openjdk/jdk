@@ -184,6 +184,9 @@
   static const bool supports_encode_ascii_array = true;
 
   // Returns pre-selection estimated size of a vector operation.
+  // Currently, it's a rudimentary heuristic based on emitted code size for complex
+  // IR nodes used by unroll policy. Idea is to constrain unrolling factor and prevent
+  // generating bloated loop bodies.
   static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
     switch(vopc) {
       default:
