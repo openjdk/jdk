@@ -6004,6 +6004,28 @@ void Assembler::testb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::testw(Address dst, int16_t imm16) {
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(dst);
+  emit_int8((unsigned char)0xF7);
+  emit_operand(rax, dst, 1);
+  emit_int16(imm16);
+}
+
+void Assembler::testw(Register dst, int16_t imm16) {
+  int encode = dst->encoding();
+  InstructionMark im(this);
+  emit_int8(0x66);
+  if (encode == 0) {
+    emit_int8((unsigned char)0xA9);
+  } else {
+    encode = prefix_and_encode(encode);
+    emit_int16((unsigned char)0xF7, (0xC0 | encode));
+  }
+  emit_int16(imm16);
+}
+
 void Assembler::testl(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefix(dst);
