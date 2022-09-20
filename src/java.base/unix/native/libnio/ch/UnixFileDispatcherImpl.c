@@ -24,11 +24,7 @@
  */
 
 #include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <fcntl.h>
 #include <sys/uio.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 
@@ -49,14 +45,9 @@
 #define fstatvfs64 fstatvfs
 #endif
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
-#include "jlong.h"
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_UnixFileDispatcherImpl.h"
-#include "java_lang_Integer.h"
 #include "java_lang_Long.h"
 #include <assert.h>
 

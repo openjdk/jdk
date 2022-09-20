@@ -23,15 +23,12 @@
  * questions.
  */
 
-#include <unistd.h>
-
 #include <sys/sendfile.h>
 #include <dlfcn.h>
 
-#include "jni.h"
-#include "jni_util.h"
 #include "nio.h"
 #include "nio_util.h"
+#include "sun_nio_ch_FileDispatcherImpl.h"
 
 typedef ssize_t copy_file_range_func(int, loff_t*, int, loff_t*, size_t,
                                      unsigned int);

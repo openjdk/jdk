@@ -23,13 +23,8 @@
  * questions.
  */
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
 #include <sys/mount.h>
-#include <sys/param.h>
 
-#include "jni.h"
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_FileDispatcherImpl.h"
