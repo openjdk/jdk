@@ -32,6 +32,7 @@
 
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.DefaultCellEditor;
@@ -97,7 +98,10 @@ public class bug6559152 {
     }
 
     private static void test() throws Exception {
-        robot.mouseMove(p.x, p.y);
+        robot.mouseMove(p.x + cb.getWidth() / 2, p.y + cb.getHeight() / 2);
+        robot.waitForIdle();
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
         testImpl();
         checkResult();
