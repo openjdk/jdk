@@ -40,8 +40,7 @@ static const char* jni_error_code(int ret) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_TestActiveDestroy_tryDestroyJavaVM
-(JNIEnv *env, jclass cls) {
+Java_TestActiveDestroy_tryDestroyJavaVM(JNIEnv *env, jclass cls) {
   JavaVM* jvm;
   int res = (*env)->GetJavaVM(env, &jvm);
   if (res != JNI_OK) {
