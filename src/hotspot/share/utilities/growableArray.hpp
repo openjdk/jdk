@@ -78,9 +78,9 @@ protected:
   // Current number of allocated elements
   int _capacity;
 
-  GrowableArrayBase(int initial_capacity, int initial_len) :
+  GrowableArrayBase(int capacity, int initial_len) :
       _len(initial_len),
-      _capacity(initial_capacity) {
+      _capacity(capacity) {
     assert(_len >= 0 && _len <= _capacity, "initial_len too big");
   }
 
@@ -119,8 +119,8 @@ class GrowableArrayView : public GrowableArrayBase {
 protected:
   E* _data; // data array
 
-  GrowableArrayView<E>(E* data, int initial_capacity, int initial_len) :
-      GrowableArrayBase(initial_capacity, initial_len), _data(data) {}
+  GrowableArrayView<E>(E* data, int capacity, int initial_len) :
+      GrowableArrayBase(capacity, initial_len), _data(data) {}
 
   ~GrowableArrayView() {}
 
@@ -364,20 +364,20 @@ class GrowableArrayWithAllocator : public GrowableArrayView<E> {
   void grow(int j);
 
 protected:
-  GrowableArrayWithAllocator(E* data, int initial_capacity) :
-      GrowableArrayView<E>(data, initial_capacity, 0) {
-    for (int i = 0; i < initial_capacity; i++) {
+  GrowableArrayWithAllocator(E* data, int capacity) :
+      GrowableArrayView<E>(data, capacity, 0) {
+    for (int i = 0; i < capacity; i++) {
       ::new ((void*)&data[i]) E();
     }
   }
 
-  GrowableArrayWithAllocator(E* data, int initial_capacity, int initial_len, const E& filler) :
-      GrowableArrayView<E>(data, initial_capacity, initial_len) {
+  GrowableArrayWithAllocator(E* data, int capacity, int initial_len, const E& filler) :
+      GrowableArrayView<E>(data, capacity, initial_len) {
     int i = 0;
     for (; i < initial_len; i++) {
       ::new ((void*)&data[i]) E(filler);
     }
-    for (; i < initial_capacity; i++) {
+    for (; i < capacity; i++) {
       ::new ((void*)&data[i]) E();
     }
   }
