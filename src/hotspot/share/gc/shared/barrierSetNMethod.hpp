@@ -44,16 +44,18 @@ public:
   virtual ByteSize thread_disarmed_offset() const;
   virtual int* disarmed_value_address() const;
 
+  bool is_armed(nmethod* nm);
+
   int disarmed_value() const;
+  int arm_value(nmethod* nm);
 
   static int nmethod_stub_entry_barrier(address* return_address_ptr);
   bool nmethod_osr_entry_barrier(nmethod* nm);
-  bool is_armed(nmethod* nm);
+
   void disarm(nmethod* nm);
-  void arm(nmethod* nm, int arm_value);
+  void disarm_with_value(nmethod* nm, int value);
 
   void arm_all_nmethods();
 };
-
 
 #endif // SHARE_GC_SHARED_BARRIERSETNMETHOD_HPP

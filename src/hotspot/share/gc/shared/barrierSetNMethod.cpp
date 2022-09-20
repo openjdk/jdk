@@ -197,3 +197,7 @@ bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
   log_trace(nmethod, barrier)("Running osr nmethod entry barrier: " PTR_FORMAT, p2i(nm));
   return nmethod_entry_barrier(nm);
 }
+
+void BarrierSetNMethod::disarm(nmethod* nm) {
+  disarm_with_value(nm, disarmed_value());
+}
