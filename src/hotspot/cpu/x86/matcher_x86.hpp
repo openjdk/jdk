@@ -190,7 +190,7 @@
         return 0;
       case Op_VectorCastF2X: // fall through
       case Op_VectorCastD2X: {
-        return is_subword_type(ety) ? 75 : 70;
+        return is_subword_type(ety) ? 35 : 30;
       }
       case Op_CountTrailingZerosV:
       case Op_CountLeadingZerosV:
