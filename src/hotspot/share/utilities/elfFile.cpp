@@ -1610,6 +1610,7 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
 
     if (current_index == file_index) {
       // Found correct file.
+      strip_path_prefix(filename, filename_len);
       return true;
     }
 
@@ -1623,6 +1624,20 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
   }
   DWARF_LOG_DEBUG("Did not find filename entry at index " UINT32_FORMAT " in .debug_line header", file_index);
   return false;
+}
+
+// Remove everything before the last slash including the slash itself to get the actual filename. This is required, for
+// example, for Clang debug builds which emit a relative path while GCC only emits the filename.
+void DwarfFile::LineNumberProgram::strip_path_prefix(char* filename, const size_t filename_len) {
+  char* last_slash = strrchr(filename, '/');
+  if (last_slash != nullptr) {
+    uint16_t index_after_slash = (uint16_t)(last_slash + 1 - filename);
+    // Copy filename to beginning of buffer.
+    int bytes_written = jio_snprintf(filename, filename_len - index_after_slash, "%s", filename + index_after_slash);
+    assert(bytes_written > 0, "could not strip path prefix");
+    // Add null terminator.
+    jio_snprintf(filename + bytes_written, 1, "%s", '\0');
+  }
 }
 
 void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {

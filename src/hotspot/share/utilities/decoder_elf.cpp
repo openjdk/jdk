@@ -55,8 +55,8 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 }
 
 bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len, int* line, bool is_pc_after_call) {
-#ifdef __clang__
-  DWARF_LOG_ERROR("Parsing DWARF emitted by Clang is currently not supported due to an incomplete .debug_aranges section.");
+#if defined(__clang_major__) && (__clang_major__ < 5)
+  DWARF_LOG_ERROR("The DWARF parser only supports Clang 5.0+.");
   return false;
 #else
   assert(filename != nullptr && filename_len > 0 && line != nullptr, "Argument error");

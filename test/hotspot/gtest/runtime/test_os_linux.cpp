@@ -434,7 +434,7 @@ TEST(os_linux, addr_to_function_valid) {
   ASSERT_TRUE(offset >= 0);
 }
 
-#ifndef __clang__ // Parsing DWARF emitted by Clang is currently unsupported
+#if !defined(__clang_major__) || (__clang_major__ >= 5) // DWARF does not support Clang versions older than 5.0.
 // Test valid address of method JNI_CreateJavaVM in jni.cpp. We should get "jni.cpp" in the buffer and a valid line number.
 TEST_VM(os_linux, decoder_get_source_info_valid) {
   char buf[128] = "";
@@ -455,7 +455,11 @@ TEST_VM(os_linux, decoder_get_source_info_valid_truncated) {
   ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, 7, &line));
   ASSERT_TRUE(buf[7 - 1] == '\0');
   ASSERT_TRUE(buf[7] == 'X');
-  ASSERT_TRUE(strcmp(buf, "jni.cp") == 0);
+  // Clang emits a relative file path for debug builds while in product builds it only emits the filename itself.
+  // GCC only emits the filename.
+  // This gives us either "jni.cp" or "src/ho". In the latter case, we strip the path prefix to get to the actual
+  // filename which, however, is useless in this case - we get "ho".
+  ASSERT_TRUE(strcmp(buf, "jni.cp") == 0 || strcmp(buf, "ho") == 0);
   ASSERT_TRUE(line > 0);
 }
 
@@ -475,5 +479,5 @@ TEST_VM(os_linux, decoder_get_source_info_invalid) {
     ASSERT_TRUE(line == -1);
   }
 }
-#endif // NOT clang
+#endif // clang
 #endif // LINUX
