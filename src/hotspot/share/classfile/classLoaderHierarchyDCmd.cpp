@@ -170,10 +170,10 @@ class LoaderTreeNode : public ResourceObj {
     return (_loader_oop != NULL) ? java_lang_ClassLoader::name(_loader_oop) : NULL;
   }
 
-  // Returns ResourceArea-allocated name of loader, NULL if none is set
+  // Returns ResourceArea-allocated name of loader, "" if none is set
   const char* loader_name() const {
     oop name_oop = loader_name_oop();
-    return name_oop != NULL ? java_lang_String::as_utf8_string(name_oop) : NULL;
+    return name_oop != NULL ? java_lang_String::as_utf8_string(name_oop) : "";
   }
 
   bool is_bootstrap() const {
@@ -184,7 +184,7 @@ class LoaderTreeNode : public ResourceObj {
     return false;
   }
 
-  void print_with_childs(outputStream* st, BranchTracker& branchtracker,
+  void print_with_child_nodes(outputStream* st, BranchTracker& branchtracker,
       bool print_classes, bool verbose) const {
 
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
@@ -203,7 +203,7 @@ class LoaderTreeNode : public ResourceObj {
     if (is_bootstrap()) {
       st->print(" <bootstrap>");
     } else {
-      if (the_loader_name != NULL) {
+      if (the_loader_name[0] != '\0') {
         st->print(" \"%s\",", the_loader_name);
       }
       st->print(" %s", the_loader_class_name);
@@ -304,7 +304,7 @@ class LoaderTreeNode : public ResourceObj {
     // Print children, recursively
     LoaderTreeNode* c = _child;
     while (c != NULL) {
-      c->print_with_childs(st, branchtracker, print_classes, verbose);
+      c->print_with_child_nodes(st, branchtracker, print_classes, verbose);
       c = c->_next;
     }
 
@@ -313,11 +313,21 @@ class LoaderTreeNode : public ResourceObj {
   // Helper: Attempt to fold this node into the target node. If success, returns true.
   // Folding can be done if both nodes are leaf nodes and they refer to the same loader class
   // and they have the same name or no name (note: leaf check is done by caller).
-  bool can_fold_into(LoaderTreeNode* target_node) const {
+  bool can_fold_into(const LoaderTreeNode* target_node) const {
     assert(is_leaf() && target_node->is_leaf(), "must be leaf");
-    return (loader_klass() != NULL) && (loader_klass() == target_node->loader_klass()) &&
-           ((loader_name_oop() == NULL && target_node->loader_name_oop() == NULL) ||
-             (::strcmp(loader_name(), target_node->loader_name()) == 0));
+
+    // Must have the same non-null klass
+    const Klass* k = loader_klass();
+    if (k == NULL || k != target_node->loader_klass()) {
+      return false;
+    }
+
+    // Must have the same loader name, or none
+    if (::strcmp(loader_name(), target_node->loader_name()) != 0) {
+      return false;
+    }
+
+    return true;
   }
 
 public:
@@ -414,7 +424,7 @@ public:
 
   void print_with_childs(outputStream* st, bool print_classes, bool print_add_info) const {
     BranchTracker bwt;
-    print_with_childs(st, bwt, print_classes, print_add_info);
+    print_with_child_nodes(st, bwt, print_classes, print_add_info);
   }
 
 };
