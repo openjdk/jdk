@@ -488,7 +488,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
     DEFAULT_JMOD_COMPRESS="zip-1"
   fi
 
-  UTIL_ARG_WITH(NAME: jmod-compress, TYPE: string,
+  UTIL_ARG_WITH(NAME: jmod-compress, TYPE: literal,
     VALID_VALUES: [zip-0 zip-1 zip-2 zip-3 zip-4 zip-5 zip-6 zip-7 zip-8 zip-9],
     DEFAULT: $DEFAULT_JMOD_COMPRESS,
     CHECKING_MSG: [for JMOD compression type],
