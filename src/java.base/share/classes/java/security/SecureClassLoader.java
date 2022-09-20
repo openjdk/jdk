@@ -220,6 +220,7 @@ public class SecureClassLoader extends ClassLoader {
         // only), and the fragment is not considered.
         CodeSourceKey key = new CodeSourceKey(cs);
         return pdcache.computeIfAbsent(key, new Function<>() {
+            // Do not turn this into a lambda since it is executed during bootstrap
             @Override
             public ProtectionDomain apply(CodeSourceKey key) {
                 PermissionCollection perms
