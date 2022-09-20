@@ -440,6 +440,7 @@ define SetupJavaCompilationBody
           -classpath $$(BUILDTOOLS_OUTPUTDIR)/depend \
           -Xplugin:"depend $$($1_API_TARGET)" \
           "-XDinternalAPIPath=$$($1_API_INTERNAL)" \
+          "-XDLOG_LEVEL=$(LOG_LEVEL)" \
           #
 
       $1_EXTRA_DEPS := $$(BUILDTOOLS_OUTPUTDIR)/depend/_the.COMPILE_DEPEND_batch
@@ -463,7 +464,7 @@ define SetupJavaCompilationBody
     # Otherwise, all module's sources will be compiled. If a non-Java file is included,
     # it will be considered to be a significant change, and all module source will
     # be recompiled
-    $$($1_MODFILELIST):  $$($1_SRCS) $$($1_DEPENDS) \
+    $$($1_MODFILELIST): $$($1_SRCS) $$($1_DEPENDS) \
         $$($1_VARDEPS_FILE) $$($1_EXTRA_DEPS) $$($1_JAVAC_SERVER_CONFIG)
 		$$(eval $1_MODFILES := $$?)
 		$$(eval $$(call ListPathsSafely, $1_MODFILES, $$($1_MODFILELIST)))

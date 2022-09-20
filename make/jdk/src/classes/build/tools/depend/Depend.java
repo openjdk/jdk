@@ -121,6 +121,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.StreamSupport;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 import javax.tools.ForwardingJavaFileManager;
@@ -147,6 +148,8 @@ public class Depend implements Plugin {
             if (modifiedInputs == null) {
                 throw new IllegalStateException("Expected modifiedInputs to be set using -XDmodifiedInputs=<list-of-files>");
             }
+            String logLevel = options.get("LOG_LEVEL");
+            boolean debug = "trace".equals(logLevel) || "debug".equals(logLevel);
             String internalAPIPath = options.get("internalAPIPath");
             if (internalAPIPath == null) {
                 throw new IllegalStateException("Expected internalAPIPath to be set using -XDinternalAPIPath=<internal-API-path>");
@@ -165,7 +168,8 @@ public class Depend implements Plugin {
                                            new FilteredInitialFileParser(compiler,
                                                                          modified,
                                                                          internalAPIDigestFile,
-                                                                         noApiChange));
+                                                                         noApiChange,
+                                                                         debug));
             context.<Object>put(key, initialParserInstance);
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
@@ -252,7 +256,8 @@ public class Depend implements Plugin {
 
     private com.sun.tools.javac.util.List<JCCompilationUnit> doFilteredParse(
             JavaCompiler compiler, Iterable<JavaFileObject> fileObjects, Set<String> modified,
-            Path internalAPIDigestFile, AtomicBoolean noApiChange) {
+            Path internalAPIDigestFile, AtomicBoolean noApiChange,
+            boolean debug) {
         Map<String, String> internalAPI = new LinkedHashMap<>();
         if (Files.isReadable(internalAPIDigestFile)) {
             try {
@@ -304,6 +309,25 @@ public class Depend implements Plugin {
             }
         } else {
             noApiChange.set(true);
+        }
+        if (debug) {
+            long allJavaInputs = StreamSupport.stream(fileObjects.spliterator(), false).count();
+            String module = StreamSupport.stream(fileObjects.spliterator(), false)
+                         .map(fo -> fo.toUri().toString())
+                         .filter(path -> path.contains("/share/classes/"))
+                         .map(path -> path.substring(0, path.indexOf("/share/classes/")))
+                         .map(path -> path.substring(path.lastIndexOf("/") + 1))
+                         .findAny()
+                         .orElseGet(() -> "unknown");
+            String nonJavaModifiedFiles = modified.stream()
+                                                  .filter(f -> !StringUtils.toLowerCase(f)
+                                                                           .endsWith(".java"))
+                                                  .collect(Collectors.joining(", "));
+            System.err.println("compiling module: " + module +
+                               ", all Java inputs: " + allJavaInputs +
+                               ", modified files (Java or non-Java): " + modified.size() +
+                               ", full recompile: " + fullRecompile +
+                               ", non-Java modified files: " + nonJavaModifiedFiles);
         }
         return result.toList();
     }
@@ -858,15 +882,18 @@ public class Depend implements Plugin {
         private final Set<String> modified;
         private final Path internalAPIDigestFile;
         private final AtomicBoolean noApiChange;
+        private final boolean debug;
 
         public FilteredInitialFileParser(JavaCompiler compiler,
                                          Set<String> modified,
                                          Path internalAPIDigestFile,
-                                         AtomicBoolean noApiChange) {
+                                         AtomicBoolean noApiChange,
+                                         boolean debug) {
             this.compiler = compiler;
             this.modified = modified;
             this.internalAPIDigestFile = internalAPIDigestFile;
             this.noApiChange = noApiChange;
+            this.debug = debug;
         }
 
         @Override
@@ -877,7 +904,8 @@ public class Depend implements Plugin {
                                                 (Iterable<JavaFileObject>) args[0],
                                                 modified,
                                                 internalAPIDigestFile,
-                                                noApiChange);
+                                                noApiChange,
+                                                debug);
                 default -> throw new UnsupportedOperationException();
             };
         }
