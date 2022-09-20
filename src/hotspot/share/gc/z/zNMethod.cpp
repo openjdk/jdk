@@ -200,7 +200,7 @@ void ZNMethod::disarm(nmethod* nm) {
 void ZNMethod::arm(nmethod* nm, int arm_value) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs != NULL) {
-    bs->arm(nm, arm_value);
+    bs->disarm_with_value(nm, arm_value);
   }
 }
 

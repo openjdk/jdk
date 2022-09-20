@@ -176,22 +176,13 @@ static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
   return barrier;
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::disarm_with_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
-  cmp->set_immediate(disarmed_value());
-}
-
-void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
-  if (!supports_entry_barrier(nm)) {
-    return;
-  }
-
-  NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
-  cmp->set_immediate(arm_value);
+  cmp->set_immediate(value);
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
@@ -201,4 +192,13 @@ bool BarrierSetNMethod::is_armed(nmethod* nm) {
 
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
   return (disarmed_value() != cmp->get_immedate());
+}
+
+int BarrierSetNMethod::arm_value(nmethod* nm) {
+  if (!supports_entry_barrier(nm)) {
+    return 0;
+  }
+
+  NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
+  return cmp->get_immedate();
 }
