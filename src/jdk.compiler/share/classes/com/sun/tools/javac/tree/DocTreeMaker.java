@@ -353,7 +353,7 @@ public class DocTreeMaker implements DocTreeFactory {
     public DCReference newReferenceTree(String signature) {
         try {
             ReferenceParser.Reference ref = referenceParser.parse(signature);
-            DCReference tree = new DCReference(signature, ref.moduleName, ref.qualExpr, ref.member, ref.paramTypes);
+            DCReference tree = newReferenceTree(signature, ref);
             tree.pos = pos;
             return tree;
         } catch (ReferenceParser.ParseException e) {
@@ -361,8 +361,8 @@ public class DocTreeMaker implements DocTreeFactory {
         }
     }
 
-    public DCReference newReferenceTree(String signature, JCTree.JCExpression moduleName, JCTree qualExpr, Name member, List<JCTree> paramTypes) {
-        DCReference tree = new DCReference(signature, moduleName, qualExpr, member, paramTypes);
+    public DCReference newReferenceTree(String signature, ReferenceParser.Reference ref) {
+        DCReference tree = new DCReference(signature, ref.moduleName, ref.qualExpr, ref.member, ref.paramTypes);
         tree.pos = pos;
         return tree;
     }

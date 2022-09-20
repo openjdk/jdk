@@ -410,11 +410,9 @@ public class DocCommentParser {
      * Matching pairs of {@literal < >} are skipped. The text is terminated by the first
      * unmatched }. It is an error if the beginning of the next tag is detected.
      */
-    // TODO: allowMember is currently ignored
-    // TODO: boolean allowMember should be enum FORBID, ALLOW, REQUIRE
     // TODO: improve quality of parse to forbid bad constructions.
     @SuppressWarnings("fallthrough")
-    protected DCReference reference(boolean allowMember) throws ParseException {
+    protected DCReference reference() throws ParseException {
         int pos = bp;
         int depth = 0;
 
@@ -468,13 +466,9 @@ public class DocCommentParser {
 
         String sig = newString(pos, bp);
 
-
         try {
             ReferenceParser.Reference ref = new ReferenceParser(fac).parse(sig);
-            return m.at(pos).newReferenceTree(sig,
-                    ref.moduleName, ref.qualExpr,
-                    ref.member, ref.paramTypes)
-                    .setEndPos(bp);
+            return m.at(pos).newReferenceTree(sig, ref).setEndPos(bp);
         } catch (ReferenceParser.ParseException pe) {
             throw new ParseException(pos + pe.pos, pe.getMessage());
         }
@@ -1237,7 +1231,7 @@ public class DocCommentParser {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
                     skipWhitespace();
-                    DCReference ref = reference(false);
+                    DCReference ref = reference();
                     List<DCTree> description = blockContent();
                     return m.at(pos).newExceptionTree(ref, description);
                 }
@@ -1294,7 +1288,7 @@ public class DocCommentParser {
             new TagParser(TagParser.Kind.INLINE, DCTree.Kind.LINK) {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
-                    DCReference ref = reference(true);
+                    DCReference ref = reference();
                     List<DCTree> label = inlineContent();
                     return m.at(pos).newLinkTree(ref, label);
                 }
@@ -1304,7 +1298,7 @@ public class DocCommentParser {
             new TagParser(TagParser.Kind.INLINE, DCTree.Kind.LINK_PLAIN) {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
-                    DCReference ref = reference(true);
+                    DCReference ref = reference();
                     List<DCTree> label = inlineContent();
                     return m.at(pos).newLinkPlainTree(ref, label);
                 }
@@ -1351,7 +1345,7 @@ public class DocCommentParser {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
                     skipWhitespace();
-                    DCReference ref = reference(true);
+                    DCReference ref = reference();
                     List<DCTree> description = blockContent();
                     return m.at(pos).newProvidesTree(ref, description);
                 }
@@ -1411,7 +1405,7 @@ public class DocCommentParser {
 
                         default:
                             if (isJavaIdentifierStart(ch) || ch == '#') {
-                                DCReference ref = reference(true);
+                                DCReference ref = reference();
                                 List<DCTree> description = blockContent();
                                 return m.at(pos).newSeeTree(description.prepend(ref));
                             }
@@ -1436,7 +1430,7 @@ public class DocCommentParser {
                     skipWhitespace();
                     DCIdentifier name = identifier();
                     skipWhitespace();
-                    DCReference type = reference(false);
+                    DCReference type = reference();
                     List<DCTree> description = null;
                     if (isWhitespace(ch)) {
                         skipWhitespace();
@@ -1588,7 +1582,7 @@ public class DocCommentParser {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
                     skipWhitespace();
-                    DCReference ref = reference(false);
+                    DCReference ref = reference();
                     List<DCTree> description = blockContent();
                     return m.at(pos).newThrowsTree(ref, description);
                 }
@@ -1599,7 +1593,7 @@ public class DocCommentParser {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
                     skipWhitespace();
-                    DCReference ref = reference(true);
+                    DCReference ref = reference();
                     List<DCTree> description = blockContent();
                     return m.at(pos).newUsesTree(ref, description);
                 }
@@ -1624,7 +1618,7 @@ public class DocCommentParser {
                             format = null;
                         }
                     }
-                    DCReference ref = reference(true);
+                    DCReference ref = reference();
                     skipWhitespace();
                     if (ch == '}') {
                         nextChar();

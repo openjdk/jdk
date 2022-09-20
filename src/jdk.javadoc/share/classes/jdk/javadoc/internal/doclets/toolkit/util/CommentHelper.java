@@ -213,7 +213,7 @@ public class CommentHelper {
         return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }
 
-    public String getReferencedMemberName(String signature) {
+    public String getReferencedFragment(String signature) {
         if (signature == null) {
             return null;
         }

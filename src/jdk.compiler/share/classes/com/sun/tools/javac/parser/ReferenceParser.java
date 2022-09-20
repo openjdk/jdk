@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
 
 import javax.tools.JavaFileObject;
-import java.util.Locale;
-import java.util.Queue;
 
 /**
  *  A utility class to parse a string in a doc comment containing a
@@ -113,9 +111,12 @@ public class ReferenceParser {
 
         try {
             int slash = sig.indexOf("/");
+            int hash = sig.indexOf("#");
+            if (hash > -1 && slash > hash) {
+                // A slash following a hash is part of a doc-file path, not a module separator
+                slash = -1;
+            }
             int afterSlash = slash + 1;
-            int hash = sig.indexOf("#", afterSlash);
-            int afterHash = hash + 1;
             int lparen = sig.indexOf("(", Math.max(slash, hash) + 1);
             int afterLparen = lparen + 1;
 
@@ -138,7 +139,13 @@ public class ReferenceParser {
                 }
             } else {
                 qualExpr = (hash == afterSlash) ? null : parseType(sig, afterSlash, hash, dh);
-                if (lparen == -1) {
+                int afterHash = hash + 1;
+                int dash = sig.indexOf("-", afterHash);
+                if (dash > -1 || sig.indexOf("#", afterHash) == afterHash) {
+                    // A hash symbol followed by another hash or text containing a dash represents
+                    // a verbatim URL fragment or static file path and is not not parsed as a member.
+                    member = null;
+                } else if (lparen == -1) {
                     member = parseMember(sig, afterHash, sig.length(), dh);
                 } else {
                     member = parseMember(sig, afterHash, lparen, dh);
