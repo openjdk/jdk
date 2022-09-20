@@ -168,6 +168,8 @@ class PhaseNameValidator {
         // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with NULLs.
         strncpy(_bad, *iter, len);
         _valid = false;
+      } else if (PHASE_DEBUG == cpt) {
+        mask = ~((uint64_t)0);
       } else {
         assert(cpt < 64, "out of bounds");
         mask |= CompilerPhaseTypeHelper::to_bitmask(cpt);
