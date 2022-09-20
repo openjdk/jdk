@@ -33,7 +33,8 @@ public class TestActiveDestroy {
 
     static native boolean tryDestroyJavaVM();
 
-    static {System.loadLibrary("activeDestroy");
+    static {
+        System.loadLibrary("activeDestroy");
     }
 
     public static void main(String[] args) throws Throwable {
