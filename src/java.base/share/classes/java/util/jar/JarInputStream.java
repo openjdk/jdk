@@ -70,11 +70,19 @@ import jdk.internal.util.jar.JarIndex;
  *         All signature-related entries immediately follow the {@code Manifest}
  *      </li>
  *  </ul>
+ *  <p>
  *  Once the {@code JarEntry} has been completely verified, which is done by
  *  reading until the end of the entry's input stream,
  *  {@link JarEntry#getCertificates()} may be called to obtain the certificates
  *  for this entry and {@link JarEntry#getCodeSigners()} may be called to obtain
  *  the signers.
+ *  </p>
+ *  <p>
+ *  It is important to note that the verification process does not include validating
+ *  the signer's certificate. A caller should inspect the return value of
+ *  {@link JarEntry#getCodeSigners()} to further determine if the signature
+ *  can be trusted.
+ *  </p>
  * @apiNote
  * If a {@code JarEntry} is modified after the JAR file is signed,
  * a {@link SecurityException} will be thrown when the entry is read.
