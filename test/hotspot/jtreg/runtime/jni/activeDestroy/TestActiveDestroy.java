@@ -24,9 +24,8 @@
 /*
  * @test
  * @bug     8290482
- * @summary Tests that DestroyJavaVM from an active thread
- *          reports JNI_ERR.
- * @run main/native TestActiveDestroy driver
+ * @summary Tests that DestroyJavaVM from an active thread fails.
+ * @run main/native TestActiveDestroy
  */
 
 public class TestActiveDestroy {
