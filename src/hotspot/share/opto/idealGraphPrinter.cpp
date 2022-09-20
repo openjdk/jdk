@@ -201,7 +201,7 @@ void IdealGraphPrinter::end_head() {
 void IdealGraphPrinter::print_attr(const char *name, intptr_t val) {
   stringStream stream;
   stream.print(INTX_FORMAT, val);
-  print_attr(name, stream.as_string());
+  print_attr(name, stream.freeze());
 }
 
 void IdealGraphPrinter::print_attr(const char *name, const char *val) {
@@ -225,7 +225,7 @@ void IdealGraphPrinter::text(const char *s) {
 void IdealGraphPrinter::print_prop(const char *name, int val) {
   stringStream stream;
   stream.print("%d", val);
-  print_prop(name, stream.as_string());
+  print_prop(name, stream.freeze());
 }
 
 void IdealGraphPrinter::print_prop(const char *name, const char *val) {
@@ -245,8 +245,8 @@ void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree
   stringStream shortStr;
   method->print_short_name(&shortStr);
 
-  print_attr(METHOD_NAME_PROPERTY, str.as_string());
-  print_attr(METHOD_SHORT_NAME_PROPERTY, shortStr.as_string());
+  print_attr(METHOD_NAME_PROPERTY, str.freeze());
+  print_attr(METHOD_SHORT_NAME_PROPERTY, shortStr.freeze());
   print_attr(METHOD_BCI_PROPERTY, bci);
 
   end_head();
@@ -305,7 +305,7 @@ void IdealGraphPrinter::begin_method() {
   // Add method name
   stringStream strStream;
   method->print_name(&strStream);
-  print_prop(METHOD_NAME_PROPERTY, strStream.as_string());
+  print_prop(METHOD_NAME_PROPERTY, strStream.freeze());
 
   if (method->flags().is_public()) {
     print_prop(METHOD_IS_PUBLIC_PROPERTY, TRUE_VALUE);
@@ -318,7 +318,7 @@ void IdealGraphPrinter::begin_method() {
   if (C->is_osr_compilation()) {
       stringStream ss;
       ss.print("bci: %d, line: %d", C->entry_bci(), method->line_number_from_bci(C->entry_bci()));
-      print_prop(COMPILATION_OSR_PROPERTY, ss.as_string());
+      print_prop(COMPILATION_OSR_PROPERTY, ss.freeze());
   }
 
   print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
@@ -601,7 +601,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         bciStream.print("%d ", caller->bci());
         caller = caller->caller();
       }
-      print_prop("bci", bciStream.as_string());
+      print_prop("bci", bciStream.freeze());
       if (last != NULL && last->has_linenumber_table() && last_bci >= 0) {
         print_prop("line", last->line_number_from_bci(last_bci));
       }
@@ -611,7 +611,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (node->debug_orig() != NULL) {
       stringStream dorigStream;
       node->dump_orig(&dorigStream, false);
-      print_prop("debug_orig", dorigStream.as_string());
+      print_prop("debug_orig", dorigStream.freeze());
     }
 #endif
 

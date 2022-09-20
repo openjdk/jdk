@@ -6325,7 +6325,6 @@ instruct expandBitsI_mem(rRegI dst, rRegI src, memory mask) %{
 
 instruct vsqrtF_reg(vec dst, vec src) %{
   match(Set dst (SqrtVF src));
-  ins_cost(400);
   format %{ "vsqrtps  $dst,$src\t! sqrt packedF" %}
   ins_encode %{
     assert(UseAVX > 0, "required");
@@ -6338,7 +6337,6 @@ instruct vsqrtF_reg(vec dst, vec src) %{
 instruct vsqrtF_mem(vec dst, memory mem) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) > 8);
   match(Set dst (SqrtVF (LoadVector mem)));
-  ins_cost(400);
   format %{ "vsqrtps  $dst,$mem\t! sqrt packedF" %}
   ins_encode %{
     assert(UseAVX > 0, "required");
@@ -6351,7 +6349,6 @@ instruct vsqrtF_mem(vec dst, memory mem) %{
 // Floating point vector sqrt
 instruct vsqrtD_reg(vec dst, vec src) %{
   match(Set dst (SqrtVD src));
-  ins_cost(400);
   format %{ "vsqrtpd  $dst,$src\t! sqrt packedD" %}
   ins_encode %{
     assert(UseAVX > 0, "required");
@@ -6364,7 +6361,6 @@ instruct vsqrtD_reg(vec dst, vec src) %{
 instruct vsqrtD_mem(vec dst, memory mem) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) > 8);
   match(Set dst (SqrtVD (LoadVector mem)));
-  ins_cost(400);
   format %{ "vsqrtpd  $dst,$mem\t! sqrt packedD" %}
   ins_encode %{
     assert(UseAVX > 0, "required");
@@ -7905,7 +7901,6 @@ instruct evblendvp64_masked(vec dst, vec src1, vec src2, kReg mask) %{
 // a = |a|
 instruct vabsB_reg(vec dst, vec src) %{
   match(Set dst (AbsVB  src));
-  ins_cost(450);
   format %{ "vabsb $dst,$src\t# $dst = |$src| abs packedB" %}
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
@@ -7921,7 +7916,6 @@ instruct vabsB_reg(vec dst, vec src) %{
 
 instruct vabsS_reg(vec dst, vec src) %{
   match(Set dst (AbsVS  src));
-  ins_cost(450);
   format %{ "vabsw $dst,$src\t# $dst = |$src| abs packedS" %}
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
@@ -7938,7 +7932,6 @@ instruct vabsS_reg(vec dst, vec src) %{
 instruct vabsI_reg(vec dst, vec src) %{
   match(Set dst (AbsVI  src));
   format %{ "pabsd $dst,$src\t# $dst = |$src| abs packedI" %}
-  ins_cost(250);
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
     if (vlen <= 4) {
@@ -7953,7 +7946,6 @@ instruct vabsI_reg(vec dst, vec src) %{
 
 instruct vabsL_reg(vec dst, vec src) %{
   match(Set dst (AbsVL  src));
-  ins_cost(450);
   format %{ "evpabsq $dst,$src\t# $dst = |$src| abs packedL" %}
   ins_encode %{
     assert(UseAVX > 2, "required");
@@ -8893,7 +8885,6 @@ instruct vpopcount_integral_reg_evex(vec dst, vec src) %{
   predicate(is_vector_popcount_predicate(Matcher::vector_element_basic_type(n->in(1))));
   match(Set dst (PopCountVI src));
   match(Set dst (PopCountVL src));
-  ins_cost(400);
   format %{ "vector_popcount_integral $dst, $src" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
@@ -9718,7 +9709,6 @@ instruct vmul_mem_masked(vec dst, memory src2, kReg mask) %{
 instruct vsqrt_reg_masked(vec dst, kReg mask) %{
   match(Set dst (SqrtVF dst mask));
   match(Set dst (SqrtVD dst mask));
-  ins_cost(100);
   format %{ "vpsqrt_masked $dst, $mask\t! sqrt masked operation" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
@@ -10044,7 +10034,6 @@ instruct vabs_masked(vec dst, kReg mask) %{
   match(Set dst (AbsVI dst mask));
   match(Set dst (AbsVL dst mask));
   format %{ "vabs_masked $dst, $mask \t! vabs masked operation" %}
-  ins_cost(100);
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);

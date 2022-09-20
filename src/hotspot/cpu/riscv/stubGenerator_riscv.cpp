@@ -355,13 +355,13 @@ class StubGenerator: public StubCodeGenerator {
     __ ld(j_rarg2, result);
     Label is_long, is_float, is_double, exit;
     __ ld(j_rarg1, result_type);
-    __ li(t0, (u1)T_OBJECT);
+    __ mv(t0, (u1)T_OBJECT);
     __ beq(j_rarg1, t0, is_long);
-    __ li(t0, (u1)T_LONG);
+    __ mv(t0, (u1)T_LONG);
     __ beq(j_rarg1, t0, is_long);
-    __ li(t0, (u1)T_FLOAT);
+    __ mv(t0, (u1)T_FLOAT);
     __ beq(j_rarg1, t0, is_float);
-    __ li(t0, (u1)T_DOUBLE);
+    __ mv(t0, (u1)T_DOUBLE);
     __ beq(j_rarg1, t0, is_double);
 
     // handle T_INT case
@@ -599,7 +599,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label exit, error;
 
-    __ push_reg(0x3000, sp);   // save c_rarg2 and c_rarg3
+    __ push_reg(RegSet::of(c_rarg2, c_rarg3), sp); // save c_rarg2 and c_rarg3
 
     __ la(c_rarg2, ExternalAddress((address) StubRoutines::verify_oop_count_addr()));
     __ ld(c_rarg3, Address(c_rarg2));
@@ -635,12 +635,12 @@ class StubGenerator: public StubCodeGenerator {
     // return if everything seems ok
     __ bind(exit);
 
-    __ pop_reg(0x3000, sp);   // pop c_rarg2 and c_rarg3
+    __ pop_reg(RegSet::of(c_rarg2, c_rarg3), sp);  // pop c_rarg2 and c_rarg3
     __ ret();
 
     // handle errors
     __ bind(error);
-    __ pop_reg(0x3000, sp);   // pop c_rarg2 and c_rarg3
+    __ pop_reg(RegSet::of(c_rarg2, c_rarg3), sp); // pop c_rarg2 and c_rarg3
 
     __ push_reg(RegSet::range(x0, x31), sp);
     // debug(char* msg, int64_t pc, int64_t regs[])
@@ -753,7 +753,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       Label L;
 
-      __ li(t0, 8);
+      __ mv(t0, 8);
       __ bge(count, t0, L);
       __ stop("genrate_copy_longs called with < 8 words");
       __ bind(L);
@@ -1558,7 +1558,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
-    __ store_heap_oop(Address(to, 0), copied_oop, noreg, noreg, AS_RAW);  // store the oop
+    __ store_heap_oop(Address(to, 0), copied_oop, noreg, noreg, noreg, AS_RAW); // store the oop
     __ add(to, to, UseCompressedOops ? 4 : 8);
     __ sub(count, count, 1);
     __ beqz(count, L_do_card_marks);
@@ -1964,7 +1964,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
   __ BIND(L_failed);
-    __ li(x10, -1);
+    __ mv(x10, -1);
     __ leave();   // required for proper stackwalking of RuntimeStub frame
     __ ret();
 
@@ -2917,7 +2917,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(numIter, exit);
     __ shadd(newArr, newIdx, newArr, t0, 2);
 
-    __ li(shiftRevCount, 32);
+    __ mv(shiftRevCount, 32);
     __ sub(shiftRevCount, shiftRevCount, shiftCount);
 
     __ bind(loop);
@@ -2971,7 +2971,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(idx, exit);
     __ shadd(newArr, newIdx, newArr, t0, 2);
 
-    __ li(shiftRevCount, 32);
+    __ mv(shiftRevCount, 32);
     __ sub(shiftRevCount, shiftRevCount, shiftCount);
 
     __ bind(loop);
@@ -3272,7 +3272,7 @@ class StubGenerator: public StubCodeGenerator {
           ld(Rm, Address(Rm));
           add(Rn, Pn_base, Rn);
           ld(Rn, Address(Rn));
-          li(t0, 1); // set carry flag, i.e. no borrow
+          mv(t0, 1); // set carry flag, i.e. no borrow
           align(16);
           bind(loop); {
             notr(Rn, Rn);
@@ -3438,7 +3438,7 @@ class StubGenerator: public StubCodeGenerator {
       enter();
 
       // Make room.
-      li(Ra, 512);
+      mv(Ra, 512);
       bgt(Rlen, Ra, argh);
       slli(Ra, Rlen, exact_log2(4 * sizeof(jint)));
       sub(Ra, sp, Ra);
@@ -3464,7 +3464,7 @@ class StubGenerator: public StubCodeGenerator {
       {
         ld(Rn, Address(Pn_base));
         mul(Rlo_mn, Rn, inv);
-        li(t0, -1);
+        mv(t0, -1);
         Label ok;
         beq(Rlo_mn, t0, ok);
         stop("broken inverse in Montgomery multiply");
@@ -3560,7 +3560,7 @@ class StubGenerator: public StubCodeGenerator {
       enter();
 
       // Make room.
-      li(Ra, 512);
+      mv(Ra, 512);
       bgt(Rlen, Ra, argh);
       slli(Ra, Rlen, exact_log2(4 * sizeof(jint)));
       sub(Ra, sp, Ra);
@@ -3804,15 +3804,16 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(c_rarg0, thread);
   }
 
-  static void jfr_epilogue(MacroAssembler* _masm, Register thread) {
+  static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
     Label null_jobject;
     __ beqz(x10, null_jobject);
     DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), c_rarg0, thread);
+    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), t0, t1);
     __ bind(null_jobject);
   }
+
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
@@ -3838,7 +3839,7 @@ class StubGenerator: public StubCodeGenerator {
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, xthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-    jfr_epilogue(_masm, xthread);
+    jfr_epilogue(_masm);
     __ leave();
     __ ret();
 

@@ -377,7 +377,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 #ifndef PRODUCT
   stringStream ss;
   ss.print("upcall_stub_%s", entry->signature()->as_C_string());
-  const char* name = _masm->code_string(ss.as_string());
+  const char* name = _masm->code_string(ss.freeze());
 #else // PRODUCT
   const char* name = "upcall_stub";
 #endif // PRODUCT

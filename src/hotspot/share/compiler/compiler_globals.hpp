@@ -308,6 +308,9 @@
   product(bool, ReplayCompiles, false, DIAGNOSTIC,                          \
           "Enable replay of compilations from ReplayDataFile")              \
                                                                             \
+  product(bool, ReplayReduce, false, EXPERIMENTAL,                          \
+          "Enable features to facilitate replay file reduction")            \
+                                                                            \
   product(ccstr, ReplayDataFile, NULL,                                      \
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \

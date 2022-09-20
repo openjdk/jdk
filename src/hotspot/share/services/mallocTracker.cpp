@@ -174,7 +174,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   }
 
   // Uses placement global new operator to initialize malloc header
-  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, stack, mst_marker);
+  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, mst_marker);
   void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.

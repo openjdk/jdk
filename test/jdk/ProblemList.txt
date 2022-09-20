@@ -524,6 +524,7 @@ java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-
 sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
 sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
+sun/management/jmxremote/bootstrap/RmiBootstrapTest.java#id1    8293657 linux-x64
 
 ############################################################################
 
