@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     1234567
+ * @bug     8290482
  * @summary Tests that DestroyJavaVM from an active thread
  *          reports JNI_ERR.
  * @run main/native TestActiveDestroy driver
