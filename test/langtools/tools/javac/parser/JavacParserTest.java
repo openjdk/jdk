@@ -1919,6 +1919,12 @@ public class JavacParserTest extends TestCase {
                           void test2() {
                               try (@Ann AutoCloseable withAnnotation = null) {}
                           }
+                          void test3() {
+                              try (final AutoCloseable withFinal = null) {}
+                          }
+                          void test4() {
+                              try (final @Ann AutoCloseable withAnnotationFinal = null) {}
+                          }
                           @interface Ann {}
                       }
                       """;
@@ -1929,15 +1935,20 @@ public class JavacParserTest extends TestCase {
         Trees t = Trees.instance(ct);
         SourcePositions sp = t.getSourcePositions();
         new TreeScanner<Void, Void>() {
+            boolean modifiersHaveFinal;
             boolean modifiersHaveSpan;
 
             @Override
             public Void visitVariable(VariableTree node, Void p) {
+                boolean prevModifiersHaveFinal = modifiersHaveFinal;
                 boolean prevModifiersHaveSpan = modifiersHaveSpan;
                 try {
-                    modifiersHaveSpan = node.getName().contentEquals("withAnnotation");
+                    modifiersHaveFinal = node.getName().toString().contains("Final");
+                    modifiersHaveSpan = modifiersHaveFinal ||
+                                        node.getName().toString().contains("Annotation");
                     return super.visitVariable(node, p);
                 } finally {
+                    modifiersHaveFinal = prevModifiersHaveFinal;
                     modifiersHaveSpan = prevModifiersHaveSpan;
                 }
             }
@@ -1953,8 +1964,14 @@ public class JavacParserTest extends TestCase {
             }
             @Override
             public Void visitModifiers(ModifiersTree node, Void p) {
-                if (node.getFlags().contains(Modifier.FINAL)) {
-                    throw new AssertionError("Unexpected final modified.");
+                if (modifiersHaveFinal) {
+                    if (!node.getFlags().contains(Modifier.FINAL)) {
+                        throw new AssertionError("Expected final missing.");
+                    }
+                } else {
+                    if (node.getFlags().contains(Modifier.FINAL)) {
+                        throw new AssertionError("Unexpected final modified.");
+                    }
                 }
                 long start = sp.getStartPosition(cut, node);
                 long end = sp.getEndPosition(cut, node);
