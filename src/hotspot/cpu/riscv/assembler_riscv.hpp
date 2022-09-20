@@ -486,10 +486,9 @@ public:
 
 #define INSN_ENTRY_RELOC(result_type, header)                               \
   result_type header {                                                      \
-    InstructionMark im(this);                                               \
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
-    code_section()->relocate(inst_mark(), InternalAddress(dest).rspec());
+    code_section()->relocate(pc(), InternalAddress(dest).rspec());
 
   // Load/store register (all modes)
 #define INSN(NAME, op, funct3)                                                                     \
