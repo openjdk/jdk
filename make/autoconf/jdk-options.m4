@@ -481,7 +481,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
   # Final JMODs are recompiled often during development, and java.base JMOD
   # includes the JVM libraries. In release mode, prefer to compress JMODs fully.
   # In debug mode, pay with a little extra space, but win a lot of CPU time back
-  # with the lightest (not still some) compression.
+  # with the lightest (but still some) compression.
   if test "x$DEBUG_LEVEL" = xrelease; then
     DEFAULT_JMOD_COMPRESS="zip-6"
   else
