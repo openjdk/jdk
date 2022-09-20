@@ -3031,8 +3031,13 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       __ lwarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stwcx_(Rco, Rptr);
     } else {
-      const Register Robj = data->as_register();
-      assert_different_registers(Rptr, Rold, Robj);
+      Register Robj = data->as_register();
+      assert_different_registers(Rptr, Rold, Rtmp);
+      assert_different_registers(Rptr, Robj, Rtmp);
+      if (Robj == Rold) { // May happen with ZGC.
+        __ mr(Rtmp, Robj);
+        Robj = Rtmp;
+      }
       __ ldarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stdcx_(Robj, Rptr);
     }
