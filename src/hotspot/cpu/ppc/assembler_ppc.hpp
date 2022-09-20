@@ -237,6 +237,7 @@ class Assembler : public AbstractAssembler {
 
   enum opcdxos_masks {
     XL_FORM_OPCODE_MASK = (63u << OPCODE_SHIFT) | (1023u << 1),
+    ANDI_OPCODE_MASK    = (63u << OPCODE_SHIFT),
     ADDI_OPCODE_MASK    = (63u << OPCODE_SHIFT),
     ADDIS_OPCODE_MASK   = (63u << OPCODE_SHIFT),
     BXX_OPCODE_MASK     = (63u << OPCODE_SHIFT),
@@ -1477,6 +1478,9 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_addis(int x) {
      return ADDIS_OPCODE == (x & ADDIS_OPCODE_MASK);
+  }
+  static bool is_andi(int x) {
+     return ANDI_OPCODE == (x & ANDI_OPCODE_MASK);
   }
   static bool is_bxx(int x) {
      return BXX_OPCODE == (x & BXX_OPCODE_MASK);
