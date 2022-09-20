@@ -185,15 +185,6 @@ bool LIR_Opr::is_oop() const {
 
 void LIR_Op2::verify() const {
 #ifdef ASSERT
-  switch (code()) {
-    case lir_xchg:
-      break;
-
-    default:
-      assert(!result_opr()->is_register() || !result_opr()->is_oop_register(),
-             "can't produce oops from arith");
-  }
-
   if (two_operand_lir_form) {
 
 #ifdef ASSERT
