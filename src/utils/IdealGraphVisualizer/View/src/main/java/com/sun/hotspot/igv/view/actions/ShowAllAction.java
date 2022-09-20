@@ -23,16 +23,13 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import java.util.HashSet;
-import javax.swing.Action;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
-import org.openide.util.ImageUtilities;
-import org.openide.util.Lookup;
+import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
 
 
@@ -49,12 +46,7 @@ import org.openide.util.NbBundle.Messages;
         "CTL_ShowAllAction=Show all",
         "HINT_ShowAllAction=Show all nodes"
 })
-public final class ShowAllAction extends ContextAction<DiagramViewModel> {
-
-    public ShowAllAction() {
-        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_ShowAllAction());
-        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
-    }
+public final class ShowAllAction extends ModelAwareAction {
 
     @Override
     protected String iconResource() {
@@ -62,43 +54,22 @@ public final class ShowAllAction extends ContextAction<DiagramViewModel> {
     }
 
     @Override
+    protected String getDescription() {
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ShowAllAction");
+    }
+
+    @Override
     public String getName() {
-        return Bundle.CTL_ShowAllAction();
+        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ShowAllAction");
     }
 
     @Override
     public void performAction(DiagramViewModel model) {
-        model.showNot(new HashSet<Integer>());
+        model.showNot(new HashSet<>());
     }
 
     @Override
     public boolean isEnabled(DiagramViewModel model) {
         return model != null && !model.getHiddenNodes().isEmpty();
-    }
-
-    @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup actionContext) {
-        return this;
-    }
-
-    @Override
-    public void addContextListener(DiagramViewModel model) {
-        model.getViewChangedEvent().addListener(this);
-        model.getDiagramChangedEvent().addListener(this);
-        model.getViewPropertiesChangedEvent().addListener(this);
-        model.getHiddenNodesChangedEvent().addListener(this);
-    }
-
-    @Override
-    public void removeContextListener(DiagramViewModel model) {
-        model.getViewChangedEvent().removeListener(this);
-        model.getDiagramChangedEvent().removeListener(this);
-        model.getViewPropertiesChangedEvent().removeListener(this);
-        model.getHiddenNodesChangedEvent().removeListener(this);
     }
 }

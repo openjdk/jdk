@@ -29,6 +29,7 @@ import java.beans.PropertyChangeEvent;
 public class EnableSeaLayoutAction extends EnableLayoutAction {
 
     private final EditorTopComponent editor;
+
     public EnableSeaLayoutAction(EditorTopComponent etc) {
         editor = etc;
     }

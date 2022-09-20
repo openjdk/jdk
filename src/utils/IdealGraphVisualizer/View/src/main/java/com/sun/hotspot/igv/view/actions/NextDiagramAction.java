@@ -23,15 +23,12 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
-import javax.swing.Action;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
-import org.openide.util.ImageUtilities;
-import org.openide.util.Lookup;
+import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -47,13 +44,7 @@ import org.openide.util.NbBundle.Messages;
         "CTL_NextDiagramAction=Show next graph",
         "HINT_NextDiagramAction=Show next graph of current group"
 })
-public final class NextDiagramAction extends ContextAction<DiagramViewModel> {
-
-
-    public NextDiagramAction() {
-        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_NextDiagramAction());
-        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
-    }
+public final class NextDiagramAction extends ModelAwareAction {
 
     @Override
     protected String iconResource() {
@@ -61,8 +52,13 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> {
     }
 
     @Override
+    protected String getDescription() {
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_NextDiagramAction");
+    }
+
+    @Override
     public String getName() {
-        return Bundle.CTL_NextDiagramAction();
+        return NbBundle.getMessage(NextDiagramAction.class, "CTL_NextDiagramAction");
     }
 
     @Override
@@ -75,31 +71,5 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> {
     @Override
     public boolean isEnabled(DiagramViewModel model) {
         return model.getSecondPosition() != model.getPositions().size() - 1;
-    }
-
-    @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup actionContext) {
-        return NextDiagramAction.this;
-    }
-
-    @Override
-    public void addContextListener(DiagramViewModel model) {
-        model.getViewChangedEvent().addListener(this);
-        model.getDiagramChangedEvent().addListener(this);
-        model.getViewPropertiesChangedEvent().addListener(this);
-        model.getHiddenNodesChangedEvent().addListener(this);
-    }
-
-    @Override
-    public void removeContextListener(DiagramViewModel model) {
-        model.getViewChangedEvent().removeListener(this);
-        model.getDiagramChangedEvent().removeListener(this);
-        model.getViewPropertiesChangedEvent().removeListener(this);
-        model.getHiddenNodesChangedEvent().removeListener(this);
     }
 }

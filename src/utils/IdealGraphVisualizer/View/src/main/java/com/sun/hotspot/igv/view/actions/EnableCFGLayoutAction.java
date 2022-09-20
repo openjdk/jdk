@@ -41,7 +41,7 @@ public class EnableCFGLayoutAction extends EnableLayoutAction {
 
     @Override
     protected String getDescription() {
-        return "Show clustered sea of nodes";
+        return "Show control-flow graph";
     }
 
     @Override

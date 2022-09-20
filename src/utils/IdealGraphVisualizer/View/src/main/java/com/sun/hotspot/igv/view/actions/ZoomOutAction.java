@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.actions.CallableSystemAction;
 
@@ -50,7 +51,7 @@ import org.openide.util.actions.CallableSystemAction;
 public final class ZoomOutAction extends CallableSystemAction {
 
     public ZoomOutAction() {
-        putValue(Action.SHORT_DESCRIPTION, Bundle.HINT_ZoomOutAction());
+        putValue(Action.SHORT_DESCRIPTION, getDescription());
         putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
@@ -64,7 +65,11 @@ public final class ZoomOutAction extends CallableSystemAction {
 
     @Override
     public String getName() {
-        return Bundle.CTL_ZoomOutAction();
+        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomOutAction");
+    }
+
+    private String getDescription() {
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomOutAction");
     }
 
     @Override
