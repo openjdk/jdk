@@ -1110,6 +1110,11 @@ ifeq ($(ENABLE_FULL_DOCS), true)
   docs-jdk-api: docs-jdk-api-modulegraph
   docs-javase-api: docs-javase-api-modulegraph
   docs-reference-api: docs-reference-api-modulegraph
+
+  # We must generated javadoc first so we know what graphs are needed
+  docs-jdk-api-modulegraph: docs-jdk-api-javadoc
+  docs-javase-api-modulegraph: docs-javase-api-javadoc
+  docs-reference-api-modulegraph: docs-reference-api-javadoc
 endif
 
 docs-jdk: docs-jdk-api docs-jdk-specs docs-jdk-index
