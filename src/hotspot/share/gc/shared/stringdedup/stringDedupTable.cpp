@@ -162,8 +162,8 @@ void StringDedup::Table::Bucket::adjust_capacity(int new_capacity) {
 }
 
 void StringDedup::Table::Bucket::expand_if_full() {
-  if (_hashes.length() == _hashes.max_length()) {
-    adjust_capacity(needed_capacity(_hashes.max_length() + 1));
+  if (_hashes.length() == _hashes.capacity()) {
+    adjust_capacity(needed_capacity(_hashes.capacity() + 1));
   }
 }
 
@@ -173,7 +173,7 @@ void StringDedup::Table::Bucket::shrink() {
     _values.clear_and_deallocate();
   } else {
     int target = needed_capacity(_hashes.length());
-    if (target < _hashes.max_length()) {
+    if (target < _hashes.capacity()) {
       adjust_capacity(target);
     }
   }

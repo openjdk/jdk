@@ -89,7 +89,6 @@ protected:
 public:
   int   length() const          { return _len; }
   int   capacity() const        { return _capacity; }
-  int   max_length() const      { return _capacity; }
 
   bool  is_empty() const        { return _len == 0; }
   bool  is_nonempty() const     { return _len != 0; }
@@ -158,12 +157,12 @@ public:
   }
 
   E first() const {
-    assert(_len > 0, "empty list");
+    assert(_len > 0, "empty");
     return _data[0];
   }
 
   E top() const {
-    assert(_len > 0, "empty list");
+    assert(_len > 0, "empty");
     return _data[_len-1];
   }
 
