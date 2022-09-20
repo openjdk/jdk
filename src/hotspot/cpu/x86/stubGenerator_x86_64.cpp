@@ -1192,9 +1192,12 @@ void StubGenerator::restore_arg_regs() {
 
 // This is used in places where r10 is a scratch register, and can
 // be adapted if r9 is needed also.
-void StubGenerator::setup_arg_regs_using_thread() {
+void StubGenerator::setup_arg_regs_using_thread(int nargs) {
   const Register saved_r15 = r9;
 #ifdef _WIN64
+  if (nargs >= 4) {
+    __ mov(rax, r9);       // r9 is also saved_r15
+  }
   __ mov(saved_r15, r15);  // r15 is callee saved and needs to be restored
   __ get_thread(r15_thread);
   assert(c_rarg0 == rcx && c_rarg1 == rdx && c_rarg2 == r8 && c_rarg3 == r9,
@@ -1205,6 +1208,9 @@ void StubGenerator::setup_arg_regs_using_thread() {
   __ mov(rdi, rcx); // c_rarg0
   __ mov(rsi, rdx); // c_rarg1
   __ mov(rdx, r8);  // c_rarg2
+  if (nargs >= 4) {
+      __ mov(rcx, rax); // c_rarg3 (via rax)
+  }
 #else
   assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
          "unexpected argument registers");
