@@ -27,49 +27,37 @@
   * @library /test/lib
   * @summary Crash in PhaseIdealLoop::verify_strip_mined_scheduling
   *
-  * @run main TestDuplicateSimpleLoopBackedge
+  * @run main/othervm -Xbatch TestDuplicateSimpleLoopBackedge
   *
   */
 
-import jdk.test.lib.Utils;
-
-class Foo {
-    static void c(Byte[] a, Byte d) {
+public class TestDuplicateSimpleLoopBackedge {
+    static void zero(Byte[] a) {
         for (int e = 0; e < a.length; e++)
             a[e] = 0;
     }
-}
 
-public class TestDuplicateSimpleLoopBackedge {
-    int f(int g) {
+    int foo(int g) {
         Byte h[] = new Byte[500];
-        Foo.c(h, (byte)4);
+        zero(h);
         short i = 7;
         while (i != 1)
             i = (short)(i - 3);
         return 0;
     }
 
-    void j(String[] k) {
+    void bar(String[] k) {
         try {
             int l = 5;
-            if (l < f(l));
+            if (l < foo(l));
         } catch (Exception m) {
         }
     }
 
-    public static void main(String[] args) throws Exception{
-        Thread thread = new Thread() {
-                public void run() {
-                    TestDuplicateSimpleLoopBackedge n = new TestDuplicateSimpleLoopBackedge();
-                    for (int i = 0; i < 10000; ++i) {
-                        n.j(args);
-                    }
-                }
-            };
-        // Give thread some time to trigger compilation
-        thread.setDaemon(true);
-        thread.start();
-        Thread.sleep(Utils.adjustTimeout(4000));
+    public static void main(String[] args) {
+        TestDuplicateSimpleLoopBackedge n = new TestDuplicateSimpleLoopBackedge();
+        for (int i = 0; i < 10000; ++i) {
+            n.bar(args);
+        }
     }
 }
