@@ -55,15 +55,16 @@ import jdk.internal.util.jar.JarIndex;
  * over by these methods. Whether these methods skip over the Manifest when it
  * appears later in the stream is not specified.
  * </p>
- * <h2>Verifying a JarInputStream</h2>
+ * <h2>Signed JAR Files</h2>
  *
  *  A {@code JarInputStream} may be used to verify the signatures of a
  *  <a href="{@docRoot}/../specs/jar/jar.html#signed-jar-file">signed JAR file</a>
  *  assuming the following requirements are met:
  *  <ul>
  *      <li>
- *         The {@link #getManifest()} method returns the {@code Manifest} for the JAR
- *         file
+ *         The {@code Manifest} is the first entry in the stream (or the second
+ *         entry if the first entry in the stream is {@code META-INF/} and the
+ *         second entry is {@code META-INF/MANIFEST.MF}).
  *      </li>
  *      <li>
  *         All signature-related entries immediately follow the {@code Manifest}
