@@ -2439,6 +2439,9 @@ void MacroAssembler::far_jump(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+        || entry.rspec().type() == relocInfo::runtime_call_type
+        || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   int32_t offset = 0;
   if (far_branches()) {
     // We can use auipc + jalr here because we know that the total size of
@@ -2454,6 +2457,9 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+        || entry.rspec().type() == relocInfo::runtime_call_type
+        || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   int32_t offset = 0;
   if (far_branches()) {
     // We can use auipc + jalr here because we know that the total size of
@@ -2701,7 +2707,7 @@ void MacroAssembler::la_patchable(Register reg1, const Address &dest, int32_t &o
   // RISC-V doesn't compute a page-aligned address, in order to partially
   // compensate for the use of *signed* offsets in its base+disp12
   // addressing mode (RISC-V's PC-relative reach remains asymmetric
-  // [-(2G + 2K), 2G - 2k).
+  // [-(2G + 2K), 2G - 2K).
   if (offset_high >= -((1L << 31) + (1L << 11)) && offset_low < (1L << 31) - (1L << 11)) {
     int64_t distance = dest.target() - pc();
     auipc(reg1, (int32_t)distance + 0x800);
