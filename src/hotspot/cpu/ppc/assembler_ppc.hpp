@@ -242,6 +242,7 @@ class Assembler : public AbstractAssembler {
     ADDIS_OPCODE_MASK   = (63u << OPCODE_SHIFT),
     BXX_OPCODE_MASK     = (63u << OPCODE_SHIFT),
     BCXX_OPCODE_MASK    = (63u << OPCODE_SHIFT),
+    CMPLI_OPCODE_MASK   = (63u << OPCODE_SHIFT),
     // trap instructions
     TDI_OPCODE_MASK     = (63u << OPCODE_SHIFT),
     TWI_OPCODE_MASK     = (63u << OPCODE_SHIFT),
@@ -1505,6 +1506,9 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_bclr(int x) {
      return BCLR_OPCODE == (x & XL_FORM_OPCODE_MASK);
+  }
+  static bool is_cmpli(int x) {
+     return CMPLI_OPCODE == (x & CMPLI_OPCODE_MASK);
   }
   static bool is_li(int x) {
      return is_addi(x) && inv_ra_field(x)==0;
