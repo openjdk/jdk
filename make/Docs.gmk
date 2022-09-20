@@ -216,8 +216,9 @@ endef
 #
 define setup_gengraph_sealed_dot_to_svg
   $1_$2_DOT_SRC :=  $$($1_SEALED_GENGRAPHS_DIR)/$2.dot
-  $1_$2_SLASHED_NAME := $$(subst .,/,$2)
-  $1_$2_TARGET_MODULE := FIXME_MODULE_HERE
+  $1_$2_TARGET_CLASS := $$(word 2, $$(subst _, , $2))
+  $1_$2_SLASHED_NAME := $$(subst .,/, $$($1_$2_TARGET_CLASS))
+  $1_$2_TARGET_MODULE := $$(word 1, $$(subst _, , $2))
   $1_$2_TARGET_PATH := $$($1_TARGET_DIR)/$$($1_$2_TARGET_MODULE)/$$(dir $$($1_$2_SLASHED_NAME))
   $1_$2_TARGET_NAME := $$(notdir $$($1_$2_SLASHED_NAME))
   $1_$2_SVG_TARGET := $$($1_$2_TARGET_PATH)/$$($1_$2_TARGET_NAME)-sealed-graph.svg
