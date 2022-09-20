@@ -37,8 +37,8 @@ template <> const char* type_name<uint32_t>() { return "uint32_t"; }
 template <> const char* type_name<int64_t>()  { return "int64_t"; }
 template <> const char* type_name<int32_t>()  { return "int32_t"; }
 
-#define LOG(s, ...) LOG_HERE(s, __VA_ARGS__)
-//#define LOG(s, ...)
+//#define LOG(s, ...) LOG_HERE(s, __VA_ARGS__)
+#define LOG(s, ...)
 
 template <typename T>
 static void do_test_valid(T expected_value, const char* pattern) {
