@@ -101,7 +101,7 @@ public class bug6559152 {
     }
 
     private static void test() throws Exception {
-        robot.mouseMove(p.x + (int)(d.getWidth() / 2), p.y + (int)(d.getHeight() / 2));
+        robot.mouseMove(p.x + d.width / 2, p.y + d.height / 2);
         robot.waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
