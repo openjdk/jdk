@@ -26,7 +26,6 @@
   @bug 4116029 4300383
   @summary verify that child components can draw only inside their
            visible bounds
-  @key printer
   @library /test/lib
   @library /javax/accessibility/manual
   @build lib.ManualTestFrame
