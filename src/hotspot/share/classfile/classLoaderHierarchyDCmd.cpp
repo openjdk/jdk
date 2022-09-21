@@ -422,7 +422,7 @@ public:
     }
   }
 
-  void print_with_childs(outputStream* st, bool print_classes, bool print_add_info) const {
+  void print_with_child_nodes(outputStream* st, bool print_classes, bool print_add_info) const {
     BranchTracker bwt;
     print_with_child_nodes(st, bwt, print_classes, print_add_info);
   }
@@ -499,7 +499,7 @@ public:
   }
 
   void print_results(outputStream* st) const {
-    _root->print_with_childs(st, _print_classes, _verbose);
+    _root->print_with_child_nodes(st, _print_classes, _verbose);
   }
 
   void do_cld (ClassLoaderData* cld) {
