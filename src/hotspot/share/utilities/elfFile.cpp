@@ -446,7 +446,7 @@ bool ElfFile::DwarfFilePath::set(const char* src) {
 }
 
 bool ElfFile::DwarfFilePath::set_after_last_slash(const char* src) {
-  char* last_slash = strrchr(_path, '/');
+  char* last_slash = strrchr(_path, *os::file_separator());
   if (last_slash == nullptr) {
     // Should always find a slash.
     return false;
@@ -1629,14 +1629,14 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
 // Remove everything before the last slash including the slash itself to get the actual filename. This is required, for
 // example, for Clang debug builds which emit a relative path while GCC only emits the filename.
 void DwarfFile::LineNumberProgram::strip_path_prefix(char* filename, const size_t filename_len) {
-  char* last_slash = strrchr(filename, '/');
+  char* last_slash = strrchr(filename, *os::file_separator());
   if (last_slash != nullptr) {
     uint16_t index_after_slash = (uint16_t)(last_slash + 1 - filename);
     // Copy filename to beginning of buffer.
     int bytes_written = jio_snprintf(filename, filename_len - index_after_slash, "%s", filename + index_after_slash);
     assert(bytes_written > 0, "could not strip path prefix");
     // Add null terminator.
-    jio_snprintf(filename + bytes_written, 1, "%s", '\0');
+    filename[bytes_written] = '\0';
   }
 }
 

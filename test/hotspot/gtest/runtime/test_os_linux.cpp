@@ -458,7 +458,8 @@ TEST_VM(os_linux, decoder_get_source_info_valid_truncated) {
   // Clang emits a relative file path for debug builds while in product builds it only emits the filename itself.
   // GCC only emits the filename.
   // This gives us either "jni.cp" or "src/ho". In the latter case, we strip the path prefix to get to the actual
-  // filename which, however, is useless in this case - we get "ho".
+  // filename which, however, is not a real filename since we miss most of the path and the filename itself due to
+  // the too small buffer. Stripping gives us "ho" as filename.
   ASSERT_TRUE(strcmp(buf, "jni.cp") == 0 || strcmp(buf, "ho") == 0);
   ASSERT_TRUE(line > 0);
 }
