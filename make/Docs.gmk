@@ -443,7 +443,7 @@ define SetupApiDocsGenerationBody
     # Now we must produce the svg files from the dot files.
 
     # Get a list of classes for which SealedGraph has generated dot files
-    $1_SEALED_CLASSES := $$(patsubst %.dot,%,$$(patsubst
+    $1_SEALED_CLASSES := $$(patsubst %.dot,%,$$(patsubst \
         $$($1_SEALED_GRAPHS_DIR)/%,%, \
         $$(wildcard $$($1_SEALED_GRAPHS_DIR)/*.dot)))
 
