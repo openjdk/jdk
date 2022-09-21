@@ -163,7 +163,7 @@ static size_t minimum_pending_cards_target() {
 G1ConcurrentRefine::G1ConcurrentRefine(G1Policy* policy) :
   _policy(policy),
   _threads_wanted(0),
-  _pending_cards_target(SIZE_MAX),
+  _pending_cards_target(PendingCardsTargetUninitialized),
   _last_adjust(),
   _needs_adjust(false),
   _threads_needed(policy, adjust_threads_period_ms()),
@@ -217,7 +217,7 @@ void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_scan_ti
   // Deduct predicted cards in thread buffers to get target.
   size_t new_target = budget - MIN2(budget, predicted_thread_buffer_cards);
   // Add some hysterisis with previous values.
-  if (_pending_cards_target != SIZE_MAX) {
+  if (is_pending_cards_target_initialized()) {
     new_target = (new_target + _pending_cards_target) / 2;
   }
   // Apply minimum target.
@@ -245,7 +245,7 @@ void G1ConcurrentRefine::adjust_after_gc(double logged_cards_scan_time_ms,
     // thread, in case it is waiting.
     _dcqs.set_max_cards(SIZE_MAX);
     _needs_adjust = true;
-    if (_pending_cards_target != SIZE_MAX) {
+    if (is_pending_cards_target_initialized()) {
       _thread_control.activate(0);
     }
   }
@@ -261,15 +261,15 @@ static uint64_t compute_adjust_delay(double available_ms) {
 
 uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
   assert_current_thread_is_primary_refinement_thread();
-  if (_pending_cards_target == SIZE_MAX) {
-    // If target is "unbounded" then wait forever (until explicitly
-    // activated).  This happens during startup, when we don't bother with
-    // refinement.
-    return 0;
-  } else {
+  if (is_pending_cards_target_initialized()) {
     double available_ms = _threads_needed.predicted_time_ms();
     uint64_t delay = compute_adjust_delay(available_ms);
     return MAX2(delay, adjust_threads_period_ms());
+  } else {
+    // If target not yet initialized then wait forever (until explicitly
+    // activated).  This happens during startup, when we don't bother with
+    // refinement.
+    return 0;
   }
 }
 

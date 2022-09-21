@@ -127,6 +127,15 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
     _thread_control.assert_current_thread_is_primary_refinement_thread();
   }
 
+  // For the first few collection cycles we don't have a target (and so don't
+  // do any concurrent refinement), because there hasn't been enough pause
+  // time refinement work to be done to make useful predictions.  We use
+  // SIZE_MAX as a special marker value to indicate we're in this state.
+  static const size_t PendingCardsTargetUninitialized = SIZE_MAX;
+  bool is_pending_cards_target_initialized() const {
+    return _pending_cards_target != PendingCardsTargetUninitialized;
+  }
+
   void update_pending_cards_target(double logged_cards_scan_time_ms,
                                    size_t processed_logged_cards,
                                    size_t predicted_thread_buffer_cards,
