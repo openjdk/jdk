@@ -134,7 +134,7 @@ public class FinalizerInfo extends Tool {
             System.out.println("Count" + "\t" + "Class description");
             System.out.println("-------------------------------------------------------");
             for (int i=0; i<list.size(); i++) {
-                ObjectHistogramElement e = (ObjectHistogramElement)list.get(i);
+                ObjectHistogramElement e = list.get(i);
                 System.out.println(e.getCount() + "\t" + e.getDescription());
             }
        }
