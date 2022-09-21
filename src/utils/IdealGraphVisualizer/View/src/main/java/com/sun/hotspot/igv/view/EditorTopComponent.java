@@ -187,7 +187,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         content.add(exportCookie);
         content.add(rangeSliderModel);
         graphContent = new InstanceContent();
-        this.associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
+        associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
         rangeSliderModel.getDiagramChangedEvent().addListener(source -> {
             setDisplayName(getDiagram().getName());
