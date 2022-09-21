@@ -23,7 +23,7 @@
 /*
  * @test
  * @key headful
- * @bug 6286501
+ * @bug 6286501 8294046
  * @summary  Verifies if NPE is thrown from stateChanged listener of JTabbedPane
   * @run main TestNPEStateChgListener
  */
