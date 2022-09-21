@@ -27,7 +27,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/parse_memory_size.hpp"
+#include "utilities/parseMemorySize.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
 

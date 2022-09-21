@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -90,4 +90,4 @@ inline bool parse_integer(const char *s, char **endptr, int base, T* result) {
   return rc;
 }
 
-#endif // SHARE_UTILITIES_COPY_HPP
+#endif // SHARE_UTILITIES_PARSE_INTEGER_HPP
