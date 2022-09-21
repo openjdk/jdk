@@ -138,7 +138,8 @@ public class BasicTextAreaUI extends BasicTextUI {
 
     /**
      * Creates the view for an element.  Returns a WrappedPlainView or
-     * PlainView.
+     * PlainView if non-bidi text is handled
+     * else returns PlainParagraph or BoxView if bidi text is being handled.
      *
      * @param elem the element
      * @return the view
