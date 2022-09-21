@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,30 +24,34 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.beans.PropertyChangeEvent;
+import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeListener;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ImageIcon;
+import org.openide.util.ImageUtilities;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class EnableBlockLayoutAction extends EnableLayoutAction {
 
-    public EnableBlockLayoutAction(EditorTopComponent etc) {
-        super(etc);
+public abstract class EnableLayoutAction extends AbstractAction implements PropertyChangeListener {
+
+    protected final EditorTopComponent editor;
+
+    public EnableLayoutAction(EditorTopComponent etc) {
+        editor = etc;
+        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(SELECTED_KEY, false);
+        putValue(Action.SHORT_DESCRIPTION, getDescription());
+        this.addPropertyChangeListener(this);
+    }
+
+    protected abstract String getDescription();
+
+    protected abstract String iconResource();
+
+    public boolean isSelected() {
+        return (Boolean)getValue(SELECTED_KEY);
     }
 
     @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/blocks.png";
-    }
-
-    @Override
-    protected String getDescription() {
-        return "Cluster nodes into blocks";
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        editor.getModel().setShowBlocks(this.isSelected());
-    }
+    public void actionPerformed(ActionEvent e) { }
 }

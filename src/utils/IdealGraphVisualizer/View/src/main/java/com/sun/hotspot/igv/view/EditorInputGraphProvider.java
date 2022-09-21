@@ -50,7 +50,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     @Override
     public InputGraph getGraph() {
         if (editor != null && editor.isOpened()) {
-            return editor.getDiagramModel().getGraphToView();
+            return editor.getModel().getGraphToView();
         } else {
             return null;
         }
@@ -66,7 +66,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     @Override
     public Iterable<InputGraph> searchBackward() {
         if (editor != null && editor.isOpened()) {
-            return editor.getDiagramModel().getGraphsBackward();
+            return editor.getModel().getGraphsBackward();
         } else {
             return null;
         }
@@ -75,7 +75,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     @Override
     public Iterable<InputGraph> searchForward() {
         if (editor != null && editor.isOpened()) {
-            return editor.getDiagramModel().getGraphsForward();
+            return editor.getModel().getGraphsForward();
         } else {
             return null;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.DiagramViewModel;
-import java.util.HashSet;
-import java.util.Set;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
@@ -34,46 +32,45 @@ import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
 
 
-/**
- * @author Thomas Wuerthinger
- */
-@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.HideAction")
-@ActionRegistration(displayName = "#CTL_HideAction")
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ReduceDiffAction")
+@ActionRegistration(displayName = "#CTL_ReduceDiffAction")
 @ActionReferences({
-        @ActionReference(path = "Menu/View", position = 400),
-        @ActionReference(path = "Shortcuts", name = "D-H")
+        @ActionReference(path = "Menu/View", position = 200),
+        @ActionReference(path = "Shortcuts", name = "DS-LEFT"),
+        @ActionReference(path = "Shortcuts", name = "D-DOWN")
 })
 @Messages({
-        "CTL_HideAction=Hide nodes",
-        "HINT_HideAction=Hide selected nodes"
+        "CTL_ReduceDiffAction=Reduce difference selection",
+        "HINT_ReduceDiffAction=Reduce the difference selection"
 })
-public final class HideAction extends ModelAwareAction {
+public final class ReduceDiffAction extends ModelAwareAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/hide.gif"; // NOI18N
-    }
-
-    @Override
-    public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_HideAction");
+        return "com/sun/hotspot/igv/view/images/shrink_right.png"; // NOI18N
     }
 
     @Override
     protected String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_HideAction");
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ReduceDiffAction");
+    }
+
+    @Override
+    public String getName() {
+        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ReduceDiffAction");
     }
 
     @Override
     public void performAction(DiagramViewModel model) {
-        Set<Integer> selectedNodes = model.getSelectedNodes();
-        HashSet<Integer> nodes = new HashSet<>(model.getHiddenNodes());
-        nodes.addAll(selectedNodes);
-        model.showNot(nodes);
+        int firstPos = model.getFirstPosition();
+        int secondPos = model.getSecondPosition();
+        if (firstPos < secondPos) {
+            model.setPositions(firstPos, secondPos - 1);
+        }
     }
 
     @Override
     public boolean isEnabled(DiagramViewModel model) {
-        return model != null && !model.getSelectedNodes().isEmpty();
+        return model.getFirstPosition() != model.getSecondPosition();
     }
 }
