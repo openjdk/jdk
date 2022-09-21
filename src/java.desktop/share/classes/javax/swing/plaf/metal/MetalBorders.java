@@ -239,7 +239,7 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameBorder extends AbstractBorder implements UIResource {
-        private static int corner = 14;
+        private static final int corner = 14;
 
         /**
          * Constructs a {@code InternalFrameBorder}.
@@ -310,7 +310,7 @@ public class MetalBorders {
             g2d.translate(xtranslation, ytranslation);
 
             // border and corner scaling
-            corner = (int) Math.round(corner * at.getScaleX());
+            int scaledCorner = (int) Math.round(corner * at.getScaleX());
             // loop constraint for bulk of the border
             int loopCount = (int) Math.round(5 * at.getScaleX());
 
@@ -333,23 +333,23 @@ public class MetalBorders {
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
                 // Draw the Long highlight lines
                 g.setColor(highlight);
-                g.drawLine(corner+1, midPoint+stkWidth,
-                        width-corner, midPoint+stkWidth); //top
-                g.drawLine(midPoint+stkWidth, corner+1,
-                        midPoint+stkWidth, height-corner); //left
-                g.drawLine(width-midPoint, corner+1,
-                        width-midPoint, height-corner); //right
-                g.drawLine(corner+1, height-midPoint,
-                        width-corner, height-midPoint); //bottom
+                g.drawLine(scaledCorner + 1, midPoint+stkWidth,
+                        width- scaledCorner, midPoint+stkWidth); //top
+                g.drawLine(midPoint+stkWidth, scaledCorner + 1,
+                        midPoint+stkWidth, height- scaledCorner); //left
+                g.drawLine(width-midPoint, scaledCorner + 1,
+                        width-midPoint, height- scaledCorner); //right
+                g.drawLine(scaledCorner + 1, height-midPoint,
+                        width- scaledCorner, height-midPoint); //bottom
 
                 // Draw the Long shadow lines
                 g.setColor(shadow);
-                g.drawLine(corner, midPoint, width-corner-1, midPoint);
-                g.drawLine(midPoint, corner, midPoint, height-corner-1);
-                g.drawLine(width-(midPoint+stkWidth), corner,
-                        width-(midPoint+stkWidth), height-corner-1);
-                g.drawLine(corner, height-(midPoint+stkWidth),
-                        width-corner-1, height-(midPoint+stkWidth));
+                g.drawLine(scaledCorner, midPoint, width- scaledCorner -1, midPoint);
+                g.drawLine(midPoint, scaledCorner, midPoint, height- scaledCorner -1);
+                g.drawLine(width-(midPoint+stkWidth), scaledCorner,
+                        width-(midPoint+stkWidth), height- scaledCorner -1);
+                g.drawLine(scaledCorner, height-(midPoint+stkWidth),
+                        width- scaledCorner -1, height-(midPoint+stkWidth));
             }
 
             // Undo the resetTransform setting from before
@@ -362,8 +362,8 @@ public class MetalBorders {
         }
 
         public Insets getBorderInsets(Component c, Insets newInsets) {
-          newInsets.set(5, 5, 5, 5);
-          return newInsets;
+            newInsets.set(5, 5, 5, 5);
+            return newInsets;
         }
     }
 
