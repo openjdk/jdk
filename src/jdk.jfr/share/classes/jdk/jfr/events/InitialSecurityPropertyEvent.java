@@ -32,7 +32,6 @@ import jdk.jfr.internal.MirrorEvent;
 @Label("Initial Security Property")
 @Name("jdk.InitialSecurityProperty")
 @Description("Initial Security Properties")
-@MirrorEvent(className = "jdk.internal.event.InitialSecurityPropertyEvent")
 public final class InitialSecurityPropertyEvent extends AbstractJDKEvent {
     @Label("Key")
     public String key;

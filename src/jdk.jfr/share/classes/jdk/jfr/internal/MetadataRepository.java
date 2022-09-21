@@ -208,11 +208,6 @@ public final class MetadataRepository {
             pEventType = (PlatformEventType) TypeLibrary.createType(eventClass, dynamicAnnotations, dynamicFields);
         }
         EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
-        String fullName = eventClass.getModule().getName() + ":" + eventClass.getName();
-        Class<? extends Event> c = mirrors.get(fullName);
-        if (c != null) {
-            eventClass = c;
-        }
         EventControl ec = new EventControl(pEventType, eventClass);
         List<SettingInfo> settingInfos = ec.getSettingInfos();
         SettingControl[] settings = new SettingControl[settingInfos.size()];

@@ -73,7 +73,6 @@ import jdk.internal.platform.Metrics;
 public final class JDKEvents {
     private static final Class<?>[] mirrorEventClasses = {
         DeserializationEvent.class,
-        InitialSecurityPropertyEvent.class,
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
         ThreadSleepEvent.class,
@@ -98,7 +97,6 @@ public final class JDKEvents {
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
         jdk.internal.event.DeserializationEvent.class,
-        jdk.internal.event.InitialSecurityPropertyEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,
@@ -110,7 +108,8 @@ public final class JDKEvents {
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
 
-        DirectBufferStatisticsEvent.class
+        DirectBufferStatisticsEvent.class,
+        InitialSecurityPropertyEvent.class,
     };
 
     // This is a list of the classes with instrumentation code that should be applied.
