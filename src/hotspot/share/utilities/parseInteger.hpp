@@ -35,6 +35,13 @@
 #include <limits>
 #include <stdlib.h>
 
+// *************************************************************************
+// ** Attention compatibility!                                            **
+// ** These functions are used to parse JVM arguments (-XX). Be careful   **
+// ** with behavioral changes here.                                       **
+// *************************************************************************
+
+
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit
 inline bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   // Don't use strtol -- on 64-bit builds, "long" could be either 32- or 64-bits
@@ -82,11 +89,84 @@ inline bool parse_integer_impl(const char *s, char **endptr, int base, T* result
   return errno == 0;
 }
 
-template <typename T>
-inline bool parse_integer(const char *s, char **endptr, int base, T* result) {
-  bool rc = parse_integer_impl(s, endptr, base, result);
-  // We fail also if we have not parsed anything
-  rc = rc && (*endptr > s);
+
+// Helper for parse_memory_size
+template<typename T>
+inline bool multiply_by_1k(T& n) {
+  if (n >= std::numeric_limits<T>::min() / 1024 &&
+      n <= std::numeric_limits<T>::max() / 1024) {
+    n *= 1024;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Parses a memory size in the form "<number>[<unit>]" with valid units being
+// "k", "K", "m", "M", "g", "G", "t", "T". Unit omitted means bytes. If unit is given,
+// no space is allowed between number and unit. Number can be in either decimal form
+// or in hexadecimal form, the latter must start with "0x".
+//
+// Valid template arguments for T are signed/unsigned 32/64-bit values.
+//
+// This function will parse until it encounters unparseable parts, then
+// stop. If it read no valid memory size, it will fail.
+//
+// Example: "1024M:oom" will yield true, result=1G, endptr pointing to ":oom"
+
+template<typename T>
+static bool parse_integer(const char *s, char **endptr, T* result) {
+
+  if (!isdigit(s[0]) && s[0] != '-') {
+    // strtoll/strtoull may allow leading spaces. Forbid it.
+    return false;
+  }
+
+  T n = 0;
+  bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
+                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
+  char* remainder;
+
+  if (!parse_integer_impl<T>(s, &remainder, (is_hex ? 16 : 10), &n)) {
+    return false;
+  }
+  // Nothing parsed? That is an error too.
+  if (remainder == s) {
+    return false;
+  }
+
+  switch (*remainder) {
+    case 'T': case 't':
+      if (!multiply_by_1k(n)) return false;
+      // fall-through
+    case 'G': case 'g':
+      if (!multiply_by_1k(n)) return false;
+      // fall-through
+    case 'M': case 'm':
+      if (!multiply_by_1k(n)) return false;
+      // fall-through
+    case 'K': case 'k':
+      if (!multiply_by_1k(n)) return false;
+      remainder ++; // shave off parsed unit char
+      break;
+    default:
+      // nothing. Return remainder unparsed.
+      break;
+  };
+
+  *result = n;
+  *endptr = remainder;
+  return true;
+}
+
+// Same as parse_integer(const char *s, char **endptr, T* result), but does not allow unrecognizable
+// characters. No remainder are allowed here.
+// Example: "100m" - okay, "100m:oom" -> not okay
+template<typename T>
+static bool parse_integer(const char *s, T* result) {
+  char* remainder;
+  bool rc = parse_integer(s, &remainder, result);
+  rc = rc && (*remainder == '\0');
   return rc;
 }
 

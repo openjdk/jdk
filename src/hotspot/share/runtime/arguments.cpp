@@ -61,7 +61,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/parseMemorySize.hpp"
+#include "utilities/parseInteger.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 #if INCLUDE_JFR
@@ -746,7 +746,7 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 #endif
 
 bool Arguments::atojulong(const char *s, julong* result) {
-  return parse_argument_memory_size(s, result);
+  return parse_integer(s, result);
 }
 
 Arguments::ArgsRange Arguments::check_memory_size(julong size, julong min_size, julong max_size) {
@@ -808,32 +808,32 @@ static bool set_numeric_flag(JVMFlag* flag, const char* value, JVMFlagOrigin ori
 
   if (flag->is_int()) {
     int v;
-    if (parse_argument_memory_size(value, &v)) {
+    if (parse_integer(value, &v)) {
       result = JVMFlagAccess::set_int(flag, &v, origin);
     }
   } else if (flag->is_uint()) {
     uint v;
-    if (parse_argument_memory_size(value, &v)) {
+    if (parse_integer(value, &v)) {
       result = JVMFlagAccess::set_uint(flag, &v, origin);
     }
   } else if (flag->is_intx()) {
     intx v;
-    if (parse_argument_memory_size(value, &v)) {
+    if (parse_integer(value, &v)) {
       result = JVMFlagAccess::set_intx(flag, &v, origin);
     }
   } else if (flag->is_uintx()) {
     uintx v;
-    if (parse_argument_memory_size(value, &v)) {
+    if (parse_integer(value, &v)) {
       result = JVMFlagAccess::set_uintx(flag, &v, origin);
     }
   } else if (flag->is_uint64_t()) {
     uint64_t v;
-    if (parse_argument_memory_size(value, &v)) {
+    if (parse_integer(value, &v)) {
       result = JVMFlagAccess::set_uint64_t(flag, &v, origin);
     }
   } else if (flag->is_size_t()) {
     size_t v;
-    if (parse_argument_memory_size(value, &v)) {
+    if (parse_integer(value, &v)) {
       result = JVMFlagAccess::set_size_t(flag, &v, origin);
     }
   }
@@ -2008,7 +2008,7 @@ bool Arguments::parse_uintx(const char* value,
                             uintx* uintx_arg,
                             uintx min_size) {
   uintx n;
-  if (!parse_argument_memory_size(value, &n)) {
+  if (!parse_integer(value, &n)) {
     return false;
   }
   if (n >= min_size) {
@@ -2067,7 +2067,7 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
                                                   julong* long_arg,
                                                   julong min_size,
                                                   julong max_size) {
-  if (!parse_argument_memory_size(s, long_arg)) return arg_unreadable;
+  if (!parse_integer(s, long_arg)) return arg_unreadable;
   return check_memory_size(*long_arg, min_size, max_size);
 }
 

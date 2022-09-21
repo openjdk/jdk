@@ -27,7 +27,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/parseMemorySize.hpp"
+#include "utilities/parseInteger.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
 
@@ -50,11 +50,11 @@ static void do_test_valid(T expected_value, const char* pattern) {
   stringStream ss;
   ss.print_raw(pattern);
 
-  bool rc = parse_memory_size(ss.base(), &end, &value);
+  bool rc = parse_integer(ss.base(), &end, &value);
   ASSERT_TRUE(rc);
   ASSERT_EQ(value, expected_value);
 
-  rc = parse_argument_memory_size(ss.base(), &value);
+  rc = parse_integer(ss.base(), &value);
   ASSERT_TRUE(rc);
   ASSERT_EQ(value, expected_value);
 
@@ -62,13 +62,13 @@ static void do_test_valid(T expected_value, const char* pattern) {
   // parse_memory_size() should return remainder pointer,
   // parse_argument_memory_size() should flatly refuse to parse this.
   ss.print(":-)");
-  rc = parse_memory_size(ss.base(), &end, &value);
+  rc = parse_integer(ss.base(), &end, &value);
   ASSERT_TRUE(rc);
   ASSERT_EQ(value, expected_value);
   ASSERT_EQ(end, ss.base() + strlen(pattern));
   ASSERT_EQ(strcmp(end, ":-)"), 0);
 
-  rc = parse_argument_memory_size(ss.base(), &value);
+  rc = parse_integer(ss.base(), &value);
   ASSERT_FALSE(rc);
 }
 
@@ -129,9 +129,9 @@ static void do_test_invalid_both(const char* pattern) {
 
   LOG("%s\n", pattern);
 
-  bool rc = parse_memory_size(pattern, &end, &value);
+  bool rc = parse_integer(pattern, &end, &value);
   EXPECT_FALSE(rc);
-  rc = parse_argument_memory_size(pattern, &value);
+  rc = parse_integer(pattern, &value);
   EXPECT_FALSE(rc);
 }
 
@@ -141,9 +141,12 @@ static void do_test_invalid_for_parse_arguments(const char* pattern) {
 
   LOG("%s\n", pattern);
 
-  bool rc = parse_memory_size(pattern, &end, &value);
+  // The first overload parses until unrecognized chars are encountered, then
+  // returns pointer to string remainder.
+  bool rc = parse_integer(pattern, &end, &value);
   ASSERT_TRUE(rc);
-  rc = parse_argument_memory_size(pattern, &value);
+  // The second overload parses everything; unrecognized chars will make it fail.
+  rc = parse_integer(pattern, &value);
   ASSERT_FALSE(rc);
 }
 
