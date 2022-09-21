@@ -39,6 +39,7 @@ class UnixFileDispatcherImpl extends FileDispatcher {
 
     static {
         IOUtil.load();
+        init();
     }
 
     private static final JavaIOFileDescriptorAccess fdAccess =
