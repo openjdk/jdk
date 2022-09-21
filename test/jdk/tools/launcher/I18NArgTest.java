@@ -31,6 +31,8 @@
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.HexFormat;
+import java.nio.charset.StandardCharsets;
 
 public class I18NArgTest extends TestHelper {
     public static void main(String... args) throws IOException {
@@ -66,21 +68,21 @@ public class I18NArgTest extends TestHelper {
         execTest("*" + unicodeStr + unicodeStr + "*", hexValue + hexValue);
         execTest("?" + unicodeStr + unicodeStr + "?", hexValue + hexValue);
 
-        execTest("\"" + unicodeStr + "a" + unicodeStr + "\"", hexValue + "61" + hexValue);
-        execTest("\\" + unicodeStr + "a" + unicodeStr + "\\", hexValue + "61" + hexValue);
-        execTest(" " + unicodeStr + "a" + unicodeStr + " ", hexValue + "61"+ hexValue);
-        execTest("'" + unicodeStr + "a" + unicodeStr + "'", hexValue + "61"+ hexValue);
-        execTest("\t" + unicodeStr + "a" + unicodeStr + "\t", hexValue + "61"+ hexValue);
-        execTest("*" + unicodeStr + "a" + unicodeStr + "*", hexValue + "61"+ hexValue);
-        execTest("?" + unicodeStr + "a" + unicodeStr + "?", hexValue + "61"+ hexValue);
+        execTest("\"" + unicodeStr + "a" + unicodeStr + "\"", hexValue + "0061" + hexValue);
+        execTest("\\" + unicodeStr + "a" + unicodeStr + "\\", hexValue + "0061" + hexValue);
+        execTest(" " + unicodeStr + "a" + unicodeStr + " ", hexValue + "0061"+ hexValue);
+        execTest("'" + unicodeStr + "a" + unicodeStr + "'", hexValue + "0061"+ hexValue);
+        execTest("\t" + unicodeStr + "a" + unicodeStr + "\t", hexValue + "0061"+ hexValue);
+        execTest("*" + unicodeStr + "a" + unicodeStr + "*", hexValue + "0061"+ hexValue);
+        execTest("?" + unicodeStr + "a" + unicodeStr + "?", hexValue + "0061"+ hexValue);
 
-        execTest("\"" + unicodeStr + "\u00b1" + unicodeStr + "\"", hexValue + "b1" + hexValue);
-        execTest("\\" + unicodeStr + "\u00b1" + unicodeStr + "\\", hexValue + "b1" + hexValue);
-        execTest(" " + unicodeStr + "\u00b1" + unicodeStr + " ", hexValue + "b1"+ hexValue);
-        execTest("'" + unicodeStr + "\u00b1" + unicodeStr + "'", hexValue + "b1"+ hexValue);
-        execTest("\t" + unicodeStr + "\u00b1" + unicodeStr + "\t", hexValue + "b1"+ hexValue);
-        execTest("*" + unicodeStr + "\u00b1" + unicodeStr + "*", hexValue + "b1"+ hexValue);
-        execTest("?" + unicodeStr + "\u00b1" + unicodeStr + "?", hexValue + "b1"+ hexValue);
+        execTest("\"" + unicodeStr + "\u00b1" + unicodeStr + "\"", hexValue + "00b1" + hexValue);
+        execTest("\\" + unicodeStr + "\u00b1" + unicodeStr + "\\", hexValue + "00b1" + hexValue);
+        execTest(" " + unicodeStr + "\u00b1" + unicodeStr + " ", hexValue + "00b1"+ hexValue);
+        execTest("'" + unicodeStr + "\u00b1" + unicodeStr + "'", hexValue + "00b1"+ hexValue);
+        execTest("\t" + unicodeStr + "\u00b1" + unicodeStr + "\t", hexValue + "00b1"+ hexValue);
+        execTest("*" + unicodeStr + "\u00b1" + unicodeStr + "*", hexValue + "00b1"+ hexValue);
+        execTest("?" + unicodeStr + "\u00b1" + unicodeStr + "?", hexValue + "00b1"+ hexValue);
     }
 
     static void execTest(String unicodeStr, String hexValue) {
@@ -122,10 +124,7 @@ public class I18NArgTest extends TestHelper {
     static void testCharacters(String... args) {
         String input = args[0];
         String expected = args[1];
-        String hexValue = "";
-        for (int i = 0; i < input.length(); i++) {
-            hexValue = hexValue.concat(Integer.toHexString((int)input.charAt(i)));
-        }
+        var hexValue = HexFormat.of().formatHex(input.getBytes(StandardCharsets.UTF_16));
         System.out.println("input:" + input);
         System.out.println("expected:" + expected);
         System.out.println("obtained:" + hexValue);
@@ -141,10 +140,7 @@ public class I18NArgTest extends TestHelper {
             if (sysPropVal == null) {
                 throw new RuntimeException("Missing system property " + sysPropName);
             }
-            String sysPropHexVal = "";
-            for (int i = 0; i < sysPropVal.length(); i++) {
-                sysPropHexVal = sysPropHexVal.concat(Integer.toHexString(sysPropVal.charAt(i)));
-            }
+            var sysPropHexVal = HexFormat.of().formatHex(sysPropVal.getBytes(StandardCharsets.UTF_16));
             System.out.println("System property " + sysPropName + " computed hex value: "
                     + sysPropHexVal);
             if (!sysPropHexVal.contains(expected)) {
