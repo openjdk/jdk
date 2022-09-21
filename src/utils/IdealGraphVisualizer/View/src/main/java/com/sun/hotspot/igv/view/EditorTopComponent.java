@@ -37,7 +37,6 @@ import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.services.DiagramProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
@@ -124,31 +123,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         }
     };
 
-    private DiagramProvider diagramProvider = new DiagramProvider() {
-
-        @Override
-        public Diagram getDiagram() {
-            return getModel().getDiagramToView();
-        }
-
-        @Override
-        public ChangedEvent<DiagramProvider> getChangedEvent() {
-            return diagramChangedEvent;
-        }
-    };
-
-    private ChangedEvent<DiagramProvider> diagramChangedEvent = new ChangedEvent<>(diagramProvider);
-
-
-    private void updateDisplayName() {
-        setDisplayName(getDiagram().getName());
-        setToolTipText(getDiagram().getGraph().getGroup().getName());
-    }
-
     public EditorTopComponent(Diagram diagram) {
-
         LookupHistory.init(InputGraphProvider.class);
-        LookupHistory.init(DiagramProvider.class);
         this.setFocusable(true);
         FilterChain filterChain = null;
         FilterChain sequence = null;
@@ -208,13 +184,16 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         scene = new DiagramScene(actions, actionsWithSelection, rangeSliderModel);
         content = new InstanceContent();
-        graphContent = new InstanceContent();
-        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
         content.add(exportCookie);
         content.add(rangeSliderModel);
-        content.add(diagramProvider);
+        graphContent = new InstanceContent();
+        associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
-        rangeSliderModel.getDiagramChangedEvent().addListener(diagramChangedListener);
+        rangeSliderModel.getDiagramChangedEvent().addListener(source -> {
+            setDisplayName(getDiagram().getName());
+            setToolTipText(getDiagram().getGraph().getGroup().getName());
+            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
+        });
         rangeSliderModel.selectGraph(diagram.getGraph());
         rangeSliderModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
                 @Override
@@ -383,7 +362,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             rangeSlider.setVisible(false);
         }
 
-        updateDisplayName();
+        getModel().getDiagramChangedEvent().fire();
     }
 
     public DiagramViewModel getDiagramModel() {
@@ -428,7 +407,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public static EditorTopComponent getActive() {
-        return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
+        try {
+            return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** This method is called from within the constructor to
@@ -460,6 +443,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     public void componentClosed() {
         super.componentClosed();
         rangeSliderModel.close();
+        LookupHistory.terminate(InputGraphProvider.class);
     }
 
     @Override
@@ -468,25 +452,12 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     private void closeOnRemovedOrEmptyGroup() {
-        Group group = getDiagram().getGraph().getGroup();
+        Group group = getDiagramModel().getGroup();
         if (!group.getParent().getElements().contains(group) ||
             group.getGraphs().isEmpty()) {
             close();
         }
     }
-
-    private ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
-
-        @Override
-        public void changed(DiagramViewModel source) {
-            updateDisplayName();
-            Collection<Object> list = new ArrayList<>();
-            list.add(new EditorInputGraphProvider(EditorTopComponent.this));
-            graphContent.set(list, null);
-            diagramProvider.getChangedEvent().fire();
-        }
-
-    };
 
     public boolean showPredSucc() {
         return (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
