@@ -31,7 +31,6 @@ import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.services.DiagramProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
@@ -73,32 +72,10 @@ public final class EditorTopComponent extends TopComponent {
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
 
-    private final DiagramProvider diagramProvider = new DiagramProvider() {
-
-        @Override
-        public Diagram getDiagram() {
-            return getModel().getDiagramToView();
-        }
-
-        @Override
-        public ChangedEvent<DiagramProvider> getChangedEvent() {
-            return diagramChangedEvent;
-        }
-    };
-
-    private final ChangedEvent<DiagramProvider> diagramChangedEvent = new ChangedEvent<>(diagramProvider);
-
-
-    private void updateDisplayName() {
-        setDisplayName(getDiagram().getName());
-        setToolTipText(getDiagram().getGraph().getGroup().getName());
-    }
-
     public EditorTopComponent(Diagram diagram) {
         initComponents();
 
         LookupHistory.init(InputGraphProvider.class);
-        LookupHistory.init(DiagramProvider.class);
         this.setFocusable(true);
         FilterChain filterChain;
         FilterChain sequence;
@@ -154,15 +131,14 @@ public final class EditorTopComponent extends TopComponent {
         InstanceContent content = new InstanceContent();
         content.add(new ExportGraph());
         content.add(diagramViewModel);
-        content.add(diagramProvider);
         this.associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
         diagramViewModel.getDiagramChangedEvent().addListener(source -> {
-            updateDisplayName();
+            setDisplayName(getDiagram().getName());
+            setToolTipText(getDiagram().getGraph().getGroup().getName());
             Collection<Object> list = new ArrayList<>();
             list.add(new EditorInputGraphProvider(EditorTopComponent.this));
             graphContent.set(list, null);
-            diagramProvider.getChangedEvent().fire();
         });
         diagramViewModel.selectGraph(diagram.getGraph());
 
@@ -255,7 +231,7 @@ public final class EditorTopComponent extends TopComponent {
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
 
-        updateDisplayName();
+        getModel().getDiagramChangedEvent().fire();
     }
 
     public DiagramViewModel getModel() {
