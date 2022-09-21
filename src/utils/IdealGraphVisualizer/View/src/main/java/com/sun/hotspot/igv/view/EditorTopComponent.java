@@ -192,7 +192,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         rangeSliderModel.getDiagramChangedEvent().addListener(source -> {
             setDisplayName(getDiagram().getName());
             setToolTipText(getDiagram().getGraph().getGroup().getName());
-            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(EditorTopComponent.this)), null);
+            graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
         });
         rangeSliderModel.selectGraph(diagram.getGraph());
         rangeSliderModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
