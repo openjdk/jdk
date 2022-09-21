@@ -2608,7 +2608,7 @@ void PSParallelCompact::update_deferred_object(ParCompactionManager* cm, HeapWor
   }
 
   cm->update_contents(cast_to_oop(addr));
-  assert(oopDesc::is_oop_or_null(cast_to_oop(addr)), "Expected an oop or NULL at " PTR_FORMAT, p2i(cast_to_oop(addr)));
+  assert(oopDesc::is_oop(cast_to_oop(addr)), "Expected an oop at " PTR_FORMAT, p2i(cast_to_oop(addr)));
 }
 
 // Skip over count live words starting from beg, and return the address of the
