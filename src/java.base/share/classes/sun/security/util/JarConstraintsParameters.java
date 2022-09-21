@@ -98,16 +98,11 @@ public class JarConstraintsParameters implements ConstraintsParameters {
         this.timestamp = latestTimestamp;
     }
 
-    public JarConstraintsParameters(List<X509Certificate> chain, Timestamp timestamp) {
+    public JarConstraintsParameters(List<X509Certificate> chain, Date timestamp) {
         this.keys = new HashSet<>();
         this.certsIssuedByAnchor = new HashSet<>();
         addToCertsAndKeys(chain);
-        if (timestamp != null) {
-            addToCertsAndKeys(timestamp.getSignerCertPath());
-            this.timestamp = timestamp.getTimestamp();
-        } else {
-            this.timestamp = null;
-        }
+        this.timestamp = timestamp;
     }
 
     // extract last certificate and signer's public key from chain
@@ -178,7 +173,7 @@ public class JarConstraintsParameters implements ConstraintsParameters {
 
     @Override
     public String extendedExceptionMsg() {
-        return message;
+        return message == null ? "." : message;
     }
 
     @Override

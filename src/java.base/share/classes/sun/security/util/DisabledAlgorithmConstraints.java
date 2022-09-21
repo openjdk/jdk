@@ -199,16 +199,16 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public final void permits(String algorithm, AlgorithmParameters ap,
-        ConstraintsParameters cp) throws CertPathValidatorException {
-
-        permits(algorithm, cp);
+            ConstraintsParameters cp, boolean checkKey)
+            throws CertPathValidatorException {
+        permits(algorithm, cp, checkKey);
         if (ap != null) {
             permits(ap, cp);
         }
     }
 
     private void permits(AlgorithmParameters ap, ConstraintsParameters cp)
-        throws CertPathValidatorException {
+            throws CertPathValidatorException {
 
         switch (ap.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
             case "RSASSA-PSS":
@@ -226,13 +226,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             PSSParameterSpec pssParams =
                 ap.getParameterSpec(PSSParameterSpec.class);
             String digestAlg = pssParams.getDigestAlgorithm();
-            permits(digestAlg, cp);
+            permits(digestAlg, cp, false);
             AlgorithmParameterSpec mgfParams = pssParams.getMGFParameters();
             if (mgfParams instanceof MGF1ParameterSpec) {
                 String mgfDigestAlg =
                     ((MGF1ParameterSpec)mgfParams).getDigestAlgorithm();
                 if (!mgfDigestAlg.equalsIgnoreCase(digestAlg)) {
-                    permits(mgfDigestAlg, cp);
+                    permits(mgfDigestAlg, cp, false);
                 }
             }
         } catch (InvalidParameterSpecException ipse) {
@@ -240,22 +240,24 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    public final void permits(String algorithm, ConstraintsParameters cp)
-            throws CertPathValidatorException {
+    public final void permits(String algorithm, ConstraintsParameters cp,
+            boolean checkKey) throws CertPathValidatorException {
 
-        // Check if named curves in the key are disabled.
-        for (Key key : cp.getKeys()) {
-            for (String curve : getNamedCurveFromKey(key)) {
-                if (!cachedCheckAlgorithm(curve)) {
-                    throw new CertPathValidatorException(
+        if (checkKey) {
+            // Check if named curves in the key are disabled.
+            for (Key key : cp.getKeys()) {
+                for (String curve : getNamedCurveFromKey(key)) {
+                    if (!cachedCheckAlgorithm(curve)) {
+                        throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
                                     "algorithm: " + curve,
                             null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
+                    }
                 }
             }
         }
 
-        algorithmConstraints.permits(algorithm, cp);
+        algorithmConstraints.permits(algorithm, cp, checkKey);
     }
 
     private static List<String> getNamedCurveFromKey(Key key) {
@@ -493,8 +495,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             return true;
         }
 
-        public void permits(String algorithm, ConstraintsParameters cp)
-                throws CertPathValidatorException {
+        public void permits(String algorithm, ConstraintsParameters cp,
+                boolean checkKey) throws CertPathValidatorException {
 
             if (debug != null) {
                 debug.println("Constraints.permits(): " + algorithm + ", "
@@ -508,8 +510,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 algorithms.add(algorithm);
             }
 
-            for (Key key : cp.getKeys()) {
-                algorithms.add(key.getAlgorithm());
+            if (checkKey) {
+                for (Key key : cp.getKeys()) {
+                    algorithms.add(key.getAlgorithm());
+                }
             }
 
             // Check all applicable constraints
@@ -519,6 +523,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     continue;
                 }
                 for (Constraint constraint : list) {
+                    if (!checkKey && constraint instanceof KeySizeConstraint) {
+                        continue;
+                    }
                     constraint.permits(cp);
                 }
             }
