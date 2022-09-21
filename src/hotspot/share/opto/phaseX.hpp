@@ -549,8 +549,6 @@ public:
     n->rm_prec(i);
   }
 
-
-
   bool delay_transform() const { return _delay_transform; }
 
   void set_delay_transform(bool delay) {
