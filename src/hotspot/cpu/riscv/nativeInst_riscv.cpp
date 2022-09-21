@@ -270,7 +270,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
   // alignment restrictions are true. These guarantees check those
   // conditions.
 
-  // Must be 4 byte aligned
+  // Must be 4 bytes aligned
   MacroAssembler::assert_alignment(verified_entry);
 }
 
