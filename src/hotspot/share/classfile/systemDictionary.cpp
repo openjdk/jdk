@@ -1291,7 +1291,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     InstanceKlass* spec_klass = vmClasses::ClassLoader_klass();
 
     if (is_parallelCapable(class_loader)) {
-      // Call loadClass(String) directly for parallel capable class loaders.
+      // Call public unsynchronized loadClass(String) directly for parallel capable class loaders.
       JavaCalls::call_virtual(&result,
                               class_loader,
                               spec_klass,
@@ -1300,7 +1300,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
                               string,
                               CHECK_NULL);
     } else {
-      // Call private unsynchronized loadClassInternal(String) for other class loaders.
+      // Call private synchronized loadClassInternal(String) for other class loaders.
       // loadClassInternal synchronizes parallel loading for this class.
       JavaCalls::call_virtual(&result,
                               class_loader,
