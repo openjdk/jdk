@@ -83,6 +83,5 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                int gai_error);
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
-void NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass);
 
 #endif /* NET_UTILS_MD_H */

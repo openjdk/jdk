@@ -57,16 +57,6 @@ typedef union {
     struct sockaddr_in6 sa6;
 } SOCKETADDRESS;
 
-/*
- * passed to NET_BindV6. Both ipv4_fd and ipv6_fd must be created and unbound
- * sockets. On return they may refer to different sockets.
- */
-struct ipv6bind {
-    SOCKETADDRESS      *addr;
-    SOCKET              ipv4_fd;
-    SOCKET              ipv6_fd;
-};
-
 #define SOCKETADDRESS_COPY(DST,SRC) {                           \
     if ((SRC)->sa_family == AF_INET6) {                         \
         memcpy ((DST), (SRC), sizeof (struct sockaddr_in6));    \
@@ -120,21 +110,6 @@ int NET_Socket(int domain, int type, int protocol);
 
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
-
-/*
- * differs from NET_Timeout() as follows:
- *
- * If timeout = -1, it blocks forever.
- *
- * returns 1 or 2 depending if only one or both sockets
- * fire at same time.
- *
- * *fdret is (one of) the active fds. If both sockets
- * fire at same time, *fd == fd always.
- */
-JNIEXPORT int JNICALL NET_Timeout2(int fd, int fd1, long timeout, int *fdret);
-
-JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind *b, jboolean exclBind);
 
 JNIEXPORT int JNICALL NET_WinBind(int s, SOCKETADDRESS *sa, int len,
                                   jboolean exclBind);
