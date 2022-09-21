@@ -6778,13 +6778,13 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // The handle is dereferenced through a load barrier.
-  static void jfr_epilogue(MacroAssembler* _masm, Register thread) {
+  static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
     Label null_jobject;
     __ cbz(r0, null_jobject);
     DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, r0, Address(r0, 0), c_rarg0, thread);
+    bs->load_at(_masm, decorators, T_OBJECT, r0, Address(r0, 0), rscratch1, rscratch2);
     __ bind(null_jobject);
   }
 
@@ -6813,7 +6813,7 @@ class StubGenerator: public StubCodeGenerator {
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, rthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-    jfr_epilogue(_masm, rthread);
+    jfr_epilogue(_masm);
     __ leave();
     __ ret(lr);
 

@@ -63,8 +63,8 @@ import sun.security.util.*;
  */
 public class CRLExtensions {
 
-    private Map<String,Extension> map = Collections.synchronizedMap(
-            new TreeMap<String,Extension>());
+    private final Map<String,Extension> map = Collections.synchronizedMap(
+            new TreeMap<>());
     private boolean unsupportedCritExt = false;
 
     /**

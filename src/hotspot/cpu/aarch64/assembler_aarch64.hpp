@@ -3142,6 +3142,7 @@ public:
     sve_predicate_reg_insn(op1, op2, Zd_or_Zdn_or_Vd, T, Pg, Zn_or_Zm);                               \
   }
 
+  INSN(sve_fabd,   0b01100101, 0b001000100); // floating-point absolute difference
   INSN(sve_fabs,   0b00000100, 0b011100101);
   INSN(sve_fadd,   0b01100101, 0b000000100);
   INSN(sve_fadda,  0b01100101, 0b011000001); // add strictly-ordered reduction to scalar Vd
