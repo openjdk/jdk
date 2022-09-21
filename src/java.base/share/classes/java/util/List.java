@@ -28,10 +28,9 @@ package java.util;
 import java.util.function.UnaryOperator;
 
 /**
- * An ordered collection (also known as a <i>sequence</i>).  The user of this
- * interface has precise control over where in the list each element is
- * inserted.  The user can access elements by their integer index (position in
- * the list), and search for elements in the list.<p>
+ * An ordered collection, where the user has precise control over where in the
+ * list each element is inserted.  The user can access elements by their integer
+ * index (position in the list), and search for elements in the list.<p>
  *
  * Unlike sets, lists typically allow duplicate elements.  More formally,
  * lists typically allow pairs of elements {@code e1} and {@code e2}
@@ -781,29 +780,20 @@ public interface List<E> extends SequencedCollection<E> {
         }
     }
 
-    // ========== ReversibleCollection ==========
+    // ========== SequencedCollection ==========
 
     /**
-     * Adds an element at the front of this collection.
-     * @param e the element to be added
-     * @throws NullPointerException if the specified element is null and this
-     *         collection does not permit null elements
+     * {@inheritDoc}
      */
     default void addFirst(E e) { this.add(0, e); }
 
     /**
-     * Adds an element at the end of this collection.
-     * Synonymous with add(E).
-     * @param e the element to be added.
-     * @throws NullPointerException if the specified element is null and this
-     *         collection does not permit null elements
+     * {@inheritDoc}
      */
     default void addLast(E e) { this.add(e); }
 
     /**
-     * Gets the element at the front of this collection.
-     * @return the retrieved element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     default E getFirst() {
         if (this.isEmpty())
@@ -812,9 +802,7 @@ public interface List<E> extends SequencedCollection<E> {
     }
 
     /**
-     * Gets the element at the end of this collection.
-     * @return the retrieved element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     default E getLast() {
         if (this.isEmpty())
@@ -823,9 +811,7 @@ public interface List<E> extends SequencedCollection<E> {
     }
 
     /**
-     * Removes and returns the first element of this collection.
-     * @return the removed element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     default E removeFirst() {
         if (this.isEmpty())
@@ -834,9 +820,7 @@ public interface List<E> extends SequencedCollection<E> {
     }
 
     /**
-     * Removes and returns the last element of this collection.
-     * @return the removed element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     default E removeLast() {
         if (this.isEmpty())
@@ -845,12 +829,13 @@ public interface List<E> extends SequencedCollection<E> {
     }
 
     /**
-     * Returns a reversed-order view of this List. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reverse-ordered view of this List
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class returns an instance of a reverse-ordered
+     * List that delegates its operations to this List.
+     *
+     * @return a reverse-ordered view of this collection, as a {@code List}
      */
     default List<E> reversed() {
         return ReverseOrderListView.of(this);

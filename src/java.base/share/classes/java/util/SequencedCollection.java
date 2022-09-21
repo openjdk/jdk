@@ -26,73 +26,130 @@
 package java.util;
 
 /**
- * A linear collection that has a well-defined order and that is reversible.
- * Provides methods for a reverse-ordered view as well as convenient access
- * to elements at both ends.
+ * A collection that has a well-defined encounter order, that supports
+ * operations at both ends, and that is reversible. The model of a sequenced collection
+ * is that the elements are arranged in <i>encounter order</i>. A non-empty sequenced
+ * collection has a first element and a last element (which are the same element,
+ * if the collection has a single element). All elements except the first have a
+ * predecessor, and all elements except the last have a successor. If some element has
+ * a successor, the predecessor of the element's successor is the element. If some
+ * element has a predecessor, the successor of the element's predecessor is the element.
+ * <p>
+ * Several methods inherited from the {@link Collection} interface are required to operate on
+ * elements according to this collection's encounter order. For instance, the
+ * {@link Collection#iterator iterator} method provides elements starting from the first element,
+ * proceeding through successive elements, until the last element. Other methods that are
+ * required to operate on elements in encounter order include the following:
+ * {@link Iterable#forEach forEach}, {@link Collection#parallelStream parallelStream},
+ * {@link Collection#spliterator spliterator}, {@link Collection#stream stream},
+ * and all overloads of the {@link Collection#toArray toArray} method.
+ * <p>
+ * This interface provides methods to add elements, to retrieve elements, and to remove
+ * elements at either end of the collection.
+ * <p>
+ * {@code SequencedCollection} also defines the {@link #reversed reversed} method, which provides
+ * a reverse-ordered <a href="Collection.html#view">view</a> of this collection.
+ * In the reverse-ordered view, the concepts of first and last are inverted, as
+ * are the concepts of successor and predecessor. The first element of this collection
+ * is the last element of the reverse-ordered view, and vice-versa. The successor of some
+ * element in this collection is its predecessor in the reversed view, and vice-versa. All
+ * methods that respect the encounter order of the collection operate as if the encounter order
+ * is inverted. For instance, the {@link #iterator} method of the reversed view reports the
+ * elements in order from the last element of this collection to the first. The availability of
+ * the {@code reversed} method, and its impact on the ordering semantics of all applicable
+ * methods, allow convenient iteration, searching, copying, and streaming of the elements of
+ * this collection in either forward order or reverse order.
+ * <p>
+ * This class is a member of the
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
+ * Java Collections Framework</a>.
+ *
+ * @apiNote
+ * This interface does not impose new requirements on the {@code equals} and {@code hashCode}
+ * methods, because requirements imposed by sub-interfaces such as {@link List} and
+ * {@link SequencedSet} would be in conflict. See the specifications for
+ * {@link Collection#equals Collection.equals} and {@link Collection#hashCode Collection.hashCode}
+ * for further information.
+ * <p>
+ * The {@code add}, {@code get}, and {@code remove} methods were promoted from existing
+ * methods of the {@link Deque} interface.
+ * <p>
+ * Covariant overrides of the {@link #reversed reversed} method are provided on sub-interfaces.
+ * This preserves the same set of operations on the reverse-ordered view as on the forward-ordered
+ * collection.
  *
  * @param <E> the type of elements in this collection
- * @since XXX
+ * @since 20
  */
 public interface SequencedCollection<E> extends Collection<E> {
     /**
-     * Returns a reversed-order view of this collection. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reversed-order view of this collection
+     * Returns a reverse-ordered <a href="Collection.html#view">view</a> of this collection.
+     * The encounter order of elements in the returned view is the inverse of the encounter
+     * order of elements in this collection. The reverse ordering affects all order-sensitive
+     * operations, including those on the view collections of the returned view. If the collection
+     * implementation permits modifications to this view, the modifications "write through" to the
+     * underlying collection. Changes to the underlying collection might or might not be visible
+     * in this reversed view, depending upon the implementation.
+     *
+     * @return a reverse-ordered view of this collection
      */
     SequencedCollection<E> reversed();
 
     /**
-     * Adds an element at the front of this collection (optional operation).
+     * Adds an element as the first element of this collection (optional operation).
+     * After this operation completes normally, the given element will be a member of
+     * this collection, and it will be the first element in encounter order.
      * @param e the element to be added
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
      * @throws UnsupportedOperationException if this collection implementation
      *         does not support this operation
      * @implSpec
-     * The default implementation in this class throws UnsupportedOperationException.
+     * The implementation in this class always throws {@code UnsupportedOperationException}.
      */
     default void addFirst(E e) {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * Adds an element at the end of this collection (optional operation).
-     * Synonymous with add(E).
+     * Adds an element as the last element of this collection (optional operation).
+     * After this operation completes normally, the given element will be a member of
+     * this collection, and it will be the last element in encounter order.
      * @param e the element to be added.
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
      * @throws UnsupportedOperationException if this collection implementation
      *         does not support this operation
      * @implSpec
-     * The default implementation in this class throws UnsupportedOperationException.
+     * The implementation in this class always throws {@code UnsupportedOperationException}.
      */
     default void addLast(E e) {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * Gets the element at the front of this collection.
+     * Gets the first element of this collection.
      * @return the retrieved element
      * @throws NoSuchElementException if this collection is empty
      * @implSpec
-     * The default implementation in this class gets an Iterator via
-     * the iterator() method, calls next() on it and returns the result.
+     * The implementation in this class behaves as if:
+     * <pre>{@code
+     *     return this.iterator().next();
+     * }</pre>
      */
     default E getFirst() {
         return this.iterator().next();
     }
 
     /**
-     * Gets the element at the end of this collection.
+     * Gets the last element of this collection.
      * @return the retrieved element
      * @throws NoSuchElementException if this collection is empty
      * @implSpec
-     * The default implementation in this class gets the reverse-order view
-     * of this collection by calling the reversed() method. It then gets
-     * an Iterator via the iterator() method, calls next() on it and returns the result.
+     * The implementation in this class behaves as if:
+     * <pre>{@code
+     *     return this.reversed().iterator().next();
+     * }</pre>
      */
     default E getLast() {
         return this.reversed().iterator().next();
@@ -104,7 +161,7 @@ public interface SequencedCollection<E> extends Collection<E> {
      * @throws NoSuchElementException if this collection is empty
      * @throws UnsupportedOperationException if this collection does not support this operation
      * @implSpec
-     * The default implementation in this class is implemented as if:
+     * The implementation in this class behaves as if:
      * <pre>{@code
      *     var it = this.iterator();
      *     E e = it.next();
@@ -125,7 +182,7 @@ public interface SequencedCollection<E> extends Collection<E> {
      * @throws NoSuchElementException if this collection is empty
      * @throws UnsupportedOperationException if this collection does not support this operation
      * @implSpec
-     * The default implementation in this class is implemented as if:
+     * The implementation in this class behaves as if:
      * <pre>{@code
      *     var it = this.reversed().iterator();
      *     E e = it.next();

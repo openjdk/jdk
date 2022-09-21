@@ -26,26 +26,104 @@
 package java.util;
 
 /**
- * A Map that has a well-defined iteration order and that is reversible.
+ * A Map that has a well-defined encounter order and that is reversible.
+ * The <i>encounter order</i> of a {@code SequencedMap} is similar to that of the
+ * elements of a {@link SequencedCollection}, but the ordering applies to
+ * mappings instead of individual elements.
+ * <p>
+ * The bulk operations on this map, including the {@link #forEach forEach} and the
+ * {@link #replaceAll replaceAll} methods, operate on this map's mappings in
+ * encounter order.
+ * <p>
+ * The view collections provided by the
+ * {@link #keySet keySet},
+ * {@link #values values},
+ * {@link #entrySet entrySet},
+ * {@link #sequencedKeySet sequencedKeySet},
+ * {@link #sequencedValues sequencedValues},
+ * and
+ * {@link #sequencedEntrySet sequencedEntrySet} methods all reflect the encounter order
+ * of this map. Even though the return values of the
+ * {@link #keySet keySet},
+ * {@link #values values}, and
+ * {@link #entrySet entrySet} methods are not sequenced <i>types</i>, the elements
+ * in those view collections do reflect the encounter order of this map. Thus, the
+ * iterators returned by the statements
+ * <pre>{@code
+ *     var it1 = sequencedMap.entrySet().iterator();
+ *     var it2 = sequencedMap.sequencedEntrySet().iterator();
+ * }</pre>
+ * both provide the mappings of {@code sequencedMap} in that map's encounter order.
+ * <p>
+ * {@code SequencedMap} also defines the {@link #reversed} method, which provides a
+ * reverse-ordered <a href="Collection.html#view">view</a> of this map.
+ * In the reverse-ordered view, the concepts of first and last are inverted, as
+ * are the concepts of successor and predecessor. The first mapping of this map
+ * is the last mapping of the reverse-ordered view, and vice-versa. The successor of some
+ * mapping in this map is its predecessor in the reversed view, and vice-versa. All
+ * methods that respect the encounter order of the map operate as if the encounter order
+ * is inverted. For instance, the {@link #forEach forEach} method of the reversed view reports
+ * the mappings in order from the last mapping of this map to the first. In addition, all of
+ * the view collections of the reversed view also reflect the inverse of this map's
+ * encounter order. For example,
+ * <pre>{@code
+ *     var itr = sequencedMap.reversed().entrySet().iterator();
+ * }</pre>
+ * provides the mappings of this map in the inverse of the encounter order, that is, from
+ * the last mapping to the first mapping. The availability of the {@code reversed} method,
+ * and its impact on the ordering semantics of all applicable methods and views, allow convenient
+ * iteration, searching, copying, and streaming of this map's mappings in either forward order or
+ * reverse order.
+ * <p>
+ * The {@link Map.Entry} instances obtained from the {@link entrySet} view
+ * of this collection, and from its reverse-ordered view, maintain a connection
+ * to the underlying map. If the underlying map permits it, calling the
+ * {@link Map.Entry#setValue setValue} method on such an {@code Entry} will
+ * modify the value of the underlying mapping. It is, however, unspecified whether
+ * modifications to the value in the underlying mapping are visible in the
+ * {@code Entry} instance.
+ * <p>
+ * Depending upon the underlying implementation, the {@code Entry} instances
+ * returned by other methods in this interface might or might not be connected
+ * to the underlying map entries. For example, it is not specified by this interface
+ * whether the {@code setValue} method of an {@code Entry} obtained from the
+ * {@link #firstEntry firstEntry} method will update a mapping in the underlying map, or whether
+ * changes to the underlying map are visible in the returned {@code Entry}.
+ * <p>
+ * This interface has the same requirements on the {@code equals} and {@code hashCode}
+ * methods as defined by {@link Map#equals Map.equals} and {@link Map#hashCode Map.hashCode}.
+ * Thus, a {@code Map} and a {@code SequencedMap} will compare equals if and only
+ * if they have equal mappings, irrespective of ordering.
+ * <p>
+ * This class is a member of the
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
+ * Java Collections Framework</a>.
  *
- * <p>Depending upon the underlying implementation, the Map.Entry instances
- * returned by methods in this interface might or might not be connected
- * to actual map entries. In particular, it is not specified by this interface
- * whether the {@code setValue} method of an entry instance will update a
- * mapping in the underlying map, or whether changes to the underlying map
- * are visible in a returned Map.Entry instance.
+ * @apiNote
+ * The {@link #firstKey firstKey} and {@link #lastKey lastKey} methods were promoted from
+ * the {@link SortedMap} interface. The
+ * {@link #firstEntry firstEntry},
+ * {@link #lastEntry lastEntry},
+ * {@link #pollFirstEntry pollFirstEntry}, and
+ * {@link #pollLastEntry pollLastEntry} methods were promoted from the
+ * {@link NavigableMap} interface. The method definitions were kept the same in order
+ * to preserve compatibility with the existing sub-interfaces, even though this results
+ * in some apparent inconsistency among the behaviors of these methods.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
- * @since XXX
+ * @since 20
  */
 public interface SequencedMap<K, V> extends Map<K, V> {
     /**
-     * Returns a reverse-ordered view of this map. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying map. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying map
-     * may be visible in this reversed view.
+     * Returns a reverse-ordered <a href="Collection.html#view">view</a> of this map.
+     * The encounter order of elements in the returned view is the inverse of the encounter
+     * order of elements in this map. The reverse ordering affects all order-sensitive operations,
+     * including those on the view collections of the returned view. If the implementation permits
+     * modifications to this view, the modifications "write through" to the underlying map.
+     * Changes to the underlying map might or might not be visible in this reversed view,
+     * depending upon the implementation.
+     *
      * @return a reverse-ordered view of this map
      */
     SequencedMap<K, V> reversed();
@@ -53,9 +131,11 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     /**
      * Returns the first key currently in this map.
      *
-     * @implSpec Obtains an iterator of the keySet of
-     * this Map and returns the result of calling its
-     * {@code next} method.
+     * @implSpec
+     * The default implementation in this class is implemented as if:
+     * <pre>{@code
+     *     return keySet().iterator().next();
+     * }</pre>
      *
      * @return the first key currently in this map
      * @throws NoSuchElementException if this map is empty
@@ -67,9 +147,11 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     /**
      * Returns the last key currently in this map.
      *
-     * @implSpec Obtains an iterator of the keySet of
-     * a reversed view of this Map and returns the result of calling its
-     * {@code next} method.
+     * @implSpec
+     * The default implementation in this class is implemented as if:
+     * <pre>{@code
+     *     return reversed().keySet().iterator().next();
+     * }</pre>
      *
      * @return the last key currently in this map
      * @throws NoSuchElementException if this map is empty
@@ -82,7 +164,12 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Returns the first key-value mapping in this map,
      * or {@code null} if the map is empty.
      *
-     * @implSpec XXX
+     * @implSpec
+     * The default implementation in this class is implemented as if:
+     * <pre>{@code
+     *     var it = entrySet().iterator();
+     *     return it.hasNext() ? it.next() : null;
+     * }</pre>
      *
      * @return the first key-value mapping,
      *         or {@code null} if this map is empty
@@ -96,7 +183,12 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Returns the last key-value mapping in this map,
      * or {@code null} if the map is empty.
      *
-     * @implSpec XXX
+     * @implSpec
+     * The default implementation in this class is implemented as if:
+     * <pre>{@code
+     *     var it = reversed().entrySet().iterator();
+     *     return it.hasNext() ? it.next() : null;
+     * }</pre>
      *
      * @return the last key-value mapping,
      *         or {@code null} if this map is empty
@@ -110,7 +202,18 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Removes and returns the first key-value mapping in this map,
      * or {@code null} if the map is empty (optional operation).
      *
-     * @implSpec XXX
+     * @implSpec
+     * The default implementation in this class is implemented as if:
+     * <pre>{@code
+     *     var it = entrySet().iterator();
+     *     if (it.hasNext()) {
+     *         var entry = it.next();
+     *         it.remove();
+     *         return entry;
+     *     } else {
+     *         return null;
+     *     }
+     * }</pre>
      *
      * @return the removed first entry of this map,
      *         or {@code null} if this map is empty
@@ -130,7 +233,18 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Removes and returns the last key-value mapping in this map,
      * or {@code null} if the map is empty (optional operation).
      *
-     * @implSpec XXX
+     * @implSpec
+     * The default implementation in this class is implemented as if:
+     * <pre>{@code
+     *     var it = reversed().entrySet().iterator();
+     *     if (it.hasNext()) {
+     *         var entry = it.next();
+     *         it.remove();
+     *         return entry;
+     *     } else {
+     *         return null;
+     *     }
+     * }</pre>
      *
      * @return the removed last entry of this map,
      *         or {@code null} if this map is empty
@@ -147,11 +261,13 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     }
 
     /**
-     * Inserts this mapping into the map if not already present (optional operation).
-     * Moves the mapping to be the first in iteration order.
+     * Inserts this mapping into the map if it is not already present, or replaces the value
+     * of a mapping if it is already present (optional operation).
+     * After this operation completes normally, the given mapping will present in this map,
+     * and it will be the first mapping in this map's in encounter order.
      *
      * @implSpec The implementation of this method in this class always throws
-     * UnsupportedOperationException.
+     * {@code UnsupportedOperationException}.
      *
      * @param k the key
      * @param v the value
@@ -162,11 +278,13 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     }
 
     /**
-     * Inserts this mapping into the map if not already present (optional operation).
-     * Moves the mapping to be the last in iteration order.
+     * Inserts this mapping into the map if it is not already present, or replaces the value
+     * of a mapping if it is already present (optional operation).
+     * After this operation completes normally, the given mapping will present in this map,
+     * and it will be the last mapping in this map's in encounter order.
      *
      * @implSpec The implementation of this method in this class always throws
-     * UnsupportedOperationException.
+     * {@code UnsupportedOperationException}.
      *
      * @param k the key
      * @param v the value
@@ -178,6 +296,14 @@ public interface SequencedMap<K, V> extends Map<K, V> {
 
     /**
      * Returns a {@link SequencedSet} view of this map's keySet.
+     *
+     * @implSpec
+     * The implementation of this method in this class returns a {@code SequencedSet}
+     * implementation that delegates all operations either to this map or to this map's
+     * {@link #keySet}, except for its {@link SequencedSet#reversed reversed} method,
+     * which instead returns the result of calling {@code sequencedKeySet} on this map's
+     * reverse-ordered view.
+     *
      * @return a SequencedSet view of this map's keySet
      */
     default SequencedSet<K> sequencedKeySet() {
@@ -197,6 +323,14 @@ public interface SequencedMap<K, V> extends Map<K, V> {
 
     /**
      * Returns a {@link SequencedCollection} view of this map's values collection.
+     *
+     * @implSpec
+     * The implementation of this method in this class returns a {@code SequencedCollection}
+     * implementation that delegates all operations either to this map or to this map's
+     * {@link #values} collection, except for its {@link SequencedCollection#reversed reversed}
+     * method, which instead returns the result of calling {@code sequencedValues} on this map's
+     * reverse-ordered view.
+     *
      * @return a SequencedCollection view of this map's values collection
      */
     default SequencedCollection<V> sequencedValues() {
@@ -216,6 +350,14 @@ public interface SequencedMap<K, V> extends Map<K, V> {
 
     /**
      * Returns a {@link SequencedSet} view of this map's entrySet.
+     *
+     * @implSpec
+     * The implementation of this method in this class returns a {@code SequencedSet}
+     * implementation that delegates all operations either to this map or to this map's
+     * {@link #entrySet}, except for its {@link SequencedSet#reversed reversed} method,
+     * which instead returns the result of calling {@code sequencedEntrySet} on this map's
+     * reverse-ordered view.
+     *
      * @return a SequencedSet view of this map's entrySet
      */
     default SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {

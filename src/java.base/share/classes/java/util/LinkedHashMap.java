@@ -33,15 +33,16 @@ import java.util.function.Function;
 
 /**
  * <p>Hash table and linked list implementation of the {@code Map} interface,
- * with predictable iteration order.  This implementation differs from
- * {@code HashMap} in that it maintains a doubly-linked list running through
- * all of its entries.  This linked list defines the iteration ordering,
+ * with well-defined encounter order.  This implementation differs from
+ * {@code HashMap} in that it maintains a doubly-linked list running through all of
+ * its entries.  This linked list defines the encounter order (the order of iteration),
  * which is normally the order in which keys were inserted into the map
  * (<i>insertion-order</i>).  Note that insertion order is not affected
  * if a key is <i>re-inserted</i> into the map.  (A key {@code k} is
  * reinserted into a map {@code m} if {@code m.put(k, v)} is invoked when
  * {@code m.containsKey(k)} would return {@code true} immediately prior to
- * the invocation.)
+ * the invocation.) Ordering of existing keys can be changed through use of
+ * the {@link #putFirst putFirst} and {@link #putLast putLast} methods.
  *
  * <p>This implementation spares its clients from the unspecified, generally
  * chaotic ordering provided by {@link HashMap} (and {@link Hashtable}),
@@ -77,7 +78,10 @@ import java.util.function.Function;
  *
  * <p>The {@link #removeEldestEntry(Map.Entry)} method may be overridden to
  * impose a policy for removing stale mappings automatically when new mappings
- * are added to the map.
+ * are added to the map. Alternatively, since the "eldest" entry is the first
+ * entry in encounter order, programs can inspect and remove stale mappings through
+ * use of the {@link #firstEntry firstEntry} and {@link #pollFirstEntry pollFirstEntry}
+ * methods.
  *
  * <p>This class provides all of the optional {@code Map} operations, and
  * permits null elements.  Like {@code HashMap}, it provides constant-time
@@ -370,11 +374,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Inserts this mapping into the map if not already present (optional operation).
-     * Moves the mapping to be the first in iteration order.
-     * @param k the key
-     * @param v the value
-     * @return the value previously associated with k, or null if none
+     * {@inheritDoc}
      */
     public V putFirst(K k, V v) {
         try {
@@ -386,11 +386,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Inserts this mapping into the map if not already present (optional operation).
-     * Moves the mapping to be the last in iteration order.
-     * @param k the key
-     * @param v the value
-     * @return the value previously associated with k, or null if none
+     * {@inheritDoc}
      */
     public V putLast(K k, V v) {
         try {
@@ -592,8 +588,9 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link Set} view of the keys contained in this map.
-     * The set is backed by the map, so changes to the map are
+     * Returns a {@link Set} view of the keys contained in this map. The encounter
+     * order of the keys in the view matches the encounter order of mappings of
+     * this map. The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
      * while an iteration over the set is in progress (except through
      * the iterator's own {@code remove} operation), the results of
@@ -614,8 +611,10 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link SequencedSet} view of the keySet of this map.
-     * @return a SequencedSet view of this map's keySet
+     * Returns a {@link SequencedSet} view of the keys contained in this map.
+     * Other than the return type, the returned view has the same characteristics
+     * as specified in the {@link #keySet keySet} method.
+     * @return a SequencedSet view of the keys contained in this map
      */
     public SequencedSet<K> sequencedKeySet() {
         Set<K> ks = keySet;
@@ -735,8 +734,9 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link Collection} view of the values contained in this map.
-     * The collection is backed by the map, so changes to the map are
+     * Returns a {@link Collection} view of the values contained in this map. The
+     * encounter order of values in the view matches the encounter order of entries in
+     * this map. The collection is backed by the map, so changes to the map are
      * reflected in the collection, and vice-versa.  If the map is
      * modified while an iteration over the collection is in progress
      * (except through the iterator's own {@code remove} operation),
@@ -757,8 +757,10 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link SequencedCollection} view of this map's values collection.
-     * @return a SequencedCollection view of this map's values collection
+     * Returns a {@link SequencedCollection} view of the values contained in this map.
+     * Other than the return type, the returned view has the same characteristics
+     * as specified in the {@link #values values} method.
+     * @return a SequencedCollection view of the values contained in this map
      */
     public SequencedCollection<V> sequencedValues() {
         Collection<V> vs = values;
@@ -833,7 +835,8 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link Set} view of the mappings contained in this map.
+     * Returns a {@link Set} view of the mappings contained in this map. The encounter
+     * order of the view matches the encounter order of entries of this map.
      * The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
      * while an iteration over the set is in progress (except through
@@ -856,8 +859,10 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link SequencedSet} view of this map's entrySet.
-     * @return a SequencedSet view of this map's entrySet
+     * Returns a {@link SequencedSet} view of the mappings contained in this map.
+     * Other than the return type, the returned view has the same characteristics
+     * as specified in the {@link #entrySet entrySet} method.
+     * @return a SequencedSet view of the mappings contained in this map
      */
     public SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
         Set<Map.Entry<K, V>> es = entrySet;
@@ -1048,6 +1053,16 @@ public class LinkedHashMap<K,V>
 
     // Reversed View
 
+    /**
+     * Returns a reverse-ordered <a href="Collection.html#view">view</a> of this map.
+     * The encounter order of elements in the returned view is the inverse of the encounter
+     * order of elements in this map. The reverse ordering affects all order-sensitive operations,
+     * including those on the view collections of the returned view. Modifications to the
+     * returned view are permitted and will "write through" to this map. Modifications to
+     * this map are visible in the returned view.
+     *
+     * @return a reverse-ordered view of this map
+     */
     public SequencedMap<K, V> reversed() {
         return new ReversedLinkedHashMapView<>(this);
     }

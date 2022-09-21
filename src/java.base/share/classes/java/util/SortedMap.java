@@ -283,12 +283,35 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
     Set<Map.Entry<K, V>> entrySet();
 
     /**
-     * Returns a reversed-order view of this collection. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reversed-order view
+     * Not supported. The position of a mapping is determined by the order induced by
+     * the comparison method, so explicit positioning is not supported.
+     * @implSpec
+     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     * @throws UnsupportedOperationException always
+     */
+     default V putFirst(K k, V v) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Not supported. The position of a mapping is determined by the order induced by
+     * the comparison method, so explicit positioning is not supported.
+     * @implSpec
+     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     * @throws UnsupportedOperationException always
+     */
+    default V putLast(K k, V v) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class returns an instance of a reverse-ordered
+     * SortedMap that delegates its operations to this SortedMap.
+     *
+     * @return a reverse-ordered view of this map, as a {@code SortedMap}
      */
     default SortedMap<K, V> reversed() {
         return ReverseOrderSortedMapView.of(this);

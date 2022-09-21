@@ -322,10 +322,15 @@ public interface NavigableSet<E> extends SortedSet<E> {
     SortedSet<E> tailSet(E fromElement);
 
     /**
-     * Returns a reverse order view of the elements contained in this set.
-     * @return a reverse-order view
+     * {@inheritDoc}
+     * <p>
+     * This method is equivalent to {@link #descendingSet descendingSet}.
+     *
      * @implSpec
-     * Returns the result of calling this.descendingSet().
+     * The implementation in this class returns the result of calling the
+     * {@code descendingSet} method.
+     *
+     * @return a reverse-ordered view of this collection, as a {@code NavigableSet}
      */
     default NavigableSet<E> reversed() {
         return this.descendingSet();

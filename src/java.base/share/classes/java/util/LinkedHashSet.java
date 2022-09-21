@@ -27,15 +27,16 @@ package java.util;
 
 /**
  * <p>Hash table and linked list implementation of the {@code Set} interface,
- * with predictable iteration order.  This implementation differs from
+ * with well-defined encounter order.  This implementation differs from
  * {@code HashSet} in that it maintains a doubly-linked list running through
- * all of its entries.  This linked list defines the iteration ordering,
- * which is the order in which elements were inserted into the set
+ * all of its entries.  This linked list defines the encounter order (iteration
+ * order), which is the order in which elements were inserted into the set
  * (<i>insertion-order</i>).  Note that insertion order is <i>not</i> affected
  * if an element is <i>re-inserted</i> into the set.  (An element {@code e}
  * is reinserted into a set {@code s} if {@code s.add(e)} is invoked when
- * {@code s.contains(e)} would return {@code true} immediately prior to
- * the invocation.)
+ * {@code s.contains(e)} would return {@code true} immediately prior to the
+ * invocation.) Ordering of elements already in the set can be changed through
+ * use of the {@link #addFirst addFirst} and {@link #addLast addLast} methods.
  *
  * <p>This implementation spares its clients from the unspecified, generally
  * chaotic ordering provided by {@link HashSet}, without incurring the
@@ -227,64 +228,56 @@ public class LinkedHashSet<E>
     }
 
     /**
-     * Inserts the specified element at the front of this collection.
-     * @param e the element to add
+     * {@inheritDoc}
      */
     public void addFirst(E e) {
         map().putFirst(e, PRESENT);
     }
 
     /**
-     * Inserts the specified element at the end of this collection.
-     * @param e the element to add
+     * {@inheritDoc}
      */
     public void addLast(E e) {
         map().putLast(e, PRESENT);
     }
 
     /**
-     * Gets the element at the front of this collection.
-     * @return the retrieved element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     public E getFirst() {
         return map().sequencedKeySet().getFirst();
     }
 
     /**
-     * Gets the element at the end of this collection.
-     * @return the retrieved element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     public E getLast() {
         return map().sequencedKeySet().getLast();
     }
 
     /**
-     * Removes and returns the first element of this collection.
-     * @return the removed element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     public E removeFirst() {
         return map().sequencedKeySet().removeFirst();
     }
 
     /**
-     * Removes and returns the last element of this collection.
-     * @return the removed element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     public E removeLast() {
         return map().sequencedKeySet().removeLast();
     }
 
     /**
-     * Returns a reversed-order view of this collection. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reversed-order view
+     * Returns a reverse-ordered <a href="Collection.html#view">view</a> of this set.
+     * The encounter order of elements in the returned view is the inverse of the encounter
+     * order of elements in this set. The reverse ordering affects all order-sensitive
+     * operations, including those on the view collections of the returned view.
+     * Modifications to the returned view are permitted and will "write through" to this set.
+     * Modifications to this set are visible in the returned view.
+     *
+     * @return a reverse-ordered view of this set
      */
     public SequencedSet<E> reversed() {
         class ReverseLinkedHashSetView extends AbstractSet<E> implements SequencedSet<E> {

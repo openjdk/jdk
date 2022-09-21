@@ -262,38 +262,38 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
         };
     }
 
-    // ========== ReversibleCollection ==========
+    // ========== SequencedCollection ==========
 
     /**
-     * Not supported.
+     * Not supported. The position of an element is determined by the order induced by
+     * the comparison method, so explicit positioning is not supported.
+     * @implSpec
+     * The implementation in this class always throws {@code UnsupportedOperationException}.
      * @throws UnsupportedOperationException always
      */
     default void addFirst(E e) { throw new UnsupportedOperationException(); }
 
     /**
-     * Not supported.
+     * Not supported. The position of an element is determined by the order induced by
+     * the comparison method, so explicit positioning is not supported.
+     * @implSpec
+     * The implementation in this class always throws {@code UnsupportedOperationException}.
      * @throws UnsupportedOperationException always
      */
     default void addLast(E e) { throw new UnsupportedOperationException(); }
 
     /**
-     * Gets the element at the front of this collection.
-     * @return the retrieved element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     default E getFirst() { return this.first(); }
 
     /**
-     * Gets the element at the end of this collection.
-     * @return the retrieved element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     default E getLast() { return this.last(); }
 
     /**
-     * Removes and returns the first element of this collection.
-     * @return the removed element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     default E removeFirst() {
         E e = this.first();
@@ -302,9 +302,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
     }
 
     /**
-     * Removes and returns the last element of this collection.
-     * @return the removed element
-     * @throws NoSuchElementException if this collection is empty
+     * {@inheritDoc}
      */
     default E removeLast() {
         E e = this.last();
@@ -313,12 +311,13 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
     }
 
     /**
-     * Returns a reversed-order view of this collection. If the implementation
-     * permits modifications to this view, the modifications "write through"
-     * to the underlying collection. Depending upon the implementation's
-     * concurrent modification policy, changes to the underlying collection
-     * may be visible in this reversed view.
-     * @return a reversed-order view
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class returns an instance of a reverse-ordered
+     * SortedSet that delegates its operations to this SortedSet.
+     *
+     * @return a reverse-ordered view of this collection, as a {@code SortedSet}
      */
     default SortedSet<E> reversed() {
         return ReverseOrderSortedSetView.of(this);
