@@ -32,6 +32,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
+#include "nativeInst_riscv.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
@@ -323,7 +324,7 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // first instruction with a jump. For this action to be legal we
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
-  assert_alignment();
+  assert_alignment(NativeInstruction::instruction_size);
   nop();
 }
 

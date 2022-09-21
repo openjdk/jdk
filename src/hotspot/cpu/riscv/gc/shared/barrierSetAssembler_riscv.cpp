@@ -31,6 +31,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
+#include "nativeInst_riscv.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -262,7 +263,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
     __ bind(local_guard);
 
-    __ assert_alignment();
+    __ assert_alignment(NativeInstruction::instruction_size);
     __ emit_int32(0); // nmethod guard value. Skipped over in common case.
     __ bind(skip_barrier);
   } else {
