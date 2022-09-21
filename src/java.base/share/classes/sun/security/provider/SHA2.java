@@ -199,7 +199,7 @@ abstract class SHA2 extends DigestBase {
             int ch_efg = g ^ (e & (f ^ g));
 
             // maj(x,y,z) = (x and y) xor (x and z) xor (y and z)
-	    //            = (x and y) xor ((x xor y) and z)
+            //            = (x and y) xor ((x xor y) and z)
             int maj_abc = (a & b) ^ ((a ^ b) & c);
 
             int T1 = h + sigma1_e + ch_efg + ROUND_CONSTS[i] + W[i];
