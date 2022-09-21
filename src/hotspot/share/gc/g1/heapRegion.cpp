@@ -103,7 +103,11 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
-  set_old();
+  clear_index_in_opt_cset();
+  move_to_old();
+
+  _rem_set->clean_code_roots(this);
+  _rem_set->clear_locked(true /* only_cardset */);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -268,9 +272,11 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
-void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start) {
-  // We always scrub the region to make sure the entire region is
-  // parsable after the self-forwarding point removal.
+void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
+  // PB must be bottom - we only evacuate old gen regions after scrubbing, and
+  // young gen regions never have their PB set to anything other than bottom.
+  assert(parsable_bottom_acquire() == bottom(), "must be");
+
   _garbage_bytes = 0;
 
   if (during_concurrent_start) {
@@ -285,14 +291,11 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
-  assert(marked_bytes <= used(),
-         "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
-  _garbage_bytes = used() - marked_bytes;
+void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
+  Atomic::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
 }
 
 // Code roots support
-
 void HeapRegion::add_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->add_code_root(nm);
@@ -441,7 +444,7 @@ void HeapRegion::print_on(outputStream* st) const {
     st->print("|  ");
   }
   st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s ",
-               p2i(top_at_mark_start()), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
+            p2i(top_at_mark_start()), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {

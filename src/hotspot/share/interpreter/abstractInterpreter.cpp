@@ -96,7 +96,7 @@ address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::nu
 //------------------------------------------------------------------------------------------------------------------------
 // Generation of complete interpreter
 
-AbstractInterpreterGenerator::AbstractInterpreterGenerator(StubQueue* _code) {
+AbstractInterpreterGenerator::AbstractInterpreterGenerator() {
   _masm                      = NULL;
 }
 

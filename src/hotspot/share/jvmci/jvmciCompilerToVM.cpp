@@ -963,7 +963,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
       CodeCache::print_summary(&s, false);
     }
     ttyLocker ttyl;
-    tty->print_raw_cr(s.as_string());
+    tty->print_raw_cr(s.freeze());
   }
 
   if (result != JVMCI::ok) {
@@ -2208,11 +2208,9 @@ C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jchar type_char))
   return type2aelembytes(type);
 C2V_END
 
-C2V_VMENTRY(void, deleteGlobalHandle, (JNIEnv* env, jobject, jlong handle))
-  if (handle != 0) {
-    JVMCIENV->runtime()->destroy_oop_handle(handle);
-  }
-}
+C2V_VMENTRY(void, releaseClearedOopHandles, (JNIEnv* env, jobject))
+  JVMCIENV->runtime()->release_cleared_oop_handles();
+C2V_END
 
 static void requireJVMCINativeLibrary(JVMCI_TRAPS) {
   if (!UseJVMCINativeLibrary) {
@@ -2903,7 +2901,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "readArrayElement",                             CC "(" OBJECTCONSTANT "I)Ljava/lang/Object;",                                         FN_PTR(readArrayElement)},
   {CC "arrayBaseOffset",                              CC "(C)I",                                                                            FN_PTR(arrayBaseOffset)},
   {CC "arrayIndexScale",                              CC "(C)I",                                                                            FN_PTR(arrayIndexScale)},
-  {CC "deleteGlobalHandle",                           CC "(J)V",                                                                            FN_PTR(deleteGlobalHandle)},
+  {CC "releaseClearedOopHandles",                     CC "()V",                                                                             FN_PTR(releaseClearedOopHandles)},
   {CC "registerNativeMethods",                        CC "(" CLASS ")[J",                                                                   FN_PTR(registerNativeMethods)},
   {CC "isCurrentThreadAttached",                      CC "()Z",                                                                             FN_PTR(isCurrentThreadAttached)},
   {CC "getCurrentJavaThread",                         CC "()J",                                                                             FN_PTR(getCurrentJavaThread)},

@@ -95,6 +95,8 @@ address CompilerToVM::Data::dpow;
 address CompilerToVM::Data::symbol_init;
 address CompilerToVM::Data::symbol_clinit;
 
+int CompilerToVM::Data::data_section_item_alignment;
+
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
@@ -132,6 +134,8 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   symbol_clinit = (address) vmSymbols::class_initializer_name();
 
   _fields_annotations_base_offset = Array<AnnotationArray*>::base_offset_in_bytes();
+
+  data_section_item_alignment = relocInfo::addr_unit();
 
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {

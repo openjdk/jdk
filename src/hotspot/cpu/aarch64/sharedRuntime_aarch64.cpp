@@ -45,6 +45,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1052,8 +1053,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     __ cbnz(c_rarg2, call_thaw);
 
-    address mark = __ pc();
-    __ trampoline_call(resolve);
+    const address tr_call = __ trampoline_call(resolve);
 
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
@@ -1061,7 +1061,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ b(exit);
 
     CodeBuffer* cbuf = masm->code_section()->outer();
-    CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+    CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
   }
 
   // compiled entry
@@ -1077,8 +1077,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ cbnz(c_rarg2, call_thaw);
 
-  address mark = __ pc();
-  __ trampoline_call(resolve);
+  const address tr_call = __ trampoline_call(resolve);
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
@@ -1120,18 +1119,16 @@ static void gen_continuation_enter(MacroAssembler* masm,
   }
 
   CodeBuffer* cbuf = masm->code_section()->outer();
-  CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+  CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
 }
 
 static void gen_continuation_yield(MacroAssembler* masm,
                                    const methodHandle& method,
                                    const BasicType* sig_bt,
                                    const VMRegPair* regs,
-                                   int& exception_offset,
                                    OopMapSet* oop_maps,
                                    int& frame_complete,
                                    int& stack_slots,
-                                   int& interpreted_entry_offset,
                                    int& compiled_entry_offset) {
     enum layout {
       rfp_off1,
@@ -1264,12 +1261,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
   if (method->is_continuation_native_intrinsic()) {
-    int vep_offset = 0;
-    int exception_offset = 0;
-    int frame_complete = 0;
-    int stack_slots = 0;
-    OopMapSet* oop_maps =  new OopMapSet();
+    int exception_offset = -1;
+    OopMapSet* oop_maps = new OopMapSet();
+    int frame_complete = -1;
+    int stack_slots = -1;
     int interpreted_entry_offset = -1;
+    int vep_offset = -1;
     if (method->is_continuation_enter_intrinsic()) {
       gen_continuation_enter(masm,
                              method,
@@ -1286,15 +1283,27 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                              method,
                              in_sig_bt,
                              in_regs,
-                             exception_offset,
                              oop_maps,
                              frame_complete,
                              stack_slots,
-                             interpreted_entry_offset,
                              vep_offset);
     } else {
       guarantee(false, "Unknown Continuation native intrinsic");
     }
+
+#ifdef ASSERT
+    if (method->is_continuation_enter_intrinsic()) {
+      assert(interpreted_entry_offset != -1, "Must be set");
+      assert(exception_offset != -1,         "Must be set");
+    } else {
+      assert(interpreted_entry_offset == -1, "Must be unset");
+      assert(exception_offset == -1,         "Must be unset");
+    }
+    assert(frame_complete != -1,    "Must be set");
+    assert(stack_slots != -1,       "Must be set");
+    assert(vep_offset != -1,        "Must be set");
+#endif
+
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
@@ -1786,7 +1795,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ dmb(Assembler::ISH);
+  if (!UseSystemMemoryBarrier) {
+    __ dmb(Assembler::ISH);
+  }
 
   __ verify_sve_vector_length();
 
@@ -1884,7 +1895,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Unbox oop result, e.g. JNIHandles::resolve result.
   if (is_reference_type(ret_type)) {
-    __ resolve_jobject(r0, rthread, rscratch2);
+    __ resolve_jobject(r0, r1, r2);
   }
 
   if (CheckJNICalls) {

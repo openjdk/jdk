@@ -546,7 +546,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized FilterTopComponent getDefault() {
         if (instance == null) {
