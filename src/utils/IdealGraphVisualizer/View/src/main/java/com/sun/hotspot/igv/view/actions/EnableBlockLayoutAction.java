@@ -32,10 +32,8 @@ import java.beans.PropertyChangeEvent;
  */
 public class EnableBlockLayoutAction extends EnableLayoutAction {
 
-    private final EditorTopComponent editor;
-
     public EnableBlockLayoutAction(EditorTopComponent etc) {
-        editor = etc;
+        super(etc);
     }
 
     @Override

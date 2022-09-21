@@ -28,17 +28,14 @@ import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
 
 
 abstract public class ExpandAdjacentAction extends CallableSystemAction {
 
-    protected interface AdjacentOperator {
-        List<Figure> get(Figure f);
-    }
-
-    protected void expandFigures(AdjacentOperator adjacentOp) {
+    protected void expandFigures(Function<Figure, List<Figure>> getAdjacentFigures) {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
             Set<Figure> oldSelection = editor.getModel().getSelectedFigures();
@@ -49,7 +46,7 @@ abstract public class ExpandAdjacentAction extends CallableSystemAction {
                 }
 
                 boolean ok = false;
-                for (Figure adjFig : adjacentOp.get(f)) {
+                for (Figure adjFig : getAdjacentFigures.apply(f)) {
                     if (oldSelection.contains(adjFig)) {
                         ok = true;
                         break;

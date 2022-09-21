@@ -28,10 +28,8 @@ import java.beans.PropertyChangeEvent;
 
 public class EnableCFGLayoutAction extends EnableLayoutAction {
 
-    private final EditorTopComponent editor;
-
     public EnableCFGLayoutAction(EditorTopComponent etc) {
-        editor = etc;
+        super(etc);
     }
 
     @Override
