@@ -1230,15 +1230,12 @@ private:
 
   template <class T>
   void do_oop_work(T* p) {
-    T o = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+    oop obj = HeapAccess<AS_NO_KEEPALIVE>::oop_load(p);
+    if (!CompressedOops::is_null(obj)) {
       if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked(obj)) {
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-
       assert(oopDesc::is_oop(obj), "must be a valid oop");
       if (!_bitmap->is_marked(obj)) {
         _bitmap->mark(obj);
@@ -1340,15 +1337,12 @@ private:
 
   template <class T>
   void do_oop_work(T* p) {
-    T o = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+    oop obj = HeapAccess<AS_NO_KEEPALIVE>::oop_load(p);
+    if (!CompressedOops::is_null(obj)) {
       if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked(obj)) {
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-
       assert(oopDesc::is_oop(obj), "Must be a valid oop");
       if (_bitmap->par_mark(obj)) {
         _queue->push(ShenandoahMarkTask(obj));
