@@ -39,43 +39,31 @@ extern "C" void restore_thread_pointer(void* p) {
   ThreadLocalStorage::set_thread((Thread*) p);
 }
 
-// We initialize Library-based TLS at C++ dynamic initialization time (when
-// the libjvm.so is loaded).
-// Note however that we cannot rely on initialization order, and we may be
-// used even earlier than our initialization runs when called by other
-// initialization code (e.g. UL). Therefore we also initialize on demand
-// in ThreadLocalStorage::thread().
-
-static void initialize_if_needed() {
-  // Notes:
-  // - we fatal out if this fails, even in release, since continuing would
-  //   mean we use pthread_key_set/getspecific with an uninitialized key
-  //   which is UB
-  // - pthread_key_create *returns* the error code, it does not set errno
-  if (!_initialized) {
-    int rslt = pthread_key_create(&_thread_key, restore_thread_pointer);
-    if (rslt != 0) {
-      fatal("TLS initialization failed (pthread_key_create error %d)", rslt);
-    }
-    _initialized = true;
-  }
+void ThreadLocalStorage::init() {
+  assert(!_initialized, "initializing TLS more than once!");
+  int rslt = pthread_key_create(&_thread_key, restore_thread_pointer);
+  // If this assert fails we will get a recursive assertion failure
+  // and not see the actual error message or get a hs_err file
+  assert_status(rslt == 0, rslt, "pthread_key_create");
+  _initialized = true;
 }
-
-struct InitTLS { InitTLS() { initialize_if_needed(); }};
-static InitTLS _the_initializer;
 
 bool ThreadLocalStorage::is_initialized() {
   return _initialized;
 }
 
 Thread* ThreadLocalStorage::thread() {
-  initialize_if_needed();
+  // If this assert fails we will get a recursive assertion failure
+  // and not see the actual error message or get a hs_err file.
+  // Which most likely indicates we have taken an error path early in
+  // the initialization process, which is using Thread::current without
+  // checking TLS is initialized - see java.cpp vm_exit
+  assert(_initialized, "TLS not initialized yet!");
   return (Thread*) pthread_getspecific(_thread_key); // may be NULL
 }
 
 void ThreadLocalStorage::set_thread(Thread* current) {
-  initialize_if_needed();
+  assert(_initialized, "TLS not initialized yet!");
   int rslt = pthread_setspecific(_thread_key, current);
-  // pthread_setspecific *returns* error code, does not set errno
-  assert(rslt == 0, "pthread_setspecific error %d", rslt);
+  assert_status(rslt == 0, rslt, "pthread_setspecific");
 }

@@ -43,6 +43,7 @@ class ThreadLocalStorage : AllStatic {
  public:
   static Thread* thread(); // return current thread, if attached
   static void    set_thread(Thread* thread); // set current thread
+  static void    init();
   static bool    is_initialized(); // can't use TLS prior to initialization
 };
 
