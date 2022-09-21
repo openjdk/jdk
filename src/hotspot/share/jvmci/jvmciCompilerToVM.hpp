@@ -91,12 +91,19 @@ class CompilerToVM {
     static address symbol_init;
     static address symbol_clinit;
 
+    // Minimum alignment of an offset into CodeBuffer::SECT_CONSTS
+    static int data_section_item_alignment;
+
    public:
      static void initialize(JVMCI_TRAPS);
 
     static int max_oop_map_stack_offset() {
       assert(_max_oop_map_stack_offset > 0, "must be initialized");
       return Data::_max_oop_map_stack_offset;
+    }
+
+    static int get_data_section_item_alignment() {
+      return data_section_item_alignment;
     }
   };
 
