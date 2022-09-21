@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -608,10 +608,6 @@ public class Arguments {
                 Option.ADD_EXPORTS, Option.ADD_OPENS, Option.ADD_READS,
                 Option.LIMIT_MODULES,
                 Option.PATCH_MODULE);
-
-        if (lintOptions && options.isSet(Option.PARAMETERS) && !target.hasMethodParameters()) {
-            log.warning(Warnings.OptionParametersUnsupported(target, Target.JDK1_8));
-        }
 
         if (fm.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
             if (!options.isSet(Option.PROC, "only")

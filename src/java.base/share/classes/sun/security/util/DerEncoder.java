@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 1922, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public interface DerEncoder {
      *
      * @param out  the stream on which the DER encoding is written.
      */
-    public void derEncode(OutputStream out)
+    void derEncode(OutputStream out)
         throws IOException;
 
 }

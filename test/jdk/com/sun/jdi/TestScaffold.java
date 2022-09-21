@@ -453,6 +453,10 @@ abstract public class TestScaffold extends TargetAdapter {
 
     protected void failure(String str) {
         println(str);
+        StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement traceElement : trace) {
+            System.err.println("\tat " + traceElement);
+        }
         testFailed = true;
     }
 
@@ -845,6 +849,14 @@ abstract public class TestScaffold extends TargetAdapter {
         }
 
         return (Location)locs.get(0);
+    }
+
+    public Location findMethodLocation(ReferenceType rt, String methodName,
+                                       String methodSignature, int methodLineNumber)
+        throws AbsentInformationException {
+        Method m = findMethod(rt, methodName, methodSignature);
+        int lineNumber = m.location().lineNumber() + methodLineNumber - 1;
+        return findLocation(rt, lineNumber);
     }
 
     public BreakpointEvent resumeTo(String clsName, String methodName,

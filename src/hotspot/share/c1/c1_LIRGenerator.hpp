@@ -272,7 +272,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_update_CRC32C(Intrinsic* x);
   void do_vectorizedMismatch(Intrinsic* x);
   void do_blackhole(Intrinsic* x);
-  void do_continuation_doYield(Intrinsic* x);
 
  public:
   LIR_Opr call_runtime(BasicTypeArray* signature, LIRItemList* args, address entry, ValueType* result_type, CodeEmitInfo* info);
@@ -418,7 +417,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
       increment_event_counter(info, step, bci, true);
     }
   }
-  void decrement_age(CodeEmitInfo* info);
   CodeEmitInfo* state_for(Instruction* x, ValueStack* state, bool ignore_xhandler = false);
   CodeEmitInfo* state_for(Instruction* x);
 

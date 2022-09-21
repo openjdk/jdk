@@ -187,7 +187,7 @@ public class IssuingDistributionPointExtension extends Extension
         }
 
         DerInputStream in = val.data;
-        while (in != null && in.available() != 0) {
+        while (in.available() != 0) {
             DerValue opt = in.getDerValue();
 
             if (opt.isContextSpecific(TAG_DISTRIBUTION_POINT) &&

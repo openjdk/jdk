@@ -115,9 +115,9 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
     __ movl(rax, mxcsr_save);
     __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
     ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-    __ cmp32(rax, mxcsr_std);
+    __ cmp32(rax, mxcsr_std, rscratch1);
     __ jcc(Assembler::equal, skip_ldmx);
-    __ ldmxcsr(mxcsr_std);
+    __ ldmxcsr(mxcsr_std, rscratch1);
     __ bind(skip_ldmx);
   }
 #endif
@@ -377,7 +377,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 #ifndef PRODUCT
   stringStream ss;
   ss.print("upcall_stub_%s", entry->signature()->as_C_string());
-  const char* name = _masm->code_string(ss.as_string());
+  const char* name = _masm->code_string(ss.freeze());
 #else // PRODUCT
   const char* name = "upcall_stub";
 #endif // PRODUCT
