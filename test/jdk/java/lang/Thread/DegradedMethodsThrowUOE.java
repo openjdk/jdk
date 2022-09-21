@@ -23,7 +23,7 @@
 
 /* @test
  * @bug  8289610 8249627 8205132
- * @summary Test that Thread stop/resume/resume/countStackFrames throw UOE
+ * @summary Test that Thread stop/suspend/resume/countStackFrames throw UOE
  * @run junit DegradedMethodsThrowUOE
  */
 
