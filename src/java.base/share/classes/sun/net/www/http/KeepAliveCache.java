@@ -191,23 +191,6 @@ public class KeepAliveCache
         return isProxy ? userKeepAliveProxy : userKeepAliveServer;
     }
 
-    /* remove an obsolete HttpClient from its VectorCache */
-    public void remove(HttpClient h, Object obj) {
-        cacheLock.lock();
-        try {
-            KeepAliveKey key = new KeepAliveKey(h.url, obj);
-            ClientVector v = super.get(key);
-            if (v != null) {
-                v.remove(h);
-                if (v.isEmpty()) {
-                    removeVector(key);
-                }
-            }
-        } finally {
-            cacheLock.unlock();
-        }
-    }
-
     /* called by a clientVector thread when all its connections have timed out
      * and that vector of connections should be removed.
      */
