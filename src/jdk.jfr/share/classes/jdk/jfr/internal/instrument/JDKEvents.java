@@ -28,7 +28,9 @@ package jdk.jfr.internal.instrument;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
@@ -45,6 +47,7 @@ import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.DeserializationEvent;
+import jdk.jfr.events.InitialSecurityPropertyEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SocketReadEvent;
@@ -70,6 +73,7 @@ import jdk.internal.platform.Metrics;
 public final class JDKEvents {
     private static final Class<?>[] mirrorEventClasses = {
         DeserializationEvent.class,
+        InitialSecurityPropertyEvent.class,
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
         ThreadSleepEvent.class,
@@ -94,6 +98,7 @@ public final class JDKEvents {
         ActiveSettingEvent.class,
         ActiveRecordingEvent.class,
         jdk.internal.event.DeserializationEvent.class,
+        jdk.internal.event.InitialSecurityPropertyEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,
@@ -128,6 +133,7 @@ public final class JDKEvents {
     private static final Runnable emitContainerCPUThrottling = JDKEvents::emitContainerCPUThrottling;
     private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
     private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
+    private static final Runnable emitInitialSecurityProperties = JDKEvents::emitInitialSecurityProperties;
     private static Metrics containerMetrics = null;
     private static boolean initializationTriggered;
 
@@ -144,6 +150,7 @@ public final class JDKEvents {
 
                 RequestEngine.addTrustedJDKHook(ExceptionStatisticsEvent.class, emitExceptionStatistics);
                 RequestEngine.addTrustedJDKHook(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
+                RequestEngine.addTrustedJDKHook(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
 
                 initializeContainerEvents();
                 initializationTriggered = true;
@@ -286,6 +293,7 @@ public final class JDKEvents {
     public static void remove() {
         RequestEngine.removeHook(emitExceptionStatistics);
         RequestEngine.removeHook(emitDirectBufferStatistics);
+        RequestEngine.removeHook(emitInitialSecurityProperties);
 
         RequestEngine.removeHook(emitContainerConfiguration);
         RequestEngine.removeHook(emitContainerCPUUsage);
@@ -297,5 +305,15 @@ public final class JDKEvents {
     private static void emitDirectBufferStatistics() {
         DirectBufferStatisticsEvent e = new DirectBufferStatisticsEvent();
         e.commit();
+    }
+
+    private static void emitInitialSecurityProperties() {
+        Properties p = SharedSecrets.getJavaSecurityAccess().getInitialProperties();
+        for (Map.Entry<Object, Object> entry : p.entrySet()) {
+            InitialSecurityPropertyEvent e = new InitialSecurityPropertyEvent();
+            e.key = (String)entry.getKey();
+            e.value = (String)entry.getValue();
+            e.commit();
+        }
     }
 }

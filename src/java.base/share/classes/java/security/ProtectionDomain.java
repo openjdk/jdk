@@ -25,13 +25,8 @@
 
 package java.security;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.WeakHashMap;
+import java.util.*;
+
 import jdk.internal.access.JavaSecurityAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.security.action.GetPropertyAction;
@@ -69,7 +64,9 @@ public class ProtectionDomain {
             "true".equals(GetPropertyAction.privilegedGetProperty(
                 "jdk.security.filePermCompat"));
 
-    private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
+    static class JavaSecurityAccessImpl implements JavaSecurityAccess {
+        /* cache a copy for recording purposes */
+        static Properties initialSecurityProperties;
 
         private JavaSecurityAccessImpl() {
         }
@@ -126,6 +123,11 @@ public class ProtectionDomain {
                     return pd == null ? map.get(null) : map.get(pd.key);
                 }
             };
+        }
+
+        @Override
+        public Properties getInitialProperties() {
+            return initialSecurityProperties;
         }
     }
 

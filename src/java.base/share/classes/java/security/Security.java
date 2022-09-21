@@ -104,6 +104,14 @@ public final class Security {
             }
             loadProps(null, extraPropFile, overrideAll);
         }
+        ProtectionDomain.JavaSecurityAccessImpl.initialSecurityProperties = (Properties) props.clone();
+        if (sdebug != null) {
+            for (Map.Entry<Object, Object> entry : props.entrySet()) {
+                sdebug.println("Initial security property: " + entry.getKey() + "=" +
+                    entry.getValue());
+            }
+        }
+
     }
 
     private static boolean loadProps(File masterFile, String extraPropFile, boolean overrideAll) {

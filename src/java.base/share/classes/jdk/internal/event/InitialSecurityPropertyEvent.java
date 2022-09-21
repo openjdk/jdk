@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,22 @@
  * questions.
  */
 
-package jdk.internal.access;
+package jdk.internal.event;
 
-import java.security.AccessControlContext;
-import java.security.PermissionCollection;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
-import java.util.Properties;
+/**
+ * Event recording details of initial security properties
+ */
 
-public interface JavaSecurityAccess {
-
-    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
-                                  @SuppressWarnings("removal") AccessControlContext stack,
-                                  @SuppressWarnings("removal") AccessControlContext context);
-
-    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
-                                  @SuppressWarnings("removal") AccessControlContext context);
-
-    ProtectionDomain[] getProtectDomains(@SuppressWarnings("removal") AccessControlContext context);
-
-    interface ProtectionDomainCache {
-        void put(ProtectionDomain pd, PermissionCollection pc);
-        PermissionCollection get(ProtectionDomain pd);
-    }
+public final class InitialSecurityPropertyEvent extends Event {
+    private final static InitialSecurityPropertyEvent EVENT = new InitialSecurityPropertyEvent();
 
     /**
-     * Returns the ProtectionDomainCache.
+     * Returns {@code true} if event is enabled, {@code false} otherwise.
      */
-    ProtectionDomainCache getProtectionDomainCache();
+    public static boolean isTurnedOn() {
+        return EVENT.isEnabled();
+    }
 
-    Properties getInitialProperties();
+    public String key;
+    public String value;
 }

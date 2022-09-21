@@ -165,6 +165,7 @@ module java.base {
         jdk.charsets,
         jdk.jartool,
         jdk.jlink,
+        jdk.jfr,
         jdk.net;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
