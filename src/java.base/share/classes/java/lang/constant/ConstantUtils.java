@@ -204,16 +204,21 @@ class ConstantUtils {
                 case JVM_SIGNATURE_DOUBLE:
                     return index - start + 1;
                 case JVM_SIGNATURE_CLASS:
+                    // state variable for detection of illegal states, such as:
+                    // empty unqualified name, '//', leading '/', or trailing '/'
                     boolean legal = false;
                     while (++index < end) {
                         switch (descriptor.charAt(index)) {
                             case ';' -> {
+                                // illegal state on parser exit indicates empty unqualified name or trailing '/'
                                 return legal ? index - start + 1 : 0;
                             }
                             case '.', '[' -> {
+                                // do not permit '.' or '['
                                 return 0;
                             }
                             case '/' -> {
+                                // illegal state when received '/' indicates '//' or leading '/'
                                 if (!legal) return 0;
                                 legal = false;
                             }
