@@ -170,7 +170,7 @@ class PhaseNameValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
-        mask = ~((uint64_t)0);
+        mask = ~(UINT64_C(0));
       } else {
         assert(cpt < 64, "out of bounds");
         mask |= CompilerPhaseTypeHelper::to_bitmask(cpt);
