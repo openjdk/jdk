@@ -271,7 +271,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
   // conditions.
 
   // Must be 4 byte aligned
-  MacroAssembler::assert_alignment(verified_entry, NativeInstruction::instruction_size);
+  MacroAssembler::assert_alignment(verified_entry);
 }
 
 

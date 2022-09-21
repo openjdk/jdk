@@ -29,6 +29,7 @@
 
 #include "asm/assembler.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "nativeInst_riscv.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -48,8 +49,8 @@ class MacroAssembler: public Assembler {
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
-  static void assert_alignment(address pc, int alignment);
-  void assert_alignment(int alignment);
+  static void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size);
+  void assert_alignment(int alignment = NativeInstruction::instruction_size);
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP

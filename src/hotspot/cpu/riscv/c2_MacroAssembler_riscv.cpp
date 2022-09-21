@@ -255,7 +255,7 @@ void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
 
   bind(stub->guard());
   relocate(entry_guard_Relocation::spec());
-  assert_alignment(NativeInstruction::instruction_size);
+  assert_alignment();
   emit_int32(0);  // nmethod guard value
   // make sure the stub with a fixed code size
   if (alignment_bytes == 2) {

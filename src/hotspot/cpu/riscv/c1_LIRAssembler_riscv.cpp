@@ -1372,7 +1372,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
-  __ assert_alignment(call_pc, NativeInstruction::instruction_size);
+  __ assert_alignment(call_pc);
   address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");

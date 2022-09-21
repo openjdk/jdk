@@ -1318,7 +1318,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
-  __ assert_alignment(NativeInstruction::instruction_size);
+  __ assert_alignment();
   __ nop();
 
   assert_cond(C != NULL);
