@@ -156,18 +156,33 @@ private:
   G1CollectedHeap* _g1h;
   G1Allocator* _allocator;
 
-  PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
+  // Collects per-destination information (e.g. young, old gen) about current PLAB
+  // and statistics about it.
+  struct PLABData {
+    PLAB** _alloc_buffer;
 
-  // Number of words allocated directly (not counting PLAB allocation).
-  size_t _direct_allocated[G1HeapRegionAttr::Num];
+    size_t _direct_allocated;             // Number of words allocated directly (not counting PLAB allocation).
+    size_t _num_plab_fills;               // Number of PLAB refills experienced so far.
+    size_t _num_direct_allocations;       // Number of direct allocations experienced so far.
 
-  // Number of PLAB refills experienced so far.
-  size_t _num_plab_fills[G1HeapRegionAttr::Num];
-  size_t _num_direct_allocations[G1HeapRegionAttr::Num];
+    size_t _plab_fill_counter;            // How many PLAB refills left until boosting.
+    size_t _cur_desired_plab_size;        // Current desired PLAB size incorporating eventual boosting.
 
-  size_t _plab_fill_counter[G1HeapRegionAttr::Num];
-  // Current desired PLAB size incorporating eventual boosting.
-  size_t _cur_desired_plab_size[G1HeapRegionAttr::Num];
+    uint _num_alloc_buffers;              // The number of PLABs for this destination.
+
+    PLABData();
+    ~PLABData();
+
+    void initialize(uint num_alloc_buffers, size_t desired_plab_size, size_t tolerated_refills);
+
+    // Should we actually boost the PLAB size?
+    // The _plab_refill_counter reset value encodes the ResizePLAB flag value already, so no
+    // need to check here.
+    bool should_boost() const { return _plab_fill_counter == 0; }
+
+    void notify_plab_refill(size_t tolerated_refills, size_t next_plab_size);
+
+  } _dest_data[G1HeapRegionAttr::Num];
 
   // The amount of PLAB refills tolerated until boosting PLAB size.
   // This value is the same for all generations because they all use the same
@@ -186,7 +201,6 @@ private:
   bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:
   G1PLABAllocator(G1Allocator* allocator);
-  ~G1PLABAllocator();
 
   size_t waste() const;
   size_t undo_waste() const;

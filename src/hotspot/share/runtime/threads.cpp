@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -60,6 +61,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -79,7 +81,6 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
-#include "services/threadIdTable.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/timer.hpp"
@@ -89,10 +90,12 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
+#include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -550,6 +553,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
+
+  if (UseSystemMemoryBarrier) {
+    if (!SystemMemoryBarrier::initialize()) {
+      vm_shutdown_during_initialization("Failed to initialize the requested system memory barrier synchronization.");
+      return JNI_EINVAL;
+    }
+    log_debug(os)("Using experimental system memory barrier synchronization");
+  }
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();

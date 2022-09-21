@@ -116,7 +116,7 @@ class MallocHeader {
 
  public:
 
-  inline MallocHeader(size_t size, MEMFLAGS flags, const NativeCallStack& stack, uint32_t mst_marker);
+  inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
 
   inline size_t   size()  const { return _size; }
   inline MEMFLAGS flags() const { return (MEMFLAGS)_flags; }

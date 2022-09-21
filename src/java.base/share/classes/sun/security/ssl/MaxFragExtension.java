@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ final class MaxFragExtension {
         }
     }
 
-    static enum MaxFragLenEnum {
+    enum MaxFragLenEnum {
         MFL_512     ((byte)0x01,  512,  "2^9"),
         MFL_1024    ((byte)0x02, 1024,  "2^10"),
         MFL_2048    ((byte)0x03, 2048,  "2^11"),
@@ -110,7 +110,7 @@ final class MaxFragExtension {
         final int fragmentSize;
         final String description;
 
-        private MaxFragLenEnum(byte id, int fragmentSize, String description) {
+        MaxFragLenEnum(byte id, int fragmentSize, String description) {
             this.id = id;
             this.fragmentSize = fragmentSize;
             this.description = description;
@@ -190,8 +190,8 @@ final class MaxFragExtension {
                 requestedMFLength =
                     chc.resumingSession.getNegotiatedMaxFragSize();
             } else if (chc.sslConfig.maximumPacketSize != 0) {
-                // Maybe we can calculate the fragment size more accurate
-                // by condering the enabled cipher suites in the future.
+                // Maybe we can calculate the fragment size more accurately
+                // by considering the enabled cipher suites in the future.
                 requestedMFLength = chc.sslConfig.maximumPacketSize;
                 if (chc.sslContext.isDTLS()) {
                     requestedMFLength -= DTLSRecord.maxPlaintextPlusSize;

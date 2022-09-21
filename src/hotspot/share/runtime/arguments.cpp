@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
@@ -3880,11 +3881,13 @@ static void apply_debugger_ergo() {
   }
 #endif
 
+#ifndef PRODUCT
   if (UseDebuggerErgo) {
     // Turn on sub-flags
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
   }
+#endif
 
   if (UseDebuggerErgo2) {
     // Debugging with limited number of CPUs

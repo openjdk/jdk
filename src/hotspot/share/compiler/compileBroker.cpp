@@ -547,13 +547,12 @@ void CompileQueue::print(outputStream* st) {
 }
 
 void CompileQueue::print_tty() {
-  ResourceMark rm;
   stringStream ss;
   // Dump the compile queue into a buffer before locking the tty
   print(&ss);
   {
     ttyLocker ttyl;
-    tty->print("%s", ss.as_string());
+    tty->print("%s", ss.freeze());
   }
 }
 
@@ -2023,7 +2022,6 @@ void CompileBroker::maybe_block() {
 // wrapper for CodeCache::print_summary()
 static void codecache_print(bool detailed)
 {
-  ResourceMark rm;
   stringStream s;
   // Dump code cache  into a buffer before locking the tty,
   {
@@ -2031,12 +2029,11 @@ static void codecache_print(bool detailed)
     CodeCache::print_summary(&s, detailed);
   }
   ttyLocker ttyl;
-  tty->print("%s", s.as_string());
+  tty->print("%s", s.freeze());
 }
 
 // wrapper for CodeCache::print_summary() using outputStream
 static void codecache_print(outputStream* out, bool detailed) {
-  ResourceMark rm;
   stringStream s;
 
   // Dump code cache into a buffer
@@ -2172,18 +2169,21 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       compilable = ciEnv::MethodCompilable_never;
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
-      methodHandle method(thread, target_handle);
-      runtime = env.runtime();
-      runtime->compile_method(&env, jvmci, method, osr_bci);
-
       failure_reason = compile_state.failure_reason();
-      failure_reason_on_C_heap = compile_state.failure_reason_on_C_heap();
-      if (!compile_state.retryable()) {
-        retry_message = "not retryable";
-        compilable = ciEnv::MethodCompilable_not_at_tier;
-      }
-      if (!task->is_success()) {
-        assert(failure_reason != NULL, "must specify failure_reason");
+      if (failure_reason == nullptr) {
+        methodHandle method(thread, target_handle);
+        runtime = env.runtime();
+        runtime->compile_method(&env, jvmci, method, osr_bci);
+
+        failure_reason = compile_state.failure_reason();
+        failure_reason_on_C_heap = compile_state.failure_reason_on_C_heap();
+        if (!compile_state.retryable()) {
+          retry_message = "not retryable";
+          compilable = ciEnv::MethodCompilable_not_at_tier;
+        }
+        if (!task->is_success()) {
+          assert(failure_reason != NULL, "must specify failure_reason");
+        }
       }
     }
     if (!task->is_success()) {
@@ -2348,7 +2348,6 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
-      ResourceMark rm;
       stringStream s;
       // Dump code cache state into a buffer before locking the tty,
       // because log_state() will use locks causing lock conflicts.
@@ -2356,7 +2355,7 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
       // Lock to prevent tearing
       ttyLocker ttyl;
       xtty->begin_elem("code_cache_full");
-      xtty->print("%s", s.as_string());
+      xtty->print("%s", s.freeze());
       xtty->stamp();
       xtty->end_elem();
     }

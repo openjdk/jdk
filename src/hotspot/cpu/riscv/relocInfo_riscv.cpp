@@ -41,7 +41,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
   switch (type()) {
     case relocInfo::oop_type: {
       oop_Relocation *reloc = (oop_Relocation *)this;
-      // in movoop when BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate
+      // in movoop when BarrierSet::barrier_set()->barrier_set_nmethod() != NULL
       if (NativeInstruction::is_load_pc_relative_at(addr())) {
         address constptr = (address)code()->oop_addr_at(reloc->oop_index());
         bytes = MacroAssembler::pd_patch_instruction_size(addr(), constptr);

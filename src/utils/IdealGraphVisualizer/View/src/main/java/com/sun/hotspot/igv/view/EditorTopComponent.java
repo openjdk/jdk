@@ -76,7 +76,7 @@ public final class EditorTopComponent extends TopComponent {
         initComponents();
 
         LookupHistory.init(InputGraphProvider.class);
-        this.setFocusable(true);
+        setFocusable(true);
         FilterChain filterChain;
         FilterChain sequence;
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
@@ -124,14 +124,14 @@ public final class EditorTopComponent extends TopComponent {
         }
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         container.add(BorderLayout.CENTER, pane);
-        this.add(container, BorderLayout.NORTH);
+        add(container, BorderLayout.NORTH);
 
         scene = new DiagramScene(actions, actionsWithSelection, diagramViewModel);
         graphContent = new InstanceContent();
         InstanceContent content = new InstanceContent();
         content.add(new ExportGraph());
         content.add(diagramViewModel);
-        this.associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
+        associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
         diagramViewModel.getDiagramChangedEvent().addListener(source -> {
             setDisplayName(getDiagram().getName());
@@ -157,7 +157,7 @@ public final class EditorTopComponent extends TopComponent {
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SCENE_STRING, scene.getComponent());
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
-        this.add(centerPanel, BorderLayout.CENTER);
+        add(centerPanel, BorderLayout.CENTER);
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
@@ -250,8 +250,8 @@ public final class EditorTopComponent extends TopComponent {
         }
     }
 
-    public void showSatellite(boolean b) {
-        if (b) {
+    public void showSatellite(boolean enable) {
+        if (enable) {
             cardLayout.show(centerPanel, SATELLITE_STRING);
             satelliteComponent.requestFocus();
         } else {
@@ -268,10 +268,6 @@ public final class EditorTopComponent extends TopComponent {
         scene.zoomIn();
     }
 
-    public FilterChain getFilterChain() {
-        return getModel().getFilterChain();
-    }
-
     public static EditorTopComponent getActive() {
         TopComponent topComponent = getRegistry().getActivated();
         if (topComponent instanceof EditorTopComponent) {
@@ -280,8 +276,13 @@ public final class EditorTopComponent extends TopComponent {
         return null;
     }
 
+    @Override
+    public int getPersistenceType() {
+        return TopComponent.PERSISTENCE_NEVER;
+    }
+
     private void closeOnRemovedOrEmptyGroup() {
-        Group group = getDiagram().getGraph().getGroup();
+        Group group = getModel().getGroup();
         if (!group.getParent().getElements().contains(group) ||
             group.getGraphs().isEmpty()) {
             close();
@@ -289,7 +290,6 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     public void setSelection(PropertyMatcher matcher) {
-
         Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(getDiagram().getFigures());
         List<Figure> list = selector.selectMultiple(matcher);
         setSelectedFigures(list);
@@ -336,18 +336,15 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     @Override
-    public int getPersistenceType() {
-        return TopComponent.PERSISTENCE_NEVER;
-    }
-
-    @Override
     protected String preferredID() {
         return PREFERRED_ID;
     }
 
     @Override
     public void componentClosed() {
+        super.componentClosed();
         getModel().close();
+        LookupHistory.terminate(InputGraphProvider.class);
     }
 
     @Override

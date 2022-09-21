@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ final class MergeCollation {
      * before & and <
      */
     public String getPattern(boolean withWhiteSpace) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         PatternEntry tmp = null;
         ArrayList<PatternEntry> extList = null;
         int i;
@@ -146,7 +146,7 @@ final class MergeCollation {
      * builder.
      */
     public String emitPattern(boolean withWhiteSpace) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (int i = 0; i < patterns.size(); ++i)
         {
             PatternEntry entry = patterns.get(i);
