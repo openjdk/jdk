@@ -1691,7 +1691,7 @@ public class Thread implements Runnable {
      *       interrupt the wait.
      *       For more information, see
      *       <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
-     *       is Thread.stop Deprecated?</a>.
+     *       are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated(since="1.2", forRemoval=true)
     public final void stop() {
@@ -1862,12 +1862,15 @@ public class Thread implements Runnable {
      * @throws  UnsupportedOperationException always
      *
      * @deprecated This method was originally specified to suspend a thread.
-     *   It was inherently deadlock-prone. If the target thread held a lock on
-     *   a monitor protecting a critical system resource when it was suspended,
-     *   no thread could access the resource until the target thread was resumed.
-     *   If the thread intending to resume the target thread attempted to lock
-     *   the monitor prior to calling {@code resume}, deadlock would result.
-     *   Such deadlocks typically manifested themselves as "frozen" processes.
+     *     It was inherently deadlock-prone. If the target thread held a lock on
+     *     a monitor protecting a critical system resource when it was suspended,
+     *     no thread could access the resource until the target thread was resumed.
+     *     If the thread intending to resume the target thread attempted to lock
+     *     the monitor prior to calling {@code resume}, deadlock would result.
+     *     Such deadlocks typically manifested themselves as "frozen" processes.
+     *     For more information, see
+     *     <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
+     *     are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated(since="1.2", forRemoval=true)
     public final void suspend() {
@@ -1880,8 +1883,11 @@ public class Thread implements Runnable {
      * @throws  UnsupportedOperationException always
      *
      * @deprecated This method was originally specified to resume a thread
-     *   suspended with {@link #suspend()}. Suspending a thread was
-     *   inherently deadlock-prone.
+     *     suspended with {@link #suspend()}. Suspending a thread was
+     *     inherently deadlock-prone.
+     *     For more information, see
+     *     <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
+     *     are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated(since="1.2", forRemoval=true)
     public final void resume() {
