@@ -99,7 +99,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             if (group != null) {
                 group.getChangedEvent().removeListener(groupContentChangedListener);
             }
-            this.group = newModel.group;
+            group = newModel.group;
             if (group != null) {
                 group.getChangedEvent().addListener(groupContentChangedListener);
             }
