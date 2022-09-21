@@ -159,10 +159,10 @@ class LoaderTreeNode : public ResourceObj {
     return (_loader_oop != NULL) ? _loader_oop->klass() : NULL;
   }
 
-  // Returns ResourceArea-allocated class name of loader class
+  // Returns ResourceArea-allocated class name of loader class; "" if there is no klass (bootstrap loader)
   const char* loader_class_name() const {
     const Klass* klass = loader_klass();
-    return klass != NULL ? klass->external_name() : NULL;
+    return klass != NULL ? klass->external_name() : "";
   }
 
   // Returns oop of loader name; NULL for bootstrap; NULL if no name was set
