@@ -141,7 +141,6 @@ public class ClassLoaderHierarchyTest {
         output.shouldContain("java.lang.Object");
         output.shouldContain("java.lang.Enum");
         output.shouldContain("java.lang.NullPointerException");
-        output.shouldContain("com.sun.javatest.regtest.agent.MainWrapper");
         output.shouldContain("TestClass2");
 
         output.shouldContain("Hidden Classes:");
