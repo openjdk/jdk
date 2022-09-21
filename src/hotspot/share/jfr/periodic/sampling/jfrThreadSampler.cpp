@@ -37,12 +37,14 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 
 enum JfrSampleType {
   NO_SAMPLE = 0,
@@ -382,6 +384,9 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
 
   bool ret = false;
   thread->set_trace_flag();  // Provides StoreLoad, needed to keep read of thread state from floating up.
+  if (UseSystemMemoryBarrier) {
+    SystemMemoryBarrier::emit();
+  }
   if (JAVA_SAMPLE == type) {
     if (thread_state_in_java(thread)) {
       ret = sample_thread_in_java(thread, frames, max_frames);

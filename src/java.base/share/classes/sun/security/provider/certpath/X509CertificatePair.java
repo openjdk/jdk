@@ -187,7 +187,7 @@ public class X509CertificatePair {
      * Return the DER encoded form of the certificate pair.
      *
      * @return The encoded form of the certificate pair.
-     * @throws CerticateEncodingException If an encoding exception occurs.
+     * @throws CertificateEncodingException If an encoding exception occurs.
      */
     public byte[] getEncoded() throws CertificateEncodingException {
         try {

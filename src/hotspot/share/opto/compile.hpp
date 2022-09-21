@@ -491,7 +491,7 @@ class Compile : public Phase {
   void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     stringStream ss;
     CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
-    print_inlining_stream()->print("%s", ss.as_string());
+    print_inlining_stream()->print("%s", ss.freeze());
   }
 
 #ifndef PRODUCT
@@ -506,6 +506,7 @@ class Compile : public Phase {
 
   // Dump inlining replay data to the stream.
   void dump_inline_data(outputStream* out);
+  void dump_inline_data_reduced(outputStream* out);
 
  private:
   // Matching, CFG layout, allocation, code generation

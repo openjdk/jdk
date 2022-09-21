@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,14 +78,14 @@ public class PKCS8Key implements PrivateKey {
     private static final int V2 = 1;
 
     /**
-     * Default constructor. Constructors in sub-classes that create a new key
+     * Default constructor. Constructors in subclasses that create a new key
      * from its components require this. These constructors must initialize
      * {@link #algid} and {@link #key}.
      */
     protected PKCS8Key() { }
 
     /**
-     * Another constructor. Constructors in sub-classes that create a new key
+     * Another constructor. Constructors in subclasses that create a new key
      * from an encoded byte array require this. We do not assign this
      * encoding to {@link #encodedKey} directly.
      *

@@ -193,7 +193,7 @@ PackageEntryTable::PackageEntryTable() { }
 PackageEntryTable::~PackageEntryTable() {
   class PackageEntryTableDeleter : public StackObj {
    public:
-    bool do_entry(const Symbol*& name, PackageEntry*& entry) {
+    bool do_entry(const SymbolHandle& name, PackageEntry*& entry) {
       if (log_is_enabled(Info, module, unload) || log_is_enabled(Debug, module)) {
         ResourceMark rm;
         const char* str = name->as_C_string();
@@ -248,7 +248,7 @@ void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
 void PackageEntry::init_as_archived_entry() {
   Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_growable_array(_qualified_exports);
 
-  _name = ArchiveBuilder::get_relocated_symbol(_name);
+  _name = ArchiveBuilder::get_buffered_symbol(_name);
   _module = ModuleEntry::get_archived_entry(_module);
   _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;
@@ -270,7 +270,7 @@ static int compare_package_by_name(PackageEntry* a, PackageEntry* b) {
 }
 
 void PackageEntryTable::iterate_symbols(MetaspaceClosure* closure) {
-  auto syms = [&] (const Symbol*& key, PackageEntry*& p) {
+  auto syms = [&] (const SymbolHandle& key, PackageEntry*& p) {
       p->iterate_symbols(closure);
   };
   _table.iterate_all(syms);
@@ -279,7 +279,7 @@ void PackageEntryTable::iterate_symbols(MetaspaceClosure* closure) {
 Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   // First count the packages in named modules
   int n = 0;
-  auto count = [&] (const Symbol*& key, PackageEntry*& p) {
+  auto count = [&] (const SymbolHandle& key, PackageEntry*& p) {
     if (p->module()->is_named()) {
       n++;
     }
@@ -289,7 +289,7 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   Array<PackageEntry*>* archived_packages = ArchiveBuilder::new_rw_array<PackageEntry*>(n);
   // reset n
   n = 0;
-  auto grab = [&] (const Symbol*& key, PackageEntry*& p) {
+  auto grab = [&] (const SymbolHandle& key, PackageEntry*& p) {
     if (p->module()->is_named()) {
       // We don't archive unnamed modules, or packages in unnamed modules. They will be
       // created on-demand at runtime as classes in such packages are loaded.
@@ -374,7 +374,7 @@ PackageEntry* PackageEntryTable::locked_lookup_only(Symbol* name) {
 // Verify the packages loaded thus far are in java.base's package list.
 void PackageEntryTable::verify_javabase_packages(GrowableArray<Symbol*> *pkg_list) {
   assert_lock_strong(Module_lock);
-  auto verifier = [&] (const Symbol*& name, PackageEntry*& entry) {
+  auto verifier = [&] (const SymbolHandle& name, PackageEntry*& entry) {
     ModuleEntry* m = entry->module();
     Symbol* module_name = (m == NULL ? NULL : m->name());
     if (module_name != NULL &&
@@ -410,7 +410,7 @@ bool PackageEntry::exported_pending_delete() const {
 // Remove dead entries from all packages' exported list
 void PackageEntryTable::purge_all_package_exports() {
   assert_locked_or_safepoint(Module_lock);
-  auto purge = [&] (const Symbol*& name, PackageEntry*& entry) {
+  auto purge = [&] (const SymbolHandle& name, PackageEntry*& entry) {
     if (entry->exported_pending_delete()) {
       // exported list is pending deletion due to a transition
       // from qualified to unqualified
@@ -423,7 +423,7 @@ void PackageEntryTable::purge_all_package_exports() {
 }
 
 void PackageEntryTable::packages_do(void f(PackageEntry*)) {
-  auto doit = [&] (const Symbol*&name, PackageEntry*& entry) {
+  auto doit = [&] (const SymbolHandle&name, PackageEntry*& entry) {
     f(entry);
   };
   assert_locked_or_safepoint(Module_lock);
@@ -433,7 +433,7 @@ void PackageEntryTable::packages_do(void f(PackageEntry*)) {
 
 GrowableArray<PackageEntry*>*  PackageEntryTable::get_system_packages() {
   GrowableArray<PackageEntry*>* loaded_class_pkgs = new GrowableArray<PackageEntry*>(50);
-  auto grab = [&] (const Symbol*&name, PackageEntry*& entry) {
+  auto grab = [&] (const SymbolHandle& name, PackageEntry*& entry) {
     if (entry->has_loaded_class()) {
       loaded_class_pkgs->append(entry);
     }
@@ -446,7 +446,7 @@ GrowableArray<PackageEntry*>*  PackageEntryTable::get_system_packages() {
 }
 
 void PackageEntryTable::print(outputStream* st) {
-  auto printer = [&] (const Symbol*& name, PackageEntry*& entry) {
+  auto printer = [&] (const SymbolHandle& name, PackageEntry*& entry) {
     entry->print(st);
   };
   st->print_cr("Package Entry Table (table_size=%d, entries=%d)",

@@ -262,12 +262,12 @@ public:
     // Save registers
     __ push_reg(_gp_regs, sp);
     __ push_fp(_fp_regs, sp);
-    __ push_vp(_vp_regs, sp);
+    __ push_v(_vp_regs, sp);
   }
 
   ~ZSaveLiveRegisters() {
     // Restore registers
-    __ pop_vp(_vp_regs, sp);
+    __ pop_v(_vp_regs, sp);
     __ pop_fp(_fp_regs, sp);
     __ pop_reg(_gp_regs, sp);
   }

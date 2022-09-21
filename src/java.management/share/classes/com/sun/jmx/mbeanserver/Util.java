@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class Util {
     }
 
     static <K, V> Map<K, V> newMap() {
-        return new HashMap<K, V>();
+        return new HashMap<>();
     }
 
     static <K, V> Map<K, V> newSynchronizedMap() {
@@ -60,7 +60,7 @@ public class Util {
     }
 
     static <K, V> IdentityHashMap<K, V> newIdentityHashMap() {
-        return new IdentityHashMap<K, V>();
+        return new IdentityHashMap<>();
     }
 
     static <K, V> Map<K, V> newSynchronizedIdentityHashMap() {
@@ -69,31 +69,31 @@ public class Util {
     }
 
     static <K, V> SortedMap<K, V> newSortedMap() {
-        return new TreeMap<K, V>();
+        return new TreeMap<>();
     }
 
     static <K, V> SortedMap<K, V> newSortedMap(Comparator<? super K> comp) {
-        return new TreeMap<K, V>(comp);
+        return new TreeMap<>(comp);
     }
 
     static <K, V> Map<K, V> newInsertionOrderMap() {
-        return new LinkedHashMap<K, V>();
+        return new LinkedHashMap<>();
     }
 
     static <E> Set<E> newSet() {
-        return new HashSet<E>();
+        return new HashSet<>();
     }
 
     static <E> Set<E> newSet(Collection<E> c) {
-        return new HashSet<E>(c);
+        return new HashSet<>(c);
     }
 
     static <E> List<E> newList() {
-        return new ArrayList<E>();
+        return new ArrayList<>();
     }
 
     static <E> List<E> newList(Collection<E> c) {
-        return new ArrayList<E>(c);
+        return new ArrayList<>(c);
     }
 
     /* This method can be used by code that is deliberately violating the

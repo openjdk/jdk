@@ -474,9 +474,6 @@ void os::initialize_jdk_signal_support(TRAPS) {
     JavaThread::vm_exit_on_osthread_failure(thread);
 
     JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
-
-    // Handle ^BREAK
-    os::signal(SIGBREAK, os::user_handler());
   }
 }
 
@@ -936,6 +933,11 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   long minutes = (sec/60) - (days * 1440) - (hours * 60);
   if (startStr == NULL) startStr = "";
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
+}
+
+void os::print_tos(outputStream* st, address sp) {
+  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
+  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
 }
 
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
