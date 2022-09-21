@@ -51,7 +51,7 @@ public class LookupHistory {
             result = Utilities.actionsGlobalContext().lookupResult(klass);
             result.addLookupListener(this);
             last = Utilities.actionsGlobalContext().lookup(klass);
-            this.fire();
+            fire();
         }
 
         public T getLast() {
