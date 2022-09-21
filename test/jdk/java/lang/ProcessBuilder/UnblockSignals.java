@@ -28,7 +28,8 @@ import java.io.IOException;
  * @test
  * @summary Verify Signal mask is cleared by ProcessBuilder start
  * @bug 8234262
- * @run main UnblockSignals
+ * @run main/othervm UnblockSignals
+ * @run main/othervm -Xrs UnblockSignals
  */
 public class UnblockSignals {
     public static void main(String[] args)  throws IOException, InterruptedException {
