@@ -45,6 +45,7 @@
 #define fstatvfs64 fstatvfs
 #endif
 
+#include "jni.h"
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_UnixFileDispatcherImpl.h"
