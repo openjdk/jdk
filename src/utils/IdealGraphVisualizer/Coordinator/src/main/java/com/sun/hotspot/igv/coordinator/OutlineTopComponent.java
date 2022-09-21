@@ -227,7 +227,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         // Wait for LookupHistory to be updated with the last active graph
         // before selecting it.
         SwingUtilities.invokeLater(() -> {
-            GraphNode[] selection = new  GraphNode[]{};
+            GraphNode[] selection = new GraphNode[0];
             if (lastProvider != null) {
                 // Try to fetch and select the latest active graph.
                 InputGraph graph = lastProvider.getGraph();
