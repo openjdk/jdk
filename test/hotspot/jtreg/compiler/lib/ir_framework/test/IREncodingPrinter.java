@@ -105,8 +105,8 @@ public class IREncodingPrinter {
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": Flag constraint not met.",
                                      "[IREncodingPrinter]", true);
+                return false;
             }
-            return check;
         }
 
         if (irAnno.applyIfNot().length != 0) {
@@ -114,8 +114,8 @@ public class IREncodingPrinter {
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": Flag constraint not met.",
                                      "[IREncodingPrinter]", true);
+                return false;
             }
-            return check;
         }
 
         if (irAnno.applyIfAnd().length != 0) {
@@ -123,8 +123,8 @@ public class IREncodingPrinter {
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": All flag constraints not met.",
                                      "[IREncodingPrinter]", true);
+                return false;
             }
-            return check;
         }
 
         if (irAnno.applyIfOr().length != 0) {
@@ -132,8 +132,8 @@ public class IREncodingPrinter {
             if (check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": None of the flag constraint met.",
                                      "[IREncodingPrinter]", true);
+                return false;
             }
-            return !check;
         }
 
         if (irAnno.applyIfCPUFeature().length != 0) {
@@ -141,8 +141,8 @@ public class IREncodingPrinter {
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": Feature constraint not met.",
                                      "[IREncodingPrinter]", true);
+                return false;
             }
-            return check;
         }
 
         if (irAnno.applyIfCPUFeatureAnd().length != 0) {
@@ -150,8 +150,8 @@ public class IREncodingPrinter {
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": All feature constraints not met.",
                                      "[IREncodingPrinter]", true);
+                return false;
             }
-            return check;
         }
 
         if (irAnno.applyIfCPUFeatureOr().length != 0) {
@@ -159,10 +159,10 @@ public class IREncodingPrinter {
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": None of the feature constraint met.",
                                      "[IREncodingPrinter]", true);
+                return false;
             }
-            return check;
         }
-        // No conditions, always apply.
+        // All preconditions satisfied: apply rule.
         return true;
     }
 
