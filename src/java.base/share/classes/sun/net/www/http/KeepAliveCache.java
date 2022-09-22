@@ -122,6 +122,7 @@ public class KeepAliveCache
      */
     @SuppressWarnings("removal")
     public void put(final URL url, Object obj, HttpClient http) {
+        HttpClient oldClient = null;
         cacheLock.lock();
         try {
             boolean startThread = (keepAliveTimer == null);
@@ -172,17 +173,21 @@ public class KeepAliveCache
                 // alive, which could be 0, if the user specified 0 for the property
                 assert keepAliveTimeout >= 0;
                 if (keepAliveTimeout == 0) {
-                    http.closeServer();
+                    oldClient = http;
                 } else {
                     v = new ClientVector(keepAliveTimeout * 1000);
                     v.put(http);
                     super.put(key, v);
                 }
             } else {
-                v.put(http);
+                oldClient = v.put(http);
             }
         } finally {
             cacheLock.unlock();
+        }
+        // close after releasing locks
+        if (oldClient != null) {
+            oldClient.closeServer();
         }
     }
 
@@ -238,10 +243,10 @@ public class KeepAliveCache
                     ClientVector v = get(key);
                     v.lock();
                     try {
-                        KeepAliveEntry e = v.peek();
+                        KeepAliveEntry e = v.peekLast();
                         while (e != null) {
                             if ((currentTime - e.idleStartTime) > v.nap) {
-                                v.poll();
+                                v.pollLast();
                                 if (closeList == null) {
                                     closeList = new ArrayList<>();
                                 }
@@ -249,7 +254,7 @@ public class KeepAliveCache
                             } else {
                                 break;
                             }
-                            e = v.peek();
+                            e = v.peekLast();
                         }
 
                         if (v.isEmpty()) {
@@ -291,8 +296,8 @@ public class KeepAliveCache
     }
 }
 
-/* FILO order for recycling HttpClients, should run in a thread
- * to time them out.  If > maxConns are in use, block.
+/* LIFO order for reusing HttpClients. Most recent entries at the front.
+ * If > maxConns are in use, discard oldest.
  */
 class ClientVector extends ArrayDeque<KeepAliveEntry> {
     @java.io.Serial
@@ -306,6 +311,7 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
         this.nap = nap;
     }
 
+    /* return a still valid, idle HttpClient */
     HttpClient get() {
         lock();
         try {
@@ -313,55 +319,40 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
                 return null;
             }
 
-            // Loop until we find a connection that has not timed out
-            HttpClient hc = null;
+            // check the most recent connection, use if still valid
             long currentTime = System.currentTimeMillis();
-            do {
-                KeepAliveEntry e = pop();
-                if ((currentTime - e.idleStartTime) > nap) {
-                    e.hc.closeServer();
-                } else {
-                    hc = e.hc;
-                    if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
-                        String msg = "cached HttpClient was idle for "
-                                + Long.toString(currentTime - e.idleStartTime);
-                        KeepAliveCache.logger.finest(msg);
-                    }
-                }
-            } while ((hc == null) && (!isEmpty()));
-            return hc;
-        } finally {
-            unlock();
-        }
-    }
-
-    /* return a still valid, unused HttpClient */
-    void put(HttpClient h) {
-        lock();
-        try {
-            if (size() >= KeepAliveCache.getMaxConnections()) {
-                h.closeServer(); // otherwise the connection remains in limbo
+            KeepAliveEntry e = peekFirst();
+            if ((currentTime - e.idleStartTime) > nap) {
+                return null; // all connections stale - will be cleaned up later
             } else {
-                push(new KeepAliveEntry(h, System.currentTimeMillis()));
+                pollFirst();
+                if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
+                    String msg = "cached HttpClient was idle for "
+                            + Long.toString(currentTime - e.idleStartTime);
+                    KeepAliveCache.logger.finest(msg);
+                }
+                return e.hc;
             }
         } finally {
             unlock();
         }
     }
 
-    /* remove an HttpClient */
-    boolean remove(HttpClient h) {
+    HttpClient put(HttpClient h) {
+        HttpClient staleClient = null;
         lock();
         try {
-            for (KeepAliveEntry curr : this) {
-                if (curr.hc == h) {
-                    return super.remove(curr);
-                }
+            assert KeepAliveCache.getMaxConnections() > 0;
+            if (size() >= KeepAliveCache.getMaxConnections()) {
+                // remove oldest connection
+                staleClient = removeLast().hc;
             }
-            return false;
+            addFirst(new KeepAliveEntry(h, System.currentTimeMillis()));
         } finally {
             unlock();
         }
+        // close after releasing the locks
+        return staleClient;
     }
 
     final void lock() {
@@ -389,10 +380,10 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
 }
 
 class KeepAliveKey {
-    private String      protocol = null;
-    private String      host = null;
-    private int         port = 0;
-    private Object      obj = null; // additional key, such as socketfactory
+    private final String      protocol;
+    private final String      host;
+    private final int         port;
+    private final Object      obj; // additional key, such as socketfactory
 
     /**
      * Constructor
@@ -433,8 +424,8 @@ class KeepAliveKey {
 }
 
 class KeepAliveEntry {
-    HttpClient hc;
-    long idleStartTime;
+    final HttpClient hc;
+    final long idleStartTime;
 
     KeepAliveEntry(HttpClient hc, long idleStartTime) {
         this.hc = hc;
