@@ -452,11 +452,6 @@ public:
   static inline bool should_skip(oop val);
 };
 
-class IncludeAllValues {
-public:
-  static bool should_skip(oop value) { return false; }
-};
-
 template <typename OopFnT, typename DerivedOopFnT, typename ValueFilterT>
 class OopMapDo {
 private:
