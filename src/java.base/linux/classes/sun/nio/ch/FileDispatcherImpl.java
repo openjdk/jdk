@@ -58,6 +58,7 @@ class FileDispatcherImpl extends UnixFileDispatcherImpl {
     static native void init0();
 
     static {
+        IOUtil.load();
         init0();
     }
 }
