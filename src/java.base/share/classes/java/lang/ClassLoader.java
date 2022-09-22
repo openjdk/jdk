@@ -786,8 +786,8 @@ public abstract class ClassLoader {
     private Thread waitForThreadLoadingClass(String name, Thread currentThread) {
         Thread thread;
         boolean interrupted = false;
-        while ((thread = curThreadLoadingClass(name, currentThread)) != currentThread) {
-            // Some other thread is loading this class name
+        while ((thread = curThreadLoadingClass(name, currentThread)) != null) {
+            // Wait while another thread is loading this class name or there's a CCE
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -819,7 +819,8 @@ public abstract class ClassLoader {
         assert (parallelLockMap == null);
         Thread currentThread = Thread.currentThread();
         Thread thread = curThreadLoadingClass(name, currentThread);
-        if (thread != currentThread) {
+        // Another thread is loading the class.
+        if (thread != null && thread != currentThread) {
             // notify loading thread once
             notifyAll();
             thread = waitForThreadLoadingClass(name, currentThread);
