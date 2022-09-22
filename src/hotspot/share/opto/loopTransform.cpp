@@ -3700,8 +3700,9 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
     phase->do_peeling(this, old_new);
   }
 
-  // We replace phi with final iv (exact_limit - stride), to make sure
-  // the loop exit value is correct.
+  // Replace the phi at loop head with the final value of the last
+  // iteration (exact_limit - stride), to make sure the loop exit value
+  // is correct, for any users after the loop.
   // Note: the final value after increment should not overflow since
   // counted loop has limit check predicate.
   Node* phi = cl->phi();
