@@ -416,7 +416,7 @@ public class TagletWriterImpl extends TagletWriter {
     private void appendSeparatorIfNotEmpty(ContentBuilder body) {
         if (!body.isEmpty()) {
             body.add(", ");
-            body.add(DocletConstants.NL);
+            body.add(Text.NL);
         }
     }
 
