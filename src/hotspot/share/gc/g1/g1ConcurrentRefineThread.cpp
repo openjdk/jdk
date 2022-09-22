@@ -166,11 +166,17 @@ bool G1PrimaryConcurrentRefineThread::maybe_deactivate() {
 }
 
 void G1PrimaryConcurrentRefineThread::do_refinement_step() {
-  // If adjustment done, don't do any refinement this round, since this thread
-  // might no longer be wanted active.
+  // Try adjustment first.  If it succeeds then don't do any refinement this
+  // round.  This thread may have just woken up but no threads are currently
+  // needed, which is common.  In this case we want to just go back to
+  // waiting, with a minimum of fuss; in particular, don't do any "premature"
+  // refinement.  However, adjustment may be pending but temporarily
+  // blocked. In that case we *do* try refinement, rather than possibly
+  // uselessly spinning while waiting for adjustment to succeed.
   if (!cr()->adjust_threads_periodically()) {
+    // No adjustment, so try refinement, with the target as a cuttoff.
     if (!try_refinement_step(cr()->pending_cards_target())) {
-      // Proceed with fewer threads if target reached.
+      // Refinement was cut off, so proceed with fewer threads.
       cr()->reduce_threads_wanted();
     }
   }
