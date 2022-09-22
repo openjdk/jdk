@@ -27,6 +27,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
 /**
@@ -35,20 +37,20 @@ import org.openide.util.ImageUtilities;
  */
 public class PredSuccAction extends AbstractAction {
 
-    private boolean state;
-    public static final String STATE = "state";
 
     public PredSuccAction() {
-        state = true;
+        putValue(Action.SELECTED_KEY, true);
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(STATE, true);
         putValue(Action.SHORT_DESCRIPTION, "Show neighboring nodes of fully visible nodes semi-transparent");
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
-        this.state = !state;
-        this.putValue(STATE, state);
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            boolean selected = (boolean)getValue(SELECTED_KEY);
+            editor.getModel().setShowNodeHull(selected);
+        }
     }
 
     protected String iconResource() {

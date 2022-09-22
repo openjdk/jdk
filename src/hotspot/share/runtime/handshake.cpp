@@ -30,6 +30,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -43,6 +44,7 @@
 #include "utilities/filterQueue.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 
 class HandshakeOperation : public CHeapObj<mtThread> {
   friend class HandshakeState;
@@ -248,6 +250,9 @@ class VM_HandshakeAllThreads: public VM_Operation {
       thr->handshake_state()->add_operation(_op);
       number_of_threads_issued++;
     }
+    if (UseSystemMemoryBarrier) {
+      SystemMemoryBarrier::emit();
+    }
 
     if (number_of_threads_issued < 1) {
       log_handshake_info(start_time_ns, _op->name(), 0, 0, "no threads alive");
@@ -368,6 +373,12 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
     jio_snprintf(buf, sizeof(buf),  "(thread= " INTPTR_FORMAT " dead)", p2i(target));
     log_handshake_info(start_time_ns, op.name(), 0, 0, buf);
     return;
+  }
+
+  // Separate the arming of the poll in add_operation() above from
+  // the read of JavaThread state in the try_process() call below.
+  if (UseSystemMemoryBarrier) {
+    SystemMemoryBarrier::emit();
   }
 
   // Keeps count on how many of own emitted handshakes

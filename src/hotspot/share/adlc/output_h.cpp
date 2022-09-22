@@ -417,7 +417,7 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
   }
   else if (!strcmp(ideal_type, "ConL")) {
     fprintf(fp,"    st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", i);
-    fprintf(fp,"    st->print(\"/\" PTR64_FORMAT, (uint64_t)_c%d);\n", i);
+    fprintf(fp,"    st->print(\"/\" UINT64_FORMAT_X_0, (uint64_t)_c%d);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "ConF")) {
@@ -429,7 +429,7 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
   else if (!strcmp(ideal_type, "ConD")) {
     fprintf(fp,"    st->print(\"#%%f\", _c%d);\n", i);
     fprintf(fp,"    jlong _c%dl = JavaValue(_c%d).get_jlong();\n", i, i);
-    fprintf(fp,"    st->print(\"/\" PTR64_FORMAT, (uint64_t)_c%dl);\n", i);
+    fprintf(fp,"    st->print(\"/\" UINT64_FORMAT_X_0, (uint64_t)_c%dl);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "Bool")) {

@@ -963,7 +963,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
       CodeCache::print_summary(&s, false);
     }
     ttyLocker ttyl;
-    tty->print_raw_cr(s.as_string());
+    tty->print_raw_cr(s.freeze());
   }
 
   if (result != JVMCI::ok) {
@@ -975,7 +975,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
         assert(JVMCIENV->isa_HotSpotNmethod(installed_code_handle), "wrong type");
         // Clear the link to an old nmethod first
         JVMCIObject nmethod_mirror = installed_code_handle;
-        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, JVMCI_CHECK_0);
+        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, JVMCI_CHECK_0);
       } else {
         assert(JVMCIENV->isa_InstalledCode(installed_code_handle), "wrong type");
       }
@@ -1145,9 +1145,9 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 C2V_END
 
 
-C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod))
+C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize))
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, JVMCI_CHECK);
+  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, JVMCI_CHECK);
 C2V_END
 
 C2V_VMENTRY_NULL(jlongArray, collectCounters, (JNIEnv* env, jobject))
@@ -2208,11 +2208,9 @@ C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jchar type_char))
   return type2aelembytes(type);
 C2V_END
 
-C2V_VMENTRY(void, deleteGlobalHandle, (JNIEnv* env, jobject, jlong handle))
-  if (handle != 0) {
-    JVMCIENV->runtime()->destroy_oop_handle(handle);
-  }
-}
+C2V_VMENTRY(void, releaseClearedOopHandles, (JNIEnv* env, jobject))
+  JVMCIENV->runtime()->release_cleared_oop_handles();
+C2V_END
 
 static void requireJVMCINativeLibrary(JVMCI_TRAPS) {
   if (!UseJVMCINativeLibrary) {
@@ -2862,7 +2860,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getLocalVariableTableStart",                   CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getLocalVariableTableStart)},
   {CC "getLocalVariableTableLength",                  CC "(" HS_METHOD2 ")I",                                                               FN_PTR(getLocalVariableTableLength)},
   {CC "reprofile",                                    CC "(" HS_METHOD2 ")V",                                                               FN_PTR(reprofile)},
-  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD ")V",                                                               FN_PTR(invalidateHotSpotNmethod)},
+  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "Z)V",                                                              FN_PTR(invalidateHotSpotNmethod)},
   {CC "collectCounters",                              CC "()[J",                                                                            FN_PTR(collectCounters)},
   {CC "getCountersSize",                              CC "()I",                                                                             FN_PTR(getCountersSize)},
   {CC "setCountersSize",                              CC "(I)Z",                                                                            FN_PTR(setCountersSize)},
@@ -2903,7 +2901,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "readArrayElement",                             CC "(" OBJECTCONSTANT "I)Ljava/lang/Object;",                                         FN_PTR(readArrayElement)},
   {CC "arrayBaseOffset",                              CC "(C)I",                                                                            FN_PTR(arrayBaseOffset)},
   {CC "arrayIndexScale",                              CC "(C)I",                                                                            FN_PTR(arrayIndexScale)},
-  {CC "deleteGlobalHandle",                           CC "(J)V",                                                                            FN_PTR(deleteGlobalHandle)},
+  {CC "releaseClearedOopHandles",                     CC "()V",                                                                             FN_PTR(releaseClearedOopHandles)},
   {CC "registerNativeMethods",                        CC "(" CLASS ")[J",                                                                   FN_PTR(registerNativeMethods)},
   {CC "isCurrentThreadAttached",                      CC "()Z",                                                                             FN_PTR(isCurrentThreadAttached)},
   {CC "getCurrentJavaThread",                         CC "()J",                                                                             FN_PTR(getCurrentJavaThread)},

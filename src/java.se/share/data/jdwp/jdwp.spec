@@ -3164,7 +3164,7 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Constant THREAD_NOT_SUSPENDED   =13  "If the specified thread has not been "
                                           "suspended by an event.")
     (Constant THREAD_SUSPENDED       =14  "Thread already suspended.")
-    (Constant THREAD_NOT_ALIVE       =15  "Thread has not been started or has terminated.")
+    (Constant THREAD_NOT_ALIVE       =15  "Not used.")
     (Constant INVALID_OBJECT         =20  "If this reference type has been unloaded "
                                           "and garbage collected.")
     (Constant INVALID_CLASS          =21  "Invalid class.")
