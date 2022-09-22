@@ -263,8 +263,7 @@ public final class EventWriter {
         // event class field and assign it to another. This check makes sure
         // the event type matches what was added by instrumentation.
         if (configuration.getId() != typeId) {
-            System.out.println("bad ID detected: config: " + configuration.getId() + ", typeId: " + typeId);
-            //EventWriterKey.block();
+            EventWriterKey.block();
         }
         if (excluded) {
             // thread is excluded from writing events
