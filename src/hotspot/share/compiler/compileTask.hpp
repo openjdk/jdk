@@ -31,6 +31,8 @@
 #include "memory/allocation.hpp"
 #include "utilities/xmlstream.hpp"
 
+class DirectiveSet;
+
 JVMCI_ONLY(class JVMCICompileState;)
 
 // CompileTask
@@ -72,35 +74,38 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 
  private:
-  static CompileTask* _task_free_list;
-  Monitor*     _lock;
-  uint         _compile_id;
-  Method*      _method;
-  jobject      _method_holder;
-  int          _osr_bci;
-  bool         _is_complete;
-  bool         _is_success;
-  bool         _is_blocking;
+  static CompileTask*  _task_free_list;
+  Monitor*             _lock;
+  uint                 _compile_id;
+  Method*              _method;
+  jobject              _method_holder;
+  int                  _osr_bci;
+  bool                 _is_complete;
+  bool                 _is_success;
+  bool                 _is_blocking;
+  CodeSection::csize_t _nm_content_size;
+  CodeSection::csize_t _nm_total_size;
+  CodeSection::csize_t _nm_insts_size;
+  const DirectiveSet*  _directive;
 #if INCLUDE_JVMCI
-  bool         _has_waiter;
+  bool                 _has_waiter;
   // Compilation state for a blocking JVMCI compilation
-  JVMCICompileState* _blocking_jvmci_compile_state;
+  JVMCICompileState*   _blocking_jvmci_compile_state;
 #endif
-  int          _comp_level;
-  int          _num_inlined_bytecodes;
-  nmethodLocker* _code_handle;  // holder of eventual result
-  CompileTask* _next, *_prev;
-  bool         _is_free;
+  int                  _comp_level;
+  int                  _num_inlined_bytecodes;
+  CompileTask*         _next, *_prev;
+  bool                 _is_free;
   // Fields used for logging why the compilation was initiated:
-  jlong        _time_queued;  // time when task was enqueued
-  jlong        _time_started; // time when compilation started
-  Method*      _hot_method;   // which method actually triggered this task
-  jobject      _hot_method_holder;
-  int          _hot_count;    // information about its invocation counter
-  CompileReason _compile_reason;      // more info about the task
-  const char*  _failure_reason;
+  jlong                _time_queued;  // time when task was enqueued
+  jlong                _time_started; // time when compilation started
+  Method*              _hot_method;   // which method actually triggered this task
+  jobject              _hot_method_holder;
+  int                  _hot_count;    // information about its invocation counter
+  CompileReason        _compile_reason;      // more info about the task
+  const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
-  bool         _failure_reason_on_C_heap;
+  bool                 _failure_reason_on_C_heap;
 
  public:
   CompileTask() : _failure_reason(NULL), _failure_reason_on_C_heap(false) {
@@ -122,6 +127,14 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_complete() const               { return _is_complete; }
   bool         is_blocking() const               { return _is_blocking; }
   bool         is_success() const                { return _is_success; }
+  void         set_directive(const DirectiveSet* directive) { _directive = directive; }
+  const DirectiveSet* directive() const          { return _directive; }
+  CodeSection::csize_t nm_content_size() { return _nm_content_size; }
+  void         set_nm_content_size(CodeSection::csize_t size) { _nm_content_size = size; }
+  CodeSection::csize_t nm_insts_size() { return _nm_insts_size; }
+  void         set_nm_insts_size(CodeSection::csize_t size) { _nm_insts_size = size; }
+  CodeSection::csize_t nm_total_size() { return _nm_total_size; }
+  void         set_nm_total_size(CodeSection::csize_t size) { _nm_total_size = size; }
   bool         can_become_stale() const          {
     switch (_compile_reason) {
       case Reason_BackedgeCount:
@@ -152,11 +165,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
     _blocking_jvmci_compile_state = state;
   }
 #endif
-
-  nmethodLocker* code_handle() const             { return _code_handle; }
-  void         set_code_handle(nmethodLocker* l) { _code_handle = l; }
-  nmethod*     code() const;                     // _code_handle->code()
-  void         set_code(nmethod* nm);            // _code_handle->set_code(nm)
 
   Monitor*     lock() const                      { return _lock; }
 

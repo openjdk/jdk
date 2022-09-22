@@ -24,12 +24,13 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -315,19 +316,19 @@ void ReadClosure::do_tag(int tag) {
 void ReadClosure::do_oop(oop *p) {
   if (UseCompressedOops) {
     narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-    if (CompressedOops::is_null(o) || !HeapShared::is_fully_available()) {
+    if (CompressedOops::is_null(o) || !ArchiveHeapLoader::is_fully_available()) {
       *p = NULL;
     } else {
-      assert(HeapShared::can_use(), "sanity");
-      assert(HeapShared::is_fully_available(), "must be");
-      *p = HeapShared::decode_from_archive(o);
+      assert(ArchiveHeapLoader::can_use(), "sanity");
+      assert(ArchiveHeapLoader::is_fully_available(), "must be");
+      *p = ArchiveHeapLoader::decode_from_archive(o);
     }
   } else {
     intptr_t dumptime_oop = nextPtr();
-    if (dumptime_oop == 0 || !HeapShared::is_fully_available()) {
+    if (dumptime_oop == 0 || !ArchiveHeapLoader::is_fully_available()) {
       *p = NULL;
     } else {
-      intptr_t runtime_oop = dumptime_oop + HeapShared::runtime_delta();
+      intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::runtime_delta();
       *p = cast_to_oop(runtime_oop);
     }
   }

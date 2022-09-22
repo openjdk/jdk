@@ -257,7 +257,7 @@ class os: AllStatic {
   static jlong  javaTimeNanos();
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
-  static void   run_periodic_checks();
+  static void   run_periodic_checks(outputStream* st);
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -519,7 +519,7 @@ class os: AllStatic {
   enum ThreadType {
     vm_thread,
     gc_thread,         // GC thread
-    java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
+    java_thread,       // Java, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
     asynclog_thread,   // dedicated to flushing logs
@@ -758,12 +758,13 @@ class os: AllStatic {
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
   static void print_tos_pc(outputStream* st, const void* context);
+  static void print_tos(outputStream* st, address sp);
+  static void print_instructions(outputStream* st, address pc, int unitsize);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
-  static void print_instructions(outputStream* st, address pc, int unitsize);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
