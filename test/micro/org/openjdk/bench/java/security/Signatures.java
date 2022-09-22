@@ -53,7 +53,7 @@ public class Signatures {
         params.init(new ECGenParameterSpec("secp256r1"));
         ECGenParameterSpec ecParams =
                 params.getParameterSpec(ECGenParameterSpec.class);
-        
+
         KeyPairGenerator kpg =
                 KeyPairGenerator.getInstance("EC", "SunEC");
         kpg.initialize(ecParams);
