@@ -101,20 +101,20 @@ public class FieldGen {
     }
 
     static FieldParams P256 = new FieldParams(
-            "IntegerPolynomialP256", 26, 10, 2, 256,
+            "IntegerPolynomialP256", 29, 9, 2, 256,
             Arrays.asList(
                     new Term(224, -1),
                     new Term(192, 1),
                     new Term(96, 1),
                     new Term(0, -1)
             ),
-            P256CrSequence(), simpleSmallCrSequence(10)
+            P256CrSequence(), simpleSmallCrSequence(9)
     );
 
     private static List<CarryReduce> P256CrSequence() {
         List<CarryReduce> result = new ArrayList<CarryReduce>();
-        result.addAll(fullReduce(10));
-        result.addAll(simpleSmallCrSequence(10));
+        result.addAll(fullReduce(9));
+        result.addAll(simpleSmallCrSequence(9));
         return result;
     }
 
@@ -152,9 +152,9 @@ public class FieldGen {
     }
 
     static FieldParams O256 = new FieldParams(
-            "P256OrderField", 26, 10, 1, 256,
+            "P256OrderField", 29, 9, 1, 256,
             "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
-            orderFieldCrSequence(10), orderFieldSmallCrSequence(10)
+            orderFieldCrSequence(9), orderFieldSmallCrSequence(9)
     );
 
     static FieldParams O384 = new FieldParams(
