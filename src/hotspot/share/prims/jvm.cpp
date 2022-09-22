@@ -2981,45 +2981,6 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
 JVM_END
 
 
-// JVM_Stop is implemented using a VM_Operation, so threads are forced to safepoints
-// before the quasi-asynchronous exception is delivered.  This is a little obtrusive,
-// but is thought to be reliable and simple. In the case, where the receiver is the
-// same thread as the sender, no VM_Operation is needed.
-JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
-  ThreadsListHandle tlh(thread);
-  oop java_throwable = JNIHandles::resolve(throwable);
-  if (java_throwable == NULL) {
-    THROW(vmSymbols::java_lang_NullPointerException());
-  }
-  oop java_thread = NULL;
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, &java_thread);
-  Events::log_exception(thread,
-                        "JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]",
-                        p2i(receiver), p2i(java_thread), p2i(throwable));
-
-  if (is_alive) {
-    // jthread refers to a live JavaThread.
-    if (thread == receiver) {
-      // Exception is getting thrown at self so no VM_Operation needed.
-      THROW_OOP(java_throwable);
-    } else {
-      // Use a VM_Operation to throw the exception.
-      JavaThread::send_async_exception(receiver, java_throwable);
-    }
-  } else {
-    // Either:
-    // - target thread has not been started before being stopped, or
-    // - target thread already terminated
-    // We could read the threadStatus to determine which case it is
-    // but that is overkill as it doesn't matter. We must set the
-    // stillborn flag for the first case, and if the thread has already
-    // exited setting this flag has no effect.
-    java_lang_Thread::set_stillborn(java_thread);
-  }
-JVM_END
-
-
 JVM_ENTRY(jboolean, JVM_IsThreadAlive(JNIEnv* env, jobject jthread))
   oop thread_oop = JNIHandles::resolve_non_null(jthread);
   return java_lang_Thread::is_alive(thread_oop);
