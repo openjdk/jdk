@@ -288,8 +288,6 @@ class Thread: public ThreadShadow {
   JvmtiRawMonitor* _current_pending_raw_monitor; // JvmtiRawMonitor this thread
                                                  // is waiting to lock
 
-  static void set_thread_current(Thread* t);
-
  public:
   // Constructor
   Thread();
@@ -301,8 +299,10 @@ class Thread: public ThreadShadow {
 
 #ifdef ASSERT
   // Support for temporarily disabling thread_current (see NoThreadCurrentMark)
-  static void swap_thread_current(Thread* swap_in, Thread** old);
-#endif
+  bool _thread_current_disabled;
+  void disable_thread_current() { _thread_current_disabled = true; }
+  void enable_thread_current()  { _thread_current_disabled = false; }
+#endif // ASSERT
 
  protected:
   // To be implemented by children.
@@ -655,21 +655,29 @@ inline Thread* Thread::current() {
 }
 
 inline Thread* Thread::current_or_null() {
+  Thread* t = nullptr;
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
-  return _thr_current;
+  t = _thr_current;
 #else
   if (ThreadLocalStorage::is_initialized()) {
-    return ThreadLocalStorage::thread();
+    t = ThreadLocalStorage::thread();
   }
-  return NULL;
 #endif
+  if (t != nullptr && t->_thread_current_disabled) {
+    t = nullptr;
+  }
+  return t;
 }
 
 inline Thread* Thread::current_or_null_safe() {
+  Thread* t = nullptr;
   if (ThreadLocalStorage::is_initialized()) {
-    return ThreadLocalStorage::thread();
+    t = ThreadLocalStorage::thread();
   }
-  return NULL;
+  if (t != nullptr && t->_thread_current_disabled) {
+    t = nullptr;
+  }
+  return t;
 }
 
 #endif // SHARE_RUNTIME_THREAD_HPP

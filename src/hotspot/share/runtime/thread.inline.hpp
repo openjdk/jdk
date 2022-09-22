@@ -93,11 +93,6 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
 
 
 #ifdef ASSERT
-inline void Thread::swap_thread_current(Thread* swap_in, Thread** old) {
-  *old = current_or_null_safe();
-  Thread::set_thread_current(swap_in);
-}
-
 // Mark disables Thread::current by setting it to NULL for the extend. Can be
 // used to simulate running code in non-attached threads, or to guard code
 // against accidental usage of features that depend on Thread::current() (e.g.
@@ -106,11 +101,15 @@ class NoThreadCurrentMark {
   Thread* _t;
 public:
   NoThreadCurrentMark() {
-    Thread::swap_thread_current((Thread*)nullptr, &_t);
+    _t = Thread::current_or_null_safe();
+    if (_t != nullptr) {
+      _t->disable_thread_current();
+    }
   }
   ~NoThreadCurrentMark() {
-    Thread* dummy;
-    Thread::swap_thread_current(_t, &dummy);
+    if (_t != nullptr) {
+      _t->enable_thread_current();
+    }
   }
 };
 #endif // ASSERT

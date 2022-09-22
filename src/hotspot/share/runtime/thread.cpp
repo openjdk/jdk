@@ -75,6 +75,7 @@ DEBUG_ONLY(Thread* Thread::_starting_thread = NULL;)
 Thread::Thread() {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
+  DEBUG_ONLY(_thread_current_disabled = false;)
 
   // stack and get_thread
   set_stack_base(NULL);
@@ -153,25 +154,21 @@ void Thread::initialize_tlab() {
   }
 }
 
-void Thread::set_thread_current(Thread* t) {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-  _thr_current = t;
-#endif
-  ThreadLocalStorage::set_thread(t);
-}
-
 void Thread::initialize_thread_current() {
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
   assert(_thr_current == NULL, "Thread::current already initialized");
+  _thr_current = this;
 #endif
   assert(ThreadLocalStorage::thread() == NULL, "ThreadLocalStorage::thread already initialized");
-  set_thread_current(this);
+  ThreadLocalStorage::set_thread(this);
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
 }
 
 void Thread::clear_thread_current() {
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
-  set_thread_current(NULL);
+#ifndef USE_LIBRARY_BASED_TLS_ONLY
+  _thr_current = NULL;
+#endif
   ThreadLocalStorage::set_thread(NULL);
 }
 
