@@ -2828,6 +2828,11 @@ address MacroAssembler::trampoline_call(Address entry) {
   }
 
   address call_pc = pc();
+#ifdef ASSERT
+  if (entry.rspec().type() != relocInfo::runtime_call_type) {
+    assert_alignment(call_pc);
+  }
+#endif
   relocate(entry.rspec());
   if (!far_branches()) {
     jal(entry.target());
