@@ -95,20 +95,8 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   public WindbgDebuggerLocal(MachineDescription machDesc,
                             boolean useCache) throws DebuggerException {
     this.machDesc = machDesc;
-    utils = new DebuggerUtilities(machDesc.getAddressSize(), machDesc.isBigEndian()) {
-           public void checkAlignment(long address, long alignment) {
-             // Need to override default checkAlignment because we need to
-             // relax alignment constraints on Windows/x86
-             if ( (address % alignment != 0)
-                &&(alignment != 8 || address % 4 != 0)) {
-                throw new UnalignedAddressException(
-                        "Trying to read at address: "
-                      + addressValueToString(address)
-                      + " with alignment: " + alignment,
-                        address);
-             }
-           }
-        };
+    utils = new DebuggerUtilities(machDesc.getAddressSize(), machDesc.isBigEndian(),
+                                  machDesc.supports32bitAlignmentOf64bitTypes());
 
     String cpu = PlatformInfo.getCPU();
     if (cpu.equals("x86")) {
@@ -269,22 +257,6 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     return getThreadIdFromSysId0(sysId);
   }
 
-  //----------------------------------------------------------------------
-  // Overridden from DebuggerBase because we need to relax alignment
-  // constraints on x86
-
-  public long readJLong(long address)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    // FIXME: allow this to be configurable. Undesirable to add a
-    // dependency on the runtime package here, though, since this
-    // package should be strictly underneath it.
-    //    utils.checkAlignment(address, jlongSize);
-    utils.checkAlignment(address, jintSize);
-    byte[] data = readBytes(address, jlongSize);
-    return utils.dataToJLong(data, jlongSize);
-  }
-
   //--------------------------------------------------------------------------------
   // Internal routines (for implementation of WindbgAddress).
   // These must not be called until the MachineDescription has been set up.
@@ -344,7 +316,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   public synchronized long[] getThreadIntegerRegisterSet(long threadId)
     throws DebuggerException {
     requireAttach();
-    return (long[]) threadIntegerRegisterSet.get(threadId);
+    return threadIntegerRegisterSet.get(threadId);
   }
 
   public synchronized List<ThreadProxy> getThreadList() throws DebuggerException {
@@ -456,7 +428,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
       } // else fallthru...
     }
 
-    DLL dll = (DLL) nameToDllMap.get(objectName);
+    DLL dll = nameToDllMap.get(objectName);
     // The DLL can be null because we use this to search through known
     // DLLs in HotSpotTypeDataBase (for example)
     if (dll != null) {
@@ -535,7 +507,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
       // First place to search is co-located with saproc.dll in
       // $JAVA_HOME/jre/bin (java.home property is set to $JAVA_HOME/jre):
       searchList.add(System.getProperty("java.home") + File.separator + "bin");
-      saprocPath = (String) searchList.get(0) + File.separator +
+      saprocPath = searchList.get(0) + File.separator +
           "saproc.dll";
 
       // second place to search is specified by an environment variable:
@@ -564,7 +536,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     }
 
     for (int i = 0; i < searchList.size(); i++) {
-      File dir = new File((String) searchList.get(i));
+      File dir = new File(searchList.get(i));
       if (!dir.exists()) {
         if (loadLibraryDEBUG) {
           System.err.println("DEBUG: '" + searchList.get(i) +
@@ -574,8 +546,8 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
         continue;
       }
 
-      dbgengPath = (String) searchList.get(i) + File.separator + "dbgeng.dll";
-      dbghelpPath = (String) searchList.get(i) + File.separator + "dbghelp.dll";
+      dbgengPath = searchList.get(i) + File.separator + "dbgeng.dll";
+      dbghelpPath = searchList.get(i) + File.separator + "dbghelp.dll";
 
       File feng = new File(dbgengPath);
       File fhelp = new File(dbghelpPath);

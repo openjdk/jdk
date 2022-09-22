@@ -25,11 +25,12 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -1970,7 +1971,7 @@ address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_
   if (with_current_oop_encoding_mode) {
     return cast_from_oop<address>(CompressedOops::decode_raw_not_null(n));
   } else {
-    return cast_from_oop<address>(HeapShared::decode_from_archive(n));
+    return cast_from_oop<address>(ArchiveHeapLoader::decode_from_archive(n));
   }
 }
 
@@ -2016,10 +2017,10 @@ void FileMapInfo::map_or_load_heap_regions() {
   bool success = false;
 
   if (can_use_heap_regions()) {
-    if (HeapShared::can_map()) {
+    if (ArchiveHeapLoader::can_map()) {
       success = map_heap_regions();
-    } else if (HeapShared::can_load()) {
-      success = HeapShared::load_heap_regions(this);
+    } else if (ArchiveHeapLoader::can_load()) {
+      success = ArchiveHeapLoader::load_heap_regions(this);
     } else {
       log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
     }
@@ -2085,15 +2086,15 @@ address FileMapInfo::heap_region_runtime_start_address(FileMapRegion* spc) {
     return start_address_as_decoded_from_archive(spc);
   } else {
     assert(is_aligned(spc->mapping_offset(), sizeof(HeapWord)), "must be");
-    return header()->heap_begin() + spc->mapping_offset() + HeapShared::runtime_delta();
+    return header()->heap_begin() + spc->mapping_offset() + ArchiveHeapLoader::runtime_delta();
   }
 }
 
 void FileMapInfo::set_shared_heap_runtime_delta(ptrdiff_t delta) {
   if (UseCompressedOops) {
-    HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
+    ArchiveHeapLoader::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
   } else {
-    HeapShared::set_runtime_delta(delta);
+    ArchiveHeapLoader::set_runtime_delta(delta);
   }
 }
 
@@ -2209,14 +2210,14 @@ void FileMapInfo::map_heap_regions_impl() {
                        MetaspaceShared::max_num_closed_heap_regions,
                        /*is_open_archive=*/ false,
                        &closed_heap_regions, &num_closed_heap_regions)) {
-    HeapShared::set_closed_regions_mapped();
+    ArchiveHeapLoader::set_closed_regions_mapped();
 
     // Now, map the open heap regions: GC can write into these regions.
     if (map_heap_regions(MetaspaceShared::first_open_heap_region,
                          MetaspaceShared::max_num_open_heap_regions,
                          /*is_open_archive=*/ true,
                          &open_heap_regions, &num_open_heap_regions)) {
-      HeapShared::set_open_regions_mapped();
+      ArchiveHeapLoader::set_open_regions_mapped();
     }
   }
 }
@@ -2224,12 +2225,12 @@ void FileMapInfo::map_heap_regions_impl() {
 bool FileMapInfo::map_heap_regions() {
   map_heap_regions_impl();
 
-  if (!HeapShared::closed_regions_mapped()) {
+  if (!ArchiveHeapLoader::closed_regions_mapped()) {
     assert(closed_heap_regions == NULL &&
            num_closed_heap_regions == 0, "sanity");
   }
 
-  if (!HeapShared::open_regions_mapped()) {
+  if (!ArchiveHeapLoader::open_regions_mapped()) {
     assert(open_heap_regions == NULL && num_open_heap_regions == 0, "sanity");
     return false;
   } else {
@@ -2336,7 +2337,7 @@ void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regio
   assert(bitmap_base != NULL, "must have already been mapped");
   for (int i=0; i<num_regions; i++) {
     FileMapRegion* si = space_at(i + first_region_idx);
-    HeapShared::patch_embedded_pointers(
+    ArchiveHeapLoader::patch_embedded_pointers(
       regions[i],
       (address)(space_at(MetaspaceShared::bm)->mapped_base()) + si->oopmap_offset(),
       si->oopmap_size_in_bits());

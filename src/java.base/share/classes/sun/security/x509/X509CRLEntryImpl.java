@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -408,7 +408,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
 
             if (extAlias == null) { // may be unknown
                 ObjectIdentifier findOID = ObjectIdentifier.of(oid);
-                Extension ex = null;
+                Extension ex;
                 ObjectIdentifier inCertOID;
                 for (Enumeration<Extension> e = extensions.getElements();
                                                  e.hasMoreElements();) {

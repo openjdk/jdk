@@ -133,7 +133,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     }
 
     public void selectionChanged() {
-        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);//)Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
+        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
         if (p != null) {
             Set<InputNode> inputNodes = new HashSet<InputNode>();
             for (BlockWidget w : selection) {
