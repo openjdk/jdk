@@ -1388,7 +1388,6 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
      */
     RECT outside;
     RECT inside;
-    int extraBottomInsets = 0;
 
     // extra padded border for captioned windows
     int extraPaddedBorderInsets = ::GetSystemMetrics(SM_CXPADDEDBORDER);
@@ -1400,7 +1399,7 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     if (outside.right - outside.left > 0 && outside.bottom - outside.top > 0) {
         ::MapWindowPoints(GetHWnd(), 0, (LPPOINT)&inside, 2);
         m_insets.top = inside.top - outside.top;
-        m_insets.bottom = outside.bottom - inside.bottom + extraBottomInsets;
+        m_insets.bottom = outside.bottom - inside.bottom;
         m_insets.left = inside.left - outside.left;
         m_insets.right = outside.right - inside.right;
     } else {
@@ -1439,7 +1438,6 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             env->DeleteLocalRef(target);
             return FALSE;
         }
-        m_insets.bottom += extraBottomInsets;
         env->DeleteLocalRef(target);
     }
 
