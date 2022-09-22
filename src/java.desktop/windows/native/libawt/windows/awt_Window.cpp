@@ -1408,15 +1408,19 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     }
 
     if (m_insets.left < 0 || m_insets.top < 0 ||
-        m_insets.right < 0 || m_insets.bottom < 0) {
+        m_insets.right < 0 || m_insets.bottom < 0)
+    {
         /* This window hasn't been sized yet -- use system metrics. */
         jobject target = GetTarget(env);
         if (IsUndecorated() == FALSE) {
             /* Get outer frame sizes. */
+            // System metrics are same for resizable & non-resizable frame.
+            // SM_CXFRAME is the width of the horizontal border in pixels.
+            // SM_CYFRAME is the height of the vertical border in pixels.
             m_insets.left = m_insets.right =
-                ::GetSystemMetrics(SM_CXSIZEFRAME) + extraPaddedBorderInsets;
+                ::GetSystemMetrics(SM_CXFRAME) + extraPaddedBorderInsets;
             m_insets.top = m_insets.bottom =
-                ::GetSystemMetrics(SM_CYSIZEFRAME) + extraPaddedBorderInsets;
+                ::GetSystemMetrics(SM_CYFRAME) + extraPaddedBorderInsets;
             /* Add in title. */
             m_insets.top += ::GetSystemMetrics(SM_CYCAPTION);
         }
@@ -1424,7 +1428,7 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             /* fix for 4418125: Undecorated frames are off by one */
             /* undo the -1 set above */
             /* Additional fix for 5059656 */
-                /* Also, 5089312: Window insets should be 0. */
+            /* Also, 5089312: Window insets should be 0. */
             ::memset(&m_insets, 0, sizeof(m_insets));
         }
 
