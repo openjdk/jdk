@@ -48,6 +48,26 @@ public class HandshakeDirectTest  implements Runnable {
     static Object[] locks = new Object[WORKING_THREADS];
     static AtomicInteger handshakeCount = new AtomicInteger(0);
 
+    static void suspendThread(Thread t) {
+        try {
+            JVMTIUtils.suspendThread(t);
+        } catch (JVMTIUtils.JvmtiException e) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw e;
+            }
+        }
+    }
+
+    static void resumeThread(Thread t) {
+        try {
+            JVMTIUtils.resumeThread(t);
+        } catch (JVMTIUtils.JvmtiException e) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw e;
+            }
+        }
+    }
+
     @Override
     public void run() {
         int me = Integer.parseInt(Thread.currentThread().getName());
@@ -93,12 +113,12 @@ public class HandshakeDirectTest  implements Runnable {
             public void run() {
                 while (true) {
                     int i = ThreadLocalRandom.current().nextInt(0, WORKING_THREADS - 1);
-                    JVMTIUtils.suspendThread(workingThreads[i]);
+                    suspendThread(workingThreads[i]);
                     try {
                         Thread.sleep(1); // sleep for 1 ms
                     } catch(InterruptedException ie) {
                     }
-                    JVMTIUtils.resumeThread(workingThreads[i]);
+                    resumeThread(workingThreads[i]);
                 }
             }
         };

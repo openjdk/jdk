@@ -59,28 +59,14 @@ Java_jvmti_JVMTIUtils_stopThread(JNIEnv *jni, jclass cls, jthread thread, jobjec
   check_jvmti_status(jni, err, "Error during StopThread()");
 }
 
-JNIEXPORT void JNICALL
-Java_jvmti_JVMTIUtils_suspendThread(JNIEnv *jni, jclass cls, jthread thread) {
-  jvmtiError err =  jvmti->SuspendThread(thread);
-  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
-    return;
-  }
-  if (err == JVMTI_ERROR_THREAD_SUSPENDED) {
-    return;
-  }
-  check_jvmti_status(jni, err, "Error during SuspendThread");
+JNIEXPORT jint JNICALL
+Java_jvmti_JVMTIUtils_suspendThread0(JNIEnv *jni, jclass cls, jthread thread) {
+  return jvmti->SuspendThread(thread);
 }
 
-JNIEXPORT void JNICALL
-Java_jvmti_JVMTIUtils_resumeThread(JNIEnv *jni, jclass cls, jthread thread) {
-  jvmtiError err =  jvmti->ResumeThread(thread);
-  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
-    return;
-  }
-  if (err == JVMTI_ERROR_THREAD_NOT_SUSPENDED) {
-    return;
-  }
-  check_jvmti_status(jni, err, "Error during ResumeThread");
+JNIEXPORT jint JNICALL
+Java_jvmti_JVMTIUtils_resumeThread0(JNIEnv *jni, jclass cls, jthread thread) {
+  return jvmti->ResumeThread(thread);
 }
 
 }

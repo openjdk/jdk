@@ -133,8 +133,6 @@ public class interrupt001 {
 
     static final String EQUALS_NOT_INTERRUPTED = "Statuses of threads are equal: not interrupted";
 
-    static final int MAX_CASE = 1;
-
     //------------------------------------------------------ methods
 
     private int runThis(String argv[], PrintStream out) {
