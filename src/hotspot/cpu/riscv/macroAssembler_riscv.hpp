@@ -641,7 +641,7 @@ public:
   void reserved_stack_check();
 
   void get_polling_page(Register dest, relocInfo::relocType rtype);
-  address read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
+  void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
   // RISCV64 OpenJDK uses four different types of calls:
   //   - direct call: jal pc_relative_offset
