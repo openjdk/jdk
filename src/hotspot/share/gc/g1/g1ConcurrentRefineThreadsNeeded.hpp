@@ -37,8 +37,8 @@ class G1Policy;
 class G1ConcurrentRefineThreadsNeeded : public CHeapObj<mtGC> {
   G1Policy* _policy;
   double _update_period_ms;
-  double _predicted_time_ms;
-  size_t _predicted_cards;
+  double _predicted_time_until_next_gc_ms;
+  size_t _predicted_cards_at_next_gc;
   uint _threads_needed;
 
 public:
@@ -55,11 +55,15 @@ public:
   uint threads_needed() const { return _threads_needed; }
 
   // Estimate of the time until the next GC.
-  double predicted_time_ms() const { return _predicted_time_ms; }
+  double predicted_time_until_next_gc_ms() const {
+    return _predicted_time_until_next_gc_ms;
+  }
 
   // Estimate of the number of pending cards at the next GC if no further
   // refinement is performed.
-  size_t predicted_cards() const { return _predicted_cards; }
+  size_t predicted_cards_at_next_gc() const {
+    return _predicted_cards_at_next_gc;
+  }
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINETHREADSNEEDED_HPP

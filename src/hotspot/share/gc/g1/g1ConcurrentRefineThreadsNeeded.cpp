@@ -34,8 +34,8 @@ G1ConcurrentRefineThreadsNeeded::G1ConcurrentRefineThreadsNeeded(G1Policy* polic
                                                                  double update_period_ms) :
   _policy(policy),
   _update_period_ms(update_period_ms),
-  _predicted_time_ms(0.0),
-  _predicted_cards(0),
+  _predicted_time_until_next_gc_ms(0.0),
+  _predicted_cards_at_next_gc(0),
   _threads_needed(0)
 {}
 
@@ -63,14 +63,15 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   double alloc_region_rate = analytics->predict_alloc_rate_ms();
   double alloc_bytes_rate = alloc_region_rate * HeapRegion::GrainBytes;
   if (alloc_bytes_rate == 0.0) {
-    _predicted_time_ms = 0.0;
+    _predicted_time_until_next_gc_ms = 0.0;
   } else {
     // If the heap size is large and the allocation rate is small, we can get
     // a predicted time until next GC that is so large it can cause problems
     // (such as overflow) in other calculations.  Limit the prediction to one
     // hour, which is still large in this context.
     const double one_hour_ms = 60.0 * 60.0 * MILLIUNITS;
-    _predicted_time_ms = MIN2(available_bytes / alloc_bytes_rate, one_hour_ms);
+    double raw_time_ms = available_bytes / alloc_bytes_rate;
+    _predicted_time_until_next_gc_ms = MIN2(raw_time_ms, one_hour_ms);
   }
 
   // Estimate number of cards that need to be processed before next GC.  There
@@ -78,12 +79,13 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // refinement by mutator threads when there to a GC, to stay on target even
   // if threads deactivate in the meantime.
   size_t incoming_cards = 0;
-  if (_predicted_time_ms > _update_period_ms) {
+  if (_predicted_time_until_next_gc_ms > _update_period_ms) {
     double incoming_rate = analytics->predict_dirtied_cards_rate_ms();
-    incoming_cards = static_cast<size_t>(incoming_rate * _predicted_time_ms);
+    double raw_cards = incoming_rate * _predicted_time_until_next_gc_ms;
+    incoming_cards = static_cast<size_t>(raw_cards);
   }
   size_t total_cards = num_cards + incoming_cards;
-  _predicted_cards = total_cards;
+  _predicted_cards_at_next_gc = total_cards;
 
   // No concurrent refinement needed.
   if (total_cards <= target_num_cards) {
@@ -98,7 +100,7 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // threads running, other than to treat the current thread as running.  That
   // might not be sufficient, but hopefully we were reasonably close
   // previously and won't accumulate a large excess in the remaining time.
-  if (_predicted_time_ms <= _update_period_ms) {
+  if (_predicted_time_until_next_gc_ms <= _update_period_ms) {
     _threads_needed = MAX2(active_threads, 1u);
     return;
   }
@@ -120,7 +122,7 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
 
   // Estimate the number of refinement threads we need to run in order to
   // reach the goal in time.
-  double thread_capacity = refine_rate * _predicted_time_ms;
+  double thread_capacity = refine_rate * _predicted_time_until_next_gc_ms;
   double nthreads = cards_needed / thread_capacity;
 
   // Decide how to round nthreads to an integral number of threads.  Always
@@ -128,7 +130,7 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // close to the next GC we want to drive toward the target, so round up
   // then.  The rest of the time we round to nearest, trying to remain near
   // the middle of the range.
-  if (_predicted_time_ms <= _update_period_ms * 5.0) {
+  if (_predicted_time_until_next_gc_ms <= _update_period_ms * 5.0) {
     nthreads = ::ceil(nthreads);
   } else {
     nthreads = ::round(nthreads);

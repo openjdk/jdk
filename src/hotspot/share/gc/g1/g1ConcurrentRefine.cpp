@@ -262,7 +262,7 @@ static uint64_t compute_adjust_delay(double available_ms) {
 uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
   assert_current_thread_is_primary_refinement_thread();
   if (is_pending_cards_target_initialized()) {
-    double available_ms = _threads_needed.predicted_time_ms();
+    double available_ms = _threads_needed.predicted_time_until_next_gc_ms();
     uint64_t delay = compute_adjust_delay(available_ms);
     return MAX2(delay, adjust_threads_period_ms());
   } else {
@@ -306,7 +306,7 @@ bool G1ConcurrentRefine::adjust_threads_periodically() {
 }
 
 bool G1ConcurrentRefine::is_in_last_adjustment_period() const {
-  return _threads_needed.predicted_time_ms() <= adjust_threads_period_ms();
+  return _threads_needed.predicted_time_until_next_gc_ms() <= adjust_threads_period_ms();
 }
 
 void G1ConcurrentRefine::adjust_threads_needed(size_t available_bytes) {
@@ -341,8 +341,8 @@ void G1ConcurrentRefine::adjust_threads_needed(size_t available_bytes) {
                         "predicted: %zu, time: %1.2fms",
                         new_needed,
                         num_cards,
-                        _threads_needed.predicted_cards(),
-                        _threads_needed.predicted_time_ms());
+                        _threads_needed.predicted_cards_at_next_gc(),
+                        _threads_needed.predicted_time_until_next_gc_ms());
   // Activate newly wanted threads.  The current thread is the primary
   // refinement thread, so is already active.
   for (uint i = MAX2(old_wanted, 1u); i < new_needed; ++i) {
