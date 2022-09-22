@@ -44,18 +44,6 @@ import jdk.classfile.instruction.LocalVariableType;
  * newly allocated positions to avoid conflicts during code injection.
  * Locals pointing to the receiver or to method arguments slots are never shifted.
  * All locals pointing beyond the method arguments are re-indexed in order of appearance.
- * <p>
- * Sample use in code injection transformation:
- * <p>
- * {@snippet lang=java :
- *     methodBuilder.transformCode(codeModel, (codeBuilder, codeElement) -> {
- *         ...
- *         codeBuilder.transform(injectedCodeModel,
- *                               CodeLocalsShifter.of(methodModel.flags(), methodModel.methodTypeSymbol())
- *                               .andThen(otherInjectedCodeTransforms));
- *         ...
- *     }));
- * }
  */
 public sealed interface CodeLocalsShifter extends CodeTransform {
 

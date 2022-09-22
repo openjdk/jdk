@@ -48,17 +48,6 @@ import jdk.classfile.instruction.LocalVariableType;
  * Primary purpose of CodeRelabeler is for repeated injections of the same code blocks.
  * Repeated injection of the same code block must be relabeled, so each instance of
  * {@link jdk.classfile.Label} is bound in the target bytecode exactly once.
- * <p>
- * Sample use:
- * <p>
- * {@snippet lang=java :
- *     //first injection does not require relabeling
- *     codeBuilder.transform(codeModel, myCodeInjectionTransformation);
- *     ...
- *     //repeated injection of the same code requires relabeling
- *     codeBuilder.transform(codeModel, CodeRelabeler.of()
- *                                      .andThen(myCodeInjectionTransformation));
- * }
  */
 public sealed interface CodeRelabeler extends CodeTransform {
 

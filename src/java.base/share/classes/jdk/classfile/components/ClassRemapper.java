@@ -92,33 +92,15 @@ import jdk.classfile.instruction.ConstantInstruction.LoadConstantInstruction;
 /**
  * ClassRemapper is a {@link jdk.classfile.ClassTransform}, {@link jdk.classfile.FieldTransform},
  * {@link jdk.classfile.MethodTransform} and {@link jdk.classfile.CodeTransform}
- * re-mapping all class references in any form according to given map or map function.
+ * deeply re-mapping all class references in any form, according to given map or map function.
+ * <p>
+ * The re-mapping is applied to superclass, interfaces, all kinds of descriptors and signatures,
+ * all attributes referencing classes in any form (including all types of annotations),
+ * and to all instructions referencing to classes.
  * <p>
  * Primitive types and arrays are never subjects of mapping and are not allowed targets of mapping.
  * <p>
  * Arrays of reference types are always decomposed, mapped as the base reference types and composed back to arrays.
- * <p>
- * Sample re-mapping class Foo to Bar:
- * <p>
- * {@snippet lang=java :
- *     var classMap = Map.of(ClassDesc.of("Foo"), ClassDesc.of("Bar"));
- *     var classRemapper = ClassRemapper.of(classMap);
- *     for (var classModel : allMyClasses) {
- *         var remappedClassBytes = classRemapper.remapClass(classModel);
- *         ...
- *     }
- * }
- * <p>
- * Sample re-mapping all classes in com.mypackage and sub-packages to com.otherpackage:
- * <p>
- * {@snippet lang=java :
- *     var classRemapper = ClassRemapper.of(cd ->
- *             ClassDesc.ofDescriptor(cd.descriptorString().replace("Lcom/mypackage/", "Lcom/otherpackage/")));
- *     for (var classModel : allMyClasses) {
- *         var remappedClassBytes = classRemapper.remapClass(classModel);
- *         ...
- *     }
- * }
  */
 public sealed interface ClassRemapper extends ClassTransform {
 

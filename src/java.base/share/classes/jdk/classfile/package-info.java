@@ -214,7 +214,7 @@
  * different levels of abstraction.  For example, the {@code invokevirtual}
  * instruction invoking {@code println} could have been generated with {@link
  * jdk.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
- * java.lang.String, java.lang.constant.MethodTypeDesc, boolean) CodeBuilder.invokevirtual}, {@link
+ * java.lang.String, java.lang.constant.MethodTypeDesc) CodeBuilder.invokevirtual}, {@link
  * jdk.classfile.CodeBuilder#invokeInstruction(jdk.classfile.Opcode,
  * java.lang.constant.ClassDesc, java.lang.String, java.lang.constant.MethodTypeDesc,
  * boolean) CodeBuilder.invokeInstruction}, or
@@ -356,7 +356,7 @@
  * corresponding interface to describe that element, and factory methods to
  * create that element.  Some element kinds also have convenience methods on the
  * corresponding builder (e.g., {@link jdk.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
- * java.lang.String, java.lang.constant.MethodTypeDesc, boolean)}).
+ * java.lang.String, java.lang.constant.MethodTypeDesc)}).
  * <p>
  * Most symbolic information in elements is represented by constant pool entries
  * (for example, the owner of a field is represented by a {@link
