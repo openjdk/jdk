@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 package com.sun.hotspot.igv.util;
 
+import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.data.Event;
 import java.util.HashMap;
 import java.util.Map;
 import org.openide.util.Lookup.Result;
@@ -38,7 +40,7 @@ public class LookupHistory {
 
     private static Map<Class, LookupHistoryImpl> cache = new HashMap<>();
 
-    private static class LookupHistoryImpl<T> implements LookupListener {
+    private static class LookupHistoryImpl<T> extends Event<ChangedListener<T>> implements LookupListener {
 
         private Class<T> klass;
         private Result<T> result;
@@ -49,6 +51,7 @@ public class LookupHistory {
             result = Utilities.actionsGlobalContext().lookupResult(klass);
             result.addLookupListener(this);
             last = Utilities.actionsGlobalContext().lookup(klass);
+            fire();
         }
 
         public T getLast() {
@@ -56,10 +59,17 @@ public class LookupHistory {
         }
 
         @Override
+        protected void fire(ChangedListener<T> l) {
+            l.changed(last);
+        }
+
+
+        @Override
         public void resultChanged(LookupEvent ev) {
             T current = Utilities.actionsGlobalContext().lookup(klass);
             if (current != null) {
                 last = current;
+                this.fire();
             }
         }
     }
@@ -70,10 +80,31 @@ public class LookupHistory {
         }
     }
 
+    public static <T> void terminate(Class<T> klass) {
+        if (cache.containsKey(klass)) {
+            cache.get(klass).fire();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> T getLast(Class<T> klass) {
         init(klass);
         assert cache.containsKey(klass);
         return (T) cache.get(klass).getLast();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> void addListener(Class<T> klass, ChangedListener<T> listener) {
+        init(klass);
+        assert cache.containsKey(klass);
+        cache.get(klass).addListener(listener);
+        cache.get(klass).fire();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> void removeListener(Class<T> klass, ChangedListener<T> listener) {
+        if (cache.containsKey(klass)) {
+            cache.get(klass).removeListener(listener);
+        }
     }
 }
