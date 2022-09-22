@@ -226,6 +226,7 @@ public class KeepAliveCache
             try {
                 Thread.sleep(LIFETIME);
             } catch (InterruptedException e) {}
+            List<HttpClient> closeList = null;
 
             // Remove all outdated HttpClients.
             cacheLock.lock();
@@ -241,7 +242,10 @@ public class KeepAliveCache
                         while (e != null) {
                             if ((currentTime - e.idleStartTime) > v.nap) {
                                 v.poll();
-                                e.hc.closeServer();
+                                if (closeList == null) {
+                                    closeList = new ArrayList<>();
+                                }
+                                closeList.add(e.hc);
                             } else {
                                 break;
                             }
@@ -261,6 +265,12 @@ public class KeepAliveCache
                 }
             } finally {
                 cacheLock.unlock();
+            }
+            // close connections outside cacheLock
+            if (closeList != null) {
+                for (HttpClient hc : closeList) {
+                    hc.closeServer();
+                }
             }
         } while (!isEmpty());
     }
