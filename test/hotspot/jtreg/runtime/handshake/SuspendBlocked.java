@@ -43,10 +43,16 @@ public class SuspendBlocked {
         suspend_thread.start();
         WhiteBox wb = WhiteBox.getWhiteBox();
         for (int i = 0; i < 100; i++) {
-            JVMTIUtils.suspendThread(suspend_thread);
-            wb.lockAndBlock(/* suspender= */ true);
-            JVMTIUtils.resumeThread(suspend_thread);
-            Thread.sleep(1);
+            try {
+                JVMTIUtils.suspendThread(suspend_thread);
+                wb.lockAndBlock(/* suspender= */ true);
+                JVMTIUtils.resumeThread(suspend_thread);
+                Thread.sleep(1);
+            } catch (JVMTIUtils.JvmtiException e) {
+                if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                    throw e;
+                }
+            }
         }
         suspend_thread.join();
     }
