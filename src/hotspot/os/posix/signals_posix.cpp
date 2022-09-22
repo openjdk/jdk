@@ -649,7 +649,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       }
     }
   }
-#endif
+#endif // ZERO
 
   // Call platform dependent signal handler.
   if (!signal_was_handled) {
