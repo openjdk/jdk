@@ -65,9 +65,9 @@ public abstract class MacSpi {
      * @param key the (secret) key.
      * @param params the algorithm parameters.
      *
-     * @exception InvalidKeyException if the given key is inappropriate for
+     * @throws InvalidKeyException if the given key is inappropriate for
      * initializing this MAC.
-     * @exception InvalidAlgorithmParameterException if the given algorithm
+     * @throws InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this MAC.
      */
     protected abstract void engineInit(Key key,
@@ -101,6 +101,9 @@ public abstract class MacSpi {
      * process ByteBuffers more efficiently than byte arrays.
      *
      * @param input the ByteBuffer
+     *
+     * @throws NullPointerException if {@code input} is null
+     *
      * @since 1.5
      */
     protected void engineUpdate(ByteBuffer input) {
@@ -145,7 +148,7 @@ public abstract class MacSpi {
      *
      * @return a clone if the implementation is cloneable.
      *
-     * @exception CloneNotSupportedException if this is called
+     * @throws CloneNotSupportedException if this is called
      * on an implementation that does not support {@code Cloneable}.
      */
     public Object clone() throws CloneNotSupportedException {

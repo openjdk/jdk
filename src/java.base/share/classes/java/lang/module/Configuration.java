@@ -83,11 +83,10 @@ import jdk.internal.vm.annotation.Stable;
  * parent configuration. It prints the name of each resolved module and the
  * names of the modules that each module reads. </p>
  *
- * <pre>{@code
+ * {@snippet :
+ *    Path dir1 = ..., dir2 = ..., dir3 = ...;
  *    ModuleFinder finder = ModuleFinder.of(dir1, dir2, dir3);
- *
  *    Configuration parent = ModuleLayer.boot().configuration();
- *
  *    Configuration cf = parent.resolve(finder, ModuleFinder.of(), Set.of("myapp"));
  *    cf.modules().forEach(m -> {
  *        System.out.format("%s -> %s%n",
@@ -96,7 +95,7 @@ import jdk.internal.vm.annotation.Stable;
  *                .map(ResolvedModule::name)
  *                .collect(Collectors.joining(", ")));
  *    });
- * }</pre>
+ * }
  *
  * @since 9
  * @see java.lang.ModuleLayer

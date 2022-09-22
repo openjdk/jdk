@@ -34,7 +34,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
@@ -576,7 +575,6 @@ void InstanceKlass::deallocate_record_components(ClassLoaderData* loader_data,
 // This function deallocates the metadata and C heap pointers that the
 // InstanceKlass points to.
 void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
-
   // Orphan the mirror first, CMS thinks it's still live.
   if (java_mirror() != NULL) {
     java_lang_Class::set_klass(java_mirror(), NULL);
@@ -1357,7 +1355,7 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
   if (TraceFinalizerRegistration) {
     tty->print("Registered ");
     i->print_value_on(tty);
-    tty->print_cr(" (" INTPTR_FORMAT ") as finalizable", p2i(i));
+    tty->print_cr(" (" PTR_FORMAT ") as finalizable", p2i(i));
   }
   instanceHandle h_i(THREAD, i);
   // Pass the handle as argument, JavaCalls::call expects oop as jobjects
@@ -1477,7 +1475,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     LogStream ls(lt);
     ls.print("%d Initializing ", call_class_initializer_counter++);
     name()->print_value_on(&ls);
-    ls.print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this));
+    ls.print_cr("%s (" PTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this));
   }
   if (h_method() != NULL) {
     JavaCallArguments args; // No arguments
@@ -2042,7 +2040,7 @@ PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose)
 void PrintClassClosure::do_klass(Klass* k)  {
   ResourceMark rm;
   // klass pointer
-  _st->print(INTPTR_FORMAT "  ", p2i(k));
+  _st->print(PTR_FORMAT "  ", p2i(k));
   // klass size
   _st->print("%4d  ", k->size());
   // initialization state
@@ -2342,10 +2340,6 @@ void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
   dependencies().add_dependent_nmethod(nm);
 }
 
-void InstanceKlass::remove_dependent_nmethod(nmethod* nm) {
-  dependencies().remove_dependent_nmethod(nm);
-}
-
 void InstanceKlass::clean_dependency_context() {
   dependencies().clean_unloading_dependents();
 }
@@ -2456,6 +2450,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_record_components);
 }
 
+#if INCLUDE_CDS
 void InstanceKlass::remove_unshareable_info() {
 
   if (is_linked()) {
@@ -2656,6 +2651,7 @@ void InstanceKlass::assign_class_loader_type() {
     set_shared_class_loader_type(ClassLoader::APP_LOADER);
   }
 }
+#endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
 static void clear_all_breakpoints(Method* m) {
@@ -2679,7 +2675,7 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
 
   if (log_is_enabled(Info, class, unload)) {
     ResourceMark rm;
-    log_info(class, unload)("unloading class %s " INTPTR_FORMAT, ik->external_name(), p2i(ik));
+    log_info(class, unload)("unloading class %s " PTR_FORMAT, ik->external_name(), p2i(ik));
   }
 
   Events::log_class_unloading(Thread::current(), ik);
@@ -2880,11 +2876,10 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
         // in the java.base module it will be caught later when java.base
         // is defined by ModuleEntryTable::verify_javabase_packages check.
         assert(ModuleEntryTable::javabase_moduleEntry() != NULL, JAVA_BASE_NAME " module is NULL");
-        _package_entry = loader_data->packages()->lookup(pkg_name, ModuleEntryTable::javabase_moduleEntry());
+        _package_entry = loader_data->packages()->create_entry_if_absent(pkg_name, ModuleEntryTable::javabase_moduleEntry());
       } else {
         assert(loader_data->unnamed_module() != NULL, "unnamed module is NULL");
-        _package_entry = loader_data->packages()->lookup(pkg_name,
-                                                         loader_data->unnamed_module());
+        _package_entry = loader_data->packages()->create_entry_if_absent(pkg_name, loader_data->unnamed_module());
       }
 
       // A package should have been successfully created
@@ -3509,9 +3504,9 @@ void InstanceKlass::print_on(outputStream* st) const {
   } else {
     st->print_cr(BULLET"java mirror:       NULL");
   }
-  st->print(BULLET"vtable length      %d  (start addr: " INTPTR_FORMAT ")", vtable_length(), p2i(start_of_vtable())); st->cr();
+  st->print(BULLET"vtable length      %d  (start addr: " PTR_FORMAT ")", vtable_length(), p2i(start_of_vtable())); st->cr();
   if (vtable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_vtable(), vtable_length(), st);
-  st->print(BULLET"itable length      %d (start addr: " INTPTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
+  st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
   FieldPrinter print_static_field(st);
@@ -3718,7 +3713,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
     stringStream debug_stream;
 
     // Class hierarchy info
-    debug_stream.print(" klass: " INTPTR_FORMAT " super: " INTPTR_FORMAT,
+    debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
                        p2i(this),  p2i(superklass()));
 
     // Interfaces
@@ -3726,7 +3721,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
       debug_stream.print(" interfaces:");
       int length = local_interfaces()->length();
       for (int i = 0; i < length; i++) {
-        debug_stream.print(" " INTPTR_FORMAT,
+        debug_stream.print(" " PTR_FORMAT,
                            p2i(InstanceKlass::cast(local_interfaces()->at(i))));
       }
     }
@@ -4009,7 +4004,7 @@ void InstanceKlass::purge_previous_version_list() {
       // The previous version InstanceKlass is on the ClassLoaderData deallocate list
       // so will be deallocated during the next phase of class unloading.
       log_trace(redefine, class, iklass, purge)
-        ("previous version " INTPTR_FORMAT " is dead.", p2i(pv_node));
+        ("previous version " PTR_FORMAT " is dead.", p2i(pv_node));
       // Unlink from previous version list.
       assert(pv_node->class_loader_data() == loader_data, "wrong loader_data");
       InstanceKlass* next = pv_node->previous_versions();
@@ -4023,7 +4018,7 @@ void InstanceKlass::purge_previous_version_list() {
       version++;
       continue;
     } else {
-      log_trace(redefine, class, iklass, purge)("previous version " INTPTR_FORMAT " is alive", p2i(pv_node));
+      log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is alive", p2i(pv_node));
       assert(pvcp->pool_holder() != NULL, "Constant pool with no holder");
       guarantee (!loader_data->is_unloading(), "unloaded classes can't be on the stack");
       live_count++;

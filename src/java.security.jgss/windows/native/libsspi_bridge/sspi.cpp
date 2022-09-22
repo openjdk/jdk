@@ -55,7 +55,7 @@
 // A debugging macro
 #define PP(fmt, ...) \
         if (trace) { \
-            fprintf(stderr, "[SSPI:%ld] "fmt"\n", __LINE__, ##__VA_ARGS__); \
+            fprintf(stderr, "[SSPI:%ld] " fmt "\n", __LINE__, ##__VA_ARGS__); \
             fflush(stderr); \
         }
 #define SEC_SUCCESS(status) ((*minor_status = (status)), (status) >= SEC_E_OK)

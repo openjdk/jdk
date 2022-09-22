@@ -1346,16 +1346,18 @@ public final class Class<T> implements java.io.Serializable,
      * @since 20
      */
     public Set<AccessFlag> accessFlags() {
-        // This likely needs some refinement. Exploration of hidden
-        // classes, array classes.  Location.CLASS allows SUPER and
-        // AccessFlag.MODULE which INNER_CLASS forbids. INNER_CLASS
-        // allows PRIVATE, PROTECTED, and STATIC, which are not
-        // allowed on Location.CLASS.
-        return AccessFlag.maskToAccessFlags(getModifiers(),
-                                            (isMemberClass() || isLocalClass() ||
-                                             isAnonymousClass() || isArray()) ?
-                                            AccessFlag.Location.INNER_CLASS :
-                                            AccessFlag.Location.CLASS);
+        // Location.CLASS allows SUPER and AccessFlag.MODULE which
+        // INNER_CLASS forbids. INNER_CLASS allows PRIVATE, PROTECTED,
+        // and STATIC, which are not allowed on Location.CLASS.
+        // Use getClassAccessFlagsRaw to expose SUPER status.
+        var location = (isMemberClass() || isLocalClass() ||
+                        isAnonymousClass() || isArray()) ?
+            AccessFlag.Location.INNER_CLASS :
+            AccessFlag.Location.CLASS;
+        return AccessFlag.maskToAccessFlags((location == AccessFlag.Location.CLASS) ?
+                                            getClassAccessFlagsRaw() :
+                                            getModifiers(),
+                                            location);
     }
 
     /**
@@ -4668,4 +4670,34 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private native Class<?>[] getPermittedSubclasses0();
+
+    /*
+     * Return the class's major and minor class file version packed into an int.
+     * The high order 16 bits contain the class's minor version.  The low order
+     * 16 bits contain the class's major version.
+     *
+     * If the class is an array type then the class file version of its element
+     * type is returned.  If the class is a primitive type then the latest class
+     * file major version is returned and zero is returned for the minor version.
+     */
+    private int getClassFileVersion() {
+        Class<?> c = isArray() ? elementType() : this;
+        return c.getClassFileVersion0();
+    }
+
+    private native int getClassFileVersion0();
+
+    /*
+     * Return the access flags as they were in the class's bytecode, including
+     * the original setting of ACC_SUPER.
+     *
+     * If the class is an array type then the access flags of the element type is
+     * returned.  If the class is a primitive then ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
+     */
+    private int getClassAccessFlagsRaw() {
+        Class<?> c = isArray() ? elementType() : this;
+        return c.getClassAccessFlagsRaw0();
+    }
+
+    private native int getClassAccessFlagsRaw0();
 }

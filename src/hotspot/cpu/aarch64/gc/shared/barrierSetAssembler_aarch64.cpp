@@ -39,7 +39,7 @@
 #define __ masm->
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                  Register dst, Address src, Register tmp1, Register tmp2) {
 
   // LR is live.  It must be saved around calls.
 
@@ -80,7 +80,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 }
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                   Address dst, Register val, Register tmp1, Register tmp2) {
+                                   Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   switch (type) {
@@ -158,63 +158,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
     __ sub(var_size_in_bytes, var_size_in_bytes, obj);
   }
   // verify_tlab();
-}
-
-// Defines obj, preserves var_size_in_bytes
-void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj,
-                                        Register var_size_in_bytes,
-                                        int con_size_in_bytes,
-                                        Register t1,
-                                        Label& slow_case) {
-  assert_different_registers(obj, var_size_in_bytes, t1);
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    __ b(slow_case);
-  } else {
-    Register end = t1;
-    Register heap_end = rscratch2;
-    Label retry;
-    __ bind(retry);
-    {
-      uint64_t offset;
-      __ adrp(rscratch1, ExternalAddress((address) Universe::heap()->end_addr()), offset);
-      __ ldr(heap_end, Address(rscratch1, offset));
-    }
-
-    ExternalAddress heap_top((address) Universe::heap()->top_addr());
-
-    // Get the current top of the heap
-    {
-      uint64_t offset;
-      __ adrp(rscratch1, heap_top, offset);
-      // Use add() here after ARDP, rather than lea().
-      // lea() does not generate anything if its offset is zero.
-      // However, relocs expect to find either an ADD or a load/store
-      // insn after an ADRP.  add() always generates an ADD insn, even
-      // for add(Rn, Rn, 0).
-      __ add(rscratch1, rscratch1, offset);
-      __ ldaxr(obj, rscratch1);
-    }
-
-    // Adjust it my the size of our new object
-    if (var_size_in_bytes == noreg) {
-      __ lea(end, Address(obj, con_size_in_bytes));
-    } else {
-      __ lea(end, Address(obj, var_size_in_bytes));
-    }
-
-    // if end < obj then we wrapped around high memory
-    __ cmp(end, obj);
-    __ br(Assembler::LO, slow_case);
-
-    __ cmp(end, heap_end);
-    __ br(Assembler::HI, slow_case);
-
-    // If heap_top hasn't been changed by some other thread, update it.
-    __ stlxr(rscratch2, end, rscratch1);
-    __ cbnzw(rscratch2, retry);
-
-    incr_allocated_bytes(masm, var_size_in_bytes, con_size_in_bytes, t1);
-  }
 }
 
 void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
@@ -342,13 +285,12 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ cbnz(rscratch2, method_live);
 
   // Is it a weak but alive CLD?
-  __ stp(r10, r11, Address(__ pre(sp, -2 * wordSize)));
+  __ push(RegSet::of(r10), sp);
   __ ldr(r10, Address(rscratch1, ClassLoaderData::holder_offset()));
 
-  // Uses rscratch1 & rscratch2, so we must pass new temporaries.
-  __ resolve_weak_handle(r10, r11);
+  __ resolve_weak_handle(r10, rscratch1, rscratch2);
   __ mov(rscratch1, r10);
-  __ ldp(r10, r11, Address(__ post(sp, 2 * wordSize)));
+  __ pop(RegSet::of(r10), sp);
   __ cbnz(rscratch1, method_live);
 
   __ bind(bad_call);

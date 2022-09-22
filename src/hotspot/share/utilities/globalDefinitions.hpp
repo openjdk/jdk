@@ -90,72 +90,90 @@ class oopDesc;
 // doesn't provide appropriate definitions, they should be provided in
 // the compiler-specific definitions file (e.g., globalDefinitions_gcc.hpp)
 
-#define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
+// Guide to the suffixes used in the format specifiers for integers:
+//        - print the decimal value:                   745565
+//  _X    - print as hexadecimal, without leading 0s: 0x12345
+//  _X_0  - print as hexadecimal, with leading 0s: 0x00012345
+//  _W(w) - prints w sized string with the given value right
+//          adjusted. Use -w to print left adjusted.
+//
+// Note that the PTR format specifiers print using 0x with leading zeros,
+// just like the _X_0 version for integers.
+
+// Format 8-bit quantities.
+#define INT8_FORMAT_X_0          "0x%02"      PRIx8
+#define UINT8_FORMAT_X_0         "0x%02"      PRIx8
+
+// Format 16-bit quantities.
+#define INT16_FORMAT_X_0         "0x%04"      PRIx16
+#define UINT16_FORMAT_X_0        "0x%04"      PRIx16
 
 // Format 32-bit quantities.
-#define INT32_FORMAT           "%" PRId32
-#define UINT32_FORMAT          "%" PRIu32
-#define INT32_FORMAT_W(width)  "%" #width PRId32
-#define UINT32_FORMAT_W(width) "%" #width PRIu32
-
-#define PTR32_FORMAT           "0x%08" PRIx32
-#define PTR32_FORMAT_W(width)  "0x%" #width PRIx32
+#define INT32_FORMAT             "%"          PRId32
+#define INT32_FORMAT_X_0         "0x%08"      PRIx32
+#define INT32_FORMAT_W(width)    "%"   #width PRId32
+#define UINT32_FORMAT            "%"          PRIu32
+#define UINT32_FORMAT_X_0        "0x%08"      PRIx32
+#define UINT32_FORMAT_W(width)   "%"   #width PRIu32
 
 // Format 64-bit quantities.
-#define INT64_FORMAT           "%" PRId64
-#define UINT64_FORMAT          "%" PRIu64
-#define UINT64_FORMAT_X        "%" PRIx64
-#define INT64_FORMAT_W(width)  "%" #width PRId64
-#define UINT64_FORMAT_W(width) "%" #width PRIu64
-#define UINT64_FORMAT_X_W(width) "%" #width PRIx64
+#define INT64_FORMAT             "%"          PRId64
+#define INT64_FORMAT_X           "0x%"        PRIx64
+#define INT64_FORMAT_X_0         "0x%016"     PRIx64
+#define INT64_FORMAT_W(width)    "%"   #width PRId64
+#define UINT64_FORMAT            "%"          PRIu64
+#define UINT64_FORMAT_X          "0x%"        PRIx64
+#define UINT64_FORMAT_X_0        "0x%016"     PRIx64
+#define UINT64_FORMAT_W(width)   "%"   #width PRIu64
 
-#define PTR64_FORMAT           "0x%016" PRIx64
+// Format integers which change size between 32- and 64-bit.
+#define SSIZE_FORMAT             "%"          PRIdPTR
+#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
+#define SIZE_FORMAT              "%"          PRIuPTR
+#define SIZE_FORMAT_X            "0x%"        PRIxPTR
+#ifdef _LP64
+#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
+#else
+#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
+#endif
+#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
+
+#define INTX_FORMAT              "%"          PRIdPTR
+#define INTX_FORMAT_X            "0x%"        PRIxPTR
+#define INTX_FORMAT_W(width)     "%"   #width PRIdPTR
+#define UINTX_FORMAT             "%"          PRIuPTR
+#define UINTX_FORMAT_X           "0x%"        PRIxPTR
+#define UINTX_FORMAT_W(width)    "%"   #width PRIuPTR
 
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT
-#define JLONG_FORMAT           INT64_FORMAT
+#define JLONG_FORMAT             INT64_FORMAT
 #endif
 #ifndef JLONG_FORMAT_W
-#define JLONG_FORMAT_W(width)  INT64_FORMAT_W(width)
+#define JLONG_FORMAT_W(width)    INT64_FORMAT_W(width)
 #endif
 #ifndef JULONG_FORMAT
-#define JULONG_FORMAT          UINT64_FORMAT
+#define JULONG_FORMAT            UINT64_FORMAT
 #endif
 #ifndef JULONG_FORMAT_X
-#define JULONG_FORMAT_X        UINT64_FORMAT_X
+#define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
 
 // Format pointers which change size between 32- and 64-bit.
 #ifdef  _LP64
-#define INTPTR_FORMAT "0x%016" PRIxPTR
-#define PTR_FORMAT    "0x%016" PRIxPTR
+#define INTPTR_FORMAT            "0x%016"     PRIxPTR
+#define PTR_FORMAT               "0x%016"     PRIxPTR
 #else   // !_LP64
-#define INTPTR_FORMAT "0x%08"  PRIxPTR
-#define PTR_FORMAT    "0x%08"  PRIxPTR
+#define INTPTR_FORMAT            "0x%08"      PRIxPTR
+#define PTR_FORMAT               "0x%08"      PRIxPTR
 #endif  // _LP64
-
-// Format pointers without leading zeros
-#define INTPTRNZ_FORMAT "0x%"  PRIxPTR
-
-#define INTPTR_FORMAT_W(width)   "%" #width PRIxPTR
-
-#define SSIZE_FORMAT             "%"   PRIdPTR
-#define SIZE_FORMAT              "%"   PRIuPTR
-#define SIZE_FORMAT_HEX          "0x%" PRIxPTR
-#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
-#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-#define SIZE_FORMAT_HEX_W(width) "0x%" #width PRIxPTR
-
-#define INTX_FORMAT           "%" PRIdPTR
-#define UINTX_FORMAT          "%" PRIuPTR
-#define INTX_FORMAT_W(width)  "%" #width PRIdPTR
-#define UINTX_FORMAT_W(width) "%" #width PRIuPTR
 
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
 }
 
+#define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
 
 //----------------------------------------------------------------------------------------------------
 // Forbid the use of various C library functions.
@@ -1132,7 +1150,6 @@ static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
 inline intx byte_size(void* from, void* to) {
   return (address)to - (address)from;
 }
-
 
 // Pack and extract shorts to/from ints:
 
