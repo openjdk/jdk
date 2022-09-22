@@ -592,7 +592,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
+  address pc = os::fetch_frame_from_context(uc).pc();
   print_instructions(st, pc, sizeof(char));
   st->cr();
 }
