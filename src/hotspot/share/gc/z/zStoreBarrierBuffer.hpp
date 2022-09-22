@@ -42,6 +42,7 @@ struct ZStoreBarrierEntry {
 };
 
 class ZStoreBarrierBuffer : public CHeapObj<mtGC> {
+  friend class ZVerify;
 private:
   static const size_t _buffer_length = 32;
   static const size_t _buffer_size_bytes = _buffer_length * sizeof(ZStoreBarrierEntry);

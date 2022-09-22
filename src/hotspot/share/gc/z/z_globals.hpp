@@ -88,6 +88,9 @@
   product(bool, ZStressRelocateInPlace, false, DIAGNOSTIC,                  \
           "Always relocate pages in-place")                                 \
                                                                             \
+  product(bool, ZVerifyRemembered, trueInDebug, DIAGNOSTIC,                 \
+          "Verify remembered sets")                                         \
+                                                                            \
   product(bool, ZVerifyRoots, trueInDebug, DIAGNOSTIC,                      \
           "Verify roots")                                                   \
                                                                             \

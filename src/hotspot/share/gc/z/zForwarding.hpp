@@ -106,6 +106,9 @@ public:
   template <typename Function>
   void object_iterate(Function function);
 
+  template <typename Function>
+  void address_unsafe_iterate_via_table(Function function);
+
   // Visit to-objects
   template <typename Function>
   void object_iterate_forwarded(Function function);
@@ -150,6 +153,7 @@ public:
   bool relocated_remembered_fields_is_concurrently_scanned() const;
   template <typename Function>
   void relocated_remembered_fields_apply_to_published(Function function);
+  bool relocated_remembered_fields_published_contains(volatile zpointer* p);
 
   void verify() const;
 };

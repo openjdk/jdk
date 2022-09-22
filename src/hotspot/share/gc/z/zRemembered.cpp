@@ -31,6 +31,7 @@
 #include "gc/z/zRemembered.inline.hpp"
 #include "gc/z/zRememberedSet.hpp"
 #include "gc/z/zTask.hpp"
+#include "gc/z/zVerify.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
@@ -308,6 +309,7 @@ public:
 
     _iterator.do_forwardings([&](ZForwarding* forwarding) {
       _remembered.scan_forwarding(forwarding, &context);
+      ZVerify::after_scan(forwarding);
       return !ZGeneration::young()->should_worker_stop();
     });
 

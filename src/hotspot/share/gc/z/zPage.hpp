@@ -213,6 +213,7 @@ public:
   void print() const;
 
   // Verification
+  bool was_remembered(volatile zpointer* p);
   bool is_remembered(volatile zpointer* p);
   void verify_live(uint32_t live_objects, size_t live_bytes, bool in_place) const;
 };

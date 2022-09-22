@@ -43,6 +43,7 @@
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
+#include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
@@ -973,19 +974,6 @@ public:
     return ZGeneration::old()->active_remset_is_current();
   }
 
-  void verify_remset() const {
-#ifdef ASSERT
-    // Only verify old relocation
-    if (_forwarding->from_age() == ZPageAge::old) {
-      if (active_remset_is_current()) {
-        _forwarding->page()->verify_remset_cleared_previous();
-      } else {
-        _forwarding->page()->verify_remset_cleared_current();
-      }
-    }
-#endif
-  }
-
   void clear_remset_before_reuse(ZPage* page, bool in_place) {
     if (_forwarding->from_age() != ZPageAge::old) {
       // No remset bits
@@ -1032,10 +1020,12 @@ public:
       return;
     }
 
-    verify_remset();
+    ZVerify::before_relocation(_forwarding);
 
     // Relocate objects
     _forwarding->object_iterate([&](oop obj) { relocate_object(obj); });
+
+    ZVerify::after_relocation(_forwarding);
 
     // Verify
     if (ZVerifyForwarding) {

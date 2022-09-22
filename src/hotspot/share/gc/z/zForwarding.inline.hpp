@@ -114,6 +114,25 @@ inline void ZForwarding::object_iterate(Function function) {
 }
 
 template <typename Function>
+inline void ZForwarding::address_unsafe_iterate_via_table(Function function) {
+  for (ZForwardingCursor i = 0; i < _entries.length(); i++) {
+    const ZForwardingEntry entry = at(&i);
+    if (!entry.populated()) {
+      // Skip empty entries
+      continue;
+    }
+
+    // Find to-object
+
+    zoffset from_offset = start() + (entry.from_index() << object_alignment_shift());
+    zaddress_unsafe from_addr = ZOffset::address_unsafe(from_offset);
+
+    // Apply function
+    function(from_addr);
+  }
+}
+
+template <typename Function>
 inline void ZForwarding::object_iterate_forwarded_via_livemap(Function function) {
   assert(!in_place_relocation(), "Not allowed to use livemap iteration");
 

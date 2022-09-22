@@ -27,6 +27,7 @@
 #include "memory/allStatic.hpp"
 
 class frame;
+class ZForwarding;
 class ZPageAllocator;
 
 class ZVerify : public AllStatic {
@@ -37,10 +38,18 @@ private:
   static void objects(bool verify_weaks);
   static void threads_start_processing();
 
+  static void after_relocation_internal(ZForwarding* forwarding);
+
 public:
   static void before_zoperation();
   static void after_mark();
   static void after_weak_processing();
+
+  static void before_relocation(ZForwarding* forwarding);
+  static void after_relocation(ZForwarding* forwarding);
+  static void after_scan(ZForwarding* forwarding);
+
+  static void on_color_flip();
 };
 
 #endif // SHARE_GC_Z_ZVERIFY_HPP

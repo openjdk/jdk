@@ -61,6 +61,11 @@ inline bool ZRememberedSet::at_current(uintptr_t offset) const {
   return current()->at(index);
 }
 
+inline bool ZRememberedSet::at_previous(uintptr_t offset) const {
+  const BitMap::idx_t index = to_index(offset);
+  return previous()->at(index);
+}
+
 inline bool ZRememberedSet::set_current(uintptr_t offset) {
   const BitMap::idx_t index = to_index(offset);
   return current()->par_set_bit(index, memory_order_relaxed);

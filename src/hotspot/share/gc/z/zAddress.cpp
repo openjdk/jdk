@@ -25,6 +25,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zVerify.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/java.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -117,22 +118,26 @@ void ZGlobalsPointers::flip_young_mark_start() {
   ZPointerMarkedYoung ^= (ZPointerMarkedYoung0 | ZPointerMarkedYoung1);
   ZPointerRemembered ^= (ZPointerRemembered0 | ZPointerRemembered1);
   set_good_masks();
+  ZVerify::on_color_flip();
 }
 
 void ZGlobalsPointers::flip_young_relocate_start() {
   ZPointerRemappedYoungMask ^= ZPointerRemappedMask;
   set_good_masks();
+  ZVerify::on_color_flip();
 }
 
 void ZGlobalsPointers::flip_old_mark_start() {
   ZPointerMarkedOld ^= (ZPointerMarkedOld0 | ZPointerMarkedOld1);
   ZPointerFinalizable ^= (ZPointerFinalizable0 | ZPointerFinalizable1);
   set_good_masks();
+  ZVerify::on_color_flip();
 }
 
 void ZGlobalsPointers::flip_old_relocate_start() {
   ZPointerRemappedOldMask ^= ZPointerRemappedMask;
   set_good_masks();
+  ZVerify::on_color_flip();
 }
 
 void z_catch_colored_oops(oopDesc* obj) {

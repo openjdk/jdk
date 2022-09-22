@@ -119,6 +119,7 @@ public:
   void resize(size_t page_size);
 
   bool at_current(uintptr_t offset) const;
+  bool at_previous(uintptr_t offset) const;
   bool set_current(uintptr_t offset);
   void unset_non_par_current(uintptr_t offset);
   void unset_range_non_par_current(uintptr_t offset, size_t size);

@@ -388,6 +388,12 @@ inline bool ZPage::is_remembered(volatile zpointer* p) {
   return _remembered_set.at_current(l_offset);
 }
 
+inline bool ZPage::was_remembered(volatile zpointer* p) {
+  const zaddress addr = to_zaddress((uintptr_t)p);
+  const uintptr_t l_offset = local_offset(addr);
+  return _remembered_set.at_previous(l_offset);
+}
+
 inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
   assert_zpage_mark_state();
 
