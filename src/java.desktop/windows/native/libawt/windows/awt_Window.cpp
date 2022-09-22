@@ -1415,8 +1415,6 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
         if (IsUndecorated() == FALSE) {
             /* Get outer frame sizes. */
             // System metrics are same for resizable & non-resizable frame.
-            // SM_CXFRAME is the width of the horizontal border in pixels.
-            // SM_CYFRAME is the height of the vertical border in pixels.
             m_insets.left = m_insets.right =
                 ::GetSystemMetrics(SM_CXFRAME) + extraPaddedBorderInsets;
             m_insets.top = m_insets.bottom =
@@ -1475,6 +1473,7 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
         // to reflect that change
         env->CallVoidMethod(peer, AwtComponent::replaceSurfaceDataLaterMID);
     }
+
     return insetsChanged;
 }
 
