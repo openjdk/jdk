@@ -24,9 +24,11 @@
 
 package com.sun.hotspot.igv.view;
 
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.graph.Figure;
 import java.awt.Component;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Collection;
 import java.util.List;
@@ -38,7 +40,7 @@ import org.openide.util.Lookup;
  *
  * @author Thomas Wuerthinger
  */
-interface DiagramViewer {
+public interface DiagramViewer {
 
     enum InteractionMode {
         SELECTION,
@@ -47,32 +49,34 @@ interface DiagramViewer {
 
     DiagramViewModel getModel();
 
-    public void paint(Graphics2D generator);
+    void paint(Graphics2D generator);
 
-    public Lookup getLookup();
+    Lookup getLookup();
 
-    public JComponent createSatelliteView();
+    JComponent createSatelliteView();
 
-    public Component getComponent();
+    Component getComponent();
 
-    public void zoomOut();
+    void zoomOut(Point zoomCenter);
 
-    public void zoomIn();
+    void zoomIn(Point zoomCenter);
 
-    public UndoRedo getUndoRedo();
+    void setZoomPercentage(int percentage);
+    int getZoomPercentage();
+    ChangedEvent<DiagramViewer> getZoomChangedEvent();
 
-    public void componentHidden();
+    UndoRedo getUndoRedo();
 
-    public void componentShowing();
+    void componentHidden();
 
-    public void initialize();
+    void componentShowing();
 
-    public void setSelection(Collection<Figure> list);
+    void setSelection(Collection<Figure> list);
 
-    public void centerFigures(List<Figure> list);
+    void centerFigures(List<Figure> list);
 
-    public void setInteractionMode(InteractionMode mode);
+    void setInteractionMode(InteractionMode mode);
 
-    public Rectangle getBounds();
+    Rectangle getBounds();
 
 }
