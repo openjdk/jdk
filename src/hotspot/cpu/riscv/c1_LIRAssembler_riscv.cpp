@@ -1349,7 +1349,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
   // With RVC a call instruction may get 2-byte aligned.
   // The address of the call instruction needs to be 4-byte aligned to
   // ensure that it does not span a cache line so that it can be patched.
-  __ align(4);
+  __ align(NativeInstruction::instruction_size);
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
@@ -1372,7 +1372,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
-  assert((__ offset() % 4) == 0, "bad alignment");
+  MacroAssembler::assert_alignment(call_pc);
   address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");
