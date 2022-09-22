@@ -69,7 +69,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
         String feature = Objects.requireNonNull(utils.getPreviewFeature(e),
                 "Preview feature not specified").toString();
         JEP jep = jeps.computeIfAbsent(feature, (featureName) -> {
-            Map<? extends ExecutableElement, ? extends AnnotationValue> anno = utils.getJepInfo(featureName);
+            Map<? extends ExecutableElement, ? extends AnnotationValue> anno = configuration.workArounds.getJepInfo(featureName);
             int number = 0;
             String title = "";
             String status = "Preview"; // Default value is not returned by the method we use above.

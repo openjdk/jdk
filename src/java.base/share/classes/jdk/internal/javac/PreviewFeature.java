@@ -88,7 +88,7 @@ public @interface PreviewFeature {
     @interface JEP {
         /** JEP number */
         int number() default 0;
-        /** JEP title */
+        /** JEP title in plain text */
         String title();
         /** JEP status such as "Preview", "Second Preview", etc */
         String status() default "Preview";
