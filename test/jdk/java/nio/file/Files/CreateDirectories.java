@@ -21,16 +21,20 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.testng.Assert;
+import static org.testng.Assert.*;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8293792
+ * @bug 8032220 8293792
  * @summary Test java.nio.file.Files.createDirectories method
+ * @library ..
  * @run testng CreateDirectories
  */
 public class CreateDirectories {
@@ -43,23 +47,28 @@ public class CreateDirectories {
     public void testSymlinkDir() throws Exception {
         // create a temp dir as the "root" in which we will run our tests.
         final Path startingDir = Files.createTempDirectory(Path.of("."), "8293792");
+        if (!TestUtil.supportsLinks(startingDir)) {
+            System.out.println("Skipping tests since symbolic links isn't " +
+                    "supported under directory "+ startingDir);
+            throw new SkipException("Symbolic links not supported");
+        }
         System.out.println("Running tests under directory " + startingDir.toAbsolutePath());
         final Path fooDir = Files.createDirectory(Path.of(startingDir.toString(), "foo"));
-        Assert.assertTrue(Files.isDirectory(fooDir),
+        assertTrue(Files.isDirectory(fooDir),
                 fooDir + " was expected to be a directory but wasn't");
 
         // now create a symlink to the "foo" dir
         final Path symlink = Files.createSymbolicLink(
                 Path.of(startingDir.toString(), "symlinkToFoo"), fooDir.toAbsolutePath());
-        Assert.assertTrue(Files.isSymbolicLink(symlink),
+        assertTrue(Files.isSymbolicLink(symlink),
                 symlink + " was expected to be a symlink but wasn't");
-        Assert.assertTrue(Files.isDirectory(symlink),
+        assertTrue(Files.isDirectory(symlink),
                 symlink + " was expected to be a directory but wasn't");
 
         // now create a directory under the symlink (which effectively creates a directory under
         // "foo")
         final Path barDir = Files.createDirectory(Path.of(symlink.toString(), "bar"));
-        Assert.assertTrue(Files.isDirectory(barDir),
+        assertTrue(Files.isDirectory(barDir),
                 barDir + " was expected to be a directory but wasn't");
         // ultimately, we now have this directory structure:
         // <root-dir>
@@ -74,5 +83,41 @@ public class CreateDirectories {
         Files.createDirectories(fooDir); // ./<root-dir>/foo
         Files.createDirectories(symlink); // ./<root-dir>/symlinkToFoo
         Files.createDirectories(barDir); // ./<root-dir>/symlinkToFoo/bar
+    }
+
+    /**
+     * Tests Files.createDirectories
+     */
+    @Test
+    public void testCreateDirectories() throws IOException {
+        final Path tmpdir = TestUtil.createTemporaryDirectory();
+        // a no-op
+        Files.createDirectories(tmpdir);
+
+        // create one directory
+        Path subdir = tmpdir.resolve("a");
+        Files.createDirectories(subdir);
+        assertTrue(Files.exists(subdir), subdir + " was expected to exist, but didn't");
+
+        // create parents
+        subdir = subdir.resolve("b/c/d");
+        Files.createDirectories(subdir);
+        assertTrue(Files.exists(subdir), subdir + " was expected to exist, but didn't");
+
+        // existing file is not a directory
+        Path file = Files.createFile(tmpdir.resolve("x"));
+        try {
+            Files.createDirectories(file);
+            throw new RuntimeException("failure expected");
+        } catch (FileAlreadyExistsException x) { }
+        try {
+            Files.createDirectories(file.resolve("y"));
+            throw new RuntimeException("failure expected");
+        } catch (IOException x) { }
+
+        // the root directory always exists
+        Path root = Path.of("/");
+        Files.createDirectories(root);
+        Files.createDirectories(root.toAbsolutePath());
     }
 }
