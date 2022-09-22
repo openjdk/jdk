@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,42 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedListener;
-import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-import org.openide.util.*;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
-public final class NextDiagramAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.NextDiagramAction")
+@ActionRegistration(displayName = "#CTL_NextDiagramAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 150),
+        @ActionReference(path = "Shortcuts", name = "D-RIGHT")
+})
+@Messages({
+        "CTL_NextDiagramAction=Show next graph",
+        "HINT_NextDiagramAction=Show next graph of current group"
+})
+public final class NextDiagramAction extends ModelAwareAction {
 
-    private DiagramViewModel model;
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/next_diagram.png"; // NOI18N
+    }
 
-    public NextDiagramAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Show next graph of current group");
-        putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/next_diagram.png")));
+    @Override
+    protected String getDescription() {
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_NextDiagramAction");
     }
 
     @Override
     public String getName() {
         return NbBundle.getMessage(NextDiagramAction.class, "CTL_NextDiagramAction");
-    }
-
-    @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
-    }
-
-    @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
     }
 
     @Override
@@ -66,33 +69,7 @@ public final class NextDiagramAction extends ContextAction<DiagramViewModel> imp
     }
 
     @Override
-    public void update(DiagramViewModel model) {
-        super.update(model);
-
-        if (this.model != model) {
-            if (this.model != null) {
-                this.model.getDiagramChangedEvent().removeListener(this);
-            }
-
-            this.model = model;
-            if (this.model != null) {
-                this.model.getDiagramChangedEvent().addListener(this);
-            }
-        }
-    }
-
-    @Override
     public boolean isEnabled(DiagramViewModel model) {
         return model.getSecondPosition() != model.getPositions().size() - 1;
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup arg0) {
-        return new NextDiagramAction();
-    }
-
-    @Override
-    public void changed(DiagramViewModel source) {
-        update(source);
     }
 }

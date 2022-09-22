@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,13 +23,23 @@
  * questions.
  */
 
-#include "native_thread.cpp"
-#include "nsk_tools.cpp"
-#include "jni_tools.cpp"
-#include "jvmti_tools.cpp"
-#include "agent_tools.cpp"
-#include "jvmti_FollowRefObjects.cpp"
-#include "Injector.cpp"
-#include "JVMTITools.cpp"
-#include "agent_common.cpp"
-#include "hs204t001.cpp"
+package jdk.internal.event;
+
+/**
+ * Event recording details of Provider.getService(String type, String algorithm) calls
+ */
+
+public final class SecurityProviderServiceEvent extends Event {
+    private final static SecurityProviderServiceEvent EVENT = new SecurityProviderServiceEvent();
+
+    /**
+     * Returns {@code true} if event is enabled, {@code false} otherwise.
+     */
+    public static boolean isTurnedOn() {
+        return EVENT.isEnabled();
+    }
+
+    public String type;
+    public String algorithm;
+    public String provider;
+}

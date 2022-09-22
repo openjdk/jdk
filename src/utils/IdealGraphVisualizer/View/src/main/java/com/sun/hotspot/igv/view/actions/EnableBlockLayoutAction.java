@@ -23,34 +23,31 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import java.awt.event.ActionEvent;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-import org.openide.util.ImageUtilities;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class EnableBlockLayoutAction extends AbstractAction {
+public class EnableBlockLayoutAction extends EnableLayoutAction {
 
-    public EnableBlockLayoutAction() {
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(SELECTED_KEY, false);
-        putValue(Action.SHORT_DESCRIPTION, "Show clustered sea of nodes");
+    public EnableBlockLayoutAction(EditorTopComponent etc) {
+        super(etc);
     }
 
-    public boolean isSelected() {
-        return (Boolean)getValue(SELECTED_KEY);
-    }
-
+    @Override
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/blocks.png";
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    protected String getDescription() {
+        return "Cluster nodes into blocks";
     }
 
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowBlocks(this.isSelected());
+    }
 }
