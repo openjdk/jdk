@@ -64,7 +64,7 @@ public class CreateDirectories {
         // ultimately, we now have this directory structure:
         // <root-dir>
         //   |--- foo
-        //   |	   |--- bar
+        //   |     |--- bar
         //   |
         //   |--- symlinkToFoo -> (links to) <absolute-path-to-root-dir>/foo
 
