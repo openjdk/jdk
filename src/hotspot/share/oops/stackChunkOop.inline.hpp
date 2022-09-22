@@ -52,6 +52,8 @@ inline bool stackChunkOopDesc::is_parent_null() const          { return jdk_inte
 inline void stackChunkOopDesc::set_parent(stackChunkOop value) { jdk_internal_vm_StackChunk::set_parent(this, value); }
 template<typename P>
 inline void stackChunkOopDesc::set_parent_raw(oop value)       { jdk_internal_vm_StackChunk::set_parent_raw<P>(this, value); }
+template<DecoratorSet decorators>
+inline void stackChunkOopDesc::set_parent_access(oop value)    { jdk_internal_vm_StackChunk::set_parent_access<decorators>(this, value); }
 
 inline int stackChunkOopDesc::stack_size() const        { return jdk_internal_vm_StackChunk::size(as_oop()); }
 
@@ -90,9 +92,11 @@ inline oop stackChunkOopDesc::cont() const              {
   obj = (oop)NativeAccess<>::oop_load(&obj);
   return obj;
 }
-inline void stackChunkOopDesc::set_cont(oop value)      { jdk_internal_vm_StackChunk::set_cont(this, value); }
+inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
-inline void stackChunkOopDesc::set_cont_raw(oop value)  {  jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+inline void stackChunkOopDesc::set_cont_raw(oop value)    {  jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+template<DecoratorSet decorators>
+inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
 inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize(); }
 

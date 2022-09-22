@@ -1290,8 +1290,8 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   assert(chunk->is_gc_mode() == false, "");
 
   // fields are uninitialized
-  chunk->set_parent_raw<typename ConfigT::OopT>(_cont.last_nonempty_chunk());
-  chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
+  chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
+  chunk->set_cont_access<IS_DEST_UNINITIALIZED>(_cont.continuation());
 
   assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
 
