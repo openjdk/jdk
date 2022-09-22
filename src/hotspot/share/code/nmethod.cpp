@@ -1414,14 +1414,16 @@ oop nmethod::oop_at(int index) const {
   if (index == 0) {
     return NULL;
   }
-  return NativeAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
+
+  return NMethodAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
 }
 
 oop nmethod::oop_at_phantom(int index) const {
   if (index == 0) {
     return NULL;
   }
-  return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
+
+  return NMethodAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
 }
 
 //
