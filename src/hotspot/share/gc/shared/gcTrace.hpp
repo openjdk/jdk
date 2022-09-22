@@ -124,10 +124,15 @@ class GCTracer {
 class YoungGCTracer : public GCTracer {
   static const uint UNSET_TENURING_THRESHOLD = (uint) -1;
 
-  uint _tenuring_threshold;
+  const bool _uses_tenuring_threshold;
+  uint       _tenuring_threshold;
 
  protected:
-  YoungGCTracer(GCName name) : GCTracer(name), _tenuring_threshold(UNSET_TENURING_THRESHOLD) {}
+  YoungGCTracer(GCName name, bool uses_tenuring_threshold = true) :
+      GCTracer(name),
+      _uses_tenuring_threshold(uses_tenuring_threshold),
+      _tenuring_threshold(UNSET_TENURING_THRESHOLD) {}
+
   virtual void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  public:
