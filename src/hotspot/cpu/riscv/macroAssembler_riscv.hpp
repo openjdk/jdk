@@ -28,7 +28,9 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.hpp"
+#include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "nativeInst_riscv.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -48,6 +50,9 @@ class MacroAssembler: public Assembler {
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
+  static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
+    assert(is_aligned(pc, alignment), "bad alignment");
+  }
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP
@@ -596,8 +601,15 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Jumps that can reach anywhere in the code cache.
-  // Trashes tmp.
+  // Emit a direct call/jump if the entry address will always be in range,
+  // otherwise a far call/jump.
+  // The address must be inside the code cache.
+  // Supported entry.rspec():
+  // - relocInfo::external_word_type
+  // - relocInfo::runtime_call_type
+  // - relocInfo::none
+  // In the case of a far call/jump, the entry address is put in the tmp register.
+  // The tmp register is invalidated.
   void far_call(Address entry, Register tmp = t0);
   void far_jump(Address entry, Register tmp = t0);
 
@@ -633,8 +645,72 @@ public:
   void reserved_stack_check();
 
   void get_polling_page(Register dest, relocInfo::relocType rtype);
-  address read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
+  void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
+  // RISCV64 OpenJDK uses four different types of calls:
+  //   - direct call: jal pc_relative_offset
+  //     This is the shortest and the fastest, but the offset has the range: +/-1MB.
+  //
+  //   - far call: auipc reg, pc_relative_offset; jalr ra, reg, offset
+  //     This is longer than a direct call. The offset has
+  //     the range [-(2G + 2K), 2G - 2K). Addresses out of the range in the code cache
+  //     requires indirect call.
+  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset' can
+  //     be used instead.
+  //     All instructions are embedded at a call site.
+  //
+  //   - trampoline call:
+  //     This is only available in C1/C2-generated code (nmethod). It is a combination
+  //     of a direct call, which is used if the destination of a call is in range,
+  //     and a register-indirect call. It has the advantages of reaching anywhere in
+  //     the RISCV address space and being patchable at runtime when the generated
+  //     code is being executed by other threads.
+  //
+  //     [Main code section]
+  //       jal trampoline
+  //     [Stub code section]
+  //     trampoline:
+  //       ld    reg, pc + 8 (auipc + ld)
+  //       jr    reg
+  //       <64-bit destination address>
+  //
+  //     If the destination is in range when the generated code is moved to the code
+  //     cache, 'jal trampoline' is replaced with 'jal destination' and the trampoline
+  //     is not used.
+  //     The optimization does not remove the trampoline from the stub section.
+
+  //     This is necessary because the trampoline may well be redirected later when
+  //     code is patched, and the new destination may not be reachable by a simple JAL
+  //     instruction.
+  //
+  //   - indirect call: movptr_with_offset + jalr
+  //     This too can reach anywhere in the address space, but it cannot be
+  //     patched while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses, which
+  //     will never be patched.
+  //
+  //
+  // To patch a trampoline call when the JAL can't reach, we first modify
+  // the 64-bit destination address in the trampoline, then modify the
+  // JAL to point to the trampoline, then flush the instruction cache to
+  // broadcast the change to all executing threads. See
+  // NativeCall::set_destination_mt_safe for the details.
+  //
+  // There is a benign race in that the other thread might observe the
+  // modified JAL before it observes the modified 64-bit destination
+  // address. That does not matter because the destination method has been
+  // invalidated, so there will be a trap at its start.
+  // For this to work, the destination address in the trampoline is
+  // always updated, even if we're not using the trampoline.
+
+  // Emit a direct call if the entry address will always be in range,
+  // otherwise a trampoline call.
+  // Supported entry.rspec():
+  // - relocInfo::runtime_call_type
+  // - relocInfo::opt_virtual_call_type
+  // - relocInfo::static_call_type
+  // - relocInfo::virtual_call_type
+  //
   // Return: the call PC or NULL if CodeCache is full.
   address trampoline_call(Address entry);
   address ic_call(address entry, jint method_index = 0);
@@ -797,6 +873,22 @@ public:
   void vmnot_m(VectorRegister vd, VectorRegister vs);
   void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked);
   void vfneg_v(VectorRegister vd, VectorRegister vs);
+
+
+  // support for argument shuffling
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void object_move(OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
+
+  void rt_call(address dest, Register tmp = t0);
 
 private:
 
