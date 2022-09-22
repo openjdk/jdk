@@ -60,8 +60,19 @@ static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
 #ifdef AMD64
-  assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
-  pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      *to++ = *from++;
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      *to-- = *from--;
+    }
+  }
 #else
   // Guarantee use of fild/fistp or xmm regs via some asm code, because compilers won't.
   __asm {
