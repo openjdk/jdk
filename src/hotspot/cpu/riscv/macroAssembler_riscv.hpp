@@ -49,8 +49,9 @@ class MacroAssembler: public Assembler {
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
-  static void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size);
-  void assert_alignment(int alignment = NativeInstruction::instruction_size);
+  static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
+    assert(is_aligned(pc, alignment), "bad alignment");
+  }
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP

@@ -91,14 +91,6 @@ int MacroAssembler::align(int modulus, int extra_offset) {
   return (int)(offset() - before);
 }
 
-void MacroAssembler::assert_alignment(int alignment) {
-  assert_alignment(pc(), alignment);
-}
-
-void MacroAssembler::assert_alignment(address pc, int alignment) {
-  assert(is_aligned(pc, alignment), "bad alignment");
-}
-
 void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions) {
   call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
 }
