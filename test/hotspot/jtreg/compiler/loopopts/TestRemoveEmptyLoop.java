@@ -48,7 +48,7 @@ public class TestRemoveEmptyLoop {
     }
 
     public void test_cmp() {
-	// Loop is OSR compiled, and test_cmp_helper inlined
+        // Loop is OSR compiled, and test_cmp_helper inlined
         for (int i = 0; i < 50000; i++) {
             test_cmp_helper();
         }
@@ -69,7 +69,7 @@ public class TestRemoveEmptyLoop {
     }
 
     public void test_collapse() {
-	// Loop is OSR compiled, and test_collapse_helper inlined
+        // Loop is OSR compiled, and test_collapse_helper inlined
         for (int i = 0; i < 50000; i++) {
             test_collapse_helper();
         }
