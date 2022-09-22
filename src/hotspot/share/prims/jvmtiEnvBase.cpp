@@ -703,12 +703,12 @@ JvmtiEnvBase::get_vthread_jvf(oop vthread) {
 javaVFrame*
 JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_p) {
   // Strip vthread frames in case of carrier thread with mounted continuation.
-  javaVFrame *jvf = JvmtiEnvBase::is_cthread_with_continuation(jt) ?
-                        jt->carrier_last_java_vframe(reg_map_p) :
-                        jt->last_java_vframe(reg_map_p);
-  // Skipping hidden frames when jt->is_in_tmp_VTMS_transition()==true results
-  // in returning jvf==NULL, and so, empty stack traces for carrier threads.
-  if (!jt->is_in_tmp_VTMS_transition()) {
+  bool cthread_with_cont = JvmtiEnvBase::is_cthread_with_continuation(jt);
+  javaVFrame *jvf = cthread_with_cont ? jt->carrier_last_java_vframe(reg_map_p)
+                                      : jt->last_java_vframe(reg_map_p);
+  // Skip hidden frames only for carrier threads
+  // which are in non-temporary VTMS transition.
+  if (jt->is_in_VTMS_transition()) {
     jvf = check_and_skip_hidden_frames(jt, jvf);
   }
   return jvf;
@@ -1597,7 +1597,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
     }
     java_thread->set_carrier_thread_suspended();
   }
-  assert(!java_thread->is_in_non_tmp_VTMS_transition(), "sanity check");
+  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
 
   assert(!single_suspend || (!is_virtual && java_thread->is_carrier_thread_suspended()) ||
           (is_virtual && JvmtiVTSuspender::is_vthread_suspended(thread_h())),
@@ -1664,7 +1664,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
     }
     java_thread->clear_carrier_thread_suspended();
   }
-  assert(!java_thread->is_in_non_tmp_VTMS_transition(), "sanity check");
+  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
 
   if (!is_passive_cthread) {
     assert(single_resume || is_virtual, "ResumeAllVirtualThreads should never resume non-virtual threads");

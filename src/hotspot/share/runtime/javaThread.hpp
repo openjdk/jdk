@@ -643,11 +643,13 @@ private:
     return _carrier_thread_suspended;
   }
 
-  bool is_in_non_tmp_VTMS_transition() const     { return _is_in_VTMS_transition; }
-  bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition || _is_in_tmp_VTMS_transition; }
-  void set_is_in_VTMS_transition(bool val);
+  bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }
   bool is_in_tmp_VTMS_transition() const         { return _is_in_tmp_VTMS_transition; }
+  bool is_in_any_VTMS_transition() const         { return _is_in_VTMS_transition || _is_in_tmp_VTMS_transition; }
+
+  void set_is_in_VTMS_transition(bool val);
   void toggle_is_in_tmp_VTMS_transition()        { _is_in_tmp_VTMS_transition = !_is_in_tmp_VTMS_transition; };
+
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
   void set_is_VTMS_transition_disabler(bool val);

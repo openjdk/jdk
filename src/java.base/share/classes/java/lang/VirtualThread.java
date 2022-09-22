@@ -356,27 +356,33 @@ final class VirtualThread extends BaseVirtualThread {
 
     /**
      * Sets the current thread to the current carrier thread.
+     * @return true if JVMTI was notified
      */
     @ChangesCurrentThread
-    private void switchToCarrierThread() {
+    @JvmtiMountTransition
+    private boolean switchToCarrierThread() {
+        boolean notifyJvmti = notifyJvmtiEvents;
+        if (notifyJvmti) {
+            notifyJvmtiHideFrames(true);
+        }
         Thread carrier = this.carrierThread;
         assert Thread.currentThread() == this
                 && carrier == Thread.currentCarrierThread();
-        if (notifyJvmtiEvents) {
-            notifyJvmtiHideFrames(true);
-        }
         carrier.setCurrentThread(carrier);
+        return notifyJvmti;
     }
 
     /**
      * Sets the current thread to the given virtual thread.
+     * If {@code notifyJvmti} is true then JVMTI is notified.
      */
     @ChangesCurrentThread
-    private void switchToVirtualThread(VirtualThread vthread) {
+    @JvmtiMountTransition
+    private void switchToVirtualThread(VirtualThread vthread, boolean notifyJvmti) {
         Thread carrier = vthread.carrierThread;
         assert carrier == Thread.currentCarrierThread();
         carrier.setCurrentThread(vthread);
-        if (notifyJvmtiEvents) {
+        if (notifyJvmti) {
             notifyJvmtiHideFrames(false);
         }
     }
@@ -553,7 +559,7 @@ final class VirtualThread extends BaseVirtualThread {
             long startTime = System.nanoTime();
 
             boolean yielded;
-            Future<?> unparker = scheduleUnpark(nanos);
+            Future<?> unparker = scheduleUnpark(this::unpark, nanos);
             setState(PARKING);
             try {
                 yielded = yieldContinuation();
@@ -606,16 +612,16 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Schedules this thread to be unparked after the given delay.
+     * Schedule an unpark task to run after a given delay.
      */
     @ChangesCurrentThread
-    private Future<?> scheduleUnpark(long nanos) {
+    private Future<?> scheduleUnpark(Runnable unparker, long nanos) {
         // need to switch to current carrier thread to avoid nested parking
-        switchToCarrierThread();
+        boolean notifyJvmti = switchToCarrierThread();
         try {
-            return UNPARKER.schedule(() -> unpark(), nanos, NANOSECONDS);
+            return UNPARKER.schedule(unparker, nanos, NANOSECONDS);
         } finally {
-            switchToVirtualThread(this);
+            switchToVirtualThread(this, notifyJvmti);
         }
     }
 
@@ -626,11 +632,11 @@ final class VirtualThread extends BaseVirtualThread {
     private void cancel(Future<?> future) {
         if (!future.isDone()) {
             // need to switch to current carrier thread to avoid nested parking
-            switchToCarrierThread();
+            boolean notifyJvmti = switchToCarrierThread();
             try {
                 future.cancel(false);
             } finally {
-                switchToVirtualThread(this);
+                switchToVirtualThread(this, notifyJvmti);
             }
         }
     }
@@ -650,11 +656,11 @@ final class VirtualThread extends BaseVirtualThread {
             int s = state();
             if (s == PARKED && compareAndSetState(PARKED, RUNNABLE)) {
                 if (currentThread instanceof VirtualThread vthread) {
-                    vthread.switchToCarrierThread();
+                    boolean notifyJvmti = vthread.switchToCarrierThread();
                     try {
                         submitRunContinuation();
                     } finally {
-                        switchToVirtualThread(vthread);
+                        switchToVirtualThread(vthread, notifyJvmti);
                     }
                 } else {
                     submitRunContinuation();
