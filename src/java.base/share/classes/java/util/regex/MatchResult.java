@@ -108,14 +108,10 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @throws UnsupportedOperationException
-     *          If the default implementation of {@link #namedGroups()}
-     *          is not overridden.
-     *
      * @implSpec
      * The default implementation of this method invokes {@link #namedGroups()}
-     * to obtain the group number from the {@code name} argument, and uses this
-     * number as argument to an invocation of {@link #start(int)}.
+     * to obtain the group number from the {@code name} argument, and uses it
+     * as argument to an invocation of {@link #start(int)}.
      *
      * @since 20
      */
@@ -180,14 +176,10 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @throws UnsupportedOperationException
-     *          If the default implementation of {@link #namedGroups()}
-     *          is not overridden.
-     *
      * @implSpec
      * The default implementation of this method invokes {@link #namedGroups()}
-     * to obtain the group number from the {@code name} argument, and uses this
-     * number as argument to an invocation of {@link #end(int)}.
+     * to obtain the group number from the {@code name} argument, and uses it
+     * as argument to an invocation of {@link #end(int)}.
      *
      * @since 20
      */
@@ -280,14 +272,10 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @throws UnsupportedOperationException
-     *          If the default implementation of {@link #namedGroups()}
-     *          is not overridden.
-     *
      * @implSpec
      * The default implementation of this method invokes {@link #namedGroups()}
-     * to obtain the group number from the {@code name} argument, and uses this
-     * number as argument to an invocation of {@link #group(int)}.
+     * to obtain the group number from the {@code name} argument, and uses it
+     * as argument to an invocation of {@link #group(int)}.
      *
      * @since 20
      */
