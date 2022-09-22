@@ -432,6 +432,10 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         public void mouseClicked(MouseEvent e) {
             if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
                 int index = list.locationToIndex(e.getPoint());
+                File currentDirectory = getFileChooser().getCurrentDirectory();
+                if (currentDirectory.getParentFile() == null && index == 1) {
+                    return;
+                }
                 if (index >= 0) {
                     File f = (File) list.getModel().getElementAt(index);
                     try {
