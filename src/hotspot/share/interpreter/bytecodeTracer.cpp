@@ -441,24 +441,7 @@ void BytecodePrinter::print_cpcache_entry(int cpc_index, outputStream* st) {
   ConstantPool* constants = method()->constants();
   ConstantPoolCacheEntry* cpce = constants->cache()->entry_at(cpc_index);
   st->print("  ConstantPoolCacheEntry: ");
-  cpce->print(st, cpc_index);
-  if (cpce->bytecode_1() == Bytecodes::_invokehandle ||
-      cpce->bytecode_1() == Bytecodes::_invokedynamic) {
-    constantPoolHandle cph(Thread::current(), constants);
-    Method* m = cpce->method_if_resolved(cph);
-    oop appendix = cpce->appendix_if_resolved(cph);
-    if (m != NULL) {
-      st->print_cr("  Method%s: " INTPTR_FORMAT " %s.%s%s",
-                   m->is_native() ? " (native)" : "",
-                   p2i(m),
-                   m->method_holder()->name()->as_C_string(),
-                   m->name()->as_C_string(), m->signature()->as_C_string());
-    }
-    if (appendix != NULL) {
-      st->print("  appendix: ");
-      appendix->print_on(st);
-    }
-  }
+  cpce->print(st, cpc_index, constants->cache());
 }
 
 void BytecodePrinter::print_attributes(int bci, outputStream* st) {
