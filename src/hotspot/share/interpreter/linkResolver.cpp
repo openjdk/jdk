@@ -27,8 +27,6 @@
 #include "cds/archiveUtils.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/resolutionErrors.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -50,6 +48,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbolHandle.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -1086,7 +1085,7 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
-  if (resolved_method->is_continuation_enter_intrinsic()
+  if (resolved_method->is_continuation_native_intrinsic()
       && resolved_method->from_interpreted_entry() == NULL) { // does a load_acquire
     methodHandle mh(THREAD, resolved_method);
     // Generate a compiled form of the enterSpecial intrinsic.
@@ -1736,8 +1735,31 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
          resolved_klass == vmClasses::VarHandle_klass(), "");
   assert(MethodHandles::is_signature_polymorphic_name(link_info.name()), "");
   Handle resolved_appendix;
-  Method* resolved_method = lookup_polymorphic_method(link_info, &resolved_appendix, CHECK);
-  result.set_handle(resolved_klass, methodHandle(THREAD, resolved_method), resolved_appendix, CHECK);
+  Method* m = lookup_polymorphic_method(link_info, &resolved_appendix, CHECK);
+  methodHandle resolved_method(THREAD, m);
+
+  if (link_info.check_access()) {
+    Symbol* name = link_info.name();
+    vmIntrinsics::ID iid = MethodHandles::signature_polymorphic_name_id(name);
+    if (MethodHandles::is_signature_polymorphic_intrinsic(iid)) {
+      // Check if method can be accessed by the referring class.
+      // MH.linkTo* invocations are not rewritten to invokehandle.
+      assert(iid == vmIntrinsicID::_invokeBasic, "%s", vmIntrinsics::name_at(iid));
+
+      Klass* current_klass = link_info.current_klass();
+      assert(current_klass != NULL , "current_klass should not be null");
+      check_method_accessability(current_klass,
+                                 resolved_klass,
+                                 resolved_method->method_holder(),
+                                 resolved_method,
+                                 CHECK);
+    } else {
+      // Java code is free to arbitrarily link signature-polymorphic invokers.
+      assert(iid == vmIntrinsics::_invokeGeneric, "not an invoker: %s", vmIntrinsics::name_at(iid));
+      assert(MethodHandles::is_signature_polymorphic_public_name(resolved_klass, name), "not public");
+    }
+  }
+  result.set_handle(resolved_klass, resolved_method, resolved_appendix, CHECK);
   JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 

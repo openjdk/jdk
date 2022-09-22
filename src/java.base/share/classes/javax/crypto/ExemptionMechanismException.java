@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,17 @@ public class ExemptionMechanismException extends GeneralSecurityException {
     private static final long serialVersionUID = 1572699429277957109L;
 
     /**
-     * Constructs a ExemptionMechanismException with no detailed message.
-     * (A detailed message is a String that describes this particular
-     * exception.)
+     * Constructs an {@code ExemptionMechanismException} with no detailed
+     * message. (A detailed message is a {@code String} that describes this
+     * particular exception.)
      */
     public ExemptionMechanismException() {
         super();
     }
 
     /**
-     * Constructs a ExemptionMechanismException with the specified
-     * detailed message. (A detailed message is a String that describes
+     * Constructs an {@code ExemptionMechanismException} with the specified
+     * detailed message. (A detailed message is a {@code String}  that describes
      * this particular exception.)
      *
      * @param msg the detailed message.

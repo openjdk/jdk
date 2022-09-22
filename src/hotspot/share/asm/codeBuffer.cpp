@@ -442,6 +442,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   address buf = dest->_total_start;
   csize_t buf_offset = 0;
   assert(dest->_total_size >= total_content_size(), "must be big enough");
+  assert(!_finalize_stubs, "non-finalized stubs");
 
   {
     // not sure why this is here, but why not...
@@ -978,6 +979,22 @@ void CodeBuffer::log_section_sizes(const char* name) {
     }
     xtty->print_cr("</blob>");
   }
+}
+
+void CodeBuffer::finalize_stubs() {
+  if (!pd_finalize_stubs()) {
+    return;
+  }
+  _finalize_stubs = false;
+}
+
+void CodeBuffer::shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset) {
+  if (_shared_stub_to_interp_requests == NULL) {
+    _shared_stub_to_interp_requests = new SharedStubToInterpRequests(8);
+  }
+  SharedStubToInterpRequest request(callee, call_offset);
+  _shared_stub_to_interp_requests->push(request);
+  _finalize_stubs = true;
 }
 
 #ifndef PRODUCT

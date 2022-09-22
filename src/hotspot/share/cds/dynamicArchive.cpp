@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -55,10 +56,6 @@ public:
   DynamicArchiveBuilder(const char* archive_name) : _archive_name(archive_name) {}
   void mark_pointer(address* ptr_loc) {
     ArchivePtrMarker::mark_pointer(ptr_loc);
-  }
-
-  template <typename T> T get_dumped_addr(T obj) {
-    return (T)ArchiveBuilder::get_dumped_addr((address)obj);
   }
 
   static int dynamic_dump_method_comparator(Method* a, Method* b) {
@@ -106,8 +103,6 @@ public:
   }
 
   void doit() {
-    SystemDictionaryShared::start_dumping();
-
     verify_universe("Before CDS dynamic dump");
     DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
@@ -117,7 +112,6 @@ public:
 
     if (SystemDictionaryShared::is_dumptime_table_empty()) {
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
-      SystemDictionaryShared::stop_dumping();
       return;
     }
 
@@ -177,7 +171,6 @@ public:
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
-    SystemDictionaryShared::stop_dumping();
   }
 
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {

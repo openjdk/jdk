@@ -188,13 +188,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_pc == NULL ||  sender_blob == NULL) {
-      return false;
-    }
-
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
       return false;
     }
 
@@ -352,6 +347,11 @@ void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
 // Used by template based interpreter deoptimization
 void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
     *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
+}
+
+// Used by template based interpreter deoptimization
+void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
+  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
 }
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
@@ -599,6 +599,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
     DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
@@ -670,6 +671,8 @@ void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
   DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
   DESCRIBE_FP_OFFSET(interpreter_frame_method);
   DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
   DESCRIBE_FP_OFFSET(interpreter_frame_cache);
   DESCRIBE_FP_OFFSET(interpreter_frame_locals);
   DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
@@ -731,9 +734,15 @@ extern "C" void pf(uintptr_t sp, uintptr_t fp, uintptr_t pc,
                    uintptr_t bcx, uintptr_t thread) {
   if (!reg_map) {
     reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtInternal);
-    ::new (reg_map) RegisterMap((JavaThread*)thread, false);
+    ::new (reg_map) RegisterMap((JavaThread*)thread,
+                                RegisterMap::UpdateMap::skip,
+                                RegisterMap::ProcessFrames::include,
+                                RegisterMap::WalkContinuation::skip);
   } else {
-    *reg_map = RegisterMap((JavaThread*)thread, false);
+    *reg_map = RegisterMap((JavaThread*)thread,
+                           RegisterMap::UpdateMap::skip,
+                           RegisterMap::ProcessFrames::include,
+                           RegisterMap::WalkContinuation::skip);
   }
 
   {
@@ -772,4 +781,3 @@ void JavaFrameAnchor::make_walkable() {
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }
-

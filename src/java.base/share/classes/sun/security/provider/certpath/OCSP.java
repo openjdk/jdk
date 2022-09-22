@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This is a class that checks the revocation status of a certificate(s) using
- * OCSP. It is not a PKIXCertPathChecker and therefore can be used outside of
+ * OCSP. It is not a PKIXCertPathChecker and therefore can be used outside
  * the CertPathValidator framework. It is useful when you want to
  * just check the revocation status of a certificate, and you don't want to
- * incur the overhead of validating all of the certificates in the
+ * incur the overhead of validating all the certificates in the
  * associated certificate chain.
  *
  * @author Sean Mullan
@@ -128,7 +128,7 @@ public final class OCSP {
             }
         }
 
-        OCSPResponse ocspResponse = null;
+        OCSPResponse ocspResponse;
         try {
             byte[] response = getOCSPBytes(certIds, responderURI, extensions);
             ocspResponse = new OCSPResponse(response);
@@ -271,8 +271,8 @@ public final class OCSP {
     /**
      * The Revocation Status of a certificate.
      */
-    public static interface RevocationStatus {
-        public enum CertStatus { GOOD, REVOKED, UNKNOWN };
+    public interface RevocationStatus {
+        enum CertStatus { GOOD, REVOKED, UNKNOWN }
 
         /**
          * Returns the revocation status.

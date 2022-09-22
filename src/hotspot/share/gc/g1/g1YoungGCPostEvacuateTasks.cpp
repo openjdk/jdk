@@ -49,7 +49,7 @@ public:
 
   double worker_cost() const override { return 1.0; }
 
-  void do_work(uint worker_id) override { _per_thread_states->flush(); }
+  void do_work(uint worker_id) override { _per_thread_states->flush_stats(); }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
@@ -97,19 +97,22 @@ public:
   }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
-  G1ParRemoveSelfForwardPtrsTask _task;
+class G1PostEvacuateCollectionSetCleanupTask1::RestoreRetainedRegionsTask : public G1AbstractSubTask {
+  G1RemoveSelfForwardsTask _task;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
+  RestoreRetainedRegionsTask(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
     _task(evac_failure_regions),
-    _evac_failure_regions(evac_failure_regions) { }
+    _evac_failure_regions(evac_failure_regions) {
+  }
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
-    return _evac_failure_regions->num_regions_failed_evacuation();
+
+    double workers_per_region = (double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker;
+    return workers_per_region * _evac_failure_regions->num_regions_failed_evacuation();
   }
 
   void do_work(uint worker_id) override {
@@ -128,10 +131,10 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
-  if (evacuation_failed) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
-  }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
+  if (evacuation_failed) {
+    add_parallel_task(new RestoreRetainedRegionsTask(evac_failure_regions));
+  }
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
@@ -205,11 +208,10 @@ public:
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* const cm = g1h->concurrent_mark();
     cm->humongous_object_eagerly_reclaimed(r);
-    assert(!cm->is_marked_in_prev_bitmap(obj) && !cm->is_marked_in_next_bitmap(obj),
-           "Eagerly reclaimed humongous region %u should not be marked at all but is in prev %s next %s",
+    assert(!cm->is_marked_in_bitmap(obj),
+           "Eagerly reclaimed humongous region %u should not be marked at all but is in bitmap %s",
            region_idx,
-           BOOL_TO_STR(cm->is_marked_in_prev_bitmap(obj)),
-           BOOL_TO_STR(cm->is_marked_in_next_bitmap(obj)));
+           BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
     _humongous_objects_reclaimed++;
     do {
       HeapRegion* next = g1h->next_region_in_humongous(r);
@@ -280,8 +282,6 @@ public:
     g1h->decrement_summary_bytes(_bytes_freed);
   }
 
-  static bool should_execute() {   return G1CollectedHeap::heap()->should_do_eager_reclaim(); }
-
   double worker_cost() const override { return 1.0; }
   void do_work(uint worker_id) override {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -320,7 +320,6 @@ public:
 };
 
 class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
- private:
   size_t _num_dirtied;
   G1CollectedHeap* _g1h;
   G1CardTable* _g1_ct;
@@ -336,7 +335,7 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
     return _g1h->is_in_cset(hr) && !_evac_failure_regions->contains(hr->hrm_index());
   }
 
- public:
+public:
   RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h, G1EvacFailureRegions* evac_failure_regions) :
     G1CardTableEntryClosure(),
     _num_dirtied(0),
@@ -355,6 +354,45 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   }
 
   size_t num_dirtied()   const { return _num_dirtied; }
+};
+
+class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : public G1AbstractSubTask {
+  G1EvacFailureRegions* _evac_failure_regions;
+  HeapRegionClaimer _claimer;
+
+  class ClearRetainedRegionBitmapsClosure : public HeapRegionClosure {
+  public:
+
+    bool do_heap_region(HeapRegion* r) override {
+      assert(r->bottom() == r->top_at_mark_start(),
+             "TAMS should have been reset for region %u", r->hrm_index());
+      G1CollectedHeap::heap()->clear_bitmap_for_region(r);
+      return false;
+    }
+  };
+
+public:
+
+  ClearRetainedRegionBitmaps(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionBitmaps),
+    _evac_failure_regions(evac_failure_regions),
+    _claimer(0) {
+    assert(!G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc(),
+           "Should not clear bitmaps of retained regions during concurrent start");
+  }
+
+  void set_max_workers(uint max_workers) override {
+    _claimer.set_n_workers(max_workers);
+  }
+
+  double worker_cost() const override {
+    return _evac_failure_regions->num_regions_failed_evacuation();
+  }
+
+  void do_work(uint worker_id) override {
+    ClearRetainedRegionBitmapsClosure cl;
+    _evac_failure_regions->par_iterate(&cl, &_claimer, worker_id);
+  }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
@@ -398,7 +436,7 @@ public:
 
 // Helper class to keep statistics for the collection set freeing
 class FreeCSetStats {
-  size_t _before_used_bytes;   // Usage in regions successfully evacutate
+  size_t _before_used_bytes;   // Usage in regions successfully evacuate
   size_t _after_used_bytes;    // Usage in regions failing evacuation
   size_t _bytes_allocated_in_old_since_last_gc; // Size of young regions turned into old
   size_t _failure_used_words;  // Live size in failed regions
@@ -441,7 +479,7 @@ public:
   }
 
   void account_failed_region(HeapRegion* r) {
-    size_t used_words = r->marked_bytes() / HeapWordSize;
+    size_t used_words = r->live_bytes() / HeapWordSize;
     _failure_used_words += used_words;
     _failure_waste_words += HeapRegion::GrainWords - used_words;
     _after_used_bytes += r->used();
@@ -531,6 +569,15 @@ class FreeCSetClosure : public HeapRegionClosure {
     // are always made old, so there is no need to update anything in the young
     // gen statistics, but we need to update old gen statistics.
     stats()->account_failed_region(r);
+
+    G1GCPhaseTimes* p = _g1h->phase_times();
+    assert(!r->is_pinned(), "Unexpected pinned region at index %u", r->hrm_index());
+    assert(r->in_collection_set(), "bad CS");
+
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                      _worker_id,
+                                      1,
+                                      G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
     // Update the region state due to the failed evacuation.
     r->handle_evacuation_failure();
@@ -673,15 +720,19 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
-  if (EagerlyReclaimHumongousObjectsTask::should_execute()) {
+  if (G1CollectedHeap::heap()->has_humongous_reclaim_candidates()) {
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
   if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
+    // Keep marks on bitmaps in retained regions during concurrent start - they will all be old.
+    if (!G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc()) {
+      add_parallel_task(new ClearRetainedRegionBitmaps(evac_failure_regions));
+    }
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
   add_parallel_task(new FreeCollectionSetTask(evacuation_info,
-                                                   per_thread_states->surviving_young_words(),
-                                                   evac_failure_regions));
+                                              per_thread_states->surviving_young_words(),
+                                              evac_failure_regions));
 }

@@ -412,6 +412,12 @@ insertThread(JNIEnv *env, ThreadList *list, jthread thread)
             if (error != JVMTI_ERROR_NONE) {
                 EXIT_ERROR(error, "getting vthread state");
             }
+            if ((vthread_state & JVMTI_THREAD_STATE_ALIVE) == 0) {
+                // Thread not alive so put on otherThreads list instead of runningVThreads.
+                // It might not have started yet or might have terminated. Either way,
+                // otherThreads is the place for it.
+                list = &otherThreads;
+            }
             if (suspendAllCount > 0) {
                 // Assume the suspendAllCount, just like the regular thread case above.
                 node->suspendCount = suspendAllCount;
@@ -419,7 +425,6 @@ insertThread(JNIEnv *env, ThreadList *list, jthread thread)
                     // If state == 0, then this is a new vthread that has not been started yet.
                     // Need to suspendOnStart in that case, just like the regular thread case above.
                     node->suspendOnStart = JNI_TRUE;
-                    list = &otherThreads; // Put on otherThreads list instead of runningVThreads
                 }
             }
             if (vthread_state != 0) {

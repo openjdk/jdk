@@ -25,14 +25,22 @@
 
 package sun.security.provider;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.security.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Provider;
+import java.security.Security;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetBooleanAction;
-import sun.security.util.SecurityProviderConstants;
+
 import static sun.security.util.SecurityProviderConstants.getAliases;
 
 /**
@@ -312,7 +320,7 @@ public final class SunEntries {
             getAliases(algo), attrs));
     }
 
-    private LinkedHashSet<Provider.Service> services;
+    private final LinkedHashSet<Provider.Service> services;
 
     // name of the *System* property, takes precedence over PROP_RNDSOURCE
     private static final String PROP_EGD = "java.security.egd";
@@ -358,7 +366,7 @@ public final class SunEntries {
     /*
      * Use a URI to access this File. Previous code used a URL
      * which is less strict on syntax. If we encounter a
-     * URISyntaxException we make best efforts for backwards
+     * URISyntaxException we make a best effort for backwards
      * compatibility. e.g. space character in deviceName string.
      *
      * Method called within PrivilegedExceptionAction block.
@@ -381,7 +389,7 @@ public final class SunEntries {
             }
         } catch (URISyntaxException use) {
             /*
-             * Make best effort to access this File.
+             * Make a best effort to access this File.
              * We can try using the URL path.
              */
             return new File(device.getPath());

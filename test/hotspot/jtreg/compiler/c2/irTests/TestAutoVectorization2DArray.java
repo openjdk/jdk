@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8279258
  * @summary Auto-vectorization enhancement for two-dimensional array operations
+ * @requires (os.arch != "x86" & os.arch != "i386") | vm.opt.UseSSE == "null" | vm.opt.UseSSE >= 2
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestAutoVectorization2DArray
  */

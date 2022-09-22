@@ -46,11 +46,8 @@ class MacroAssembler: public Assembler {
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
-  // Place a fence.i after code may have been modified due to a safepoint.
-  void safepoint_ifence();
-
   // Alignment
-  void align(int modulus, int extra_offset = 0);
+  int align(int modulus, int extra_offset = 0);
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP
@@ -174,21 +171,21 @@ class MacroAssembler: public Assembler {
   virtual void check_and_handle_earlyret(Register java_thread);
   virtual void check_and_handle_popframe(Register java_thread);
 
-  void resolve_weak_handle(Register result, Register tmp);
-  void resolve_oop_handle(Register result, Register tmp = x15);
-  void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
-  void movoop(Register dst, jobject obj, bool immediate = false);
+  void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
   void bang_stack_size(Register size, Register tmp);
   void set_narrow_oop(Register dst, jobject obj);
   void set_narrow_klass(Register dst, Klass* k);
 
-  void load_mirror(Register dst, Register method, Register tmp = x15);
+  void load_mirror(Register dst, Register method, Register tmp1, Register tmp2);
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst,
-                      Address src, Register tmp1, Register thread_tmp);
+                      Address src, Register tmp1, Register tmp2);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
-                       Register src, Register tmp1, Register thread_tmp);
+                       Register src, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp, Label &L);
@@ -204,11 +201,11 @@ class MacroAssembler: public Assembler {
   void encode_heap_oop(Register d, Register s);
   void encode_heap_oop(Register r) { encode_heap_oop(r, r); };
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                     Register tmp2 = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                              Register tmp2 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -269,15 +266,6 @@ class MacroAssembler: public Assembler {
     Register tmp1,                  // temp register
     Register tmp2,                  // temp register
     Label&   slow_case,             // continuation point of fast allocation fails
-    bool is_far = false
-  );
-
-  void eden_allocate(
-    Register obj,                   // result: pointer to object after successful allocation
-    Register var_size_in_bytes,     // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,     // object size in bytes if   known at compile time
-    Register tmp,                   // temp register
-    Label&   slow_case,             // continuation point if fast allocation fails
     bool is_far = false
   );
 
@@ -485,17 +473,26 @@ class MacroAssembler: public Assembler {
   void double_blt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
   void double_bgt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
 
-  void push_reg(RegSet regs, Register stack) { if (regs.bits()) { push_reg(regs.bits(), stack); } }
-  void pop_reg(RegSet regs, Register stack) { if (regs.bits()) { pop_reg(regs.bits(), stack); } }
+private:
+  int push_reg(unsigned int bitset, Register stack);
+  int pop_reg(unsigned int bitset, Register stack);
+  int push_fp(unsigned int bitset, Register stack);
+  int pop_fp(unsigned int bitset, Register stack);
+#ifdef COMPILER2
+  int push_v(unsigned int bitset, Register stack);
+  int pop_v(unsigned int bitset, Register stack);
+#endif // COMPILER2
+
+public:
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
-  int  push_reg(unsigned int bitset, Register stack);
-  int  pop_reg(unsigned int bitset, Register stack);
+  void push_reg(RegSet regs, Register stack) { if (regs.bits()) push_reg(regs.bits(), stack); }
+  void pop_reg(RegSet regs, Register stack)  { if (regs.bits()) pop_reg(regs.bits(), stack); }
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
+  void pop_fp(FloatRegSet regs, Register stack)  { if (regs.bits()) pop_fp(regs.bits(), stack); }
 #ifdef COMPILER2
-  void push_vp(VectorRegSet regs, Register stack) { if (regs.bits()) push_vp(regs.bits(), stack); }
-  void pop_vp(VectorRegSet regs, Register stack) { if (regs.bits()) pop_vp(regs.bits(), stack); }
+  void push_v(VectorRegSet regs, Register stack) { if (regs.bits()) push_v(regs.bits(), stack); }
+  void pop_v(VectorRegSet regs, Register stack)  { if (regs.bits()) pop_v(regs.bits(), stack); }
 #endif // COMPILER2
 
   // Push and pop everything that might be clobbered by a native
@@ -525,15 +522,14 @@ class MacroAssembler: public Assembler {
   }
 
   // mv
+  void mv(Register Rd, address addr)          { li(Rd, (int64_t)addr); }
+
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  inline void mv(Register Rd, T o) {
-    li(Rd, (int64_t)o);
-  }
+  inline void mv(Register Rd, T o)            { li(Rd, (int64_t)o); }
 
   inline void mvw(Register Rd, int32_t imm32) { mv(Rd, imm32); }
 
   void mv(Register Rd, Address dest);
-  void mv(Register Rd, address addr);
   void mv(Register Rd, RegisterOrConstant src);
 
   // logic
@@ -602,8 +598,8 @@ class MacroAssembler: public Assembler {
 
   // Jumps that can reach anywhere in the code cache.
   // Trashes tmp.
-  void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = t0);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = t0);
+  void far_call(Address entry, Register tmp = t0);
+  void far_jump(Address entry, Register tmp = t0);
 
   static int far_branch_size() {
     if (far_branches()) {
@@ -639,11 +635,23 @@ class MacroAssembler: public Assembler {
   void get_polling_page(Register dest, relocInfo::relocType rtype);
   address read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  // Return: the call PC or NULL if CodeCache is full.
+  address trampoline_call(Address entry);
   address ic_call(address entry, jint method_index = 0);
 
-  void add_memory_int64(const Address dst, int64_t imm);
-  void add_memory_int32(const Address dst, int32_t imm);
+  // Support for memory inc/dec
+  // n.b. increment/decrement calls with an Address destination will
+  // need to use a scratch register to load the value to be
+  // incremented. increment/decrement calls which add or subtract a
+  // constant value other than sign-extended 12-bit immediate will need
+  // to use a 2nd scratch register to hold the constant. so, an address
+  // increment/decrement may trash both t0 and t1.
+
+  void increment(const Address dst, int64_t value = 1);
+  void incrementw(const Address dst, int32_t value = 1);
+
+  void decrement(const Address dst, int64_t value = 1);
+  void decrementw(const Address dst, int32_t value = 1);
 
   void cmpptr(Register src1, Address src2, Label& equal);
 
@@ -785,12 +793,6 @@ class MacroAssembler: public Assembler {
   // if [src1 < src2], dst = -1;
   void cmp_l2i(Register dst, Register src1, Register src2, Register tmp = t0);
 
-  int push_fp(unsigned int bitset, Register stack);
-  int pop_fp(unsigned int bitset, Register stack);
-
-  int push_vp(unsigned int bitset, Register stack);
-  int pop_vp(unsigned int bitset, Register stack);
-
   // vext
   void vmnot_m(VectorRegister vd, VectorRegister vs);
   void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked);
@@ -834,9 +836,6 @@ private:
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
-
-  // Check the current thread doesn't need a cross modify fence.
-  void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 };
 
 #ifdef ASSERT

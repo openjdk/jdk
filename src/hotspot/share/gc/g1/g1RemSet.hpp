@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,10 +147,6 @@ public:
 
   // Print accumulated summary info from the last time called.
   void print_periodic_summary_info(const char* header, uint period_count, bool show_thread_times);
-
-  // Rebuilds the remembered set by scanning from bottom to TARS for all regions
-  // using the given workers.
-  void rebuild_rem_set(G1ConcurrentMark* cm, WorkerThreads* workers, uint worker_id_offset);
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

@@ -524,7 +524,7 @@ public class TestRecordTypes extends JavadocTester {
                     <div class="table-header col-last">Description</div>
                     <div class="col-summary-item-name even-row-color"><a href="p/R.html" title="class in p">p.R</a></div>
                     <div class="col-last even-row-color">
-                    <div class="deprecation-comment">Do not use.</div>
+                    <div class="block">Do not use.</div>
                     </div>""");
     }
 

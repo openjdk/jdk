@@ -79,6 +79,7 @@
 #include "runtime/serviceThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -160,6 +161,10 @@ void JavaThread::set_threadOopHandles(oop p) {
 }
 
 oop JavaThread::threadObj() const {
+  // Ideally we would verify the current thread is oop_safe when this is called, but as we can
+  // be called from a signal handler we would have to use Thread::current_or_null_safe(). That
+  // has overhead and also interacts poorly with GetLastError on Windows due to the use of TLS.
+  // Instead callers must verify oop safe access.
   return _threadObj.resolve();
 }
 
@@ -452,6 +457,7 @@ JavaThread::JavaThread() :
   _cont_fastpath(0),
   _cont_fastpath_thread_state(1),
   _held_monitor_count(0),
+  _jni_monitor_count(0),
 
   _handshake(this),
 
@@ -559,9 +565,10 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
 void JavaThread::block_if_vm_exited() {
   if (_terminated == _vm_exited) {
     // _vm_exited is set at safepoint, and Threads_lock is never released
-    // we will block here forever.
+    // so we will block here forever.
     // Here we can be doing a jump from a safe state to an unsafe state without
-    // proper transition, but it happens after the final safepoint has begun.
+    // proper transition, but it happens after the final safepoint has begun so
+    // this jump won't cause any safepoint problems.
     set_thread_state(_thread_in_vm);
     Threads_lock->lock();
     ShouldNotReachHere();
@@ -846,7 +853,18 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     assert(!this->has_pending_exception(), "release_monitors should have cleared");
   }
 
-  assert(!Continuations::enabled() || this->held_monitor_count() == 0, "held monitor count should be zero");
+  // Since above code may not release JNI monitors and if someone forgot to do an
+  // JNI monitorexit, held count should be equal jni count.
+  // Consider scan all object monitor for this owner if JNI count > 0 (at least on detach).
+  assert(this->held_monitor_count() == this->jni_monitor_count(),
+         "held monitor count should be equal to jni: " INT64_FORMAT " != " INT64_FORMAT,
+         (int64_t)this->held_monitor_count(), (int64_t)this->jni_monitor_count());
+  if (CheckJNICalls && this->jni_monitor_count() > 0) {
+    // We would like a fatal here, but due to we never checked this before there
+    // is a lot of tests which breaks, even with an error log.
+    log_debug(jni)("JavaThread %s (tid: " UINTX_FORMAT ") with Objects still locked by JNI MonitorEnter.",
+      exit_type == JavaThread::normal_exit ? "exiting" : "detaching", os::current_thread_id());
+  }
 
   // These things needs to be done while we are still a Java Thread. Make sure that thread
   // is in a consistent state, in case GC happens
@@ -1038,7 +1056,10 @@ void JavaThread::handle_async_exception(oop java_throwable) {
       // OptoRuntime from compiled code. Some runtime stubs (new, monitor_exit..)
       // must deoptimize the caller before continuing, as the compiled exception
       // handler table may not be valid.
-      RegisterMap reg_map(this, false);
+      RegisterMap reg_map(this,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
       frame compiled_frame = f.sender(&reg_map);
       if (!StressCompiledExceptionHandlers && compiled_frame.can_be_deoptimized()) {
         Deoptimization::deoptimize(this, compiled_frame);
@@ -1510,9 +1531,15 @@ void JavaThread::print_name_on_error(outputStream* st, char *buf, int buflen) co
 // JavaThread::print() is that we can't grab lock or allocate memory.
 void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   st->print("%s \"%s\"", type_name(), get_thread_name_string(buf, buflen));
-  oop thread_obj = threadObj();
-  if (thread_obj != NULL) {
-    if (java_lang_Thread::is_daemon(thread_obj)) st->print(" daemon");
+  Thread* current = Thread::current_or_null_safe();
+  assert(current != nullptr, "cannot be called by a detached thread");
+  if (!current->is_Java_thread() || JavaThread::cast(current)->is_oop_safe()) {
+    // Only access threadObj() if current thread is not a JavaThread
+    // or if it is a JavaThread that can safely access oops.
+    oop thread_obj = threadObj();
+    if (thread_obj != nullptr) {
+      if (java_lang_Thread::is_daemon(thread_obj)) st->print(" daemon");
+    }
   }
   st->print(" [");
   st->print("%s", _get_thread_state_name(_thread_state));
@@ -1534,7 +1561,7 @@ void JavaThread::frames_do(void f(frame*, const RegisterMap* map)) {
   // ignore if there is no stack
   if (!has_last_Java_frame()) return;
   // traverse the stack frames. Starts from top frame.
-  for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
+  for (StackFrameStream fst(this, true /* update_map */, true /* process_frames */, false /* walk_cont */); !fst.is_done(); fst.next()) {
     frame* fr = fst.current();
     f(fr, fst.register_map());
   }
@@ -1571,23 +1598,43 @@ const char* JavaThread::name() const  {
 // descriptive string if there is no set name.
 const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
   const char* name_str;
-  oop thread_obj = threadObj();
-  if (thread_obj != NULL) {
-    oop name = java_lang_Thread::name(thread_obj);
-    if (name != NULL) {
-      if (buf == NULL) {
-        name_str = java_lang_String::as_utf8_string(name);
+#ifdef ASSERT
+  Thread* current = Thread::current_or_null_safe();
+  assert(current != nullptr, "cannot be called by a detached thread");
+  if (!current->is_Java_thread() || JavaThread::cast(current)->is_oop_safe()) {
+    // Only access threadObj() if current thread is not a JavaThread
+    // or if it is a JavaThread that can safely access oops.
+#endif
+    oop thread_obj = threadObj();
+    if (thread_obj != NULL) {
+      oop name = java_lang_Thread::name(thread_obj);
+      if (name != NULL) {
+        if (buf == NULL) {
+          name_str = java_lang_String::as_utf8_string(name);
+        } else {
+          name_str = java_lang_String::as_utf8_string(name, buf, buflen);
+        }
+      } else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
+        name_str = "<no-name - thread is attaching>";
       } else {
-        name_str = java_lang_String::as_utf8_string(name, buf, buflen);
+        name_str = "<un-named>";
       }
-    } else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
-      name_str = "<no-name - thread is attaching>";
     } else {
-      name_str = "<un-named>";
+      name_str = Thread::name();
     }
+#ifdef ASSERT
   } else {
-    name_str = Thread::name();
+    // Current JavaThread has exited...
+    if (current == this) {
+      // ... and is asking about itself:
+      name_str = "<no-name - current JavaThread has exited>";
+    } else {
+      // ... and it can't safely determine this JavaThread's name so
+      // use the default thread name.
+      name_str = Thread::name();
+    }
   }
+#endif
   assert(name_str != NULL, "unexpected NULL thread name");
   return name_str;
 }
@@ -1662,7 +1709,10 @@ void JavaThread::print_stack_on(outputStream* st) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
 
-  RegisterMap reg_map(this, true, true);
+  RegisterMap reg_map(this,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   vframe* start_vf = platform_thread_last_java_vframe(&reg_map);
   int count = 0;
   for (vframe* f = start_vf; f != NULL; f = f->sender()) {
@@ -1807,26 +1857,36 @@ void JavaThread::trace_stack() {
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  RegisterMap reg_map(this, true, true);
+  RegisterMap reg_map(this,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   trace_stack_from(last_java_vframe(&reg_map));
 }
 
 
 #endif // PRODUCT
 
-void JavaThread::inc_held_monitor_count() {
-  if (!Continuations::enabled()) {
-    return;
+void JavaThread::inc_held_monitor_count(int i, bool jni) {
+#ifdef SUPPORT_MONITOR_COUNT
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
+  _held_monitor_count += i;
+  if (jni) {
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
+    _jni_monitor_count += i;
   }
-  _held_monitor_count++;
+#endif
 }
 
-void JavaThread::dec_held_monitor_count() {
-  if (!Continuations::enabled()) {
-    return;
+void JavaThread::dec_held_monitor_count(int i, bool jni) {
+#ifdef SUPPORT_MONITOR_COUNT
+  _held_monitor_count -= i;
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
+  if (jni) {
+    _jni_monitor_count -= i;
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
   }
-  assert(_held_monitor_count > 0, "");
-  _held_monitor_count--;
+#endif
 }
 
 frame JavaThread::vthread_last_frame() {

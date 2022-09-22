@@ -85,7 +85,7 @@ public class thrstat03 {
             throw new Error("Unexpected: " + e);
         }
 
-        if (!check(t, t.isVirtual() ? NOT_STARTED : ZOMBIE)) {
+        if (!check(t, ZOMBIE)) {
             throw new RuntimeException();
         }
     }

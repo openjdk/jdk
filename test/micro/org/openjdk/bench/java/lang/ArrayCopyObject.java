@@ -22,7 +22,7 @@
  * questions.
  */
 
-package org.openjdk.bench.vm.compiler;
+package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

@@ -160,6 +160,17 @@ public class TestSegmentAllocators {
         allocator.allocate(1, 3);
     }
 
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
+        allocator.allocateArray(ValueLayout.JAVA_BYTE, -1);
+    }
+
+    @Test(expectedExceptions = OutOfMemoryError.class)
+    public void testBadArenaNullReturn() {
+        SegmentAllocator segmentAllocator = SegmentAllocator.newNativeArena(MemorySession.openImplicit());
+        segmentAllocator.allocate(Long.MAX_VALUE, 2);
+    }
+
     @Test
     public void testArrayAllocateDelegation() {
         AtomicInteger calls = new AtomicInteger();
@@ -183,6 +194,25 @@ public class TestSegmentAllocators {
         allocator.allocateArray(ValueLayout.JAVA_LONG);
         allocator.allocateArray(ValueLayout.JAVA_DOUBLE);
         assertEquals(calls.get(), 7);
+    }
+
+    @Test
+    public void testStringAllocateDelegation() {
+        AtomicInteger calls = new AtomicInteger();
+        SegmentAllocator allocator = new SegmentAllocator() {
+            @Override
+            public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+                return MemorySegment.allocateNative(bytesSize, bytesAlignment, MemorySession.openImplicit());
+            }
+
+            @Override
+            public MemorySegment allocate(long size) {
+                calls.incrementAndGet();
+                return allocate(size, 1);
+            };
+        };
+        allocator.allocateUtf8String("Hello");
+        assertEquals(calls.get(), 1);
     }
 
 
