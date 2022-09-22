@@ -24,27 +24,21 @@
 /*
  * @test
  * @bug 8289551
- * @library /test/lib
  * @summary Verify NaN sign and significand bits are preserved across conversions
  */
 
-import jdk.test.lib.Platform;
-
+/*
+ * The behavior tested below is an implementation property not
+ * required by the specification. It would be acceptable for this
+ * information to not be preserved (as long as a NaN is returned) if,
+ * say, a intrinsified version using native hardware instructions
+ * behaved differently.
+ *
+ * If that is the case, this test should be modified to disable
+ * intrinsics or to otherwise not run on platforms with an differently
+ * behaving intrinsic.
+ */
 public class Binary16ConversionNaN {
-
-    /*
-     * The behavior tested below is an implementation property not
-     * required by the specification. It would be acceptable for this
-     * information to not be preserved (as long as a NaN is returned) if,
-     * say, a intrinsified version using native hardware instructions
-     * behaved differently.
-     *
-     * All platforms current platforms are bit exac, except:
-     *   - x86_32 FPU that silently convert NaNs
-     */
-    private static final boolean BITEXACT_SIGNIFICAND = !Platform.isX86();
-    private static final boolean BITEXACT_SIGN = true;
-
     public static void main(String... argv) {
         int errors = 0;
         errors += binary16NaNRoundTrip();
@@ -66,8 +60,8 @@ public class Binary16ConversionNaN {
         for (int i = 1; i <= 0x3ff; i++) {
             short binary16NaN = (short)(NAN_EXPONENT | i);
             assert isNaN(binary16NaN);
-            errors += testNaNRoundTrip(                   binary16NaN);
-            errors += testNaNRoundTrip((short)(SIGN_BIT | binary16NaN));
+            errors += testRoundTrip(                   binary16NaN);
+            errors += testRoundTrip((short)(SIGN_BIT | binary16NaN));
         }
         return errors;
     }
@@ -77,27 +71,13 @@ public class Binary16ConversionNaN {
             && ((binary16 & 0x03ff) != 0 );    // significand nonzero.
     }
 
-    private static int sign(short binary16) {
-        return (binary16 & 0xf000);
-    }
-
-    private static int testNaNRoundTrip(int i) {
+    private static int testRoundTrip(int i) {
         int errors = 0;
         short s = (short)i;
         float f =  Float.float16ToFloat(s);
         short s2 = Float.floatToFloat16(f);
 
-        boolean pass;
-        if (BITEXACT_SIGNIFICAND && BITEXACT_SIGN) {
-            pass = (s == s2);               // Bit exact
-        } else if (BITEXACT_SIGN) {
-            pass = (isNaN(s) == isNaN(s2))  // Still NaN
-                && (sign(s)  == sign(s2));  // Sign is intact
-        } else {
-            pass = (isNaN(s) == isNaN(s2)); // Still NaN
-        }
-
-        if (!pass) {
+        if (s != s2) {
             errors++;
             System.out.println("Roundtrip failure on NaN value " +
                                Integer.toHexString(0xFFFF & (int)s) +
