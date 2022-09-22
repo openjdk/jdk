@@ -156,6 +156,13 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 // By default, gcc always save frame pointer (%ebp/%rbp) on stack. It may get
 // turned off by -fomit-frame-pointer,
 frame os::get_sender_for_C_frame(frame* fr) {
+  if (!is_readable_pointer(fr->pc())) {
+    // Assume call into bad memory, try to recover
+    intptr_t* sender_sp = fr->sp() + 1;
+    // Return address is close enough to actual call site
+    address sender_pc = (address)fr->sp()[0];
+    return frame(sender_sp, fr->fp(), sender_pc);
+  }
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 

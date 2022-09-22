@@ -33,6 +33,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
+#include "utilities/vmError.hpp"
 
 // Inline functions for Intel frames:
 
@@ -59,7 +60,7 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
   _on_heap = false;
   DEBUG_ONLY(_frame_index = -1;)
 
-  assert(pc != NULL, "no pc?");
+  assert(pc != NULL || VMError::is_error_reported(), "no pc?");
   _cb = CodeCache::find_blob(pc); // not fast because this constructor can be used on native frames
   setup(pc);
 }

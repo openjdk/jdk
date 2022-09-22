@@ -350,7 +350,7 @@ static frame next_frame(frame fr, Thread* t) {
 void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info, char* buf, int buf_size) {
 
   // see if it's a valid frame
-  if (fr.pc()) {
+  if (fr.sp() != nullptr && os::is_readable_pointer(fr.sp())) {
     st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
 
     int count = 0;
@@ -369,7 +369,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
       }
       st->cr();
       fr = next_frame(fr, t);
-      if (fr.pc() == nullptr) {
+      if (fr.sp() == nullptr) {
         break;
       }
     }
@@ -963,7 +963,7 @@ void VMError::report(outputStream* st, bool _verbose) {
          } else {
            frame fr = _context ? os::fetch_frame_from_context(_context)
                                : os::current_frame();
-           while (printed_len < limit && fr.pc() != nullptr) {
+           while (printed_len < limit && fr.sp() != nullptr) {
              if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
                printed_len++;
              }
