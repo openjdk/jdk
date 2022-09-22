@@ -99,6 +99,16 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
         installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 7, new DataPatch[0], null);
     }
 
+    @Test
+    public void testValidAlignment32() {
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 32, new DataPatch[0], null);
+    }
+
+    @Test
+    public void testValidAlignment64() {
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 64, new DataPatch[0], null);
+    }
+
     @Test(expected = NullPointerException.class)
     public void testNullDataPatchInDataSection() {
         installEmptyCode(new Site[0], new Assumption[0], new Comment[0], validDataSectionAlignment, new DataPatch[]{null}, null);

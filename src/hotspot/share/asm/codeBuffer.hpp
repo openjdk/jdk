@@ -27,6 +27,7 @@
 
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
@@ -748,6 +749,12 @@ inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
 
 inline int CodeSection::alignment(int section) {
   if (section == CodeBuffer::SECT_CONSTS) {
+#if INCLUDE_JVMCI
+    if (EnableJVMCI) {
+      // Graal vectorization requires larger aligned constants
+      return 64;
+    }
+#endif
     return (int) sizeof(jdouble);
   }
   if (section == CodeBuffer::SECT_INSTS) {
