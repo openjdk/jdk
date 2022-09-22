@@ -406,7 +406,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::remove_useless_nodes(Unique_Node_List &useful) {
+void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -429,7 +429,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       }
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
-      record_for_igvn(n->unique_out());
+      worklist->push(n->unique_out());
     }
   }
 
@@ -440,6 +440,11 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
+#ifdef ASSERT
+  if (_modified_nodes != NULL) {
+    _modified_nodes->remove_useless_nodes(useful.member_set());
+  }
+#endif
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_useless_gc_barriers(useful, this);
@@ -1017,7 +1022,6 @@ void Compile::Init(int aliaslevel) {
   set_use_cmove(UseCMoveUnconditionally /* || do_vector_loop()*/); //TODO: consider do_vector_loop() mandate use_cmove unconditionally
   NOT_PRODUCT(if (use_cmove() && Verbose && has_method()) {tty->print("Compile::Init: use CMove without profitability tests for method %s\n",  method()->name()->as_quoted_ascii());})
 
-  set_age_code(has_method() && method()->profile_aging());
   set_rtm_state(NoRTM); // No RTM lock eliding by default
   _max_node_limit = _directive->MaxNodeLimitOption;
 
@@ -2970,6 +2974,7 @@ void Compile::Code_Gen() {
       cfg.set_loop_alignment();
     }
     cfg.fixup_flow();
+    cfg.remove_unreachable_blocks();
   }
 
   // Apply peephole optimizations
@@ -3989,7 +3994,7 @@ bool Compile::final_graph_reshaping() {
       // 'fall-thru' path, so expected kids is 1 less.
       if (n->is_PCTable() && n->in(0) && n->in(0)->in(0)) {
         if (n->in(0)->in(0)->is_Call()) {
-          CallNode* call = n->in(0)->in(0)->as_Call();
+          CallNode *call = n->in(0)->in(0)->as_Call();
           if (call->entry_point() == OptoRuntime::rethrow_stub()) {
             required_outcnt--;      // Rethrow always has 1 less kid
           } else if (call->req() > TypeFunc::Parms &&
@@ -3998,25 +4003,22 @@ bool Compile::final_graph_reshaping() {
             // detected that the virtual call will always result in a null
             // pointer exception. The fall-through projection of this CatchNode
             // will not be populated.
-            Node* arg0 = call->in(TypeFunc::Parms);
+            Node *arg0 = call->in(TypeFunc::Parms);
             if (arg0->is_Type() &&
                 arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
               required_outcnt--;
             }
-          } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
-                     call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
-            // Check for illegal array length. In such case, the optimizer has
+          } else if (call->entry_point() == OptoRuntime::new_array_Java() &&
+                     call->req() > TypeFunc::Parms+1 &&
+                     call->is_CallStaticJava()) {
+            // Check for negative array length. In such case, the optimizer has
             // detected that the allocation attempt will always result in an
             // exception. There is no fall-through projection of this CatchNode .
-            assert(call->is_CallStaticJava(), "static call expected");
-            assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
-            Node* valid_length_test = call->in(call->req()-1);
-            call->del_req(call->req()-1);
-            if (valid_length_test->find_int_con(1) == 0) {
+            Node *arg1 = call->in(TypeFunc::Parms+1);
+            if (arg1->is_Type() &&
+                arg1->as_Type()->type()->join(TypeInt::POS)->empty()) {
               required_outcnt--;
             }
-            assert(n->outcnt() == required_outcnt, "malformed control flow");
-            continue;
           }
         }
       }
@@ -4024,14 +4026,6 @@ bool Compile::final_graph_reshaping() {
       if (n->outcnt() != required_outcnt) {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
-      }
-    } else if (n->is_PCTable() && n->in(0) && n->in(0)->in(0) && n->in(0)->in(0)->is_Call()) {
-      CallNode* call = n->in(0)->in(0)->as_Call();
-      if (call->entry_point() == OptoRuntime::new_array_Java() ||
-          call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
-        assert(call->is_CallStaticJava(), "static call expected");
-        assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
-        call->del_req(call->req()-1); // valid length test useless now
       }
     }
     // Check that I actually visited all kids.  Unreached kids
@@ -4511,7 +4505,7 @@ void Compile::process_print_inlining() {
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       PrintInliningBuffer* pib = _print_inlining_list->at(i);
-      ss.print("%s", pib->ss()->as_string());
+      ss.print("%s", pib->ss()->freeze());
       delete pib;
       DEBUG_ONLY(_print_inlining_list->at_put(i, NULL));
     }
@@ -4522,7 +4516,7 @@ void Compile::process_print_inlining() {
     print_inlining_stream_free();
     size_t end = ss.size();
     _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
-    strncpy(_print_inlining_output, ss.base(), end+1);
+    strncpy(_print_inlining_output, ss.freeze(), end+1);
     _print_inlining_output[end] = 0;
   }
 }
@@ -4582,6 +4576,35 @@ void Compile::dump_inline_data(outputStream* out) {
   if (inl_tree != NULL) {
     out->print(" inline %d", inl_tree->count());
     inl_tree->dump_replay_data(out);
+  }
+}
+
+void Compile::dump_inline_data_reduced(outputStream* out) {
+  assert(ReplayReduce, "");
+
+  InlineTree* inl_tree = ilt();
+  if (inl_tree == NULL) {
+    return;
+  }
+  // Enable iterative replay file reduction
+  // Output "compile" lines for depth 1 subtrees,
+  // simulating that those trees were compiled
+  // instead of inlined.
+  for (int i = 0; i < inl_tree->subtrees().length(); ++i) {
+    InlineTree* sub = inl_tree->subtrees().at(i);
+    if (sub->inline_level() != 1) {
+      continue;
+    }
+
+    ciMethod* method = sub->method();
+    int entry_bci = -1;
+    int comp_level = env()->task()->comp_level();
+    out->print("compile ");
+    method->dump_name_as_ascii(out);
+    out->print(" %d %d", entry_bci, comp_level);
+    out->print(" inline %d", sub->count());
+    sub->dump_replay_data(out, -1);
+    out->cr();
   }
 }
 

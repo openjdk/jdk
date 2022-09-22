@@ -179,290 +179,161 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
   reg_def V0_H ( SOC, SOC, Op_RegF, 0, v0->as_VMReg()->next()  );
   reg_def V0_J ( SOC, SOC, Op_RegF, 0, v0->as_VMReg()->next(2) );
   reg_def V0_K ( SOC, SOC, Op_RegF, 0, v0->as_VMReg()->next(3) );
-  reg_def V0_L ( SOC, SOC, Op_RegF, 0, v0->as_VMReg()->next(4) );
-  reg_def V0_M ( SOC, SOC, Op_RegF, 0, v0->as_VMReg()->next(5) );
-  reg_def V0_N ( SOC, SOC, Op_RegF, 0, v0->as_VMReg()->next(6) );
-  reg_def V0_O ( SOC, SOC, Op_RegF, 0, v0->as_VMReg()->next(7) );
 
   reg_def V1   ( SOC, SOC, Op_RegF, 1, v1->as_VMReg()          );
   reg_def V1_H ( SOC, SOC, Op_RegF, 1, v1->as_VMReg()->next()  );
   reg_def V1_J ( SOC, SOC, Op_RegF, 1, v1->as_VMReg()->next(2) );
   reg_def V1_K ( SOC, SOC, Op_RegF, 1, v1->as_VMReg()->next(3) );
-  reg_def V1_L ( SOC, SOC, Op_RegF, 1, v1->as_VMReg()->next(4) );
-  reg_def V1_M ( SOC, SOC, Op_RegF, 1, v1->as_VMReg()->next(5) );
-  reg_def V1_N ( SOC, SOC, Op_RegF, 1, v1->as_VMReg()->next(6) );
-  reg_def V1_O ( SOC, SOC, Op_RegF, 1, v1->as_VMReg()->next(7) );
 
   reg_def V2   ( SOC, SOC, Op_RegF, 2, v2->as_VMReg()          );
   reg_def V2_H ( SOC, SOC, Op_RegF, 2, v2->as_VMReg()->next()  );
   reg_def V2_J ( SOC, SOC, Op_RegF, 2, v2->as_VMReg()->next(2) );
   reg_def V2_K ( SOC, SOC, Op_RegF, 2, v2->as_VMReg()->next(3) );
-  reg_def V2_L ( SOC, SOC, Op_RegF, 2, v2->as_VMReg()->next(4) );
-  reg_def V2_M ( SOC, SOC, Op_RegF, 2, v2->as_VMReg()->next(5) );
-  reg_def V2_N ( SOC, SOC, Op_RegF, 2, v2->as_VMReg()->next(6) );
-  reg_def V2_O ( SOC, SOC, Op_RegF, 2, v2->as_VMReg()->next(7) );
 
   reg_def V3   ( SOC, SOC, Op_RegF, 3, v3->as_VMReg()          );
   reg_def V3_H ( SOC, SOC, Op_RegF, 3, v3->as_VMReg()->next()  );
   reg_def V3_J ( SOC, SOC, Op_RegF, 3, v3->as_VMReg()->next(2) );
   reg_def V3_K ( SOC, SOC, Op_RegF, 3, v3->as_VMReg()->next(3) );
-  reg_def V3_L ( SOC, SOC, Op_RegF, 3, v3->as_VMReg()->next(4) );
-  reg_def V3_M ( SOC, SOC, Op_RegF, 3, v3->as_VMReg()->next(5) );
-  reg_def V3_N ( SOC, SOC, Op_RegF, 3, v3->as_VMReg()->next(6) );
-  reg_def V3_O ( SOC, SOC, Op_RegF, 3, v3->as_VMReg()->next(7) );
 
   reg_def V4   ( SOC, SOC, Op_RegF, 4, v4->as_VMReg()          );
   reg_def V4_H ( SOC, SOC, Op_RegF, 4, v4->as_VMReg()->next()  );
   reg_def V4_J ( SOC, SOC, Op_RegF, 4, v4->as_VMReg()->next(2) );
   reg_def V4_K ( SOC, SOC, Op_RegF, 4, v4->as_VMReg()->next(3) );
-  reg_def V4_L ( SOC, SOC, Op_RegF, 4, v4->as_VMReg()->next(4) );
-  reg_def V4_M ( SOC, SOC, Op_RegF, 4, v4->as_VMReg()->next(5) );
-  reg_def V4_N ( SOC, SOC, Op_RegF, 4, v4->as_VMReg()->next(6) );
-  reg_def V4_O ( SOC, SOC, Op_RegF, 4, v4->as_VMReg()->next(7) );
 
   reg_def V5   ( SOC, SOC, Op_RegF, 5, v5->as_VMReg()          );
   reg_def V5_H ( SOC, SOC, Op_RegF, 5, v5->as_VMReg()->next()  );
   reg_def V5_J ( SOC, SOC, Op_RegF, 5, v5->as_VMReg()->next(2) );
   reg_def V5_K ( SOC, SOC, Op_RegF, 5, v5->as_VMReg()->next(3) );
-  reg_def V5_L ( SOC, SOC, Op_RegF, 5, v5->as_VMReg()->next(4) );
-  reg_def V5_M ( SOC, SOC, Op_RegF, 5, v5->as_VMReg()->next(5) );
-  reg_def V5_N ( SOC, SOC, Op_RegF, 5, v5->as_VMReg()->next(6) );
-  reg_def V5_O ( SOC, SOC, Op_RegF, 5, v5->as_VMReg()->next(7) );
 
   reg_def V6   ( SOC, SOC, Op_RegF, 6, v6->as_VMReg()          );
   reg_def V6_H ( SOC, SOC, Op_RegF, 6, v6->as_VMReg()->next()  );
   reg_def V6_J ( SOC, SOC, Op_RegF, 6, v6->as_VMReg()->next(2) );
   reg_def V6_K ( SOC, SOC, Op_RegF, 6, v6->as_VMReg()->next(3) );
-  reg_def V6_L ( SOC, SOC, Op_RegF, 6, v6->as_VMReg()->next(4) );
-  reg_def V6_M ( SOC, SOC, Op_RegF, 6, v6->as_VMReg()->next(5) );
-  reg_def V6_N ( SOC, SOC, Op_RegF, 6, v6->as_VMReg()->next(6) );
-  reg_def V6_O ( SOC, SOC, Op_RegF, 6, v6->as_VMReg()->next(7) );
 
   reg_def V7   ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()          );
   reg_def V7_H ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next()  );
   reg_def V7_J ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next(2) );
   reg_def V7_K ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next(3) );
-  reg_def V7_L ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next(4) );
-  reg_def V7_M ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next(5) );
-  reg_def V7_N ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next(6) );
-  reg_def V7_O ( SOC, SOC, Op_RegF, 7, v7->as_VMReg()->next(7) );
 
   reg_def V8   ( SOC, SOE, Op_RegF, 8, v8->as_VMReg()          );
   reg_def V8_H ( SOC, SOE, Op_RegF, 8, v8->as_VMReg()->next()  );
   reg_def V8_J ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(2) );
   reg_def V8_K ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(3) );
-  reg_def V8_L ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(4) );
-  reg_def V8_M ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(5) );
-  reg_def V8_N ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(6) );
-  reg_def V8_O ( SOC, SOC, Op_RegF, 8, v8->as_VMReg()->next(7) );
 
   reg_def V9   ( SOC, SOE, Op_RegF, 9, v9->as_VMReg()          );
   reg_def V9_H ( SOC, SOE, Op_RegF, 9, v9->as_VMReg()->next()  );
   reg_def V9_J ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(2) );
   reg_def V9_K ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(3) );
-  reg_def V9_L ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(4) );
-  reg_def V9_M ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(5) );
-  reg_def V9_N ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(6) );
-  reg_def V9_O ( SOC, SOC, Op_RegF, 9, v9->as_VMReg()->next(7) );
 
   reg_def V10   ( SOC, SOE, Op_RegF, 10, v10->as_VMReg()          );
   reg_def V10_H ( SOC, SOE, Op_RegF, 10, v10->as_VMReg()->next()  );
   reg_def V10_J ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(2) );
   reg_def V10_K ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(3) );
-  reg_def V10_L ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(4) );
-  reg_def V10_M ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(5) );
-  reg_def V10_N ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(6) );
-  reg_def V10_O ( SOC, SOC, Op_RegF, 10, v10->as_VMReg()->next(7) );
 
   reg_def V11   ( SOC, SOE, Op_RegF, 11, v11->as_VMReg()          );
   reg_def V11_H ( SOC, SOE, Op_RegF, 11, v11->as_VMReg()->next()  );
   reg_def V11_J ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(2) );
   reg_def V11_K ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(3) );
-  reg_def V11_L ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(4) );
-  reg_def V11_M ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(5) );
-  reg_def V11_N ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(6) );
-  reg_def V11_O ( SOC, SOC, Op_RegF, 11, v11->as_VMReg()->next(7) );
 
   reg_def V12   ( SOC, SOE, Op_RegF, 12, v12->as_VMReg()          );
   reg_def V12_H ( SOC, SOE, Op_RegF, 12, v12->as_VMReg()->next()  );
   reg_def V12_J ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(2) );
   reg_def V12_K ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(3) );
-  reg_def V12_L ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(4) );
-  reg_def V12_M ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(5) );
-  reg_def V12_N ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(6) );
-  reg_def V12_O ( SOC, SOC, Op_RegF, 12, v12->as_VMReg()->next(7) );
 
   reg_def V13   ( SOC, SOE, Op_RegF, 13, v13->as_VMReg()          );
   reg_def V13_H ( SOC, SOE, Op_RegF, 13, v13->as_VMReg()->next()  );
   reg_def V13_J ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(2) );
   reg_def V13_K ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(3) );
-  reg_def V13_L ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(4) );
-  reg_def V13_M ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(5) );
-  reg_def V13_N ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(6) );
-  reg_def V13_O ( SOC, SOC, Op_RegF, 13, v13->as_VMReg()->next(7) );
 
   reg_def V14   ( SOC, SOE, Op_RegF, 14, v14->as_VMReg()          );
   reg_def V14_H ( SOC, SOE, Op_RegF, 14, v14->as_VMReg()->next()  );
   reg_def V14_J ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(2) );
   reg_def V14_K ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(3) );
-  reg_def V14_L ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(4) );
-  reg_def V14_M ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(5) );
-  reg_def V14_N ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(6) );
-  reg_def V14_O ( SOC, SOC, Op_RegF, 14, v14->as_VMReg()->next(7) );
 
   reg_def V15   ( SOC, SOE, Op_RegF, 15, v15->as_VMReg()          );
   reg_def V15_H ( SOC, SOE, Op_RegF, 15, v15->as_VMReg()->next()  );
   reg_def V15_J ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(2) );
   reg_def V15_K ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(3) );
-  reg_def V15_L ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(4) );
-  reg_def V15_M ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(5) );
-  reg_def V15_N ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(6) );
-  reg_def V15_O ( SOC, SOC, Op_RegF, 15, v15->as_VMReg()->next(7) );
 
   reg_def V16   ( SOC, SOC, Op_RegF, 16, v16->as_VMReg()          );
   reg_def V16_H ( SOC, SOC, Op_RegF, 16, v16->as_VMReg()->next()  );
   reg_def V16_J ( SOC, SOC, Op_RegF, 16, v16->as_VMReg()->next(2) );
   reg_def V16_K ( SOC, SOC, Op_RegF, 16, v16->as_VMReg()->next(3) );
-  reg_def V16_L ( SOC, SOC, Op_RegF, 16, v16->as_VMReg()->next(4) );
-  reg_def V16_M ( SOC, SOC, Op_RegF, 16, v16->as_VMReg()->next(5) );
-  reg_def V16_N ( SOC, SOC, Op_RegF, 16, v16->as_VMReg()->next(6) );
-  reg_def V16_O ( SOC, SOC, Op_RegF, 16, v16->as_VMReg()->next(7) );
 
   reg_def V17   ( SOC, SOC, Op_RegF, 17, v17->as_VMReg()          );
   reg_def V17_H ( SOC, SOC, Op_RegF, 17, v17->as_VMReg()->next()  );
   reg_def V17_J ( SOC, SOC, Op_RegF, 17, v17->as_VMReg()->next(2) );
   reg_def V17_K ( SOC, SOC, Op_RegF, 17, v17->as_VMReg()->next(3) );
-  reg_def V17_L ( SOC, SOC, Op_RegF, 17, v17->as_VMReg()->next(4) );
-  reg_def V17_M ( SOC, SOC, Op_RegF, 17, v17->as_VMReg()->next(5) );
-  reg_def V17_N ( SOC, SOC, Op_RegF, 17, v17->as_VMReg()->next(6) );
-  reg_def V17_O ( SOC, SOC, Op_RegF, 17, v17->as_VMReg()->next(7) );
 
   reg_def V18   ( SOC, SOC, Op_RegF, 18, v18->as_VMReg()          );
   reg_def V18_H ( SOC, SOC, Op_RegF, 18, v18->as_VMReg()->next()  );
   reg_def V18_J ( SOC, SOC, Op_RegF, 18, v18->as_VMReg()->next(2) );
   reg_def V18_K ( SOC, SOC, Op_RegF, 18, v18->as_VMReg()->next(3) );
-  reg_def V18_L ( SOC, SOC, Op_RegF, 18, v18->as_VMReg()->next(4) );
-  reg_def V18_M ( SOC, SOC, Op_RegF, 18, v18->as_VMReg()->next(5) );
-  reg_def V18_N ( SOC, SOC, Op_RegF, 18, v18->as_VMReg()->next(6) );
-  reg_def V18_O ( SOC, SOC, Op_RegF, 18, v18->as_VMReg()->next(7) );
 
   reg_def V19   ( SOC, SOC, Op_RegF, 19, v19->as_VMReg()          );
   reg_def V19_H ( SOC, SOC, Op_RegF, 19, v19->as_VMReg()->next()  );
   reg_def V19_J ( SOC, SOC, Op_RegF, 19, v19->as_VMReg()->next(2) );
   reg_def V19_K ( SOC, SOC, Op_RegF, 19, v19->as_VMReg()->next(3) );
-  reg_def V19_L ( SOC, SOC, Op_RegF, 19, v19->as_VMReg()->next(4) );
-  reg_def V19_M ( SOC, SOC, Op_RegF, 19, v19->as_VMReg()->next(5) );
-  reg_def V19_N ( SOC, SOC, Op_RegF, 19, v19->as_VMReg()->next(6) );
-  reg_def V19_O ( SOC, SOC, Op_RegF, 19, v19->as_VMReg()->next(7) );
 
   reg_def V20   ( SOC, SOC, Op_RegF, 20, v20->as_VMReg()          );
   reg_def V20_H ( SOC, SOC, Op_RegF, 20, v20->as_VMReg()->next()  );
   reg_def V20_J ( SOC, SOC, Op_RegF, 20, v20->as_VMReg()->next(2) );
   reg_def V20_K ( SOC, SOC, Op_RegF, 20, v20->as_VMReg()->next(3) );
-  reg_def V20_L ( SOC, SOC, Op_RegF, 20, v20->as_VMReg()->next(4) );
-  reg_def V20_M ( SOC, SOC, Op_RegF, 20, v20->as_VMReg()->next(5) );
-  reg_def V20_N ( SOC, SOC, Op_RegF, 20, v20->as_VMReg()->next(6) );
-  reg_def V20_O ( SOC, SOC, Op_RegF, 20, v20->as_VMReg()->next(7) );
 
   reg_def V21   ( SOC, SOC, Op_RegF, 21, v21->as_VMReg()          );
   reg_def V21_H ( SOC, SOC, Op_RegF, 21, v21->as_VMReg()->next()  );
   reg_def V21_J ( SOC, SOC, Op_RegF, 21, v21->as_VMReg()->next(2) );
   reg_def V21_K ( SOC, SOC, Op_RegF, 21, v21->as_VMReg()->next(3) );
-  reg_def V21_L ( SOC, SOC, Op_RegF, 21, v21->as_VMReg()->next(4) );
-  reg_def V21_M ( SOC, SOC, Op_RegF, 21, v21->as_VMReg()->next(5) );
-  reg_def V21_N ( SOC, SOC, Op_RegF, 21, v21->as_VMReg()->next(6) );
-  reg_def V21_O ( SOC, SOC, Op_RegF, 21, v21->as_VMReg()->next(7) );
 
   reg_def V22   ( SOC, SOC, Op_RegF, 22, v22->as_VMReg()          );
   reg_def V22_H ( SOC, SOC, Op_RegF, 22, v22->as_VMReg()->next()  );
   reg_def V22_J ( SOC, SOC, Op_RegF, 22, v22->as_VMReg()->next(2) );
   reg_def V22_K ( SOC, SOC, Op_RegF, 22, v22->as_VMReg()->next(3) );
-  reg_def V22_L ( SOC, SOC, Op_RegF, 22, v22->as_VMReg()->next(4) );
-  reg_def V22_M ( SOC, SOC, Op_RegF, 22, v22->as_VMReg()->next(5) );
-  reg_def V22_N ( SOC, SOC, Op_RegF, 22, v22->as_VMReg()->next(6) );
-  reg_def V22_O ( SOC, SOC, Op_RegF, 22, v22->as_VMReg()->next(7) );
 
   reg_def V23   ( SOC, SOC, Op_RegF, 23, v23->as_VMReg()          );
   reg_def V23_H ( SOC, SOC, Op_RegF, 23, v23->as_VMReg()->next()  );
   reg_def V23_J ( SOC, SOC, Op_RegF, 23, v23->as_VMReg()->next(2) );
   reg_def V23_K ( SOC, SOC, Op_RegF, 23, v23->as_VMReg()->next(3) );
-  reg_def V23_L ( SOC, SOC, Op_RegF, 23, v23->as_VMReg()->next(4) );
-  reg_def V23_M ( SOC, SOC, Op_RegF, 23, v23->as_VMReg()->next(5) );
-  reg_def V23_N ( SOC, SOC, Op_RegF, 23, v23->as_VMReg()->next(6) );
-  reg_def V23_O ( SOC, SOC, Op_RegF, 23, v23->as_VMReg()->next(7) );
 
   reg_def V24   ( SOC, SOC, Op_RegF, 24, v24->as_VMReg()          );
   reg_def V24_H ( SOC, SOC, Op_RegF, 24, v24->as_VMReg()->next()  );
   reg_def V24_J ( SOC, SOC, Op_RegF, 24, v24->as_VMReg()->next(2) );
   reg_def V24_K ( SOC, SOC, Op_RegF, 24, v24->as_VMReg()->next(3) );
-  reg_def V24_L ( SOC, SOC, Op_RegF, 24, v24->as_VMReg()->next(4) );
-  reg_def V24_M ( SOC, SOC, Op_RegF, 24, v24->as_VMReg()->next(5) );
-  reg_def V24_N ( SOC, SOC, Op_RegF, 24, v24->as_VMReg()->next(6) );
-  reg_def V24_O ( SOC, SOC, Op_RegF, 24, v24->as_VMReg()->next(7) );
 
   reg_def V25   ( SOC, SOC, Op_RegF, 25, v25->as_VMReg()          );
   reg_def V25_H ( SOC, SOC, Op_RegF, 25, v25->as_VMReg()->next()  );
   reg_def V25_J ( SOC, SOC, Op_RegF, 25, v25->as_VMReg()->next(2) );
   reg_def V25_K ( SOC, SOC, Op_RegF, 25, v25->as_VMReg()->next(3) );
-  reg_def V25_L ( SOC, SOC, Op_RegF, 25, v25->as_VMReg()->next(4) );
-  reg_def V25_M ( SOC, SOC, Op_RegF, 25, v25->as_VMReg()->next(5) );
-  reg_def V25_N ( SOC, SOC, Op_RegF, 25, v25->as_VMReg()->next(6) );
-  reg_def V25_O ( SOC, SOC, Op_RegF, 25, v25->as_VMReg()->next(7) );
 
   reg_def V26   ( SOC, SOC, Op_RegF, 26, v26->as_VMReg()          );
   reg_def V26_H ( SOC, SOC, Op_RegF, 26, v26->as_VMReg()->next()  );
   reg_def V26_J ( SOC, SOC, Op_RegF, 26, v26->as_VMReg()->next(2) );
   reg_def V26_K ( SOC, SOC, Op_RegF, 26, v26->as_VMReg()->next(3) );
-  reg_def V26_L ( SOC, SOC, Op_RegF, 26, v26->as_VMReg()->next(4) );
-  reg_def V26_M ( SOC, SOC, Op_RegF, 26, v26->as_VMReg()->next(5) );
-  reg_def V26_N ( SOC, SOC, Op_RegF, 26, v26->as_VMReg()->next(6) );
-  reg_def V26_O ( SOC, SOC, Op_RegF, 26, v26->as_VMReg()->next(7) );
 
   reg_def V27   ( SOC, SOC, Op_RegF, 27, v27->as_VMReg()          );
   reg_def V27_H ( SOC, SOC, Op_RegF, 27, v27->as_VMReg()->next()  );
   reg_def V27_J ( SOC, SOC, Op_RegF, 27, v27->as_VMReg()->next(2) );
   reg_def V27_K ( SOC, SOC, Op_RegF, 27, v27->as_VMReg()->next(3) );
-  reg_def V27_L ( SOC, SOC, Op_RegF, 27, v27->as_VMReg()->next(4) );
-  reg_def V27_M ( SOC, SOC, Op_RegF, 27, v27->as_VMReg()->next(5) );
-  reg_def V27_N ( SOC, SOC, Op_RegF, 27, v27->as_VMReg()->next(6) );
-  reg_def V27_O ( SOC, SOC, Op_RegF, 27, v27->as_VMReg()->next(7) );
 
   reg_def V28   ( SOC, SOC, Op_RegF, 28, v28->as_VMReg()          );
   reg_def V28_H ( SOC, SOC, Op_RegF, 28, v28->as_VMReg()->next()  );
   reg_def V28_J ( SOC, SOC, Op_RegF, 28, v28->as_VMReg()->next(2) );
   reg_def V28_K ( SOC, SOC, Op_RegF, 28, v28->as_VMReg()->next(3) );
-  reg_def V28_L ( SOC, SOC, Op_RegF, 28, v28->as_VMReg()->next(4) );
-  reg_def V28_M ( SOC, SOC, Op_RegF, 28, v28->as_VMReg()->next(5) );
-  reg_def V28_N ( SOC, SOC, Op_RegF, 28, v28->as_VMReg()->next(6) );
-  reg_def V28_O ( SOC, SOC, Op_RegF, 28, v28->as_VMReg()->next(7) );
 
   reg_def V29   ( SOC, SOC, Op_RegF, 29, v29->as_VMReg()          );
   reg_def V29_H ( SOC, SOC, Op_RegF, 29, v29->as_VMReg()->next()  );
   reg_def V29_J ( SOC, SOC, Op_RegF, 29, v29->as_VMReg()->next(2) );
   reg_def V29_K ( SOC, SOC, Op_RegF, 29, v29->as_VMReg()->next(3) );
-  reg_def V29_L ( SOC, SOC, Op_RegF, 29, v29->as_VMReg()->next(4) );
-  reg_def V29_M ( SOC, SOC, Op_RegF, 29, v29->as_VMReg()->next(5) );
-  reg_def V29_N ( SOC, SOC, Op_RegF, 29, v29->as_VMReg()->next(6) );
-  reg_def V29_O ( SOC, SOC, Op_RegF, 29, v29->as_VMReg()->next(7) );
 
   reg_def V30   ( SOC, SOC, Op_RegF, 30, v30->as_VMReg()          );
   reg_def V30_H ( SOC, SOC, Op_RegF, 30, v30->as_VMReg()->next()  );
   reg_def V30_J ( SOC, SOC, Op_RegF, 30, v30->as_VMReg()->next(2) );
   reg_def V30_K ( SOC, SOC, Op_RegF, 30, v30->as_VMReg()->next(3) );
-  reg_def V30_L ( SOC, SOC, Op_RegF, 30, v30->as_VMReg()->next(4) );
-  reg_def V30_M ( SOC, SOC, Op_RegF, 30, v30->as_VMReg()->next(5) );
-  reg_def V30_N ( SOC, SOC, Op_RegF, 30, v30->as_VMReg()->next(6) );
-  reg_def V30_O ( SOC, SOC, Op_RegF, 30, v30->as_VMReg()->next(7) );
 
   reg_def V31   ( SOC, SOC, Op_RegF, 31, v31->as_VMReg()          );
   reg_def V31_H ( SOC, SOC, Op_RegF, 31, v31->as_VMReg()->next()  );
   reg_def V31_J ( SOC, SOC, Op_RegF, 31, v31->as_VMReg()->next(2) );
   reg_def V31_K ( SOC, SOC, Op_RegF, 31, v31->as_VMReg()->next(3) );
-  reg_def V31_L ( SOC, SOC, Op_RegF, 31, v31->as_VMReg()->next(4) );
-  reg_def V31_M ( SOC, SOC, Op_RegF, 31, v31->as_VMReg()->next(5) );
-  reg_def V31_N ( SOC, SOC, Op_RegF, 31, v31->as_VMReg()->next(6) );
-  reg_def V31_O ( SOC, SOC, Op_RegF, 31, v31->as_VMReg()->next(7) );
-
 
 // ----------------------------
 // SVE Predicate Registers
@@ -550,42 +421,42 @@ alloc_class chunk0(
 alloc_class chunk1(
 
     // no save
-    V16, V16_H, V16_J, V16_K, V16_L, V16_M, V16_N, V16_O,
-    V17, V17_H, V17_J, V17_K, V17_L, V17_M, V17_N, V17_O,
-    V18, V18_H, V18_J, V18_K, V18_L, V18_M, V18_N, V18_O,
-    V19, V19_H, V19_J, V19_K, V19_L, V19_M, V19_N, V19_O,
-    V20, V20_H, V20_J, V20_K, V20_L, V20_M, V20_N, V20_O,
-    V21, V21_H, V21_J, V21_K, V21_L, V21_M, V21_N, V21_O,
-    V22, V22_H, V22_J, V22_K, V22_L, V22_M, V22_N, V22_O,
-    V23, V23_H, V23_J, V23_K, V23_L, V23_M, V23_N, V23_O,
-    V24, V24_H, V24_J, V24_K, V24_L, V24_M, V24_N, V24_O,
-    V25, V25_H, V25_J, V25_K, V25_L, V25_M, V25_N, V25_O,
-    V26, V26_H, V26_J, V26_K, V26_L, V26_M, V26_N, V26_O,
-    V27, V27_H, V27_J, V27_K, V27_L, V27_M, V27_N, V27_O,
-    V28, V28_H, V28_J, V28_K, V28_L, V28_M, V28_N, V28_O,
-    V29, V29_H, V29_J, V29_K, V29_L, V29_M, V29_N, V29_O,
-    V30, V30_H, V30_J, V30_K, V30_L, V30_M, V30_N, V30_O,
-    V31, V31_H, V31_J, V31_K, V31_L, V31_M, V31_N, V31_O,
+    V16, V16_H, V16_J, V16_K,
+    V17, V17_H, V17_J, V17_K,
+    V18, V18_H, V18_J, V18_K,
+    V19, V19_H, V19_J, V19_K,
+    V20, V20_H, V20_J, V20_K,
+    V21, V21_H, V21_J, V21_K,
+    V22, V22_H, V22_J, V22_K,
+    V23, V23_H, V23_J, V23_K,
+    V24, V24_H, V24_J, V24_K,
+    V25, V25_H, V25_J, V25_K,
+    V26, V26_H, V26_J, V26_K,
+    V27, V27_H, V27_J, V27_K,
+    V28, V28_H, V28_J, V28_K,
+    V29, V29_H, V29_J, V29_K,
+    V30, V30_H, V30_J, V30_K,
+    V31, V31_H, V31_J, V31_K,
 
     // arg registers
-    V0, V0_H, V0_J, V0_K, V0_L, V0_M, V0_N, V0_O,
-    V1, V1_H, V1_J, V1_K, V1_L, V1_M, V1_N, V1_O,
-    V2, V2_H, V2_J, V2_K, V2_L, V2_M, V2_N, V2_O,
-    V3, V3_H, V3_J, V3_K, V3_L, V3_M, V3_N, V3_O,
-    V4, V4_H, V4_J, V4_K, V4_L, V4_M, V4_N, V4_O,
-    V5, V5_H, V5_J, V5_K, V5_L, V5_M, V5_N, V5_O,
-    V6, V6_H, V6_J, V6_K, V6_L, V6_M, V6_N, V6_O,
-    V7, V7_H, V7_J, V7_K, V7_L, V7_M, V7_N, V7_O,
+    V0, V0_H, V0_J, V0_K,
+    V1, V1_H, V1_J, V1_K,
+    V2, V2_H, V2_J, V2_K,
+    V3, V3_H, V3_J, V3_K,
+    V4, V4_H, V4_J, V4_K,
+    V5, V5_H, V5_J, V5_K,
+    V6, V6_H, V6_J, V6_K,
+    V7, V7_H, V7_J, V7_K,
 
     // non-volatiles
-    V8, V8_H, V8_J, V8_K, V8_L, V8_M, V8_N, V8_O,
-    V9, V9_H, V9_J, V9_K, V9_L, V9_M, V9_N, V9_O,
-    V10, V10_H, V10_J, V10_K, V10_L, V10_M, V10_N, V10_O,
-    V11, V11_H, V11_J, V11_K, V11_L, V11_M, V11_N, V11_O,
-    V12, V12_H, V12_J, V12_K, V12_L, V12_M, V12_N, V12_O,
-    V13, V13_H, V13_J, V13_K, V13_L, V13_M, V13_N, V13_O,
-    V14, V14_H, V14_J, V14_K, V14_L, V14_M, V14_N, V14_O,
-    V15, V15_H, V15_J, V15_K, V15_L, V15_M, V15_N, V15_O,
+    V8, V8_H, V8_J, V8_K,
+    V9, V9_H, V9_J, V9_K,
+    V10, V10_H, V10_J, V10_K,
+    V11, V11_H, V11_J, V11_K,
+    V12, V12_H, V12_J, V12_K,
+    V13, V13_H, V13_J, V13_K,
+    V14, V14_H, V14_J, V14_K,
+    V15, V15_H, V15_J, V15_K,
 );
 
 alloc_class chunk2 (
@@ -900,38 +771,38 @@ reg_class double_reg(
 
 // Class for all SVE vector registers.
 reg_class vectora_reg (
-    V0, V0_H, V0_J, V0_K, V0_L, V0_M, V0_N, V0_O,
-    V1, V1_H, V1_J, V1_K, V1_L, V1_M, V1_N, V1_O,
-    V2, V2_H, V2_J, V2_K, V2_L, V2_M, V2_N, V2_O,
-    V3, V3_H, V3_J, V3_K, V3_L, V3_M, V3_N, V3_O,
-    V4, V4_H, V4_J, V4_K, V4_L, V4_M, V4_N, V4_O,
-    V5, V5_H, V5_J, V5_K, V5_L, V5_M, V5_N, V5_O,
-    V6, V6_H, V6_J, V6_K, V6_L, V6_M, V6_N, V6_O,
-    V7, V7_H, V7_J, V7_K, V7_L, V7_M, V7_N, V7_O,
-    V8, V8_H, V8_J, V8_K, V8_L, V8_M, V8_N, V8_O,
-    V9, V9_H, V9_J, V9_K, V9_L, V9_M, V9_N, V9_O,
-    V10, V10_H, V10_J, V10_K, V10_L, V10_M, V10_N, V10_O,
-    V11, V11_H, V11_J, V11_K, V11_L, V11_M, V11_N, V11_O,
-    V12, V12_H, V12_J, V12_K, V12_L, V12_M, V12_N, V12_O,
-    V13, V13_H, V13_J, V13_K, V13_L, V13_M, V13_N, V13_O,
-    V14, V14_H, V14_J, V14_K, V14_L, V14_M, V14_N, V14_O,
-    V15, V15_H, V15_J, V15_K, V15_L, V15_M, V15_N, V15_O,
-    V16, V16_H, V16_J, V16_K, V16_L, V16_M, V16_N, V16_O,
-    V17, V17_H, V17_J, V17_K, V17_L, V17_M, V17_N, V17_O,
-    V18, V18_H, V18_J, V18_K, V18_L, V18_M, V18_N, V18_O,
-    V19, V19_H, V19_J, V19_K, V19_L, V19_M, V19_N, V19_O,
-    V20, V20_H, V20_J, V20_K, V20_L, V20_M, V20_N, V20_O,
-    V21, V21_H, V21_J, V21_K, V21_L, V21_M, V21_N, V21_O,
-    V22, V22_H, V22_J, V22_K, V22_L, V22_M, V22_N, V22_O,
-    V23, V23_H, V23_J, V23_K, V23_L, V23_M, V23_N, V23_O,
-    V24, V24_H, V24_J, V24_K, V24_L, V24_M, V24_N, V24_O,
-    V25, V25_H, V25_J, V25_K, V25_L, V25_M, V25_N, V25_O,
-    V26, V26_H, V26_J, V26_K, V26_L, V26_M, V26_N, V26_O,
-    V27, V27_H, V27_J, V27_K, V27_L, V27_M, V27_N, V27_O,
-    V28, V28_H, V28_J, V28_K, V28_L, V28_M, V28_N, V28_O,
-    V29, V29_H, V29_J, V29_K, V29_L, V29_M, V29_N, V29_O,
-    V30, V30_H, V30_J, V30_K, V30_L, V30_M, V30_N, V30_O,
-    V31, V31_H, V31_J, V31_K, V31_L, V31_M, V31_N, V31_O,
+    V0, V0_H, V0_J, V0_K,
+    V1, V1_H, V1_J, V1_K,
+    V2, V2_H, V2_J, V2_K,
+    V3, V3_H, V3_J, V3_K,
+    V4, V4_H, V4_J, V4_K,
+    V5, V5_H, V5_J, V5_K,
+    V6, V6_H, V6_J, V6_K,
+    V7, V7_H, V7_J, V7_K,
+    V8, V8_H, V8_J, V8_K,
+    V9, V9_H, V9_J, V9_K,
+    V10, V10_H, V10_J, V10_K,
+    V11, V11_H, V11_J, V11_K,
+    V12, V12_H, V12_J, V12_K,
+    V13, V13_H, V13_J, V13_K,
+    V14, V14_H, V14_J, V14_K,
+    V15, V15_H, V15_J, V15_K,
+    V16, V16_H, V16_J, V16_K,
+    V17, V17_H, V17_J, V17_K,
+    V18, V18_H, V18_J, V18_K,
+    V19, V19_H, V19_J, V19_K,
+    V20, V20_H, V20_J, V20_K,
+    V21, V21_H, V21_J, V21_K,
+    V22, V22_H, V22_J, V22_K,
+    V23, V23_H, V23_J, V23_K,
+    V24, V24_H, V24_J, V24_K,
+    V25, V25_H, V25_J, V25_K,
+    V26, V26_H, V26_J, V26_K,
+    V27, V27_H, V27_J, V27_K,
+    V28, V28_H, V28_J, V28_K,
+    V29, V29_H, V29_J, V29_K,
+    V30, V30_H, V30_J, V30_K,
+    V31, V31_H, V31_J, V31_K,
 );
 
 // Class for all 64bit vector registers
@@ -1313,9 +1184,6 @@ public:
 
   // predicate controlling translation of CompareAndSwapX
   bool needs_acquiring_load_exclusive(const Node *load);
-
-  // Assert that the given node is not a variable shift.
-  bool assert_not_var_shift(const Node* n);
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
@@ -1731,12 +1599,6 @@ bool needs_acquiring_load_exclusive(const Node *n)
   return true;
 }
 
-// Assert that the given node is not a variable shift.
-bool assert_not_var_shift(const Node* n) {
-  assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
-  return true;
-}
-
 #define __ _masm.
 
 // advance declarations for helper functions to convert register
@@ -2047,19 +1909,19 @@ static enum RC rc_class(OptoReg::Name reg) {
   }
 
   // we have 32 int registers * 2 halves
-  int slots_of_int_registers = RegisterImpl::max_slots_per_register * RegisterImpl::number_of_registers;
+  int slots_of_int_registers = Register::number_of_registers * Register::max_slots_per_register;
 
   if (reg < slots_of_int_registers) {
     return rc_int;
   }
 
   // we have 32 float register * 8 halves
-  int slots_of_float_registers = FloatRegisterImpl::max_slots_per_register * FloatRegisterImpl::number_of_registers;
+  int slots_of_float_registers = FloatRegister::number_of_registers * FloatRegister::max_slots_per_register;
   if (reg < slots_of_int_registers + slots_of_float_registers) {
     return rc_float;
   }
 
-  int slots_of_predicate_registers = PRegisterImpl::max_slots_per_register * PRegisterImpl::number_of_registers;
+  int slots_of_predicate_registers = PRegister::number_of_registers * PRegister::max_slots_per_register;
   if (reg < slots_of_int_registers + slots_of_float_registers + slots_of_predicate_registers) {
     return rc_predicate;
   }
@@ -2432,97 +2294,9 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       }
       break;
-    case Op_LoadVectorMasked:
-    case Op_StoreVectorMasked:
-    case Op_LoadVectorGatherMasked:
-    case Op_StoreVectorScatterMasked:
-    case Op_MaskAll:
-    case Op_AndVMask:
-    case Op_OrVMask:
-    case Op_XorVMask:
-      if (UseSVE == 0) {
-        ret_value = false;
-      }
-      break;
   }
 
   return ret_value; // Per default match rules are supported.
-}
-
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
-  if (UseSVE == 0) {
-    // ConvD2I and ConvL2F are not profitable to be vectorized on NEON, because no direct
-    // NEON instructions support them. But the match rule support for them is profitable for
-    // Vector API intrinsics.
-    if ((opcode == Op_VectorCastD2X && bt == T_INT) ||
-        (opcode == Op_VectorCastL2X && bt == T_FLOAT)) {
-      return false;
-    }
-  }
-  return match_rule_supported_vector(opcode, vlen, bt);
-}
-
-// Identify extra cases that we might want to provide match rules for vector nodes and
-// other intrinsics guarded with vector length (vlen) and element type (bt).
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  if (!match_rule_supported(opcode)) {
-    return false;
-  }
-  int bit_size = vlen * type2aelembytes(bt) * 8;
-  if (UseSVE == 0 && bit_size > 128) {
-    return false;
-  }
-  if (UseSVE > 0) {
-    return op_sve_supported(opcode, vlen, bt);
-  } else { // NEON
-    // Special cases
-    switch (opcode) {
-    case Op_VectorMaskCmp:
-      if (vlen < 2 || bit_size < 64) {
-        return false;
-      }
-      break;
-    case Op_MulAddVS2VI:
-      if (bit_size < 128) {
-        return false;
-      }
-      break;
-    case Op_MulVL:
-    case Op_PopulateIndex:
-      return false;
-    case Op_VectorLoadShuffle:
-    case Op_VectorRearrange:
-      if (vlen < 4) {
-        return false;
-      }
-      break;
-    case Op_VectorMaskGen:
-    case Op_LoadVectorGather:
-    case Op_StoreVectorScatter:
-    case Op_CompressV:
-    case Op_CompressM:
-    case Op_ExpandV:
-    case Op_VectorLongToMask:
-      return false;
-    default:
-      break;
-    }
-  }
-  return vector_size_supported(bt, vlen);
-}
-
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
-  // Only SVE supports masked operations.
-  if (UseSVE == 0) {
-    return false;
-  }
-  return match_rule_supported(opcode) &&
-         masked_op_sve_supported(opcode, vlen, bt);
-}
-
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-  // Only SVE has partial vector operations
-  return (UseSVE > 0) && partial_op_sve_needed(node, vt);
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -2591,7 +2365,7 @@ const int Matcher::scalable_vector_reg_size(const BasicType bt) {
 
 // Vector ideal reg.
 const uint Matcher::vector_ideal_reg(int len) {
-  if (UseSVE > 0 && 2 <= len && len <= 256) {
+  if (UseSVE > 0 && 16 < len && len <= 256) {
     return Op_VecA;
   }
   switch(len) {
@@ -2605,19 +2379,23 @@ const uint Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
-  ShouldNotReachHere(); // generic vector operands not supported
+MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
+  assert(Matcher::is_generic_vector(generic_opnd), "not generic");
+  switch (ideal_reg) {
+    case Op_VecA: return new vecAOper();
+    case Op_VecD: return new vecDOper();
+    case Op_VecX: return new vecXOper();
+  }
+  ShouldNotReachHere();
   return NULL;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
-  ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
 
 bool Matcher::is_generic_vector(MachOper* opnd)  {
-  ShouldNotReachHere();  // generic vector operands not supported
-  return false;
+  return opnd->opcode() == VREG;
 }
 
 // Return whether or not this register is ever used as an argument.
@@ -3205,49 +2983,49 @@ encode %{
   // END Non-volatile memory access
 
   // Vector loads and stores
-  enc_class aarch64_enc_ldrvH(vecD dst, memory mem) %{
+  enc_class aarch64_enc_ldrvH(vReg dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::H,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_ldrvS(vecD dst, memory mem) %{
+  enc_class aarch64_enc_ldrvS(vReg dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::S,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_ldrvD(vecD dst, memory mem) %{
+  enc_class aarch64_enc_ldrvD(vReg dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::D,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_ldrvQ(vecX dst, memory mem) %{
+  enc_class aarch64_enc_ldrvQ(vReg dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::Q,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_strvH(vecD src, memory mem) %{
+  enc_class aarch64_enc_strvH(vReg src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::H,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_strvS(vecD src, memory mem) %{
+  enc_class aarch64_enc_strvS(vReg src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::S,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_strvD(vecD src, memory mem) %{
+  enc_class aarch64_enc_strvD(vReg src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::D,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
-  enc_class aarch64_enc_strvQ(vecX src, memory mem) %{
+  enc_class aarch64_enc_strvQ(vReg src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::Q,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
@@ -3590,7 +3368,7 @@ encode %{
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
       if (rtype == relocInfo::oop_type) {
-        __ movoop(dst_reg, (jobject)con, /*immediate*/true);
+        __ movoop(dst_reg, (jobject)con);
       } else if (rtype == relocInfo::metadata_type) {
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
@@ -3844,7 +3622,7 @@ encode %{
     address call;
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
+      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type));
       if (call == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -3853,7 +3631,7 @@ encode %{
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      call = __ trampoline_call(Address(addr, rspec), &cbuf);
+      call = __ trampoline_call(Address(addr, rspec));
       if (call == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -3861,10 +3639,10 @@ encode %{
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
         // a stub to the interpreter.
-        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+        cbuf.shared_stub_to_interp_for(_method, call - cbuf.insts_begin());
       } else {
         // Emit stub for static call
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
         if (stub == NULL) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -3872,7 +3650,6 @@ encode %{
       }
     }
 
-    _masm.clear_inst_mark();
     __ post_call_nop();
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
@@ -3919,7 +3696,6 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      _masm.clear_inst_mark();
       __ post_call_nop();
     } else {
       Label retaddr;
@@ -4362,46 +4138,6 @@ operand immI_gt_1()
 operand immI_le_4()
 %{
   predicate(n->get_int() <= 4);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immI_31()
-%{
-  predicate(n->get_int() == 31);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immI_2()
-%{
-  predicate(n->get_int() == 2);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immI_4()
-%{
-  predicate(n->get_int() == 4);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immI_8()
-%{
-  predicate(n->get_int() == 8);
   match(ConI);
 
   op_cost(0);
@@ -5457,12 +5193,24 @@ operand vRegD()
 %}
 
 // Generic vector class. This will be used for
-// all vector operands, including NEON and SVE,
-// but currently only used for SVE VecA.
+// all vector operands, including NEON and SVE.
 operand vReg()
+%{
+  constraint(ALLOC_IN_RC(dynamic));
+  match(VecA);
+  match(VecD);
+  match(VecX);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecA()
 %{
   constraint(ALLOC_IN_RC(vectora_reg));
   match(VecA);
+
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -6765,290 +6513,6 @@ pipe_class fp_load_constant_d(vRegD dst)
   dst    : S4(write);
   INS01  : ISS;
   NEON_FP : S4;
-%}
-
-pipe_class vmul64(vecD dst, vecD src1, vecD src2)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src1   : S1(read);
-  src2   : S1(read);
-  INS01  : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vmul128(vecX dst, vecX src1, vecX src2)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src1   : S1(read);
-  src2   : S1(read);
-  INS0   : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vmla64(vecD dst, vecD src1, vecD src2)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src1   : S1(read);
-  src2   : S1(read);
-  dst    : S1(read);
-  INS01  : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vmla128(vecX dst, vecX src1, vecX src2)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src1   : S1(read);
-  src2   : S1(read);
-  dst    : S1(read);
-  INS0   : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vdop64(vecD dst, vecD src1, vecD src2)
-%{
-  single_instruction;
-  dst    : S4(write);
-  src1   : S2(read);
-  src2   : S2(read);
-  INS01  : ISS;
-  NEON_FP : S4;
-%}
-
-pipe_class vdop128(vecX dst, vecX src1, vecX src2)
-%{
-  single_instruction;
-  dst    : S4(write);
-  src1   : S2(read);
-  src2   : S2(read);
-  INS0   : ISS;
-  NEON_FP : S4;
-%}
-
-pipe_class vlogical64(vecD dst, vecD src1, vecD src2)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src1   : S2(read);
-  src2   : S2(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vlogical128(vecX dst, vecX src1, vecX src2)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src1   : S2(read);
-  src2   : S2(read);
-  INS0   : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vshift64(vecD dst, vecD src, vecX shift)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  shift  : S1(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vshift128(vecX dst, vecX src, vecX shift)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  shift  : S1(read);
-  INS0   : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vshift64_imm(vecD dst, vecD src, immI shift)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vshift128_imm(vecX dst, vecX src, immI shift)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  INS0   : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vdop_fp64(vecD dst, vecD src1, vecD src2)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src1   : S1(read);
-  src2   : S1(read);
-  INS01  : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vdop_fp128(vecX dst, vecX src1, vecX src2)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src1   : S1(read);
-  src2   : S1(read);
-  INS0   : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vmuldiv_fp64(vecD dst, vecD src1, vecD src2)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src1   : S1(read);
-  src2   : S1(read);
-  INS0   : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vmuldiv_fp128(vecX dst, vecX src1, vecX src2)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src1   : S1(read);
-  src2   : S1(read);
-  INS0   : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vsqrt_fp128(vecX dst, vecX src)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src    : S1(read);
-  INS0   : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vunop_fp64(vecD dst, vecD src)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src    : S1(read);
-  INS01  : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vunop_fp128(vecX dst, vecX src)
-%{
-  single_instruction;
-  dst    : S5(write);
-  src    : S1(read);
-  INS0   : ISS;
-  NEON_FP : S5;
-%}
-
-pipe_class vdup_reg_reg64(vecD dst, iRegI src)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vdup_reg_reg128(vecX dst, iRegI src)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vdup_reg_freg64(vecD dst, vRegF src)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vdup_reg_freg128(vecX dst, vRegF src)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vdup_reg_dreg128(vecX dst, vRegD src)
-%{
-  single_instruction;
-  dst    : S3(write);
-  src    : S1(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vmovi_reg_imm64(vecD dst)
-%{
-  single_instruction;
-  dst    : S3(write);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vmovi_reg_imm128(vecX dst)
-%{
-  single_instruction;
-  dst    : S3(write);
-  INS0   : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vload_reg_mem64(vecD dst, vmem8 mem)
-%{
-  single_instruction;
-  dst    : S5(write);
-  mem    : ISS(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vload_reg_mem128(vecX dst, vmem16 mem)
-%{
-  single_instruction;
-  dst    : S5(write);
-  mem    : ISS(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vstore_reg_mem64(vecD src, vmem8 mem)
-%{
-  single_instruction;
-  mem    : ISS(read);
-  src    : S2(read);
-  INS01  : ISS;
-  NEON_FP : S3;
-%}
-
-pipe_class vstore_reg_mem128(vecD src, vmem16 mem)
-%{
-  single_instruction;
-  mem    : ISS(read);
-  src    : S2(read);
-  INS01  : ISS;
-  NEON_FP : S3;
 %}
 
 //------- Integer ALU operations --------------------------
@@ -9178,28 +8642,6 @@ instruct castDD(vRegD dst)
 
   size(0);
   format %{ "# castDD of $dst" %}
-  ins_encode(/* empty encoding */);
-  ins_cost(0);
-  ins_pipe(pipe_class_empty);
-%}
-
-instruct castVVD(vecD dst)
-%{
-  match(Set dst (CastVV dst));
-
-  size(0);
-  format %{ "# castVV of $dst" %}
-  ins_encode(/* empty encoding */);
-  ins_cost(0);
-  ins_pipe(pipe_class_empty);
-%}
-
-instruct castVVX(vecX dst)
-%{
-  match(Set dst (CastVV dst));
-
-  size(0);
-  format %{ "# castVV of $dst" %}
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(pipe_class_empty);
@@ -16954,6 +16396,8 @@ instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, 
   ins_pipe(pipe_class_memory);
 %}
 
+// Intrisics for String.compareTo()
+
 instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2, rFlagsReg cr)
 %{
@@ -17025,6 +16469,102 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
                       $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::LU);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+// Note that Z registers alias the corresponding NEON registers, we declare the vector operands of
+// these string_compare variants as NEON register type for convenience so that the prototype of
+// string_compare can be shared with all variants.
+
+instruct string_compareLL_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+                              iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
+                              vRegD_V0 vtmp1, vRegD_V1 vtmp2, pRegGov_P0 pgtmp1,
+                              pRegGov_P1 pgtmp2, rFlagsReg cr)
+%{
+  predicate((UseSVE > 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP vtmp1, TEMP vtmp2, TEMP pgtmp1, TEMP pgtmp2,
+         USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # USE sve" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$Register, $tmp2$$Register,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
+                      as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
+                      StrIntrinsicNode::LL);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_compareLU_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+                              iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
+                              vRegD_V0 vtmp1, vRegD_V1 vtmp2, pRegGov_P0 pgtmp1,
+                              pRegGov_P1 pgtmp2, rFlagsReg cr)
+%{
+  predicate((UseSVE > 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP vtmp1, TEMP vtmp2, TEMP pgtmp1, TEMP pgtmp2,
+         USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # USE sve" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$Register, $tmp2$$Register,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
+                      as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
+                      StrIntrinsicNode::LU);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_compareUL_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+                              iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
+                              vRegD_V0 vtmp1, vRegD_V1 vtmp2, pRegGov_P0 pgtmp1,
+                              pRegGov_P1 pgtmp2, rFlagsReg cr)
+%{
+  predicate((UseSVE > 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP vtmp1, TEMP vtmp2, TEMP pgtmp1, TEMP pgtmp2,
+         USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # USE sve" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$Register, $tmp2$$Register,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
+                      as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
+                      StrIntrinsicNode::UL);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_compareUU_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+                              iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
+                              vRegD_V0 vtmp1, vRegD_V1 vtmp2, pRegGov_P0 pgtmp1,
+                              pRegGov_P1 pgtmp2, rFlagsReg cr)
+%{
+  predicate((UseSVE > 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP vtmp1, TEMP vtmp2, TEMP pgtmp1, TEMP pgtmp2,
+         USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # USE sve" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$Register, $tmp2$$Register,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
+                      as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
+                      StrIntrinsicNode::UU);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -17189,6 +16729,38 @@ instruct stringL_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
     __ stringL_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                             $result$$Register, $tmp1$$Register, $tmp2$$Register,
                             $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct stringL_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
+                                  iRegI_R0 result, vecA ztmp1, vecA ztmp2,
+                                  pRegGov pgtmp, pReg ptmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && ((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  effect(TEMP ztmp1, TEMP ztmp2, TEMP pgtmp, TEMP ptmp, KILL cr);
+  format %{ "StringLatin1 IndexOf char[] $str1,$cnt1,$ch -> $result # use sve" %}
+  ins_encode %{
+    __ string_indexof_char_sve($str1$$Register, $cnt1$$Register, $ch$$Register,
+                               $result$$Register, $ztmp1$$FloatRegister,
+                               $ztmp2$$FloatRegister, $pgtmp$$PRegister,
+                               $ptmp$$PRegister, true /* isL */);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct stringU_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
+                                  iRegI_R0 result, vecA ztmp1, vecA ztmp2,
+                                  pRegGov pgtmp, pReg ptmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && ((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  effect(TEMP ztmp1, TEMP ztmp2, TEMP pgtmp, TEMP ptmp, KILL cr);
+  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result # use sve" %}
+  ins_encode %{
+    __ string_indexof_char_sve($str1$$Register, $cnt1$$Register, $ch$$Register,
+                               $result$$Register, $ztmp1$$FloatRegister,
+                               $ztmp2$$FloatRegister, $pgtmp$$PRegister,
+                               $ptmp$$PRegister, false /* isL */);
   %}
   ins_pipe(pipe_class_memory);
 %}

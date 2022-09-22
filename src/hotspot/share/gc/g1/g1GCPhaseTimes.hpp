@@ -78,6 +78,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     SampleCollectionSetCandidates,
     MergePSS,
     RestoreRetainedRegions,
+    RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
     ResetHotCardCache,
@@ -87,6 +88,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 #endif
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
+    ClearRetainedRegionBitmaps,
     CLDClearClaimedMarks,
     ResetMarkingState,
     NoteStartOfMark,
@@ -140,12 +142,20 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   enum GCMergePSSWorkItems {
     MergePSSCopiedBytes,
+    MergePSSLABSize,
     MergePSSLABWasteBytes,
     MergePSSLABUndoWasteBytes
   };
 
   enum RestoreRetainedRegionsWorkItems {
     RestoreRetainedRegionsNum,
+  };
+
+  enum RemoveSelfForwardsWorkItems {
+    RemoveSelfForwardChunksNum,
+    RemoveSelfForwardEmptyChunksNum,
+    RemoveSelfForwardObjectsNum,
+    RemoveSelfForwardObjectsBytes,
   };
 
   enum GCEagerlyReclaimHumongousObjectsItems {

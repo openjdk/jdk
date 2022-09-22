@@ -32,16 +32,6 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 public class DocletConstants {
 
     /**
-     * The default amount of space between tab stops.
-     */
-    public static final int DEFAULT_TAB_STOP_LENGTH = 8;
-
-    /**
-     * The line separator for the current operating system.
-     */
-    public static final String NL = System.getProperty("line.separator");
-
-    /**
      * The default module or a package name.
      */
     public static final String DEFAULT_ELEMENT_NAME = "<Unnamed>";

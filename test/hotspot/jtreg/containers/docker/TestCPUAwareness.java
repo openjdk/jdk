@@ -58,11 +58,6 @@ public class TestCPUAwareness {
             // cpuset, period, shares, expected Active Processor Count
             testComboWithCpuSets();
 
-            // cpu shares - it should be safe to use CPU shares exceeding available CPUs
-            testCpuShares(256, 1);
-            testCpuShares(2048, 2);
-            testCpuShares(4096, 4);
-
             // leave one CPU for system and tools, otherwise this test may be unstable
             int maxNrOfAvailableCpus =  availableCPUs - 1;
             for (int i=1; i < maxNrOfAvailableCpus; i = i * 2) {
@@ -75,10 +70,11 @@ public class TestCPUAwareness {
             testActiveProcessorCount(2, 2);
 
             // cpu quota and period
-            testCpuQuotaAndPeriod(50*1000, 100*1000);
-            testCpuQuotaAndPeriod(100*1000, 100*1000);
-            testCpuQuotaAndPeriod(150*1000, 100*1000);
-            testCpuQuotaAndPeriod(400*1000, 100*1000);
+            testCpuQuotaAndPeriod(50*1000, 100*1000, false);
+            testCpuQuotaAndPeriod(100*1000, 100*1000, false);
+            testCpuQuotaAndPeriod(150*1000, 100*1000, false);
+            testCpuQuotaAndPeriod(400*1000, 100*1000, false);
+            testCpuQuotaAndPeriod(50*1000, 100*1000, true /* additional cgroup mount */);
 
             testOperatingSystemMXBeanAwareness("0.5", "1");
             testOperatingSystemMXBeanAwareness("1.0", "1");
@@ -100,11 +96,6 @@ public class TestCPUAwareness {
         String cpuSetStr = CPUSetsReader.readFromProcStatus("Cpus_allowed_list");
         System.out.println("cpuSetStr = " + cpuSetStr);
 
-        // OLD = use the deprecated -XX:+UseContainerCpuShares flag, which
-        // will be removed in the next JDK release. See JDK-8281181.
-        boolean OLD = true;
-        boolean NEW = false;
-
         if (cpuSetStr == null) {
             System.out.printf("The cpuset test cases are skipped");
         } else {
@@ -113,32 +104,21 @@ public class TestCPUAwareness {
             // Test subset of cpuset with one element
             if (cpuSet.size() >= 1) {
                 String testCpuSet = CPUSetsReader.listToString(cpuSet, 1);
-                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000,   4*1024, true, 1);
-                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000,   4*1024, true, 1);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000,   4*1024, 1);
             }
 
             // Test subset of cpuset with two elements
             if (cpuSet.size() >= 2) {
                 String testCpuSet = CPUSetsReader.listToString(cpuSet, 2);
-                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 4*1024, true, 2);
-                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
-                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 1023,   false,1);
-
-                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 4*1024, true, 2);
-                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
-                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 1023,   false,2);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 4*1024, 2);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   2);
             }
 
             // Test subset of cpuset with three elements
             if (cpuSet.size() >= 3) {
                 String testCpuSet = CPUSetsReader.listToString(cpuSet, 3);
-                testAPCCombo(OLD, testCpuSet, 100*1000, 100*1000, 2*1024, true, 1);
-                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
-                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 1023,   false,1);
-
-                testAPCCombo(NEW, testCpuSet, 100*1000, 100*1000, 2*1024, true, 1);
-                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
-                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 1023,   false,2);
+                testAPCCombo(testCpuSet, 100*1000, 100*1000, 2*1024, 1);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   2);
             }
         }
     }
@@ -174,7 +154,7 @@ public class TestCPUAwareness {
     }
 
 
-    private static void testCpuQuotaAndPeriod(int quota, int period)
+    private static void testCpuQuotaAndPeriod(int quota, int period, boolean addCgmounts)
         throws Exception {
         Common.logNewTestCase("test cpu quota and period: ");
         System.out.println("quota = " + quota);
@@ -188,6 +168,10 @@ public class TestCPUAwareness {
             .addDockerOpts("--cpu-period=" + period)
             .addDockerOpts("--cpu-quota=" + quota);
 
+        if (addCgmounts) {
+            opts = opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroups-in:ro");
+        }
+
         Common.run(opts)
             .shouldMatch("CPU Period is.*" + period)
             .shouldMatch("CPU Quota is.*" + quota)
@@ -195,20 +179,13 @@ public class TestCPUAwareness {
     }
 
 
-    // Test correctess of automatically selected active processor count
-    // Note: when -XX:+UseContainerCpuShares is removed,
-    // useContainerCpuShares, shares, and usePreferContainerQuotaForCPUCount
-    // should also be removed.
-    private static void testAPCCombo(boolean useContainerCpuShares, String cpuset, int quota, int period, int shares,
-                                     boolean usePreferContainerQuotaForCPUCount,
+    private static void testAPCCombo(String cpuset, int quota, int period, int shares,
                                      int expectedAPC) throws Exception {
         Common.logNewTestCase("test APC Combo");
         System.out.println("cpuset = " + cpuset);
         System.out.println("quota = " + quota);
         System.out.println("period = " + period);
         System.out.println("shares = " + shares);
-        System.out.println("useContainerCpuShares = " + useContainerCpuShares);
-        System.out.println("usePreferContainerQuotaForCPUCount = " + usePreferContainerQuotaForCPUCount);
         System.out.println("expectedAPC = " + expectedAPC);
 
         expectedAPC = adjustExpectedAPCForAvailableCPUs(expectedAPC);
@@ -219,40 +196,10 @@ public class TestCPUAwareness {
             .addDockerOpts("--cpu-quota=" + quota)
             .addDockerOpts("--cpu-shares=" + shares);
 
-        if (useContainerCpuShares) opts.addJavaOpts("-XX:+UseContainerCpuShares");  // deprecated
-        if (!usePreferContainerQuotaForCPUCount) opts.addJavaOpts("-XX:-PreferContainerQuotaForCPUCount");  // deprecated
-
         Common.run(opts)
             .shouldMatch("active_processor_count.*" + expectedAPC);
     }
 
-
-    // Note: when -XX:+UseContainerCpuShares is removed, this test should also be removed.
-    private static void testCpuShares(int shares, int expectedAPC) throws Exception {
-        Common.logNewTestCase("test cpu shares, shares = " + shares);
-        System.out.println("expectedAPC = " + expectedAPC);
-
-        expectedAPC = adjustExpectedAPCForAvailableCPUs(expectedAPC);
-
-        DockerRunOptions opts = Common.newOpts(imageName)
-            .addDockerOpts("--cpu-shares=" + shares);
-        opts.addJavaOpts("-XX:+UseContainerCpuShares"); // deprecated
-        OutputAnalyzer out = Common.run(opts);
-        // Cgroups v2 needs to do some scaling of raw shares values. Hence,
-        // 256 CPU shares come back as 264. Raw value written to cpu.weight
-        // is 10. The reason this works for >= 1024 shares value is because
-        // post-scaling the closest multiple of 1024 is found and returned.
-        //
-        // For values < 1024, this doesn't happen so loosen the match to a
-        // 3-digit number and ensure the active_processor_count is as
-        // expected.
-        if (shares < 1024) {
-            out.shouldMatch("CPU Shares is.*\\d{3}");
-        } else {
-            out.shouldMatch("CPU Shares is.*" + shares);
-        }
-        out.shouldMatch("active_processor_count.*" + expectedAPC);
-    }
 
     private static void testOperatingSystemMXBeanAwareness(String cpuAllocation, String expectedCpus) throws Exception {
         Common.logNewTestCase("Check OperatingSystemMXBean");

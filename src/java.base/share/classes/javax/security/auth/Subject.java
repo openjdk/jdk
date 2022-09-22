@@ -25,20 +25,16 @@
 
 package javax.security.auth;
 
-import java.util.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.security.*;
 import java.text.MessageFormat;
-import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.DomainCombiner;
-import java.security.Principal;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
-import java.security.ProtectionDomain;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.util.ResourcesMgr;
 
 /**
@@ -90,7 +86,7 @@ import sun.security.util.ResourcesMgr;
  * While the Principals associated with the {@code Subject} are serialized,
  * the credentials associated with the {@code Subject} are not.
  * Note that the {@code java.security.Principal} class
- * does not implement {@code Serializable}.  Therefore all concrete
+ * does not implement {@code Serializable}.  Therefore, all concrete
  * {@code Principal} implementations associated with Subjects
  * must implement {@code Serializable}.
  *
@@ -752,7 +748,7 @@ public final class Subject implements java.io.Serializable {
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
-        return new ClassSet<T>(PRINCIPAL_SET, c);
+        return new ClassSet<>(PRINCIPAL_SET, c);
     }
 
     /**
@@ -846,7 +842,7 @@ public final class Subject implements java.io.Serializable {
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
-        return new ClassSet<T>(PUB_CREDENTIAL_SET, c);
+        return new ClassSet<>(PUB_CREDENTIAL_SET, c);
     }
 
     /**
@@ -890,7 +886,7 @@ public final class Subject implements java.io.Serializable {
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
-        return new ClassSet<T>(PRIV_CREDENTIAL_SET, c);
+        return new ClassSet<>(PRIV_CREDENTIAL_SET, c);
     }
 
     /**
@@ -923,9 +919,7 @@ public final class Subject implements java.io.Serializable {
             return true;
         }
 
-        if (o instanceof Subject) {
-
-            final Subject that = (Subject)o;
+        if (o instanceof final Subject that) {
 
             // check the principal and credential sets
             Set<Principal> thatPrincipals;
@@ -1180,7 +1174,7 @@ public final class Subject implements java.io.Serializable {
         SecureSet(Subject subject, int which) {
             this.subject = subject;
             this.which = which;
-            this.elements = new LinkedList<E>();
+            this.elements = new LinkedList<>();
         }
 
         SecureSet(Subject subject, int which, LinkedList<E> list) {
@@ -1195,10 +1189,12 @@ public final class Subject implements java.io.Serializable {
 
         public Iterator<E> iterator() {
             final LinkedList<E> list = elements;
-            return new Iterator<E>() {
-                ListIterator<E> i = list.listIterator(0);
+            return new Iterator<>() {
+                final ListIterator<E> i = list.listIterator(0);
 
-                public boolean hasNext() {return i.hasNext();}
+                public boolean hasNext() {
+                    return i.hasNext();
+                }
 
                 public E next() {
                     if (which != Subject.PRIV_CREDENTIAL_SET) {
@@ -1337,7 +1333,7 @@ public final class Subject implements java.io.Serializable {
                     // For private credentials:
                     // If the caller does not have read permission
                     // for o.getClass(), we throw a SecurityException.
-                    // Otherwise we check the private cred set to see whether
+                    // Otherwise, we check the private cred set to see whether
                     // it contains the Object
 
                     SecurityManager sm = System.getSecurityManager();
@@ -1472,7 +1468,7 @@ public final class Subject implements java.io.Serializable {
                 // The next() method performs a security manager check
                 // on each element in the SecureSet.  If we make it all
                 // the way through we should be able to simply return
-                // element's toArray results.  Otherwise we'll let
+                // element's toArray results.  Otherwise, we'll let
                 // the SecurityException pass up the call stack.
                 e.next();
             }
@@ -1486,7 +1482,7 @@ public final class Subject implements java.io.Serializable {
                 // The next() method performs a security manager check
                 // on each element in the SecureSet.  If we make it all
                 // the way through we should be able to simply return
-                // element's toArray results.  Otherwise we'll let
+                // element's toArray results.  Otherwise, we'll let
                 // the SecurityException pass up the call stack.
                 e.next();
             }
@@ -1586,14 +1582,14 @@ public final class Subject implements java.io.Serializable {
      */
     private class ClassSet<T> extends AbstractSet<T> {
 
-        private int which;
-        private Class<T> c;
-        private Set<T> set;
+        private final int which;
+        private final Class<T> c;
+        private final Set<T> set;
 
         ClassSet(int which, Class<T> c) {
             this.which = which;
             this.c = c;
-            set = new HashSet<T>();
+            set = new HashSet<>();
 
             switch (which) {
             case Subject.PRINCIPAL_SET:

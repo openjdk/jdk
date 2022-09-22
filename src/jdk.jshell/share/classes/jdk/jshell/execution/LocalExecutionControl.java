@@ -24,9 +24,17 @@
  */
 package jdk.jshell.execution;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Label;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
  * An implementation of {@link jdk.jshell.spi.ExecutionControl} which executes
@@ -40,6 +48,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private final Object STOP_LOCK = new Object();
     private boolean userCodeRunning = false;
     private ThreadGroup execThreadGroup;
+    private Field allStop = null;
 
     /**
      * Creates an instance, delegating loader operations to the specified
@@ -58,7 +67,60 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     @Override
+    public void load(ClassBytecodes[] cbcs)
+            throws ClassInstallException, NotImplementedException, EngineTerminationException {
+        super.load(Stream.of(cbcs)
+                .map(cbc -> new ClassBytecodes(cbc.name(), instrument(cbc.bytecodes())))
+                .toArray(ClassBytecodes[]::new));
+    }
+
+    private static byte[] instrument(byte[] classFile) {
+        var reader  = new ClassReader(classFile);
+        var writer = new ClassWriter(reader, 0);
+        reader.accept(new ClassVisitor(Opcodes.ASM9, writer) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                return new MethodVisitor(Opcodes.ASM9, super.visitMethod(access, name, descriptor, signature, exceptions)) {
+                    @Override
+                    public void visitJumpInsn(int opcode, Label label) {
+                        visitMethodInsn(Opcodes.INVOKESTATIC, "REPL/$Cancel$", "stopCheck", "()V", false);
+                        super.visitJumpInsn(opcode, label);
+                    }
+                };
+            }
+        }, 0);
+        return writer.toByteArray();
+    }
+
+    private static ClassBytecodes genCancelClass() {
+        var cancelWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        cancelWriter.visit(Opcodes.V19, Opcodes.ACC_PUBLIC, "REPL/$Cancel$", null, "java/lang/Object", null);
+        cancelWriter.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_VOLATILE, "allStop", "Z", null, null);
+        var checkVisitor = cancelWriter.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "stopCheck", "()V", null, null);
+            checkVisitor.visitCode();
+            checkVisitor.visitFieldInsn(Opcodes.GETSTATIC, "REPL/$Cancel$", "allStop", "Z");
+            var skip = new Label();
+            checkVisitor.visitJumpInsn(Opcodes.IFEQ, skip);
+            checkVisitor.visitTypeInsn(Opcodes.NEW, "java/lang/ThreadDeath");
+            checkVisitor.visitInsn(Opcodes.DUP);
+            checkVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/ThreadDeath", "<init>", "()V", false);
+            checkVisitor.visitInsn(Opcodes.ATHROW);
+            checkVisitor.visitLabel(skip);
+            checkVisitor.visitInsn(Opcodes.RETURN);
+            checkVisitor.visitMaxs(0, 0);
+            checkVisitor.visitEnd();
+        cancelWriter.visitEnd();
+        return new ClassBytecodes("REPL.$Cancel$", cancelWriter.toByteArray());
+    }
+
+    @Override
     protected String invoke(Method doitMethod) throws Exception {
+        if (allStop == null) {
+            super.load(new ClassBytecodes[]{ genCancelClass() });
+            allStop = findClass("REPL.$Cancel$").getDeclaredField("allStop");
+        }
+        allStop.set(null, false);
+
         execThreadGroup = new ThreadGroup("JShell process local execution");
 
         AtomicReference<InvocationTargetException> iteEx = new AtomicReference<>();
@@ -124,7 +186,6 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     @Override
-    @SuppressWarnings({"deprecation", "removal"})
     public void stop() throws EngineTerminationException, InternalException {
         synchronized (STOP_LOCK) {
             if (!userCodeRunning) {
@@ -133,7 +194,11 @@ public class LocalExecutionControl extends DirectExecutionControl {
             if (execThreadGroup == null) {
                 throw new InternalException("Process-local code snippets thread group is null. Aborting stop.");
             }
-
+            try {
+                allStop.set(null, true);
+            } catch (IllegalArgumentException | IllegalAccessException ex) {
+                throw new InternalException("Exception on local stop: " + ex);
+            }
             Thread[] threads;
             int len, threadCount;
             do {
@@ -142,7 +207,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
                 threadCount = execThreadGroup.enumerate(threads);
             } while (threadCount == len);
             for (int i = 0; i < threadCount; i++) {
-                threads[i].stop();
+                threads[i].interrupt();
             }
         }
     }

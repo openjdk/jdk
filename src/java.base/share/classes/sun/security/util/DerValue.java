@@ -120,7 +120,7 @@ public class DerValue {
     /** Tag value indicating an ASN.1 "GeneralizedTime" value. */
     public static final byte    tag_GeneralizedTime = 0x18;
 
-    /** Tag value indicating an ASN.1 "GenerallString" value. */
+    /** Tag value indicating an ASN.1 "GeneralString" value. */
     public static final byte    tag_GeneralString = 0x1B;
 
     /** Tag value indicating an ASN.1 "UniversalString" value. */
@@ -1016,7 +1016,7 @@ public class DerValue {
                     throw new IOException("Parse " + type + " time, +hhmm");
                 }
 
-                time -= ((hr * 60) + min) * 60 * 1000;
+                time -= ((hr * 60L) + min) * 60 * 1000;
                 break;
 
             case '-':
@@ -1032,7 +1032,7 @@ public class DerValue {
                     throw new IOException("Parse " + type + " time, -hhmm");
                 }
 
-                time += ((hr * 60) + min) * 60 * 1000;
+                time += ((hr * 60L) + min) * 60 * 1000;
                 break;
 
             case 'Z':
@@ -1104,10 +1104,9 @@ public class DerValue {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DerValue)) {
+        if (!(o instanceof DerValue other)) {
             return false;
         }
-        DerValue other = (DerValue) o;
         if (tag != other.tag) {
             return false;
         }
