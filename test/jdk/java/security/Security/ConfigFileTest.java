@@ -36,7 +36,7 @@ import java.util.Optional;
 /*
  * @test
  * @summary Throw error if default java.security file is missing
- * @bug 8155246 8292297 8148188
+ * @bug 8155246 8292297 8292177
  * @library /test/lib
  * @run main ConfigFileTest
  */

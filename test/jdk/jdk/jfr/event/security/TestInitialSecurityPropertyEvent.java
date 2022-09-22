@@ -36,7 +36,7 @@ import java.util.Properties;
 
 /*
  * @test
- * @bug 8148188
+ * @bug 8292177
  * @summary InitialSecurityProperty JFR event
  * @key jfr
  * @requires vm.hasJFR
