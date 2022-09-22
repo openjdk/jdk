@@ -559,6 +559,7 @@ public:
     if (_in[i] != NULL) _in[i]->del_out((Node *)this);
     _in[i] = n;
     n->add_out((Node *)this);
+    Compile::current()->record_modified_node(this);
   }
 
   // Set this node's index, used by cisc_version to replace current node

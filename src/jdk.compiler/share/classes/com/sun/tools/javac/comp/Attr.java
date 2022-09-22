@@ -1900,6 +1900,8 @@ public class Attr extends JCTree.Visitor {
                         checkAutoCloseable(resource.pos(), localEnv, resource.type);
 
                         VarSymbol var = ((JCVariableDecl) resource).sym;
+
+                        var.flags_field |= Flags.FINAL;
                         var.setData(ElementKind.RESOURCE_VARIABLE);
                     } else {
                         attribTree(resource, tryEnv, twrResult);
