@@ -303,7 +303,7 @@ public abstract class ClassLoader {
 
     // Synchronization for class loading when the current class loader is NOT
     // parallel capable.  The non-parallel capable class loader locks
-    // the ClassLoader lock. Maps a class name to the thread that is currently
+    // the ClassLoader object. This maps a class name to the thread that is currently
     // loading the class in case the ClassLoader lock is broken.
     private final ConcurrentHashMap<String, Thread> threadLoadingClassMap;
 
@@ -764,7 +764,7 @@ public abstract class ClassLoader {
     // The threadLoadingClassMap is a concurrent hashtable that keeps track of the threads
     // that are currently loading each class by this class loader.  The class name is mapped to
     // the thread that is first seen loading that class, then removed when loading is complete
-    // for that class or throws an exception.
+    // for that class.
     private final Thread curThreadLoadingClass(String name, Thread thread) {
         return threadLoadingClassMap.putIfAbsent(name, thread);
     }
@@ -777,7 +777,7 @@ public abstract class ClassLoader {
     }
 
     // We only get here if the application has released the
-    // classloader lock (wait) when another thread was in the middle of loading a
+    // class loader lock (wait) in the middle of loading a
     // superclass/superinterface for this class, and now
     // this thread is also trying to load this class.
     // To minimize surprises, this thread waits while the first thread
@@ -787,7 +787,6 @@ public abstract class ClassLoader {
         Thread thread;
         boolean interrupted = false;
         while ((thread = curThreadLoadingClass(name, currentThread)) != null) {
-            // Wait while another thread is loading this class name or there's a CCE
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -807,9 +806,9 @@ public abstract class ClassLoader {
         return thread;
     }
 
-    // This function is called by VM to load a class for a non-parallel-capable ClassLoader.
+    // This method is called by VM to load a class for a non-parallel capable ClassLoader.
     // It checks if another thread has released the class loader lock (wait) while loading a class
-    // by this name, and will notify the other thread to continue and complete loading the class.
+    // by this name, and will notify the other thread to continue to complete loading the class.
     // For class circularity checks to be detected, the same thread must completely load the class and
     // its superclasses.
     private final synchronized Class<?> loadClassInternal(String name)
