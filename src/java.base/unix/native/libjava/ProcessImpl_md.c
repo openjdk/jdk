@@ -490,8 +490,6 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     char *buf, buf1[16];
     char *hlpargs[2];
     SpawnInfo sp;
-    posix_spawnattr_t spawnattr;
-    sigset_t unblock_signals;
 
     /* need to tell helper which fd is for receiving the childstuff
      * and which fd to send response back on
@@ -500,14 +498,6 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     /* put the fd string as argument to the helper cmd */
     hlpargs[0] = buf1;
     hlpargs[1] = 0;
-
-    /* Unmask all signals in the child. */
-    sigemptyset(&unblock_signals);
-    if (posix_spawnattr_init(&spawnattr) != 0 ||
-        posix_spawnattr_setflags(&spawnattr, POSIX_SPAWN_SETSIGMASK) != 0 ||
-        posix_spawnattr_setsigmask(&spawnattr, &unblock_signals) != 0) {
-        return -1;      // errno is set
-    }
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.
@@ -542,9 +532,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         }
     }
 
-    rval = posix_spawn(&resultPid, helperpath, 0, &spawnattr, (char * const *) hlpargs, environ);
-
-    posix_spawnattr_destroy(&spawnattr);
+    rval = posix_spawn(&resultPid, helperpath, 0, 0, (char * const *) hlpargs, environ);
 
     if (rval != 0) {
         return -1;
