@@ -547,13 +547,12 @@ void CompileQueue::print(outputStream* st) {
 }
 
 void CompileQueue::print_tty() {
-  ResourceMark rm;
   stringStream ss;
   // Dump the compile queue into a buffer before locking the tty
   print(&ss);
   {
     ttyLocker ttyl;
-    tty->print("%s", ss.as_string());
+    tty->print("%s", ss.freeze());
   }
 }
 
@@ -2023,7 +2022,6 @@ void CompileBroker::maybe_block() {
 // wrapper for CodeCache::print_summary()
 static void codecache_print(bool detailed)
 {
-  ResourceMark rm;
   stringStream s;
   // Dump code cache  into a buffer before locking the tty,
   {
@@ -2031,12 +2029,11 @@ static void codecache_print(bool detailed)
     CodeCache::print_summary(&s, detailed);
   }
   ttyLocker ttyl;
-  tty->print("%s", s.as_string());
+  tty->print("%s", s.freeze());
 }
 
 // wrapper for CodeCache::print_summary() using outputStream
 static void codecache_print(outputStream* out, bool detailed) {
-  ResourceMark rm;
   stringStream s;
 
   // Dump code cache into a buffer
@@ -2351,7 +2348,6 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
-      ResourceMark rm;
       stringStream s;
       // Dump code cache state into a buffer before locking the tty,
       // because log_state() will use locks causing lock conflicts.
@@ -2359,7 +2355,7 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
       // Lock to prevent tearing
       ttyLocker ttyl;
       xtty->begin_elem("code_cache_full");
-      xtty->print("%s", s.as_string());
+      xtty->print("%s", s.freeze());
       xtty->stamp();
       xtty->end_elem();
     }
