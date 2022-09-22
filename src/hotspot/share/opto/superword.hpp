@@ -584,6 +584,8 @@ class SuperWord : public ResourceObj {
   Node_List* in_pack(Node* s, Node_List* p);
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
+  // Remove the pack in the packset
+  void remove_pack(Node_List* p);
   // Return the node executed first in pack p.
   Node* executed_first(Node_List* p);
   // Return the node executed last in pack p.
