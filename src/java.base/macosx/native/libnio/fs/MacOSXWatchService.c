@@ -38,7 +38,7 @@ JNIEXPORT void JNICALL
 Java_sun_nio_fs_MacOSXWatchService_initIDs(JNIEnv* env, __unused jclass clazz)
 {
     callbackMID = (*env)->GetMethodID(env, clazz,
-                                      "callback", "(J[Ljava/lang/String;J)V");
+                                      "handleEvents", "(J[Ljava/lang/String;J)V");
 }
 
 extern CFStringRef
@@ -86,9 +86,6 @@ callback(__unused ConstFSEventStreamRef streamRef,
          __unused const FSEventStreamEventId eventIds[])
 {
     JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    if (!env) { // Shouldn't happen as run loop starts from Java code
-        return;
-    }
 
     // We can get more events at once than the number of Java array elements,
     // so report them in chunks.

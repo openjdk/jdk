@@ -126,9 +126,9 @@ class MacOSXWatchService extends AbstractWatchService {
      * Invoked on the CFRunLoopThread by the native code to report directories
      * that need to be re-scanned.
      */
-    private void callback(final long eventStreamRef,
-                          final String[] paths,
-                          final long eventFlagsPtr) {
+    private void handleEvents(final long eventStreamRef,
+                              final String[] paths,
+                              final long eventFlagsPtr) {
         synchronized (watchKeysLock) {
             final MacOSXWatchKey watchKey = eventStreamToWatchKey.get(eventStreamRef);
             if (watchKey != null) {
@@ -382,6 +382,9 @@ class MacOSXWatchService extends AbstractWatchService {
         }
 
         private boolean updateNeeded(String[] paths, long eventFlagsPtr) {
+            // FSEventStreamEventFlags is UInt32.
+            final long SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS = 4L;
+
             boolean rootChanged = false;
             for (final String absPath : paths) {
                 if (absPath == null) {
@@ -393,6 +396,7 @@ class MacOSXWatchService extends AbstractWatchService {
 
                 if (!relativeRootPath.equals(path)) {
                     // Ignore events from subdirectories for now.
+                    eventFlagsPtr += SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS;
                     continue;
                 }
 
@@ -406,8 +410,6 @@ class MacOSXWatchService extends AbstractWatchService {
                     rootChanged = true;
                 }
 
-                // FSEventStreamEventFlags is UInt32.
-                final long SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS = 4L;
                 eventFlagsPtr += SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS;
             }
 
