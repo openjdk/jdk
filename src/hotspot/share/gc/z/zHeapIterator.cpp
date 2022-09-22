@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -236,6 +236,9 @@ ZHeapIterator::~ZHeapIterator() {
   for (uint i = 0; i < _queues.size(); i++) {
     delete _queues.queue(i);
   }
+
+  // Clear claimed CLD bits
+  ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
 }
 
 static size_t object_index_max() {
