@@ -179,12 +179,20 @@ address os::fetch_frame_from_context(const void* ucVoid,
 
   if (uc != NULL) {
     epc = os::Posix::ucontext_get_pc(uc);
-    if (ret_sp) *ret_sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
-    if (ret_fp) *ret_fp = (intptr_t *)os::Linux::ucontext_get_fp(uc);
+    if (ret_sp) {
+      *ret_sp = (intptr_t*) os::Linux::ucontext_get_sp(uc);
+    }
+    if (ret_fp) {
+      *ret_fp = (intptr_t*) os::Linux::ucontext_get_fp(uc);
+    }
   } else {
     epc = NULL;
-    if (ret_sp) *ret_sp = nullptr;
-    if (ret_fp) *ret_fp = nullptr;
+    if (ret_sp) {
+      *ret_sp = nullptr;
+    }
+    if (ret_fp) {
+      *ret_fp = nullptr;
+    }
   }
 
   return epc;
