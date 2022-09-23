@@ -25,31 +25,36 @@
 
 package build.tools.taglet;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.ModuleElement;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet;
-import static jdk.javadoc.doclet.Taglet.Location.*;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+
+import java.io.*;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+
+import static java.lang.System.lineSeparator;
+import static jdk.javadoc.doclet.Taglet.Location.TYPE;
 
 /**
  * A block tag to optionally insert a reference to a sealed class hierarchy graph.
  */
 public class SealedGraph implements Taglet {
     private static final String sealedGraphDotPath =
-        System.getProperty("sealedGraphDotPath");
+            System.getProperty("sealedGraphDotPath", "/Users/pemi/git/oracle/magicus-jdk/open/");
 
     private DocletEnvironment docletEnvironment;
 
-    /** Returns the set of locations in which a taglet may be used. */
+    /**
+     * Returns the set of locations in which a taglet may be used.
+     */
     @Override
     public Set<Location> getAllowedLocations() {
         return EnumSet.of(TYPE);
@@ -83,51 +88,101 @@ public class SealedGraph implements Taglet {
         File dotFile = new File(sealedGraphDotPath,
                 module.getQualifiedName() + "_" + typeElement.getQualifiedName() + ".dot");
 
-        try (PrintWriter out = new PrintWriter(dotFile)) {
-            out.println("""
-                digraph G {
-                labelloc="b";
-                label="The Public Sealed Hierarchy of java.lang.foreign.MemoryLayout";
-                rankdir="BT";
-                GroupLayout -> MemoryLayout;
-                StructLayout -> GroupLayout;
-                UnionLayout -> GroupLayout;
-                PaddingLayout -> MemoryLayout;
-                SequenceLayout -> MemoryLayout;
-                ValueLayout -> MemoryLayout;
-                OfAddress -> ValueLayout;
-                OfBoolean -> ValueLayout;
-                OfByte -> ValueLayout;
-                OfChar -> ValueLayout;
-                OfDouble -> ValueLayout;
-                OfFloat -> ValueLayout;
-                OfInt -> ValueLayout;
-                OfLong -> ValueLayout;
-                OfShort -> ValueLayout;
-                }
-            """);
+        String dotContent = Renderer.graph(typeElement);
+
+        try (PrintWriter pw = new PrintWriter(dotFile)) {
+            pw.println(dotContent);
         } catch (FileNotFoundException e) {
-            // FIXME: Please handle better than just ignoring
+            throw new RuntimeException(e);
         }
 
         String simpleTypeName = element.getSimpleName().toString();
         String imageFile = simpleTypeName + "-sealed-graph.svg";
         int thumbnailHeight = -1;
         return "<dt>Sealed Class Hierarchy Graph:</dt>"
-            + "<dd>"
-            + "<a class=\"sealed-graph\" href=\"" + imageFile + "\">"
-            + getImage(simpleTypeName, imageFile, thumbnailHeight)
-            + "</a>"
-            + "</dd>";
+                + "<dd>"
+                + "<a class=\"sealed-graph\" href=\"" + imageFile + "\">"
+                + getImage(simpleTypeName, imageFile, thumbnailHeight)
+                + "</a>"
+                + "</dd>";
     }
 
     private static final String VERTICAL_ALIGN = "vertical-align:top";
 
     private String getImage(String moduleName, String file, int height) {
         return String.format("<img style=\"%s\" alt=\"Sealed class hierarchy graph for %s\" src=\"%s\"%s>",
-                             VERTICAL_ALIGN,
-                             moduleName,
-                             file,
-                             (height <= 0 ? "" : " height=\"" + height + "\""));
+                VERTICAL_ALIGN,
+                moduleName,
+                file,
+                (height <= 0 ? "" : " height=\"" + height + "\""));
     }
+
+    private static final class Renderer {
+
+        private Renderer() {
+        }
+
+        // Generates a graph in DOT format
+        static String graph(TypeElement rootClass) {
+            final State state = new State(rootClass);
+            traverse(state, rootClass);
+            return state.render();
+        }
+
+        static void traverse(State state, TypeElement node) {
+            for (TypeElement subNode : permittedSubclasses(node)) {
+                state.addEdge(node, subNode);
+                traverse(state, subNode);
+            }
+        }
+
+        private static final class State {
+
+            private final StringBuilder builder;
+
+            public State(TypeElement rootNode) {
+                builder = new StringBuilder()
+                        .append("digraph G {")
+                        .append(lineSeparator())
+/*                        .append("  labelloc=\"b\";")
+                        .append(lineSeparator())
+                        .append("  label=\"The Public Sealed Hierarchy of ")
+                        .append(rootNode.getName())
+                        .append("\";")
+                        .append(lineSeparator())*/
+                        .append("  rankdir=\"BT\";")
+                        .append(lineSeparator());
+            }
+
+            public void addEdge(TypeElement node, TypeElement subNode) {
+                if (subNode.toString().contains(".internal")) {
+                    // Do not expose internal classes
+                    return;
+                }
+                builder.append("  ")
+                        .append('"').append(subNode.getSimpleName()).append('"')
+                        .append(" -> ")
+                        .append('"').append(node.getSimpleName()).append('"')
+                        .append(";")
+                        .append(lineSeparator());
+            }
+
+            public String render() {
+                builder.append("}");
+                return builder.toString();
+            }
+
+        }
+
+        private static List<TypeElement> permittedSubclasses(TypeElement node) {
+            return node.getPermittedSubclasses().stream()
+                    .filter(DeclaredType.class::isInstance)
+                    .map(DeclaredType.class::cast)
+                    .map(DeclaredType::asElement)
+                    .filter(TypeElement.class::isInstance)
+                    .map(TypeElement.class::cast)
+                    .toList();
+        }
+    }
+
 }
