@@ -37,7 +37,7 @@ import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.actions.CustomSelectAction;
 import com.sun.hotspot.igv.view.actions.CustomizablePanAction;
-import com.sun.hotspot.igv.view.actions.MouseCenteredZoomAction;
+import com.sun.hotspot.igv.view.actions.MouseZoomAction;
 import com.sun.hotspot.igv.view.widgets.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -61,7 +61,6 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Sheet;
 import org.openide.util.Lookup;
-import org.openide.util.Utilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 
@@ -96,12 +95,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
      * The offset of the graph to the border of the window showing it.
      */
     public static final int BORDER_SIZE = 20;
-
-
     public static final int UNDOREDO_LIMIT = 100;
     public static final int SCROLL_UNIT_INCREMENT = 80;
     public static final int SCROLL_BLOCK_INCREMENT = 400;
-    public static final float ZOOM_MAX_FACTOR = 3.0f;
+    public static final float ZOOM_MAX_FACTOR = 4.0f;
     public static final float ZOOM_MIN_FACTOR = 0.1f;
     public static final float ZOOM_INCREMENT = 1.5f;
     public static final int SLOT_OFFSET = 8;
@@ -161,13 +158,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     @Override
-    public void zoomIn(Point zoomCenter) {
-        centredZoom(getZoomFactor() * ZOOM_INCREMENT, zoomCenter);
+    public void zoomIn(Point zoomCenter, double factor) {
+        centredZoom(getZoomFactor() * factor, zoomCenter);
     }
 
     @Override
-    public void zoomOut(Point zoomCenter) {
-        centredZoom(getZoomFactor() / ZOOM_INCREMENT, zoomCenter);
+    public void zoomOut(Point zoomCenter, double factor) {
+        centredZoom(getZoomFactor() / factor, zoomCenter);
     }
 
     @Override
@@ -308,7 +305,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         getScrollPane().getViewport().setViewPosition(p);
     }
 
-    private JScrollPane createScrollPane() {
+    private JScrollPane createScrollPane(MouseZoomAction mouseZoomAction) {
         setBackground(Color.WHITE);
         setOpaque(true);
 
@@ -327,10 +324,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         scrollPane.getVerticalScrollBar().setBlockIncrement(SCROLL_BLOCK_INCREMENT);
         scrollPane.getHorizontalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
         scrollPane.getHorizontalScrollBar().setBlockIncrement(SCROLL_BLOCK_INCREMENT);
-
-
         scrollPane.getViewport().setScrollMode(JViewport.BACKINGSTORE_SCROLL_MODE);
-
 
         // remove the default MouseWheelListener of the JScrollPane
         for (MouseWheelListener listener: scrollPane.getMouseWheelListeners()) {
@@ -339,43 +333,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         // add a new MouseWheelListener for zooming if the mouse is outside the viewComponent
         // but still inside the scrollPane
-
-        scrollPane.addMouseWheelListener(new MouseWheelListener() {
-            private final int modifiers = Utilities.isMac() ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK;
-            @Override
-            public void mouseWheelMoved(MouseWheelEvent event) {
-                if ((event.getModifiersEx() & modifiers) != modifiers) {
-                    // If modifier key is not pressed, use wheel for panning
-                    JComponent view = DiagramScene.this.getView();
-                    Rectangle visibleRect = view.getVisibleRect();
-                    int amount = event.getWheelRotation() * 64;
-                    switch (event.getModifiers() & 11) {
-                        case 0:
-                            visibleRect.y += amount;
-                            break;
-                        case 1:
-                            visibleRect.x += amount;
-                            break;
-                        default:
-                            return;
-                    }
-                    view.scrollRectToVisible(visibleRect);
-                    return;
-                }
-
-                Rectangle visibleRect = DiagramScene.this.getView().getVisibleRect();
-                Point zoomCenter = new Point(visibleRect.x + visibleRect.width / 2, visibleRect.y + visibleRect.height / 2);
-                zoomCenter = DiagramScene.this.convertViewToScene(zoomCenter);
-
-                int n = event.getWheelRotation();
-                if (n > 0) {
-                    DiagramScene.this.zoomOut(null);
-                } else if (n < 0) {
-                    DiagramScene.this.zoomIn(null);
-                }
-            }
-        });
-
+        scrollPane.addMouseWheelListener(mouseZoomAction);
         return scrollPane;
     }
     private ObjectSceneListener selectionChangedListener = new ObjectSceneListener() {
@@ -477,7 +435,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         this.setCheckClipping(true);
 
-        scrollPane = createScrollPane();
+        MouseZoomAction mouseZoomAction = new MouseZoomAction(this);
+        scrollPane = createScrollPane(mouseZoomAction);
 
         hoverAction = createObjectHoverAction();
 
@@ -527,7 +486,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         this.setBorder(BorderFactory.createLineBorder(Color.white, BORDER_SIZE));
         this.setLayout(LayoutFactory.createAbsoluteLayout());
-        this.getActions().addAction( new MouseCenteredZoomAction(this));
+        this.getActions().addAction(mouseZoomAction);
         this.getActions().addAction(ActionFactory.createPopupMenuAction(popupMenuProvider));
 
         LayerWidget selectLayer = new LayerWidget(this);

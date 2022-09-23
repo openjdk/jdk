@@ -57,9 +57,9 @@ public interface DiagramViewer {
 
     Component getComponent();
 
-    void zoomOut(Point zoomCenter);
+    void zoomOut(Point zoomCenter, double speed);
 
-    void zoomIn(Point zoomCenter);
+    void zoomIn(Point zoomCenter, double speed);
 
     void setZoomPercentage(int percentage);
     int getZoomPercentage();
@@ -79,4 +79,5 @@ public interface DiagramViewer {
 
     Rectangle getBounds();
 
+    JComponent getView();
 }

@@ -272,11 +272,11 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     public void zoomOut() {
-        scene.zoomOut(null);
+        scene.zoomOut(null, DiagramScene.ZOOM_INCREMENT);
     }
 
     public void zoomIn() {
-        scene.zoomIn(null);
+        scene.zoomIn(null, DiagramScene.ZOOM_INCREMENT);
     }
 
     public void setZoomLevel(int percentage) {
