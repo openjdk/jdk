@@ -87,10 +87,6 @@ DISABLED_WARNINGS_gcc := ignored-qualifiers comment int-in-bool-context \
     array-bounds implicit-fallthrough parentheses missing-field-initializers \
     delete-non-virtual-dtor unknown-pragmas maybe-uninitialized
 
-ifeq ($(call check-jvm-feature, zero), true)
-  DISABLED_WARNINGS_gcc += return-type switch clobbered
-endif
-
 DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
