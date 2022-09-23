@@ -61,7 +61,7 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
             output.holderTag = tags.get(0);
             output.inlineTags = input.isFirstSentence
                     ? ch.getFirstSentenceTrees(output.holderTag)
-                    : ch.getReference(output.holderTag);
+                    : ch.getTags(output.holderTag);
         }
     }
 
