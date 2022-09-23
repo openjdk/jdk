@@ -58,9 +58,6 @@ public class SecurityTools {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(tool)
                 .addVMArg("-Duser.language=en")
                 .addVMArg("-Duser.country=US");
-        if (!Platform.isWindows()) {
-            launcher.addVMArg("-Djava.security.egd=file:/dev/./urandom");
-        }
         for (String arg : args) {
             if (arg.startsWith("-J")) {
                 launcher.addVMArg(arg.substring(2));
