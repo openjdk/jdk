@@ -27,8 +27,11 @@ name: 'OpenJDK Downstreaming'
 
 on:
   schedule:
-    # Trigger on every day at 07:00 UTC (09:00 CET, 00:00 PT)
-    - cron: '0 6 * * 1-5'
+    # Trigger on Sunday to Friday at 21:00 UTC (23:00 CET, 14:00 PT)
+    # It triggers at least 9 hours before start of the working day in CET
+    # since that's when I would want to review it. And given GHA takes a long
+    # time to run, we want to start doing it as early as possible
+    - cron: '0 21 * * 0-4'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -44,25 +47,36 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.WORKFLOW_TOKEN }}
-      - name: "Create Pull Request"
+
+      - name: "Fetch"
+        id: fetch
         run: |
-          # 1. fetch
           git remote add upstream https://github.com/openjdk/jdk.git
           git fetch --tags upstream master
 
-          # 2. push
           TAG=$(git tag | grep --extended-regexp '^jdk\-.*' | sort --version-sort | tail --lines 1 | tr --delete '\n')
           test -n "$TAG"
-          git checkout -b rivos/merge-upstream $TAG
-          git push origin rivos/merge-upstream $TAG
 
-          # 3. pr
+          echo "::set-output name=tag::$TAG"
+
+      - name: "Push"
+        run: |
+          git push origin ${{ steps.fetch.outputs.tag }}
+
+          git checkout -B master ${{ steps.fetch.outputs.tag }}
+          git push origin master
+
+          git checkout -B rivos/merge-upstream ${{ steps.fetch.outputs.tag }}
+          git push origin rivos/merge-upstream
+
+      - name: "Create PR"
+        run: |
           gh pr create \
             --repo rivosinc/jdk \
             --base rivos/main \
             --head rivos/merge-upstream \
-            --title "Merge $TAG into rivos/main" \
-            --body "This is an automated pull request." \
+            --title "Merge ${{ steps.fetch.outputs.tag }} into rivos/main" \
+            --body "" \
             --reviewer "luhenry" || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
