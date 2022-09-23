@@ -360,6 +360,7 @@ template <typename E, typename Derived>
 class GrowableArrayWithAllocator : public GrowableArrayView<E> {
   friend class VMStructs;
 
+  void expand_to(int j);
   void grow(int j);
 
 protected:
@@ -484,15 +485,21 @@ public:
     ::swap(this->_capacity, other->_capacity);
   }
 
+  // Ensure capacity is at least new_capacity.
+  void reserve(int new_capacity);
+
+  // Reduce capacity to length.
+  void shrink_to_fit();
+
   void clear_and_deallocate();
 };
 
 template <typename E, typename Derived>
-void GrowableArrayWithAllocator<E, Derived>::grow(int j) {
+void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
   int old_capacity = this->_capacity;
-  // grow the array by increasing _capacity to the first power of two larger than the size we need
-  this->_capacity = next_power_of_2((uint32_t)j);
-  // j < _capacity
+  assert(new_capacity > old_capacity,
+         "expected growth but %d <= %d", new_capacity, old_capacity);
+  this->_capacity = new_capacity;
   E* newData = static_cast<Derived*>(this)->allocate();
   int i = 0;
   for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(this->_data[i]);
@@ -505,16 +512,50 @@ void GrowableArrayWithAllocator<E, Derived>::grow(int j) {
 }
 
 template <typename E, typename Derived>
-void GrowableArrayWithAllocator<E, Derived>::clear_and_deallocate() {
-  if (this->_data != NULL) {
-    for (int i = 0; i < this->_capacity; i++) {
-      this->_data[i].~E();
-    }
-    static_cast<Derived*>(this)->deallocate(this->_data);
-    this->_data = NULL;
+void GrowableArrayWithAllocator<E, Derived>::grow(int j) {
+  // grow the array by increasing _capacity to the first power of two larger than the size we need
+  expand_to(next_power_of_2((uint32_t)j));
+}
+
+template <typename E, typename Derived>
+void GrowableArrayWithAllocator<E, Derived>::reserve(int new_capacity) {
+  if (new_capacity > this->_capacity) {
+    expand_to(new_capacity);
   }
-  this->_len = 0;
-  this->_capacity = 0;
+}
+
+template <typename E, typename Derived>
+void GrowableArrayWithAllocator<E, Derived>::shrink_to_fit() {
+  int old_capacity = this->_capacity;
+  int len = this->_len;
+  assert(len <= old_capacity, "invariant");
+
+  // If already at full capacity, nothing to do.
+  if (len == old_capacity) {
+    return;
+  }
+
+  // If not empty, allocate new, smaller, data, and copy old data to it.
+  E* old_data = this->_data;
+  E* new_data = nullptr;
+  this->_capacity = len;        // Must preceed allocate().
+  if (len > 0) {
+    new_data = static_cast<Derived*>(this)->allocate();
+    for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(old_data[i]);
+  }
+  // Destroy contents of old data, and deallocate it.
+  for (int i = 0; i < old_capacity; ++i) old_data[i].~E();
+  if (old_data != nullptr) {
+    static_cast<Derived*>(this)->deallocate(old_data);
+  }
+  // Install new data, which might be nullptr.
+  this->_data = new_data;
+}
+
+template <typename E, typename Derived>
+void GrowableArrayWithAllocator<E, Derived>::clear_and_deallocate() {
+  this->clear();
+  this->shrink_to_fit();
 }
 
 class GrowableArrayResourceAllocator {
