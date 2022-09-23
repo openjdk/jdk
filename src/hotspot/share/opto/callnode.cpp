@@ -1454,7 +1454,7 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   assert(Opcode() == Op_SafePoint, "only value for safepoint in loops");
   int nb = igvn->C->root()->find_prec_edge(this);
   if (nb != -1) {
-    igvn->C->root()->rm_prec(nb);
+    igvn->delete_precedence_of(igvn->C->root(), nb);
   }
 }
 

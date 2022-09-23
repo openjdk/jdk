@@ -58,11 +58,12 @@ class AsyncLogWriter : public NonJavaThread {
   friend class AsyncLogTest;
   friend class AsyncLogTest_logBuffer_vm_Test;
   class AsyncLogLocker;
+
+  // account for dropped messages
+  template <ResourceObj::allocation_type ALLOC_TYPE>
   using AsyncLogMap = ResourceHashtable<LogFileStreamOutput*,
-                          uint32_t,
-                          17, /*table_size*/
-                          ResourceObj::C_HEAP,
-                          mtLogging>;
+                          uint32_t, 17, /*table_size*/
+                          ALLOC_TYPE, mtLogging>;
 
   // Messsage is the envelop of a log line and its associative data.
   // Its length is variable because of the zero-terminated c-str. It is only valid when we create it using placement new
@@ -154,7 +155,7 @@ class AsyncLogWriter : public NonJavaThread {
   PlatformMonitor _lock;
   bool _data_available;
   volatile bool _initialized;
-  AsyncLogMap _stats; // statistics for dropped messages
+  AsyncLogMap<ResourceObj::C_HEAP> _stats;
 
   // ping-pong buffers
   Buffer* _buffer;
