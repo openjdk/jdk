@@ -262,7 +262,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
     __ bind(local_guard);
 
-    assert(__ offset() % 4 == 0, "bad alignment");
+    MacroAssembler::assert_alignment(__ pc());
     __ emit_int32(0); // nmethod guard value. Skipped over in common case.
     __ bind(skip_barrier);
   } else {
