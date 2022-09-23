@@ -178,16 +178,6 @@ import java.lang.module.ModuleFinder;
  * </tr>
  *
  * <tr>
- *   <th scope="row">stopThread</th>
- *   <td>Stopping of threads via calls to the Thread {@code stop}
- * method</td>
- *   <td>This allows code to stop any thread in the system provided that it is
- * already granted permission to access that thread.
- * This poses as a threat, because that code may corrupt the system by
- * killing existing threads.</td>
- * </tr>
- *
- * <tr>
  *   <th scope="row">modifyThreadGroup</th>
  *   <td>modification of thread groups, e.g., via calls to ThreadGroup
  * {@code getParent}, {@code setDaemon}, and {@code setMaxPriority} methods</td>

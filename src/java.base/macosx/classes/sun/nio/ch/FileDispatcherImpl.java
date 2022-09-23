@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,35 @@
  * questions.
  */
 
-package java.lang;
+package sun.nio.ch;
 
-/**
- * An instance of {@code ThreadDeath} was originally specified to be thrown
- * by a victim thread when "stopped" with {@link Thread#stop()}.
- *
- * @deprecated {@link Thread#stop()} was originally specified to "stop" a victim
- *      thread by causing the victim thread to throw a {@code ThreadDeath}. It
- *      was inherently unsafe and deprecated in an early JDK release. The ability
- *      to "stop" a thread with {@code Thread.stop} has been removed and the
- *      {@code Thread.stop} method changed to throw an exception. Consequently,
- *      {@code ThreadDeath} is also deprecated, for removal.
- *
- * @since   1.0
- */
-@Deprecated(since="20", forRemoval=true)
-public class ThreadDeath extends Error {
-    @java.io.Serial
-    private static final long serialVersionUID = -4417128565033088268L;
+import java.io.FileDescriptor;
+import java.io.IOException;
 
-    /**
-     * Constructs a {@code ThreadDeath}.
-     */
-    public ThreadDeath() {}
+class FileDispatcherImpl extends UnixFileDispatcherImpl {
+    FileDispatcherImpl() {
+        super();
+    }
+
+    int force(FileDescriptor fd, boolean metaData) throws IOException {
+        return force0(fd, metaData);
+    }
+
+    boolean canTransferToFromOverlappedMap() {
+        return false;
+    }
+
+    long transferTo(FileDescriptor src, long position, long count,
+                    FileDescriptor dst, boolean append) {
+        return transferTo0(src, position, count, dst, append);
+    }
+
+    // -- Native methods --
+
+    static native int force0(FileDescriptor fd, boolean metaData)
+        throws IOException;
+
+    static native long transferTo0(FileDescriptor src, long position,
+                                   long count, FileDescriptor dst,
+                                   boolean append);
 }

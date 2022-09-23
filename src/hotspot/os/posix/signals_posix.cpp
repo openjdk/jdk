@@ -624,6 +624,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     signal_was_handled = true; // unconditionally.
   }
 
+#ifndef ZERO
   // Check for UD trap caused by NOP patching.
   // If it is, patch return address to be deopt handler.
   if (!signal_was_handled) {
@@ -648,6 +649,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       }
     }
   }
+#endif // !ZERO
 
   // Call platform dependent signal handler.
   if (!signal_was_handled) {
