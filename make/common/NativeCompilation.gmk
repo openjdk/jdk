@@ -349,18 +349,20 @@ define SetupCompileNativeFileBody
     endif
 
     $1_BASE_CFLAGS :=  $$($$($1_BASE)_CFLAGS) $$($$($1_BASE)_EXTRA_CFLAGS) \
-        $$($$($1_BASE)_SYSROOT_CFLAGS) $$($1_WARNINGS_FLAGS)
+        $$($$($1_BASE)_SYSROOT_CFLAGS)
     $1_BASE_CXXFLAGS := $$($$($1_BASE)_CXXFLAGS) $$($$($1_BASE)_EXTRA_CXXFLAGS) \
-        $$($$($1_BASE)_SYSROOT_CFLAGS) $$($1_EXTRA_CXXFLAGS) $$($1_WARNINGS_FLAGS)
+        $$($$($1_BASE)_SYSROOT_CFLAGS) $$($1_EXTRA_CXXFLAGS)
     $1_BASE_ASFLAGS := $$($$($1_BASE)_ASFLAGS) $$($$($1_BASE)_EXTRA_ASFLAGS)
 
     ifneq ($$(filter %.c, $$($1_FILENAME)), )
       # Compile as a C file
+      $1_CFLAGS += $$($1_WARNINGS_FLAGS)
       $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CFLAGS) \
           $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CC)
     else ifneq ($$(filter %.m, $$($1_FILENAME)), )
       # Compile as an Objective-C file
+      $1_CFLAGS += $$($1_WARNINGS_FLAGS)
       $1_FLAGS := -x objective-c $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) \
           $$($1_BASE_CFLAGS) $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CC)
@@ -384,6 +386,7 @@ define SetupCompileNativeFileBody
       endif
     else ifneq ($$(filter %.cpp %.cc %.mm, $$($1_FILENAME)), )
       # Compile as a C++ or Objective-C++ file
+      $1_CXXFLAGS += $$($1_WARNINGS_FLAGS)
       $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CXXFLAGS) \
           $$($1_OPT_CXXFLAGS) $$($1_CXXFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CXX)
