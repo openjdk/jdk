@@ -155,6 +155,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_abstractDisassembler.cpp := shift-negative-value, \
     DISABLED_WARNINGS_gcc_assembler_aarch64.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_c1_LIR.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_c1_LIRGenerator_ppc.cpp := shift-negative-value, \
     DISABLED_WARNINGS_gcc_dict.cpp := char-subscripts, \
     DISABLED_WARNINGS_gcc_g1CardSet.cpp := shift-negative-value, \
     DISABLED_WARNINGS_gcc_javaClasses.cpp := misleading-indentation, \
