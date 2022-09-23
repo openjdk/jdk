@@ -38,6 +38,8 @@ import org.openide.util.Utilities;
 
 public class MouseZoomAction extends WidgetAction.Adapter implements MouseWheelListener {
 
+    public static final int PAN_INCREMENT = 32;
+
     private static final int MODIFIER = Utilities.isMac() ? InputEvent.META_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
     private final DiagramViewer scene;
     private int prev_n;
@@ -51,7 +53,7 @@ public class MouseZoomAction extends WidgetAction.Adapter implements MouseWheelL
         // If modifier key is not pressed, use wheel for panning
         JComponent view = scene.getView();
         Rectangle visibleRect = view.getVisibleRect();
-        int amount = wheelRotation * 32;
+        int amount = wheelRotation * PAN_INCREMENT;
         if (modifiersEx == 0) {
             visibleRect.y += amount;
         } else if (modifiersEx == InputEvent.SHIFT_DOWN_MASK) {
@@ -96,9 +98,7 @@ public class MouseZoomAction extends WidgetAction.Adapter implements MouseWheelL
             }
         }
 
-        Point sceneMouseLocation = widget.convertLocalToScene(event.getPoint());
-        int n = event.getWheelRotation();
-        if (performZooming(sceneMouseLocation, n)) {
+        if (performZooming(widget.convertLocalToScene(event.getPoint()), event.getWheelRotation())) {
             return State.CONSUMED;
         } else {
             return State.REJECTED;
