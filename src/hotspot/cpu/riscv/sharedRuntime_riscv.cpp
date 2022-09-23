@@ -896,7 +896,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ bnez(c_rarg2, call_thaw);
 
     // Make sure the call is patchable
-    __ align(4);
+    __ align(NativeInstruction::instruction_size);
 
     const address tr_call = __ trampoline_call(resolve);
 
@@ -923,7 +923,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ bnez(c_rarg2, call_thaw);
 
   // Make sure the call is patchable
-  __ align(4);
+  __ align(NativeInstruction::instruction_size);
 
   const address tr_call = __ trampoline_call(resolve);
 
