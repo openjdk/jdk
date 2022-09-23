@@ -177,6 +177,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_management.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_os_posix.cpp := mismatched-tags missing-field-initializers, \
     DISABLED_WARNINGS_clang_postaloc.cpp := tautological-undefined-compare, \
+    DISABLED_WARNINGS_clang_vm_version_x86.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_zTracer.cpp := undefined-var-template, \
     DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
