@@ -2127,21 +2127,6 @@ public:
     }
   };
 
-public:
-  // Emit a relocation.
-  void relocate(address at, RelocationHolder const& rspec, int format = 0) {
-    code_section()->relocate(at, rspec, format);
-  }
-  void relocate(address at, relocInfo::relocType rtype, int format = 0, jint method_index = 0) {
-    code_section()->relocate(at, rtype, format, method_index);
-  }
-  void relocate(RelocationHolder const& rspec, int format = 0) {
-    AbstractAssembler::relocate(rspec, format);
-  }
-  void relocate(relocInfo::relocType rtype, int format = 0) {
-    AbstractAssembler::relocate(rtype, format);
-  }
-
   // patch a 16-bit instruction.
   static void c_patch(address a, unsigned msb, unsigned lsb, uint16_t val) {
     assert_cond(a != NULL);
