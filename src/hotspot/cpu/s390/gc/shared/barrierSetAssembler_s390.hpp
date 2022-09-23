@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,6 +41,7 @@ public:
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        const Address& addr, Register dst, Register tmp1, Register tmp2, Label *L_handle_null = NULL);
+  virtual void nmethod_entry_barrier(MacroAssembler* masm, Register tmp);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3);
 

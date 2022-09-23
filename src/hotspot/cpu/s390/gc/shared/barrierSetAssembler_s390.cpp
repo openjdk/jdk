@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,9 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/jniHandles.hpp"
@@ -66,6 +68,19 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   }
   default: Unimplemented();
   }
+}
+
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register tmp) {
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm == nullptr) {
+    return;
+  }
+
+  __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
+
+    ShouldNotReachHere(); // TODO
+
+  __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
