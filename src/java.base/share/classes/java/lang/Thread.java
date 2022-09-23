@@ -1629,59 +1629,19 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Forces the thread to stop executing.
-     * <p>
-     * If there is a security manager installed, its {@code checkAccess}
-     * method is called with {@code this}
-     * as its argument. This may result in a
-     * {@code SecurityException} being raised (in the current thread).
-     * <p>
-     * If this thread is different from the current thread (that is, the current
-     * thread is trying to stop a thread other than itself), the
-     * security manager's {@code checkPermission} method (with a
-     * {@code RuntimePermission("stopThread")} argument) is called in
-     * addition.
-     * Again, this may result in throwing a
-     * {@code SecurityException} (in the current thread).
-     * <p>
-     * The thread represented by this thread is forced to stop whatever
-     * it is doing abnormally and to throw a newly created
-     * {@code ThreadDeath} object as an exception.
-     * <p>
-     * It is permitted to stop a thread that has not yet been started.
-     * If the thread is eventually started, it immediately terminates.
-     * <p>
-     * An application should not normally try to catch
-     * {@code ThreadDeath} unless it must do some extraordinary
-     * cleanup operation (note that the throwing of
-     * {@code ThreadDeath} causes {@code finally} clauses of
-     * {@code try} statements to be executed before the thread
-     * officially terminates).  If a {@code catch} clause catches a
-     * {@code ThreadDeath} object, it is important to rethrow the
-     * object so that the thread actually terminates.
-     * <p>
-     * The top-level error handler that reacts to otherwise uncaught
-     * exceptions does not print out a message or otherwise notify the
-     * application if the uncaught exception is an instance of
-     * {@code ThreadDeath}.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * @throws     SecurityException  if the current thread cannot
-     *             modify this thread.
-     * @throws     UnsupportedOperationException if invoked on a virtual thread
-     * @see        #interrupt()
-     * @see        #checkAccess()
-     * @see        ThreadDeath
-     * @see        ThreadGroup#uncaughtException(Thread,Throwable)
-     * @see        SecurityManager#checkAccess(Thread)
-     * @see        SecurityManager#checkPermission
-     * @deprecated This method is inherently unsafe.  Stopping a thread with
-     *       Thread.stop causes it to unlock all of the monitors that it
-     *       has locked (as a natural consequence of the unchecked
-     *       {@code ThreadDeath} exception propagating up the stack).  If
+     * @throws  UnsupportedOperationException always
+     *
+     * @deprecated This method was originally specified to "stop" a victim
+     *       thread by causing the victim thread to throw a {@link ThreadDeath}.
+     *       It was inherently unsafe. Stopping a thread caused it to unlock
+     *       all of the monitors that it had locked (as a natural consequence
+     *       of the {@code ThreadDeath} exception propagating up the stack). If
      *       any of the objects previously protected by these monitors were in
-     *       an inconsistent state, the damaged objects become visible to
-     *       other threads, potentially resulting in arbitrary behavior.  Many
-     *       uses of {@code stop} should be replaced by code that simply
+     *       an inconsistent state, the damaged objects became visible to
+     *       other threads, potentially resulting in arbitrary behavior.
+     *       Usages of {@code stop} should be replaced by code that simply
      *       modifies some variable to indicate that the target thread should
      *       stop running.  The target thread should check this variable
      *       regularly, and return from its run method in an orderly fashion
@@ -1695,26 +1655,7 @@ public class Thread implements Runnable {
      */
     @Deprecated(since="1.2", forRemoval=true)
     public final void stop() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            checkAccess();
-            if (this != Thread.currentThread()) {
-                security.checkPermission(SecurityConstants.STOP_THREAD_PERMISSION);
-            }
-        }
-
-        if (isVirtual())
-            throw new UnsupportedOperationException();
-
-        // A zero status value corresponds to "NEW", it can't change to
-        // not-NEW because we hold the lock.
-        if (holder.threadStatus != 0) {
-            resume(); // Wake up thread if it was suspended; no-op otherwise
-        }
-
-        // The VM can handle all thread states
-        stop0(new ThreadDeath());
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -3094,7 +3035,6 @@ public class Thread implements Runnable {
 
     /* Some private helper methods */
     private native void setPriority0(int newPriority);
-    private native void stop0(Object o);
     private native void suspend0();
     private native void resume0();
     private native void interrupt0();

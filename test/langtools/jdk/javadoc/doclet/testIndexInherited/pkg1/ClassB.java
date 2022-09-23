@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-package com.sun.hotspot.igv.graph.services;
-
-import com.sun.hotspot.igv.data.ChangedEvent;
-import com.sun.hotspot.igv.graph.Diagram;
+package pkg1;
 
 /**
- *
- * @author Thomas Wuerthinger
+ * A public subclass in the same package as its superclass.
  */
-public interface DiagramProvider {
-    Diagram getDiagram();
-    ChangedEvent<DiagramProvider> getChangedEvent();
+public class ClassB implements ClassA {
 
+    /**
+     * The sole constructor.
+     */
+    public ClassB() {
+    }
+
+    /**
+     * A public method.
+     */
+    public void methodB() {
+        System.out.println(ClassB.class.getName() + ": " + STRING_A);
+    }
 }
