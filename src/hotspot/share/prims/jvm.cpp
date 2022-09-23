@@ -2926,9 +2926,6 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     if (java_lang_Thread::thread(JNIHandles::resolve_non_null(jthread)) != NULL) {
       throw_illegal_thread_state = true;
     } else {
-      // We could also check the stillborn flag to see if this thread was already stopped, but
-      // for historical reasons we let the thread detect that itself when it starts running
-
       jlong size =
              java_lang_Thread::stackSize(JNIHandles::resolve_non_null(jthread));
       // Allocate the C++ Thread structure and create the native thread.  The

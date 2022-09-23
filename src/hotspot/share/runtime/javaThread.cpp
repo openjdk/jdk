@@ -687,11 +687,9 @@ void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
   assert(_threadObj.peek() != NULL, "just checking");
 
-  // Execute thread entry point unless this thread has a pending exception
-  // or has been stopped before starting.
-  // Note: Due to JVM_StopThread we can have pending exceptions already!
-  if (!this->has_pending_exception() &&
-      !java_lang_Thread::is_stillborn(this->threadObj())) {
+  // Execute thread entry point unless this thread has a pending exception.
+  // Note: Due to JVMTI StopThread we can have pending exceptions already!
+  if (!this->has_pending_exception()) {
     {
       ResourceMark rm(this);
       this->set_native_thread_name(this->name());
