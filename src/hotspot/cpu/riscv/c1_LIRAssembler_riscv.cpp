@@ -2147,16 +2147,6 @@ void LIR_Assembler::typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile
   __ bind(done);
 }
 
-void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {
-  _masm->code_section()->relocate(adr, relocInfo::poll_type);
-  int pc_offset = code_offset();
-  flush_debug_info(pc_offset);
-  info->record_debug_info(compilation()->debug_info_recorder(), pc_offset);
-  if (info->exception_handlers() != NULL) {
-    compilation()->add_exception_handlers_for_pco(pc_offset, info->exception_handlers());
-  }
-}
-
 void LIR_Assembler::type_profile(Register obj, ciMethodData* md, Register klass_RInfo, Register k_RInfo,
                                  ciProfileData* data, Label* success, Label* failure,
                                  Label& profile_cast_success, Label& profile_cast_failure) {
