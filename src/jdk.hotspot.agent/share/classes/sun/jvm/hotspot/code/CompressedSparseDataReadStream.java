@@ -25,9 +25,9 @@ package sun.jvm.hotspot.code;
 
 import sun.jvm.hotspot.debugger.*;
 
-public class CompressedSparceDataReadStream extends CompressedReadStream {
+public class CompressedSparseDataReadStream extends CompressedReadStream {
 
-  public CompressedSparceDataReadStream(Address buffer, int position) {
+  public CompressedSparseDataReadStream(Address buffer, int position) {
     super(buffer, position);
     curr_byte_ = (byte) read();
   }
@@ -39,7 +39,7 @@ public class CompressedSparceDataReadStream extends CompressedReadStream {
     byte b = (byte) (curr_byte_ << byte_pos_);
     curr_byte_ = (byte) read();
     if (byte_pos_ > 0) {
-      b |= (0xFF & curr_byte_) >> (8 - byte_pos_);
+      b |= (byte) ((0xFF & curr_byte_) >> (8 - byte_pos_));
     }
     return b;
   }

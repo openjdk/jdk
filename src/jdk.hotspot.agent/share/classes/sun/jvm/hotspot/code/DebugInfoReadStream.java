@@ -31,7 +31,7 @@ import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.oops.Method;
 
-public class DebugInfoReadStream extends CompressedSparceDataReadStream {
+public class DebugInfoReadStream extends CompressedSparseDataReadStream {
   private NMethod code;
   private int InvocationEntryBCI;
   private List<ObjectValue> objectPool;
