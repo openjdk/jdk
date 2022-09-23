@@ -255,7 +255,7 @@ void G1ConcurrentRefine::adjust_after_gc(double logged_cards_scan_time_ms,
 // the next GC is longer.  But don't increase the wait time too rapidly.
 // This reduces the number of primary thread wakeups that just immediately
 // go back to waiting, while still being responsive to behavior changes.
-static uint64_t compute_adjust_delay(double available_ms) {
+static uint64_t compute_adjust_wait_time_ms(double available_ms) {
   return static_cast<uint64_t>(sqrt(available_ms) * 4.0);
 }
 
@@ -263,8 +263,8 @@ uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
   assert_current_thread_is_primary_refinement_thread();
   if (is_pending_cards_target_initialized()) {
     double available_ms = _threads_needed.predicted_time_until_next_gc_ms();
-    uint64_t delay = compute_adjust_delay(available_ms);
-    return MAX2(delay, adjust_threads_period_ms());
+    uint64_t wait_time_ms = compute_adjust_wait_time_ms(available_ms);
+    return MAX2(wait_time_ms, adjust_threads_period_ms());
   } else {
     // If target not yet initialized then wait forever (until explicitly
     // activated).  This happens during startup, when we don't bother with
