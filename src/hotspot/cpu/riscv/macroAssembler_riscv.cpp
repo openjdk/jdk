@@ -241,6 +241,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     set_last_Java_frame(last_java_sp, last_java_fp, target(L), tmp);
   } else {
     L.add_patch_at(code(), locator());
+    IncompressibleRegion ir(this);  // the label address will be patched back.
     set_last_Java_frame(last_java_sp, last_java_fp, pc() /* Patched later */, tmp);
   }
 }
@@ -758,6 +759,7 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
 }
 
 void MacroAssembler::la(Register Rd, Label &label) {
+  IncompressibleRegion ir(this);   // the label address may be patched back.
   la(Rd, target(label));
 }
 
