@@ -151,6 +151,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
+    DISABLED_WARNINGS_gcc_abstractCompiler.cpp := shift-negative-value, \
+    DISABLED_WARNINGS_gcc_abstractDisassembler.cpp := shift-negative-value, \
     DISABLED_WARNINGS_gcc_assembler_aarch64.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_c1_LIR.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_dict.cpp := char-subscripts, \
