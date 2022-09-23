@@ -650,8 +650,8 @@ public:
     emit(insn);                                                                                          \
   }
 
-  INSN(_beq, 0b1100011, 0b000);
-  INSN(_bne, 0b1100011, 0b001);
+  INSN(beq, 0b1100011, 0b000);
+  INSN(bne, 0b1100011, 0b001);
   INSN(bge,  0b1100011, 0b101);
   INSN(bgeu, 0b1100011, 0b111);
   INSN(blt,  0b1100011, 0b100);
@@ -868,7 +868,7 @@ public:
     emit(insn);                                                                               \
   }
 
-  INSN(_jal, 0b1101111);
+  INSN(jal, 0b1101111);
 
 #undef INSN
 
@@ -2851,42 +2851,7 @@ public:
 #undef INSN
 
 // --------------------------
-// Conditional branch instructions
-// --------------------------
-#define INSN(NAME, C_NAME, NORMAL_NAME)                                                      \
-  void NAME(Register Rs1, Register Rs2, const int64_t offset) {                              \
-    /* beq/bne -> c.beqz/c.bnez */                                                           \
-    if (do_compress() &&                                                                     \
-        (offset != 0 && Rs2 == x0 && Rs1->is_compressed_valid() &&                           \
-        is_imm_in_range(offset, 8, 1))) {                                                    \
-      C_NAME(Rs1, offset);                                                                   \
-      return;                                                                                \
-    }                                                                                        \
-    NORMAL_NAME(Rs1, Rs2, offset);                                                           \
-  }
-
-  INSN(beq, c_beqz, _beq);
-  INSN(bne, c_bnez, _bne);
-
-#undef INSN
-
-// --------------------------
 // Unconditional branch instructions
-// --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, const int32_t offset) {                                             \
-    /* jal -> c.j */                                                                         \
-    if (do_compress() && offset != 0 && Rd == x0 && is_imm_in_range(offset, 11, 1)) {        \
-      c_j(offset);                                                                           \
-      return;                                                                                \
-    }                                                                                        \
-    _jal(Rd, offset);                                                                        \
-  }
-
-  INSN(jal);
-
-#undef INSN
-
 // --------------------------
 #define INSN(NAME)                                                                           \
   void NAME(Register Rd, Register Rs, const int32_t offset) {                                \
