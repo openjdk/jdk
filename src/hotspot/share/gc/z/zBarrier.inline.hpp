@@ -726,6 +726,16 @@ inline void ZBarrier::store_barrier_on_native_oop_field(volatile zpointer* p, bo
   barrier(is_store_good_fast_path, native_store_slow_path, color_store_good, (heal ? p : NULL), prev);
 }
 
+inline void ZBarrier::no_keep_alive_store_barrier_on_heap_oop_field(volatile zpointer* p) {
+  const zpointer prev = load_atomic(p);
+
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::no_keep_alive_heap_store_slow_path(p, addr);
+  };
+
+  barrier(is_store_good_fast_path, slow_path, color_store_good, NULL, prev);
+}
+
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
 inline void ZBarrier::mark(zaddress addr) {
   assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");

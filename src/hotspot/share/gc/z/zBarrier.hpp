@@ -112,6 +112,7 @@ private:
   static zaddress keep_alive_slow_path(zaddress addr);
   static zaddress heap_store_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal);
   static zaddress native_store_slow_path(zaddress addr);
+  static zaddress no_keep_alive_heap_store_slow_path(volatile zpointer* p, zaddress addr);
 
   static zaddress promote_slow_path(zaddress addr);
 
@@ -167,6 +168,8 @@ public:
   // Store barrier
   static void store_barrier_on_heap_oop_field(volatile zpointer* p, bool heal);
   static void store_barrier_on_native_oop_field(volatile zpointer* p, bool heal);
+
+  static void no_keep_alive_store_barrier_on_heap_oop_field(volatile zpointer* p);
 };
 
 #endif // SHARE_GC_Z_ZBARRIER_HPP

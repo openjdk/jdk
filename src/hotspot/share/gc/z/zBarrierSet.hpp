@@ -66,6 +66,7 @@ public:
 
     static void store_barrier_heap_with_healing(zpointer* p);
     static void store_barrier_heap_without_healing(zpointer* p);
+    static void no_keep_alive_store_barrier_heap(zpointer* p);
 
     static void store_barrier_native_with_healing(zpointer* p);
     static void store_barrier_native_without_healing(zpointer* p);
@@ -75,6 +76,7 @@ public:
     static zaddress load_barrier_on_unknown_oop_ref(oop base, ptrdiff_t offset, narrowOop* p, zpointer o) { unsupported(); return zaddress::null; }
     static void store_barrier_heap_with_healing(narrowOop* p) { unsupported(); }
     static void store_barrier_heap_without_healing(narrowOop* p)  { unsupported(); }
+    static void no_keep_alive_store_barrier_heap(narrowOop* p)  { unsupported(); }
     static void store_barrier_native_with_healing(narrowOop* p)  { unsupported(); }
     static void store_barrier_native_without_healing(narrowOop* p)  { unsupported(); }
 
