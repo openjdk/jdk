@@ -337,18 +337,6 @@ ClassFileStream* ClassPathZipEntry::open_stream(JavaThread* current, const char*
                              ClassFileStream::verify);
 }
 
-// invoke function for each entry in the zip file
-void ClassPathZipEntry::contents_do(void f(const char* name, void* context), void* context) {
-  JavaThread* thread = JavaThread::current();
-  HandleMark  handle_mark(thread);
-  ThreadToNativeFromVM ttn(thread);
-  for (int n = 0; ; n++) {
-    jzentry * ze = ((*GetNextEntry)(_zip, n));
-    if (ze == NULL) break;
-    (*f)(ze->name, context);
-  }
-}
-
 DEBUG_ONLY(ClassPathImageEntry* ClassPathImageEntry::_singleton = NULL;)
 
 JImageFile* ClassPathImageEntry::jimage() const {
