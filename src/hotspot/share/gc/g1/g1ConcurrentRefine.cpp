@@ -295,7 +295,7 @@ bool G1ConcurrentRefine::adjust_threads_periodically() {
     if (Heap_lock->try_lock()) {
       size_t available_bytes = _policy->estimate_available_eden_bytes_locked();
       Heap_lock->unlock();
-      adjust_threads_needed(available_bytes);
+      adjust_threads_wanted(available_bytes);
       _needs_adjust = false;
       _last_adjust = Ticks::now();
       return true;
@@ -309,7 +309,7 @@ bool G1ConcurrentRefine::is_in_last_adjustment_period() const {
   return _threads_needed.predicted_time_until_next_gc_ms() <= adjust_threads_period_ms();
 }
 
-void G1ConcurrentRefine::adjust_threads_needed(size_t available_bytes) {
+void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
   assert_current_thread_is_primary_refinement_thread();
   size_t num_cards = _dcqs.num_cards();
   size_t mutator_threshold = SIZE_MAX;
@@ -319,14 +319,14 @@ void G1ConcurrentRefine::adjust_threads_needed(size_t available_bytes) {
                          available_bytes,
                          num_cards,
                          _pending_cards_target);
-  uint new_needed = _threads_needed.threads_needed();
-  if (new_needed > _thread_control.max_num_threads()) {
+  uint new_wanted = _threads_needed.threads_needed();
+  if (new_wanted > _thread_control.max_num_threads()) {
     // If running all the threads can't reach goal, turn on refinement by
     // mutator threads.  Using target as the threshold may be stronger
     // than required, but will do the most to get us under goal, and we'll
     // reevaluate with the next adjustment.
     mutator_threshold = _pending_cards_target;
-    new_needed = _thread_control.max_num_threads();
+    new_wanted = _thread_control.max_num_threads();
   } else if (is_in_last_adjustment_period()) {
     // If very little time remains until GC, enable mutator refinement.  If
     // the target has been reached, this keeps the number of pending cards on
@@ -335,17 +335,17 @@ void G1ConcurrentRefine::adjust_threads_needed(size_t available_bytes) {
     // worse.
     mutator_threshold = _pending_cards_target;
   }
-  Atomic::store(&_threads_wanted, new_needed);
+  Atomic::store(&_threads_wanted, new_wanted);
   _dcqs.set_max_cards(mutator_threshold);
-  log_debug(gc, refine)("Updating refinement threads: needed %u, cards: %zu, "
+  log_debug(gc, refine)("Updating refinement threads: wanted %u, cards: %zu, "
                         "predicted: %zu, time: %1.2fms",
-                        new_needed,
+                        new_wanted,
                         num_cards,
                         _threads_needed.predicted_cards_at_next_gc(),
                         _threads_needed.predicted_time_until_next_gc_ms());
   // Activate newly wanted threads.  The current thread is the primary
   // refinement thread, so is already active.
-  for (uint i = MAX2(old_wanted, 1u); i < new_needed; ++i) {
+  for (uint i = MAX2(old_wanted, 1u); i < new_wanted; ++i) {
     if (!_thread_control.activate(i)) {
       // Failed to allocate and activate thread.  Stop trying to activate, and
       // instead use mutator threads to make up the gap.

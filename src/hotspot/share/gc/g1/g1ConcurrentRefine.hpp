@@ -143,7 +143,7 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
 
   uint64_t adjust_threads_period_ms() const;
   bool is_in_last_adjustment_period() const;
-  void adjust_threads_needed(size_t available_bytes);
+  void adjust_threads_wanted(size_t available_bytes);
 
   NONCOPYABLE(G1ConcurrentRefine);
 

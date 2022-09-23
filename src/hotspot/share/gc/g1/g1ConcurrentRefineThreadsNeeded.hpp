@@ -51,7 +51,8 @@ public:
               size_t num_cards,
               size_t target_num_cards);
 
-  // The number of refinement threads needed.
+  // Estimate of the number of active refinement threads needed to reach the
+  // target before the next GC.
   uint threads_needed() const { return _threads_needed; }
 
   // Estimate of the time until the next GC.
