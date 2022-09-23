@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 6187113
- * @summary  Verifies if 
+ * @summary  Verifies if
  *  DefaultListSelectionModel.removeIndexInterval(0, Integer.MAX_VALUE) fails
  * @run main TestDefListModelExcpn
  */
