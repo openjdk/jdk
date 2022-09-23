@@ -43,7 +43,7 @@ class DegradedMethodsThrowUOE {
      */
     static Stream<Consumer<Thread>> ops() {
         return Stream.<Consumer<Thread>>of(
-                // Thread::stop,
+                Thread::stop,
                 Thread::suspend,
                 Thread::resume,
                 Thread::countStackFrames
