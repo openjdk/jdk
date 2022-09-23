@@ -3064,7 +3064,7 @@ public:
   // zero extend word
   void zext_w(Register Rd, Register Rs);
 
-  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(false) {
+  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {
   }
 
   // Stack overflow checking
