@@ -324,7 +324,7 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
   assert_alignment(pc());
-  nop();
+  nop(false);  // 4 bytes
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {

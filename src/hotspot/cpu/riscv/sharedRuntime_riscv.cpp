@@ -939,7 +939,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // First instruction must be a nop as it may need to be patched on deoptimisation
     MacroAssembler::assert_alignment(__ pc());
-    __ nop();
+    __ nop(false);  // 4 bytes
     gen_special_dispatch(masm,
                          method,
                          in_sig_bt,
@@ -1091,7 +1091,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.
   MacroAssembler::assert_alignment(__ pc());
-  __ nop();
+  __ nop(false);  // 4 bytes
 
   if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
     Label L_skip_barrier;
