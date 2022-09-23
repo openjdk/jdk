@@ -4144,7 +4144,6 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
   }
 }
 
-
 void MacroAssembler::move_float_to_integer_or_stack(VMRegPair src, VMRegPair dst, Register tmp) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {

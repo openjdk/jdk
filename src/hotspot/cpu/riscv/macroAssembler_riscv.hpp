@@ -889,7 +889,6 @@ public:
                    int* receiver_offset);
   void move_double_to_integer_or_stack(VMRegPair src, VMRegPair dst, Register tmp = t0);
   void move_float_to_integer_or_stack(VMRegPair src, VMRegPair dst, Register tmp = t0);
-
   void rt_call(address dest, Register tmp = t0);
 
 private:

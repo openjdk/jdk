@@ -55,17 +55,18 @@ public class RISCV64Architecture implements Architecture {
     // Enumeration values of below two interfaces must consistent with riscv64 backend.
     public interface RegTypes {
         int INTEGER = 0;
-        int FLOAT = 1;
-        int STACK = 2;
+        int FLOAT = 1 << 8;
+        int STACK = 2 << 8;
     }
 
     public interface StorageClasses {
-        int INTEGER_8 = 3;
-        int INTEGER_16 = 4;
-        int INTEGER_32 = 5;
-        int INTEGER_64 = 6;
-        int FLOAT_32 = 7;
-        int FLOAT_64 = 8;
+        int INTEGER_8 = RegTypes.INTEGER | 8;
+        int INTEGER_16 = RegTypes.INTEGER | 16;
+        int INTEGER_32 = RegTypes.INTEGER | 32;
+        int INTEGER_64 = RegTypes.INTEGER | 64;
+        int FLOAT_32 = RegTypes.FLOAT | 32;
+        int FLOAT_64 = RegTypes.FLOAT | 64;
+        int STACK_SLOT = RegTypes.STACK;
 
         public static int fromTypeClass(TypeClass typeClass) {
             return switch (typeClass) {
@@ -174,16 +175,13 @@ public class RISCV64Architecture implements Architecture {
 
     @Override
     public int typeSize(int cls) {
-        switch (cls) {
-            case RegTypes.INTEGER, StorageClasses.INTEGER_8, StorageClasses.INTEGER_16,
-                    StorageClasses.INTEGER_32, StorageClasses.INTEGER_64:
-                return INTEGER_REG_SIZE;
-            case RegTypes.FLOAT, StorageClasses.FLOAT_32, StorageClasses.FLOAT_64:
-                return FLOAT_REG_SIZE;
-            case RegTypes.STACK:
-                return STACK_SLOT_SIZE;
-        }
-        throw new IllegalArgumentException("Invalid Storage Class: " + cls);
+        return switch (cls) {
+            case StorageClasses.INTEGER_8, StorageClasses.INTEGER_16,
+                    StorageClasses.INTEGER_32, StorageClasses.INTEGER_64 -> INTEGER_REG_SIZE;
+            case StorageClasses.FLOAT_32, StorageClasses.FLOAT_64 -> FLOAT_REG_SIZE;
+            case StorageClasses.STACK_SLOT -> STACK_SLOT_SIZE;
+            default -> throw new IllegalArgumentException("Invalid type: " + cls);
+        };
     }
 
     @Override
