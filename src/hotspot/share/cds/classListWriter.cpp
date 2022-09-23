@@ -40,7 +40,7 @@ void ClassListWriter::init() {
   // For -XX:DumpLoadedClassList=<file> option
   if (DumpLoadedClassList != NULL) {
     const char* list_name = make_log_name(DumpLoadedClassList, NULL);
-    _classlist_file = new(ResourceObj::C_HEAP, mtInternal)
+    _classlist_file = new(mtInternal)
                          fileStream(list_name);
     _classlist_file->print_cr("# NOTE: Do not modify this file.");
     _classlist_file->print_cr("#");

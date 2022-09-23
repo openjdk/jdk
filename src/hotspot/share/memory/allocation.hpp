@@ -216,6 +216,48 @@ template <MEMFLAGS F> class CHeapObj {
   void  operator delete [] (void* p) { FreeHeap(p); }
 };
 
+class DynCHeapObj {
+ public:
+  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS F) throw() {
+    return (void*)AllocateHeap(size, F);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size,
+                                  const NativeCallStack& stack, MEMFLAGS F) throw() {
+    return (void*)AllocateHeap(size, F, stack);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&,
+                                  const NativeCallStack& stack, MEMFLAGS F) throw() {
+    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&, MEMFLAGS F) throw() {
+    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS F) throw() {
+    return (void*)AllocateHeap(size, F);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size,
+                                    const NativeCallStack& stack, MEMFLAGS F) throw() {
+    return (void*)AllocateHeap(size, F, stack);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&,
+                                    const NativeCallStack& stack, MEMFLAGS F) throw() {
+    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&, MEMFLAGS F) throw() {
+    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  }
+
+  void  operator delete(void* p)     { FreeHeap(p); }
+  void  operator delete [] (void* p) { FreeHeap(p); }
+};
+
 // Base class for objects allocated on the stack only.
 // Calling new or delete will result in fatal error.
 

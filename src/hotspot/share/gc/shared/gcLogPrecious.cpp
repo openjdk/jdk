@@ -33,8 +33,8 @@ stringStream* GCLogPrecious::_temp = NULL;
 Mutex* GCLogPrecious::_lock = NULL;
 
 void GCLogPrecious::initialize() {
-  _lines = new (ResourceObj::C_HEAP, mtGC) stringStream();
-  _temp = new (ResourceObj::C_HEAP, mtGC) stringStream();
+  _lines = new (mtGC) stringStream();
+  _temp = new (mtGC) stringStream();
   _lock = new Mutex(Mutex::event, /* The lowest lock rank I could find */
                     "GCLogPrecious Lock");
 }

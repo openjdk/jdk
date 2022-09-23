@@ -36,6 +36,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -4409,7 +4410,7 @@ void Compile::print_inlining_init() {
   if (print_inlining() || print_intrinsics()) {
     // print_inlining_init is actually called several times.
     print_inlining_stream_free();
-    _print_inlining_stream = new stringStream();
+    _print_inlining_stream = new (mtCompiler) stringStream();
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer*>(comp_arena(), 1, 1, new PrintInliningBuffer());
   }
 }
@@ -4418,7 +4419,7 @@ void Compile::print_inlining_reinit() {
   if (print_inlining() || print_intrinsics()) {
     print_inlining_stream_free();
     // Re allocate buffer when we change ResourceMark
-    _print_inlining_stream = new stringStream();
+    _print_inlining_stream = new (mtCompiler) stringStream();
   }
 }
 

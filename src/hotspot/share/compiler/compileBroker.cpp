@@ -1960,7 +1960,7 @@ void CompileBroker::init_compiler_thread_log() {
         if (LogCompilation && Verbose) {
           tty->print_cr("Opening compilation log %s", file_name);
         }
-        CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file_name, fp, thread_id);
+        CompileLog* log = new(mtCompiler) CompileLog(file_name, fp, thread_id);
         if (log == NULL) {
           fclose(fp);
           return;
