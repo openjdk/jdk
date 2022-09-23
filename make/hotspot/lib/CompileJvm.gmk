@@ -93,11 +93,8 @@ ifeq ($(call check-jvm-feature, zero), true)
   DISABLED_WARNINGS_gcc += return-type switch clobbered
 endif
 
-DISABLED_WARNINGS_clang := tautological-compare \
-    undefined-var-template sometimes-uninitialized unknown-pragmas \
-    delete-non-virtual-dtor missing-braces char-subscripts \
-    ignored-qualifiers missing-field-initializers mismatched-tags \
-    shift-negative-value misleading-indentation
+DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
+    missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
@@ -157,6 +154,15 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
+    DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_clang_dict.cpp := char-subscripts, \
+    DISABLED_WARNINGS_clang_directivesParser.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_clang_g1ParScanThreadState.cpp := delete-abstract-non-virtual-dtor, \
+    DISABLED_WARNINGS_clang_g1YoungGCPostEvacuateTasks.cpp := delete-abstract-non-virtual-dtor, \
+    DISABLED_WARNINGS_clang_management.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_clang_os_posix.cpp := mismatched-tags missing-field-initializers, \
+    DISABLED_WARNINGS_clang_postaloc.cpp := tautological-undefined-compare, \
+    DISABLED_WARNINGS_clang_zTracer.cpp := undefined-var-template, \
     DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
