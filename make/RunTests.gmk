@@ -854,8 +854,8 @@ define SetupRunJtregTestBody
           -dir:$$(JTREG_TOPDIR) \
           -reportDir:$$($1_TEST_RESULTS_DIR) \
           -workDir:$$($1_TEST_SUPPORT_DIR) \
-          -status:$$$${JTREG_STATUS} \
           -report:$$$${JTREG_REPORT} \
+          $$$${JTREG_STATUS} \
           $$(JTREG_OPTIONS) \
           $$(JTREG_FAILURE_HANDLER_OPTIONS) \
           $$(JTREG_COV_OPTIONS) \
