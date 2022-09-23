@@ -48,7 +48,7 @@ import static jdk.javadoc.doclet.Taglet.Location.TYPE;
  */
 public class SealedGraph implements Taglet {
     private static final String sealedGraphDotPath =
-            System.getProperty("sealedGraphDotPath", "/Users/pemi/git/oracle/magicus-jdk/open/");
+            System.getProperty("sealedGraphDotPath");
 
     private DocletEnvironment docletEnvironment;
 
