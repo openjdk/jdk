@@ -200,19 +200,19 @@ uint G1ConcurrentRefine::max_num_threads() {
   return G1ConcRefinementThreads;
 }
 
-void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_scan_time_ms,
+void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_time_ms,
                                                      size_t processed_logged_cards,
                                                      size_t predicted_thread_buffer_cards,
                                                      double goal_ms) {
   size_t minimum = minimum_pending_cards_target();
-  if ((processed_logged_cards < minimum) || (logged_cards_scan_time_ms == 0.0)) {
+  if ((processed_logged_cards < minimum) || (logged_cards_time_ms == 0.0)) {
     log_debug(gc, ergo, refine)("Unchanged pending cards target: %zu",
                                 _pending_cards_target);
     return;
   }
 
   // Base the pending cards budget on the measured rate.
-  double rate = processed_logged_cards / logged_cards_scan_time_ms;
+  double rate = processed_logged_cards / logged_cards_time_ms;
   size_t budget = static_cast<size_t>(goal_ms * rate);
   // Deduct predicted cards in thread buffers to get target.
   size_t new_target = budget - MIN2(budget, predicted_thread_buffer_cards);
@@ -226,12 +226,12 @@ void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_scan_ti
   log_debug(gc, ergo, refine)("New pending cards target: %zu", new_target);
 }
 
-void G1ConcurrentRefine::adjust_after_gc(double logged_cards_scan_time_ms,
+void G1ConcurrentRefine::adjust_after_gc(double logged_cards_time_ms,
                                          size_t processed_logged_cards,
                                          size_t predicted_thread_buffer_cards,
                                          double goal_ms) {
   if (!G1UseConcRefinement) return;
-  update_pending_cards_target(logged_cards_scan_time_ms,
+  update_pending_cards_target(logged_cards_time_ms,
                               processed_logged_cards,
                               predicted_thread_buffer_cards,
                               goal_ms);

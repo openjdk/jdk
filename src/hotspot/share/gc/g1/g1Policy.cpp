@@ -928,16 +928,16 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   }
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
-  double scan_logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
+  double logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  if (scan_logged_cards_time_goal_ms < merge_hcc_time_ms) {
+  if (logged_cards_time_goal_ms < merge_hcc_time_ms) {
     log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
                                 "Logged Cards Scan time goal: %1.2fms Scan HCC time: %1.2fms",
-                                scan_logged_cards_time_goal_ms, merge_hcc_time_ms);
+                                logged_cards_time_goal_ms, merge_hcc_time_ms);
 
-    scan_logged_cards_time_goal_ms = 0;
+    logged_cards_time_goal_ms = 0;
   } else {
-    scan_logged_cards_time_goal_ms -= merge_hcc_time_ms;
+    logged_cards_time_goal_ms -= merge_hcc_time_ms;
   }
 
   double const logged_cards_time_ms = logged_cards_processing_time();
@@ -947,7 +947,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   size_t hcc_cards =
     phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeHCC,
                                          G1GCPhaseTimes::MergeHCCDirtyCards);
-  bool exceeded_goal = scan_logged_cards_time_goal_ms < logged_cards_time_ms;
+  bool exceeded_goal = logged_cards_time_goal_ms < logged_cards_time_ms;
   size_t predicted_thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1ConcurrentRefine* cr = _g1h->concurrent_refine();
 
@@ -955,7 +955,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
            ("GC refinement: goal: %zu + %zu / %1.2fms, actual: %zu / %1.2fms, HCC: %zu / %1.2fms%s",
             cr->pending_cards_target(),
             predicted_thread_buffer_cards,
-            scan_logged_cards_time_goal_ms,
+            logged_cards_time_goal_ms,
             logged_cards,
             logged_cards_time_ms,
             hcc_cards,
@@ -965,7 +965,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   cr->adjust_after_gc(logged_cards_time_ms,
                       logged_cards,
                       predicted_thread_buffer_cards,
-                      scan_logged_cards_time_goal_ms);
+                      logged_cards_time_goal_ms);
 }
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
