@@ -83,11 +83,9 @@ CFLAGS_VM_VERSION := \
 ################################################################################
 # Disabled warnings
 
-DISABLED_WARNINGS_gcc := parentheses comment unknown-pragmas address \
-    delete-non-virtual-dtor char-subscripts array-bounds int-in-bool-context \
-    ignored-qualifiers  missing-field-initializers implicit-fallthrough \
-    empty-body strict-overflow sequence-point maybe-uninitialized \
-    misleading-indentation cast-function-type shift-negative-value
+DISABLED_WARNINGS_gcc := ignored-qualifiers comment int-in-bool-context \
+    array-bounds implicit-fallthrough parentheses missing-field-initializers \
+    delete-non-virtual-dtor unknown-pragmas maybe-uninitialized
 
 ifeq ($(call check-jvm-feature, zero), true)
   DISABLED_WARNINGS_gcc += return-type switch clobbered
@@ -153,6 +151,17 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
+    DISABLED_WARNINGS_gcc_c1_LIR.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_dict.cpp := char-subscripts, \
+    DISABLED_WARNINGS_gcc_g1CardSet.cpp := shift-negative-value, \
+    DISABLED_WARNINGS_gcc_javaClasses.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_loopnode.cpp := sequence-point, \
+    DISABLED_WARNINGS_gcc_macroArrayCopy.cpp := shift-negative-value, \
+    DISABLED_WARNINGS_gcc_mulnode.cpp := shift-negative-value, \
+    DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
+    DISABLED_WARNINGS_gcc_sharedRuntimeTrig.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_signals_posix.cpp := cast-function-type, \
+    DISABLED_WARNINGS_gcc_templateTable.cpp := cast-function-type, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_dict.cpp := char-subscripts, \
