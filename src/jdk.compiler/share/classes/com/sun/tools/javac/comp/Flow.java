@@ -2838,10 +2838,12 @@ public class Flow {
             final Bits prevUninits = new Bits(uninits);
             final Bits prevInits = new Bits(inits);
             int returnadrPrev = returnadr;
+            int firstadrPrev = firstadr;
             int nextadrPrev = nextadr;
             ListBuffer<PendingExit> prevPending = pendingExits;
             try {
                 returnadr = nextadr;
+                firstadr = nextadr;
                 pendingExits = new ListBuffer<>();
                 for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
                     JCVariableDecl def = l.head;
@@ -2860,6 +2862,7 @@ public class Flow {
                 uninits.assign(prevUninits);
                 inits.assign(prevInits);
                 pendingExits = prevPending;
+                firstadr = firstadrPrev;
                 nextadr = nextadrPrev;
             }
         }
