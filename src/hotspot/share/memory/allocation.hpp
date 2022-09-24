@@ -174,84 +174,43 @@ char* ReallocateHeap(char *old,
 // handles NULL pointers
 void FreeHeap(void* p);
 
-template <MEMFLAGS F> class CHeapObj {
+template<MEMFLAGS F>
+class CHeapObj {
  public:
-  ALWAYSINLINE void* operator new(size_t size) throw() {
-    return (void*)AllocateHeap(size, F);
+  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f = F) throw() {
+    return (void*)AllocateHeap(size, f);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
-                                  const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack);
+                                  const NativeCallStack& stack, MEMFLAGS f = F) throw() {
+    return (void*)AllocateHeap(size, f, stack);
   }
 
   ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&,
-                                  const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+                                  const NativeCallStack& stack, MEMFLAGS f = F) throw() {
+    return (void*)AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
   }
 
-  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&) throw() {
-    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&, MEMFLAGS f = F) throw() {
+    return (void*)AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size) throw() {
-    return (void*)AllocateHeap(size, F);
-  }
-
-  ALWAYSINLINE void* operator new[](size_t size,
-                                  const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack);
-  }
-
-  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&,
-                                    const NativeCallStack& stack) throw() {
-    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
-  }
-
-  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&) throw() {
-    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
-  }
-
-  void  operator delete(void* p)     { FreeHeap(p); }
-  void  operator delete [] (void* p) { FreeHeap(p); }
-};
-
-class DynCHeapObj {
- public:
-  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS F) throw() {
-    return (void*)AllocateHeap(size, F);
-  }
-
-  ALWAYSINLINE void* operator new(size_t size,
-                                  const NativeCallStack& stack, MEMFLAGS F) throw() {
-    return (void*)AllocateHeap(size, F, stack);
-  }
-
-  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&,
-                                  const NativeCallStack& stack, MEMFLAGS F) throw() {
-    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
-  }
-
-  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&, MEMFLAGS F) throw() {
-    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
-  }
-
-  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS F) throw() {
-    return (void*)AllocateHeap(size, F);
+  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS f = F) throw() {
+    return (void*)AllocateHeap(size, f);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
-                                    const NativeCallStack& stack, MEMFLAGS F) throw() {
-    return (void*)AllocateHeap(size, F, stack);
+                                    const NativeCallStack& stack, MEMFLAGS f = F) throw() {
+    return (void*)AllocateHeap(size, f, stack);
   }
 
   ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&,
-                                    const NativeCallStack& stack, MEMFLAGS F) throw() {
-    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+                                    const NativeCallStack& stack, MEMFLAGS f = F) throw() {
+    return (void*)AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&, MEMFLAGS F) throw() {
-    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&, MEMFLAGS f = F) throw() {
+    return (void*)AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
 
   void  operator delete(void* p)     { FreeHeap(p); }
