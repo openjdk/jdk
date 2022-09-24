@@ -86,13 +86,16 @@ public class TransferTo {
         InputStreamProvider inputStreamProvider = byteArrayInput();
 
         // tests empty input stream
-        assertThrows(NullPointerException.class, () -> inputStreamProvider.input().transferTo(null));
+        assertThrows(NullPointerException.class,
+                () -> inputStreamProvider.input().transferTo(null));
 
         // tests single-byte input stream
-        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1).transferTo(null));
+        assertThrows(NullPointerException.class,
+                () -> inputStreamProvider.input((byte) 1).transferTo(null));
 
         // tests dual-byte input stream
-        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null));
+        assertThrows(NullPointerException.class,
+                () -> inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null));
     }
 
     /*
@@ -108,14 +111,17 @@ public class TransferTo {
         OutputStreamProvider outputStreamProvider = byteArrayOutput();
 
         // tests empty input stream
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
+        checkTransferredContents(inputStreamProvider,
+                outputStreamProvider, new byte[0]);
 
         // tests input stream with a length between 1k and 4k
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
+        checkTransferredContents(inputStreamProvider,
+                outputStreamProvider, createRandomBytes(1024, 4096));
 
         // tests input stream with several data chunks, as 16k is more than a
         // single chunk can hold
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(16384, 16384));
+        checkTransferredContents(inputStreamProvider,
+                outputStreamProvider, createRandomBytes(16384, 16384));
 
         // tests randomly chosen starting positions within source and
         // target stream and random pushback
@@ -123,14 +129,17 @@ public class TransferTo {
             byte[] inBytes = createRandomBytes(MIN_SIZE, MAX_SIZE_INCR);
             int posIn = RND.nextInt(inBytes.length);
             int posOut = RND.nextInt(MIN_SIZE);
-            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut, 1);
+            checkTransferredContents(inputStreamProvider,
+                    outputStreamProvider, inBytes, posIn, posOut, 1);
         }
 
         // tests reading beyond source EOF (must not transfer any bytes)
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0, 0);
+        checkTransferredContents(inputStreamProvider,
+                outputStreamProvider, createRandomBytes(4096, 0), 4096, 0, 0);
 
         // tests writing beyond target EOF (must extend output stream)
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096, 0);
+        checkTransferredContents(inputStreamProvider,
+                outputStreamProvider, createRandomBytes(4096, 0), 0, 4096, 0);
     }
 
     /*
@@ -140,7 +149,8 @@ public class TransferTo {
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider, byte[] inBytes) throws Exception {
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0, 0);
+        checkTransferredContents(inputStreamProvider,
+                outputStreamProvider, inBytes, 0, 0, 0);
     }
 
     /*
@@ -149,7 +159,8 @@ public class TransferTo {
      * output streams before the transfer are provided by the caller.
      */
     private static void checkTransferredContents(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut, int pushBackBytes) throws Exception {
+            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn,
+            int posOut, int pushBackBytes) throws Exception {
         AtomicReference<Supplier<byte[]>> recorder = new AtomicReference<>();
         try (InputStream in = inputStreamProvider.input(inBytes);
             OutputStream out = outputStreamProvider.output(recorder::set)) {
@@ -167,11 +178,13 @@ public class TransferTo {
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
 
-            assertEquals(reported, count, format("reported %d bytes but should report %d", reported, count));
+            assertEquals(reported, count,
+                    format("reported %d bytes but should report %d", reported, count));
 
             byte[] outBytes = recorder.get().get();
-            assertTrue(Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count),
-                format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
+            assertTrue(Arrays.equals(inBytes, posIn, posIn + count,
+                    outBytes, posOut, posOut + count),
+                    format("inBytes.length=%d, outBytes.length=%d", count, outBytes.length));
         }
     }
 
@@ -180,7 +193,8 @@ public class TransferTo {
      * filled with random bytes
      */
     private static byte[] createRandomBytes(int min, int maxRandomAdditive) {
-        byte[] bytes = new byte[min + (maxRandomAdditive == 0 ? 0 : RND.nextInt(maxRandomAdditive))];
+        byte[] bytes = new byte[min +
+                                (maxRandomAdditive == 0 ? 0 : RND.nextInt(maxRandomAdditive))];
         RND.nextBytes(bytes);
         return bytes;
     }
