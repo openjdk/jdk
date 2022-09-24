@@ -215,7 +215,7 @@ void Assembler::ret() {
   void Assembler::NAME(const Address &adr, Register temp) {    \
     switch (adr.getMode()) {                                   \
       case Address::literal: {                                 \
-        code_section()->relocate(pc(), adr.rspec());           \
+        relocate(adr.rspec());                                 \
         NAME(adr.target(), temp);                              \
         break;                                                 \
       }                                                        \
@@ -309,13 +309,6 @@ void Assembler::movptr(Register Rd, address addr) {
   int offset = 0;
   movptr_with_offset(Rd, addr, offset);
   addi(Rd, Rd, offset);
-}
-
-void Assembler::ifence() {
-  fence_i();
-  if (UseConservativeFence) {
-    fence(ir, ir);
-  }
 }
 
 #define INSN(NAME, NEG_INSN)                                                         \

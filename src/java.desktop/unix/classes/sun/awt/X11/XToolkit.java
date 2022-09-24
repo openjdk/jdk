@@ -727,9 +727,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 }
 
                 dispatchEvent(ev);
-            } catch (ThreadDeath td) {
-                XBaseWindow.ungrabInput();
-                return;
             } catch (Throwable thr) {
                 XBaseWindow.ungrabInput();
                 processException(thr);
@@ -1994,8 +1991,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
                 try {
                     task.run();
-                } catch (ThreadDeath td) {
-                    throw td;
                 } catch (Throwable thr) {
                     processException(thr);
                 }

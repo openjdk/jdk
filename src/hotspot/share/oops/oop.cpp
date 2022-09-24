@@ -35,6 +35,7 @@
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
 void oopDesc::print_on(outputStream* st) const {
@@ -48,7 +49,7 @@ void oopDesc::print_on(outputStream* st) const {
 }
 
 void oopDesc::print_address_on(outputStream* st) const {
-  st->print("{" INTPTR_FORMAT "}", p2i(this));
+  st->print("{" PTR_FORMAT "}", p2i(this));
 
 }
 
@@ -132,7 +133,7 @@ VerifyOopClosure VerifyOopClosure::verify_oop;
 
 template <class T> void VerifyOopClosure::do_oop_work(T* p) {
   oop obj = RawAccess<>::oop_load(p);
-  guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
+  guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " PTR_FORMAT, p2i(obj));
 }
 
 void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); }
