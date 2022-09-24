@@ -169,7 +169,7 @@ public class TransferTo {
             in.skipNBytes(posIn);
             out.write(new byte[posOut]);
 
-            // fill buffer by reading some bytes before transformTo
+            // fill buffer by reading some bytes before transferTo
             byte[] bytes = new byte[bufferBytes];
             in.read(bytes);
             out.write(bytes);
