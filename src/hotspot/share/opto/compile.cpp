@@ -569,6 +569,12 @@ void Compile::print_ideal_ir(const char* phase_name) {
 #endif
 
 // ============================================================================
+
+//------------------------------Destructor-------------------------------------------
+Compile::~Compile() {
+  delete _print_inlining_stream;
+}
+
 //------------------------------Compile standard-------------------------------
 debug_only( int Compile::_debug_idx = 100000; )
 
@@ -630,6 +636,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
+                  _print_inlining_stream(new stringStream()),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
@@ -902,6 +909,7 @@ Compile::Compile( ciEnv* ci_env,
     _initial_gvn(NULL),
     _for_igvn(NULL),
     _number_of_mh_late_inlines(0),
+    _print_inlining_stream(new stringStream()),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
     _print_inlining_output(NULL),
@@ -4411,14 +4419,14 @@ void Compile::print_inlining_reinit() {
 }
 
 void Compile::print_inlining_reset() {
-  _print_inlining_stream.reset();
+  _print_inlining_stream->reset();
 }
 
 void Compile::print_inlining_commit() {
   assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
   // Transfer the message from _print_inlining_stream to the current
   // _print_inlining_list buffer and clear _print_inlining_stream.
-  _print_inlining_list->at(_print_inlining_idx)->ss()->write(_print_inlining_stream.base(), _print_inlining_stream.size());
+  _print_inlining_list->at(_print_inlining_idx)->ss()->write(_print_inlining_stream->base(), _print_inlining_stream->size());
   print_inlining_reset();
 }
 
@@ -4467,7 +4475,7 @@ void Compile::print_inlining_move_to(CallGenerator* cg) {
 
 void Compile::print_inlining_update_delayed(CallGenerator* cg) {
   if (print_inlining() || print_intrinsics()) {
-    assert(_print_inlining_stream.size() > 0, "missing inlining msg");
+    assert(_print_inlining_stream->size() > 0, "missing inlining msg");
     assert(print_inlining_current()->cg() == cg, "wrong entry");
     // replace message with new message
     _print_inlining_list->at_put(_print_inlining_idx, new PrintInliningBuffer());
@@ -4477,7 +4485,7 @@ void Compile::print_inlining_update_delayed(CallGenerator* cg) {
 }
 
 void Compile::print_inlining_assert_ready() {
-  assert(!_print_inlining || _print_inlining_stream.size() == 0, "losing data");
+  assert(!_print_inlining || _print_inlining_stream->size() == 0, "losing data");
 }
 
 void Compile::process_print_inlining() {

@@ -447,7 +447,7 @@ class Compile : public Phase {
     void set_cg(CallGenerator* cg) { _cg = cg; }
   };
 
-  stringStream _print_inlining_stream;
+  stringStream* _print_inlining_stream;
   GrowableArray<PrintInliningBuffer*>* _print_inlining_list;
   int _print_inlining_idx;
   char* _print_inlining_output;
@@ -1057,6 +1057,8 @@ class Compile : public Phase {
           address stub_function, const char *stub_name,
           int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
+
+  ~Compile();
 
   // Are we compiling a method?
   bool has_method() { return method() != NULL; }
