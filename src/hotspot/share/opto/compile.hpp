@@ -478,7 +478,7 @@ class Compile : public Phase {
 
   stringStream* print_inlining_stream() {
     assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
-    return &_print_inlining_stream;
+    return _print_inlining_stream;
   }
 
   void print_inlining_update(CallGenerator* cg);
