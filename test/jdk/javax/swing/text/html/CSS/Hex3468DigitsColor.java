@@ -37,51 +37,23 @@ public class Hex3468DigitsColor {
         StringBuilder result = new StringBuilder();
         boolean passed = true;
         StyleSheet styleSheet = new StyleSheet();
-        // #rgba Should be interpreted as #rrggbbaa according CSS Color Level 4.
-        // Then expecting r=255 g=17 b=34 a=170
+
+        // #rgba should be interpreted as #rrggbbaa according CSS Color Level 4.
+        // Then expecting 0xaaff1122 from Color.
         Color color = styleSheet.stringToColor("#f12a");
-        int red = color.getRed();
-        int green = color.getGreen();
-        int blue = color.getBlue();
-        int alpha = color.getAlpha();
         result.append("  Test for #f00a");
-        if (red != 255) {
-            result.append(", expected r=255 but r=%s found".formatted(red));
+        if (0xaaff1122 != color.getRGB()) {
             passed = false;
         }
-        if (green != 17) {
-            result.append(", expected g=17 but g=%s found".formatted(green));
-            passed = false;
-        }
-        if (blue != 34) {
-            result.append(", expected b=34 but b=%s found".formatted(blue));
-            passed = false;
-        }
-        if (alpha != 170) {
-            result.append(", expected a=170 but a=%s found".formatted(alpha));
-            passed = false;
-        }
-        // In #rrggbbaa last two digits should be interpreted as Alpha value according CSS Color Level 4.
-        // Then expecting r=255 g=17 b=34 a=170
+
+        // In #rrggbbaa, last two digits should be interpreted as Alpha value according CSS Color Level 4.
+        // Then expecting 0xaaff1122 from Color.
         color = styleSheet.stringToColor("#ff1122aa");
-        alpha = color.getAlpha();
-        result.append("\n  Test for #ff1122aa");
-        if (red != 255) {
-            result.append(", expected r=255 but r=%s found".formatted(red));
+        result.append(" and Test for #ff1122aa");
+        if (0xaaff1122 != color.getRGB()) {
             passed = false;
         }
-        if (green != 17) {
-            result.append(", expected g=17 but g=%s found".formatted(green));
-            passed = false;
-        }
-        if (blue != 34) {
-            result.append(", expected b=34 but b=%s found".formatted(blue));
-            passed = false;
-        }
-        if (alpha != 170) {
-            result.append(", expected a=170 but a=%s found".formatted(alpha));
-            passed = false;
-        }
+
         if (!passed) {
             result.insert(0, "Failed :");
             throw new RuntimeException(result.toString());
