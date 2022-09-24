@@ -40,26 +40,25 @@ import org.testng.annotations.Test;
 public class CreateDirectories {
 
     /**
-     * Creates a symlink which points to a directory that exists. Then calls Files.createDirectories
-     * method passing it the path to the symlink and verifies that no exception gets thrown
+     * Test Files.createDirectories symbolic file with an existing directory.
      */
     @Test
     public void testSymlinkDir() throws Exception {
         // create a temp dir as the "root" in which we will run our tests.
-        final Path startingDir = Files.createTempDirectory(Path.of("."), "8293792");
-        if (!TestUtil.supportsLinks(startingDir)) {
+        final Path top = TestUtil.createTemporaryDirectory();
+        if (!TestUtil.supportsLinks(top)) {
             System.out.println("Skipping tests since symbolic links isn't " +
-                    "supported under directory "+ startingDir);
+                    "supported under directory "+ top);
             throw new SkipException("Symbolic links not supported");
         }
-        System.out.println("Running tests under directory " + startingDir.toAbsolutePath());
-        final Path fooDir = Files.createDirectory(Path.of(startingDir.toString(), "foo"));
+        System.out.println("Running tests under directory " + top.toAbsolutePath());
+        final Path fooDir = Files.createDirectory(top.resolve("foo"));
         assertTrue(Files.isDirectory(fooDir),
                 fooDir + " was expected to be a directory but wasn't");
 
         // now create a symlink to the "foo" dir
-        final Path symlink = Files.createSymbolicLink(
-                Path.of(startingDir.toString(), "symlinkToFoo"), fooDir.toAbsolutePath());
+        final Path symlink = Files.createSymbolicLink(top.resolve("symlinkToFoo"),
+                fooDir.toAbsolutePath());
         assertTrue(Files.isSymbolicLink(symlink),
                 symlink + " was expected to be a symlink but wasn't");
         assertTrue(Files.isDirectory(symlink),
@@ -67,7 +66,7 @@ public class CreateDirectories {
 
         // now create a directory under the symlink (which effectively creates a directory under
         // "foo")
-        final Path barDir = Files.createDirectory(Path.of(symlink.toString(), "bar"));
+        final Path barDir = Files.createDirectory(symlink.resolve("bar"));
         assertTrue(Files.isDirectory(barDir),
                 barDir + " was expected to be a directory but wasn't");
         // ultimately, we now have this directory structure:
@@ -97,12 +96,14 @@ public class CreateDirectories {
         // create one directory
         Path subdir = tmpdir.resolve("a");
         Files.createDirectories(subdir);
-        assertTrue(Files.exists(subdir), subdir + " was expected to exist, but didn't");
+        assertTrue(Files.isDirectory(subdir), subdir + " was expected to be a directory," +
+                " but wasn't");
 
         // create parents
         subdir = subdir.resolve("b/c/d");
         Files.createDirectories(subdir);
-        assertTrue(Files.exists(subdir), subdir + " was expected to exist, but didn't");
+        assertTrue(Files.isDirectory(subdir), subdir + " was expected to be a directory," +
+                " but wasn't");
 
         // existing file is not a directory
         Path file = Files.createFile(tmpdir.resolve("x"));
