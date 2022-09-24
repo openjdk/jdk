@@ -569,12 +569,6 @@ void Compile::print_ideal_ir(const char* phase_name) {
 #endif
 
 // ============================================================================
-
-//------------------------------Destructor-------------------------------------------
-Compile::~Compile() {
-  delete _print_inlining_stream;
-}
-
 //------------------------------Compile standard-------------------------------
 debug_only( int Compile::_debug_idx = 100000; )
 
