@@ -205,52 +205,15 @@ public final class ShapeGraphicAttribute extends GraphicAttribute {
     /**
      * Compares this {@code ShapeGraphicAttribute} to the specified
      * {@code Object}.
-     * @param rhs the {@code Object} to compare for equality
+     * @param o the {@code Object} to compare for equality
      * @return {@code true} if this
      * {@code ShapeGraphicAttribute} equals {@code rhs};
      * {@code false} otherwise.
      */
-    public boolean equals(Object rhs) {
-
-        try {
-            return equals((ShapeGraphicAttribute) rhs);
-        }
-        catch(ClassCastException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Compares this {@code ShapeGraphicAttribute} to the specified
-     * {@code ShapeGraphicAttribute}.
-     * @param rhs the {@code ShapeGraphicAttribute} to compare for
-     * equality
-     * @return {@code true} if this
-     * {@code ShapeGraphicAttribute} equals {@code rhs};
-     * {@code false} otherwise.
-     */
-    public boolean equals(ShapeGraphicAttribute rhs) {
-
-        if (rhs == null) {
-            return false;
-        }
-
-        if (this == rhs) {
-            return true;
-        }
-
-        if (fStroke != rhs.fStroke) {
-            return false;
-        }
-
-        if (getAlignment() != rhs.getAlignment()) {
-            return false;
-        }
-
-        if (!fShape.equals(rhs.fShape)) {
-            return false;
-        }
-
-        return true;
+    public boolean equals(Object o) {
+        return this == o || o instanceof ShapeGraphicAttribute o1
+                && fStroke == o1.fStroke
+                && getAlignment() == o1.getAlignment()
+                && fShape.equals(o1.fShape);
     }
 }

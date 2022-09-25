@@ -134,18 +134,11 @@ public final class GlyphLayout {
             return lang;
         }
 
-        public boolean equals(Object rhs) {
-            if (this == rhs) return true;
-            if (rhs == null) return false;
-            try {
-                LayoutEngineKey that = (LayoutEngineKey)rhs;
-                return this.script == that.script &&
-                       this.lang == that.lang &&
-                       this.font.equals(that.font);
-            }
-            catch (ClassCastException e) {
-                return false;
-            }
+        public boolean equals(Object o) {
+            return this == o || o instanceof LayoutEngineKey o1
+                    && script == o1.script
+                    && lang == o1.lang
+                    && font.equals(o1.font);
         }
 
         public int hashCode() {
@@ -279,16 +272,10 @@ public final class GlyphLayout {
             }
 
             public boolean equals(Object o) {
-                try {
-                    SDKey rhs = (SDKey)o;
-                    return
-                        hash == rhs.hash &&
-                        font.equals(rhs.font) &&
-                        frc.equals(rhs.frc);
-                }
-                catch (ClassCastException e) {
-                }
-                return false;
+                return this == o || o instanceof SDKey o1
+                        && hash == o1.hash
+                        && font.equals(o1.font)
+                        && frc.equals(o1.frc);
             }
         }
 

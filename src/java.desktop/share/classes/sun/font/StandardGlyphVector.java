@@ -45,6 +45,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.ref.SoftReference;
 import java.text.CharacterIterator;
+import java.util.Objects;
 
 import sun.awt.SunHints;
 import sun.java2d.loops.FontInfo;
@@ -634,61 +635,7 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     public boolean equals(GlyphVector rhs) {
-        if (this == rhs) {
-            return true;
-        }
-        if (rhs == null) {
-            return false;
-        }
-
-        try {
-            StandardGlyphVector other = (StandardGlyphVector)rhs;
-
-            if (glyphs.length != other.glyphs.length) {
-                return false;
-            }
-
-            for (int i = 0; i < glyphs.length; ++i) {
-                if (glyphs[i] != other.glyphs[i]) {
-                    return false;
-                }
-            }
-
-            if (!font.equals(other.font)) {
-                return false;
-            }
-
-            if (!frc.equals(other.frc)) {
-                return false;
-            }
-
-            if ((other.positions == null) != (positions == null)) {
-                if (positions == null) {
-                    initPositions();
-                } else {
-                    other.initPositions();
-                }
-            }
-
-            if (positions != null) {
-                for (int i = 0; i < positions.length; ++i) {
-                    if (positions[i] != other.positions[i]) {
-                        return false;
-                    }
-                }
-            }
-
-            if (gti == null) {
-                return other.gti == null;
-            } else {
-                return gti.equals(other.gti);
-            }
-        }
-        catch (ClassCastException e) {
-            // assume they are different simply by virtue of the class difference
-
-            return false;
-        }
+        return equals((Object) rhs);
     }
 
     /**
@@ -704,13 +651,49 @@ public class StandardGlyphVector extends GlyphVector {
      * the inherited Object.equals(Object) as well.  GlyphVector should do
      * this, and define two glyphvectors as not equal if the classes differ.
      */
-    public boolean equals(Object rhs) {
-        try {
-            return equals((GlyphVector)rhs);
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-        catch (ClassCastException e) {
-            return false;
+
+        if (o instanceof StandardGlyphVector o1) {
+            if (glyphs.length != o1.glyphs.length) {
+                return false;
+            }
+
+            for (int i = 0; i < glyphs.length; ++i) {
+                if (glyphs[i] != o1.glyphs[i]) {
+                    return false;
+                }
+            }
+
+            if (!font.equals(o1.font)) {
+                return false;
+            }
+
+            if (!frc.equals(o1.frc)) {
+                return false;
+            }
+
+            if ((o1.positions == null) != (positions == null)) {
+                if (positions == null) {
+                    initPositions();
+                } else {
+                    o1.initPositions();
+                }
+            }
+
+            if (positions != null) {
+                for (int i = 0; i < positions.length; ++i) {
+                    if (positions[i] != o1.positions[i]) {
+                        return false;
+                    }
+                }
+            }
+
+            return Objects.equals(gti, o1.gti);
         }
+        return false;
     }
 
     /**

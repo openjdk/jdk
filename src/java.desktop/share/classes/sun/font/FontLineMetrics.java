@@ -33,6 +33,7 @@ package sun.font;
 
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineMetrics;
+import java.util.Objects;
 
 /**
  * Metrics from a font for layout of characters along a line
@@ -98,13 +99,8 @@ public final class FontLineMetrics extends LineMetrics implements Cloneable {
         return cm.hashCode();
     }
 
-    public boolean equals(Object rhs) {
-        try {
-            return cm.equals(((FontLineMetrics)rhs).cm);
-        }
-        catch (ClassCastException e) {
-            return false;
-        }
+    public boolean equals(Object o) {
+        return this == o || o instanceof FontLineMetrics o1 && Objects.equals(cm, o1.cm);
     }
 
     public Object clone() {

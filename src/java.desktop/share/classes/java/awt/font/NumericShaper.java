@@ -1825,29 +1825,28 @@ public final class NumericShaper implements java.io.Serializable {
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object o) {
-        if (o != null) {
-            try {
-                NumericShaper rhs = (NumericShaper)o;
-                if (rangeSet != null) {
-                    if (rhs.rangeSet != null) {
-                        return isContextual() == rhs.isContextual()
+        if (o == this) {
+            return true;
+        }
+
+        if (o instanceof NumericShaper rhs) {
+            if (rangeSet != null) {
+                if (rhs.rangeSet != null) {
+                    return isContextual() == rhs.isContextual()
                             && rangeSet.equals(rhs.rangeSet)
                             && shapingRange == rhs.shapingRange;
-                    }
-                    return isContextual() == rhs.isContextual()
+                }
+                return isContextual() == rhs.isContextual()
                         && rangeSet.equals(Range.maskToRangeSet(rhs.mask))
                         && shapingRange == Range.indexToRange(rhs.key);
-                } else if (rhs.rangeSet != null) {
-                    Set<Range> rset = Range.maskToRangeSet(mask);
-                    Range srange = Range.indexToRange(key);
-                    return isContextual() == rhs.isContextual()
+            } else if (rhs.rangeSet != null) {
+                Set<Range> rset = Range.maskToRangeSet(mask);
+                Range srange = Range.indexToRange(key);
+                return isContextual() == rhs.isContextual()
                         && rset.equals(rhs.rangeSet)
                         && srange == rhs.shapingRange;
-                }
-                return rhs.mask == mask && rhs.key == key;
             }
-            catch (ClassCastException e) {
-            }
+            return rhs.mask == mask && rhs.key == key;
         }
         return false;
     }

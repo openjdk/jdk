@@ -176,52 +176,17 @@ public final class ImageGraphicAttribute extends GraphicAttribute {
     /**
      * Compares this {@code ImageGraphicAttribute} to the specified
      * {@link Object}.
-     * @param rhs the {@code Object} to compare for equality
+     * @param o the {@code Object} to compare for equality
      * @return {@code true} if this
      * {@code ImageGraphicAttribute} equals {@code rhs};
      * {@code false} otherwise.
      */
-    public boolean equals(Object rhs) {
+    public boolean equals(Object o) {
+        return this == o || o instanceof ImageGraphicAttribute o1
+                && fOriginX == o1.fOriginX
+                && fOriginY == o1.fOriginY
+                && getAlignment() == o1.getAlignment()
+                && fImage.equals(o1.fImage);
 
-        try {
-            return equals((ImageGraphicAttribute) rhs);
-        }
-        catch(ClassCastException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Compares this {@code ImageGraphicAttribute} to the specified
-     * {@code ImageGraphicAttribute}.
-     * @param rhs the {@code ImageGraphicAttribute} to compare for
-     * equality
-     * @return {@code true} if this
-     * {@code ImageGraphicAttribute} equals {@code rhs};
-     * {@code false} otherwise.
-     */
-    public boolean equals(ImageGraphicAttribute rhs) {
-
-        if (rhs == null) {
-            return false;
-        }
-
-        if (this == rhs) {
-            return true;
-        }
-
-        if (fOriginX != rhs.fOriginX || fOriginY != rhs.fOriginY) {
-            return false;
-        }
-
-        if (getAlignment() != rhs.getAlignment()) {
-            return false;
-        }
-
-        if (!fImage.equals(rhs.fImage)) {
-            return false;
-        }
-
-        return true;
     }
 }

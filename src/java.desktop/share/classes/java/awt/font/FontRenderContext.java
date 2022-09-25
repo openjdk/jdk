@@ -32,6 +32,7 @@ package java.awt.font;
 import java.awt.RenderingHints;
 import static java.awt.RenderingHints.*;
 import java.awt.geom.AffineTransform;
+import java.util.Objects;
 
 /**
 *   The {@code FontRenderContext} class is a container for the
@@ -290,51 +291,29 @@ public class FontRenderContext {
     /**
      * Return true if obj is an instance of FontRenderContext and has the same
      * transform, antialiasing, and fractional metrics values as this.
-     * @param obj the object to test for equality
+     * @param o the object to test for equality
      * @return {@code true} if the specified object is equal to
      *         this {@code FontRenderContext}; {@code false}
      *         otherwise.
      */
-    public boolean equals(Object obj) {
-        try {
-            return equals((FontRenderContext)obj);
-        }
-        catch (ClassCastException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Return true if rhs has the same transform, antialiasing,
-     * and fractional metrics values as this.
-     * @param rhs the {@code FontRenderContext} to test for equality
-     * @return {@code true} if {@code rhs} is equal to
-     *         this {@code FontRenderContext}; {@code false}
-     *         otherwise.
-     * @since 1.4
-     */
-    public boolean equals(FontRenderContext rhs) {
-        if (this == rhs) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (rhs == null) {
-            return false;
-        }
 
-        /* if neither instance is a subclass, reference values directly. */
-        if (!rhs.defaulting && !defaulting) {
-            if (rhs.aaHintValue == aaHintValue &&
-                rhs.fmHintValue == fmHintValue) {
-
-                return tx == null ? rhs.tx == null : tx.equals(rhs.tx);
+        if (o instanceof FontRenderContext o1) {
+            // if neither instance is a subclass, reference values directly.
+            if (!o1.defaulting && !defaulting) {
+                return o1.aaHintValue == aaHintValue
+                        && o1.fmHintValue == fmHintValue
+                        && Objects.equals(tx, o1.tx);
+            } else {
+                return o1.getAntiAliasingHint() == getAntiAliasingHint()
+                        && o1.getFractionalMetricsHint() == getFractionalMetricsHint()
+                        && o1.getTransform().equals(getTransform());
             }
-            return false;
-        } else {
-            return
-                rhs.getAntiAliasingHint() == getAntiAliasingHint() &&
-                rhs.getFractionalMetricsHint() == getFractionalMetricsHint() &&
-                rhs.getTransform().equals(getTransform());
         }
+        return false;
     }
 
     /**

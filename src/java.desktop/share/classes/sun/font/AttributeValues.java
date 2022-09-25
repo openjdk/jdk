@@ -56,6 +56,7 @@ import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Objects;
 
 public final class AttributeValues implements Cloneable {
     private int defined;
@@ -436,48 +437,38 @@ public final class AttributeValues implements Cloneable {
         return defined << 8 ^ nondefault;
     }
 
-    public boolean equals(Object rhs) {
-        try {
-            return equals((AttributeValues)rhs);
-        }
-        catch (ClassCastException e) {
-        }
-        return false;
-    }
-
-    public boolean equals(AttributeValues rhs) {
-        // test in order of most likely to differ and easiest to compare
-        // also assumes we're generally calling this only if family,
-        // size, weight, posture are the same
-
-        if (rhs == null) return false;
-        if (rhs == this) return true;
-
-        return defined == rhs.defined
-            && nondefault == rhs.nondefault
-            && underline == rhs.underline
-            && strikethrough == rhs.strikethrough
-            && superscript == rhs.superscript
-            && width == rhs.width
-            && kerning == rhs.kerning
-            && tracking == rhs.tracking
-            && ligatures == rhs.ligatures
-            && runDirection == rhs.runDirection
-            && bidiEmbedding == rhs.bidiEmbedding
-            && swapColors == rhs.swapColors
-            && equals(transform, rhs.transform)
-            && equals(foreground, rhs.foreground)
-            && equals(background, rhs.background)
-            && equals(numericShaping, rhs.numericShaping)
-            && equals(justification, rhs.justification)
-            && equals(charReplacement, rhs.charReplacement)
-            && size == rhs.size
-            && weight == rhs.weight
-            && posture == rhs.posture
-            && equals(family, rhs.family)
-            && equals(font, rhs.font)
-            && imUnderline == rhs.imUnderline
-            && equals(imHighlight, rhs.imHighlight);
+    /**
+     * test in order of most likely to differ and easiest to compare
+     * also assumes we're generally calling this only if family,
+     * size, weight, posture are the same
+     */
+    public boolean equals(Object o) {
+        return this == o || o instanceof AttributeValues o1
+                && defined == o1.defined
+                && nondefault == o1.nondefault
+                && underline == o1.underline
+                && strikethrough == o1.strikethrough
+                && superscript == o1.superscript
+                && width == o1.width
+                && kerning == o1.kerning
+                && tracking == o1.tracking
+                && ligatures == o1.ligatures
+                && runDirection == o1.runDirection
+                && bidiEmbedding == o1.bidiEmbedding
+                && swapColors == o1.swapColors
+                && Objects.equals(transform, o1.transform)
+                && Objects.equals(foreground, o1.foreground)
+                && Objects.equals(background, o1.background)
+                && Objects.equals(numericShaping, o1.numericShaping)
+                && Objects.equals(justification, o1.justification)
+                && Objects.equals(charReplacement, o1.charReplacement)
+                && size == o1.size
+                && weight == o1.weight
+                && posture == o1.posture
+                && Objects.equals(family, o1.family)
+                && Objects.equals(font, o1.font)
+                && imUnderline == o1.imUnderline
+                && Objects.equals(imHighlight, o1.imHighlight);
     }
 
     public AttributeValues clone() {

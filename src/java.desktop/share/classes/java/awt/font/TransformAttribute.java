@@ -151,24 +151,14 @@ public final class TransformAttribute implements Serializable {
      * Returns {@code true} if rhs is a {@code TransformAttribute}
      * whose transform is equal to this {@code TransformAttribute}'s
      * transform.
-     * @param rhs the object to compare to
+     * @param o the object to compare to
      * @return {@code true} if the argument is a {@code TransformAttribute}
      * whose transform is equal to this {@code TransformAttribute}'s
      * transform.
      * @since 1.6
      */
-    public boolean equals(Object rhs) {
-        if (rhs != null) {
-            try {
-                TransformAttribute that = (TransformAttribute)rhs;
-                if (transform == null) {
-                    return that.transform == null;
-                }
-                return transform.equals(that.transform);
-            }
-            catch (ClassCastException e) {
-            }
-        }
-        return false;
+    public boolean equals(Object o) {
+        return this == o || o instanceof TransformAttribute o1
+                && transform.equals(o1.transform);
     }
 }

@@ -36,19 +36,16 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
-import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
-
-import java.awt.font.TextAttribute;
 
 import java.awt.geom.Area;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.GeneralPath;
 import java.text.AttributedCharacterIterator.Attribute;
+import java.util.Objects;
 
-import static sun.font.AttributeValues.*;
 import static sun.font.EAttribute.*;
 
 /**
@@ -168,48 +165,14 @@ public class Decoration {
             this.imUnderline = imUnderline;
         }
 
-        private static boolean areEqual(Object lhs, Object rhs) {
-
-            if (lhs == null) {
-                return rhs == null;
-            }
-            else {
-                return lhs.equals(rhs);
-            }
-        }
-
-        public boolean equals(Object rhs) {
-
-            if (rhs == this) {
-                return true;
-            }
-            if (rhs == null) {
-                return false;
-            }
-
-            DecorationImpl other = null;
-            try {
-                other = (DecorationImpl) rhs;
-            }
-            catch(ClassCastException e) {
-                return false;
-            }
-
-            if (!(swapColors == other.swapColors &&
-                        strikethrough == other.strikethrough)) {
-                return false;
-            }
-
-            if (!areEqual(stdUnderline, other.stdUnderline)) {
-                return false;
-            }
-            if (!areEqual(fgPaint, other.fgPaint)) {
-                return false;
-            }
-            if (!areEqual(bgPaint, other.bgPaint)) {
-                return false;
-            }
-            return areEqual(imUnderline, other.imUnderline);
+        public boolean equals(Object o) {
+            return this == o || o instanceof DecorationImpl o1
+                    && swapColors == o1.swapColors
+                    && strikethrough == o1.strikethrough
+                    && Objects.equals(stdUnderline, o1.stdUnderline)
+                    && Objects.equals(fgPaint, o1.fgPaint)
+                    && Objects.equals(bgPaint, o1.bgPaint)
+                    && Objects.equals(imUnderline, o1.imUnderline);
         }
 
         public int hashCode() {
