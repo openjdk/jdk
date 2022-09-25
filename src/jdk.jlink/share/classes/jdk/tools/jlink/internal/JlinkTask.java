@@ -27,6 +27,7 @@ package jdk.tools.jlink.internal;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
@@ -230,6 +231,17 @@ public class JlinkTask {
         }
         Path outputPath = null;
         try {
+            try (InputStream savedOptions = JlinkTask.class.getModule().getResourceAsStream("jdk/tools/jlink/internal/options")) {
+                if (savedOptions != null) {
+                    List<String> newArgs = new ArrayList<>();
+                    CommandLine.loadCmdFile(savedOptions, newArgs);
+                    if (!newArgs.isEmpty()) {
+                        newArgs.addAll(Arrays.asList(args));
+                        args = newArgs.toArray(new String[newArgs.size()]);
+                    }
+                }
+            }
+
             List<String> remaining = optionsHelper.handleOptions(this, args);
             if (remaining.size() > 0 && !options.suggestProviders) {
                 throw taskHelper.newBadArgs("err.orphan.arguments",
