@@ -1,2 +1,2 @@
-LambdaMutateFinalField.java:33:29: compiler.err.var.might.already.be.assigned: x
+LambdaMutateFinalField.java:11:29: compiler.err.var.might.already.be.assigned: x
 1 error
