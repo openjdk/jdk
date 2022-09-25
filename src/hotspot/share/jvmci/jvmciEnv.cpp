@@ -44,6 +44,9 @@
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 
+jbyte* JVMCIEnv::_serialized_saved_properties = nullptr;
+int JVMCIEnv::_serialized_saved_properties_len = 0;
+
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
   _compiler(compiler),
@@ -98,61 +101,70 @@ bool JVMCICompileState::jvmti_state_changed() const {
   return false;
 }
 
-void JVMCIEnv::copy_saved_properties() {
-  assert(!is_hotspot(), "can only copy saved properties from HotSpot to native image");
+jbyte* JVMCIEnv::get_serialized_saved_properties(int& props_len, TRAPS) {
+  jbyte* props = _serialized_saved_properties;
+  if (props == nullptr) {
+    // load VMSupport
+    Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
+    Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK_NULL);
 
-  JavaThread* THREAD = JavaThread::current(); // For exception macros.
-
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_services_Services(), Handle(), Handle(), true, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
-  }
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (ik->should_be_initialized()) {
-    ik->initialize(THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->should_be_initialized()) {
+      ik->initialize(CHECK_NULL);
     }
-  }
 
-  // Get the serialized saved properties from HotSpot
-  TempNewSymbol serializeSavedProperties = SymbolTable::new_symbol("serializeSavedProperties");
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args;
-  JavaCalls::call_static(&result, ik, serializeSavedProperties, vmSymbols::void_byte_array_signature(), &args, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::fatal_exception(NULL, "Error calling jdk.vm.ci.services.Services.serializeSavedProperties");
-  }
-  oop res = result.get_oop();
-  assert(res->is_typeArray(), "must be");
-  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "must be");
-  typeArrayOop ba = typeArrayOop(res);
-  int serialized_properties_len = ba->length();
+    // invoke the serializeSavedPropertiesToByteArray method
+    JavaValue result(T_OBJECT);
+    JavaCallArguments args;
 
-  // Copy serialized saved properties from HotSpot object into native buffer
-  jbyte* serialized_properties = NEW_RESOURCE_ARRAY(jbyte, serialized_properties_len);
-  memcpy(serialized_properties, ba->byte_at_addr(0), serialized_properties_len);
+    Symbol* signature = vmSymbols::serializePropertiesToByteArray_signature();
+    JavaCalls::call_static(&result,
+                           ik,
+                           vmSymbols::serializeSavedPropertiesToByteArray_name(),
+                           signature,
+                           &args,
+                           CHECK_NULL);
+
+    oop res = result.get_oop();
+    assert(res->is_typeArray(), "must be");
+    assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "must be");
+    typeArrayOop ba = typeArrayOop(res);
+    props_len = ba->length();
+
+    // Copy serialized saved properties from HotSpot object into C heap
+    props = NEW_C_HEAP_ARRAY(jbyte, props_len, mtJVMCI);
+    memcpy(props, ba->byte_at_addr(0), props_len);
+  }
+  _serialized_saved_properties_len = props_len;
+  _serialized_saved_properties = props;
+  return props;
+}
+
+void JVMCIEnv::copy_saved_properties(jbyte* properties, int properties_len, JVMCI_TRAPS) {
+  assert(!is_hotspot(), "can only copy saved properties from HotSpot to native image");
+  JavaThread* thread = JavaThread::current(); // For exception macros.
 
   // Copy native buffer into shared library object
-  JVMCIPrimitiveArray buf = new_byteArray(serialized_properties_len, this);
+  JVMCIPrimitiveArray buf = new_byteArray(properties_len, this);
   if (has_pending_exception()) {
-    describe_pending_exception(true);
-    fatal("Error in copy_saved_properties");
+    _runtime->fatal_exception(JVMCIENV, "Error in copy_saved_properties");
   }
-  copy_bytes_from(serialized_properties, buf, 0, serialized_properties_len);
+  copy_bytes_from(properties, buf, 0, properties_len);
   if (has_pending_exception()) {
-    describe_pending_exception(true);
-    fatal("Error in copy_saved_properties");
+    _runtime->fatal_exception(JVMCIENV, "Error in copy_saved_properties");
   }
 
   // Initialize saved properties in shared library
   jclass servicesClass = JNIJVMCI::Services::clazz();
   jmethodID initializeSavedProperties = JNIJVMCI::Services::initializeSavedProperties_method();
-  JNIAccessMark jni(this, THREAD);
-  jni()->CallStaticVoidMethod(servicesClass, initializeSavedProperties, buf.as_jobject());
-  if (jni()->ExceptionCheck()) {
-    jni()->ExceptionDescribe();
-    fatal("Error calling jdk.vm.ci.services.Services.initializeSavedProperties");
+  bool exception = false;
+  {
+    JNIAccessMark jni(this, thread);
+    jni()->CallStaticVoidMethod(servicesClass, initializeSavedProperties, buf.as_jobject());
+    exception = jni()->ExceptionCheck();
+  }
+  if (exception) {
+    _runtime->fatal_exception(JVMCIENV, "Error calling jdk.vm.ci.services.Services.initializeSavedProperties");
   }
 }
 
@@ -311,7 +323,8 @@ class ExceptionTranslation: public StackObj {
   void doit(JavaThread* THREAD) {
     // Resolve HotSpotJVMCIRuntime class explicitly as HotSpotJVMCI::compute_offsets
     // may not have been called.
-    Klass* runtimeKlass = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_hotspot_HotSpotJVMCIRuntime(), true, CHECK);
+    Klass* runtimeKlass = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_hotspot_HotSpotJVMCIRuntime(), true, THREAD);
+    guarantee(!HAS_PENDING_EXCEPTION, "");
 
     int buffer_size = 2048;
     while (true) {
@@ -416,31 +429,34 @@ void JVMCIEnv::translate_from_jni_exception(JavaThread* THREAD, jthrowable throw
   SharedLibraryToHotSpotExceptionTranslation(hotspot_env, jni_env, throwable).doit(THREAD);
 }
 
-jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env) {
-  if (is_hotspot()) {
-    if (HAS_PENDING_EXCEPTION) {
-      Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
-      CLEAR_PENDING_EXCEPTION;
-      translate_to_jni_exception(THREAD, throwable, this, peer_env);
-      return true;
-    }
-  } else {
-    jthrowable ex = nullptr;
-    {
-      JNIAccessMark jni(this, THREAD);
-      ex = jni()->ExceptionOccurred();
-      if (ex != nullptr) {
-        jni()->ExceptionClear();
-      }
-    }
-    if (ex != nullptr) {
-      translate_from_jni_exception(THREAD, ex, peer_env, this);
-      return true;
-    }
+jboolean JVMCIEnv::transfer_pending_exception_to_jni(JavaThread* THREAD, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env) {
+  if (HAS_PENDING_EXCEPTION) {
+    Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+    translate_to_jni_exception(THREAD, throwable, hotspot_env, jni_env);
+    return true;
   }
   return false;
 }
 
+jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env) {
+  if (is_hotspot()) {
+    return transfer_pending_exception_to_jni(THREAD, this, peer_env);
+  }
+  jthrowable ex = nullptr;
+  {
+    JNIAccessMark jni(this, THREAD);
+    ex = jni()->ExceptionOccurred();
+    if (ex != nullptr) {
+      jni()->ExceptionClear();
+    }
+  }
+  if (ex != nullptr) {
+    translate_from_jni_exception(THREAD, ex, peer_env, this);
+    return true;
+  }
+  return false;
+}
 
 JVMCIEnv::~JVMCIEnv() {
   if (_attach_threw_OOME) {

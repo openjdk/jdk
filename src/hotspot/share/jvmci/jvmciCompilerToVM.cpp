@@ -503,7 +503,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   } else {
     // Use the System class loader
     class_loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    JVMCIENV->runtime()->initialize(JVMCIENV);
+    JVMCIENV->runtime()->initialize(JVMCI_CHECK_NULL);
   }
 
   if (resolve) {

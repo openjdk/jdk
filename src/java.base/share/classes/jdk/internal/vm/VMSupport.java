@@ -32,6 +32,8 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 
+import jdk.internal.misc.VM;
+
 /*
  * Support class used by JVMTI and VM attach mechanism.
  */
@@ -51,20 +53,28 @@ public class VMSupport {
     private static native Properties initAgentProperties(Properties props);
 
     /**
-     * Write the given properties list to a byte array and return it. Properties with
-     * a key or value that is not a String is filtered out. The stream written to the byte
-     * array is ISO 8859-1 encoded.
+     * Writes the given properties list to a byte array and return it. The stream written
+     * to the byte array is ISO 8859-1 encoded.
+     *
+     * @param filter if true, then entries in {@code p} with a key or value that is not a
+     *               String are filtered out. Otherwise, the caller guarantees {@code p}
+     *               only contains String keys and values.
      */
-    private static byte[] serializePropertiesToByteArray(Properties p) throws IOException {
+    private static byte[] serializePropertiesToByteArray(Properties p, boolean filter) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream(4096);
 
-        Properties props = new Properties();
+        Properties props;
+        if (filter) {
+            props = new Properties();
 
-        // stringPropertyNames() returns a snapshot of the property keys
-        Set<String> keyset = p.stringPropertyNames();
-        for (String key : keyset) {
-            String value = p.getProperty(key);
-            props.put(key, value);
+            // stringPropertyNames() returns a snapshot of the property keys
+            Set<String> keyset = p.stringPropertyNames();
+            for (String key : keyset) {
+                String value = p.getProperty(key);
+                props.put(key, value);
+            }
+        } else {
+            props = p;
         }
 
         props.store(out, null);
@@ -72,11 +82,22 @@ public class VMSupport {
     }
 
     public static byte[] serializePropertiesToByteArray() throws IOException {
-        return serializePropertiesToByteArray(System.getProperties());
+        return serializePropertiesToByteArray(System.getProperties(), true);
     }
 
     public static byte[] serializeAgentPropertiesToByteArray() throws IOException {
-        return serializePropertiesToByteArray(getAgentProperties());
+        return serializePropertiesToByteArray(getAgentProperties(), true);
+    }
+
+    /**
+     * Serializes {@link VM#getSavedProperties()} to a byte array.
+     */
+    public static byte[] serializeSavedPropertiesToByteArray() throws IOException {
+        Properties props = new Properties();
+        for (var e : VM.getSavedProperties().entrySet()) {
+            props.put(e.getKey(), e.getValue());
+        }
+        return serializePropertiesToByteArray(props, false);
     }
 
     /*
