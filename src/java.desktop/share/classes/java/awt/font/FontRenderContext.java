@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,16 +301,16 @@ public class FontRenderContext {
             return true;
         }
 
-        if (o instanceof FontRenderContext o1) {
+        if (o instanceof FontRenderContext rhs) {
             // if neither instance is a subclass, reference values directly.
-            if (!o1.defaulting && !defaulting) {
-                return o1.aaHintValue == aaHintValue
-                        && o1.fmHintValue == fmHintValue
-                        && Objects.equals(tx, o1.tx);
+            if (!rhs.defaulting && !defaulting) {
+                return rhs.aaHintValue == aaHintValue
+                        && rhs.fmHintValue == fmHintValue
+                        && Objects.equals(tx, rhs.tx);
             } else {
-                return o1.getAntiAliasingHint() == getAntiAliasingHint()
-                        && o1.getFractionalMetricsHint() == getFractionalMetricsHint()
-                        && o1.getTransform().equals(getTransform());
+                return rhs.getAntiAliasingHint() == getAntiAliasingHint()
+                        && rhs.getFractionalMetricsHint() == getFractionalMetricsHint()
+                        && rhs.getTransform().equals(getTransform());
             }
         }
         return false;

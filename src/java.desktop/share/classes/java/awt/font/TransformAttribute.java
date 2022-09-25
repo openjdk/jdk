@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public final class TransformAttribute implements Serializable {
      * @since 1.6
      */
     public boolean equals(Object o) {
-        return this == o || o instanceof TransformAttribute o1
-                && transform.equals(o1.transform);
+        return this == o || o instanceof TransformAttribute rhs
+                && transform.equals(rhs.transform);
     }
 }

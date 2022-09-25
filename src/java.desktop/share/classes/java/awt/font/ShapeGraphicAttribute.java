@@ -211,9 +211,9 @@ public final class ShapeGraphicAttribute extends GraphicAttribute {
      * {@code false} otherwise.
      */
     public boolean equals(Object o) {
-        return this == o || o instanceof ShapeGraphicAttribute o1
-                && fStroke == o1.fStroke
-                && getAlignment() == o1.getAlignment()
-                && fShape.equals(o1.fShape);
+        return this == o || o instanceof ShapeGraphicAttribute rhs
+                && fStroke == rhs.fStroke
+                && getAlignment() == rhs.getAlignment()
+                && fShape.equals(rhs.fShape);
     }
 }

@@ -135,10 +135,10 @@ public final class GlyphLayout {
         }
 
         public boolean equals(Object o) {
-            return this == o || o instanceof LayoutEngineKey o1
-                    && script == o1.script
-                    && lang == o1.lang
-                    && font.equals(o1.font);
+            return this == o || o instanceof LayoutEngineKey rhs
+                    && script == rhs.script
+                    && lang == rhs.lang
+                    && font.equals(rhs.font);
         }
 
         public int hashCode() {
@@ -272,10 +272,10 @@ public final class GlyphLayout {
             }
 
             public boolean equals(Object o) {
-                return this == o || o instanceof SDKey o1
-                        && hash == o1.hash
-                        && font.equals(o1.font)
-                        && frc.equals(o1.frc);
+                return this == o || o instanceof SDKey rhs
+                        && hash == rhs.hash
+                        && font.equals(rhs.font)
+                        && frc.equals(rhs.frc);
             }
         }
 

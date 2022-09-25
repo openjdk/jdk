@@ -166,13 +166,13 @@ public class Decoration {
         }
 
         public boolean equals(Object o) {
-            return this == o || o instanceof DecorationImpl o1
-                    && swapColors == o1.swapColors
-                    && strikethrough == o1.strikethrough
-                    && Objects.equals(stdUnderline, o1.stdUnderline)
-                    && Objects.equals(fgPaint, o1.fgPaint)
-                    && Objects.equals(bgPaint, o1.bgPaint)
-                    && Objects.equals(imUnderline, o1.imUnderline);
+            return this == o || o instanceof DecorationImpl other
+                    && swapColors == other.swapColors
+                    && strikethrough == other.strikethrough
+                    && Objects.equals(stdUnderline, other.stdUnderline)
+                    && Objects.equals(fgPaint, other.fgPaint)
+                    && Objects.equals(bgPaint, other.bgPaint)
+                    && Objects.equals(imUnderline, other.imUnderline);
         }
 
         public int hashCode() {

@@ -182,11 +182,10 @@ public final class ImageGraphicAttribute extends GraphicAttribute {
      * {@code false} otherwise.
      */
     public boolean equals(Object o) {
-        return this == o || o instanceof ImageGraphicAttribute o1
-                && fOriginX == o1.fOriginX
-                && fOriginY == o1.fOriginY
-                && getAlignment() == o1.getAlignment()
-                && fImage.equals(o1.fImage);
-
+        return this == o || o instanceof ImageGraphicAttribute rhs
+                && fOriginX == rhs.fOriginX
+                && fOriginY == rhs.fOriginY
+                && getAlignment() == rhs.getAlignment()
+                && fImage.equals(rhs.fImage);
     }
 }

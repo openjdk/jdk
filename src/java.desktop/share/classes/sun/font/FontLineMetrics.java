@@ -100,7 +100,8 @@ public final class FontLineMetrics extends LineMetrics implements Cloneable {
     }
 
     public boolean equals(Object o) {
-        return this == o || o instanceof FontLineMetrics o1 && Objects.equals(cm, o1.cm);
+        return this == o || o instanceof FontLineMetrics rhs
+            && Objects.equals(cm, rhs.cm);
     }
 
     public Object clone() {

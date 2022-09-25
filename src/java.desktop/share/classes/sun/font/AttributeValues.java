@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,32 +443,32 @@ public final class AttributeValues implements Cloneable {
      * size, weight, posture are the same
      */
     public boolean equals(Object o) {
-        return this == o || o instanceof AttributeValues o1
-                && defined == o1.defined
-                && nondefault == o1.nondefault
-                && underline == o1.underline
-                && strikethrough == o1.strikethrough
-                && superscript == o1.superscript
-                && width == o1.width
-                && kerning == o1.kerning
-                && tracking == o1.tracking
-                && ligatures == o1.ligatures
-                && runDirection == o1.runDirection
-                && bidiEmbedding == o1.bidiEmbedding
-                && swapColors == o1.swapColors
-                && Objects.equals(transform, o1.transform)
-                && Objects.equals(foreground, o1.foreground)
-                && Objects.equals(background, o1.background)
-                && Objects.equals(numericShaping, o1.numericShaping)
-                && Objects.equals(justification, o1.justification)
-                && Objects.equals(charReplacement, o1.charReplacement)
-                && size == o1.size
-                && weight == o1.weight
-                && posture == o1.posture
-                && Objects.equals(family, o1.family)
-                && Objects.equals(font, o1.font)
-                && imUnderline == o1.imUnderline
-                && Objects.equals(imHighlight, o1.imHighlight);
+        return this == o || o instanceof AttributeValues rhs
+                && defined == rhs.defined
+                && nondefault == rhs.nondefault
+                && underline == rhs.underline
+                && strikethrough == rhs.strikethrough
+                && superscript == rhs.superscript
+                && width == rhs.width
+                && kerning == rhs.kerning
+                && tracking == rhs.tracking
+                && ligatures == rhs.ligatures
+                && runDirection == rhs.runDirection
+                && bidiEmbedding == rhs.bidiEmbedding
+                && swapColors == rhs.swapColors
+                && Objects.equals(transform, rhs.transform)
+                && Objects.equals(foreground, rhs.foreground)
+                && Objects.equals(background, rhs.background)
+                && Objects.equals(numericShaping, rhs.numericShaping)
+                && Objects.equals(justification, rhs.justification)
+                && Objects.equals(charReplacement, rhs.charReplacement)
+                && size == rhs.size
+                && weight == rhs.weight
+                && posture == rhs.posture
+                && Objects.equals(family, rhs.family)
+                && Objects.equals(font, rhs.font)
+                && imUnderline == rhs.imUnderline
+                && Objects.equals(imHighlight, rhs.imHighlight);
     }
 
     public AttributeValues clone() {

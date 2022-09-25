@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,42 +656,42 @@ public class StandardGlyphVector extends GlyphVector {
             return true;
         }
 
-        if (o instanceof StandardGlyphVector o1) {
-            if (glyphs.length != o1.glyphs.length) {
+        if (o instanceof StandardGlyphVector other) {
+            if (glyphs.length != other.glyphs.length) {
                 return false;
             }
 
             for (int i = 0; i < glyphs.length; ++i) {
-                if (glyphs[i] != o1.glyphs[i]) {
+                if (glyphs[i] != other.glyphs[i]) {
                     return false;
                 }
             }
 
-            if (!font.equals(o1.font)) {
+            if (!font.equals(other.font)) {
                 return false;
             }
 
-            if (!frc.equals(o1.frc)) {
+            if (!frc.equals(other.frc)) {
                 return false;
             }
 
-            if ((o1.positions == null) != (positions == null)) {
+            if ((other.positions == null) != (positions == null)) {
                 if (positions == null) {
                     initPositions();
                 } else {
-                    o1.initPositions();
+                    other.initPositions();
                 }
             }
 
             if (positions != null) {
                 for (int i = 0; i < positions.length; ++i) {
-                    if (positions[i] != o1.positions[i]) {
+                    if (positions[i] != other.positions[i]) {
                         return false;
                     }
                 }
             }
 
-            return Objects.equals(gti, o1.gti);
+            return Objects.equals(gti, other.gti);
         }
         return false;
     }

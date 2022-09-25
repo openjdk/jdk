@@ -71,20 +71,20 @@ public final class CoreMetrics {
     }
 
     public boolean equals(Object o) {
-        return this == o || o instanceof CoreMetrics o1
-                && ascent == o1.ascent
-                && descent == o1.descent
-                && leading == o1.leading
-                && baselineIndex == o1.baselineIndex
-                && baselineOffsets[0] == o1.baselineOffsets[0]
-                && baselineOffsets[1] == o1.baselineOffsets[1]
-                && baselineOffsets[2] == o1.baselineOffsets[2]
-                && strikethroughOffset == o1.strikethroughOffset
-                && strikethroughThickness == o1.strikethroughThickness
-                && underlineOffset == o1.underlineOffset
-                && underlineThickness == o1.underlineThickness
-                && ssOffset == o1.ssOffset
-                && italicAngle == o1.italicAngle;
+        return this == o || o instanceof CoreMetrics rhs
+                && ascent == rhs.ascent
+                && descent == rhs.descent
+                && leading == rhs.leading
+                && baselineIndex == rhs.baselineIndex
+                && baselineOffsets[0] == rhs.baselineOffsets[0]
+                && baselineOffsets[1] == rhs.baselineOffsets[1]
+                && baselineOffsets[2] == rhs.baselineOffsets[2]
+                && strikethroughOffset == rhs.strikethroughOffset
+                && strikethroughThickness == rhs.strikethroughThickness
+                && underlineOffset == rhs.underlineOffset
+                && underlineThickness == rhs.underlineThickness
+                && ssOffset == rhs.ssOffset
+                && italicAngle == rhs.italicAngle;
     }
 
     // fullOffsets is an array of 5 baseline offsets,
