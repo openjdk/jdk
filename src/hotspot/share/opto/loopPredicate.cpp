@@ -176,9 +176,8 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
   register_control(if_cont, lp, new_iff);
   register_control(if_uct, get_loop(rgn), new_iff);
 
-  // if_uct to rgn
-  _igvn.hash_delete(rgn);
-  rgn->add_req(if_uct);
+  _igvn.add_input_to(rgn, if_uct);
+
   // When called from beautify_loops() idom is not constructed yet.
   if (_idom != NULL) {
     Node* ridom = idom(rgn);

@@ -449,7 +449,7 @@ class Stream<T> extends ExchangeImpl<T> {
     private boolean checkRequestCancelled() {
         if (exchange.multi.requestCancelled()) {
             if (errorRef.get() == null) cancel();
-            else sendCancelStreamFrame();
+            else sendResetStreamFrame(ResetFrame.CANCEL);
             return true;
         }
         return false;
@@ -1238,6 +1238,16 @@ class Stream<T> extends ExchangeImpl<T> {
         cancelImpl(cause);
     }
 
+    @Override
+    void onProtocolError(final IOException cause) {
+        if (debug.on()) {
+            debug.log("cancelling exchange on stream %d due to protocol error: %s", streamid, cause.getMessage());
+        }
+        Log.logError("cancelling exchange on stream {0} due to protocol error: {1}\n", streamid, cause);
+        // send a RESET frame and close the stream
+        cancelImpl(cause, ResetFrame.PROTOCOL_ERROR);
+    }
+
     void connectionClosing(Throwable cause) {
         Flow.Subscriber<?> subscriber =
                 responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
@@ -1249,6 +1259,10 @@ class Stream<T> extends ExchangeImpl<T> {
 
     // This method sends a RST_STREAM frame
     void cancelImpl(Throwable e) {
+        cancelImpl(e, ResetFrame.CANCEL);
+    }
+
+    private void cancelImpl(final Throwable e, final int resetFrameErrCode) {
         errorRef.compareAndSet(null, e);
         if (debug.on()) {
             if (streamid == 0) debug.log("cancelling stream: %s", (Object)e);
@@ -1280,14 +1294,14 @@ class Stream<T> extends ExchangeImpl<T> {
         try {
             // will send a RST_STREAM frame
             if (streamid != 0 && streamState == 0) {
-                e = Utils.getCompletionCause(e);
-                if (e instanceof EOFException) {
+                final Throwable cause = Utils.getCompletionCause(e);
+                if (cause instanceof EOFException) {
                     // read EOF: no need to try & send reset
                     connection.decrementStreamsCount(streamid);
                     connection.closeStream(streamid);
                 } else {
                     // no use to send CANCEL if already closed.
-                    sendCancelStreamFrame();
+                    sendResetStreamFrame(resetFrameErrCode);
                 }
             }
         } catch (Throwable ex) {
@@ -1295,10 +1309,10 @@ class Stream<T> extends ExchangeImpl<T> {
         }
     }
 
-    void sendCancelStreamFrame() {
+    void sendResetStreamFrame(final int resetFrameErrCode) {
         // do not reset a stream until it has a streamid.
-        if (streamid > 0 && markStream(ResetFrame.CANCEL) == 0) {
-            connection.resetStream(streamid, ResetFrame.CANCEL);
+        if (streamid > 0 && markStream(resetFrameErrCode) == 0) {
+            connection.resetStream(streamid, resetFrameErrCode);
         }
         close();
     }

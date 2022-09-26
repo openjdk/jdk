@@ -147,7 +147,7 @@ void LIR_Assembler::emit_stubs(CodeStubList* stub_list) {
       stringStream st;
       s->print_name(&st);
       st.print(" slow case");
-      _masm->block_comment(st.as_string());
+      _masm->block_comment(st.freeze());
     }
 #endif
     s->emit_code(this);
@@ -262,7 +262,7 @@ void LIR_Assembler::emit_block(BlockBegin* block) {
   if (CommentedAssembly) {
     stringStream st;
     st.print_cr(" block B%d [%d, %d]", block->block_id(), block->bci(), block->end()->printable_bci());
-    _masm->block_comment(st.as_string());
+    _masm->block_comment(st.freeze());
   }
 #endif
 
@@ -292,7 +292,7 @@ void LIR_Assembler::emit_lir_list(LIR_List* list) {
           (op->code() == lir_leal && op->as_Op1()->patch_code() != lir_patch_none)) {
         stringStream st;
         op->print_on(&st);
-        _masm->block_comment(st.as_string());
+        _masm->block_comment(st.freeze());
       }
     }
     if (PrintLIRWithAssembly) {

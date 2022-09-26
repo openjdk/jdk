@@ -1310,6 +1310,17 @@ JvmtiEnvBase::is_cthread_with_continuation(JavaThread* jt) {
   return cont_entry != NULL && is_cthread_with_mounted_vthread(jt);
 }
 
+// If (thread == NULL) then return current thread object.
+// Otherwise return JNIHandles::resolve_external_guard(thread).
+oop
+JvmtiEnvBase::current_thread_obj_or_resolve_external_guard(jthread thread) {
+  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  if (thread == NULL) {
+    thread_obj = get_vthread_or_thread_oop(JavaThread::current());
+  }
+  return thread_obj;
+}
+
 jvmtiError
 JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
                                            JavaThread** jt_pp, oop* thread_oop_p) {
@@ -1655,7 +1666,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
     assert(single_resume || is_virtual, "ResumeAllVirtualThreads should never resume non-virtual threads");
     if (java_thread->is_suspended()) {
       if (!JvmtiSuspendControl::resume(java_thread)) {
-        return JVMTI_ERROR_INTERNAL;
+        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       }
     }
   }

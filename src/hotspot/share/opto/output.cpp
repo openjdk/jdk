@@ -930,8 +930,16 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
+    } else if (C->regalloc()->is_oop(local)) {
+      assert(t->base() == Type::OopPtr || t->base() == Type::InstPtr ||
+             t->base() == Type::AryPtr,
+             "Unexpected type: %s", t->msg());
+      array->append(new_loc_value( C->regalloc(), regnum, Location::oop ));
     } else {
-      array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
+      assert(t->base() == Type::Int || t->base() == Type::Half ||
+             t->base() == Type::FloatCon || t->base() == Type::FloatBot,
+             "Unexpected type: %s", t->msg());
+      array->append(new_loc_value( C->regalloc(), regnum, Location::normal ));
     }
     return;
   }
@@ -1472,7 +1480,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     if (!block->is_connector()) {
       stringStream st;
       block->dump_head(C->cfg(), &st);
-      MacroAssembler(cb).block_comment(st.as_string());
+      MacroAssembler(cb).block_comment(st.freeze());
     }
     jmp_target[i] = 0;
     jmp_offset[i] = 0;
@@ -1925,13 +1933,13 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        tty->print_raw(method_metadata_str.as_string());
+        tty->print_raw(method_metadata_str.freeze());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      tty->print_raw(dump_asm_str.as_string());
+      tty->print_raw(dump_asm_str.freeze());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
         xtty->tail("opto_assembly");

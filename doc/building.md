@@ -382,14 +382,14 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019
-(16.8 or higher). For all other platforms the minimum accepted version of
-Visual Studio is 2017. Older versions will not be accepted by `configure` and will
-not work. For all platforms the maximum accepted version of Visual Studio is 2022.
+The minimum accepted version is Visual Studio 2019 version 16.8. (Note that this
+version is often presented as "MSVC 14.28", and reported by cl.exe as 19.28.)
+Older versions will not be accepted by `configure` and will not work. The
+maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
-setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
+setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2022`.
 
 If you have Visual Studio installed but `configure` fails to detect it, it may
 be because of [spaces in path](#spaces-in-path).
@@ -876,6 +876,42 @@ make run-test-tier1
 
 For more details on how to run tests, please see **Testing the JDK**
 ([html](testing.html), [markdown](testing.md)).
+
+## Signing
+
+### macOS
+
+Modern versions of macOS require applications to be signed and notarizied before
+distribution. See Apple's documentation for more background on what this means
+and how it works. To help support this, the JDK build can be configured to
+automatically sign all native binaries, and the JDK bundle, with all the options
+needed for successful notarization, as well as all the entitlements required by
+the JDK. To enable `hardened` signing, use configure parameter
+`--with-macosx-codesign=hardened` and configure the signing identity you wish to
+use with `--with-macosx-codesign-identity=<identity>`. The identity refers to a
+signing identity from Apple that needs to be preinstalled on the build host.
+
+When not signing for distribution with the hardened option, the JDK build will
+still attempt to perform `adhoc` signing to add the special entitlement
+`com.apple.security.get-task-allow` to each binary. This entitlement is required
+to be able to dump core files from a process. Note that adding this entitlement
+makes the build invalid for notarization, so it is only added when signing in
+`debug` mode. To explicitly enable this kind of adhoc signing, use configure
+parameter `--with-macosx-codesign=debug`. It will be enabled by default in most
+cases.
+
+It's also possible to completely disable any explicit codesign operations done
+by the JDK build using the configure parameter `--without-macosx-codesign`.
+The exact behavior then depends on the architecture. For macOS on x64, it (at
+least at the time of this writing) results in completely unsigned binaries that
+should still work fine for development and debugging purposes. On aarch64, the
+Xcode linker will apply a default "adhoc" signing, without any entitlements.
+Such a build does not allow dumping core files.
+
+The default mode "auto" will try for `hardened` signing if the debug level is
+`release` and either the default identity or the specified identity is valid.
+If hardened isn't possible, then `debug` signing is chosen if it works. If
+nothing works, the codesign build step is disabled.
 
 ## Cross-compiling
 
@@ -1948,6 +1984,12 @@ Adoption Group will also happily answer any questions you have about
 contributing. Contact them by [mail](
 http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss) or [IRC](
 http://openjdk.java.net/irc/).
+
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/building.md` and
+then run `make update-build-docs` to generate the same changes in
+`doc/building.html`.
 
 ---
 # Override styles from the base CSS file that are not ideal for this document.

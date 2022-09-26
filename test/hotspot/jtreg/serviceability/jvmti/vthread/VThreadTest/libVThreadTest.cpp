@@ -156,9 +156,7 @@ test_GetCarrierThread(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jthread vthr
 
   // #1: Test JVMTI GetCarrierThread extension function with NULL vthread
   err = GetCarrierThread(jvmti, jni, NULL, &vthread_thread);
-  if (err != JVMTI_ERROR_INVALID_THREAD) {
-    fatal(jni, "event handler: JVMTI GetCarrierThread with NULL vthread failed to return JVMTI_ERROR_INVALID_THREAD");
-  }
+  check_jvmti_status(jni, err, "event handler: error in JVMTI GetCarrierThread");
 
   // #2: Test JVMTI GetCarrierThread extension function with a bad vthread
   err = GetCarrierThread(jvmti, jni, thread, &vthread_thread);

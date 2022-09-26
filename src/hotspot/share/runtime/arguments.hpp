@@ -479,6 +479,10 @@ class Arguments : AllStatic {
                                          char** base_archive_path,
                                          char** top_archive_path) NOT_CDS_RETURN;
 
+  // Helpers for parse_malloc_limits
+  static bool parse_malloc_limit_size(const char* s, size_t* out);
+  static void parse_single_category_limit(char* expression, size_t limits[mt_number_of_types]);
+
  public:
   static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   // Parses the arguments, first phase
@@ -652,6 +656,16 @@ class Arguments : AllStatic {
   static void assert_is_dumping_archive() {
     assert(Arguments::is_dumping_archive(), "dump time only");
   }
+
+  // Parse diagnostic NMT switch "MallocLimit" and return the found limits.
+  // 1) If option is not given, it will set all limits to 0 (aka "no limit").
+  // 2) If option is given in the global form (-XX:MallocLimit=<size>), it
+  //    will return the size in *total_limit.
+  // 3) If option is given in its per-NMT-category form (-XX:MallocLimit=<category>:<size>[,<category>:<size>]),
+  //    it will return all found limits in the limits array.
+  // 4) If option is malformed, it will exit the VM.
+  // For (2) and (3), limits not affected by the switch will be set to 0.
+  static void parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]);
 
   DEBUG_ONLY(static bool verify_special_jvm_flags(bool check_globals);)
 };
