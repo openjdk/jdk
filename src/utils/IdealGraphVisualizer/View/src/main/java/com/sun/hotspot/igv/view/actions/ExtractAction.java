@@ -23,11 +23,6 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import javax.swing.Action;
-import org.openide.util.HelpCtx;
-import org.openide.util.Utilities;
-import org.openide.util.actions.CallableSystemAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;

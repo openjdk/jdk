@@ -23,7 +23,6 @@
  */
 package com.sun.hotspot.igv.data.serialization;
 
-import com.sun.hotspot.igv.data.Properties;
 import java.util.HashMap;
 import java.util.Stack;
 import org.xml.sax.Attributes;

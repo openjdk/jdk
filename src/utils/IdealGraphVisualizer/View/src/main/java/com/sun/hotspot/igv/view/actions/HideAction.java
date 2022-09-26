@@ -24,17 +24,14 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.DiagramViewModel;
-import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.util.HashSet;
 import java.util.Set;
-import javax.swing.Action;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
 import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
-import org.openide.util.Utilities;
 
 
 /**

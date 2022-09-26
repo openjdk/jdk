@@ -32,6 +32,7 @@ import org.openide.awt.ActionRegistration;
 import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
 
+
 /**
  * @author Thomas Wuerthinger
  */
