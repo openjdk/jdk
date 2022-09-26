@@ -57,6 +57,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
 
     @Override
     public CodeBuilder.CatchBuilder catchingMulti(List<ClassDesc> exceptionTypes, Consumer<CodeBuilder.BlockCodeBuilder> catchHandler) {
+        Objects.requireNonNull(exceptionTypes);
         Objects.requireNonNull(catchHandler);
 
         if (catchBlock == null) {

@@ -332,7 +332,7 @@ public sealed interface CodeBuilder
         CatchBuilder catching(ClassDesc exceptionType, Consumer<BlockCodeBuilder> catchHandler);
 
         /**
-         * Adds a catch block that catches an exception of the given type.
+         * Adds a catch block that catches exceptions of the given types.
          * <p>
          * The caught exception will be on top of the operand stack when the catch block is entered.
          * <p>
