@@ -44,8 +44,8 @@ public class BlockWidget extends LabelWidget implements Vertex {
     private final Port outputSlot;
     private Cluster cluster;
     private boolean root;
-    private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
-    private static final Font boldFont = font.deriveFont(Font.BOLD);
+    private static final Font FOND = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+    private static final Font BOLD_FOND = FOND.deriveFont(Font.BOLD);
     public static final Color NORMAL_FOREGROUND_COLOR = Color.BLACK;
     public static final Color HOVER_FOREGROUND_COLOR = Color.BLUE;
 
@@ -58,7 +58,7 @@ public class BlockWidget extends LabelWidget implements Vertex {
         this.setBorder(BorderFactory.createLineBorder(1, NORMAL_FOREGROUND_COLOR));
         this.setMinimumSize(MIN_SIZE);
 
-        this.setFont(font);
+        this.setFont(FOND);
         this.setAlignment(Alignment.CENTER);
 
         final BlockWidget widget = this;
@@ -140,9 +140,9 @@ public class BlockWidget extends LabelWidget implements Vertex {
 
         if (previousState.isSelected() != state.isSelected()) {
             if (state.isSelected()) {
-                this.setFont(boldFont);
+                this.setFont(BOLD_FOND);
             } else {
-                this.setFont(font);
+                this.setFont(FOND);
             }
         }
     }
