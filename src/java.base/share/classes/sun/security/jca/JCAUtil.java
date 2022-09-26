@@ -25,12 +25,12 @@
 
 package sun.security.jca;
 
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.X509CertificateEvent;
 import sun.security.util.KeyUtil;
-
-import java.security.*;
-import java.security.cert.X509Certificate;
 
 /**
  * Collection of static utility methods used by the security framework.
@@ -96,44 +96,5 @@ public final class JCAUtil {
         }
         return result;
 
-    }
-
-    public static void commitX509CertEvent(X509Certificate info) {
-        if (X509CertificateEvent.isTurnedOn() || EventHelper.isLoggingSecurity()) {
-            PublicKey pKey = info.getPublicKey();
-            String algId = info.getSigAlgName();
-            String serNum = info.getSerialNumber().toString(16);
-            String subject = info.getSubjectX500Principal().getName();
-            String issuer = info.getIssuerX500Principal().getName();
-            String keyType = pKey.getAlgorithm();
-            int length = KeyUtil.getKeySize(pKey);
-            int hashCode = info.hashCode();
-            long beginDate = info.getNotBefore().getTime();
-            long endDate = info.getNotAfter().getTime();
-            if (X509CertificateEvent.isTurnedOn()) {
-                X509CertificateEvent xce = new X509CertificateEvent();
-                xce.algorithm = algId;
-                xce.serialNumber = serNum;
-                xce.subject = subject;
-                xce.issuer = issuer;
-                xce.keyType = keyType;
-                xce.keyLength = length;
-                xce.certificateId = hashCode;
-                xce.validFrom = beginDate;
-                xce.validUntil = endDate;
-                xce.commit();
-            }
-            if (EventHelper.isLoggingSecurity()) {
-                EventHelper.logX509CertificateEvent(algId,
-                        serNum,
-                        subject,
-                        issuer,
-                        keyType,
-                        length,
-                        hashCode,
-                        beginDate,
-                        endDate);
-            }
-        }
     }
 }

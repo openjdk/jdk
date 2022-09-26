@@ -42,7 +42,7 @@ import jdk.test.lib.Utils;
  * @bug 8288397
  * @key randomness
  * @library /test/lib /
- * @requires vm.cpu.features ~= ".*sve.*"
+ * @requires vm.cpu.features ~= ".*sve.*" & (vm.opt.MaxVectorSize == "null" | vm.opt.MaxVectorSize >= 16)
  * @summary AArch64: Fix register issues in SVE backend match rules
  * @modules jdk.incubator.vector
  *

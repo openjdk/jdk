@@ -67,12 +67,12 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
   assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
 
   log_trace(gc, barrier)("G1CardTable::G1CardTable: ");
-  log_trace(gc, barrier)("    &_byte_map[0]: " INTPTR_FORMAT "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
+  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[_last_valid_index]: " PTR_FORMAT,
                          p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
-  log_trace(gc, barrier)("    _byte_map_base: " INTPTR_FORMAT,  p2i(_byte_map_base));
+  log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT,  p2i(_byte_map_base));
 }
 
-bool G1CardTable::is_in_young(oop obj) const {
-  volatile CardValue* p = byte_for(obj);
-  return *p == G1CardTable::g1_young_card_val();
+bool G1CardTable::is_in_young(const void* p) const {
+  volatile CardValue* card = byte_for(p);
+  return *card == G1CardTable::g1_young_card_val();
 }

@@ -26,18 +26,20 @@
 package sun.security.provider;
 
 import java.io.*;
-import java.util.*;
+
 import java.security.cert.*;
+import java.util.*;
 
 import sun.security.jca.JCAUtil;
-import sun.security.x509.*;
 import sun.security.pkcs.PKCS7;
+import sun.security.pkcs.ParsingException;
 import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
-import sun.security.util.DerValue;
 import sun.security.util.Cache;
-import java.util.Base64;
-import sun.security.pkcs.ParsingException;
+import sun.security.util.DerValue;
+import sun.security.util.KeyUtil;
+import sun.security.x509.X509CRLImpl;
+import sun.security.x509.X509CertImpl;
 
 /**
  * This class defines a certificate factory for X.509 v3 certificates {@literal &}
@@ -126,7 +128,7 @@ public class X509Factory extends CertificateFactorySpi {
         int read = 0;
         byte[] buffer = new byte[2048];
         while (length > 0) {
-            int n = in.read(buffer, 0, length<2048?length:2048);
+            int n = in.read(buffer, 0, Math.min(length, 2048));
             if (n <= 0) {
                 break;
             }
@@ -672,7 +674,7 @@ public class X509Factory extends CertificateFactorySpi {
 
     /**
      * Read one BER data block. This method is aware of indefinite-length BER
-     * encoding and will read all of the sub-sections in a recursive way
+     * encoding and will read all the subsections in a recursive way
      *
      * @param is    Read from this InputStream
      * @param bout  Write into this OutputStream

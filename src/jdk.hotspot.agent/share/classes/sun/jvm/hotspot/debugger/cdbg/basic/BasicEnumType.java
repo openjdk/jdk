@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,8 @@ public class BasicEnumType extends BasicIntType implements EnumType {
   }
 
   public int    getNumEnumerates()  { return enums.size(); }
-  public String getEnumName(int i)  { return ((Enum) enums.get(i)).getName();  }
-  public long   getEnumValue(int i) { return ((Enum) enums.get(i)).getValue(); }
+  public String getEnumName(int i)  { return enums.get(i).getName();  }
+  public long   getEnumValue(int i) { return enums.get(i).getValue(); }
 
   public String enumNameForValue(long val) {
     if (enums == null) {

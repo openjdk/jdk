@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ implements CertAttrSet<String> {
         DerOutputStream tmp = new DerOutputStream();
 
         if (ca) {
-            tmp.putBoolean(ca);
+            tmp.putBoolean(true);
             // Only encode pathLen when ca == true
             if (pathLen >= 0) {
                 tmp.putInteger(pathLen);
@@ -194,11 +194,7 @@ implements CertAttrSet<String> {
          DerOutputStream tmp = new DerOutputStream();
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
-             if (ca) {
-                 critical = true;
-             } else {
-                 critical = false;
-             }
+             critical = ca;
              encodeThis();
          }
          super.encode(tmp);
