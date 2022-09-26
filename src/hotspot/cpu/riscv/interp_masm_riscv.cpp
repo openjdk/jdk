@@ -280,7 +280,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Load pointer for resolved_references[] objArray
   ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
   ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  resolve_oop_handle(result, tmp);
+  resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
@@ -915,7 +915,7 @@ void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
 void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Label set_mdp;
-  push_reg(0xc00, sp); // save x10, x11
+  push_reg(RegSet::of(x10, x11), sp); // save x10, x11
 
   // Test MDO to avoid the call if it is NULL.
   ld(x10, Address(xmethod, in_bytes(Method::method_data_offset())));
@@ -928,7 +928,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   add(x10, x11, x10);
   sd(x10, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
   bind(set_mdp);
-  pop_reg(0xc00, sp);
+  pop_reg(RegSet::of(x10, x11), sp);
 }
 
 void InterpreterMacroAssembler::verify_method_data_pointer() {

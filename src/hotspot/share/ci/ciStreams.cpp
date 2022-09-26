@@ -201,12 +201,8 @@ ciKlass* ciBytecodeStream::get_klass() {
   bool will_link;
   ciKlass* klass = get_klass(will_link);
   if (!will_link && klass->is_loaded()) { // klass not accessible
-    if (klass->is_array_klass()) {
-      assert(!klass->is_type_array_klass(), "");
-      klass = ciEnv::unloaded_ciobjarrayklass();
-    } else {
-      klass = ciEnv::unloaded_ciinstance_klass();
-    }
+    VM_ENTRY_MARK;
+    klass = CURRENT_ENV->get_unloaded_klass(_holder, klass->name());
   }
   return klass;
 }

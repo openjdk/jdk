@@ -146,14 +146,14 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators) {
   assert(val == noreg || val == r0, "parameter is just for looks");
-  __ store_heap_oop(dst, val, r10, r1, r3, decorators);
+  __ store_heap_oop(dst, val, r10, r11, r3, decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
                         Address src,
                         Register dst,
                         DecoratorSet decorators) {
-  __ load_heap_oop(dst, src, r10, r1, decorators);
+  __ load_heap_oop(dst, src, r10, r11, decorators);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -411,7 +411,7 @@ void TemplateTable::fast_aldc(bool wide)
     // Stash null_sentinel address to get its value later
     __ movptr(rarg, (uintptr_t)Universe::the_null_sentinel_addr());
     __ ldr(tmp, Address(rarg));
-    __ resolve_oop_handle(tmp);
+    __ resolve_oop_handle(tmp, r5, rscratch2);
     __ cmpoop(result, tmp);
     __ br(Assembler::NE, notNull);
     __ mov(result, 0);  // NULL object reference
@@ -2316,7 +2316,7 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
                                         ConstantPoolCacheEntry::f1_offset())));
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ ldr(obj, Address(obj, mirror_offset));
-    __ resolve_oop_handle(obj);
+    __ resolve_oop_handle(obj, r5, rscratch2);
   }
 }
 
