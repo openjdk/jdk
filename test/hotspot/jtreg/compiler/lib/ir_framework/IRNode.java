@@ -155,6 +155,16 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_VI, "AddVI");
     }
 
+    public static final String ADD_REDUCTION_VD = PREFIX + "ADD_REDUCTION_VD" + POSTFIX;
+    static {
+        superWordNodes(ADD_REDUCTION_VD, "AddReductionVD");
+    }
+
+    public static final String ADD_REDUCTION_VF = PREFIX + "ADD_REDUCTION_VF" + POSTFIX;
+    static {
+        superWordNodes(ADD_REDUCTION_VF, "AddReductionVF");
+    }
+
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
         String idealIndependentRegex = START + "Allocate" + MID + END;
@@ -591,6 +601,21 @@ public class IRNode {
     public static final String MUL_L = PREFIX + "MUL_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(MUL_L, "MulL");
+    }
+
+    public static final String MUL_VL = PREFIX + "MUL_VL" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_VL, "MulVL");
+    }
+
+    public static final String MUL_REDUCTION_VD = PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
+    static {
+        superWordNodes(MUL_REDUCTION_VD, "MulReductionVD");
+    }
+
+    public static final String MUL_REDUCTION_VF = PREFIX + "MUL_REDUCTION_VF" + POSTFIX;
+    static {
+        superWordNodes(MUL_REDUCTION_VF, "MulReductionVF");
     }
 
     public static final String NULL_ASSERT_TRAP = PREFIX + "NULL_ASSERT_TRAP" + POSTFIX;
@@ -1085,6 +1110,15 @@ public class IRNode {
         beforeMatching(irNodePlaceholder, regex);
     }
 
+    /**
+     * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#AFTER_CLOOPS}.
+     */
+    private static void superWordNodes(String irNodePlaceholder, String irNodeRegex) {
+        String regex = START + irNodeRegex + MID + END;
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
+                                                                          CompilePhase.AFTER_CLOOPS,
+                                                                          CompilePhase.BEFORE_MATCHING));
+    }
 
     /*
      * Methods used internally by the IR framework.
