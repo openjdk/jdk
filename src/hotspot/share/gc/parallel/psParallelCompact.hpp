@@ -243,13 +243,6 @@ public:
     // Reuse _source_region to store the corresponding shadow region index
     size_t shadow_region() const { return _source_region; }
 
-    // The object (if any) starting in this region and ending in a different
-    // region that could not be updated during the main (parallel) compaction
-    // phase.  This is different from _partial_obj_addr, which is an object that
-    // extends onto a source region.  However, the two uses do not overlap in
-    // time, so the same field is used to save space.
-    HeapWord* deferred_obj_addr() const { return _partial_obj_addr; }
-
     // The starting address of the partial object extending onto the region.
     HeapWord* partial_obj_addr() const { return _partial_obj_addr; }
 
@@ -312,7 +305,6 @@ public:
     void set_destination(HeapWord* addr)       { _destination = addr; }
     void set_source_region(size_t region)      { _source_region = region; }
     void set_shadow_region(size_t region)      { _source_region = region; }
-    void set_deferred_obj_addr(HeapWord* addr) { _partial_obj_addr = addr; }
     void set_partial_obj_addr(HeapWord* addr)  { _partial_obj_addr = addr; }
     void set_partial_obj_size(size_t words)    {
       _partial_obj_size = (region_sz_t) words;
@@ -948,8 +940,8 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // but do not have their references updated.  References are not updated because
 // it cannot easily be determined if the klass pointer KKK for the object AAA
 // has been updated.  KKK likely resides in a region to the left of the region
-// containing AAA.  These AAA's have there references updated at the end in a
-// clean up phase.  See the method PSParallelCompact::update_deferred_objects().
+// containing AAA.  These AAA's have their references updated at the end in a
+// clean up phase.  See the method PSParallelCompact::update_deferred_object().
 //
 // Compaction is done on a region basis.  A region that is ready to be filled is
 // put on a ready list and GC threads take region off the list and fill them.  A
@@ -1248,8 +1240,8 @@ class PSParallelCompact : AllStatic {
   // Fill in the block table for the specified region.
   static void fill_blocks(size_t region_idx);
 
-  // Update the deferred objects in the space.
-  static void update_deferred_objects(ParCompactionManager* cm, SpaceId id);
+  // Update a single deferred object.
+  static void update_deferred_object(ParCompactionManager* cm, HeapWord* addr);
 
   static ParMarkBitMap* mark_bitmap() { return &_mark_bitmap; }
   static ParallelCompactData& summary_data() { return _summary_data; }

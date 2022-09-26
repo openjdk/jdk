@@ -267,10 +267,15 @@ endif
 # specialized file is found, returns the default file.
 # $1 Executable to find entitlements file for.
 ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
-DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default.plist
+ifeq ($(MACOSX_CODESIGN_MODE), debug)
+  CODESIGN_PLIST_SUFFIX := -debug
+else
+  CODESIGN_PLIST_SUFFIX :=
+endif
+DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default$(CODESIGN_PLIST_SUFFIX).plist
 
 GetEntitlementsFile = \
-    $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1)).plist, \
+    $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1))$(CODESIGN_PLIST_SUFFIX).plist, \
       $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
     )
 
@@ -802,7 +807,7 @@ define SetupNativeCompilationBody
       ifeq ($(TOOLCHAIN_TYPE), microsoft)
         $1_PCH_FILE := $$($1_OBJECT_DIR)/$1.pch
         $1_GENERATED_PCH_SRC := $$($1_OBJECT_DIR)/$1_pch.cpp
-        $1_GENERATED_PCH_OBJ := $$($1_OBJECT_DIR)/$1_pch.obj
+        $1_GENERATED_PCH_OBJ := $$($1_OBJECT_DIR)/$1_pch$(OBJ_SUFFIX)
 
         $$(eval $$(call SetupCompileNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
             FILE := $$($1_GENERATED_PCH_SRC), \
@@ -909,15 +914,15 @@ define SetupNativeCompilationBody
                 # For some unknown reason, in this case CL actually outputs the show
                 # includes to stderr so need to redirect it to hide the output from the
                 # main log.
-		$$(call ExecuteWithLog, $$($1_RES_DEPS_FILE).obj, \
+		$$(call ExecuteWithLog, $$($1_RES_DEPS_FILE)$(OBJ_SUFFIX), \
 		    $$($1_CC) $$(filter-out -l%, $$($1_RCFLAGS)) \
 		        $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
-		        $(CC_OUT_OPTION)$$($1_RES_DEPS_FILE).obj -P -Fi$$($1_RES_DEPS_FILE).pp \
+		        $(CC_OUT_OPTION)$$($1_RES_DEPS_FILE)$(OBJ_SUFFIX) -P -Fi$$($1_RES_DEPS_FILE).pp \
 		        $$($1_VERSIONINFO_RESOURCE)) 2>&1 \
 		    | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 		        -e "^$$(notdir $$($1_VERSIONINFO_RESOURCE))$$$$" || test "$$$$?" = "1" ; \
 		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEPS_FILE) ; \
-		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEPS_FILE).obj.log \
+		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEPS_FILE)$(OBJ_SUFFIX).log \
 		    >> $$($1_RES_DEPS_FILE) ; \
 		$(ECHO) >> $$($1_RES_DEPS_FILE) ;\
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEPS_FILE) \
@@ -1204,11 +1209,16 @@ define SetupNativeCompilationBody
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1
                   endif
                 endif
-                # This only works if the openjdk_codesign identity is present on the system. Let
-                # silently fail otherwise.
-                ifneq ($(CODESIGN), )
+                # On macosx, optionally run codesign on every binary.
+                # Remove signature explicitly first to avoid warnings if the linker
+                # added a default adhoc signature.
+                ifeq ($(MACOSX_CODESIGN_MODE), hardened)
+		  $(CODESIGN) --remove-signature $$@
 		  $(CODESIGN) -f -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
 		      --entitlements $$(call GetEntitlementsFile, $$@) $$@
+                else ifeq ($(MACOSX_CODESIGN_MODE), debug)
+		  $(CODESIGN) --remove-signature $$@
+		  $(CODESIGN) -f -s - --entitlements $$(call GetEntitlementsFile, $$@) $$@
                 endif
   endif
 
