@@ -103,7 +103,11 @@ public class Polygon implements Shape, java.io.Serializable {
 
     /**
      * The bounds of this {@code Polygon}.
-     * This value can be null.
+     * <p>
+     * When created, {@link #invalidate() invalidated}, or {@link #reset() reset},
+     * this becomes {@code null}. To get out of the null state,
+     * {@link #getBounds()} called with {@link #npoints} being greater than
+     * {@code 0} will transfer into a non-null {@link Rectangle}.
      *
      * @serial
      * @see #getBoundingBox()

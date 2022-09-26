@@ -386,8 +386,8 @@ class Map implements Serializable {
                                           lastHeight == height)) {
                 return contains(x, y);
             }
-            // Force the bounding box to be recalced.
-            bounds = null;
+
+            invalidate(); // Force the bounding box to be recalced.
             lastWidth = width;
             lastHeight = height;
             float fWidth = (float)width;
