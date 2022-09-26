@@ -21,6 +21,15 @@
  * questions.
  */
 
+import javax.naming.ConfigurationException;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
+import java.util.Hashtable;
+
 /*
  * @test
  * @bug 8290368
@@ -38,7 +47,7 @@
  * @run main/othervm RmiFactoriesFilterTest false
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=*
- *                    RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.**;!*
  *                   RmiFactoriesFilterTest true
@@ -46,14 +55,14 @@
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.**;!*
  *                   RmiFactoriesFilterTest true
  *
- *  @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.*;!*
- *                    RmiFactoriesFilterTest true
+ * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.*;!*
+ *                   RmiFactoriesFilterTest true
  *
- *  @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.Test*;!*
- *                    RmiFactoriesFilterTest true
+ * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.Test*;!*
+ *                   RmiFactoriesFilterTest true
  *
- *  @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=!com.test.**
- *                    RmiFactoriesFilterTest false
+ * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=!com.test.**
+ *                   RmiFactoriesFilterTest false
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=!com.test.TestFactory;com.**
  *                   RmiFactoriesFilterTest false
@@ -65,7 +74,7 @@
  *                   RmiFactoriesFilterTest false
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.*;!*
- *                   RmiFactoriesFilterTest false
+ *                    RmiFactoriesFilterTest false
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.TestFactor;!*
  *                   RmiFactoriesFilterTest false
@@ -84,18 +93,13 @@
  *                   RmiFactoriesFilterTest true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/allowRmiFilter.props
+ *                   -Djdk.jndi.ldap.object.factoriesFilter=!com.test.TestFactory
+ *                   RmiFactoriesFilterTest true
+ *
+ * @run main/othervm -Djava.security.properties=${test.src}/allowRmiFilter.props
  *                   -Djdk.jndi.rmi.object.factoriesFilter=!com.test.TestFactory
  *                   RmiFactoriesFilterTest false
  */
-
-import javax.naming.ConfigurationException;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import java.rmi.RemoteException;
-import java.rmi.registry.Registry;
-import java.util.Hashtable;
 
 public class RmiFactoriesFilterTest {
 

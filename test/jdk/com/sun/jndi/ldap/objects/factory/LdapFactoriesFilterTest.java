@@ -37,7 +37,8 @@ import java.util.Hashtable;
  * @test
  * @bug 8290368
  * @summary test how JDK system properties controls objects reconstruction
- *  from naming references with a local object factory specified
+ *  from naming references with a local object factory specified obtained
+ *  during LDAP lookup operations.
  * @modules java.naming/com.sun.jndi.ldap
  * @library /test/lib ../../lib /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils TestFactory
@@ -45,7 +46,7 @@ import java.util.Hashtable;
  * @run main/othervm LdapFactoriesFilterTest false
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=*
- *                    LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.**;!*
  *                   LdapFactoriesFilterTest true
@@ -53,14 +54,14 @@ import java.util.Hashtable;
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.**;!*
  *                   LdapFactoriesFilterTest true
  *
- *  @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.*;!*
- *                    LdapFactoriesFilterTest true
+ * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.*;!*
+ *                   LdapFactoriesFilterTest true
  *
- *  @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.Test*;!*
- *                    LdapFactoriesFilterTest true
+ * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.Test*;!*
+ *                   LdapFactoriesFilterTest true
  *
- *  @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=!com.test.**
- *                    LdapFactoriesFilterTest false
+ * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=!com.test.**
+ *                   LdapFactoriesFilterTest false
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=!com.test.TestFactory;com.**
  *                   LdapFactoriesFilterTest false
@@ -91,10 +92,14 @@ import java.util.Hashtable;
  *                   LdapFactoriesFilterTest true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/allowLdapFilter.props
+ *                   -Djdk.jndi.rmi.object.factoriesFilter=!com.test.TestFactory
+ *                   LdapFactoriesFilterTest true
+ *
+ * @run main/othervm -Djava.security.properties=${test.src}/allowLdapFilter.props
  *                   -Djdk.jndi.ldap.object.factoriesFilter=!com.test.TestFactory
  *                   LdapFactoriesFilterTest false
- *
  */
+
 public class LdapFactoriesFilterTest {
     public static void main(String[] args) throws Exception {
 
@@ -102,64 +107,69 @@ public class LdapFactoriesFilterTest {
 
         // Create unbound server socket
         ServerSocket serverSocket = new ServerSocket();
+        try (serverSocket) {
+            // Bind it to the loopback address
+            SocketAddress sockAddr = new InetSocketAddress(
+                    InetAddress.getLoopbackAddress(), 0);
+            serverSocket.bind(sockAddr);
 
-        // Bind it to the loopback address
-        SocketAddress sockAddr = new InetSocketAddress(
-                InetAddress.getLoopbackAddress(), 0);
-        serverSocket.bind(sockAddr);
+            // Construct the provider URL for LDAPTestUtils
+            String providerURL = URIBuilder.newBuilder()
+                    .scheme("ldap")
+                    .loopback()
+                    .port(serverSocket.getLocalPort())
+                    .buildUnchecked().toString();
 
-        // Construct the provider URL for LDAPTestUtils
-        String providerURL = URIBuilder.newBuilder()
-                .scheme("ldap")
-                .loopback()
-                .port(serverSocket.getLocalPort())
-                .buildUnchecked().toString();
+            // Create and initialize test environment variables
+            Hashtable<Object, Object> env;
+            env = LDAPTestUtils.initEnv(serverSocket, providerURL,
+                    LdapFactoriesFilterTest.class.getName(), args, false);
+            DirContext ctx = new InitialDirContext(env);
+            Exception observedException = null;
+            Object lookupRes = null;
 
-        Hashtable<Object, Object> env;
-        // Initialize test environment variables
-        env = LDAPTestUtils.initEnv(serverSocket, providerURL,
-                LdapFactoriesFilterTest.class.getName(), args, false);
-        DirContext ctx = null;
+            // Lookup bound reference
+            try {
+                lookupRes = ctx.lookup("Example");
+                System.err.println("Lookup results: " + lookupRes.getClass().getCanonicalName());
+            } catch (Exception ex) {
+                observedException = ex;
+            }
 
-        ctx = new InitialDirContext(env);
-        Exception observedException = null;
-        Object lookupRes = null;
-        try {
-            lookupRes = ctx.lookup("Example");
-            System.err.println("Lookup results: " + lookupRes.getClass().getCanonicalName());
-        } catch (Exception ex) {
-            observedException = ex;
-        }
-
-        if (testFactoryAllowed) {
-            // we expect NamingException with RuntimeException cause here
-            if (observedException instanceof NamingException namingException) {
-                System.err.println("Observed NamingException: " + observedException);
-                Throwable cause = namingException.getCause();
-                System.err.println("NamingException cause: " + cause);
-                // We expect RuntimeException from factory for cases when LDAP factory
-                // filter allows the test factory
-                if (cause instanceof RuntimeException rte) {
-                    String rteMessage = rte.getMessage();
-                    System.err.println("RuntimeException message: " + rteMessage);
-                    if (!com.test.TestFactory.RUNTIME_EXCEPTION_MESSAGE.equals(rteMessage)) {
-                        throw new AssertionError("Unexpected RuntimeException message observed");
+            // Check lookup operation results
+            if (testFactoryAllowed) {
+                // NamingException with RuntimeException cause is expected here
+                if (observedException instanceof NamingException namingException) {
+                    System.err.println("Observed NamingException: " + observedException);
+                    Throwable cause = namingException.getCause();
+                    System.err.println("NamingException cause: " + cause);
+                    // We expect RuntimeException from factory for cases when LDAP factory
+                    // filter allows the test factory
+                    if (cause instanceof RuntimeException rte) {
+                        String rteMessage = rte.getMessage();
+                        System.err.println("RuntimeException message: " + rteMessage);
+                        if (!com.test.TestFactory.RUNTIME_EXCEPTION_MESSAGE.equals(rteMessage)) {
+                            throw new AssertionError(
+                                    "Unexpected RuntimeException message observed");
+                        }
+                    } else {
+                        throw new AssertionError(
+                                "RuntimeException is expected to be thrown" +
+                                            " by the test object factory");
                     }
                 } else {
                     throw new AssertionError(
-                            "RuntimeException is expected to be thrown by the test object factory");
+                            "NamingException was not thrown as expected");
                 }
             } else {
-                throw new AssertionError("NamingException was not thrown as expected");
-            }
-        } else {
-            // Object factory is not allowed by the factories filter
-            // we expect reference here
-            if (lookupRes instanceof Reference ref) {
-                System.err.println("Lookup result is a reference: " +
-                        ref.getFactoryClassLocation() + " " + ref.getFactoryClassName());
-            } else {
-                new AssertionError("Reference was not returned as a lookup result");
+                // Object factory is not allowed by the factories filter
+                // we expect reference here
+                if (lookupRes instanceof Reference ref) {
+                    System.err.println("Lookup result is a reference: " +
+                            ref.getFactoryClassLocation() + " " + ref.getFactoryClassName());
+                } else {
+                    new AssertionError("Reference was not returned as a lookup result");
+                }
             }
         }
     }
