@@ -25,6 +25,7 @@
  * @test 8294236
  * @summary Tests different sources and combinations of preconditions.
  * @library /test/lib /
+ * @requires vm.compiler2.enabled
  * @run driver ir_framework.tests.TestPreconditions
  */
 
