@@ -58,8 +58,16 @@ public class TestVectorConditionalMove {
         return (a > b) ? a : b;
     }
 
+    private float cmoveFloatGTSwap(float a, float b) {
+        return (b > a) ? a : b;
+    }
+
     private float cmoveFloatLT(float a, float b) {
         return (a < b) ? a : b;
+    }
+
+    private float cmoveFloatLTSwap(float a, float b) {
+        return (b < a) ? a : b;
     }
 
     private float cmoveFloatEQ(float a, float b) {
@@ -70,8 +78,16 @@ public class TestVectorConditionalMove {
         return (a <= b) ? a : b;
     }
 
+    private double cmoveDoubleLESwap(double a, double b) {
+        return (b <= a) ? a : b;
+    }
+
     private double cmoveDoubleGE(double a, double b) {
         return (a >= b) ? a : b;
+    }
+
+    private double cmoveDoubleGESwap(double a, double b) {
+        return (b >= a) ? a : b;
     }
 
     private double cmoveDoubleNE(double a, double b) {
@@ -88,9 +104,25 @@ public class TestVectorConditionalMove {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
+    private static void testCMoveVFGTSwap(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (b[i] > a[i]) ? a[i] : b[i];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVFLT(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] < b[i]) ? a[i] : b[i];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
+    private static void testCMoveVFLTSwap(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (b[i] < a[i]) ? a[i] : b[i];
         }
     }
 
@@ -112,9 +144,25 @@ public class TestVectorConditionalMove {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
+    private static void testCMoveVDLESwap(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (b[i] <= a[i]) ? a[i] : b[i];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVDGE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] >= b[i]) ? a[i] : b[i];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
+    private static void testCMoveVDGESwap(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (b[i] >= a[i]) ? a[i] : b[i];
         }
     }
 
@@ -126,7 +174,8 @@ public class TestVectorConditionalMove {
         }
     }
 
-    @Run(test = {"testCMoveVFGT", "testCMoveVFLT","testCMoveVDLE", "testCMoveVDGE", "testCMoveVFEQ", "testCMoveVDNE"})
+    @Run(test = {"testCMoveVFGT", "testCMoveVFLT","testCMoveVDLE", "testCMoveVDGE", "testCMoveVFEQ", "testCMoveVDNE",
+                 "testCMoveVFGTSwap", "testCMoveVFLTSwap","testCMoveVDLESwap", "testCMoveVDGESwap"})
     private void testCMove_runner() {
         for (int i = 0; i < SIZE; i++) {
             floata[i] = RANDOM.nextFloat();
@@ -161,6 +210,20 @@ public class TestVectorConditionalMove {
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(floatc[i], cmoveFloatEQ(floata[i], floatb[i]));
             Asserts.assertEquals(doublec[i], cmoveDoubleNE(doublea[i], doubleb[i]));
+        }
+
+        testCMoveVFGTSwap(floata, floatb, floatc);
+        testCMoveVDLESwap(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFloatGTSwap(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDoubleLESwap(doublea[i], doubleb[i]));
+        }
+
+        testCMoveVFLTSwap(floata, floatb, floatc);
+        testCMoveVDGESwap(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFloatLTSwap(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDoubleGESwap(doublea[i], doubleb[i]));
         }
     }
 }
