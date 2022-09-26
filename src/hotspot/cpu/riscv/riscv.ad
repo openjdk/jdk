@@ -1318,6 +1318,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
+  MacroAssembler::assert_alignment(__ pc());
   __ nop();
 
   assert_cond(C != NULL);
@@ -1735,6 +1736,10 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   __ cmp_klass(j_rarg0, t1, t0, skip);
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   __ bind(skip);
+
+  // These NOPs are critical so that verified entry point is properly
+  // 4 bytes aligned for patching by NativeJump::patch_verified_entry()
+  __ align(NativeInstruction::instruction_size);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const

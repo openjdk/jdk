@@ -938,6 +938,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int vep_offset = ((intptr_t)__ pc()) - start;
 
     // First instruction must be a nop as it may need to be patched on deoptimisation
+    MacroAssembler::assert_alignment(__ pc());
     __ nop();
     gen_special_dispatch(masm,
                          method,
@@ -1089,6 +1090,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.
+  MacroAssembler::assert_alignment(__ pc());
   __ nop();
 
   if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
@@ -2066,7 +2068,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
     __ lwu(t0, Address(x14, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
     __ mvw(t1, Deoptimization::Unpack_uncommon_trap);
     __ beq(t0, t1, L);
-    __ stop("SharedRuntime::generate_deopt_blob: last_Java_fp not cleared");
+    __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
     __ bind(L);
   }
 #endif

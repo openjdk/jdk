@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8289551
+ * @requires (os.arch != "x86" & os.arch != "i386") | vm.opt.UseSSE == "null" | vm.opt.UseSSE > 0
  * @summary Verify NaN sign and significand bits are preserved across conversions
  */
 

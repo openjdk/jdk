@@ -323,7 +323,7 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // first instruction with a jump. For this action to be legal we
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
-
+  assert_alignment(pc());
   nop();
 }
 
