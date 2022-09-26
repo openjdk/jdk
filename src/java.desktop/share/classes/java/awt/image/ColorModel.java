@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,15 @@ package java.awt.image;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
-import sun.java2d.cmm.CMSManager;
-import sun.java2d.cmm.ColorTransform;
-import sun.java2d.cmm.PCMM;
+import java.awt.color.ICC_Profile;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.Arrays;
+
+import sun.java2d.cmm.CMSManager;
+import sun.java2d.cmm.ColorTransform;
+import sun.java2d.cmm.PCMM;
 
 /**
  * The {@code ColorModel} abstract class encapsulates the
@@ -1791,15 +1793,10 @@ public abstract class ColorModel implements Transparency{
         for (int i = 0; i <= 255; i++) {
             g8Tos8LUT[i] = (byte) i;
         }
-        ColorTransform[] transformList = new ColorTransform[2];
+        var srgb = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
         PCMM mdl = CMSManager.getModule();
-        ICC_ColorSpace srgbCS =
-            (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_sRGB);
-        transformList[0] = mdl.createTransform(
-            grayCS.getProfile(), ColorTransform.Any, ColorTransform.In);
-        transformList[1] = mdl.createTransform(
-            srgbCS.getProfile(), ColorTransform.Any, ColorTransform.Out);
-        ColorTransform t = mdl.createTransform(transformList);
+        ColorTransform t = mdl.createTransform(ColorTransform.Any,
+                                               grayCS.getProfile(), srgb);
         byte[] tmp = t.colorConvert(g8Tos8LUT, null);
         for (int i = 0, j= 2; i <= 255; i++, j += 3) {
             // All three components of tmp should be equal, since
@@ -1832,15 +1829,10 @@ public abstract class ColorModel implements Transparency{
         for (int i = 0; i <= 65535; i++) {
             tmp[i] = (short) i;
         }
-        ColorTransform[] transformList = new ColorTransform[2];
+        var lg = ICC_Profile.getInstance(ColorSpace.CS_GRAY);
         PCMM mdl = CMSManager.getModule();
-        ICC_ColorSpace lgCS =
-            (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_GRAY);
-        transformList[0] = mdl.createTransform (
-            lgCS.getProfile(), ColorTransform.Any, ColorTransform.In);
-        transformList[1] = mdl.createTransform (
-            grayCS.getProfile(), ColorTransform.Any, ColorTransform.Out);
-        ColorTransform t = mdl.createTransform(transformList);
+        ColorTransform t = mdl.createTransform(ColorTransform.Any,
+                                               lg, grayCS.getProfile());
         tmp = t.colorConvert(tmp, null);
         byte[] lg16Toog8LUT = new byte[65536];
         for (int i = 0; i <= 65535; i++) {
@@ -1876,15 +1868,10 @@ public abstract class ColorModel implements Transparency{
         for (int i = 0; i <= 65535; i++) {
             tmp[i] = (short) i;
         }
-        ColorTransform[] transformList = new ColorTransform[2];
+        var srgb = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
         PCMM mdl = CMSManager.getModule();
-        ICC_ColorSpace srgbCS =
-            (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_sRGB);
-        transformList[0] = mdl.createTransform (
-            grayCS.getProfile(), ColorTransform.Any, ColorTransform.In);
-        transformList[1] = mdl.createTransform (
-            srgbCS.getProfile(), ColorTransform.Any, ColorTransform.Out);
-        ColorTransform t = mdl.createTransform(transformList);
+        ColorTransform t = mdl.createTransform(ColorTransform.Any,
+                                               grayCS.getProfile(), srgb);
         tmp = t.colorConvert(tmp, null);
         byte[] g16Tos8LUT = new byte[65536];
         for (int i = 0, j= 2; i <= 65535; i++, j += 3) {
@@ -1921,16 +1908,10 @@ public abstract class ColorModel implements Transparency{
         for (int i = 0; i <= 65535; i++) {
             tmp[i] = (short) i;
         }
-        ColorTransform[] transformList = new ColorTransform[2];
+        var lg = ICC_Profile.getInstance(ColorSpace.CS_GRAY);
         PCMM mdl = CMSManager.getModule();
-        ICC_ColorSpace lgCS =
-            (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_GRAY);
-        transformList[0] = mdl.createTransform (
-            lgCS.getProfile(), ColorTransform.Any, ColorTransform.In);
-        transformList[1] = mdl.createTransform(
-            grayCS.getProfile(), ColorTransform.Any, ColorTransform.Out);
-        ColorTransform t = mdl.createTransform(
-            transformList);
+        ColorTransform t = mdl.createTransform(ColorTransform.Any,
+                                               lg, grayCS.getProfile());
         short[] lg16Toog16LUT = t.colorConvert(tmp, null);
         if (lg16Toog16Map == null) {
             lg16Toog16Map = Collections.synchronizedMap(new WeakHashMap<ICC_ColorSpace, short[]>(2));

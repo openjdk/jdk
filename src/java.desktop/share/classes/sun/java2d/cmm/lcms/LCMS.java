@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,24 +127,13 @@ final class LCMS implements PCMM {
         int outFormatter, boolean isOutIntPacked,
         Object disposerRef);
 
-   /**
-     * Constructs ColorTransform object corresponding to an ICC_profile
-     */
-    public ColorTransform createTransform(ICC_Profile profile,
-                                                       int renderType,
-                                                       int transformType)
-    {
-        return new LCMSTransform(profile, renderType, renderType);
-    }
-
     /**
-     * Constructs an ColorTransform object from a list of ColorTransform
-     * objects
+     * Constructs ColorTransform object corresponding to the ICC_profiles.
      */
-    public synchronized ColorTransform createTransform(
-        ColorTransform[] transforms)
+    public ColorTransform createTransform(int renderingIntent,
+                                          ICC_Profile... profiles)
     {
-        return new LCMSTransform(transforms);
+        return new LCMSTransform(renderingIntent, profiles);
     }
 
     /* methods invoked from LCMSTransform */
