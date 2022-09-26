@@ -999,7 +999,7 @@ public class IRNode {
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
 
-    static void allocNodes(String irNode, String idealRegex, String optoRegex) {
+    private static void allocNodes(String irNode, String idealRegex, String optoRegex) {
         Map<PhaseInterval, String> intervalToRegexMap = new HashMap<>();
         intervalToRegexMap.put(new PhaseInterval(CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.PHASEIDEALLOOP_ITERATIONS),
                                idealRegex);
@@ -1012,12 +1012,12 @@ public class IRNode {
      * Apply {@code irNodeRegex} as regex for the IR node name on all machine independent ideal graph phases up to and
      *ncluding {@link CompilePhase#BEFORE_MATCHING}.
      */
-    static void beforeMatchingNameRegex(String irNodePlaceholder, String irNodeRegex) {
+    private static void beforeMatchingNameRegex(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new IdealIndependentEntry(CompilePhase.PRINT_IDEAL, regex));
     }
 
-    static void callOfNodes(String irNodePlaceholder, String callRegex) {
+    private static void callOfNodes(String irNodePlaceholder, String callRegex) {
         String regex = START + callRegex + MID + IS_REPLACED + " " +  END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new IdealIndependentEntry(CompilePhase.PRINT_IDEAL, regex));
     }
@@ -1026,7 +1026,7 @@ public class IRNode {
      * Apply {@code regex} on all machine independent ideal graph phases up to and including
      * {@link CompilePhase#BEFORE_MATCHING}.
      */
-    static void beforeMatching(String irNodePlaceholder, String regex) {
+    private static void beforeMatching(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new IdealIndependentEntry(CompilePhase.PRINT_IDEAL, regex));
     }
 
@@ -1034,18 +1034,18 @@ public class IRNode {
      * Apply {@code regex} on all machine dependant ideal graph phases (i.e. on the mach graph) starting from
      * {@link CompilePhase#MATCHING}.
      */
-    static void optoOnly(String irNodePlaceholder, String regex) {
+    private static void optoOnly(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseEntry(CompilePhase.PRINT_OPTO_ASSEMBLY, regex));
     }
 
-    static void machOnly(String irNodePlaceholder, String regex) {
+    private static void machOnly(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new MachOnlyEntry(CompilePhase.FINAL_CODE, regex));
     }
 
     /**
      * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#AFTER_CLOOPS}.
      */
-    static void fromAfterCountedLoops(String irNodePlaceholder, String regex) {
+    private static void fromAfterCountedLoops(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
                                                                           CompilePhase.AFTER_CLOOPS,
                                                                           CompilePhase.FINAL_CODE));
@@ -1054,7 +1054,7 @@ public class IRNode {
     /**
      * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#BEFORE_CLOOPS}.
      */
-    static void fromBeforeCountedLoops(String irNodePlaceholder, String regex) {
+    private static void fromBeforeCountedLoops(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
                                                                           CompilePhase.BEFORE_CLOOPS,
                                                                           CompilePhase.FINAL_CODE));
@@ -1064,23 +1064,23 @@ public class IRNode {
      * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#BEFORE_CLOOPS} up to and
      * including {@link CompilePhase#BEFORE_MATCHING}
      */
-    static void fromMacroToBeforeMatching(String irNodePlaceholder, String regex) {
+    private static void fromMacroToBeforeMatching(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
                                                                           CompilePhase.MACRO_EXPANSION,
                                                                           CompilePhase.BEFORE_MATCHING));
     }
 
-    static void trapNodes(String irNodePlaceholder, String trapReason) {
+    private static void trapNodes(String irNodePlaceholder, String trapReason) {
         String regex = START + "CallStaticJava" + MID + "uncommon_trap.*" + trapReason + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 
-    static void loadOfNodes(String irNodePlaceholder, String irNodeRegex) {
+    private static void loadOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
         beforeMatching(irNodePlaceholder, regex);
     }
 
-    static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
+    private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
         beforeMatching(irNodePlaceholder, regex);
     }
@@ -1127,18 +1127,19 @@ public class IRNode {
 
     public static String getRegexForPhaseOfIRNode(String irNode, CompilePhase compilePhase) {
         IRNodeMapEntry entry = IR_NODE_MAPPINGS.get(irNode);
-        String failMsg = "IR Node \"" + irNode + "\" defined in class IRNode has no mapping in class IRNodeMappings " +
-                         "(i.e. an entry in the constructor of class IRNodeMappings)." + System.lineSeparator() +
+        String failMsg = "IR Node \"" + irNode + "\" defined in class IRNode has no regex/compiler phase mapping " +
+                         "(i.e. no static initializer block that adds a mapping entry to IRNode.IR_NODE_MAPPINGS)." +
+                         System.lineSeparator() +
                          "   Have you just created the entry \"" + irNode + "\" in class IRNode and forgot to add a " +
-                         "mapping in class IRNodeMappings?" + System.lineSeparator() +
+                         "mapping?" + System.lineSeparator() +
                          "   Violation";
         TestFormat.checkNoReport(entry != null, failMsg);
         String regex = entry.getRegexForPhase(compilePhase);
         failMsg = "IR Node \"" + irNode + "\" defined in class IRNode has no regex defined for compile phase "
                   + compilePhase + "." + System.lineSeparator() +
-                  "   If you think this compile phase should be " +
-                  "supported, add a mapping in class IRNodeMappings (i.e an entry in the constructor of class " +
-                  "IRNodeMappings)." + System.lineSeparator() +
+                  "   If you think this compile phase should be supported, update the mapping for \"" + irNode +
+                  "\" in class IRNode (i.e the static initializer block immediately following the definition of \"" +
+                  irNode + "\")." + System.lineSeparator() +
                   "   Violation";
         TestFormat.checkNoReport(regex != null, failMsg);
         return regex;
@@ -1148,8 +1149,9 @@ public class IRNode {
         IRNodeMapEntry entry = IR_NODE_MAPPINGS.get(irNode);
         String failMsg = "\"" + irNode + "\" is not an IR node defined in class IRNode and " +
                          "has therefore no default compile phase specified." + System.lineSeparator() +
-                         "   If your regex represents a C2 IR node, consider adding an entry to class IRNode with a " +
-                         "mapping in class IRNodeMappings." + System.lineSeparator() +
+                         "   If your regex represents a C2 IR node, consider adding an entry to class IRNode together " +
+                         "with a static initializer block that adds a mapping to IRNode.IR_NODE_MAPPINGS." +
+                         System.lineSeparator() +
                          "   Otherwise, set the @IR \"phase\" attribute to a compile phase different from " +
                          "CompilePhase.DEFAULT to explicitly tell the IR framework on which compile phase your rule" +
                          " should be applied on." + System.lineSeparator() +

@@ -28,11 +28,10 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 
 /**
- * Base class to represent an {@link IRNode} mapping entry in {@link IRNodeMappings}. Each entry must define a default
- * compile phase to apply when a user test specifies {@link CompilePhase#DEFAULT} in {@link IR#phase}.
+ * Base class to represent an IR node mapping entry in {@code IR_NODE_MAPPINGS} in {@link IRNode}. Each entry must
+ * define a default compile phase to apply when a user test specifies {@link CompilePhase#DEFAULT} in {@link IR#phase}.
  *
  * @see IRNode
- * @see IRNodeMappings
  */
 public abstract class IRNodeMapEntry {
     private final CompilePhase defaultCompilePhase;
