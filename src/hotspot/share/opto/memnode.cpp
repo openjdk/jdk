@@ -1485,7 +1485,7 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
 }
 //------------------------------split_through_phi------------------------------
 // Split instance or boxed field load through Phi.
-Node* LoadNode::split_through_phi(PhaseGVN *phase) {
+Node* LoadNode::split_through_phi(PhaseGVN* phase) {
   if (req() > 3) {
     assert(is_LoadVector() && Opcode() != Op_LoadVector, "load has too many inputs");
     // LoadVector subclasses such as LoadVectorMasked have extra inputs that the logic below doesn't take into account
