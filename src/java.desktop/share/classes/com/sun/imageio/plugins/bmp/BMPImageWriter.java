@@ -1455,7 +1455,6 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         if (!spi.canEncodeImage(imgType)) {
             return false;
         }
-        int biType = imgType.getBufferedImageType();
         int bpp = imgType.getColorModel().getPixelSize();
         if (bpp != 0 && bpp != 1 && bpp != 4 && bpp != 8 &&
             bpp != 15 && bpp != 16 && bpp != 24 && bpp != 32) {
