@@ -733,7 +733,6 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set)
   VectorSet visited;
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
   nodeStack.push(start);
-  visited.test_set(start->_idx);
   if (C->cfg() != NULL) {
     // once we have a CFG there are some nodes that aren't really
     // reachable but are in the CFG so add them here.
@@ -745,25 +744,24 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set)
     }
   }
 
-  while(nodeStack.length() > 0) {
+  while (nodeStack.length() > 0) {
 
-    Node *n = nodeStack.pop();
+    Node* n = nodeStack.pop();
+    if (visited.test_set(n->_idx)) {
+      continue;
+    }
+
     visit_node(n, edges, temp_set);
 
     if (_traverse_outs) {
       for (DUIterator i = n->outs(); n->has_out(i); i++) {
-        Node* p = n->out(i);
-        if (!visited.test_set(p->_idx)) {
-          nodeStack.push(p);
-        }
+        nodeStack.push(n->out(i));
       }
     }
 
-    for ( uint i = 0; i < n->len(); i++ ) {
-      if ( n->in(i) ) {
-        if (!visited.test_set(n->in(i)->_idx)) {
-          nodeStack.push(n->in(i));
-        }
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i)) {
+        nodeStack.push(n->in(i));
       }
     }
   }
