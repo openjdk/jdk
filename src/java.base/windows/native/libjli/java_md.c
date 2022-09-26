@@ -623,7 +623,7 @@ JLI_ReportErrorMessageSys(ErrorOrigin origin, const char *fmt, ...)
                     FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
                     NULL, errval, 0, (LPTSTR)&errtext, 0, NULL);
                 if (errtext == NULL || n == 0) {                /* Paranoia check */
-                	char* buffer = "Java detected but could not determine the underlying error";
+                    char* buffer = "Java detected but could not determine the underlying error";
                     errtext = (char*) JLI_MemAlloc(strlen(buffer) + 1);
                     JLI_StrCpy(errtext, buffer);
                     n = 0;
@@ -659,11 +659,11 @@ JLI_ReportErrorMessageSys(ErrorOrigin origin, const char *fmt, ...)
         _vsnprintf(message, len, fmt, vl);
 
         if (errtext != NULL) {
-        	message[len] = ':';
-        	message[len + 1] = ' ';
+            message[len] = ':';
+            message[len + 1] = ' ';
             JLI_StrCat(message, errtext);
         } {
-        	message[len] = '\0';
+            message[len] = '\0';
         }
 
         MessageBox(NULL, message, "Java Virtual Machine Launcher",

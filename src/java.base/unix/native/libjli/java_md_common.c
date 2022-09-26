@@ -210,7 +210,7 @@ JLI_ReportErrorMessageSys(ErrorOrigin origin, const char* fmt, ...) {
         if (strerror_r(errno, msg, 1024) == 0) {
             fprintf(stderr, ": %s", msg);
         } else {
-        	fprintf(stderr, ": Java detected but could not determine the underlying error");
+            fprintf(stderr, ": Java detected but could not determine the underlying error");
         }
     }
     fprintf(stderr, "\n");

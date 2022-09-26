@@ -71,7 +71,7 @@ getLastErrorString(char *buf, size_t len, ErrorOrigin origin) {
     if (origin == SYSTEM) {
         errval = (int) GetLastError();
     } else if (origin == RUNTIME) {
-    	errval = errno;
+        errval = errno;
     }
     if (errval == 0 || len < 1) return 0;
     getErrorString(errval, buf, len, origin);
