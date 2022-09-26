@@ -87,6 +87,16 @@ void ZRememberedSet::clear_previous(const char* where) {
   previous()->clear_large();
 }
 
+void ZRememberedSet::swap_remset_bitmaps() {
+  log_debug(gc, remset)("Swap remset bitmaps current: " PTR_FORMAT " previous: " PTR_FORMAT, p2i(current()), p2i(previous()));
+  assert(previous()->is_empty(), "Previous remset bits should be empty when swapping");
+  current()->iterate([&](BitMap::idx_t index) {
+    previous()->set_bit(index);
+    return true;
+  });
+  current()->clear_large();
+}
+
 void ZRememberedSet::dirty() {
   assert(!_dirty, "Unexpected");
   assert(is_initialized(), "Unexpected");

@@ -67,7 +67,6 @@ private:
   // In-place relocation support
   bool                   _in_place;
   zoffset                _in_place_top_at_start;
-  uintptr_t              _in_place_remset_relocated_watermark;
 
   // Debugging
   volatile Thread*       _in_place_thread;
@@ -121,8 +120,6 @@ public:
   void in_place_relocation_start(zoffset relocated_watermark);
   void in_place_relocation_finish();
   bool in_place_relocation_is_below_top_at_start(zoffset addr) const;
-  void in_place_relocation_set_remset_relocated_watermark(uintptr_t local_offset);
-  uintptr_t in_place_relocation_remset_relocated_watermark() const;
 
   bool retain_page(ZRelocateQueue* queue);
   void release_page();

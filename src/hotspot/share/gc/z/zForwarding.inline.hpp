@@ -72,7 +72,6 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _relocated_remembered_fields_publish_young_seqnum(0),
     _in_place(false),
     _in_place_top_at_start(),
-    _in_place_remset_relocated_watermark(),
     _in_place_thread(NULL) {}
 
 inline ZPageType ZForwarding::type() const {
@@ -175,14 +174,6 @@ void ZForwarding::oops_do_in_forwarded_via_table(Function function) {
 inline bool ZForwarding::in_place_relocation() const {
   assert(Atomic::load(&_ref_count) != 0, "The page has been released/detached");
   return _in_place;
-}
-
-inline uintptr_t ZForwarding::in_place_relocation_remset_relocated_watermark() const {
-  return _in_place_remset_relocated_watermark;
-}
-
-inline void ZForwarding::in_place_relocation_set_remset_relocated_watermark(uintptr_t local_offset) {
-  _in_place_remset_relocated_watermark = local_offset;
 }
 
 inline ZForwardingEntry* ZForwarding::entries() const {

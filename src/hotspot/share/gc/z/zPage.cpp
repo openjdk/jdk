@@ -295,6 +295,10 @@ void ZPage::clear_remset_previous(const char* where) {
  _remembered_set.clear_previous(where);
 }
 
+void ZPage::swap_remset_bitmaps() {
+  _remembered_set.swap_remset_bitmaps();
+}
+
 void* ZPage::remset_current() {
   return _remembered_set.current();
 }

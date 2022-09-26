@@ -169,6 +169,7 @@ public:
   // In-place relocation support
   void clear_remset_bit_non_par_current(uintptr_t l_offset);
   void clear_remset_range_non_par_current(uintptr_t l_offset, size_t size);
+  void swap_remset_bitmaps();
 
   void remset_mark_dirty();
 

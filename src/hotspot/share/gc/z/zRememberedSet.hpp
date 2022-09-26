@@ -136,6 +136,7 @@ public:
   void clear_all(const char* where);
   void clear_current();
   void clear_previous(const char* where);
+  void swap_remset_bitmaps();
 
   // Support for free without clearing
   void dirty();
