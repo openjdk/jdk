@@ -488,6 +488,15 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ z_stg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
   __ z_stg(tmp2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
 
+  // Is marking still active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    __ load_and_test_int(tmp, Address(Z_thread, satb_q_active_byte_offset));
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ load_and_test_byte(tmp, Address(Z_thread, satb_q_active_byte_offset));
+  }
+  __ z_bre(marking_not_active); // Activity indicator is zero, so there is no marking going on currently.
+
   __ bind(restart);
   // Load the index into the SATB buffer. SATBMarkQueue::_index is a
   // size_t so ld_ptr is appropriate.

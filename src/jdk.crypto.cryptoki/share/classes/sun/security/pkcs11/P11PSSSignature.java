@@ -576,10 +576,10 @@ final class P11PSSSignature extends SignatureSpi {
         case T_UPDATE:
             try {
                 if (mode == M_SIGN) {
-                    System.out.println(this + ": Calling C_SignUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate(session.id(), 0, b, ofs, len);
                 } else {
-                    System.out.println(this + ": Calling C_VerfifyUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_VerfifyUpdate");
                     token.p11.C_VerifyUpdate(session.id(), 0, b, ofs, len);
                 }
                 bytesProcessed += len;
@@ -625,11 +625,11 @@ final class P11PSSSignature extends SignatureSpi {
             int ofs = byteBuffer.position();
             try {
                 if (mode == M_SIGN) {
-                    System.out.println(this + ": Calling C_SignUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                     token.p11.C_SignUpdate
                         (session.id(), addr + ofs, null, 0, len);
                 } else {
-                    System.out.println(this + ": Calling C_VerifyUpdate");
+                    if (DEBUG) System.out.println(this + ": Calling C_VerifyUpdate");
                     token.p11.C_VerifyUpdate
                         (session.id(), addr + ofs, null, 0, len);
                 }

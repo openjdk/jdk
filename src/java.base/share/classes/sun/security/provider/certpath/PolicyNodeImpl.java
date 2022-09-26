@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,10 @@
 
 package sun.security.provider.certpath;
 
-import sun.security.util.KnownOIDs;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
+import java.util.*;
 import java.security.cert.*;
+
+import sun.security.util.KnownOIDs;
 
 /**
  * Implements the <code>PolicyNode</code> interface.
@@ -56,18 +52,18 @@ final class PolicyNodeImpl implements PolicyNode {
             = KnownOIDs.CE_CERT_POLICIES_ANY.value();
 
     // every node has one parent, and zero or more children
-    private PolicyNodeImpl mParent;
-    private HashSet<PolicyNodeImpl> mChildren;
+    private final PolicyNodeImpl mParent;
+    private final HashSet<PolicyNodeImpl> mChildren;
 
     // the 4 fields specified by RFC 5280
-    private String mValidPolicy;
-    private HashSet<PolicyQualifierInfo> mQualifierSet;
-    private boolean mCriticalityIndicator;
-    private HashSet<String> mExpectedPolicySet;
+    private final String mValidPolicy;
+    private final HashSet<PolicyQualifierInfo> mQualifierSet;
+    private final boolean mCriticalityIndicator;
+    private final HashSet<String> mExpectedPolicySet;
     private boolean mOriginalExpectedPolicySet;
 
     // the tree depth
-    private int mDepth;
+    private final int mDepth;
     // immutability flag
     private boolean isImmutable = false;
 
@@ -83,7 +79,7 @@ final class PolicyNodeImpl implements PolicyNode {
      *               node is the tree's root node
      * @param validPolicy a String representing this node's valid policy OID
      * @param qualifierSet the Set of qualifiers for this policy
-     * @param criticalityIndicator a boolean representing whether or not the
+     * @param criticalityIndicator a boolean representing whether the
      *                             extension is critical
      * @param expectedPolicySet a Set of expected policies
      * @param generatedByPolicyMapping a boolean indicating whether this
@@ -94,24 +90,21 @@ final class PolicyNodeImpl implements PolicyNode {
                 boolean criticalityIndicator, Set<String> expectedPolicySet,
                 boolean generatedByPolicyMapping) {
         mParent = parent;
-        mChildren = new HashSet<PolicyNodeImpl>();
+        mChildren = new HashSet<>();
 
-        if (validPolicy != null)
-            mValidPolicy = validPolicy;
-        else
-            mValidPolicy = "";
+        mValidPolicy = (validPolicy != null) ? validPolicy : "";
 
         if (qualifierSet != null)
-            mQualifierSet = new HashSet<PolicyQualifierInfo>(qualifierSet);
+            mQualifierSet = new HashSet<>(qualifierSet);
         else
-            mQualifierSet = new HashSet<PolicyQualifierInfo>();
+            mQualifierSet = new HashSet<>();
 
         mCriticalityIndicator = criticalityIndicator;
 
         if (expectedPolicySet != null)
-            mExpectedPolicySet = new HashSet<String>(expectedPolicySet);
+            mExpectedPolicySet = new HashSet<>(expectedPolicySet);
         else
-            mExpectedPolicySet = new HashSet<String>();
+            mExpectedPolicySet = new HashSet<>();
 
         mOriginalExpectedPolicySet = !generatedByPolicyMapping;
 
@@ -313,7 +306,7 @@ final class PolicyNodeImpl implements PolicyNode {
      * Internal recursion helper.
      */
     private void getPolicyNodes(int depth, Set<PolicyNodeImpl> set) {
-        // if we've reached the desired depth, then return ourself
+        // if we've reached the desired depth, then return
         if (mDepth == depth) {
             set.add(this);
         } else {

@@ -110,7 +110,6 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -502,7 +501,6 @@ public:
 
 #ifndef PRODUCT
   virtual void           dump_spec(outputStream *st) const;
-  virtual void           related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -1227,7 +1225,6 @@ public:
   NamedCounter* counter() const { return _counter; }
   virtual void dump_spec(outputStream* st) const;
   virtual void dump_compact_spec(outputStream* st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 

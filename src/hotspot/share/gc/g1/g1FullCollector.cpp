@@ -44,7 +44,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -112,9 +111,10 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool explicit_gc,
                                  bool clear_soft_refs,
-                                 bool do_maximal_compaction) :
+                                 bool do_maximal_compaction,
+                                 G1FullGCTracer* tracer) :
     _heap(heap),
-    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction),
+    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
@@ -210,8 +210,8 @@ void G1FullCollector::collect() {
 
   phase4_do_compaction();
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 }
 
 void G1FullCollector::complete_collection() {

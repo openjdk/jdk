@@ -1005,7 +1005,6 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
         if (failtype->_lo > failtype->_hi) {
           // previous if determines the result of this if so
           // replace Bool with constant
-          igvn->_worklist.push(in(1));
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
           return true;
         }
@@ -1055,7 +1054,6 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
 
     igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
-    igvn->_worklist.push(in(1));
     igvn->replace_input_of(this, 1, newbool);
 
     return true;
@@ -1740,39 +1738,9 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
 }
 
 #ifndef PRODUCT
-//-------------------------------related---------------------------------------
-// An IfProjNode's related node set consists of its input (an IfNode) including
-// the IfNode's condition, plus all of its outputs at level 1. In compact mode,
-// the restrictions for IfNode apply (see IfNode::rel).
-void IfProjNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  Node* ifNode = this->in(0);
-  in_rel->append(ifNode);
-  if (compact) {
-    ifNode->collect_nodes(in_rel, 3, false, true);
-  } else {
-    ifNode->collect_nodes_in_all_data(in_rel, false);
-  }
-  this->collect_nodes(out_rel, -1, false, false);
-}
-
 //------------------------------dump_spec--------------------------------------
 void IfNode::dump_spec(outputStream *st) const {
   st->print("P=%f, C=%f",_prob,_fcnt);
-}
-
-//-------------------------------related---------------------------------------
-// For an IfNode, the set of related output nodes is just the output nodes till
-// depth 2, i.e, the IfTrue/IfFalse projection nodes plus the nodes they refer.
-// The related input nodes contain no control nodes, but all data nodes
-// pertaining to the condition. In compact mode, the input nodes are collected
-// up to a depth of 3.
-void IfNode::related(GrowableArray <Node *> *in_rel, GrowableArray <Node *> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 3, false, true);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-  }
-  this->collect_nodes(out_rel, -2, false, false);
 }
 #endif
 

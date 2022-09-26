@@ -59,7 +59,7 @@ class DerIndefLenConverter {
     // length octets. At the end, the new DER encoding is a concatenation of
     // all existing tags, existing definite length octets, existing contents,
     // and the newly created definite length octets in this list.
-    private ArrayList<Object> ndefsList = new ArrayList<Object>();
+    private final ArrayList<Object> ndefsList = new ArrayList<>();
 
     // Length of extra bytes needed to convert indefinite encoding to definite.
     // For each resolved indefinite length encoding, the starting 0x80 byte
@@ -303,7 +303,7 @@ class DerIndefLenConverter {
     // Returns the number of bytes needed to represent the given length
     // in ASN.1 notation
     private int getNumOfLenBytes(int len) {
-        int numOfLenBytes = 0;
+        int numOfLenBytes;
 
         if (len < 128) {
             numOfLenBytes = 1;
@@ -329,7 +329,7 @@ class DerIndefLenConverter {
     }
 
     /**
-     * Converts a indefinite length DER encoded byte array to
+     * Converts an indefinite length DER encoded byte array to
      * a definite length DER encoding.
      *
      * @param indefData the byte array holding the indefinite

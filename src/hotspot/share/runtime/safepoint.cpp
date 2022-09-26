@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
@@ -50,6 +49,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -62,7 +62,6 @@
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
@@ -71,6 +70,7 @@
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 
 static void post_safepoint_begin_event(EventSafepointBegin& event,
                                        uint64_t safepoint_id,
@@ -341,8 +341,11 @@ void SafepointSynchronize::arm_safepoint() {
     // Make sure the threads start polling, it is time to yield.
     SafepointMechanism::arm_local_poll(cur);
   }
-
-  OrderAccess::fence(); // storestore|storeload, global state -> local state
+  if (UseSystemMemoryBarrier) {
+    SystemMemoryBarrier::emit(); // storestore|storeload, global state -> local state
+  } else {
+    OrderAccess::fence(); // storestore|storeload, global state -> local state
+  }
 }
 
 // Roll all threads forward to a safepoint and suspend them all
@@ -557,13 +560,6 @@ public:
       if (StringTable::needs_rehashing()) {
         Tracer t("rehashing string table");
         StringTable::rehash_table();
-      }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
-      if (Dictionary::does_any_dictionary_needs_resizing()) {
-        Tracer t("resizing system dictionaries");
-        ClassLoaderDataGraph::resize_dictionaries();
       }
     }
 

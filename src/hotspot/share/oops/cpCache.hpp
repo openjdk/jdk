@@ -455,9 +455,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
 
-  // CDS support
+#if INCLUDE_CDS
   void remove_unshareable_info();
   void save_for_archive(TRAPS);
+#endif
+
  private:
   void walk_entries_for_initialization(bool check_only);
   void set_length(int length)                    { _length = length; }

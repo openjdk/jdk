@@ -70,6 +70,9 @@
 <li><a href="#make-control-variables">Make Control Variables</a></li>
 </ul></li>
 <li><a href="#running-tests">Running Tests</a></li>
+<li><a href="#signing">Signing</a><ul>
+<li><a href="#macos-1">macOS</a></li>
+</ul></li>
 <li><a href="#cross-compiling">Cross-compiling</a><ul>
 <li><a href="#cross-compiling-the-easy-way-with-openjdk-devkits">Cross compiling the easy way with OpenJDK devkits</a></li>
 <li><a href="#boot-jdk-and-build-jdk">Boot JDK and Build JDK</a></li>
@@ -112,6 +115,7 @@
 <li><a href="#developing-the-build-system-itself">Developing the Build System Itself</a></li>
 </ul></li>
 <li><a href="#contributing-to-the-jdk">Contributing to the JDK</a></li>
+<li><a href="#editing-this-document">Editing this document</a></li>
 </ul>
 </nav>
 <h2 id="tldr-instructions-for-the-impatient">TL;DR (Instructions for the Impatient)</h2>
@@ -300,8 +304,8 @@
 <p>It is advisable to keep an older version of Xcode for building the JDK when updating Xcode. This <a href="http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html">blog page</a> has good suggestions on managing multiple Xcode versions. To use a specific version of Xcode, use <code>xcode-select -s</code> before running <code>configure</code>, or use <code>--with-toolchain-path</code> to point to the version of Xcode to use, e.g. <code>configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin</code></p>
 <p>If you have recently (inadvertently) updated your OS and/or Xcode version, and the JDK can no longer be built, please see the section on <a href="#problems-with-the-build-environment">Problems with the Build Environment</a>, and <a href="#getting-help">Getting Help</a> to find out if there are any recent, non-merged patches available for this update.</p>
 <h3 id="microsoft-visual-studio">Microsoft Visual Studio</h3>
-<p>For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019 (16.8 or higher). For all other platforms the minimum accepted version of Visual Studio is 2017. Older versions will not be accepted by <code>configure</code> and will not work. For all platforms the maximum accepted version of Visual Studio is 2022.</p>
-<p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2017</code>.</p>
+<p>The minimum accepted version is Visual Studio 2019 version 16.8. (Note that this version is often presented as &quot;MSVC 14.28&quot;, and reported by cl.exe as 19.28.) Older versions will not be accepted by <code>configure</code> and will not work. The maximum accepted version of Visual Studio is 2022.</p>
+<p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2022</code>.</p>
 <p>If you have Visual Studio installed but <code>configure</code> fails to detect it, it may be because of <a href="#spaces-in-path">spaces in path</a>.</p>
 <h3 id="ibm-xl-cc">IBM XL C/C++</h3>
 <p>Please consult the AIX section of the <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of XLC are supported.</p>
@@ -518,6 +522,12 @@
 <p>To execute the most basic tests (tier 1), use:</p>
 <pre><code>make run-test-tier1</code></pre>
 <p>For more details on how to run tests, please see <strong>Testing the JDK</strong> (<a href="testing.html">html</a>, <a href="testing.md">markdown</a>).</p>
+<h2 id="signing">Signing</h2>
+<h3 id="macos-1">macOS</h3>
+<p>Modern versions of macOS require applications to be signed and notarizied before distribution. See Apple's documentation for more background on what this means and how it works. To help support this, the JDK build can be configured to automatically sign all native binaries, and the JDK bundle, with all the options needed for successful notarization, as well as all the entitlements required by the JDK. To enable <code>hardened</code> signing, use configure parameter <code>--with-macosx-codesign=hardened</code> and configure the signing identity you wish to use with <code>--with-macosx-codesign-identity=&lt;identity&gt;</code>. The identity refers to a signing identity from Apple that needs to be preinstalled on the build host.</p>
+<p>When not signing for distribution with the hardened option, the JDK build will still attempt to perform <code>adhoc</code> signing to add the special entitlement <code>com.apple.security.get-task-allow</code> to each binary. This entitlement is required to be able to dump core files from a process. Note that adding this entitlement makes the build invalid for notarization, so it is only added when signing in <code>debug</code> mode. To explicitly enable this kind of adhoc signing, use configure parameter <code>--with-macosx-codesign=debug</code>. It will be enabled by default in most cases.</p>
+<p>It's also possible to completely disable any explicit codesign operations done by the JDK build using the configure parameter <code>--without-macosx-codesign</code>. The exact behavior then depends on the architecture. For macOS on x64, it (at least at the time of this writing) results in completely unsigned binaries that should still work fine for development and debugging purposes. On aarch64, the Xcode linker will apply a default &quot;adhoc&quot; signing, without any entitlements. Such a build does not allow dumping core files.</p>
+<p>The default mode &quot;auto&quot; will try for <code>hardened</code> signing if the debug level is <code>release</code> and either the default identity or the specified identity is valid. If hardened isn't possible, then <code>debug</code> signing is chosen if it works. If nothing works, the codesign build step is disabled.</p>
 <h2 id="cross-compiling">Cross-compiling</h2>
 <p>Cross-compiling means using one platform (the <em>build</em> platform) to generate output that can ran on another platform (the <em>target</em> platform).</p>
 <p>The typical reason for cross-compiling is that the build is performed on a more powerful desktop computer, but the resulting binaries will be able to run on a different, typically low-performing system. Most of the complications that arise when building for embedded is due to this separation of <em>build</em> and <em>target</em> systems.</p>
@@ -1033,5 +1043,7 @@ test-support/</code></pre>
 <p>First of all: Thank you! We gladly welcome your contribution. However, please bear in mind that the JDK is a massive project, and we must ask you to follow our rules and guidelines to be able to accept your contribution.</p>
 <p>The official place to start is the <a href="http://openjdk.java.net/contribute/">'How to contribute' page</a>. There is also an official (but somewhat outdated and skimpy on details) <a href="http://openjdk.java.net/guide/">Developer's Guide</a>.</p>
 <p>If this seems overwhelming to you, the Adoption Group is there to help you! A good place to start is their <a href="https://wiki.openjdk.java.net/display/Adoption/New+Contributor">'New Contributor' page</a>, or start reading the comprehensive <a href="https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/">Getting Started Kit</a>. The Adoption Group will also happily answer any questions you have about contributing. Contact them by <a href="http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss">mail</a> or <a href="http://openjdk.java.net/irc/">IRC</a>.</p>
+<h2 id="editing-this-document">Editing this document</h2>
+<p>If you want to contribute changes to this document, edit <code>doc/building.md</code> and then run <code>make update-build-docs</code> to generate the same changes in <code>doc/building.html</code>.</p>
 </body>
 </html>

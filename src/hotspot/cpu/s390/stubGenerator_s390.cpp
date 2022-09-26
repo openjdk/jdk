@@ -2857,12 +2857,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  RuntimeStub* generate_cont_doYield() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
   address generate_cont_thaw(bool return_barrier, bool exception) {
     if (!Continuations::enabled()) return nullptr;
     Unimplemented();
@@ -2940,9 +2934,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-    StubRoutines::_cont_doYield_stub  = generate_cont_doYield();
-    StubRoutines::_cont_doYield       = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                      : StubRoutines::_cont_doYield_stub->entry_point();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)

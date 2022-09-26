@@ -324,7 +324,7 @@ inline void log_dropped_ref(const DiscoveredListIterator& iter, const char* reas
 inline void log_enqueued_ref(const DiscoveredListIterator& iter, const char* reason) {
   if (log_develop_is_enabled(Trace, gc, ref)) {
     ResourceMark rm;
-    log_develop_trace(gc, ref)("Enqueue %s reference (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Enqueue %s reference (" PTR_FORMAT ": %s)",
                                reason, p2i(iter.obj()), iter.obj()->klass()->internal_name());
   }
   assert(oopDesc::is_oop(iter.obj()), "Adding a bad reference");
@@ -371,7 +371,7 @@ size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_
   }
 
   log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
-                             " Refs in discovered list " INTPTR_FORMAT,
+                             " Refs in discovered list " PTR_FORMAT,
                              iter.removed(), iter.processed(), p2i(&refs_list));
   return iter.removed();
 }
@@ -845,7 +845,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
     default:
       ShouldNotReachHere();
   }
-  log_develop_trace(gc, ref)("Thread %d gets list " INTPTR_FORMAT, id, p2i(list));
+  log_develop_trace(gc, ref)("Thread %d gets list " PTR_FORMAT, id, p2i(list));
   return list;
 }
 
@@ -867,10 +867,10 @@ inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list
     // We can always add the object without synchronization: every thread has its
     // own list head.
     refs_list.add_as_head(obj);
-    log_develop_trace(gc, ref)("Discovered reference (%s) (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Discovered reference (%s) (" PTR_FORMAT ": %s)",
                                discovery_is_mt() ? "mt" : "st", p2i(obj), obj->klass()->internal_name());
   } else {
-    log_develop_trace(gc, ref)("Already discovered reference (mt) (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Already discovered reference (mt) (" PTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
   }
 }
@@ -913,8 +913,8 @@ void ReferenceProcessor::verify_referent(oop obj) {
   bool concurrent = discovery_is_concurrent();
   oop referent = java_lang_ref_Reference::unknown_referent_no_keepalive(obj);
   assert(concurrent ? oopDesc::is_oop_or_null(referent) : oopDesc::is_oop(referent),
-         "Bad referent " INTPTR_FORMAT " found in Reference "
-         INTPTR_FORMAT " during %sconcurrent discovery ",
+         "Bad referent " PTR_FORMAT " found in Reference "
+         PTR_FORMAT " during %sconcurrent discovery ",
          p2i(referent), p2i(obj), concurrent ? "" : "non-");
 }
 #endif
@@ -997,7 +997,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   assert(oopDesc::is_oop_or_null(discovered), "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   if (discovered != NULL) {
     // The reference has already been discovered...
-    log_develop_trace(gc, ref)("Already discovered reference (" INTPTR_FORMAT ": %s)",
+    log_develop_trace(gc, ref)("Already discovered reference (" PTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
     if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
       // assumes that an object is not processed twice;
@@ -1139,7 +1139,7 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
   }
 
   if (iter.processed() > 0) {
-    log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " INTPTR_FORMAT,
+    log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " PTR_FORMAT,
                                iter.removed(), iter.processed(), p2i(&refs_list));
   }
   return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import java.awt.*;
 import java.awt.event.ActionEvent;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
+import java.awt.event.KeyEvent;
+import javax.swing.*;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
 /**
@@ -34,24 +36,49 @@ import org.openide.util.ImageUtilities;
  * @author Thomas Wuerthinger
  */
 public class OverviewAction extends AbstractAction {
+    private static final String SATELLITE_STRING = "satellite";
+    private static final String SCENE_STRING = "scene";
 
-    private boolean state;
-    public static final String STATE = "state";
+    public OverviewAction(JPanel panel) {
+        int keyCode = KeyEvent.VK_S;
+        panel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+                KeyStroke.getKeyStroke(keyCode, 0, false), SATELLITE_STRING);
+        panel.getActionMap().put(SATELLITE_STRING,
+                new AbstractAction(SATELLITE_STRING) {
+                    @Override public void actionPerformed(ActionEvent e) {
+                        OverviewAction.this.setSelected(true);
+                    }
+                });
+        panel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+                KeyStroke.getKeyStroke(keyCode, 0, true), SCENE_STRING);
+        panel.getActionMap().put(SCENE_STRING,
+                new AbstractAction(SCENE_STRING) {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        OverviewAction.this.setSelected(false);
+                    }
+                });
 
-    public OverviewAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(Action.SELECTED_KEY, false);
         putValue(Action.SHORT_DESCRIPTION, "Show satellite view of whole graph (hold S-KEY)");
-        setState(false);
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
-        setState(!state);
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            boolean selected = (boolean)getValue(SELECTED_KEY);
+            editor.showSatellite(selected);
+        }
     }
 
-    public void setState(boolean b) {
-        this.putValue(STATE, b);
-        this.state = b;
+    public void setSelected(boolean selected) {
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            putValue(Action.SELECTED_KEY, selected);
+            editor.showSatellite(selected);
+        }
     }
 
     protected String iconResource() {

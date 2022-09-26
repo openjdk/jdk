@@ -111,7 +111,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     Address dst,
                                     Register val,
                                     Register tmp1,
-                                    Register tmp2) {
+                                    Register tmp2,
+                                    Register tmp3) {
   // Verify value
   if (is_reference_type(type)) {
     // Note that src could be noreg, which means we
@@ -119,7 +120,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
     if (val != noreg) {
       Label done;
 
-      // tmp1 and tmp2 are often set to noreg.
+      // tmp1, tmp2 and tmp3 are often set to noreg.
       RegSet savedRegs = RegSet::of(t0);
       __ push_reg(savedRegs, sp);
 
@@ -134,7 +135,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   }
 
   // Store value
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, noreg);
 }
 
 #endif // ASSERT
@@ -238,7 +239,7 @@ public:
         } else if (vm_reg->is_FloatRegister()) {
           _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
         } else if (vm_reg->is_VectorRegister()) {
-          const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~(VectorRegisterImpl::max_slots_per_register - 1));
+          const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~(VectorRegister::max_slots_per_register - 1));
           _vp_regs += VectorRegSet::of(vm_reg_base->as_VectorRegister());
         } else {
           fatal("Unknown register type");
@@ -261,12 +262,12 @@ public:
     // Save registers
     __ push_reg(_gp_regs, sp);
     __ push_fp(_fp_regs, sp);
-    __ push_vp(_vp_regs, sp);
+    __ push_v(_vp_regs, sp);
   }
 
   ~ZSaveLiveRegisters() {
     // Restore registers
-    __ pop_vp(_vp_regs, sp);
+    __ pop_v(_vp_regs, sp);
     __ pop_fp(_fp_regs, sp);
     __ pop_reg(_gp_regs, sp);
   }

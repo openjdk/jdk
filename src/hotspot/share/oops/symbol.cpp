@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,14 +117,15 @@ void Symbol::set_permanent() {
 // ------------------------------------------------------------------
 // Symbol::index_of
 //
-// Finds if the given string is a substring of this symbol's utf8 bytes.
-// Return -1 on failure.  Otherwise return the first index where str occurs.
-int Symbol::index_of_at(int i, const char* str, int len) const {
+// Test if we have the give substring at or after the i-th char of this
+// symbol's utf8 bytes.
+// Return -1 on failure.  Otherwise return the first index where substr occurs.
+int Symbol::index_of_at(int i, const char* substr, int substr_len) const {
   assert(i >= 0 && i <= utf8_length(), "oob");
-  if (len <= 0)  return 0;
-  char first_char = str[0];
+  if (substr_len <= 0)  return 0;
+  char first_char = substr[0];
   address bytes = (address) ((Symbol*)this)->base();
-  address limit = bytes + utf8_length() - len;  // inclusive limit
+  address limit = bytes + utf8_length() - substr_len;  // inclusive limit
   address scan = bytes + i;
   if (scan > limit)
     return -1;
@@ -133,9 +134,9 @@ int Symbol::index_of_at(int i, const char* str, int len) const {
     if (scan == NULL)
       return -1;  // not found
     assert(scan >= bytes+i && scan <= limit, "scan oob");
-    if (len <= 2
-        ? (char) scan[len-1] == str[len-1]
-        : memcmp(scan+1, str+1, len-1) == 0) {
+    if (substr_len <= 2
+        ? (char) scan[substr_len-1] == substr[substr_len-1]
+        : memcmp(scan+1, substr+1, substr_len-1) == 0) {
       return (int)(scan - bytes);
     }
   }

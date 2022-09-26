@@ -1920,7 +1920,7 @@ void InterpreterMacroAssembler::get_method_counters(Register Rmethod,
 // Return (invocation_counter+backedge_counter) as "result" in RctrSum.
 // Counter values are all unsigned.
 void InterpreterMacroAssembler::increment_invocation_counter(Register Rcounters, Register RctrSum) {
-  assert(UseCompiler || LogTouchedMethods, "incrementing must be useful");
+  assert(UseCompiler, "incrementing must be useful");
   assert_different_registers(Rcounters, RctrSum);
 
   int increment          = InvocationCounter::count_increment;

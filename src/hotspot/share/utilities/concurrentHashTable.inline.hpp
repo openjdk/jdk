@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1229,7 +1229,11 @@ inline TableStatistics ConcurrentHashTable<CONFIG, F>::
     summary.add((double)count);
   }
 
-  return TableStatistics(*_stats_rate, summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  if (_stats_rate == nullptr) {
+    return TableStatistics(summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  } else {
+    return TableStatistics(*_stats_rate, summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  }
 }
 
 template <typename CONFIG, MEMFLAGS F>

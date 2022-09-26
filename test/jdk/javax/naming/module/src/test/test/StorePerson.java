@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class StorePerson {
             System.err.println("        <ldapurl> is the LDAP URL of the parent entry\n");
             System.err.println("example:");
             System.err.println("        java StorePerson ldap://oasis/o=airius.com");
-            return;
+            throw new IllegalArgumentException();
         }
 
         /*
@@ -124,7 +124,7 @@ public class StorePerson {
                 System.err.println("StorePerson: entry '" + dn +
                         "' already exists");
                 cleanup(ctx, (String)null);
-                return;
+                throw e;
             }
 
             name = "Jill Smyth";
@@ -139,7 +139,7 @@ public class StorePerson {
                 System.err.println("StorePerson: entry '" + dn2 +
                         "' already exists");
                 cleanup(ctx, dn);
-                return;
+                throw e;
             }
 
             /*
@@ -161,7 +161,7 @@ public class StorePerson {
                         dn + "' " + e);
                 e.printStackTrace();
                 cleanup(ctx, dn, dn2);
-                return;
+                throw e;
             }
 
             try {
@@ -179,7 +179,7 @@ public class StorePerson {
                         dn2 + "' " + e);
                 e.printStackTrace();
                 cleanup(ctx, dn, dn2);
-                return;
+                throw e;
             }
 
             cleanup(ctx, dn, dn2);

@@ -765,11 +765,10 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
 
       size_t reg_live = r->get_live_data_words();
       if (reg_live != verf_live) {
-        ResourceMark rm;
         stringStream ss;
         r->print_on(&ss);
         fatal("%s: Live data should match: region-live = " SIZE_FORMAT ", verifier-live = " UINT32_FORMAT "\n%s",
-              label, reg_live, verf_live, ss.as_string());
+              label, reg_live, verf_live, ss.freeze());
       }
     }
   }
