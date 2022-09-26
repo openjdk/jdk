@@ -46,7 +46,7 @@ import static jdk.javadoc.doclet.Taglet.Location.TYPE;
 /**
  * A block tag to optionally insert a reference to a sealed class hierarchy graph.
  */
-public class SealedGraph implements Taglet {
+public final class SealedGraph implements Taglet {
     private static final String sealedGraphDotPath =
             System.getProperty("sealedGraphDotPath");
 
@@ -155,16 +155,14 @@ public class SealedGraph implements Taglet {
             }
 
             public void addEdge(TypeElement node, TypeElement subNode) {
-                if (subNode.toString().contains(".internal")) {
-                    // Do not expose internal classes
-                    return;
+                if (isInPublicApi(node) && isInPublicApi(subNode)) {
+                    builder.append("  ")
+                            .append('"').append(subNode.getSimpleName()).append('"')
+                            .append(" -> ")
+                            .append('"').append(node.getSimpleName()).append('"')
+                            .append(";")
+                            .append(lineSeparator());
                 }
-                builder.append("  ")
-                        .append('"').append(subNode.getSimpleName()).append('"')
-                        .append(" -> ")
-                        .append('"').append(node.getSimpleName()).append('"')
-                        .append(";")
-                        .append(lineSeparator());
             }
 
             public String render() {
@@ -181,7 +179,15 @@ public class SealedGraph implements Taglet {
                     .map(DeclaredType::asElement)
                     .filter(TypeElement.class::isInstance)
                     .map(TypeElement.class::cast)
+                    .filter(Renderer::isInPublicApi)
                     .toList();
+        }
+
+        private static boolean isInPublicApi(TypeElement typeElement) {
+            // Todo: Use the module definition to determine if in the public API or not.
+            return !typeElement.getQualifiedName()
+                    .toString()
+                    .contains(".internal");
         }
     }
 
