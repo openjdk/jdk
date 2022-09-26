@@ -36,9 +36,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 
 import java.io.*;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.System.lineSeparator;
 import static jdk.javadoc.doclet.Taglet.Location.TYPE;
@@ -130,6 +129,7 @@ public final class SealedGraph implements Taglet {
         }
 
         static void traverse(State state, TypeElement node) {
+            state.addNode(node);
             for (TypeElement subNode : permittedSubclasses(node)) {
                 state.addEdge(node, subNode);
                 traverse(state, subNode);
@@ -138,9 +138,15 @@ public final class SealedGraph implements Taglet {
 
         private static final class State {
 
+            private static final String LABEL = "label";
+            private static final String TOOLTIP = "tooltip";
+
             private final StringBuilder builder;
 
+            private final Map<String, Map<String, String>> nodeStyleMap;
+
             public State(TypeElement rootNode) {
+                nodeStyleMap = new LinkedHashMap<>();
                 builder = new StringBuilder()
                         .append("digraph G {")
                         .append(lineSeparator())
@@ -154,20 +160,41 @@ public final class SealedGraph implements Taglet {
                         .append(lineSeparator());
             }
 
+            public void addNode(TypeElement node) {
+                var styles = nodeStyleMap.computeIfAbsent(node.getQualifiedName().toString(), n -> new LinkedHashMap<>());
+                styles.put(LABEL, node.getSimpleName().toString());
+                styles.put(TOOLTIP, node.getQualifiedName().toString());
+            }
+
             public void addEdge(TypeElement node, TypeElement subNode) {
                 if (isInPublicApi(node) && isInPublicApi(subNode)) {
                     builder.append("  ")
-                            .append('"').append(subNode.getSimpleName()).append('"')
+                            .append('"').append(subNode.getQualifiedName()).append('"')
                             .append(" -> ")
-                            .append('"').append(node.getSimpleName()).append('"')
+                            .append('"').append(node.getQualifiedName()).append('"')
                             .append(";")
                             .append(lineSeparator());
                 }
             }
 
             public String render() {
+                nodeStyleMap.forEach((nodeName, styles) -> {
+                    builder.append("  ")
+                            .append('"').append(nodeName).append("\" ")
+                            .append(styles.entrySet().stream()
+                                    .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
+                                    .collect(Collectors.joining(" ", "[", "]")))
+                            .append(System.lineSeparator());
+                });
                 builder.append("}");
                 return builder.toString();
+            }
+
+            private String simpleName(String name) {
+                int lastDot = name.lastIndexOf('.');
+                return lastDot < 0
+                        ? name
+                        : name.substring(lastDot);
             }
 
         }
