@@ -46,16 +46,19 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessFlag;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static java.lang.constant.ConstantDescs.CD_Double;
 import static java.lang.constant.ConstantDescs.CD_Integer;
+import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_String;
 
 @Test
 public class BuilderTryCatchTest {
 
     static final ClassDesc CD_IOOBE = IndexOutOfBoundsException.class.describeConstable().get();
+    static final ClassDesc CD_NPE = NullPointerException.class.describeConstable().get();
     static final MethodTypeDesc MTD_String = MethodType.methodType(String.class).describeConstable().get();
 
     @Test
@@ -106,6 +109,22 @@ public class BuilderTryCatchTest {
         Assert.assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
         Assert.assertEquals(main.invoke(new String[]{}), "IndexOutOfBoundsException");
         Assert.assertEquals(main.invoke(null), "any");
+    }
+
+    @Test
+    public void testTryMutliCatchReachable() throws Throwable {
+        byte[] bytes = generateTryCatchMethod(catchBuilder ->
+            catchBuilder.catchingMulti(List.of(CD_IOOBE, CD_NPE), tb -> {
+                tb.invokevirtual(CD_Object, "toString", MTD_String);
+                tb.astore(1);
+            }));
+
+        MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
+        MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
+                MethodType.methodType(String.class, String[].class));
+
+        Assert.assertTrue(main.invoke(new String[]{}).toString().contains("IndexOutOfBoundsException"));
+        Assert.assertTrue(main.invoke(null).toString().contains("NullPointerException"));
     }
 
     @Test

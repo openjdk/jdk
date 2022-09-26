@@ -31,6 +31,7 @@ import jdk.classfile.Opcode;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -51,6 +52,11 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
 
     @Override
     public CodeBuilder.CatchBuilder catching(ClassDesc exceptionType, Consumer<CodeBuilder.BlockCodeBuilder> catchHandler) {
+        return catchingMulti(exceptionType == null ? List.of() : List.of(exceptionType), catchHandler);
+    }
+
+    @Override
+    public CodeBuilder.CatchBuilder catchingMulti(List<ClassDesc> exceptionTypes, Consumer<CodeBuilder.BlockCodeBuilder> catchHandler) {
         Objects.requireNonNull(catchHandler);
 
         if (catchBlock == null) {
@@ -59,8 +65,10 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
             }
         }
 
-        if (!catchTypes.add(exceptionType)) {
-            throw new IllegalArgumentException("Existing catch block catches exception of type: " + exceptionType);
+        for (var exceptionType : exceptionTypes) {
+            if (!catchTypes.add(exceptionType)) {
+                throw new IllegalArgumentException("Existing catch block catches exception of type: " + exceptionType);
+            }
         }
 
         // Finish prior catch block
@@ -74,11 +82,13 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
         catchBlock = new BlockCodeBuilderImpl(b, tryCatchEnd);
         Label tryStart = tryBlock.startLabel();
         Label tryEnd = tryBlock.endLabel();
-        if (exceptionType == null) {
+        if (exceptionTypes.isEmpty()) {
             catchBlock.exceptionCatchAll(tryStart, tryEnd, catchBlock.startLabel());
         }
         else {
-            catchBlock.exceptionCatch(tryStart, tryEnd, catchBlock.startLabel(), exceptionType);
+            for (var exceptionType : exceptionTypes) {
+                catchBlock.exceptionCatch(tryStart, tryEnd, catchBlock.startLabel(), exceptionType);
+            }
         }
         catchBlock.start();
         catchHandler.accept(catchBlock);
@@ -88,7 +98,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
 
     @Override
     public void catchingAll(Consumer<CodeBuilder.BlockCodeBuilder> catchAllHandler) {
-        catching(null, catchAllHandler);
+        catchingMulti(List.of(), catchAllHandler);
     }
 
     public void finish() {
