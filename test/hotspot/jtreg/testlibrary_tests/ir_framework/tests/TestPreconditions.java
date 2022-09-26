@@ -47,13 +47,13 @@ public class TestPreconditions {
 
     // The IR check should not be applied, since the CPU feature does not exist.
     @Test
-    @IR(applyIfCPUFeature={"this-feature-does-not-exist-at-all", "true"},
+    @IR(applyIfCPUFeature = {"this-feature-does-not-exist-at-all", "true"},
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyIfCPUFeatureOnly() {}
 
     // The IR check should not be applied, since the CPU feature does not exist.
     @Test
-    @IR(applyIfCPUFeature={"this-feature-does-not-exist-at-all", "true"},
+    @IR(applyIfCPUFeature = {"this-feature-does-not-exist-at-all", "true"},
         applyIf = {"LoopMaxUnroll", "= 8"},
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyBoth() {}
