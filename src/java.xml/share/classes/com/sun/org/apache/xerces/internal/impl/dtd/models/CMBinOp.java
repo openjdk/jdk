@@ -91,7 +91,7 @@ public class CMBinOp extends CMNode
     {
         if (type() == XMLContentSpec.CONTENTSPECNODE_CHOICE)
         {
-            // Its the union of the first positions of our children.
+            // Its the the union of the first positions of our children.
             toSet.setTo(fLeftChild.firstPos());
             toSet.union(fRightChild.firstPos());
         }
@@ -116,7 +116,7 @@ public class CMBinOp extends CMNode
     {
         if (type() == XMLContentSpec.CONTENTSPECNODE_CHOICE)
         {
-            // Its the union of the first positions of our children.
+            // Its the the union of the first positions of our children.
             toSet.setTo(fLeftChild.lastPos());
             toSet.union(fRightChild.lastPos());
         }

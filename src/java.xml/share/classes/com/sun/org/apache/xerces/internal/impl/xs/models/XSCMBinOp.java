@@ -88,7 +88,7 @@ public class XSCMBinOp extends CMNode {
     // -------------------------------------------------------------------
     protected void calcFirstPos(CMStateSet toSet) {
         if (type() == XSModelGroupImpl.MODELGROUP_CHOICE) {
-            // Its the union of the first positions of our children.
+            // Its the the union of the first positions of our children.
             toSet.setTo(fLeftChild.firstPos());
             toSet.union(fRightChild.firstPos());
         }
@@ -109,7 +109,7 @@ public class XSCMBinOp extends CMNode {
 
     protected void calcLastPos(CMStateSet toSet) {
         if (type() == XSModelGroupImpl.MODELGROUP_CHOICE) {
-            // Its the union of the first positions of our children.
+            // Its the the union of the first positions of our children.
             toSet.setTo(fLeftChild.lastPos());
             toSet.union(fRightChild.lastPos());
         }

@@ -1208,7 +1208,7 @@ public final class Stylesheet extends SyntaxTreeNode {
         final ConstantPoolGen cpg = classGen.getConstantPool();
 
         /*
-         * Define the method transform with the following signature:
+         * Define the the method transform with the following signature:
          * void transform(DOM, NodeIterator, HandlerBase)
          */
         final com.sun.org.apache.bcel.internal.generic.Type[] argTypes =

@@ -609,7 +609,7 @@ public final class ToHTMLStream extends ToStream
     public static final ElemDesc getElemDesc(String name)
     {
         /* this method used to return m_dummy  when name was null
-         * but now it doesn't check and requires non-null name.
+         * but now it doesn't check and and requires non-null name.
          */
         Object obj = m_elementFlags.get(name);
         if (null != obj)

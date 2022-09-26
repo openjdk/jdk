@@ -217,7 +217,7 @@ final class LogicalExpr extends Expression {
             _left.translateDesynthesized(classGen, methodGen);
 
             // This GOTO is used to skip over the code for the last test
-            // in the case where the first test succeeds
+            // in the case where the the first test succeeds
             InstructionHandle ih = il.append(new GOTO(null));
 
             // Translate right-hand side expression and produce true/false list

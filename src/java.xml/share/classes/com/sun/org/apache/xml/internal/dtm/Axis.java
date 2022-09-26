@@ -124,7 +124,7 @@ public final class Axis
   public static final int ALLFROMNODE = 14;
 
   /**
-   * A non-xpath axis, traversing the preceding and the ancestor nodes,
+   * A non-xpath axis, traversing the the preceding and the ancestor nodes,
    * needed for inverseing select patterns to match patterns.
    */
   public static final int PRECEDINGANDANCESTOR = 15;

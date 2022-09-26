@@ -1050,7 +1050,7 @@ public class NodeSetDTM extends NodeVector
    * you call getCurrentPos() and the return is 0, the next
    * fetch will take place at index 1.
    *
-   * @return the current position index.
+   * @return The the current position index.
    */
   public int getCurrentPos()
   {

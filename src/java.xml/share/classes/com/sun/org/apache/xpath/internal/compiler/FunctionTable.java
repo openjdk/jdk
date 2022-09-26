@@ -333,7 +333,7 @@ public class FunctionTable
    *    values found in {@link com.sun.org.apache.xpath.internal.compiler.FunctionTable}, but may
    *    be a value installed by an external module.
    *
-   * @return a new Function instance.
+   * @return a a new Function instance.
    *
    * @throws javax.xml.transform.TransformerException if ClassNotFoundException,
    *    IllegalAccessException, or InstantiationException is thrown.

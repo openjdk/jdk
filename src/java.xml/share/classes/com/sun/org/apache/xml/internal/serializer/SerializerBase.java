@@ -1191,7 +1191,7 @@ public abstract class SerializerBase
     }
 
     /**
-     * This method adds an attribute the current element,
+     * This method adds an attribute the the current element,
      * but should not be used for an xsl:attribute child.
      * @see ExtendedContentHandler#addAttribute(java.lang.String, java.lang.String,
      *          java.lang.String, java.lang.String, java.lang.String)

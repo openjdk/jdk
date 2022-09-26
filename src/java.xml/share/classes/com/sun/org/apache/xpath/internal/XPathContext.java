@@ -989,7 +989,7 @@ public class XPathContext extends DTMManager // implements ExpressionContext
   XPathExpressionContext expressionContext = new XPathExpressionContext();
 
   /**
-   * The expression context for extensions for this context.
+   * The the expression context for extensions for this context.
    *
    * @return An object that implements the ExpressionContext.
    */

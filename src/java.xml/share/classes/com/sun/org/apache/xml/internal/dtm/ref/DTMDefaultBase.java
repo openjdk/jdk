@@ -78,8 +78,8 @@ public abstract class DTMDefaultBase implements DTM
 
   /**
    * These hold indexes to elements based on namespace and local name.
-   * The base lookup is the namespace.  The second lookup is the local
-   * name, and the last array contains the first free element
+   * The base lookup is the the namespace.  The second lookup is the local
+   * name, and the last array contains the the first free element
    * at the start, and the list of element handles following.
    */
   protected int[][][] m_elemIndexes;

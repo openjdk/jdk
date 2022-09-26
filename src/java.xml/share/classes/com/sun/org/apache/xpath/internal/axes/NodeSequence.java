@@ -857,7 +857,7 @@ public class NodeSequence extends XObject
         * nodes to be obtaind from the iterator being
         * the sequence { 33, 11, 44, 22, 55 }.
         * <p>
-        * If ns3.nextNode() is called 3 times the
+        * If ns3.nextNode() is called 3 times the the
         * underlying iterator will have walked through
         * 33, 11, 55 and these three nodes will have been put
         * in the cache.

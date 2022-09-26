@@ -29,7 +29,7 @@ import com.sun.org.apache.xerces.internal.xni.XNIException;
 /**
  * <p>
  * The XPointerProcessor is responsible for parsing an XPointer
- * expression and providing scheme specific resolution of
+ * expression and and providing scheme specific resolution of
  * the document fragment pointed to be the pointer.
  * </p>
  *
