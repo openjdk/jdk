@@ -161,7 +161,7 @@ final class DigitList implements Cloneable {
             return 0.0;
         }
 
-        StringBuffer temp = getStringBuffer();
+        StringBuilder temp = getStringBuilder();
         temp.append('.');
         temp.append(digits, 0, count);
         temp.append('E');
@@ -187,7 +187,7 @@ final class DigitList implements Cloneable {
             return Long.MIN_VALUE;
         }
 
-        StringBuffer temp = getStringBuffer();
+        StringBuilder temp = getStringBuilder();
         temp.append(digits, 0, count);
         for (int i = count; i < decimalAt; ++i) {
             temp.append('0');
@@ -788,7 +788,7 @@ final class DigitList implements Cloneable {
         if (isZero()) {
             return "0";
         }
-        StringBuffer buf = getStringBuffer();
+        StringBuilder buf = getStringBuilder();
         buf.append("0.");
         buf.append(digits, 0, count);
         buf.append("x10^");
@@ -796,11 +796,11 @@ final class DigitList implements Cloneable {
         return buf.toString();
     }
 
-    private StringBuffer tempBuffer;
+    private StringBuilder tempBuffer;
 
-    private StringBuffer getStringBuffer() {
+    private StringBuilder getStringBuilder() {
         if (tempBuffer == null) {
-            tempBuffer = new StringBuffer(MAX_COUNT);
+            tempBuffer = new StringBuilder(MAX_COUNT);
         } else {
             tempBuffer.setLength(0);
         }
