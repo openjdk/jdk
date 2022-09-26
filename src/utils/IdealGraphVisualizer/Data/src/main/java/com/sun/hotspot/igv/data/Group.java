@@ -92,6 +92,17 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     }
 
     @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Group ").append(getProperties()).append("\n");
+        for (FolderElement g : getElements()) {
+            sb.append(g.toString());
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+
+    @Override
     public String getName() {
         return getProperties().get("name");
     }
