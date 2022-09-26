@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,50 +23,52 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.view.EditorTopComponent;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 import java.util.HashSet;
-import javax.swing.Action;
-import org.openide.util.HelpCtx;
-import org.openide.util.Utilities;
-import org.openide.util.actions.CallableSystemAction;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
-public final class ShowAllAction extends CallableSystemAction {
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ShowAllAction")
+@ActionRegistration(displayName = "#CTL_ShowAllAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 300),
+        @ActionReference(path = "Shortcuts", name = "D-A")
+})
+@Messages({
+        "CTL_ShowAllAction=Show all",
+        "HINT_ShowAllAction=Show all nodes"
+})
+public final class ShowAllAction extends ModelAwareAction {
 
     @Override
-    public void performAction() {
-        EditorTopComponent editor = EditorTopComponent.getActive();
-        if (editor != null) {
-            editor.getModel().setHiddenNodes(new HashSet<Integer>());
-        }
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/expand.gif"; // NOI18N
     }
 
-    public ShowAllAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Show all nodes");
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-A"));
+    @Override
+    protected String getDescription() {
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ShowAllAction");
     }
 
     @Override
     public String getName() {
-        return "Show all";
+        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ShowAllAction");
     }
 
     @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+    public void performAction(DiagramViewModel model) {
+        model.showNot(new HashSet<>());
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/expand.gif";
+    public boolean isEnabled(DiagramViewModel model) {
+        return model != null && !model.getHiddenNodes().isEmpty();
     }
 }

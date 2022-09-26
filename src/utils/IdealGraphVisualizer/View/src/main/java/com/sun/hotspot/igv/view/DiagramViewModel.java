@@ -54,7 +54,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
-    private final ChangedEvent<DiagramViewModel> groupChangedEvent;
     private final ChangedEvent<DiagramViewModel> diagramChangedEvent;
     private final ChangedEvent<DiagramViewModel> viewChangedEvent;
     private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
@@ -80,9 +79,14 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setData(DiagramViewModel newModel) {
         super.setData(newModel);
 
-        boolean groupChanged = (group != newModel.group);
-        this.group = newModel.group;
-        if (groupChanged) {
+        if (group != newModel.group) {
+            if (group != null) {
+                group.getChangedEvent().removeListener(groupContentChangedListener);
+            }
+            group = newModel.group;
+            if (group != null) {
+                group.getChangedEvent().addListener(groupContentChangedListener);
+            }
             filterGraphs();
         }
 
@@ -104,10 +108,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.showCFG = newModel.showCFG;
         viewPropertiesChanged |= (showNodeHull != newModel.showNodeHull);
         this.showNodeHull = newModel.showNodeHull;
-
-        if (groupChanged) {
-            groupChangedEvent.fire();
-        }
 
         if (diagramChanged) {
             diagramChangedEvent.fire();
@@ -418,6 +418,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     void close() {
         filterChain.getChangedEvent().removeListener(filterChainChangedListener);
         sequenceFilterChain.getChangedEvent().removeListener(filterChainChangedListener);
+        getChangedEvent().fire();
     }
 
     Iterable<InputGraph> getGraphsForward() {

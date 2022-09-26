@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,35 @@ package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import javax.swing.Action;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
-import org.openide.util.Utilities;
+import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.actions.CallableSystemAction;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ZoomInAction")
+@ActionRegistration(displayName = "#CTL_ZoomInAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 450),
+        @ActionReference(path = "Shortcuts", name = "D-EQUALS")
+})
+@Messages({
+        "CTL_ZoomInAction=Zoom in",
+        "HINT_ZoomInAction=Zoom into the graph"
+})
 public final class ZoomInAction extends CallableSystemAction {
+
+    public ZoomInAction() {
+        putValue(Action.SHORT_DESCRIPTION, getDescription());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+    }
 
     @Override
     public void performAction() {
@@ -45,13 +65,11 @@ public final class ZoomInAction extends CallableSystemAction {
 
     @Override
     public String getName() {
-        return "Zoom in";
+        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomInAction");
     }
 
-    public ZoomInAction() {
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-EQUALS"));
-        putValue(Action.SHORT_DESCRIPTION, "Zoom in");
+    private String getDescription() {
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomInAction");
     }
 
     @Override

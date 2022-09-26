@@ -138,7 +138,9 @@ apply.
 ### JTReg
 
 JTReg tests can be selected either by picking a JTReg test group, or a selection
-of files or directories containing JTReg tests.
+of files or directories containing JTReg tests. Documentation can be found at 
+[https://openjdk.org/jtreg/](https://openjdk.org/jtreg/), note especially the
+extensive [FAQ](https://openjdk.org/jtreg/faq.html).
 
 JTReg test groups can be specified either without a test root, e.g. `:tier1`
 (or `tier1`, the initial colon is optional), or with, e.g. `hotspot:tier1`,
@@ -454,6 +456,11 @@ Repeat the tests up to a set number of times, stopping at first failure.
 This helps to reproduce intermittent test failures.
 Defaults to 0.
 
+#### REPORT
+
+Use this report style when reporting test results (sent to JTReg as `-report`).
+Defaults to `executed`.
+
 ### Gtest keywords
 
 #### REPEAT
@@ -602,6 +609,12 @@ Explorer; in the right-side pane look for "Turn off Windows key hotkeys" and
 double click on it; enable or disable hotkeys.
 
 Note: restart is required to make the settings take effect.
+
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/testing.md` and 
+then run `make update-build-docs` to generate the same changes in 
+`doc/testing.html`.
 
 ---
 # Override some definitions in the global css file that are not optimal for

@@ -21,7 +21,7 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.util;
+package com.sun.hotspot.igv.view.actions;
 
 import java.awt.Point;
 import java.awt.event.MouseEvent;
