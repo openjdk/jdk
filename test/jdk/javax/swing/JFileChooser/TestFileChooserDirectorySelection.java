@@ -56,7 +56,7 @@ public class TestFileChooserDirectorySelection  {
             robot.waitForIdle();
             robot.delay(1000);
             Point pt = frame.getLocationOnScreen();
-            int i = 1;
+            int i = 0;
             boolean passed = false;
             File crntDir = fileChooser.getCurrentDirectory();
             File prevDir = null;
@@ -65,7 +65,8 @@ public class TestFileChooserDirectorySelection  {
                 doubleClickMouse(pt);
                 crntDir = fileChooser.getCurrentDirectory();
                 robot.delay(1000);
-                if (prevDir == crntDir) {
+                // getParentFile() returns null for root directory
+                if (prevDir == crntDir && crntDir.getParentFile() == null) {
                     passed = true;
                     break;
                 } else if (++i > 5) {

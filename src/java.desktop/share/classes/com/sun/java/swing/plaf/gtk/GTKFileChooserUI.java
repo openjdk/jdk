@@ -432,10 +432,18 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         public void mouseClicked(MouseEvent e) {
             if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
                 int index = list.locationToIndex(e.getPoint());
+
+                /*
+                 * Check if current directory is at root and user clicks on
+                 * '../' (index = 1) to move to prevoius directory then don't
+                 * process the event.
+                 * It is not possible to walk past root directory.
+                 */
                 File currentDirectory = getFileChooser().getCurrentDirectory();
                 if (currentDirectory.getParentFile() == null && index == 1) {
                     return;
                 }
+
                 if (index >= 0) {
                     File f = (File) list.getModel().getElementAt(index);
                     try {
