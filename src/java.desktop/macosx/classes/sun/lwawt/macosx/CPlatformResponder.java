@@ -79,6 +79,14 @@ final class CPlatformResponder {
         }
 
         int jmodifiers = NSEvent.nsToJavaModifiers(modifierFlags);
+        if ((jeventType == MouseEvent.MOUSE_PRESSED) && (jbuttonNumber > MouseEvent.NOBUTTON)) {
+            // 8294426: NSEvent.nsToJavaModifiers returns 0 on M2 MacBooks if the event is generated
+            //  via tapping (not pressing) on a trackpad
+            //  (System Preferences -> Trackpad -> Tap to click must be turned on).
+            // So let's set the modifiers manually.
+            jmodifiers |= MouseEvent.getMaskForButton(jbuttonNumber);
+        }
+
         boolean jpopupTrigger = NSEvent.isPopupTrigger(jmodifiers);
 
         eventNotifier.notifyMouseEvent(jeventType, System.currentTimeMillis(), jbuttonNumber,
