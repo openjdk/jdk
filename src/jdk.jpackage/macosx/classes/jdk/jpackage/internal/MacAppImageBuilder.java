@@ -284,6 +284,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 if (appImageFile != null) {
                     appImageFile.save(predefinedAppImage);
                 }
+
+                throw ex;
             }
 
             return;

@@ -61,7 +61,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 public final class AppImageFile {
 
     // These values will be loaded from AppImage xml file.
-    private final Path appImageDir;
     private final String appVersion;
     private final String launcherName;
     private final String mainClass;
@@ -82,10 +81,6 @@ public final class AppImageFile {
             String creatorVersion, String creatorPlatform, String signedStr,
             String appStoreStr) {
         boolean isValid = true;
-
-        if (appImageDir == null) {
-            isValid = false;
-        }
 
         if (appVersion == null || appVersion.length() == 0) {
             isValid = false;
@@ -129,7 +124,6 @@ public final class AppImageFile {
                 AppImageFile.getPathInAppImage(appImageDir)));
         }
 
-        this.appImageDir = appImageDir;
         this.appVersion = appVersion;
         this.launcherName = launcherName;
         this.mainClass = mainClass;
@@ -147,13 +141,6 @@ public final class AppImageFile {
      */
     List<LauncherInfo> getAddLaunchers() {
         return addLauncherInfos;
-    }
-
-    /**
-     * Returns application image directory. Never returns null.
-     */
-    Path getAppImageDir() {
-        return appImageDir;
     }
 
     /**
@@ -370,14 +357,16 @@ public final class AppImageFile {
      * Returns copy of AppImageFile, but with signed set to true if AppImageFile
      * is not marked as signed. If AppImageFile already signed it will return
      * instance to itself.
-     * @return
      */
     public AppImageFile copyAsSigned() {
         if (isSigned()) {
             return this;
         }
 
-        return new AppImageFile(getAppImageDir(), getAppVersion(),
+        // Pass null for appImageDir, it is used only to show location of
+        // .jpackage.xml in case of error. copyAsSigned() should not produce
+        // invalid app image file.
+        return new AppImageFile(null, getAppVersion(),
                 getLauncherName(), getMainClass(), getAddLaunchers(),
                 getVersion(), getPlatform(), "true", String.valueOf(isAppStore()));
     }
