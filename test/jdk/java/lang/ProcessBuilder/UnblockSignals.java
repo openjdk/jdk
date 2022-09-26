@@ -20,14 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.lang.Process;
-import java.lang.ProcessBuilder;
+
 import java.io.IOException;
 
 /*
  * @test
  * @summary Verify Signal mask is cleared by ProcessBuilder start
  * @bug 8234262
+ * @requires (os.family == "linux" | os.family == "mac")
  * @run main/othervm UnblockSignals
  * @run main/othervm -Xrs UnblockSignals
  */
