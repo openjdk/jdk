@@ -446,9 +446,13 @@ endif
 ifeq ($(call isTargetOs, windows), true)
   FixPath = \
     $(strip $(subst \,\\, $(shell $(FIXPATH_BASE) print $(patsubst $(FIXPATH), , $1))))
+  FixPathFile = \
+    $(shell $(FIXPATH_BASE) convert $1 $2)
 else
   FixPath = \
       $1
+  FixPathFile = \
+      $(shell $(CP) $1 $2)
 endif
 
 ################################################################################
