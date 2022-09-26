@@ -4182,22 +4182,41 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 #ifdef ASSERT
 bool PhaseIdealLoop::only_has_infinite_loops() {
   for (IdealLoopTree* l = _ltree_root->_child; l != NULL; l = l->_next) {
-    uint i = 1;
-    for (; i < C->root()->req(); i++) {
-      Node* in = C->root()->in(i);
-      if (in != NULL &&
-          in->Opcode() == Op_Halt &&
-          in->in(0)->is_Proj() &&
-          in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
-          in->in(0)->in(0)->in(0) == l->_head) {
-        break;
+    Unique_Node_List wq;
+    Node* head = l->_head;
+    assert(head->is_Region(), "");
+    for (uint i = 1; i < head->req(); ++i) {
+      Node* in = head->in(i);
+      if (get_loop(in) != _ltree_root) {
+        wq.push(in);
       }
     }
-    if (i == C->root()->req()) {
-      return false;
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* c = wq.at(i);
+      if (c == head) {
+        continue;
+      } else if (c->is_Region()) {
+        for (uint j = 1; j < c->req(); ++j) {
+          wq.push(c->in(j));
+        }
+      } else {
+        wq.push(c->in(0));
+      }
+    }
+    assert(wq.member(head), "");
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* c = wq.at(i);
+      if (c->isa_MultiBranch()) {
+        for (DUIterator_Fast jmax, j = c->fast_outs(jmax); j < jmax; j++) {
+          Node* u = c->fast_out(j);
+          assert(u->is_CFG(), "");
+          if (!wq.member(u) && c->Opcode() != Op_NeverBranch) {
+            return false;
+          }
+        }
+      }
     }
   }
-
   return true;
 }
 #endif
