@@ -133,8 +133,10 @@ public class Polygon implements Shape, java.io.Serializable {
     }
 
     /**
-     * Constructs and initializes a {@code Polygon} from the specified
-     * parameters.
+     * Constructs and initializes a {@code Polygon} from the
+     * specified parameters, copying the array contents of
+     * {@code xpoints} and {@code ypoints}.
+     *
      * @param xpoints an array of X coordinates
      * @param ypoints an array of Y coordinates
      * @param npoints the total number of points in the
