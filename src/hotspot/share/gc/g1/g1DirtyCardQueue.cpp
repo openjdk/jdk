@@ -68,7 +68,7 @@ static uint par_ids_start() { return 0; }
 G1DirtyCardQueueSet::G1DirtyCardQueueSet(BufferNode::Allocator* allocator) :
   PtrQueueSet(allocator),
   _num_cards(0),
-  _max_cards(SIZE_MAX),
+  _mutator_refinement_threshold(SIZE_MAX),
   _completed(),
   _paused(),
   _free_ids(par_ids_start(), num_par_ids()),
@@ -486,7 +486,7 @@ void G1DirtyCardQueueSet::handle_completed_buffer(BufferNode* new_node,
   enqueue_completed_buffer(new_node);
 
   // No need for mutator refinement if number of cards is below limit.
-  if (Atomic::load(&_num_cards) <= Atomic::load(&_max_cards)) {
+  if (Atomic::load(&_num_cards) <= Atomic::load(&_mutator_refinement_threshold)) {
     return;
   }
 
@@ -536,7 +536,7 @@ void G1DirtyCardQueueSet::abandon_logs() {
   _detached_refinement_stats.reset();
 
   // Disable mutator refinement until concurrent refinement decides otherwise.
-  set_max_cards(SIZE_MAX);
+  set_mutator_refinement_threshold(SIZE_MAX);
 
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
@@ -556,7 +556,7 @@ void G1DirtyCardQueueSet::concatenate_logs() {
   assert_at_safepoint();
 
   // Disable mutator refinement until concurrent refinement decides otherwise.
-  set_max_cards(SIZE_MAX);
+  set_mutator_refinement_threshold(SIZE_MAX);
 
   // Iterate over all the threads, if we find a partial log add it to
   // the global list of logs.
@@ -611,10 +611,10 @@ void G1DirtyCardQueueSet::record_detached_refinement_stats(G1ConcurrentRefineSta
   stats->reset();
 }
 
-size_t G1DirtyCardQueueSet::max_cards() const {
-  return Atomic::load(&_max_cards);
+size_t G1DirtyCardQueueSet::mutator_refinement_threshold() const {
+  return Atomic::load(&_mutator_refinement_threshold);
 }
 
-void G1DirtyCardQueueSet::set_max_cards(size_t value) {
-  Atomic::store(&_max_cards, value);
+void G1DirtyCardQueueSet::set_mutator_refinement_threshold(size_t value) {
+  Atomic::store(&_mutator_refinement_threshold, value);
 }

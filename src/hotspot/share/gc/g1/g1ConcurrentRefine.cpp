@@ -237,13 +237,13 @@ void G1ConcurrentRefine::adjust_after_gc(double logged_cards_time_ms,
                               goal_ms);
   if (_thread_control.max_num_threads() == 0) {
     // If no refinement threads then the mutator threshold is the target.
-    _dcqs.set_max_cards(_pending_cards_target);
+    _dcqs.set_mutator_refinement_threshold(_pending_cards_target);
   } else {
     // Provisionally make the mutator threshold unlimited, to be updated by
     // the next periodic adjustment.  Because card state may have changed
     // drastically, record that adjustment is needed and kick the primary
     // thread, in case it is waiting.
-    _dcqs.set_max_cards(SIZE_MAX);
+    _dcqs.set_mutator_refinement_threshold(SIZE_MAX);
     _needs_adjust = true;
     if (is_pending_cards_target_initialized()) {
       _thread_control.activate(0);
@@ -336,7 +336,7 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
     mutator_threshold = _pending_cards_target;
   }
   Atomic::store(&_threads_wanted, new_wanted);
-  _dcqs.set_max_cards(mutator_threshold);
+  _dcqs.set_mutator_refinement_threshold(mutator_threshold);
   log_debug(gc, refine)("Updating refinement threads: wanted %u, cards: %zu, "
                         "predicted: %zu, time: %1.2fms",
                         new_wanted,
@@ -350,7 +350,7 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
       // Failed to allocate and activate thread.  Stop trying to activate, and
       // instead use mutator threads to make up the gap.
       Atomic::store(&_threads_wanted, i);
-      _dcqs.set_max_cards(_pending_cards_target);
+      _dcqs.set_mutator_refinement_threshold(_pending_cards_target);
       break;
     }
   }
@@ -367,7 +367,7 @@ void G1ConcurrentRefine::reduce_threads_wanted() {
     // the target has been reached, this keeps the number of pending cards on
     // target even as refinement threads deactivate in the meantime.
     if (is_in_last_adjustment_period()) {
-      _dcqs.set_max_cards(_pending_cards_target);
+      _dcqs.set_mutator_refinement_threshold(_pending_cards_target);
     }
   }
 }

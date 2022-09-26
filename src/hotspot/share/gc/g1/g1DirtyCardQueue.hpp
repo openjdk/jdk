@@ -162,7 +162,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // If the queue contains more cards than configured here, the
   // mutator must start doing some of the concurrent refinement work.
-  volatile size_t _max_cards;
+  volatile size_t _mutator_refinement_threshold;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
   // NonblockingQueue has inner padding of one cache line.
@@ -222,7 +222,8 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   // Enqueue the buffer, and optionally perform refinement by the mutator.
   // Mutator refinement is only done by Java threads, and only if there
-  // are more than max_cards cards in the completed buffers.  Updates stats.
+  // are more than mutator_refinement_threshold cards in the completed buffers.
+  // Updates stats.
   //
   // Mutator refinement, if performed, stops processing a buffer if
   // SuspendibleThreadSet::should_yield(), recording the incompletely
@@ -281,12 +282,11 @@ public:
   // Accumulate refinement stats from threads that are detaching.
   void record_detached_refinement_stats(G1ConcurrentRefineStats* stats);
 
-  // Threshold for mutator threads to also do refinement when there
-  // are concurrent refinement threads.
-  size_t max_cards() const;
+  // Number of cards above which mutator threads should do refinement.
+  size_t mutator_refinement_threshold() const;
 
-  // Set threshold for mutator threads to also do refinement.
-  void set_max_cards(size_t value);
+  // Set number of cards above which mutator threads should do refinement.
+  void set_mutator_refinement_threshold(size_t value);
 };
 
 #endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
