@@ -29,7 +29,6 @@
 #include "runtime/timer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include <cstdint>
 
 DEBUG_ONLY(class ResourceMark;)
 
