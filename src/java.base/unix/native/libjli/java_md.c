@@ -422,7 +422,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         if (runpath != 0) {
             /* ensure storage for runpath + colon + NULL */
             if ((JLI_StrLen(runpath) + 1 + 1) > new_runpath_size) {
-                JLI_ReportErrorMessageSys(JRE_ERROR11);
+                JLI_ReportErrorMessageSys(SYSTEM, JRE_ERROR11);
                 exit(1);
             }
             JLI_StrCat(new_runpath, ":");
@@ -457,7 +457,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 #else /* !SETENV_REQUIRED */
         execv(newexec, argv);
 #endif /* SETENV_REQUIRED */
-        JLI_ReportErrorMessageSys(JRE_ERROR4, newexec);
+        JLI_ReportErrorMessageSys(SYSTEM, JRE_ERROR4, newexec);
     }
     exit(1);
 }

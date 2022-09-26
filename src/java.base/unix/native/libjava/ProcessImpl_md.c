@@ -326,7 +326,7 @@ throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
     jstring s;
 
     if (errnum != 0) {
-        int ret = getErrorString(errnum, tmpbuf, sizeof(tmpbuf));
+        int ret = getErrorString(errnum, tmpbuf, sizeof(tmpbuf), RUNTIME);
         if (ret != EINVAL)
             detail = tmpbuf;
     }

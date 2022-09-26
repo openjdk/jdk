@@ -104,7 +104,7 @@ JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                              const char *defaultDetail)
 {
     char buf[256];
-    size_t n = getLastErrorString(buf, sizeof(buf));
+    size_t n = getLastErrorString(buf, sizeof(buf), SYSTEM);
 
     if (n > 0) {
         jstring s = JNU_NewStringPlatform(env, buf);
@@ -130,7 +130,7 @@ JNU_ThrowByNameWithMessageAndLastError
   (JNIEnv *env, const char *name, const char *message)
 {
     char buf[256];
-    size_t n = getLastErrorString(buf, sizeof(buf));
+    size_t n = getLastErrorString(buf, sizeof(buf), SYSTEM);
     size_t messagelen = message == NULL ? 0 : strlen(message);
 
     if (n > 0) {

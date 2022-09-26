@@ -40,6 +40,7 @@
 #include "emessages.h"
 #include "java_md.h"
 #include "jli_util.h"
+#include "jni_util.h"
 #include "manifest_info.h"
 #include "wildcard.h"
 #include "splashscreen.h"
@@ -136,9 +137,12 @@ void CreateExecutionEnvironment(int *argc, char ***argv,
 JNIEXPORT void JNICALL
 JLI_ReportErrorMessage(const char * message, ...);
 
-/* Reports a system error message to stderr or a window */
+/*
+ * Just like JLI_ReportErrorMessage, except that it concatenates the system
+ * error message, if any. See jni_util.h on usage of ErrorOrigin.
+ */
 JNIEXPORT void JNICALL
-JLI_ReportErrorMessageSys(const char * message, ...);
+JLI_ReportErrorMessageSys(ErrorOrigin origin, const char * message, ...);
 
 /* Reports an error message only to stderr. */
 JNIEXPORT void JNICALL

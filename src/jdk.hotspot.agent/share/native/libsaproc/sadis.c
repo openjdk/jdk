@@ -104,7 +104,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
     func = (uintptr_t)GetProcAddress(hsdis_handle, "decode_instructions_virtual");
   }
   if (func == 0) {
-    getLastErrorString(buffer, sizeof(buffer));
+    getLastErrorString(buffer, sizeof(buffer), SYSTEM);
     error_message = buffer;
   }
 #else

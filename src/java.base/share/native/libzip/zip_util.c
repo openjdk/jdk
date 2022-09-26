@@ -863,7 +863,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     zip->lastModified = lastModified;
 
     if (zfd == -1) {
-        if (pmsg && getLastErrorString(errbuf, sizeof(errbuf)) > 0)
+        if (pmsg && getLastErrorString(errbuf, sizeof(errbuf), SYSTEM) > 0)
             *pmsg = strdup(errbuf);
         freeZip(zip);
         return NULL;
@@ -881,7 +881,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
                 *pmsg = strdup("zip file is empty");
             }
         } else { /* error */
-            if (pmsg && getLastErrorString(errbuf, sizeof(errbuf)) > 0)
+            if (pmsg && getLastErrorString(errbuf, sizeof(errbuf), SYSTEM) > 0)
                 *pmsg = strdup(errbuf);
         }
         ZFILE_Close(zfd);
@@ -1518,7 +1518,7 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             ZIP_Unlock(zip);
             if (n == -1) {
                 if (msg == 0) {
-                    getErrorString(errno, tmpbuf, sizeof(tmpbuf));
+                    getErrorString(errno, tmpbuf, sizeof(tmpbuf), RUNTIME);
                     msg = tmpbuf;
                 }
                 jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
@@ -1535,7 +1535,7 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
                 msg = zip->msg;
             }
             if (msg == 0) {
-                getErrorString(errno, tmpbuf, sizeof(tmpbuf));
+                getErrorString(errno, tmpbuf, sizeof(tmpbuf), RUNTIME);
                 msg = tmpbuf;
             }
             jio_fprintf(stderr, "%s: %s\n", zip->name, msg);

@@ -197,22 +197,22 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
     va_end(vl);
 }
 
+/* Ignore ErrorOrigin on Unix, libc is part of the OS */
 JNIEXPORT void JNICALL
-JLI_ReportErrorMessageSys(const char* fmt, ...) {
+JLI_ReportErrorMessageSys(ErrorOrigin origin, const char* fmt, ...) {
     va_list vl;
-    char *emsg;
-
-    /*
-     * TODO: its safer to use strerror_r but is not available on
-     * Solaris 8. Until then....
-     */
-    emsg = strerror(errno);
-    if (emsg != NULL) {
-        fprintf(stderr, "%s\n", emsg);
-    }
 
     va_start(vl, fmt);
     vfprintf(stderr, fmt, vl);
+    if (errno != 0) {
+        char msg[1024];
+
+        if (strerror_r(errno, msg, 1024) == 0) {
+            fprintf(stderr, ": %s", msg);
+        } else {
+        	fprintf(stderr, ": Java detected but could not determine the underlying error");
+        }
+    }
     fprintf(stderr, "\n");
     va_end(vl);
 }

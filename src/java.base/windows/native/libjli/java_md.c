@@ -605,40 +605,45 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
     va_end(vl);
 }
 
-/*
- * Just like JLI_ReportErrorMessage, except that it concatenates the system
- * error message if any, it's up to the calling routine to correctly
- * format the separation of the messages.
- */
+
 JNIEXPORT void JNICALL
-JLI_ReportErrorMessageSys(const char *fmt, ...)
+JLI_ReportErrorMessageSys(ErrorOrigin origin, const char *fmt, ...)
 {
     va_list vl;
 
-    int save_errno = errno;
     DWORD       errval;
     jboolean freeit = JNI_FALSE;
     char  *errtext = NULL;
 
     va_start(vl, fmt);
 
-    if ((errval = GetLastError()) != 0) {               /* Platform SDK / DOS Error */
-        int n = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|
-            FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
-            NULL, errval, 0, (LPTSTR)&errtext, 0, NULL);
-        if (errtext == NULL || n == 0) {                /* Paranoia check */
-            errtext = "";
-            n = 0;
-        } else {
-            freeit = JNI_TRUE;
-            if (n > 2) {                                /* Drop final CR, LF */
-                if (errtext[n - 1] == '\n') n--;
-                if (errtext[n - 1] == '\r') n--;
-                errtext[n] = '\0';
+    if (origin == SYSTEM) {
+        if ((errval = GetLastError()) != 0) {               /* Platform SDK / DOS Error */
+                int n = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|
+                    FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                    NULL, errval, 0, (LPTSTR)&errtext, 0, NULL);
+                if (errtext == NULL || n == 0) {                /* Paranoia check */
+                	char* buffer = "Java detected but could not determine the underlying error";
+                    errtext = (char*) JLI_MemAlloc(strlen(buffer) + 1);
+                    JLI_StrCpy(errtext, buffer);
+                    n = 0;
+                } else {
+                    freeit = JNI_TRUE;
+                    if (n > 3) {                                /* Drop final CR, LF */
+                        if (errtext[n - 1] == '\n') n--;
+                        if (errtext[n - 1] == '\r') n--;
+                        if (errtext[n - 1] == '.') n--;         /* Drop '.' to match getErrorString */
+                        errtext[n] = '\0';
+                    }
+                }
             }
+    } else if (origin == RUNTIME) {
+        errtext = (char*) JLI_MemAlloc(1024);                   /* Matches Unix buffer size */
+        if(strerror_s(errtext, 1024, errno) != 0) {             /* strerror_s isn't actually part of C11, neither is strerrlen_s... */
+            char* buffer = "Java detected but could not determine the underlying error";
+            errtext = (char*) JLI_MemRealloc(errtext, strlen(buffer) + 1);
+            JLI_StrCpy(errtext, buffer);
         }
-    } else {   /* C runtime error that has no corresponding DOS error code */
-        errtext = strerror(save_errno);
     }
 
     if (IsJavaw()) {
@@ -646,16 +651,19 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         int mlen;
         /* get the length of the string we need */
         int len = mlen =  _vscprintf(fmt, vl) + 1;
-        if (freeit) {
-           mlen += (int)JLI_StrLen(errtext);
+        if (errtext != NULL) {
+           mlen += 2 + (int)JLI_StrLen(errtext);
         }
 
         message = (char *)JLI_MemAlloc(mlen);
         _vsnprintf(message, len, fmt, vl);
-        message[len]='\0';
 
-        if (freeit) {
-           JLI_StrCat(message, errtext);
+        if (errtext != NULL) {
+        	message[len] = ':';
+        	message[len + 1] = ' ';
+            JLI_StrCat(message, errtext);
+        } {
+        	message[len] = '\0';
         }
 
         MessageBox(NULL, message, "Java Virtual Machine Launcher",
@@ -664,12 +672,17 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         JLI_MemFree(message);
     } else {
         vfprintf(stderr, fmt, vl);
-        if (freeit) {
-           fprintf(stderr, "%s", errtext);
+        if (errtext != NULL) {
+           fprintf(stderr, ": %s", errtext);
         }
+        fprintf(stderr, "\n");
     }
-    if (freeit) {
-        (void)LocalFree((HLOCAL)errtext);
+    if (errtext != NULL) {
+        if (freeit) {
+            (void)LocalFree((HLOCAL)errtext);
+        } else {
+            free(errtext);
+        }
     }
     va_end(vl);
 }

@@ -209,7 +209,7 @@ throwFileNotFoundException(JNIEnv *env, jstring path)
     jobject x;
     jstring why = NULL;
 
-    n = getLastErrorString(buf, sizeof(buf));
+    n = getLastErrorString(buf, sizeof(buf), SYSTEM);
     if (n > 0) {
         why = JNU_NewStringPlatform(env, buf);
         CHECK_NULL(why);
