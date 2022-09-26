@@ -2857,6 +2857,11 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_nmethod_entry_barrier() {
+    // TODO
+    return nullptr;
+  }
+
   address generate_cont_thaw(bool return_barrier, bool exception) {
     if (!Continuations::enabled()) return nullptr;
     Unimplemented();
@@ -2996,6 +3001,12 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSHA512Intrinsics) {
       StubRoutines::_sha512_implCompress   = generate_SHA512_stub(false, "SHA512_singleBlock");
       StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(true,  "SHA512_multiBlock");
+    }
+
+    // nmethod entry barriers for concurrent class unloading
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::zarch::_nmethod_entry_barrier = generate_nmethod_entry_barrier();
     }
 
 #ifdef COMPILER2

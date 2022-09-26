@@ -42,6 +42,11 @@ int StubRoutines::zarch::_atomic_memory_operation_lock = StubRoutines::zarch::un
 
 #define __ masm->
 
+address StubRoutines::zarch::generate_nmethod_entry_barrier() {
+     // TODO
+     return nullptr;
+}
+
 void StubRoutines::zarch::generate_load_absolute_address(MacroAssembler* masm, Register table, address table_addr, uint64_t table_contents) {
   __ load_absolute_address(table, table_addr);
 

@@ -31,6 +31,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
 #define __ masm->
@@ -76,9 +77,26 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
     return;
   }
 
+  assert_different_registers(tmp, Z_R1_scratch);
+
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
-    ShouldNotReachHere(); // TODO
+    // Load jump addr:
+    // Zero R1
+    __ z_xgr(Z_R1_scratch, Z_R1_scratch);
+    // Add high-order bits
+    __ z_aih(Z_R1_scratch, (long)StubRoutines::zarch::nmethod_entry_barrier() >> 32);
+    // Add low-order bits
+    __ z_afi(Z_R1_scratch, (long)StubRoutines::zarch::nmethod_entry_barrier());
+
+    // Load value from current java object:
+    __ z_lg(tmp, in_bytes(bs_nm->thread_disarmed_offset()), Z_thread);
+
+    // Compare to current patched value:
+    __ z_cfi(tmp, /* to be patched */ -1);
+
+    // Conditional Jump
+    __ z_bcr(Assembler::bcondNotEqual, Z_R1_scratch);
 
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }

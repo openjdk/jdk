@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeBlob.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -30,28 +31,43 @@
 
 class NativeMethodBarrier: public NativeInstruction {
   private:
+    NativeMovRegMem* get_patchable_instruction_handle() const {
+      address guard_addr = NativeInstruction::addr_at(guard_offset);
 
-  public:
-    int get_guard_value() const {
-      // Unimplemented();
-      return -1;
+      return reinterpret_cast<NativeMovRegMem*>(guard_addr);
     }
 
-    void release_set_guard_value(int value) {
-      // Unimplemented();
+  public:
+    static const int guard_offset = 14;
+
+    int get_guard_value() const {
+      NativeMovRegMem* guard_addr = get_patchable_instruction_handle();
+
+      // Access memory at guard address
+      return guard_addr->offset();
+    }
+
+    void set_guard_value(int value) {
+      NativeMovRegMem* guard_addr = get_patchable_instruction_handle();
+
+      // Set memory at guard address
+      guard_addr->set_offset(value);
+    }
+
+    void verify() const {
+      uint* current_instruction = reinterpret_cast<uint*>(NativeInstruction::addr_at(0));
+
+      // TODO: Implement
+      ShouldNotReachHere();
     }
 
 };
 
-static const int entry_barrier_offset() {
-  // TODO: Implement this procedure
-  return 0;
-}
-
 static NativeMethodBarrier* get_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset();
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() - NativeMethodBarrier::guard_offset;
   auto barrier = reinterpret_cast<NativeMethodBarrier*>(barrier_address);
 
+  debug_only(barrier->verify());
   return barrier;
 }
 
@@ -66,7 +82,7 @@ void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
   }
 
   NativeMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->release_set_guard_value(arm_value);
+  barrier->set_guard_value(arm_value);
 }
 
 void BarrierSetNMethod::disarm(nmethod* nm) {
@@ -75,7 +91,7 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   }
 
   NativeMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->release_set_guard_value(disarmed_value());
+  barrier->set_guard_value(disarmed_value());
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
