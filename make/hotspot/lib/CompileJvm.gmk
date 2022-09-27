@@ -89,7 +89,7 @@ DISABLED_WARNINGS_gcc := ignored-qualifiers comment int-in-bool-context \
 
 ifeq ($(call isTargetCpu, s390x), true)))
   DISABLED_WARNINGS_gcc += shift-negative-value
-fi
+endif
 
 DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
