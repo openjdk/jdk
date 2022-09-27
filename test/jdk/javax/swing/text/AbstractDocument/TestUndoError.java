@@ -22,6 +22,7 @@
  */
 /*
  * @test
+ * @key headful
  * @bug 5080391
  * @summary  Verifies if AIOOBE is thrown when we do undo of text
  *           inserted in RTL orientation
