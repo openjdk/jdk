@@ -752,7 +752,7 @@ inline int CodeSection::alignment(int section) {
   if (section == CodeBuffer::SECT_INSTS) {
     return (int) CodeEntryAlignment;
   }
-  if (CodeBuffer::SECT_STUBS) {
+  if (section == CodeBuffer::SECT_STUBS) {
     // CodeBuffer installer expects sections to be HeapWordSize aligned
     return HeapWordSize;
   }
