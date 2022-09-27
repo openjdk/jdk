@@ -48,11 +48,6 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public boolean isBlockTag() {
-        return true;
-    }
-
-    @Override
     public void inherit(Input input, DocFinder.Output output) {
         List<? extends SpecTree> tags = input.utils.getSpecTrees(input.element);
         if (!tags.isEmpty()) {
