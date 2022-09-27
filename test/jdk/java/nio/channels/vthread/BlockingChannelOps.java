@@ -640,7 +640,7 @@ public class BlockingChannelOps {
             try (Pipe.SinkChannel sink = p.sink();
                  Pipe.SourceChannel source = p.source()) {
 
-                // delaye write from sink
+                // delayed write from sink
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
                 runAfterParkedAsync(() -> sink.write(bb1));
 

@@ -140,7 +140,8 @@ public class BlockingSocketOps {
 
                 // delayed read from s2 to EOF
                 InputStream in = s2.getInputStream();
-                Thread reader = runAfterParkedAsync(() -> readToEOF(in));
+                Thread reader = runAfterParkedAsync(() ->
+                        in.transferTo(OutputStream.nullOutputStream()));
 
                 // write should block
                 byte[] ba = new byte[100*1024];
@@ -708,12 +709,6 @@ public class BlockingSocketOps {
         public void close() throws IOException {
             s1.close();
             s2.close();
-        }
-    }
-
-    static void readToEOF(InputStream in) throws IOException {
-        byte[] b = new byte[16*1024];
-        while (in.read(b) > 0) {
         }
     }
 
