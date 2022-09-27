@@ -222,7 +222,7 @@ class JavaThread: public Thread {
   void install_async_exception(AsyncExceptionHandshake* aec = NULL);
   void handle_async_exception(oop java_throwable);
  public:
-  bool has_async_exception_condition(bool ThreadDeath_only = false);
+  bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
 
