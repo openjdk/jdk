@@ -86,7 +86,7 @@ CFLAGS_VM_VERSION := \
 DISABLED_WARNINGS_gcc := parentheses comment unknown-pragmas address \
     delete-non-virtual-dtor char-subscripts array-bounds int-in-bool-context \
     ignored-qualifiers  missing-field-initializers implicit-fallthrough \
-    empty-body strict-overflow sequence-point maybe-uninitialized \
+    empty-body strict-overflow maybe-uninitialized \
     misleading-indentation cast-function-type shift-negative-value
 
 ifeq ($(call check-jvm-feature, zero), true)
