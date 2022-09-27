@@ -44,12 +44,12 @@ public final class LinuxRISCV64Linker extends AbstractLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function) {
-        return CallArranger.arrangeDowncall(inferredMethodType, function);
+        return LinuxRISCV64CallArranger.arrangeDowncall(inferredMethodType, function);
     }
 
     @Override
     protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, MemorySession scope) {
-        return CallArranger.arrangeUpcall(target, targetType, function, scope);
+        return LinuxRISCV64CallArranger.arrangeUpcall(target, targetType, function, scope);
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, MemorySession scope) {
