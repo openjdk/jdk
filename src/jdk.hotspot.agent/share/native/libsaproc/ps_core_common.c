@@ -342,7 +342,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       classes_jsa[0] = 0;
       if (read_string(ph, sharedArchivePathAddr, classes_jsa, sizeof(classes_jsa)) != true) {
         print_error("can't read shared archive path value (%p) (%p)\n",
-                           (void*)sharedArchivePathAddrAddr, (void*)sharedArchivePathAddr);
+                    (void*)sharedArchivePathAddrAddr, (void*)sharedArchivePathAddr);
         return false;
       }
 
