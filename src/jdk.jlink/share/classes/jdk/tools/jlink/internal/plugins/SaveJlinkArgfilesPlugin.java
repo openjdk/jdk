@@ -33,7 +33,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -95,6 +94,9 @@ public final class SaveJlinkArgfilesPlugin extends AbstractPlugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy(Function.identity(), out);
+        if (!in.moduleView().findModule("jdk.jlink").isPresent()) {
+            throw new PluginException("--save-jlink-argfiles requires jdk.jlink to be in the output image");
+        }
         byte[] savedOptions = argfiles.stream()
                                       .collect(Collectors.joining("\n"))
                                       .getBytes(StandardCharsets.UTF_8);

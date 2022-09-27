@@ -71,8 +71,8 @@ public class SaveJlinkArgfilesPluginTest {
             .assertSuccess();
         helper.checkImage(image, module, null, null);
 
-        Path launcher = image.resolve("bin/java" + exe);
-        var oa = ProcessTools.executeProcess(launcher.toString(), "-XshowSettings:properties", "--version");
+        String launcher = image.resolve("bin/java" + exe).toString();
+        var oa = ProcessTools.executeProcess(launcher, "-XshowSettings:properties", "--version");
 
         // Check that the primary image creation ignored the saved args
         oa.shouldHaveExitValue(0);
@@ -80,16 +80,22 @@ public class SaveJlinkArgfilesPluginTest {
         oa.shouldNotMatch("java.vendor.version = XyzzyVM 3.14.15");
         oa.shouldNotMatch("foo = xyzzy");
 
+        // Check that --save-jlink-argfiles fails if jdk.jlink not in the output image
+        launcher = image.resolve("bin/jlink" + exe).toString();
+        oa = ProcessTools.executeProcess(launcher, "--output=ignore", "--save-jlink-argfiles=" + argfile1);
+        oa.shouldHaveExitValue(1);
+        oa.stdoutShouldMatch("--save-jlink-argfiles requires jdk.jlink to be in the output image");
+
         // Create a secondary image
         Path image2 = Path.of("image2").toAbsolutePath();
-        launcher = image.resolve("bin/jlink" + exe);
-        oa = ProcessTools.executeProcess(launcher.toString(), "--output", image2.toString(), "--add-modules=java.base");
+        launcher = image.resolve("bin/jlink" + exe).toString();
+        oa = ProcessTools.executeProcess(launcher, "--output", image2.toString(), "--add-modules=java.base");
         oa.shouldHaveExitValue(0);
 
         // Ensure the saved `--add-options` and `--vendor-*` options
         // were applied when creating the secondary image.
-        launcher = image2.resolve(Path.of("bin", "java" + exe));
-        oa = ProcessTools.executeProcess(launcher.toString(), "-XshowSettings:properties", "--version");
+        launcher = image2.resolve(Path.of("bin", "java" + exe)).toString();
+        oa = ProcessTools.executeProcess(launcher, "-XshowSettings:properties", "--version");
         oa.shouldHaveExitValue(0);
         oa.stdoutShouldMatch(" XyzzyVM 3.14.15 ");
         oa.stderrShouldMatch("java.vendor.url.bug = https://bugs.xyzzy.com/");
