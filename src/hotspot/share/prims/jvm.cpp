@@ -2926,9 +2926,6 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     if (java_lang_Thread::thread(JNIHandles::resolve_non_null(jthread)) != NULL) {
       throw_illegal_thread_state = true;
     } else {
-      // We could also check the stillborn flag to see if this thread was already stopped, but
-      // for historical reasons we let the thread detect that itself when it starts running
-
       jlong size =
              java_lang_Thread::stackSize(JNIHandles::resolve_non_null(jthread));
       // Allocate the C++ Thread structure and create the native thread.  The
@@ -2978,45 +2975,6 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
 
   Thread::start(native_thread);
 
-JVM_END
-
-
-// JVM_Stop is implemented using a VM_Operation, so threads are forced to safepoints
-// before the quasi-asynchronous exception is delivered.  This is a little obtrusive,
-// but is thought to be reliable and simple. In the case, where the receiver is the
-// same thread as the sender, no VM_Operation is needed.
-JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
-  ThreadsListHandle tlh(thread);
-  oop java_throwable = JNIHandles::resolve(throwable);
-  if (java_throwable == NULL) {
-    THROW(vmSymbols::java_lang_NullPointerException());
-  }
-  oop java_thread = NULL;
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, &java_thread);
-  Events::log_exception(thread,
-                        "JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]",
-                        p2i(receiver), p2i(java_thread), p2i(throwable));
-
-  if (is_alive) {
-    // jthread refers to a live JavaThread.
-    if (thread == receiver) {
-      // Exception is getting thrown at self so no VM_Operation needed.
-      THROW_OOP(java_throwable);
-    } else {
-      // Use a VM_Operation to throw the exception.
-      JavaThread::send_async_exception(receiver, java_throwable);
-    }
-  } else {
-    // Either:
-    // - target thread has not been started before being stopped, or
-    // - target thread already terminated
-    // We could read the threadStatus to determine which case it is
-    // but that is overkill as it doesn't matter. We must set the
-    // stillborn flag for the first case, and if the thread has already
-    // exited setting this flag has no effect.
-    java_lang_Thread::set_stillborn(java_thread);
-  }
 JVM_END
 
 
@@ -3070,7 +3028,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
     ThreadState old_state = thread->osthread()->get_state();
     thread->osthread()->set_state(SLEEPING);
     if (!thread->sleep(millis)) { // interrupted
-      // An asynchronous exception (e.g., ThreadDeathException) could have been thrown on
+      // An asynchronous exception could have been thrown on
       // us while we were sleeping. We do not overwrite those.
       if (!HAS_PENDING_EXCEPTION) {
         HOTSPOT_THREAD_SLEEP_END(1);

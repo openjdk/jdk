@@ -575,35 +575,31 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
   if (thread->has_pending_exception()) {
     Handle ex(thread, thread->pending_exception());
     thread->clear_pending_exception();
-    if (ex->is_a(vmClasses::ThreadDeath_klass())) {
-      // Don't print anything if we are being killed.
+    jio_fprintf(defaultStream::error_stream(), "Exception ");
+    if (thread != NULL && thread->threadObj() != NULL) {
+      ResourceMark rm(THREAD);
+      jio_fprintf(defaultStream::error_stream(),
+                  "in thread \"%s\" ", thread->name());
+    }
+    if (ex->is_a(vmClasses::Throwable_klass())) {
+      JavaValue result(T_VOID);
+      JavaCalls::call_virtual(&result,
+                              ex,
+                              vmClasses::Throwable_klass(),
+                              vmSymbols::printStackTrace_name(),
+                              vmSymbols::void_method_signature(),
+                              THREAD);
+      // If an exception is thrown in the call it gets thrown away. Not much
+      // we can do with it. The native code that calls this, does not check
+      // for the exception - hence, it might still be in the thread when DestroyVM gets
+      // called, potentially causing a few asserts to trigger - since no pending exception
+      // is expected.
+      CLEAR_PENDING_EXCEPTION;
     } else {
-      jio_fprintf(defaultStream::error_stream(), "Exception ");
-      if (thread != NULL && thread->threadObj() != NULL) {
-        ResourceMark rm(THREAD);
-        jio_fprintf(defaultStream::error_stream(),
-        "in thread \"%s\" ", thread->name());
-      }
-      if (ex->is_a(vmClasses::Throwable_klass())) {
-        JavaValue result(T_VOID);
-        JavaCalls::call_virtual(&result,
-                                ex,
-                                vmClasses::Throwable_klass(),
-                                vmSymbols::printStackTrace_name(),
-                                vmSymbols::void_method_signature(),
-                                THREAD);
-        // If an exception is thrown in the call it gets thrown away. Not much
-        // we can do with it. The native code that calls this, does not check
-        // for the exception - hence, it might still be in the thread when DestroyVM gets
-        // called, potentially causing a few asserts to trigger - since no pending exception
-        // is expected.
-        CLEAR_PENDING_EXCEPTION;
-      } else {
-        ResourceMark rm(THREAD);
-        jio_fprintf(defaultStream::error_stream(),
-        ". Uncaught exception of type %s.",
-        ex->klass()->external_name());
-      }
+      ResourceMark rm(THREAD);
+      jio_fprintf(defaultStream::error_stream(),
+                  ". Uncaught exception of type %s.",
+                  ex->klass()->external_name());
     }
   }
 
