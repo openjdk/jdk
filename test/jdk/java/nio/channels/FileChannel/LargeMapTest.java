@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
+
 import static java.nio.file.StandardOpenOption.*;
 
 /*
@@ -51,11 +53,16 @@ public class LargeMapTest {
         System.out.println(System.getProperty("os.arch"));
         System.out.println(System.getProperty("java.version"));
 
+        System.out.println("  Writing large file...");
+        long t0 = System.nanoTime();
         Path p = Path.of(FILE);
         p.toFile().deleteOnExit();
         try (FileChannel fc = FileChannel.open(p, CREATE, WRITE)) {
             fc.position(LENGTH - 1);
             fc.write(ByteBuffer.wrap(new byte[] {27}));
+            long t1 = System.nanoTime();
+            System.out.printf("  Wrote large file in %d ns (%d ms) %n",
+                    t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
         }
 
         long offset = OFFSET;
