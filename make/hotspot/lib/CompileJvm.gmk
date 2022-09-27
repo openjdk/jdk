@@ -157,6 +157,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_gcc_abstractCompiler.cpp := shift-negative-value, \
     DISABLED_WARNINGS_gcc_abstractDisassembler.cpp := shift-negative-value, \
+    DISABLED_WARNINGS_gcc_ad_ppc.cpp := empty-body, \
     DISABLED_WARNINGS_gcc_assembler_aarch64.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_c1_LIR.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_c1_LIRGenerator_ppc.cpp := shift-negative-value, \
@@ -165,8 +166,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_javaClasses.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_loopnode.cpp := sequence-point, \
     DISABLED_WARNINGS_gcc_macroArrayCopy.cpp := shift-negative-value, \
+    DISABLED_WARNINGS_gcc_macroAssembler_arm.cpp := shift-negative-value, \
     DISABLED_WARNINGS_gcc_mulnode.cpp := shift-negative-value, \
-    DISABLED_WARNINGS_gcc_ad_ppc.cpp := empty-body, \
     DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
     DISABLED_WARNINGS_gcc_sharedRuntimeTrig.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_aarch64.cpp := misleading-indentation, \
