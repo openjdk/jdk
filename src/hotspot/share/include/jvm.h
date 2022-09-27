@@ -273,12 +273,6 @@ JNIEXPORT jboolean JNICALL
 JVM_IsThreadAlive(JNIEnv *env, jobject thread);
 
 JNIEXPORT void JNICALL
-JVM_SuspendThread(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
-JVM_ResumeThread(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
 JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio);
 
 JNIEXPORT void JNICALL
