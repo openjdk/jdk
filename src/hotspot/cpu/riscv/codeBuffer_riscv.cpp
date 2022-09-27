@@ -78,5 +78,5 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 
 bool CodeBuffer::pd_finalize_stubs() {
   return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests)
-      && emit_shared_trampolines(this, _shared_trampoline_requests);
+         && emit_shared_trampolines(this, _shared_trampoline_requests);
 }
