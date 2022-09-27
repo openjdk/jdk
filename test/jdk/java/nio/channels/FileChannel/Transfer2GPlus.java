@@ -44,6 +44,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 import jdk.test.lib.Platform;
 
 public class Transfer2GPlus {
@@ -53,23 +55,37 @@ public class Transfer2GPlus {
 
     public static void main(String[] args) throws IOException {
         Path src = Files.createTempFile("src", ".dat");
+        Files.delete(src); // need CREATE_NEW to make the file sparse
         src.toFile().deleteOnExit();
+        long t0 = System.nanoTime();
         byte[] b = createSrcFile(src);
+        long t1 = System.nanoTime();
+        System.out.printf("  Wrote large file in %d ns (%d ms) %n",
+                t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
+        t0 = t1;
         testToFileChannel(src, b);
+        t1 = System.nanoTime();
+        System.out.printf("  Copied to file channel in %d ns (%d ms) %n",
+                t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
+        t0 = t1;
         testToWritableByteChannel(src, b);
+        t1 = System.nanoTime();
+        System.out.printf("  Copied to byte channel in %d ns (%d ms) %n",
+                t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
     }
 
     // Create a file of size LENGTH with EXTRA random bytes at offset BASE.
     private static byte[] createSrcFile(Path src)
         throws IOException {
-        RandomAccessFile raf = new RandomAccessFile(src.toString(), "rw");
-        raf.setLength(LENGTH);
-        raf.seek(BASE);
-        Random r = new Random(System.nanoTime());
-        byte[] b = new byte[EXTRA];
-        r.nextBytes(b);
-        raf.write(b);
-        return b;
+        try (FileChannel fc = FileChannel.open(src, StandardOpenOption.CREATE_NEW,
+                StandardOpenOption.SPARSE, StandardOpenOption.WRITE)) {
+            fc.position(BASE);
+            Random r = new Random(System.nanoTime());
+            byte[] b = new byte[EXTRA];
+            r.nextBytes(b);
+            fc.write(ByteBuffer.wrap(b));
+            return b;
+        }
     }
 
     // Exercises transferToDirectly() on Linux and transferToTrustedChannel()
