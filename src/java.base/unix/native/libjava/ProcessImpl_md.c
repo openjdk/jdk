@@ -773,4 +773,3 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     closeSafely(err[0]); err[0] = -1;
     goto Finally;
 }
-

@@ -3026,29 +3026,6 @@ JVM_ENTRY(jboolean, JVM_IsThreadAlive(JNIEnv* env, jobject jthread))
 JVM_END
 
 
-JVM_ENTRY(void, JVM_SuspendThread(JNIEnv* env, jobject jthread))
-  ThreadsListHandle tlh(thread);
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, NULL);
-  if (is_alive) {
-    // jthread refers to a live JavaThread, but java_suspend() will
-    // detect a thread that has started to exit and will ignore it.
-    receiver->java_suspend();
-  }
-JVM_END
-
-
-JVM_ENTRY(void, JVM_ResumeThread(JNIEnv* env, jobject jthread))
-  ThreadsListHandle tlh(thread);
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, NULL);
-  if (is_alive) {
-    // jthread refers to a live JavaThread.
-    receiver->java_resume();
-  }
-JVM_END
-
-
 JVM_ENTRY(void, JVM_SetThreadPriority(JNIEnv* env, jobject jthread, jint prio))
   ThreadsListHandle tlh(thread);
   oop java_thread = NULL;
