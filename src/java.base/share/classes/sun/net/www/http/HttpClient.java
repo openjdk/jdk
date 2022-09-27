@@ -1159,8 +1159,6 @@ public class HttpClient extends NetworkClient {
     public void closeServer() {
         try {
             keepingAlive = false;
-            // SSLSocket.close may block up to timeout. Make sure it's short.
-            serverSocket.setSoTimeout(1);
             serverSocket.close();
         } catch (Exception e) {}
     }
