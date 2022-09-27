@@ -627,7 +627,7 @@ nmethod::nmethod(
     _orig_pc_offset          = 0;
     _gc_epoch                = CodeCache::gc_epoch();
 
-    _consts_offset           = data_offset();
+    _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
     _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
     _oops_offset             = data_offset();
     _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);
