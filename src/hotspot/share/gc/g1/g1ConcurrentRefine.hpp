@@ -195,7 +195,7 @@ public:
   // precondition: current thread is the primary refinement thread.
   void reduce_threads_wanted();
 
-  // Test whethre the thread designated by worker_id should be active.
+  // Test whether the thread designated by worker_id should be active.
   bool is_thread_wanted(uint worker_id) const;
 
   // Return total of concurrent refinement stats for the

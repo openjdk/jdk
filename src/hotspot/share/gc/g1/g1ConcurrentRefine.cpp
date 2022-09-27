@@ -216,7 +216,7 @@ void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_time_ms
   size_t budget = static_cast<size_t>(goal_ms * rate);
   // Deduct predicted cards in thread buffers to get target.
   size_t new_target = budget - MIN2(budget, predicted_thread_buffer_cards);
-  // Add some hysterisis with previous values.
+  // Add some hysteresis with previous values.
   if (is_pending_cards_target_initialized()) {
     new_target = (new_target + _pending_cards_target) / 2;
   }
@@ -231,6 +231,7 @@ void G1ConcurrentRefine::adjust_after_gc(double logged_cards_time_ms,
                                          size_t predicted_thread_buffer_cards,
                                          double goal_ms) {
   if (!G1UseConcRefinement) return;
+
   update_pending_cards_target(logged_cards_time_ms,
                               processed_logged_cards,
                               predicted_thread_buffer_cards,

@@ -41,8 +41,7 @@ G1ConcurrentRefineThreadsNeeded::G1ConcurrentRefineThreadsNeeded(G1Policy* polic
 
 // Estimate how many concurrent refinement threads we need to run to achieve
 // the target number of card by the time the next GC happens.  There are
-// several additional desirements we'd like to achieve while meeting that
-// goal.
+// several secondary goals we'd like to achieve while meeting that goal.
 //
 // 1. Minimize the number of refinement threads running at once.
 //
@@ -75,8 +74,8 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   }
 
   // Estimate number of cards that need to be processed before next GC.  There
-  // are no incoming cards when time is short, because the controller activates
-  // refinement by mutator threads when there to a GC, to stay on target even
+  // are no incoming cards when time is short, because in that case the
+  // controller activates refinement by mutator threads to stay on target even
   // if threads deactivate in the meantime.
   size_t incoming_cards = 0;
   if (_predicted_time_until_next_gc_ms > _update_period_ms) {
@@ -113,7 +112,7 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // have an estimate then only request one running thread, since we do have
   // excess cards to process.  Just one thread might not be sufficient, but
   // we don't have any idea how many we actually need.  Eventually the
-  // prediction machinary will warm up and we'll be able to get estimates.
+  // prediction machinery will warm up and we'll be able to get estimates.
   double refine_rate = analytics->predict_concurrent_refine_rate_ms();
   if (refine_rate == 0.0) {
     _threads_needed = 1;
