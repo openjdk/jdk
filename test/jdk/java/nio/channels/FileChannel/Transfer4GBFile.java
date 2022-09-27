@@ -52,20 +52,20 @@ public class Transfer4GBFile {
     @Test
     public void xferTest04() throws Exception { // for bug 4638365
         File source = File.createTempFile("blah", null);
+        source.delete(); // need CREATE_NEW to make the file sparse
         source.deleteOnExit();
         long testSize = ((long)Integer.MAX_VALUE) * 2;
-        initTestFile(source, 10);
-        RandomAccessFile raf = new RandomAccessFile(source, "rw");
-        FileChannel fc = raf.getChannel();
+
         out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        fc.write(ByteBuffer.wrap("Use the source!".getBytes()), testSize - 40);
-        long t1 = System.nanoTime();
-        out.printf("  Wrote large file in %d ns (%d ms) %n",
-            t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
-
-        fc.close();
-        raf.close();
+        try (FileChannel fc = FileChannel.open(source.toPath(),
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.SPARSE,
+                StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            fc.write(ByteBuffer.wrap("Use the source!".getBytes()), testSize - 40);
+            long t1 = System.nanoTime();
+            out.printf("  Wrote large file in %d ns (%d ms) %n",
+                    t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
+        }
 
         File sink = File.createTempFile("sink", null);
         sink.deleteOnExit();
@@ -73,7 +73,7 @@ public class Transfer4GBFile {
         FileInputStream fis = new FileInputStream(source);
         FileChannel sourceChannel = fis.getChannel();
 
-        raf = new RandomAccessFile(sink, "rw");
+        RandomAccessFile raf = new RandomAccessFile(sink, "rw");
         FileChannel sinkChannel = raf.getChannel();
 
         long bytesWritten = sourceChannel.transferTo(testSize -40, 10,
