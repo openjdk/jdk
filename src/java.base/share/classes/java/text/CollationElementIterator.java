@@ -776,7 +776,7 @@ public final class CollationElementIterator
     private NormalizerBase text = null;
     private int[] buffer = null;
     private int expIndex = 0;
-    private StringBuffer key = new StringBuffer(5);
+    private StringBuilder key = new StringBuilder(5);
     private int swapOrder = 0;
     private RBCollationTables ordering;
     private RuleBasedCollator owner;
