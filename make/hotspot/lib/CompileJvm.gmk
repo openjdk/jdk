@@ -87,6 +87,10 @@ DISABLED_WARNINGS_gcc := ignored-qualifiers comment int-in-bool-context \
     array-bounds implicit-fallthrough parentheses missing-field-initializers \
     delete-non-virtual-dtor unknown-pragmas maybe-uninitialized
 
+ifeq ($(call isTargetCpu, s390x), true)))
+  DISABLED_WARNINGS_gcc += shift-negative-value
+fi
+
 DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
@@ -162,9 +166,16 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_loopnode.cpp := sequence-point, \
     DISABLED_WARNINGS_gcc_macroArrayCopy.cpp := shift-negative-value, \
     DISABLED_WARNINGS_gcc_mulnode.cpp := shift-negative-value, \
+    DISABLED_WARNINGS_gcc_ad_ppc.cpp := empty-body, \
     DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
     DISABLED_WARNINGS_gcc_sharedRuntimeTrig.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_aarch64.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_ppc.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_riscv.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_shenandoahBarrierSetAssembler_x86.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1_aarch64.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1_ppc.cpp := misleading-indentation, \
+    DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1_riscv.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1_x86.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_shenandoahBarrierSetC1.cpp := misleading-indentation, \
     DISABLED_WARNINGS_gcc_signals_posix.cpp := cast-function-type, \
