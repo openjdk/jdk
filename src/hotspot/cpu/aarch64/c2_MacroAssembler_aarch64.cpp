@@ -996,11 +996,11 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType 
   }
 
   if (UseSVE > 1 && VM_Version::supports_svebitperm()) {
-    // Given by the vector with value 0x00 or 0x01 in each byte, the basic idea
+    // Given a vector with the value 0x00 or 0x01 in each byte, the basic idea
     // is to compress each significant bit of the byte in a cross-lane way. Due
-    // to the lack of cross-lane bit-compress instruction, here we use BEXT
-    // (bit-compress in each lane) with the biggest lane size (T = D) and
-    // concatenates the results then.
+    // to the lack of a cross-lane bit-compress instruction, we use BEXT
+    // (bit-compress in each lane) with the biggest lane size (T = D) then
+    // concatenate the results.
 
     // The second source input of BEXT, initialized with 0x01 in each byte.
     // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
