@@ -642,9 +642,11 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_AryEq:
+    // case Op_AryHashCode:
     case Op_CountPositives:
     case Op_StrComp:
     case Op_StrEquals:
+    // case Op_StrHashCode:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_StrInflatedCopy:
@@ -796,9 +798,11 @@ void ConnectionGraph::add_final_edges(Node *n) {
       break;
     }
     case Op_AryEq:
+    // case Op_AryHashCode:
     case Op_CountPositives:
     case Op_StrComp:
     case Op_StrEquals:
+    // case Op_StrHashCode:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_StrInflatedCopy:
@@ -3391,10 +3395,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           memnode_worklist.append_if_missing(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
               op == Op_CastP2X || op == Op_StoreCM ||
-              op == Op_FastLock || op == Op_AryEq || op == Op_StrComp ||
-              op == Op_CountPositives ||
+              op == Op_FastLock || op == Op_AryEq || /*op == Op_AryHashCode ||*/
+              op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
+              op == Op_StrEquals || /*op == Op_StrHashCode ||*/
+              op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
               op == Op_SubTypeCheck ||
               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use))) {
           n->dump();
@@ -3523,9 +3528,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.append_if_missing(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
-              op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
+              op == Op_AryEq || /*op == Op_AryHashCode ||*/ op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
+              op == Op_StrEquals || /*op == Op_StrHashCode ||*/ op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing memory path");

@@ -307,6 +307,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
 
+  case vmIntrinsics::_hashCodeL:                 return inline_string_hashCode(StrIntrinsicNode::LL);
+  case vmIntrinsics::_hashCodeU:                 return inline_string_hashCode(StrIntrinsicNode::UU);
+
   case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
   case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
   case vmIntrinsics::_getCharStringU:           return inline_string_char_access(!is_store);
@@ -491,6 +494,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
+  case vmIntrinsics::_hashCodeI:                return inline_array_hashcode(T_INT);
+  case vmIntrinsics::_hashCodeS:                return inline_array_hashcode(T_SHORT);
+  case vmIntrinsics::_hashCodeC:                return inline_array_hashcode(T_CHAR);
+  case vmIntrinsics::_hashCodeB:                return inline_array_hashcode(T_BYTE);
+  case vmIntrinsics::_hashCodeF:                return inline_array_hashcode(T_FLOAT);
   case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex(T_INT);
   case vmIntrinsics::_Preconditions_checkLongIndex: return inline_preconditions_checkIndex(T_LONG);
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
@@ -995,6 +1003,26 @@ bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
+
+//------------------------------inline_string_hashCode------------------------
+bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
+  Node* arg1 = argument(0);
+
+  arg1 = must_be_not_null(arg1, true);
+
+  // Get start addr and length of first argument
+  Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
+  Node* arg1_cnt    = load_array_length(arg1);
+
+  Node* result = new StrHashCodeNode(control(), memory(TypeAryPtr::BYTES),
+                                     arg1_start, arg1_cnt, ae);
+
+  clear_upper_avx();
+
+  set_result(_gvn.transform(result));
+  return true;
+}
+
 //------------------------------inline_string_equals------------------------
 bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg1 = argument(0);
@@ -1051,6 +1079,18 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 
   const TypeAryPtr* mtype = (ae == StrIntrinsicNode::UU) ? TypeAryPtr::CHARS : TypeAryPtr::BYTES;
   set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
+  clear_upper_avx();
+
+  return true;
+}
+
+//------------------------------inline_array_hashcode----------------------------
+bool LibraryCallKit::inline_array_hashcode(BasicType type) {
+  assert(type == T_INT || type == T_SHORT || type == T_CHAR || type == T_BYTE || type == T_FLOAT, "unsupported array types");
+  Node* arg1 = argument(0);
+
+  const TypeAryPtr* mtype = TypeAryPtr::get_array_body_type(type);
+  set_result(_gvn.transform(new AryHashCodeNode(control(), memory(mtype), arg1, type)));
   clear_upper_avx();
 
   return true;

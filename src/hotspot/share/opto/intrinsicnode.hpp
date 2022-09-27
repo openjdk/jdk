@@ -103,6 +103,16 @@ class StrEqualsNode: public StrIntrinsicNode {
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
+//------------------------------StrHashCode-------------------------------------
+class StrHashCodeNode: public StrIntrinsicNode {
+ public:
+  StrHashCodeNode(Node* control, Node* char_array_mem,
+                  Node* s1, Node* c1, ArgEncoding encoding):
+  StrIntrinsicNode(control, char_array_mem, s1, c1, encoding) {};
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+};
+
 //------------------------------StrIndexOf-------------------------------------
 class StrIndexOfNode: public StrIntrinsicNode {
  public:
@@ -166,6 +176,22 @@ class CountPositivesNode: public StrIntrinsicNode {
   virtual const Type* bottom_type() const { return TypeInt::POS; }
 };
 
+//------------------------------AryHashCode---------------------------------------
+class AryHashCodeNode: public Node {
+  BasicType _type;
+ public:
+  AryHashCodeNode(Node* control, Node* ary_mem, Node* s1, BasicType type)
+    : Node(control, ary_mem, s1), _type(type) {};
+  BasicType type() const { return _type; }
+  virtual int Opcode() const;
+  virtual bool depends_only_on_test() const { return false; }
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual const TypePtr* adr_type() const { return TypeAryPtr::get_array_body_type(_type); }
+  virtual uint match_edge(uint idx) const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
 
 //------------------------------EncodeISOArray--------------------------------
 // encode char[] to byte[] in ISO_8859_1 or ASCII

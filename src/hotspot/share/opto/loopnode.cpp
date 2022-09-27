@@ -5803,9 +5803,11 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_LoadL_unaligned:
     case Op_StrComp:            // Does a bunch of load-like effects
     case Op_StrEquals:
+    case Op_StrHashCode:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_AryHashCode:
     case Op_CountPositives:
       pinned = false;
     }

@@ -198,9 +198,11 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       break;                    // Found a memory op?
     case Op_StrComp:
     case Op_StrEquals:
+    // case Op_StrHashCode:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_AryHashCode:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
