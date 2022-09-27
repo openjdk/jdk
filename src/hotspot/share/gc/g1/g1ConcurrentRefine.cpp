@@ -337,7 +337,7 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
   }
   Atomic::store(&_threads_wanted, new_wanted);
   _dcqs.set_mutator_refinement_threshold(mutator_threshold);
-  log_debug(gc, refine)("Updating refinement threads: wanted %u, cards: %zu, "
+  log_debug(gc, refine)("Concurrent refinement: wanted %u, cards: %zu, "
                         "predicted: %zu, time: %1.2fms",
                         new_wanted,
                         num_cards,
