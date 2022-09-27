@@ -310,7 +310,7 @@ class MacOSXWatchService extends AbstractWatchService {
 
         private static final long kFSEventStreamEventFlagRootChanged     = 0x00000020;
 
-        private final static Path relativeRootPath = theFS.getPath("");
+        private static final Path relativeRootPath = theFS.getPath("");
 
         // Full path to this key's watch root directory.
         private final Path   realRootPath;
