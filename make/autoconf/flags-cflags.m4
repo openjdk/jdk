@@ -149,7 +149,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 [
   # Set default value.
   if test "x$TOOLCHAIN_TYPE" != xxlc; then
-    WARNINGS_AS_ERRORS_DEFAULT=false
+    WARNINGS_AS_ERRORS_DEFAULT=true
   else
     WARNINGS_AS_ERRORS_DEFAULT=false
   fi
