@@ -283,6 +283,7 @@ void LIR_Assembler::osr_entry() {
       }
 #endif
       __ ldr(r19, Address(OSR_buf, slot_offset));
+      __ str(r19, frame_map()->address_for_monitor_object(i));
     }
   }
 }
