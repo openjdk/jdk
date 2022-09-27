@@ -32,18 +32,17 @@
 #include "runtime/atomic.hpp"
 
 void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
-  jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
-
   uint8_t level = ShenandoahThreadLocalData::push_evac_oom_scope(thr);
  if (level == 0) {
    // Entering top level scope, register this thread.
    register_thread(thr);
  } else if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
-   jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
+   volatile jint *ptr = threads_in_evac_ptr(thr);
+   jint threads_in_evac = Atomic::load_acquire(ptr);
    // If OOM is in progress, handle it.
    if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
      assert((threads_in_evac & ~OOM_MARKER_MASK) > 0, "sanity");
-     Atomic::dec(&_threads_in_evac);
+     Atomic::dec(ptr);
      wait_for_no_evac_threads();
    }
  }

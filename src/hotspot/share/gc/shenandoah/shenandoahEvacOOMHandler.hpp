@@ -57,7 +57,9 @@
  * allocation, copying and CASing of the copy object, and is protected by this
  * OOM-during-evac-handler. The handler allows multiple threads to enter and exit
  * evacuation path, but on OOME it requires all threads that experienced OOME to wait
- * for current threads to leave, and blocks other threads from entering.
+ * for current threads to leave, and blocks other threads from entering. The counter state
+ * is striped across multiple cache lines to reduce contention when many threads attempt
+ * to enter or leave the protocol at the same time.
  *
  * Detailed state change:
  *
@@ -83,11 +85,20 @@ class ShenandoahEvacOOMHandler {
 private:
   static const jint OOM_MARKER_MASK;
 
+  static constexpr jint EVAC_COUNTER_BUCKETS = 64;
+
   shenandoah_padding(0);
-  volatile jint _threads_in_evac;
-  shenandoah_padding(1);
+  struct {
+    volatile jint bits;
+    shenandoah_padding_minus_size(1, sizeof(jint));
+  } _threads_in_evac[EVAC_COUNTER_BUCKETS];
+
+  volatile jint *threads_in_evac_ptr(Thread* t);
 
   void wait_for_no_evac_threads();
+  void wait_for_one_counter(volatile jint *ptr);
+
+  void set_oom_bit(volatile jint *ptr, bool decrement);
 
 public:
   ShenandoahEvacOOMHandler();
