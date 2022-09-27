@@ -2160,11 +2160,18 @@ static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const Id
       Node* c = phase->get_ctrl(u);
       IdealLoopTree* u_loop = phase->get_loop(c);
       assert(!loop->is_member(u_loop), "can be in outer loop or out of both loops only");
-      if (outer_loop->is_member(u_loop) ||
-          // nodes pinned with control in the outer loop but not referenced from the safepoint must be moved out of
-          // the outer loop too
-          (u->in(0) != NULL && outer_loop->is_member(phase->get_loop(u->in(0))))) {
+      if (outer_loop->is_member(u_loop)) {
         wq.push(u);
+      } else {
+        // nodes pinned with control in the outer loop but not referenced from the safepoint must be moved out of
+        // the outer loop too
+        Node* u_c = u->in(0);
+        if (u_c != NULL) {
+          IdealLoopTree* u_c_loop = phase->get_loop(u_c);
+          if (outer_loop->is_member(u_c_loop) && !loop->is_member(u_c_loop)) {
+            wq.push(u);
+          }
+        }
       }
     }
   }
@@ -3913,7 +3920,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     }
 
     // With an extra phi for the candidate iv?
-    if (!incr->is_Phi()) {
+    // Or the region node is the loop head
+    if (!incr->is_Phi() || incr->in(0) == head) {
       return false;
     }
 
@@ -4093,7 +4101,20 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
 // Reorganize offset computations to lower register pressure.  Mostly
 // prevent loop-fallout uses of the pre-incremented trip counter (which are
 // then alive with the post-incremented trip counter forcing an extra
-// register move)
+// register move):
+//
+//     iv Phi            iv Phi
+//       |                 |
+//       |                AddI (+stride)
+//       |                 |
+//       |              Opaque2  # Blocks IGVN from folding these nodes until loop opts are over.
+//       |     ====>       |
+//       |                AddI (-stride)
+//       |                 |
+//       |               CastII  # Preserve type of iv Phi
+//       |                 |
+//   Outside Use       Outside Use
+//
 void PhaseIdealLoop::reorg_offsets(IdealLoopTree *loop) {
   // Perform it only for canonical counted loops.
   // Loop's shape could be messed up by iteration_split_impl.

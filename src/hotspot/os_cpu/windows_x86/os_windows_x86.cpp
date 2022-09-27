@@ -181,7 +181,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   MacroAssembler* masm = new MacroAssembler(&cb);
   pDCD = (pDynamicCodeData) masm->pc();
 
-  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache));
+  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache), rscratch1);
   masm->flush();
 
   // Create an Unwind Structure specifying no unwind info
@@ -449,9 +449,8 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
-  intptr_t *sp = (intptr_t *)uc->REG_SP;
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
+  address sp = (address)uc->REG_SP;
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may

@@ -65,7 +65,6 @@ CompileTask* CompileTask::allocate() {
 void CompileTask::free(CompileTask* task) {
   MutexLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
-    task->set_code(NULL);
     assert(!task->lock()->is_locked(), "Should not be locked when freed");
     if ((task->_method_holder != NULL && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
         (task->_hot_method_holder != NULL && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
@@ -110,7 +109,6 @@ void CompileTask::initialize(int compile_id,
 
   _is_complete = false;
   _is_success = false;
-  _code_handle = NULL;
 
   _hot_method = NULL;
   _hot_method_holder = NULL;
@@ -118,6 +116,10 @@ void CompileTask::initialize(int compile_id,
   _time_queued = os::elapsed_counter();
   _time_started = 0;
   _compile_reason = compile_reason;
+  _nm_content_size = 0;
+  _directive = NULL;
+  _nm_insts_size = 0;
+  _nm_total_size = 0;
   _failure_reason = NULL;
   _failure_reason_on_C_heap = false;
 
@@ -159,25 +161,6 @@ CompileTask* CompileTask::select_for_compilation() {
     _hot_method_holder = JNIHandles::make_global(Handle(thread, _hot_method->method_holder()->klass_holder()));
   }
   return this;
-}
-
-// ------------------------------------------------------------------
-// CompileTask::code/set_code
-//
-nmethod* CompileTask::code() const {
-  if (_code_handle == NULL)  return NULL;
-  CodeBlob *blob = _code_handle->code();
-  if (blob != NULL) {
-    return blob->as_nmethod();
-  }
-  return NULL;
-}
-
-void CompileTask::set_code(nmethod* nm) {
-  if (_code_handle == NULL && nm == NULL)  return;
-  guarantee(_code_handle != NULL, "");
-  _code_handle->set_code(nm);
-  if (nm == NULL)  _code_handle = NULL;  // drop the handle also
 }
 
 void CompileTask::mark_on_stack() {
@@ -257,9 +240,6 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   }
   st->print("%4d ", compile_id);    // print compilation number
 
-  // For unloaded methods the transition to zombie occurs after the
-  // method is cleared so it's impossible to report accurate
-  // information for that case.
   bool is_synchronized = false;
   bool has_exception_handler = false;
   bool is_native = false;
@@ -399,9 +379,8 @@ void CompileTask::log_task_done(CompileLog* log) {
   }
 
   // <task_done ... stamp='1.234'>  </task>
-  nmethod* nm = code();
   log->begin_elem("task_done success='%d' nmsize='%d' count='%d'",
-                  _is_success, nm == NULL ? 0 : nm->content_size(),
+                  _is_success, _nm_content_size,
                   method->invocation_count());
   int bec = method->backedge_count();
   if (bec != 0)  log->print(" backedge_count='%d'", bec);

@@ -90,7 +90,7 @@ public class BlockQuickSearch implements SearchProvider {
                             final EditorTopComponent comp = EditorTopComponent.getActive();
                             assert(comp != null);
                             if (theGraph != null) {
-                                comp.getDiagramModel().selectGraph(theGraph);
+                                comp.getModel().selectGraph(theGraph);
                             }
                             comp.setSelectedNodes(b);
                             comp.requestActive();

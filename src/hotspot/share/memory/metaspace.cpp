@@ -771,7 +771,7 @@ void Metaspace::global_initialize() {
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
-                    "(must be aligned to " SIZE_FORMAT_HEX ").",
+                    "(must be aligned to " SIZE_FORMAT_X ").",
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),
@@ -995,23 +995,30 @@ const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {
   }
 }
 
-void Metaspace::purge() {
+void Metaspace::purge(bool classes_unloaded) {
   // The MetaspaceCritical_lock is used by a concurrent GC to block out concurrent metaspace
   // allocations, that would starve critical metaspace allocations, that are about to throw
   // OOM if they fail; they need precedence for correctness.
   MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
-  ChunkManager* cm = ChunkManager::chunkmanager_nonclass();
-  if (cm != NULL) {
-    cm->purge();
-  }
-  if (using_class_space()) {
-    cm = ChunkManager::chunkmanager_class();
+  if (classes_unloaded) {
+    ChunkManager* cm = ChunkManager::chunkmanager_nonclass();
     if (cm != NULL) {
       cm->purge();
     }
+    if (using_class_space()) {
+      cm = ChunkManager::chunkmanager_class();
+      if (cm != NULL) {
+        cm->purge();
+      }
+    }
   }
 
-  MetaspaceCriticalAllocation::satisfy();
+  // Try to satisfy queued metaspace allocation requests.
+  //
+  // It might seem unnecessary to try to process allocation requests if no
+  // classes have been unloaded. However, this call is required for the code
+  // in MetaspaceCriticalAllocation::try_allocate_critical to work.
+  MetaspaceCriticalAllocation::process();
 }
 
 bool Metaspace::contains(const void* ptr) {

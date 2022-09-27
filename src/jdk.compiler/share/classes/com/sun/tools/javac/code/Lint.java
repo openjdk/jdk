@@ -215,6 +215,11 @@ public class Lint
         FINALLY("finally"),
 
         /**
+          * Warn about compiler possible lossy conversions.
+          */
+        LOSSY_CONVERSIONS("lossy-conversions"),
+
+        /**
           * Warn about compiler generation of a default constructor.
           */
         MISSING_EXPLICIT_CTOR("missing-explicit-ctor"),

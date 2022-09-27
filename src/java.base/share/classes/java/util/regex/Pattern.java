@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.regex.Grapheme;
 
 /**
  * A compiled representation of a regular expression.
