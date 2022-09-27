@@ -1773,6 +1773,10 @@ void PhaseCCP::analyze() {
     } else {
       n = worklist.pop();
     }
+    if (n->is_SafePoint()) {
+      // Keep track of SafePoint nodes for PhaseCCP::transform()
+      _safepoints.push(n);
+    }
     const Type *t = n->Value(this);
     if (t != type(n)) {
       assert(ccp_type_widens(t, type(n)), "ccp type must widen");
@@ -1907,6 +1911,23 @@ Node *PhaseCCP::transform( Node *n ) {
   GrowableArray <Node *> trstack(C->live_nodes() >> 1);
 
   trstack.push(new_node);           // Process children of cloned node
+
+  // This CCP pass may prove that no exit test for a loop ever succeeds (i.e. the loop is infinite). In that case,
+  // the logic below doesn't follow any path from Root to the loop body: there's at least one such path but it's proven
+  // never taken (its type is TOP). As a consequence the node on the exit path that's input to Root (let's call it n) is
+  // replaced by the top node and the inputs of that node n are not enqueued for further processing. If CCP only works
+  // through the graph from Root, this causes the loop body to never be processed here even when it's not dead (that
+  // is reachable from Root following its uses). To prevent that issue, transform() starts walking the graph from Root
+  // and all safepoints.
+  for (uint i = 0; i < _safepoints.size(); ++i) {
+    Node* nn = _safepoints.at(i);
+    Node* new_node = _nodes[nn->_idx];
+    assert(new_node == NULL, "");
+    new_node = transform_once(nn);
+    _nodes.map(nn->_idx, new_node);
+    trstack.push(new_node);
+  }
+
   while ( trstack.is_nonempty() ) {
     Node *clone = trstack.pop();
     uint cnt = clone->req();
