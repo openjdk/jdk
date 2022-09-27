@@ -81,7 +81,7 @@ public class TestPreview extends JavadocTester {
                     <ul class="preview-feature-list">
                     <li><label for="feature-1">
                     <input type="checkbox" id="feature-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                    <span>0: <a href="https://openjdk.java.net/jeps/0">Test Feature (Preview)</a></span></label></li>
+                    <span>0: <a href="https://openjdk.org/jeps/0">Test Feature (Preview)</a></span></label></li>
                     </ul>
                     <h2 title="Contents">Contents</h2>
                     <ul class="contents-list">
