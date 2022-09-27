@@ -365,6 +365,14 @@ ul.summary-list > li {
     margin-bottom:15px;
     line-height:1.4;
 }
+ul.ref-list {
+  margin-left:0;
+  padding:0;
+  margin:0;
+}
+ul.ref-list > li {
+    list-style:none;
+}
 .summary-table dl, .summary-table dl dt, .summary-table dl dd {
     margin-top:0;
     margin-bottom:1px;
