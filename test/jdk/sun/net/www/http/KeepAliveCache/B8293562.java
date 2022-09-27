@@ -39,22 +39,14 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
-import java.net.SocketImpl;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -70,7 +62,7 @@ public class B8293562 {
     }
 
     public static void startHttpServer() throws Exception {
-        server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 10);
+        server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 10);
         server.setExecutor(Executors.newCachedThreadPool());
         server.start();
     }
@@ -78,7 +70,7 @@ public class B8293562 {
     public static void clientHttpCalls() throws Exception {
         try {
             System.out.println("http server listen on: " + server.getAddress().getPort());
-            String hostAddr =  InetAddress.getLocalHost().getHostAddress();
+            String hostAddr = InetAddress.getLoopbackAddress().getHostAddress();
             if (hostAddr.indexOf(':') > -1) hostAddr = "[" + hostAddr + "]";
             String baseURLStr = "https://" + hostAddr + ":" + server.getAddress().getPort() + "/";
 
