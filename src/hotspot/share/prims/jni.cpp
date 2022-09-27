@@ -101,7 +101,7 @@
 #include "jvmci/jvmciCompiler.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_19;
+static jint CurrentVersion = JNI_VERSION_20;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -3754,8 +3754,15 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
     return res;
   }
 
-  // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
   JavaThread* thread = JavaThread::current();
+
+  // Make sure we are actually in a newly attached thread, with no
+  // existing Java frame.
+  if (thread->has_last_Java_frame()) {
+    return JNI_ERR;
+  }
+
+  // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
 
   // We are going to VM, change W^X state to the expected one.
   MACOS_AARCH64_ONLY(WXMode oldmode = thread->enable_wx(WXWrite));
