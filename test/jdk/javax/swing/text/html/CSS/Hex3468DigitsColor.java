@@ -41,7 +41,7 @@ public class Hex3468DigitsColor {
         // #rgba should be interpreted as #rrggbbaa according CSS Color Level 4.
         // Then expecting 0xaaff1122 from Color.
         Color color = styleSheet.stringToColor("#f12a");
-        result.append("  Test for #f00a");
+        result.append("  Test for #f12a");
         if (0xaaff1122 != color.getRGB()) {
             passed = false;
         }
