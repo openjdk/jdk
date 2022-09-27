@@ -26,10 +26,70 @@
 # make sure that is called using bash.
 
 # Get an absolute path to this script, since that determines the top-level directory.
+
+echo '$?  :-  ' $?
+#echo '$*  :-  ' $*
+#echo '$@  :-  ' $@
+echo 
+
+echo '$0  :-  ' $0
+#echo '$1  :-  ' $1
+#echo '$2  :-  ' $2
+#echo '$3  :-  ' $3
+#echo '$4  :-  ' $4
+#echo '$5  :-  ' $5
+echo 
+
 this_script_dir=`dirname $0`
+echo 'dirname $0  :-  ' $this_script_dir
+#echo '$this_script_dir  :-  ' $this_script_dir
+echo 
+
+#temp3=`cd $this_script_dir`
+#echo 'cd $this_script_dir  :-  ' $temp3
+#temp4="/dev/null"
+#temp1=`$temp3 > $temp4`
+#echo 'cd $this_script_dir > /dev/null :-  ' $temp1
+#echo 
+
+#temp2=`pwd`
+#echo 'pwd  :-  ' $temp2
+#echo 
+
+#temp0=`$temp1 && $temp2`
+#echo 'cd $this_script_dir > /dev/null && pwd  :-  ' $temp0
+#echo 
+
 this_script_dir=`cd $this_script_dir > /dev/null && pwd`
+echo 'cd $this_script_dir > /dev/null && pwd  :-  ' $this_script_dir
+echo 
+
+## WAY 1
+# NEW_FILE_PATH="$(echo $FILE_PATH | sed 's/ /\\\ /g')"
+
+## WAY 2
+# echo "$line" | sed 's/ /\\ /g' 
+
+## WAY 3
+# sed 's/ /\\ /g' <<< "$line"
+
+this_script_dir_backslash="$(echo $this_script_dir | sed 's/ /\\\ /g')"
+echo '$this_script_dir_backslash  :-  ' $this_script_dir_backslash
+echo 
+
+#this_script_dir="$this_script_dir"
+#echo '"$this_script_dir"  :-  ' $this_script_dir
+#echo 
+
+this_script_dir_quotes=\"$this_script_dir\"
+echo '"$this_script_dir_quotes"  :-  ' $this_script_dir_quotes
+echo 
+
+#this_script_dir="'" $this_script_dir "'"
+#echo '"$this_script_dir"  :-  ' $this_script_dir
+#echo 
 
 # Delegate to wrapper, forcing wrapper to believe $0 is this script by using -c.
 # This trick is needed to get autoconf to co-operate properly.
 # The ${-:+-$-} construction passes on bash options.
-bash ${-:+-$-} -c ". $this_script_dir/make/autoconf/configure" $this_script_dir/configure CHECKME $this_script_dir "$@"
+bash ${-:+-$-} -c ". $this_script_dir_quotes/make/autoconf/configure" "$this_script_dir/configure" CHECKME "$this_script_dir" "$@"
