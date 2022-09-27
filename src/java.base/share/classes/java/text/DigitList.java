@@ -736,7 +736,7 @@ final class DigitList implements Cloneable {
             char[] newDigits = new char[digits.length];
             System.arraycopy(digits, 0, newDigits, 0, digits.length);
             other.digits = newDigits;
-            other.tempBuffer = null;
+            other.tempBuilder = null;
             return other;
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
@@ -788,23 +788,23 @@ final class DigitList implements Cloneable {
         if (isZero()) {
             return "0";
         }
-        StringBuilder buf = getStringBuilder();
-        buf.append("0.");
-        buf.append(digits, 0, count);
-        buf.append("x10^");
-        buf.append(decimalAt);
-        return buf.toString();
+        StringBuilder temp = getStringBuilder();
+        temp.append("0.");
+        temp.append(digits, 0, count);
+        temp.append("x10^");
+        temp.append(decimalAt);
+        return temp.toString();
     }
 
-    private StringBuilder tempBuffer;
+    private StringBuilder tempBuilder;
 
     private StringBuilder getStringBuilder() {
-        if (tempBuffer == null) {
-            tempBuffer = new StringBuilder(MAX_COUNT);
+        if (tempBuilder == null) {
+            tempBuilder = new StringBuilder(MAX_COUNT);
         } else {
-            tempBuffer.setLength(0);
+            tempBuilder.setLength(0);
         }
-        return tempBuffer;
+        return tempBuilder;
     }
 
     private void extendDigits(int len) {
