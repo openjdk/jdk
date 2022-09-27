@@ -25,6 +25,8 @@
 
 package jdk.tools.jlink.internal.plugins;
 
+import static jdk.tools.jlink.internal.JlinkTask.OPTIONS_RESOURCE;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -93,10 +95,10 @@ public final class SaveJlinkArgfilesPlugin extends AbstractPlugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy(Function.identity(), out);
-        byte[] savedOptions = argfiles.stream().
-                        collect(Collectors.joining("\n")).
-                        getBytes(StandardCharsets.UTF_8);
-        out.add(ResourcePoolEntry.create("/jdk.jlink/jdk/tools/jlink/internal/options",
+        byte[] savedOptions = argfiles.stream()
+                                      .collect(Collectors.joining("\n"))
+                                      .getBytes(StandardCharsets.UTF_8);
+        out.add(ResourcePoolEntry.create("/jdk.jlink/" + OPTIONS_RESOURCE,
                                          savedOptions));
         return out.build();
     }

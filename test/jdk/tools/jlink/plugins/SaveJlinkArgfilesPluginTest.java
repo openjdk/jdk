@@ -38,9 +38,7 @@
 
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
 
@@ -78,7 +76,9 @@ public class SaveJlinkArgfilesPluginTest {
 
         // Check that the primary image creation ignored the saved args
         oa.shouldHaveExitValue(0);
-        oa.shouldNotMatch("yzzy");
+        oa.shouldNotMatch("java.vendor.url.bug = https://bugs.xyzzy.com/");
+        oa.shouldNotMatch("java.vendor.version = XyzzyVM 3.14.15");
+        oa.shouldNotMatch("foo = xyzzy");
 
         // Create a secondary image
         Path image2 = Path.of("image2").toAbsolutePath();
@@ -91,27 +91,14 @@ public class SaveJlinkArgfilesPluginTest {
         launcher = image2.resolve(Path.of("bin", "java" + exe));
         oa = ProcessTools.executeProcess(launcher.toString(), "-XshowSettings:properties", "--version");
         oa.shouldHaveExitValue(0);
-        expectNMatchingLines(oa.getStdout(), "yzzy", 2);
-        expectNMatchingLines(oa.getStderr(), "yzzy", 3);
+        oa.stdoutShouldMatch(" XyzzyVM 3.14.15 ");
+        oa.stderrShouldMatch("java.vendor.url.bug = https://bugs.xyzzy.com/");
+        oa.stderrShouldMatch("java.vendor.version = XyzzyVM 3.14.15");
+        oa.stderrShouldMatch("foo = xyzzy");
 
         // Ensure the saved `--add-modules` option
         // was applied when creating the secondary image.
         oa = ProcessTools.executeProcess(launcher.toString(), "-d", "jdk.internal.vm.ci");
         oa.shouldHaveExitValue(0);
-    }
-
-    /**
-     * Splits {@code input} into lines and ensures that the number of lines containing
-     * {@code substring} is {@code n}.
-     *
-     * @throws AssertionError if the check fails
-     */
-    private static void expectNMatchingLines(String input, String substring, int n) {
-        long actual = Stream.of(input.split("\\R")).filter(l -> l.contains(substring)).count();
-        if (actual != n) {
-            String msg = String.format("Expected %d lines containing \"%s\" in output, got %s%nOutput: %s",
-                n, substring, actual, input);
-            throw new AssertionError(msg);
-        }
     }
 }

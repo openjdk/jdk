@@ -224,6 +224,8 @@ public class JlinkTask {
         boolean suggestProviders = false;
     }
 
+    public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
+
     int run(String[] args) {
         if (log == null) {
             setLog(new PrintWriter(System.out, true),
@@ -231,13 +233,14 @@ public class JlinkTask {
         }
         Path outputPath = null;
         try {
-            try (InputStream savedOptions = JlinkTask.class.getModule().getResourceAsStream("jdk/tools/jlink/internal/options")) {
+            Module m = JlinkTask.class.getModule();
+            try (InputStream savedOptions = m.getResourceAsStream(OPTIONS_RESOURCE)) {
                 if (savedOptions != null) {
-                    List<String> newArgs = new ArrayList<>();
-                    CommandLine.loadCmdFile(savedOptions, newArgs);
-                    if (!newArgs.isEmpty()) {
-                        newArgs.addAll(Arrays.asList(args));
-                        args = newArgs.toArray(new String[newArgs.size()]);
+                    List<String> prependArgs = new ArrayList<>();
+                    CommandLine.loadCmdFile(savedOptions, prependArgs);
+                    if (!prependArgs.isEmpty()) {
+                        prependArgs.addAll(Arrays.asList(args));
+                        args = prependArgs.toArray(new String[prependArgs.size()]);
                     }
                 }
             }
