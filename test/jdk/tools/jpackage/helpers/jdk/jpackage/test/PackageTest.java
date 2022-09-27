@@ -283,6 +283,18 @@ public final class PackageTest extends RunnablePackageTest {
                 HelloApp.verifyOutputFile(appOutput, expectedArgs,
                         Collections.emptyMap());
             });
+
+            if (TKit.isWindows()) {
+                // Verify context menu label in registry.
+                String progId = WindowsHelper.queryRegistryValue(
+                        String.format("HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\%s", fa.getSuffix()), "");
+                TKit.assertNotNull(progId, "context menu progId found");
+                String contextMenuLabel = WindowsHelper.queryRegistryValue(
+                        String.format("HKEY_CLASSES_ROOT\\%s\\shell\\open", progId), "");
+                TKit.assertNotNull(contextMenuLabel, "context menu label found");
+                String appName = cmd.getArgumentValue("--name");
+                TKit.assertTrue(String.format("Open with %s", appName).equals(contextMenuLabel), "context menu label text");
+            }
         });
 
         return this;
@@ -331,7 +343,7 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public final static class Group extends RunnablePackageTest {
+    public static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
             handlers = Stream.of(tests)
                     .map(PackageTest::createPackageTypeHandlers)
@@ -414,7 +426,26 @@ public final class PackageTest extends RunnablePackageTest {
                     terminated = true;
                 }
 
-                if (aborted) {
+                boolean skip = false;
+
+                if (unhandledAction != null) {
+                    switch (unhandledAction) {
+                        case CREATE:
+                            skip = true;
+                            break;
+                        case UNPACK:
+                        case INSTALL:
+                            skip = (action == Action.VERIFY_INSTALL);
+                            break;
+                        case UNINSTALL:
+                            skip = (action == Action.VERIFY_UNINSTALL);
+                            break;
+                    }
+                }
+
+                if (skip) {
+                    TKit.trace(String.format("Skip [%s] action of %s command",
+                            action, cmd.getPrintableCommandLine()));
                     return;
                 }
 
@@ -429,38 +460,44 @@ public final class PackageTest extends RunnablePackageTest {
                 switch (action) {
                     case UNPACK: {
                         cmd.setUnpackedPackageLocation(null);
-                        var handler = packageHandlers.get(type).unpackHandler;
-                        if (!(aborted = (handler == null))) {
-                            unpackDir = TKit.createTempDirectory(
+                        handleAction(action,
+                                packageHandlers.get(type).unpackHandler,
+                                handler -> {
+                                    unpackDir = TKit.createTempDirectory(
                                             String.format("unpacked-%s",
                                                     type.getName()));
-                            unpackDir = handler.apply(cmd, unpackDir);
-                            cmd.setUnpackedPackageLocation(unpackDir);
-                        }
+                                    unpackDir = handler.apply(cmd, unpackDir);
+                                    cmd.setUnpackedPackageLocation(unpackDir);
+                                });
                         break;
                     }
 
                     case INSTALL: {
                         cmd.setUnpackedPackageLocation(null);
-                        var handler = packageHandlers.get(type).installHandler;
-                        if (!(aborted = (handler == null))) {
-                            handler.accept(curCmd.get());
-                        }
+                        handleAction(action,
+                                packageHandlers.get(type).installHandler,
+                                handler -> {
+                                    handler.accept(curCmd.get());
+                                });
                         break;
                     }
 
                     case UNINSTALL: {
-                        var handler = packageHandlers.get(type).uninstallHandler;
-                        if (!(aborted = (handler == null))) {
-                            handler.accept(curCmd.get());
-                        }
+                        handleAction(action,
+                                packageHandlers.get(type).uninstallHandler,
+                                handler -> {
+                                    handler.accept(curCmd.get());
+                                });
                         break;
                     }
 
                     case CREATE:
                         cmd.setUnpackedPackageLocation(null);
                         handler.accept(action, curCmd.get());
-                        aborted = (expectedJPackageExitCode != 0);
+                        handleAction(action,
+                                (expectedJPackageExitCode == 0) ? Boolean.TRUE : null,
+                                handler -> {
+                                });
                         return;
 
                     default:
@@ -468,15 +505,25 @@ public final class PackageTest extends RunnablePackageTest {
                         break;
                 }
 
-                if (aborted) {
-                    TKit.trace(
-                            String.format("Aborted [%s] action of %s command",
-                                    action, cmd.getPrintableCommandLine()));
+                Optional.ofNullable(unhandledAction).ifPresent(v -> {
+                    TKit.trace(String.format(
+                            "No handler of [%s] action for %s command", v,
+                            cmd.getPrintableCommandLine()));
+                });
+            }
+
+            private <T> void handleAction(Action action, T handler,
+                    ThrowingConsumer<T> consumer) throws Throwable {
+                if (handler == null) {
+                    unhandledAction = action;
+                } else {
+                    unhandledAction = null;
+                    consumer.accept(handler);
                 }
             }
 
             private Path unpackDir;
-            private boolean aborted;
+            private Action unhandledAction;
             private boolean terminated;
             private final JPackageCommand cmd = Functional.identity(() -> {
                 JPackageCommand result = new JPackageCommand();

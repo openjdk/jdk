@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 #ifndef SHARE_GC_EPSILON_EPSILONHEAP_HPP
 #define SHARE_GC_EPSILON_EPSILONHEAP_HPP
 
+#include "gc/epsilon/epsilonBarrierSet.hpp"
+#include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/epsilon/epsilonMonitoringSupport.hpp"
-#include "gc/epsilon/epsilonBarrierSet.hpp"
+#include "memory/virtualspace.hpp"
 #include "services/memoryManager.hpp"
 
 class EpsilonHeap : public CollectedHeap {
@@ -123,7 +124,6 @@ public:
   // No nmethod handling
   virtual void register_nmethod(nmethod* nm) {}
   virtual void unregister_nmethod(nmethod* nm) {}
-  virtual void flush_nmethod(nmethod* nm) {}
   virtual void verify_nmethod(nmethod* nm) {}
 
   // No heap verification

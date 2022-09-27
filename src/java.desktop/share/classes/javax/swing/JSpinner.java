@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -935,7 +935,6 @@ public class JSpinner extends JComponent implements Accessible
          * Returns an enum indicating how the baseline of the component
          * changes as the size changes.
          *
-         * @throws NullPointerException {@inheritDoc}
          * @see javax.swing.JComponent#getBaseline(int, int)
          * @since 1.6
          */

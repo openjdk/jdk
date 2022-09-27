@@ -29,6 +29,7 @@
 #include "ci/ciMethodData.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
@@ -219,16 +220,6 @@ class Compilation: public StackObj {
   // timers
   static void print_timers();
 
-#ifndef PRODUCT
-  // debugging support.
-  // produces a file named c1compileonly in the current directory with
-  // directives to compile only the current method and it's inlines.
-  // The file can be passed to the command line option -XX:Flags=<filename>
-  void compile_only_this_method();
-  void compile_only_this_scope(outputStream* st, IRScope* scope);
-  void exclude_this_method();
-#endif // PRODUCT
-
   bool is_profiling() {
     return env()->comp_level() == CompLevel_full_profile ||
            env()->comp_level() == CompLevel_limited_profile;
@@ -261,9 +252,6 @@ class Compilation: public StackObj {
   bool profile_return() {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
-  }
-  bool age_code() const {
-    return _method->profile_aging();
   }
 
   // will compilation make optimistic assumptions that might lead to
@@ -326,13 +314,19 @@ class InstructionMark: public StackObj {
 
 //----------------------------------------------------------------------
 // Base class for objects allocated by the compiler in the compilation arena
-class CompilationResourceObj ALLOCATION_SUPER_CLASS_SPEC {
+class CompilationResourceObj {
  public:
   void* operator new(size_t size) throw() { return Compilation::current()->arena()->Amalloc(size); }
   void* operator new(size_t size, Arena* arena) throw() {
     return arena->Amalloc(size);
   }
   void  operator delete(void* p) {} // nothing to do
+
+#ifndef PRODUCT
+  // Printing support
+  void print() const;
+  virtual void print_on(outputStream* st) const;
+#endif
 };
 
 

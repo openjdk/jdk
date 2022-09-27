@@ -110,7 +110,11 @@ jobs:
           --with-gtest=${{ steps.gtest.outputs.path }}
           --enable-jtreg-failure-handler
           --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
-          ${{ inputs.extra-conf-options }}
+          --with-jmod-compress=zip-1
+          ${{ inputs.extra-conf-options }} || (
+          echo "Dumping config.log:" &&
+          cat config.log &&
+          exit 1)
         env:
           # We need a minimal PATH on Windows
           # Set PATH to "", so just GITHUB_PATH is included

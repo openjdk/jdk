@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,16 +176,6 @@ import java.lang.module.ModuleFinder;
  * methods</td>
  * <td>This allows an attacker to modify the behaviour of
  * any thread in the system.</td>
- * </tr>
- *
- * <tr>
- *   <th scope="row">stopThread</th>
- *   <td>Stopping of threads via calls to the Thread {@code stop}
- * method</td>
- *   <td>This allows code to stop any thread in the system provided that it is
- * already granted permission to access that thread.
- * This poses as a threat, because that code may corrupt the system by
- * killing existing threads.</td>
  * </tr>
  *
  * <tr>

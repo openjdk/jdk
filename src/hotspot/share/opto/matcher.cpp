@@ -41,7 +41,7 @@
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "opto/vectornode.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
@@ -2326,9 +2326,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
   }
 
   switch(opcode) {       // Handle some opcodes special
-    case Op_StorePConditional:
-    case Op_StoreIConditional:
-    case Op_StoreLConditional:
     case Op_CompareAndExchangeB:
     case Op_CompareAndExchangeS:
     case Op_CompareAndExchangeI:
@@ -2359,14 +2356,26 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     case Op_CMoveI:
     case Op_CMoveL:
     case Op_CMoveN:
-    case Op_CMoveP:
-    case Op_CMoveVF:
-    case Op_CMoveVD:  {
+    case Op_CMoveP: {
       // Restructure into a binary tree for Matching.  It's possible that
       // we could move this code up next to the graph reshaping for IfNodes
       // or vice-versa, but I do not want to debug this for Ladybird.
       // 10/2/2000 CNC.
       Node* pair1 = new BinaryNode(n->in(1), n->in(1)->in(1));
+      n->set_req(1, pair1);
+      Node* pair2 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair2);
+      n->del_req(3);
+      break;
+    }
+    case Op_CMoveVF:
+    case Op_CMoveVD: {
+      // Restructure into a binary tree for Matching:
+      // CMoveVF (Binary bool mask) (Binary src1 src2)
+      Node* in_cc = n->in(1);
+      assert(in_cc->is_Con(), "The condition input of cmove vector node must be a constant.");
+      Node* bol = new BoolNode(in_cc, (BoolTest::mask)in_cc->get_int());
+      Node* pair1 = new BinaryNode(bol, in_cc);
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);

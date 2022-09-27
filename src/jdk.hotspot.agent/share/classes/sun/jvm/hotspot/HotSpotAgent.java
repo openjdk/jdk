@@ -488,7 +488,7 @@ public class HotSpotAgent {
         RemoteDebugger remote =
         (RemoteDebugger) RMIHelper.lookup(debugServerID);
         debugger = new RemoteDebuggerClient(remote);
-        machDesc = ((RemoteDebuggerClient) debugger).getMachineDescription();
+        machDesc = debugger.getMachineDescription();
         os = debugger.getOS();
         setupJVMLibNames(os);
         cpu = debugger.getCPU();
