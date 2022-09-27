@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicComboBoxUI;
 
 public final class ZoomLevelAction extends JComboBox<String> implements ChangedListener<DiagramViewer> {
 
-    private static final String[] CHOICES = { "25%", "50%", "75%", "100%", "125%", "150%","200%","300%", "400%"};
+    private static final String[] CHOICES = { "25%", "50%", "75%", "100%", "125%", "150%","200%", "400%"};
 
     private final DiagramViewer diagramScene;
 

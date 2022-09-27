@@ -94,12 +94,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     /**
      * The offset of the graph to the border of the window showing it.
      */
-    public static final int BORDER_SIZE = 20;
+    public static final int BORDER_SIZE = 100;
     public static final int UNDOREDO_LIMIT = 100;
     public static final int SCROLL_UNIT_INCREMENT = 80;
     public static final int SCROLL_BLOCK_INCREMENT = 400;
     public static final float ZOOM_MAX_FACTOR = 4.0f;
-    public static final float ZOOM_MIN_FACTOR = 0.1f;
+    public static final float ZOOM_MIN_FACTOR = 0.25f;
     public static final float ZOOM_INCREMENT = 1.5f;
     public static final int SLOT_OFFSET = 8;
     public static final int ANIMATION_LIMIT = 40;
@@ -148,9 +148,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         double factorWidth = getScrollPane().getViewport().getViewRect().getWidth() / getBounds().getWidth() ;
         double factorHeight = getScrollPane().getViewport().getViewRect().getHeight() / getBounds().getHeight();
         double zoomToFit = 0.98 * Math.min(factorWidth, factorHeight);
-        zoomToFit = Math.max(zoomToFit, ZOOM_MIN_FACTOR);
-        zoomToFit = Math.min(zoomToFit, 1.0);
-        return zoomToFit;
+        return Math.min(zoomToFit, ZOOM_MIN_FACTOR);
     }
 
     private double getZoomMaxFactor() {
