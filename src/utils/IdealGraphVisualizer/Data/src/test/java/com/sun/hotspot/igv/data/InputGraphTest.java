@@ -238,7 +238,7 @@ public class InputGraphTest {
         assertFalse(a.isSameContent(b));
 
         b.addNode(N3);
-        assertTrue(a.isSameContent(b));        
+        assertTrue(a.isSameContent(b));
     }
 
 }
