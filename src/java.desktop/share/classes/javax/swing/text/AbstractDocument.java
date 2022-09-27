@@ -955,7 +955,7 @@ public abstract class AbstractDocument implements Document, Serializable {
                 Element bidiRoot = adoc.getBidiRootElement();
                 int index = bidiRoot.getElementIndex(p0);
                 Element bidiElem = bidiRoot.getElement(index);
-                if (bidiElem.getEndOffset() >= p1) {
+                if (bidiElem != null && bidiElem.getEndOffset() >= p1) {
                     AttributeSet bidiAttrs = bidiElem.getAttributes();
                     return ((StyleConstants.getBidiLevel(bidiAttrs) % 2) == 0);
                 }
@@ -2320,9 +2320,9 @@ public abstract class AbstractDocument implements Document, Serializable {
          */
         public void replace(int offset, int length, Element[] elems) {
             int delta = elems.length - length;
-            int src = offset + length;
-            int nmove = nchildren - src;
-            int dest = src + delta;
+            int src = Math.abs(offset + length);
+            int nmove = Math.abs(nchildren - src);
+            int dest = Math.abs(src + delta);
             if ((nchildren + delta) >= children.length) {
                 // need to grow the array
                 int newLength = Math.max(2*children.length, nchildren + delta);
