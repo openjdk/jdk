@@ -599,7 +599,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label exit, error;
 
-    __ push_reg(0x3000, sp);   // save c_rarg2 and c_rarg3
+    __ push_reg(RegSet::of(c_rarg2, c_rarg3), sp); // save c_rarg2 and c_rarg3
 
     __ la(c_rarg2, ExternalAddress((address) StubRoutines::verify_oop_count_addr()));
     __ ld(c_rarg3, Address(c_rarg2));
@@ -635,12 +635,12 @@ class StubGenerator: public StubCodeGenerator {
     // return if everything seems ok
     __ bind(exit);
 
-    __ pop_reg(0x3000, sp);   // pop c_rarg2 and c_rarg3
+    __ pop_reg(RegSet::of(c_rarg2, c_rarg3), sp);  // pop c_rarg2 and c_rarg3
     __ ret();
 
     // handle errors
     __ bind(error);
-    __ pop_reg(0x3000, sp);   // pop c_rarg2 and c_rarg3
+    __ pop_reg(RegSet::of(c_rarg2, c_rarg3), sp); // pop c_rarg2 and c_rarg3
 
     __ push_reg(RegSet::range(x0, x31), sp);
     // debug(char* msg, int64_t pc, int64_t regs[])
@@ -3804,15 +3804,16 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(c_rarg0, thread);
   }
 
-  static void jfr_epilogue(MacroAssembler* _masm, Register thread) {
+  static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
     Label null_jobject;
     __ beqz(x10, null_jobject);
     DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), c_rarg0, thread);
+    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), t0, t1);
     __ bind(null_jobject);
   }
+
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
@@ -3838,7 +3839,7 @@ class StubGenerator: public StubCodeGenerator {
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, xthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-    jfr_epilogue(_masm, xthread);
+    jfr_epilogue(_masm);
     __ leave();
     __ ret();
 

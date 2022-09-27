@@ -100,6 +100,8 @@
   static_field(CompilerToVM::Data,             symbol_init,                            address)                                      \
   static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
+                                                                                                                                     \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
   nonstatic_field(Annotations,                 _fields_annotations,                    Array<AnnotationArray*>*)                     \

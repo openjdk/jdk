@@ -128,7 +128,8 @@ private:
   bool _needs_deep_clone_jvms;
 
   // Methods for outputting the DFA
-  void gen_match(FILE *fp, MatchList &mlist, ProductionState &status, Dict &operands_chained_from);
+  void gen_match(FILE *fp, MatchList &mlist, ProductionState &status,
+                 Dict &operands_chained_from, bool is_vector_unary_op);
   void chain_rule(FILE *fp, const char *indent, const char *ideal,
                   const Expr *icost, const char *irule,
                   Dict &operands_chained_from, ProductionState &status);

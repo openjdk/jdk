@@ -255,7 +255,7 @@ void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
 
   bind(stub->guard());
   relocate(entry_guard_Relocation::spec());
-  assert(offset() % 4 == 0, "bad alignment");
+  assert_alignment(pc());
   emit_int32(0);  // nmethod guard value
   // make sure the stub with a fixed code size
   if (alignment_bytes == 2) {
