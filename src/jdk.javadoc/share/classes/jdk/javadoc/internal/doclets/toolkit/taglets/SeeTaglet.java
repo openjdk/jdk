@@ -42,8 +42,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * A taglet that represents the {@code @see} tag.
  */
-public class
-SeeTaglet extends BaseTaglet implements InheritableTaglet {
+public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
     public SeeTaglet() {
         super(DocTree.Kind.SEE, false, EnumSet.allOf(Location.class));
