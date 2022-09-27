@@ -215,7 +215,7 @@ void Assembler::ret() {
   void Assembler::NAME(const Address &adr, Register temp) {    \
     switch (adr.getMode()) {                                   \
       case Address::literal: {                                 \
-        code_section()->relocate(pc(), adr.rspec());           \
+        relocate(adr.rspec());                                 \
         NAME(adr.target(), temp);                              \
         break;                                                 \
       }                                                        \

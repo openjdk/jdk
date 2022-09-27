@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,11 @@ import java.io.IOException;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 
-class FileDispatcherImpl extends FileDispatcher {
+class UnixFileDispatcherImpl extends FileDispatcher {
+    private static final int MAP_INVALID = -1;
+    private static final int MAP_RO = 0;
+    private static final int MAP_RW = 1;
+    private static final int MAP_PV = 2;
 
     static {
         IOUtil.load();
@@ -41,7 +45,7 @@ class FileDispatcherImpl extends FileDispatcher {
     private static final JavaIOFileDescriptorAccess fdAccess =
             SharedSecrets.getJavaIOFileDescriptorAccess();
 
-    FileDispatcherImpl() {
+    UnixFileDispatcherImpl() {
     }
 
     int read(FileDescriptor fd, long address, int len) throws IOException {
@@ -127,7 +131,36 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     boolean canTransferToFromOverlappedMap() {
-        return canTransferToFromOverlappedMap0();
+        return true;
+    }
+
+    long allocationGranularity() {
+        return allocationGranularity0();
+    }
+
+    long map(FileDescriptor fd, int prot, long position, long length,
+             boolean isSync)
+        throws IOException
+    {
+        return map0(fd, prot, position, length, isSync);
+    }
+
+    int unmap(long address, long length) {
+        return unmap0(address, length);
+    }
+
+    int maxDirectTransferSize() {
+        return Integer.MAX_VALUE;
+    }
+
+    long transferTo(FileDescriptor src, long position, long count,
+                    FileDescriptor dst, boolean append) {
+        return IOStatus.UNSUPPORTED;
+    }
+
+    long transferFrom(FileDescriptor src, FileDescriptor dst,
+                      long position, long count, boolean append) {
+        return IOStatus.UNSUPPORTED;
     }
 
     int setDirectIO(FileDescriptor fd, String path) {
@@ -188,10 +221,15 @@ class FileDispatcherImpl extends FileDispatcher {
 
     static native void closeIntFD(int fd) throws IOException;
 
-    static native boolean canTransferToFromOverlappedMap0();
+    static native long allocationGranularity0();
+
+    static native long map0(FileDescriptor fd, int prot, long position,
+                            long length, boolean isSync)
+        throws IOException;
+
+    static native int unmap0(long address, long length);
 
     static native int setDirect0(FileDescriptor fd) throws IOException;
 
     static native void init();
-
 }

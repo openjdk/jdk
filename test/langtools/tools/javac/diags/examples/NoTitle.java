@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,12 @@
  * questions.
  */
 
-/* @test
- * @bug 8205132
- * @summary Test Thread.countStackFrames()
- * @run testng CountStackFrames
- */
+// key: compiler.err.dc.no.title
+// key: compiler.note.note
+// key: compiler.note.proc.messager
+// run: backdoor
+// options: -processor DocCommentProcessor -proc:only
 
-import org.testng.annotations.Test;
+/** @spec http://example.com */
+class NoTitle { }
 
-public class CountStackFrames {
-
-    // current thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testCurrentThread() {
-        Thread.currentThread().countStackFrames();
-    }
-
-    // unstarted thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testUnstartedThread() {
-        Thread thread = new Thread(() -> { });
-        thread.countStackFrames();
-    }
-
-    // terminated thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testTerminatedThread() throws Exception {
-        Thread thread = new Thread(() -> { });
-        thread.start();
-        thread.join();
-        thread.countStackFrames();
-    }
-
-}
