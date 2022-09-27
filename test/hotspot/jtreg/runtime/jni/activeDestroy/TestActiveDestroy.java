@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,24 @@
  * questions.
  */
 
- /*
+/*
  * @test
- * @run main/native JniVersion
+ * @bug     8290482
+ * @summary Tests that DestroyJavaVM from an active thread fails.
+ * @run main/native TestActiveDestroy
  */
-public class JniVersion {
 
-    public static final int JNI_VERSION_20 = 0x00140000;
+public class TestActiveDestroy {
 
-    public static void main(String... args) throws Exception {
-        System.loadLibrary("JniVersion");
-        int res = getJniVersion();
-        if (res != JNI_VERSION_20) {
-            throw new Exception("Unexpected value returned from getJniVersion(): 0x" + Integer.toHexString(res));
-        }
+    static native boolean tryDestroyJavaVM();
+
+    static {
+        System.loadLibrary("activeDestroy");
     }
 
-    static native int getJniVersion();
+    public static void main(String[] args) throws Throwable {
+        if (tryDestroyJavaVM()) {
+            throw new Error("DestroyJavaVM succeeded when it should not!");
+        }
+    }
 }

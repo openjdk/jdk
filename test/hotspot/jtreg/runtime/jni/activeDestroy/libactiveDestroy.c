@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,34 @@
  * questions.
  */
 
- /*
- * @test
- * @run main/native JniVersion
- */
-public class JniVersion {
+#include <stdio.h>
+#include <stdlib.h>
 
-    public static final int JNI_VERSION_20 = 0x00140000;
+#include "jni.h"
 
-    public static void main(String... args) throws Exception {
-        System.loadLibrary("JniVersion");
-        int res = getJniVersion();
-        if (res != JNI_VERSION_20) {
-            throw new Exception("Unexpected value returned from getJniVersion(): 0x" + Integer.toHexString(res));
-        }
-    }
+static const char* jni_error_code(int ret) {
+  switch(ret) {
+  case JNI_OK: return "JNI_OK";
+  case JNI_ERR: return "JNI_ERR";
+  case JNI_EDETACHED: return "JNI_EDETACHED";
+  case JNI_EVERSION: return "JNI_EVERSION";
+  case JNI_ENOMEM: return "JNI_ENOMEM";
+  case JNI_EEXIST: return "JNI_EEXIST";
+  case JNI_EINVAL: return "JNI_EINVAL";
+  default: return "Invalid JNI error code";
+  }
+}
 
-    static native int getJniVersion();
+JNIEXPORT jboolean JNICALL
+Java_TestActiveDestroy_tryDestroyJavaVM(JNIEnv *env, jclass cls) {
+  JavaVM* jvm;
+  int res = (*env)->GetJavaVM(env, &jvm);
+  if (res != JNI_OK) {
+    fprintf(stderr, "GetJavaVM failed: %s\n", jni_error_code(res));
+    exit(1);
+  }
+  printf("Calling DestroyJavaVM from active thread\n");
+  res = (*jvm)->DestroyJavaVM(jvm);
+  printf("DestroyJavaVM returned: %s\n", jni_error_code(res));
+  return res == JNI_OK;
 }
