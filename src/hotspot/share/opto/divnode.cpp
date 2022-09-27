@@ -1088,10 +1088,11 @@ Node* UDivINode::Identity(PhaseGVN* phase) {
 // prevent hoisting the divide above an unsafe test.
 const Type* UDivINode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type( in(1) );
-  const Type* t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if(t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
@@ -1113,16 +1114,23 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 //------------------------------Idealize---------------------------------------
 Node* UDivINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  if (in(0) && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
+  if(in(0) && in(0)->is_top()) {
+    return nullptr;
+  }
 
-  const Type* t = phase->type( in(2) );
-  if( t == TypeInt::ONE )       // Identity?
+  const Type* t = phase->type(in(2));
+  if(t == TypeInt::ONE) {       // Identity?
     return nullptr;             // Skip it
+  }
 
   const TypeInt *ti = t->isa_int();
-  if( !ti ) return nullptr;
+  if(ti == nullptr) {
+    return nullptr;
+  }
 
   // Check for useless control input
   // Check for excluding div-zero case
@@ -1138,10 +1146,14 @@ Node* UDivINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return new CMoveINode(bol, phase->intcon(0), phase->intcon(1), TypeInt::BOOL);
   }
 
-  if( !ti->is_con() ) return nullptr;
+  if(!ti->is_con()) {
+    return nullptr;
+  }
   juint i = ti->get_con();       // Get divisor
 
-  if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
+  if (i == 0) {
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
 
   // Don't transform a constant-foldable
   const Type* u = phase->type(in(1));
@@ -1166,8 +1178,9 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type( in(1) );
   const Type* t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  if(t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
@@ -1189,16 +1202,23 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 //------------------------------Idealize---------------------------------------
 Node* UDivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  if (in(0) && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
+  if(in(0) && in(0)->is_top()) {
+    return nullptr;
+  }
 
-  const Type* t = phase->type( in(2) );
-  if( t == TypeLong::ONE )       // Identity?
+  const Type* t = phase->type(in(2));
+  if(t == TypeLong::ONE) {      // Identity?
     return nullptr;             // Skip it
+  }
 
   const TypeLong* ti = t->isa_long();
-  if( !ti ) return nullptr;
+  if(ti == nullptr) {
+    return nullptr;
+  }
 
   // Check for useless control input
   // Check for excluding div-zero case
@@ -1214,10 +1234,14 @@ Node* UDivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return new CMoveLNode(bol, phase->longcon(0), phase->longcon(1), TypeLong::make(0, 1, Type::WidenMin));
   }
 
-  if( !ti->is_con() ) return nullptr;
+  if(!ti->is_con()) {
+    return nullptr;
+  }
   julong i = ti->get_con();       // Get divisor
 
-  if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
+  if (i == 0) {
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
 
   // Don't transform a constant-foldable
   const Type* u = phase->type(in(1));
@@ -1562,13 +1586,19 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
 //------------------------------Idealize---------------------------------------
 Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  if(in(0) && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
+  if(in(0) && in(0)->is_top()) {
+    return nullptr;
+  }
 
   // Get the modulus
-  const Type* t = phase->type( in(2) );
-  if( t == Type::TOP ) return nullptr;
+  const Type* t = phase->type(in(2));
+  if(t == Type::TOP) {
+    return nullptr;
+  }
   const TypeInt* ti = t->is_int();
 
   // Check for useless control input
@@ -1578,7 +1608,9 @@ Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return this;
   }
 
-  if( !ti->is_con() ) return nullptr;
+  if(!ti->is_con()) {
+    return nullptr;
+  }
   juint con = ti->get_con();
   const Type* u = phase->type(in(1));
   if (!u->isa_int() || u->is_int()->is_con()) {
@@ -1589,6 +1621,7 @@ Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (is_power_of_2(con)) {
     return new AndINode(in(1), phase->intcon(con - 1));
   }
+  // TODO: This can be calculated directly, see https://arxiv.org/abs/1902.01961
   Node* q = transform_int_udivide(phase, in(1), con);
   if (q == nullptr) {
     return nullptr;
@@ -1603,8 +1636,9 @@ const Type* UModINode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type( in(1) );
   const Type* t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  if(t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
   // x % x = 0, x % 1 = 0
   if (in(1) == in(2) || t2 == TypeInt::ONE) {
@@ -1626,13 +1660,19 @@ const Type* UModINode::Value(PhaseGVN* phase) const {
 //------------------------------Idealize---------------------------------------
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  if(in(0) && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
+  if(in(0) && in(0)->is_top()) {
+    return nullptr;
+  }
 
   // Get the modulus
-  const Type *t = phase->type( in(2) );
-  if( t == Type::TOP ) return nullptr;
+  const Type *t = phase->type(in(2));
+  if(t == Type::TOP) {
+    return nullptr;
+  }
   const TypeLong *ti = t->is_long();
 
   // Check for useless control input
@@ -1642,7 +1682,9 @@ Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
-  if( !ti->is_con() ) return nullptr;
+  if(!ti->is_con()) {
+    return nullptr;
+  }
   julong con = ti->get_con();
   const Type* u = phase->type(in(1));
   if (!u->isa_long() || u->is_long()->is_con()) {
@@ -1665,10 +1707,11 @@ Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Value------------------------------------------
 const Type* UModLNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type( in(1) );
-  const Type* t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if(t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
   // x % x = 0, x % 1 = 0
   if (in(1) == in(2) || t2 == TypeLong::ONE) {
