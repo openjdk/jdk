@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,27 @@
  * questions.
  */
 
-package java.lang;
+package com.sun.source.doctree;
+
+import java.util.List;
 
 /**
- * Thrown to indicate that a thread is not in an appropriate state
- * for the requested operation.
+ * A tree node for an {@code @spec} block tag.
  *
- * @see Thread#start()
- * @since   1.0
+ * <pre>
+ *    &#064;spec url title
+ * </pre>
+ *
+ * @since 20
  */
-public class IllegalThreadStateException extends IllegalArgumentException {
-    @java.io.Serial
-    private static final long serialVersionUID = -7626246362397460174L;
+public interface SpecTree extends BlockTagTree {
+    /**
+     * {@return the URL}
+     */
+    TextTree getURL();
 
     /**
-     * Constructs an {@code IllegalThreadStateException} with no
-     * detail message.
+     * {@return the title}
      */
-    public IllegalThreadStateException() {
-        super();
-    }
-
-    /**
-     * Constructs an {@code IllegalThreadStateException} with the
-     * specified detail message.
-     *
-     * @param   s   the detail message.
-     */
-    public IllegalThreadStateException(String s) {
-        super(s);
-    }
+    List<? extends DocTree> getTitle();
 }

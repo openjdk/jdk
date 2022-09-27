@@ -22,43 +22,61 @@
  */
 
 /* @test
- * @bug 8289610
- * @summary Test Thread.stop throws UnsupportedOperationException
- * @run testng StopTest
+ * @bug  8289610 8249627 8205132
+ * @summary Test that Thread stop/suspend/resume/countStackFrames throw UOE
+ * @run junit DegradedMethodsThrowUOE
  */
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class StopTest {
+class DegradedMethodsThrowUOE {
 
     /**
-     * Test stop on the current thread.
+     * Returns a stream of operations on a Thread that should throw UOE.
      */
-    @Test
-    public void testCurrentThread() {
-        var thread = Thread.currentThread();
-        assertThrows(UnsupportedOperationException.class, thread::stop);
+    static Stream<Consumer<Thread>> ops() {
+        return Stream.<Consumer<Thread>>of(
+                Thread::stop,
+                Thread::suspend,
+                Thread::resume,
+                Thread::countStackFrames
+        );
     }
 
     /**
-     * Test stop on an unstarted thread.
+     * Test degraded method on current thread.
      */
-    @Test
-    public void testUnstartedThread() {
+    @ParameterizedTest
+    @MethodSource("ops")
+    void testCurrentThread(Consumer<Thread> op) {
+        var thread = Thread.currentThread();
+        assertThrows(UnsupportedOperationException.class, () -> op.accept(thread));
+    }
+
+    /**
+     * Test degraded method on an unstarted thread.
+     */
+    @ParameterizedTest
+    @MethodSource("ops")
+    void testUnstartedThread(Consumer<Thread> op) {
         Thread thread = new Thread(() -> { });
-        assertThrows(UnsupportedOperationException.class, thread::stop);
+        assertThrows(UnsupportedOperationException.class, () -> op.accept(thread));
         assertTrue(thread.getState() == Thread.State.NEW);
     }
 
     /**
-     * Test stop on a thread spinning in a loop.
+     * Test degraded method on a thread spinning in a loop.
      */
-    @Test
-    public void testRunnableThread() throws Exception {
+    @ParameterizedTest
+    @MethodSource("ops")
+    void testRunnableThread(Consumer<Thread> op) throws Exception {
         AtomicBoolean done = new AtomicBoolean();
         Thread thread = new Thread(() -> {
             while (!done.get()) {
@@ -67,7 +85,7 @@ public class StopTest {
         });
         thread.start();
         try {
-            assertThrows(UnsupportedOperationException.class, thread::stop);
+            assertThrows(UnsupportedOperationException.class, () -> op.accept(thread));
 
             // thread should not terminate
             boolean terminated = thread.join(Duration.ofMillis(500));
@@ -79,10 +97,11 @@ public class StopTest {
     }
 
     /**
-     * Test stop on a thread that is parked.
+     * Test degraded method on a thread that is parked.
      */
-    @Test
-    public void testWaitingThread() throws Exception {
+    @ParameterizedTest
+    @MethodSource("ops")
+    void testWaitingThread(Consumer<Thread> op) throws Exception {
         Thread thread = new Thread(LockSupport::park);
         thread.start();
         try {
@@ -90,7 +109,7 @@ public class StopTest {
             while ((thread.getState() != Thread.State.WAITING)) {
                 Thread.sleep(10);
             }
-            assertThrows(UnsupportedOperationException.class, thread::stop);
+            assertThrows(UnsupportedOperationException.class, () -> op.accept(thread));
             assertTrue(thread.getState() == Thread.State.WAITING);
         } finally {
             LockSupport.unpark(thread);
@@ -99,15 +118,15 @@ public class StopTest {
     }
 
     /**
-     * Test stop on a terminated thread.
+     * Test degraded method on a terminated thread.
      */
-    @Test
-    public void testTerminatedThread() throws Exception {
+    @ParameterizedTest
+    @MethodSource("ops")
+    void testTerminatedThread(Consumer<Thread> op) throws Exception {
         Thread thread = new Thread(() -> { });
         thread.start();
         thread.join();
-        assertThrows(UnsupportedOperationException.class, thread::stop);
+        assertThrows(UnsupportedOperationException.class, () -> op.accept(thread));
         assertTrue(thread.getState() == Thread.State.TERMINATED);
     }
-
 }
