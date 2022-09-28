@@ -311,11 +311,13 @@ public final class JDKEvents {
 
     private static void emitInitialSecurityProperties() {
         Properties p = SharedSecrets.getJavaSecurityAccess().getInitialProperties();
-        for (Map.Entry<Object, Object> entry : p.entrySet()) {
-            InitialSecurityPropertyEvent e = new InitialSecurityPropertyEvent();
-            e.key = (String)entry.getKey();
-            e.value = (String)entry.getValue();
-            e.commit();
+        if (p != null) {
+            for (Map.Entry<Object, Object> entry : p.entrySet()) {
+                InitialSecurityPropertyEvent e = new InitialSecurityPropertyEvent();
+                e.key = (String) entry.getKey();
+                e.value = (String) entry.getValue();
+                e.commit();
+            }
         }
     }
 }
