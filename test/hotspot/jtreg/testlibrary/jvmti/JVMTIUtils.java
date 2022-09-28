@@ -25,6 +25,31 @@ package jvmti;
 
 public class JVMTIUtils {
 
+    public static int JVMTI_ERROR_NONE = 0;
+
+    public static int JVMTI_ERROR_THREAD_NOT_SUSPENDED = 13;
+    public static int JVMTI_ERROR_THREAD_SUSPENDED = 14;
+    public static int JVMTI_ERROR_THREAD_NOT_ALIVE = 15;
+
+
+    public static class JvmtiException extends RuntimeException {
+
+        private int code;
+
+        public JvmtiException(int code) {
+            this.code = code;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        @Override
+        public String getMessage(){
+            return "JVMTI ERROR: " + code;
+        }
+    }
+
     private static native int init();
 
     static {
@@ -39,4 +64,21 @@ public class JVMTIUtils {
     public static void stopThread(Thread t) {
         stopThread(t, new ThreadDeath());
     }
+
+    private static native int suspendThread0(Thread t);
+    private static native int resumeThread0(Thread t);
+
+    public static void suspendThread(Thread t) {
+        int err = suspendThread0(t);
+        if (err != JVMTI_ERROR_NONE) {
+            throw new JvmtiException(err);
+        }
+    }
+    public static void resumeThread(Thread t) {
+        int err = resumeThread0(t);
+        if (err != JVMTI_ERROR_NONE) {
+            throw new JvmtiException(err);
+        }
+    }
+
 }
