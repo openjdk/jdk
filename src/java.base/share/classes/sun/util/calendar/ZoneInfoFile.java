@@ -585,9 +585,8 @@ public final class ZoneInfoFile {
                     // "last", it works for now. From tzdata2020d this hacking
                     // will not work for Asia/Gaza and Asia/Hebron which follow
                     // Palestine DST rules.
-                    if (dom < 0 || dom >= 24 &&
-                                   !(zoneId.equals("Asia/Gaza") ||
-                                     zoneId.equals("Asia/Hebron"))) {
+                    // No need of hacking for Plaestine DST rules from tz2022d
+                    if (dom < 0 || dom >= 24) {
                         params[1] = -1;
                         params[2] = toCalendarDOW[dow];
                     } else {
