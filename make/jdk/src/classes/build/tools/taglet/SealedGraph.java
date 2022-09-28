@@ -31,6 +31,7 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -97,20 +98,26 @@ public final class SealedGraph implements Taglet {
 
         String simpleTypeName = element.getSimpleName().toString();
         String imageFile = simpleTypeName + "-sealed-graph.svg";
-        int thumbnailHeight = -1;
+        int thumbnailHeight = 100;
+        var hoverImage = "<span>"
+                + getImage(simpleTypeName, imageFile, -1, true)
+                + "</span>";
+
         return "<dt>Sealed Class Hierarchy Graph:</dt>"
                 + "<dd>"
                 + "<a class=\"sealed-graph\" href=\"" + imageFile + "\">"
-                + getImage(simpleTypeName, imageFile, thumbnailHeight)
+                + getImage(simpleTypeName, imageFile, thumbnailHeight, false)
+                // + hoverImage
                 + "</a>"
                 + "</dd>";
     }
 
     private static final String VERTICAL_ALIGN = "vertical-align:top";
+    private static final String BORDER = "border: solid lightgray 1px;";
 
-    private String getImage(String moduleName, String file, int height) {
+    private String getImage(String moduleName, String file, int height, boolean useBorder) {
         return String.format("<img style=\"%s\" alt=\"Sealed class hierarchy graph for %s\" src=\"%s\"%s>",
-                VERTICAL_ALIGN,
+                useBorder ? BORDER + " " + VERTICAL_ALIGN : VERTICAL_ALIGN,
                 moduleName,
                 file,
                 (height <= 0 ? "" : " height=\"" + height + "\""));
@@ -140,6 +147,7 @@ public final class SealedGraph implements Taglet {
 
             private static final String LABEL = "label";
             private static final String TOOLTIP = "tooltip";
+            private static final String STYLE = "style";
 
             private final StringBuilder builder;
 
@@ -161,17 +169,21 @@ public final class SealedGraph implements Taglet {
             }
 
             public void addNode(TypeElement node) {
-                var styles = nodeStyleMap.computeIfAbsent(node.getQualifiedName().toString(), n -> new LinkedHashMap<>());
+                var styles = nodeStyleMap.computeIfAbsent(id(node), n -> new LinkedHashMap<>());
                 styles.put(LABEL, node.getSimpleName().toString());
                 styles.put(TOOLTIP, node.getQualifiedName().toString());
+                if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
+                    // This indicates that the hierarchy is not closed
+                    styles.put(STYLE, "dotted");
+                }
             }
 
             public void addEdge(TypeElement node, TypeElement subNode) {
                 if (isInPublicApi(node) && isInPublicApi(subNode)) {
                     builder.append("  ")
-                            .append('"').append(subNode.getQualifiedName()).append('"')
+                            .append(quotedId(subNode))
                             .append(" -> ")
-                            .append('"').append(node.getQualifiedName()).append('"')
+                            .append(quotedId(node))
                             .append(";")
                             .append(lineSeparator());
                 }
@@ -188,6 +200,13 @@ public final class SealedGraph implements Taglet {
                 });
                 builder.append("}");
                 return builder.toString();
+            }
+
+            private String id(TypeElement node) {
+                return node.getQualifiedName().toString();
+            }
+            private String quotedId(TypeElement node) {
+                return "\"" + id(node) + "\"";
             }
 
             private String simpleName(String name) {
@@ -214,7 +233,8 @@ public final class SealedGraph implements Taglet {
             // Todo: Use the module definition to determine if in the public API or not.
             return !typeElement.getQualifiedName()
                     .toString()
-                    .contains(".internal");
+                    .contains(".internal") &&
+                    typeElement.getModifiers().contains(Modifier.PUBLIC);
         }
     }
 
