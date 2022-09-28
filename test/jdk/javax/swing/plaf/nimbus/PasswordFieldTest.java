@@ -44,17 +44,20 @@ public class PasswordFieldTest {
     }
 
     public static void main(String[] args) throws Exception {
-        for (UIManager.LookAndFeelInfo laf :
-                            UIManager.getInstalledLookAndFeels()) {
-            System.out.println("Testing L&F: " + laf.getClassName());
-            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+        SwingUtilities.invokeAndWait(() -> {
+            for (UIManager.LookAndFeelInfo laf :
+                                UIManager.getInstalledLookAndFeels()) {
+                System.out.println("Testing L&F: " + laf.getClassName());
+                setLookAndFeel(laf);
 
-            System.out.println("Echo char: " +
-                            UIManager.get("PasswordField.echoChar"));
-            if (UIManager.get("PasswordField.echoChar") == null) {
-                throw new RuntimeException(
-                    "PasswordField.echoChar returns null");
+                System.out.println("Echo char: " +
+                                UIManager.get("PasswordField.echoChar"));
+                if (UIManager.get("PasswordField.echoChar") == null) {
+                    throw new RuntimeException(
+                        "PasswordField.echoChar returns null for " +
+                            laf.getClassName());
+                }
             }
-        }
+        });
     }
 }
