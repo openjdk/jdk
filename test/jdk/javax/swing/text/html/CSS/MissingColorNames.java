@@ -23,12 +23,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8292276
- * @summary Missing Color Names in CSS
- * @run main MissingColorNames
- */
 import java.awt.Color;
 
 import javax.swing.text.AttributeSet;
@@ -39,6 +33,12 @@ import static javax.swing.text.html.CSS.Attribute.COLOR;
 import static javax.swing.text.html.CSS.Attribute.BORDER_LEFT_COLOR;
 import static javax.swing.text.html.CSS.Attribute.BORDER_RIGHT_COLOR;
 
+/*
+ * @test
+ * @bug 8292276
+ * @summary Missing Color Names in CSS
+ * @run main MissingColorNames
+ */
 public class MissingColorNames {
 
     // The CSS 'color' property accepts <name-color>, 'transparent' keyword, <rgb()>, <rgba()> values.
