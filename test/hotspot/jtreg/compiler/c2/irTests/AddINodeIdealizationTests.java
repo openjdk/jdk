@@ -45,12 +45,7 @@ public class AddINodeIdealizationTests {
                  "test14", "test15", "test16",
                  "test17", "test18", "test19",
                  "test20", "test21", "test22",
-                 "test23", "test24", "test25",
-                 "test26", "test27", "test28",
-                 "test29", "test30", "test31",
-                 "test32", "test33", "test34",
-                 "test35", "test36", "test37",
-                 "test38", "test39"})
+                 "test23"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -68,47 +63,31 @@ public class AddINodeIdealizationTests {
 
     @DontCompile
     public void assertResult(int a, int b, int c, int d) {
-        Asserts.assertEQ(((a+a) + (a+a))    , additions(a));
-        Asserts.assertEQ(0                  , xMinusX(a));
-        Asserts.assertEQ(a + 1 + 2          , test1(a));
-        Asserts.assertEQ((a + 2021) + b     , test2(a, b));
-        Asserts.assertEQ(a + (b + 2021)     , test3(a, b));
-        Asserts.assertEQ((1 - a) + 2        , test4(a));
-        Asserts.assertEQ((a - b) + (c - d)  , test5(a, b, c, d));
-        Asserts.assertEQ((a - b) + (b + c)  , test6(a, b, c));
-        Asserts.assertEQ((a - b) + (c + b)  , test7(a, b, c));
-        Asserts.assertEQ((a - b) + (b - c)  , test8(a, b, c));
-        Asserts.assertEQ((a - b) + (c - a)  , test9(a, b, c));
-        Asserts.assertEQ(a + (0 - b)        , test10(a, b));
-        Asserts.assertEQ((0 - b) + a        , test11(a, b));
-        Asserts.assertEQ((a - b) + b        , test12(a, b));
-        Asserts.assertEQ(b + (a - b)        , test13(a, b));
-        Asserts.assertEQ(a + 0              , test14(a));
-        Asserts.assertEQ(0 + a              , test15(a));
-        Asserts.assertEQ(a*b + a*c          , test16(a, b, c));
-        Asserts.assertEQ(a*b + b*c          , test17(a, b, c));
-        Asserts.assertEQ(a*c + b*c          , test18(a, b, c));
-        Asserts.assertEQ(a*b + c*a          , test19(a, b, c));
-        Asserts.assertEQ((a - b) + 210      , test20(a, b));
-        Asserts.assertEQ((a - b) + 190      , test21(a, b));
-        Asserts.assertEQ((a - b) + 210      , test22(a, b));
-        Asserts.assertEQ((a - b) + 190      , test23(a, b));
-        Asserts.assertEQ(b - a              , test24(a, b));
-        Asserts.assertEQ(a - b              , test25(a, b));
-        Asserts.assertEQ(b - a              , test26(a, b));
-        Asserts.assertEQ(a - b              , test27(a, b));
-        Asserts.assertEQ(b - a              , test28(a, b));
-        Asserts.assertEQ(a + 1              , test29(a));
-        Asserts.assertEQ(a                  , test30(a));
-        Asserts.assertEQ((b + a) + 1        , test31(a, b));
-        Asserts.assertEQ((-1 - a) - b       , test32(a, b));
-        Asserts.assertEQ((b - a) + (-1)     , test33(a, b));
-        Asserts.assertEQ((b - a) + (-1)     , test34(a, b));
-        Asserts.assertEQ(~a                 , test35(a));
-        Asserts.assertEQ(~a                 , test36(a));
-        Asserts.assertEQ(~a                 , test37(a));
-        Asserts.assertEQ(~a                 , test38(a));
-        Asserts.assertEQ((~a + b) + (~a | c), test39(a, b, c));
+        Asserts.assertEQ(((a+a) + (a+a))  , additions(a));
+        Asserts.assertEQ(0                , xMinusX(a));
+        Asserts.assertEQ(a + 1 + 2        , test1(a));
+        Asserts.assertEQ((a + 2021) + b   , test2(a, b));
+        Asserts.assertEQ(a + (b + 2021)   , test3(a, b));
+        Asserts.assertEQ((1 - a) + 2      , test4(a));
+        Asserts.assertEQ((a - b) + (c - d), test5(a, b, c, d));
+        Asserts.assertEQ((a - b) + (b + c), test6(a, b, c));
+        Asserts.assertEQ((a - b) + (c + b), test7(a, b, c));
+        Asserts.assertEQ((a - b) + (b - c), test8(a, b, c));
+        Asserts.assertEQ((a - b) + (c - a), test9(a, b, c));
+        Asserts.assertEQ(a + (0 - b)      , test10(a, b));
+        Asserts.assertEQ((0 - b) + a      , test11(a, b));
+        Asserts.assertEQ((a - b) + b      , test12(a, b));
+        Asserts.assertEQ(b + (a - b)      , test13(a, b));
+        Asserts.assertEQ(a + 0            , test14(a));
+        Asserts.assertEQ(0 + a            , test15(a));
+        Asserts.assertEQ(a*b + a*c        , test16(a, b, c));
+        Asserts.assertEQ(a*b + b*c        , test17(a, b, c));
+        Asserts.assertEQ(a*c + b*c        , test18(a, b, c));
+        Asserts.assertEQ(a*b + c*a        , test19(a, b, c));
+        Asserts.assertEQ((a - b) + 210    , test20(a, b));
+        Asserts.assertEQ((a - b) + 190    , test21(a, b));
+        Asserts.assertEQ((a - b) + 210    , test22(a, b));
+        Asserts.assertEQ((a - b) + 190    , test23(a, b));
     }
 
     @Test
@@ -313,136 +292,5 @@ public class AddINodeIdealizationTests {
     // where con < 0
     public int test23(int x, int y) {
         return x + (-10 - y) + 200; // transformed to (x - y) + 190;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR, IRNode.ADD})
-    @IR(counts = {IRNode.SUB, "1"})
-    // Checks (~x + y) + 1 => y - x
-    public int test24(int x, int y) {
-        return (~x + y) + 1;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR, IRNode.ADD})
-    @IR(counts = {IRNode.SUB, "1"})
-    // Checks (x + ~y) + 1 => x - y
-    public int test25(int x, int y) {
-        return (x + ~y) + 1;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR, IRNode.ADD})
-    @IR(counts = {IRNode.SUB, "1"})
-    // Checks ~x + (y + 1) => y - x
-    public int test26(int x, int y) {
-        return ~x + (y + 1);
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR, IRNode.ADD})
-    @IR(counts = {IRNode.SUB, "1"})
-    // Checks (x + 1) + ~y => x - y
-    public int test27(int x, int y) {
-        return (x + 1) + ~y;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.SUB, "1"})
-    // Checks ~x - ~y => y - x
-    public int test28(int x, int y) {
-        return ~x - ~y; // transformed to y - x
-    }
-
-    @Test
-    @IR(failOn = {IRNode.SUB, IRNode.XOR})
-    @IR(counts = {IRNode.ADD, "1"})
-    // Checks 0 - ~x => x + 1
-    public int test29(int x) {
-        return 0 - ~x; // transformed to x + 1
-    }
-
-    @Test
-    @IR(failOn = {IRNode.SUB, IRNode.XOR, IRNode.ADD})
-    // Checks -1 - ~x => x
-    public int test30(int x) {
-        return -1 - ~x;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.SUB, IRNode.XOR})
-    @IR(counts = {IRNode.ADD, "2"})
-    // Checks y - ~x => (y + x) + 1
-    public int test31(int x, int y) {
-        return y - ~x;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.ADD, IRNode.XOR})
-    @IR(counts = {IRNode.SUB, "2"})
-    // Checks ~x - y => (-1 - x) -y
-    public int test32(int x, int y) {
-        return ~x - y;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.SUB, "1",
-                  IRNode.ADD, "1"})
-    // Checks ~x + y => (y - x) + (-1)
-    public int test33(int x, int y) {
-        return ~x + y;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.SUB, "1",
-                  IRNode.ADD, "1"})
-    // Checks y + ~x => (y - x) + (-1)
-    public int test34(int x, int y) {
-        return y + ~x;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.SUB, IRNode.ADD})
-    @IR(counts = {IRNode.XOR, "1"})
-    // Checks ~(x + 0) => ~x, should not be transformed into -1-x
-    public int test35(int x) {
-        return ~(x + 0);
-    }
-
-    @Test
-    @IR(failOn = {IRNode.SUB, IRNode.ADD})
-    @IR(counts = {IRNode.XOR, "1"})
-    // Checks ~(x - 0) => ~x, should not be transformed into -1-x
-    public int test36(int x) {
-        return ~(x - 0);
-    }
-
-    @Test
-    @IR(failOn = {IRNode.SUB, IRNode.ADD})
-    @IR(counts = {IRNode.XOR, "1"})
-    // Checks ~x + 0 => ~x, should not be transformed into -1-x
-    public int test37(int x) {
-        return ~x + 0;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.SUB, IRNode.ADD})
-    @IR(counts = {IRNode.XOR, "1"})
-    // Checks ~x - 0 => ~x, should not be transformed into -1-x
-    public int test38(int x) {
-        return ~x - 0;
-    }
-
-    @Test
-    @IR(counts = {IRNode.XOR, "1"})
-    // Checks ~x + y should NOT be transformed into (y - x) + (-1)
-    // because ~x has one non-arithmetic user.
-    public int test39(int x, int y, int z) {
-        int u = ~x + y;
-        int v = ~x | z;
-        return u + v;
     }
 }
