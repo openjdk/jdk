@@ -144,14 +144,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return false;
     }
 
-    private double getZoomMinFactor() {
+    public double getZoomMinFactor() {
         double factorWidth = getScrollPane().getViewport().getViewRect().getWidth() / getBounds().getWidth() ;
         double factorHeight = getScrollPane().getViewport().getViewRect().getHeight() / getBounds().getHeight();
         double zoomToFit = 0.98 * Math.min(factorWidth, factorHeight);
         return Math.min(zoomToFit, ZOOM_MIN_FACTOR);
     }
 
-    private double getZoomMaxFactor() {
+    public double getZoomMaxFactor() {
         return ZOOM_MAX_FACTOR;
     }
 

@@ -57,6 +57,10 @@ public interface DiagramViewer {
 
     Component getComponent();
 
+    double getZoomMinFactor();
+
+    double getZoomMaxFactor();
+
     void zoomOut(Point zoomCenter, double speed);
 
     void zoomIn(Point zoomCenter, double speed);
