@@ -59,6 +59,20 @@ public class GraphNode extends AbstractNode {
         this(graph, new InstanceContent());
     }
 
+    private boolean selected = false;
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+        fireDisplayNameChange(null, null);
+        fireIconChange();
+    }
+
+    public String getHtmlDisplayName() {
+        String htmlDisplayName = getDisplayName();
+        if (selected) {
+            htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
+        }
+        return htmlDisplayName;
+    }
     private GraphNode(InputGraph graph, InstanceContent content) {
         super(Children.LEAF, new AbstractLookup(content));
         this.graph = graph;
@@ -102,7 +116,11 @@ public class GraphNode extends AbstractNode {
 
     @Override
     public Image getIcon(int i) {
-        return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph.png");
+        if (selected) {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph_selected.png");
+        } else {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph.png");
+        }
     }
 
     @Override

@@ -38,6 +38,8 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
@@ -48,6 +50,7 @@ import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
+import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import org.openide.windows.TopComponent;
@@ -222,12 +225,22 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         return super.requestFocusInWindow(temporary);
     }
 
+    private GraphNode[] selectedGraphs = new GraphNode[0];
+    private final Set<FolderNode> selectedFolders = new HashSet<>();
+
     @Override
     public void changed(InputGraphProvider lastProvider) {
         // Wait for LookupHistory to be updated with the last active graph
         // before selecting it.
         SwingUtilities.invokeLater(() -> {
-            GraphNode[] selection = new GraphNode[0];
+            for (GraphNode graphNode : selectedGraphs) {
+                graphNode.setSelected(false);
+            }
+            for (FolderNode folderNode : selectedFolders) {
+                folderNode.setSelected(false);
+            }
+            selectedGraphs = new GraphNode[0];
+            selectedFolders.clear();
             if (lastProvider != null) {
                 // Try to fetch and select the latest active graph.
                 InputGraph graph = lastProvider.getGraph();
@@ -237,15 +250,24 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                         if (editor != null) {
                             InputGraph firstGraph = editor.getModel().getFirstGraph();
                             InputGraph secondGraph = editor.getModel().getSecondGraph();
-                            selection = new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)};
+                            selectedGraphs = new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)};
                         }
                     } else {
-                        selection = new GraphNode[]{FolderNode.getGraphNode(graph)};
+                        selectedGraphs = new GraphNode[]{FolderNode.getGraphNode(graph)};
                     }
                 }
             }
             try {
-                manager.setSelectedNodes(selection);
+                for (GraphNode graphNode : selectedGraphs) {
+                    Node parentNode = graphNode.getParentNode();
+                    if (parentNode instanceof FolderNode) {
+                        FolderNode folderNode = (FolderNode) graphNode.getParentNode();
+                        folderNode.setSelected(true);
+                        selectedFolders.add(folderNode);
+                    }
+                    graphNode.setSelected(true);
+                }
+                manager.setSelectedNodes(selectedGraphs);
             } catch (Exception e) {
                 Exceptions.printStackTrace(e);
             }
