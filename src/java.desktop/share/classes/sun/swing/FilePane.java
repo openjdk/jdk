@@ -1124,7 +1124,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     class DetailsTableCellRenderer extends DefaultTableCellRenderer {
         JFileChooser chooser;
         DateFormat df;
-        final static double baseFileSize = 1000.0;
+        static final double baseFileSize = 1000.0;
         final MessageFormat mf = new MessageFormat("");
         final NumberFormat nf = NumberFormat.getNumberInstance();
 
