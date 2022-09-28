@@ -270,11 +270,11 @@ public class KeepAliveCache
                 }
             } finally {
                 cacheLock.unlock();
-            }
-            // close connections outside cacheLock
-            if (closeList != null) {
-                for (HttpClient hc : closeList) {
-                    hc.closeServer();
+                // close connections outside cacheLock
+                if (closeList != null) {
+                    for (HttpClient hc : closeList) {
+                        hc.closeServer();
+                    }
                 }
             }
         } while (!isEmpty());
