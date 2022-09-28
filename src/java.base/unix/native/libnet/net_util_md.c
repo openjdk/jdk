@@ -70,11 +70,6 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 }
 
 void
-NET_ThrowCurrent(JNIEnv *env, char *msg) {
-    NET_ThrowNew(env, errno, msg);
-}
-
-void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
     if (!msg) {
@@ -93,15 +88,6 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", msg);
         break;
     }
-}
-
-
-jfieldID
-NET_GetFileDescriptorID(JNIEnv *env)
-{
-    jclass cls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    CHECK_NULL_RETURN(cls, NULL);
-    return (*env)->GetFieldID(env, cls, "fd", "I");
 }
 
 jint  IPv4_supported()
@@ -326,13 +312,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
         }
     }
     return 0;
-}
-
-void
-NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass) {
-    if (sa->sa.sa_family == AF_INET6) {
-        sa->sa6.sin6_flowinfo = htonl((trafficClass & 0xff) << 20);
-    }
 }
 
 int

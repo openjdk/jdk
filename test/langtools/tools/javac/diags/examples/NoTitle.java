@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,12 @@
  * questions.
  */
 
+// key: compiler.err.dc.no.title
+// key: compiler.note.note
+// key: compiler.note.proc.messager
+// run: backdoor
+// options: -processor DocCommentProcessor -proc:only
 
-/*
- * @test
- *
- * @summary converted from VM Testbase nsk/jvmti/GetThreadState/thrstat004.
- * VM Testbase keywords: [quick, jpda, jvmti, noras]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test exercises JVMTI function
- *       GetThreadState(thread, threadStatusPtr)
- *     The test checks if the function returns:
- *       - JVMTI_ERROR_NULL_POINTER if threadStatusPtr is null
- *       - JVMTI_ERROR_NULL_POINTER if suspendStatusPtr is null
- *       - JVMTI_ERROR_INVALID_THREAD if thread is not a thread object
- * COMMENTS
- *     Converted the test to use GetThreadState instead of GetThreadStatus.
- *     Ported from JVMDI.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm/native -agentlib:thrstat004 nsk.jvmti.GetThreadState.thrstat004
- */
+/** @spec http://example.com */
+class NoTitle { }
 

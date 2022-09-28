@@ -266,17 +266,8 @@ JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, job
 JNIEXPORT void JNICALL
 JVM_StartThread(JNIEnv *env, jobject thread);
 
-JNIEXPORT void JNICALL
-JVM_StopThread(JNIEnv *env, jobject thread, jobject exception);
-
 JNIEXPORT jboolean JNICALL
 JVM_IsThreadAlive(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
-JVM_SuspendThread(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
-JVM_ResumeThread(JNIEnv *env, jobject thread);
 
 JNIEXPORT void JNICALL
 JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio);

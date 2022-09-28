@@ -194,7 +194,6 @@ JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
 JVM_ReportFinalizationComplete
-JVM_ResumeThread
 JVM_ExtentLocalCache
 JVM_SetExtentLocalCache
 JVM_SetArrayElement
@@ -205,9 +204,7 @@ JVM_SetStackWalkContinuation
 JVM_SetThreadPriority
 JVM_Sleep
 JVM_StartThread
-JVM_StopThread
 JVM_SupportsCX8
-JVM_SuspendThread
 JVM_TotalMemory
 JVM_UnloadLibrary
 JVM_WaitForReferencePendingList
