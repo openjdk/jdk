@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  Copyright (c) 2021, Rado Smogura. All rights reserved.
  *
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,6 +26,7 @@
 
 /*
  * @test
+ * @enablePreview
  * @summary Test if memory ordering is preserved
  *
  * @run main/othervm -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
@@ -36,8 +37,8 @@
 
 package compiler.vectorapi;
 
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.lang.foreign.MemorySegment;
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorSpecies;
 
@@ -53,13 +54,13 @@ public class VectorMemoryAlias {
 
   public static int test() {
     byte arr[] = new byte[256];
-    final var bb = ByteBuffer.wrap(arr);
+    final var ms = MemorySegment.ofArray(arr);
     final var ones = ByteVector.broadcast(SPECIES, 1);
     var res = ByteVector.zero(SPECIES);
 
     int result = 0;
     result += arr[2];
-    res.add(ones).intoByteBuffer(bb, 0, ByteOrder.nativeOrder());
+    res.add(ones).intoMemorySegment(ms, 0L, ByteOrder.nativeOrder());
     result += arr[2];
 
     return result;

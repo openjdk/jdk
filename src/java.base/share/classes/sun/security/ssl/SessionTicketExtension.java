@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 
 package sun.security.ssl;
 
-import sun.security.action.GetPropertyAction;
-import sun.security.ssl.SSLExtension.ExtensionConsumer;
-import sun.security.ssl.SSLExtension.SSLExtensionSpec;
-import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
-import sun.security.util.HexDumpEncoder;
-
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.text.MessageFormat;
+import java.util.Locale;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -41,12 +40,11 @@ import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_SESSION_TICKET;
 import static sun.security.ssl.SSLExtension.SH_SESSION_TICKET;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.text.MessageFormat;
-import java.util.Locale;
+import sun.security.action.GetPropertyAction;
+import sun.security.ssl.SSLExtension.ExtensionConsumer;
+import sun.security.ssl.SSLExtension.SSLExtensionSpec;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * SessionTicketExtension is an implementation of RFC 5077 with some internals
@@ -176,7 +174,7 @@ final class SessionTicketExtension {
 
             synchronized (hc.sslContext.keyHashMap) {
                 // If the current key is no longer expired, it was already
-                // updated by a previous operation and we can return.
+                // updated by a previous operation, and we can return.
                 ssk = hc.sslContext.keyHashMap.get(currentKeyID);
                 if (ssk != null && !ssk.isExpired()) {
                     return ssk;
@@ -354,9 +352,10 @@ final class SessionTicketExtension {
             }
 
             MessageFormat messageFormat = new MessageFormat(
-                    "  \"ticket\" : '{'\n" +
-                            "{0}\n" +
-                            "  '}'",
+                    """
+                              "ticket" : '{'
+                            {0}
+                              '}'""",
                     Locale.ENGLISH);
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
 
@@ -381,7 +380,7 @@ final class SessionTicketExtension {
     }
 
     private static final class T12CHSessionTicketProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
         T12CHSessionTicketProducer() {
         }
 
@@ -403,11 +402,13 @@ final class SessionTicketExtension {
             chc.statelessResumption = true;
 
             // If resumption is not in progress, return an empty value
-            if (!chc.isResumption || chc.resumingSession == null) {
+            if (!chc.isResumption || chc.resumingSession == null
+                    || chc.resumingSession.getPskIdentity() == null
+                    || chc.resumingSession.getProtocolVersion().useTLS13PlusSpec()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Stateless resumption supported");
                 }
-                return new SessionTicketSpec().getEncoded();
+                return new byte[0];
             }
 
             if (chc.localSupportedSignAlgs == null) {
@@ -478,7 +479,7 @@ final class SessionTicketExtension {
 
 
     private static final class T12SHSessionTicketProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
         T12SHSessionTicketProducer() {
         }
 

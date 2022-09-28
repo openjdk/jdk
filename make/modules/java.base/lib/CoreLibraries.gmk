@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM, \
     CFLAGS_windows_debug := -DLOGGING, \
     CFLAGS_aix := -qfloat=nomaf, \
     DISABLED_WARNINGS_gcc := sign-compare misleading-indentation array-bounds, \
+    DISABLED_WARNINGS_gcc_k_rem_pio2.c := maybe-uninitialized, \
     DISABLED_WARNINGS_clang := sign-compare misleading-indentation, \
     DISABLED_WARNINGS_microsoft := 4146 4244 4018, \
     ARFLAGS := $(ARFLAGS), \
@@ -135,6 +136,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
         $(LIBZ_CFLAGS), \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
     DISABLED_WARNINGS_gcc := unused-function implicit-fallthrough, \
+    DISABLED_WARNINGS_clang := format-nonliteral, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \
@@ -171,8 +173,10 @@ ifeq ($(call isTargetOs, macosx), true)
 endif
 
 ifeq ($(call isTargetOs, windows), true)
-  # Supply the name of the C runtime lib.
-  LIBJLI_CFLAGS += -DMSVCR_DLL_NAME='"$(notdir $(MSVCR_DLL))"'
+  # Supply the name of the C runtime libs.
+  ifneq ($(MSVCR_DLL), )
+    LIBJLI_CFLAGS += -DMSVCR_DLL_NAME='"$(notdir $(MSVCR_DLL))"'
+  endif
   ifneq ($(VCRUNTIME_1_DLL), )
     LIBJLI_CFLAGS += -DVCRUNTIME_1_DLL_NAME='"$(notdir $(VCRUNTIME_1_DLL))"'
   endif

@@ -212,8 +212,7 @@ class LinuxDosFileAttributeView
     private int getDosAttribute(int fd) throws UnixException {
         final int size = 24;
 
-        NativeBuffer buffer = NativeBuffers.getNativeBuffer(size);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             int len = LinuxNativeDispatcher
                 .fgetxattr(fd, DOS_XATTR_NAME_AS_BYTES, buffer.address(), size);
 
@@ -243,8 +242,6 @@ class LinuxDosFileAttributeView
             if (x.errno() == ENODATA)
                 return 0;
             throw x;
-        } finally {
-            buffer.release();
         }
     }
 
@@ -266,12 +263,9 @@ class LinuxDosFileAttributeView
             }
             if (newValue != oldValue) {
                 byte[] value = Util.toBytes("0x" + Integer.toHexString(newValue));
-                NativeBuffer buffer = NativeBuffers.asNativeBuffer(value);
-                try {
+                try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(value)) {
                     LinuxNativeDispatcher.fsetxattr(fd, DOS_XATTR_NAME_AS_BYTES,
                         buffer.address(), value.length+1);
-                } finally {
-                    buffer.release();
                 }
             }
         } catch (UnixException x) {

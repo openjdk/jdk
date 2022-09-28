@@ -67,8 +67,8 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             IntegerPolynomialP384, IntegerPolynomialP521,
             IntegerPolynomialModBinP, P256OrderField,
             P384OrderField, P521OrderField,
-            sun.security.util.math.intpoly.Curve25519OrderField,
-            sun.security.util.math.intpoly.Curve448OrderField {
+            Curve25519OrderField,
+            Curve448OrderField {
 
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
@@ -420,8 +420,8 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
                 int bitsAdded = bitsPerLimb - bitPos;
                 int bitsLeft = 8 - bitsAdded;
 
-                dst[dstIndex] += (curLimbValue & (0xFF >> bitsAdded))
-                    << bitsAdded;
+                dst[dstIndex] += (byte) ((curLimbValue & (0xFF >> bitsAdded))
+                    << bitsAdded);
                 curLimbValue >>= bitsLeft;
                 bitPos = bitsLeft;
             } else {
@@ -451,7 +451,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
      * The behavior is undefined if swap has any value other than 0 or 1.
      */
     protected static void conditionalAssign(int set, long[] a, long[] b) {
-        int maskValue = 0 - set;
+        int maskValue = -set;
         for (int i = 0; i < a.length; i++) {
             long dummyLimbs = maskValue & (a[i] ^ b[i]);
             a[i] = dummyLimbs ^ a[i];
@@ -466,7 +466,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
      * 0 or 1.
      */
     protected static void conditionalSwap(int swap, long[] a, long[] b) {
-        int maskValue = 0 - swap;
+        int maskValue = -swap;
         for (int i = 0; i < a.length; i++) {
             long dummyLimbs = maskValue & (a[i] ^ b[i]);
             a[i] = dummyLimbs ^ a[i];
@@ -523,7 +523,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
 
         public Element(boolean v) {
             this.limbs = new long[numLimbs];
-            this.limbs[0] = v ? 1l : 0l;
+            this.limbs[0] = v ? 1L : 0L;
             this.numAdds = 0;
         }
 
@@ -581,8 +581,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
                 newLimbs[i] = -limbs[i];
             }
 
-            ImmutableElement result = new ImmutableElement(newLimbs, numAdds);
-            return result;
+            return new ImmutableElement(newLimbs, numAdds);
         }
 
         protected long[] cloneLow(long[] limbs) {

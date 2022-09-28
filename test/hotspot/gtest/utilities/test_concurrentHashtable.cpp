@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.hpp" // malloc
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -42,10 +43,10 @@ struct Pointer : public AllStatic {
     return (uintx)value;
   }
   static void* allocate_node(void* context, size_t size, const Value& value) {
-    return ::malloc(size);
+    return os::malloc(size, mtTest);
   }
   static void free_node(void* context, void* memory, const Value& value) {
-    ::free(memory);
+    os::free(memory);
   }
 };
 
@@ -60,7 +61,7 @@ struct Allocator {
   uint cur_index;
 
   Allocator() : cur_index(0) {
-    elements = (TableElement*)::malloc(nelements * sizeof(TableElement));
+    elements = (TableElement*)os::malloc(nelements * sizeof(TableElement), mtTest);
   }
 
   void* allocate_node() {
@@ -74,7 +75,7 @@ struct Allocator {
   }
 
   ~Allocator() {
-    ::free(elements);
+    os::free(elements);
   }
 };
 

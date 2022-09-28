@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,14 @@ public class AEADBadTagException extends BadPaddingException {
     private static final long serialVersionUID = -488059093241685509L;
 
     /**
-     * Constructs a AEADBadTagException with no detail message.
+     * Constructs an {@code AEADBadTagException} with no detail message.
      */
     public AEADBadTagException() {
         super();
     }
 
     /**
-     * Constructs a AEADBadTagException with the specified
+     * Constructs an {@code AEADBadTagException} with the specified
      * detail message.
      *
      * @param msg the detail message.

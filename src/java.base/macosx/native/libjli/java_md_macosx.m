@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@
 
 #include <errno.h>
 #include <spawn.h>
+#include <unistd.h>
 
 struct NSAppArgs {
     int argc;
@@ -361,8 +362,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jrepath[], jint so_jrepath,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
-    jboolean jvmpathExists;
-
     /* Compute/set the name of the executable */
     SetExecname(*pargv);
 
@@ -546,7 +545,6 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
 jboolean
 LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 {
-    Dl_info dlinfo;
     void *libjvm;
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
@@ -722,6 +720,20 @@ static void* ThreadJavaMain(void* args) {
     return (void*)(intptr_t)JavaMain(args);
 }
 
+static size_t adjustStackSize(size_t stack_size) {
+    long page_size = getpagesize();
+    if (stack_size % page_size == 0) {
+        return stack_size;
+    } else {
+        long pages = stack_size / page_size;
+        // Ensure we don't go over limit
+        if (stack_size <= SIZE_MAX - page_size) {
+            pages++;
+        }
+        return page_size * pages;
+    }
+}
+
 /*
  * Block current thread and continue execution in a new thread.
  */
@@ -734,7 +746,7 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     if (stack_size > 0) {
-        pthread_attr_setstacksize(&attr, stack_size);
+        pthread_attr_setstacksize(&attr, adjustStackSize(stack_size));
     }
     pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
 

@@ -46,6 +46,10 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 class BlockListBuilder {
  private:
@@ -62,7 +66,9 @@ class BlockListBuilder {
   GrowableArray<ResourceBitMap> _loop_map; // caches the information if a block is contained in a loop
   int            _next_loop_index;     // next free loop number
   int            _next_block_number;   // for reverse postorder numbering of blocks
+  int            _block_id_start;
 
+  int           bit_number(int block_id) const   { return block_id - _block_id_start; }
   // accessors
   Compilation*  compilation() const              { return _compilation; }
   IRScope*      scope() const                    { return _scope; }
@@ -118,6 +124,7 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
  , _loop_map() // size not known yet
  , _next_loop_index(0)
  , _next_block_number(0)
+ , _block_id_start(0)
 {
   set_entries(osr_bci);
   set_leaders();
@@ -133,7 +140,7 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
     stringStream title;
     title.print("BlockListBuilder ");
     scope->method()->print_name(&title);
-    CFGPrinter::print_cfg(_bci2block, title.as_string(), false, false);
+    CFGPrinter::print_cfg(_bci2block, title.freeze(), false, false);
   }
 #endif
 }
@@ -380,11 +387,12 @@ void BlockListBuilder::set_leaders() {
 void BlockListBuilder::mark_loops() {
   ResourceMark rm;
 
-  _active.initialize(BlockBegin::number_of_blocks());
-  _visited.initialize(BlockBegin::number_of_blocks());
-  _loop_map = GrowableArray<ResourceBitMap>(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), ResourceBitMap());
-  for (int i = 0; i < BlockBegin::number_of_blocks(); i++) {
-    _loop_map.at(i).initialize(BlockBegin::number_of_blocks());
+  const int number_of_blocks = _blocks.length();
+  _active.initialize(number_of_blocks);
+  _visited.initialize(number_of_blocks);
+  _loop_map = GrowableArray<ResourceBitMap>(number_of_blocks, number_of_blocks, ResourceBitMap());
+  for (int i = 0; i < number_of_blocks; i++) {
+    _loop_map.at(i).initialize(number_of_blocks);
   }
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
@@ -397,12 +405,14 @@ void BlockListBuilder::mark_loops() {
   // -  The bit is then propagated for all the blocks in the loop after we exit them (post-order). There could be multiple bits
   // of course in case of nested loops.
   // -  When we exit the loop header we remove that single bit and assign the real loop state for it.
-  // -  Now, the tricky part here is how we detect irriducible loops. In the algorithm above the loop state bits
+  // -  Now, the tricky part here is how we detect irreducible loops. In the algorithm above the loop state bits
   // are propagated to the predecessors. If we encounter an irreducible loop (a loop with multiple heads) we would see
   // a node with some loop bit set that would then propagate back and be never cleared because we would
   // never go back through the original loop header. Therefore if there are any irreducible loops the bits in the states
   // for these loops are going to propagate back to the root.
-  BitMap& loop_state = mark_loops(_bci2block->at(0), false);
+  BlockBegin* start = _bci2block->at(0);
+  _block_id_start = start->block_id();
+  BitMap& loop_state = mark_loops(start, false);
   if (!loop_state.is_empty()) {
     compilation()->set_has_irreducible_loops(true);
   }
@@ -415,6 +425,8 @@ void BlockListBuilder::mark_loops() {
 }
 
 void BlockListBuilder::make_loop_header(BlockBegin* block) {
+  int block_id = block->block_id();
+  int block_bit = bit_number(block_id);
   if (block->is_set(BlockBegin::exception_entry_flag)) {
     // exception edges may look like loops but don't mark them as such
     // since it screws up block ordering.
@@ -423,24 +435,25 @@ void BlockListBuilder::make_loop_header(BlockBegin* block) {
   if (!block->is_set(BlockBegin::parser_loop_header_flag)) {
     block->set(BlockBegin::parser_loop_header_flag);
 
-    assert(_loop_map.at(block->block_id()).is_empty(), "must not be set yet");
-    assert(0 <= _next_loop_index && _next_loop_index < BlockBegin::number_of_blocks(), "_next_loop_index is too large");
-    _loop_map.at(block->block_id()).set_bit(_next_loop_index++);
+    assert(_loop_map.at(block_bit).is_empty(), "must not be set yet");
+    assert(0 <= _next_loop_index && _next_loop_index < _loop_map.length(), "_next_loop_index is too large");
+    _loop_map.at(block_bit).set_bit(_next_loop_index++);
   } else {
     // block already marked as loop header
-    assert(_loop_map.at(block->block_id()).count_one_bits() == 1, "exactly one bit must be set");
+    assert(_loop_map.at(block_bit).count_one_bits() == 1, "exactly one bit must be set");
   }
 }
 
 BitMap& BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   int block_id = block->block_id();
-  if (_visited.at(block_id)) {
-    if (_active.at(block_id)) {
+  int block_bit = bit_number(block_id);
+  if (_visited.at(block_bit)) {
+    if (_active.at(block_bit)) {
       // reached block via backward branch
       make_loop_header(block);
     }
     // return cached loop information for this block
-    return _loop_map.at(block_id);
+    return _loop_map.at(block_bit);
   }
 
   if (block->is_set(BlockBegin::subroutine_entry_flag)) {
@@ -448,18 +461,19 @@ BitMap& BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   }
 
   // set active and visited bits before successors are processed
-  _visited.set_bit(block_id);
-  _active.set_bit(block_id);
+  _visited.set_bit(block_bit);
+  _active.set_bit(block_bit);
 
   ResourceMark rm;
-  ResourceBitMap loop_state(BlockBegin::number_of_blocks());
+  ResourceBitMap loop_state(_loop_map.length());
   for (int i = number_of_successors(block) - 1; i >= 0; i--) {
+    BlockBegin* sux = successor_at(block, i);
     // recursively process all successors
-    loop_state.set_union(mark_loops(successor_at(block, i), in_subroutine));
+    loop_state.set_union(mark_loops(sux, in_subroutine));
   }
 
   // clear active-bit after all successors are processed
-  _active.clear_bit(block_id);
+  _active.clear_bit(block_bit);
 
   // reverse-post-order numbering of all blocks
   block->set_depth_first_number(_next_block_number);
@@ -472,15 +486,15 @@ BitMap& BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   }
 
   if (block->is_set(BlockBegin::parser_loop_header_flag)) {
-    BitMap& header_loop_state = _loop_map.at(block_id);
+    BitMap& header_loop_state = _loop_map.at(block_bit);
     assert(header_loop_state.count_one_bits() == 1, "exactly one bit must be set");
     // remove the bit with the loop number for the state (header is outside of the loop)
     loop_state.set_difference(header_loop_state);
   }
 
   // cache and return loop information for this block
-  _loop_map.at(block_id).set_from(loop_state);
-  return _loop_map.at(block_id);
+  _loop_map.at(block_bit).set_from(loop_state);
+  return _loop_map.at(block_bit);
 }
 
 inline int BlockListBuilder::number_of_successors(BlockBegin* block)
@@ -952,7 +966,7 @@ void GraphBuilder::load_constant() {
       case T_ARRAY  : // fall-through
       case T_OBJECT : {
         ciObject* obj = con.as_object();
-        if (!obj->is_loaded() || (PatchALot && (obj->is_null_object() || obj->klass() != ciEnv::current()->String_klass()))) {
+        if (!obj->is_loaded() || (PatchALot && !stream()->is_string_constant())) {
           // A Class, MethodType, MethodHandle, Dynamic, or String.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
@@ -973,7 +987,9 @@ void GraphBuilder::load_constant() {
     }
     Value x;
     if (patch_state != NULL) {
-      bool kills_memory = stream()->is_dynamic_constant(); // arbitrary memory effects from running BSM during linkage
+      // Arbitrary memory effects from running BSM or class loading (using custom loader) during linkage.
+      bool kills_memory = stream()->is_dynamic_constant() ||
+                          (!stream()->is_string_constant() && !method()->holder()->has_trusted_loader());
       x = new Constant(t, patch_state, kills_memory);
     } else {
       x = new Constant(t);
@@ -1909,7 +1925,6 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
   return obj_args;
 }
 
-
 void GraphBuilder::invoke(Bytecodes::Code code) {
   bool will_link;
   ciSignature* declared_signature = NULL;
@@ -1918,6 +1933,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
   assert(declared_signature != NULL, "cannot be null");
   assert(will_link == target->is_loaded(), "");
+  JFR_ONLY(Jfr::on_resolution(this, holder, target); CHECK_BAILOUT();)
 
   ciInstanceKlass* klass = target->holder();
   assert(!target->is_loaded() || klass->is_loaded(), "loaded target must imply loaded klass");
@@ -2216,8 +2232,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
 void GraphBuilder::new_instance(int klass_index) {
   ValueStack* state_before = copy_state_exhandling();
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   assert(klass->is_instance_klass(), "must be an instance klass");
   NewInstance* new_instance = new NewInstance(klass->as_instance_klass(), state_before, stream()->is_unresolved_klass());
   _memory->new_instance(new_instance);
@@ -2232,8 +2247,7 @@ void GraphBuilder::new_type_array() {
 
 
 void GraphBuilder::new_object_array() {
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
   NewArray* n = new NewObjectArray(klass, ipop(), state_before);
   apush(append_split(n));
@@ -2258,8 +2272,7 @@ bool GraphBuilder::direct_compare(ciKlass* k) {
 
 
 void GraphBuilder::check_cast(int klass_index) {
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_for_exception();
   CheckCast* c = new CheckCast(klass, apop(), state_before);
   apush(append_split(c));
@@ -2279,8 +2292,7 @@ void GraphBuilder::check_cast(int klass_index) {
 
 
 void GraphBuilder::instance_of(int klass_index) {
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
   InstanceOf* i = new InstanceOf(klass, apop(), state_before);
   ipush(append_split(i));
@@ -2302,6 +2314,7 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
+  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }
@@ -2314,8 +2327,7 @@ void GraphBuilder::monitorexit(Value x, int bci) {
 
 
 void GraphBuilder::new_multi_array(int dimensions) {
-  bool will_link;
-  ciKlass* klass = stream()->get_klass(will_link);
+  ciKlass* klass = stream()->get_klass();
   ValueStack* state_before = !klass->is_loaded() || PatchALot ? copy_state_before() : copy_state_exhandling();
 
   Values* dims = new Values(dimensions, dimensions, NULL);
@@ -3132,7 +3144,7 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // necessary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
-  // can increment the the counters.
+  // can increment the counters.
   // In addition, with range check elimination, we may need a valid block
   // that dominates all the rest to insert range predicates.
   BlockBegin* new_header_block;
@@ -3319,7 +3331,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       // Compiles where the root method is an intrinsic need a special
       // compilation environment because the bytecodes for the method
       // shouldn't be parsed during the compilation, only the special
-      // Intrinsic node should be emitted.  If this isn't done the the
+      // Intrinsic node should be emitted.  If this isn't done the
       // code for the inlined version will be different than the root
       // compiled version which could lead to monotonicity problems on
       // intel.
@@ -3837,7 +3849,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
     }
   }
 
-  // perform the throw as if at the the call site
+  // perform the throw as if at the call site
   apush(exception);
   throw_op(bci);
 
@@ -4138,20 +4150,28 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
       const int args_base = state()->stack_size() - callee->arg_size();
       ValueType* type = state()->stack_at(args_base)->type();
       if (type->is_constant()) {
-        ciMethod* target = type->as_ObjectType()->constant_value()->as_method_handle()->get_vmtarget();
-        // We don't do CHA here so only inline static and statically bindable methods.
-        if (target->is_static() || target->can_be_statically_bound()) {
-          if (ciMethod::is_consistent_info(callee, target)) {
-            Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-            ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
-            if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
-              return true;
+        ciObject* mh = type->as_ObjectType()->constant_value();
+        if (mh->is_method_handle()) {
+          ciMethod* target = mh->as_method_handle()->get_vmtarget();
+
+          // We don't do CHA here so only inline static and statically bindable methods.
+          if (target->is_static() || target->can_be_statically_bound()) {
+            if (ciMethod::is_consistent_info(callee, target)) {
+              Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
+              ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
+              if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
+                return true;
+              }
+            } else {
+              print_inlining(target, "signatures mismatch", /*success*/ false);
             }
           } else {
-            print_inlining(target, "signatures mismatch", /*success*/ false);
+            assert(false, "no inlining through MH::invokeBasic"); // missing optimization opportunity due to suboptimal LF shape
+            print_inlining(target, "not static or statically bindable", /*success*/ false);
           }
         } else {
-          print_inlining(target, "not static or statically bindable", /*success*/ false);
+          assert(mh->is_null_object(), "not a null");
+          print_inlining(callee, "receiver is always null", /*success*/ false);
         }
       } else {
         print_inlining(callee, "receiver not constant", /*success*/ false);
@@ -4224,7 +4244,8 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
     break;
 
   case vmIntrinsics::_linkToNative:
-    break; // TODO: NYI
+    print_inlining(callee, "native call", /*success*/ false);
+    break;
 
   default:
     fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));

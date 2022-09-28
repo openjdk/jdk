@@ -24,7 +24,7 @@ files in debugger machine.
 <h3>Solaris transported core dumps</h3>
 
 <p>
-Debuggers on Solaris (and Linux) use two addtional shared objects
+Debuggers on Solaris (and Linux) use two additional shared objects
 <b>rtld_db.so</b> and <b>libthread_db.so</b>. rtld_db.so is used to
 read information on shared objects from the core dump. libthread_db.so
 is used to get information on threads from the core dump. rtld_db.so
@@ -43,7 +43,7 @@ Solaris Linkers and Libraries Guide - 817-1984</a>
 With transported core dumps, you may get "rtld_db failures" or
 "libthread_db failures" or SA may just throw some other error
 (hotspot symbol is missing) when opening the core dump. 
-Enviroment variable <b>LIBSAPROC_DEBUG</b> may be set to any value
+Environment variable <b>LIBSAPROC_DEBUG</b> may be set to any value
 to debug such scenarios. With this env. var set, SA prints many
 messages in standard error which can be useful for further debugging.
 SA on Solaris uses <b>libproc.so</b> library. This library also

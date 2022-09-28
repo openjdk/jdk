@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package java.io;
 
-
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Objects;
+import jdk.internal.misc.InternalLock;
 
 /**
  * Abstract class for reading character streams.  The only methods that a
@@ -171,6 +171,21 @@ public abstract class Reader implements Readable, Closeable {
     }
 
     /**
+     * For use by BufferedReader to create a character-stream reader that uses an
+     * internal lock when BufferedReader is not extended and the given reader is
+     * trusted, otherwise critical sections will synchronize on the given reader.
+     */
+    Reader(Reader in) {
+        Class<?> clazz = in.getClass();
+        if (getClass() == BufferedReader.class &&
+                (clazz == InputStreamReader.class || clazz == FileReader.class)) {
+            this.lock = InternalLock.newLockOr(in);
+        } else {
+            this.lock = in;
+        }
+    }
+
+    /**
      * Attempts to read characters into the specified character buffer.
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
@@ -297,19 +312,33 @@ public abstract class Reader implements Readable, Closeable {
     public long skip(long n) throws IOException {
         if (n < 0L)
             throw new IllegalArgumentException("skip value is negative");
-        int nn = (int) Math.min(n, maxSkipBufferSize);
-        synchronized (lock) {
-            if ((skipBuffer == null) || (skipBuffer.length < nn))
-                skipBuffer = new char[nn];
-            long r = n;
-            while (r > 0) {
-                int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
-                if (nc == -1)
-                    break;
-                r -= nc;
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                return implSkip(n);
+            } finally {
+                locker.unlock();
             }
-            return n - r;
+        } else {
+            synchronized (lock) {
+                return implSkip(n);
+            }
         }
+    }
+
+    private long implSkip(long n) throws IOException {
+        int nn = (int) Math.min(n, maxSkipBufferSize);
+        if ((skipBuffer == null) || (skipBuffer.length < nn))
+            skipBuffer = new char[nn];
+        long r = n;
+        while (r > 0) {
+            int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
+            if (nc == -1)
+                break;
+            r -= nc;
+        }
+        return n - r;
     }
 
     /**

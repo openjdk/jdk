@@ -43,6 +43,7 @@ enum KlassKind {
   InstanceRefKlassKind,
   InstanceMirrorKlassKind,
   InstanceClassLoaderKlassKind,
+  InstanceStackChunkKlassKind,
   TypeArrayKlassKind,
   ObjArrayKlassKind
 };
@@ -172,14 +173,16 @@ private:
   jshort _shared_class_path_index;
 
 #if INCLUDE_CDS
-  // Flags of the current shared class.
+  // Various attributes for shared classes. Should be zero for a non-shared class.
   u2     _shared_class_flags;
-  enum {
+  enum CDSSharedClassFlags {
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
     _has_archived_enum_objs                = 1 << 4,
-    _regenerated                           = 1 << 5
+    // This class was not loaded from a classfile in the module image
+    // or classpath.
+    _is_generated_shared_class             = 1 << 5
   };
 #endif
 
@@ -351,11 +354,11 @@ protected:
     NOT_CDS(return false;)
   }
 
-  void set_regenerated() {
-    CDS_ONLY(_shared_class_flags |= _regenerated;)
+  void set_is_generated_shared_class() {
+    CDS_ONLY(_shared_class_flags |= _is_generated_shared_class;)
   }
-  bool is_regenerated() const {
-    CDS_ONLY(return (_shared_class_flags & _regenerated) != 0;)
+  bool is_generated_shared_class() const {
+    CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
     NOT_CDS(return false;)
   }
 
@@ -542,7 +545,9 @@ protected:
   void set_vtable_length(int len) { _vtable_len= len; }
 
   vtableEntry* start_of_vtable() const;
+#if INCLUDE_CDS
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+#endif
  public:
   Method* method_at_vtable(int index);
 
@@ -551,6 +556,7 @@ protected:
     return byte_offset_of(Klass, _vtable_len);
   }
 
+#if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
@@ -566,6 +572,7 @@ protected:
       return true;
     }
   }
+#endif // INCLUDE_CDS
 
  public:
   // ALL FUNCTIONS BELOW THIS POINT ARE DISPATCHED FROM AN OOP
@@ -617,13 +624,14 @@ protected:
  public:
   #endif
 
-  bool is_instance_klass()              const { return assert_same_query(_kind <= InstanceClassLoaderKlassKind, is_instance_klass_slow()); }
+  bool is_instance_klass()              const { return assert_same_query(_kind <= InstanceStackChunkKlassKind, is_instance_klass_slow()); }
   // Other is anything that is not one of the more specialized kinds of InstanceKlass.
   bool is_other_instance_klass()        const { return _kind == InstanceKlassKind; }
   bool is_reference_instance_klass()    const { return _kind == InstanceRefKlassKind; }
   bool is_mirror_instance_klass()       const { return _kind == InstanceMirrorKlassKind; }
   bool is_class_loader_instance_klass() const { return _kind == InstanceClassLoaderKlassKind; }
   bool is_array_klass()                 const { return assert_same_query( _kind >= TypeArrayKlassKind, is_array_klass_slow()); }
+  bool is_stack_chunk_instance_klass()  const { return _kind == InstanceStackChunkKlassKind; }
   bool is_objArray_klass()              const { return assert_same_query( _kind == ObjArrayKlassKind,  is_objArray_klass_slow()); }
   bool is_typeArray_klass()             const { return assert_same_query( _kind == TypeArrayKlassKind, is_typeArray_klass_slow()); }
   #undef assert_same_query

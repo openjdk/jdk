@@ -3,7 +3,7 @@
  * @bug 8065219
  * @summary Deprecated warning in method reference are missing in some cases.
  * @compile/ref=DeprecationSE8Test.noLint.out -XDrawDiagnostics DeprecationSE8Test.java
- * @compile/ref=DeprecationSE8Test.out -Xlint:deprecation,-options -source 8 -XDrawDiagnostics DeprecationSE8Test.java
+ * @compile/ref=DeprecationSE8Test.out -Xlint:deprecation,-options --release 8 -XDrawDiagnostics DeprecationSE8Test.java
  */
 
 

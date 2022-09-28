@@ -55,6 +55,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -316,7 +317,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* current, int reason,
     if (trap_mdo == NULL) {
       ExceptionMark em(current);
       JavaThread* THREAD = current; // For exception macros.
-      Method::build_interpreter_method_data(trap_method, THREAD);
+      Method::build_profiling_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
         assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())),
@@ -775,11 +776,7 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   Handle exception(current, current->vm_result());
   assert(exception() != NULL, "vm result should be set");
   current->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(vmClasses::ThreadDeath_klass())) {
-    exception = get_preinitialized_exception(
-                       vmClasses::IllegalMonitorStateException_klass(),
-                       CATCH);
-  }
+  exception = get_preinitialized_exception(vmClasses::IllegalMonitorStateException_klass(), CATCH);
   current->set_vm_result(exception());
 JRT_END
 
@@ -1118,6 +1115,10 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
   // JRT_END does an implicit safepoint check, hence we are guaranteed to block
   // if this is called during a safepoint
 
+  if (java_lang_VirtualThread::notify_jvmti_events()) {
+    JvmtiExport::check_vthread_and_suspend_at_safepoint(current);
+  }
+
   if (JvmtiExport::should_post_single_step()) {
     // This function is called by the interpreter when single stepping. Such single
     // stepping could unwind a frame. Then, it is important that we process any frames
@@ -1239,7 +1240,7 @@ JRT_END
 
 JRT_LEAF(int, InterpreterRuntime::interpreter_contains(address pc))
 {
-  return (Interpreter::contains(pc) ? 1 : 0);
+  return (Interpreter::contains(Continuation::get_top_return_pc_post_barrier(JavaThread::current(), pc)) ? 1 : 0);
 }
 JRT_END
 

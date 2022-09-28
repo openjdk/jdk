@@ -221,6 +221,10 @@ void G1CardSetArray::iterate(CardVisitor& found) {
   }
 }
 
+inline size_t G1CardSetArray::header_size_in_bytes() {
+  return offset_of(G1CardSetArray, _data);
+}
+
 inline G1CardSetBitMap::G1CardSetBitMap(uint card_in_region, uint size_in_bits) :
   G1CardSetContainer(), _num_bits_set(1) {
   assert(size_in_bits % (sizeof(_bits[0]) * BitsPerByte) == 0,
@@ -250,6 +254,10 @@ inline void G1CardSetBitMap::iterate(CardVisitor& found, size_t size_in_bits, ui
     found((offset | (uint)idx));
     idx = bm.get_next_one_offset(idx + 1);
   }
+}
+
+inline size_t G1CardSetBitMap::header_size_in_bytes() {
+    return offset_of(G1CardSetBitMap, _bits);
 }
 
 inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config) :
@@ -350,6 +358,10 @@ inline G1CardSetHowl::EntryCountType G1CardSetHowl::num_buckets(size_t size_in_b
   // power of two to not use more than expected memory.
   num_arrays = round_down_power_of_2(MAX2((size_t)1, MIN2(num_arrays, max_num_buckets)));
   return (EntryCountType)num_arrays;
+}
+
+inline size_t G1CardSetHowl::header_size_in_bytes() {
+  return offset_of(G1CardSetHowl, _buckets);
 }
 
 #endif // SHARE_GC_G1_G1CARDSETCONTAINERS_INLINE_HPP

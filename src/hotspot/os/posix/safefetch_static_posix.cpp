@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 
+#include "os_posix.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -47,7 +48,6 @@ extern "C" char _SafeFetchN_fault[] __attribute__ ((visibility ("hidden")));
 bool handle_safefetch(int sig, address pc, void* context) {
   ucontext_t* uc = (ucontext_t*)context;
   if ((sig == SIGSEGV || sig == SIGBUS) && uc != NULL) {
-    address pc = os::Posix::ucontext_get_pc(uc);
     if (pc == (address)_SafeFetch32_fault) {
       os::Posix::ucontext_set_pc(uc, (address)_SafeFetch32_continuation);
       return true;

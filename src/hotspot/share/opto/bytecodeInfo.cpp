@@ -215,6 +215,13 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     fail_msg = "don't inline by annotation";
   }
 
+  // Don't inline a method that changes Thread.currentThread() except
+  // into another method that is annotated @ChangesCurrentThread.
+  if (callee_method->changes_current_thread()
+      && ! C->method()->changes_current_thread()) {
+    fail_msg = "method changes current thread";
+  }
+
   // one more inlining restriction
   if (fail_msg == NULL && callee_method->has_unloaded_classes_in_signature()) {
     fail_msg = "unloaded signature classes";
@@ -706,11 +713,11 @@ int InlineTree::count() const {
   return result;
 }
 
-void InlineTree::dump_replay_data(outputStream* out) {
-  out->print(" %d %d %d ", inline_level(), caller_bci(), _late_inline);
+void InlineTree::dump_replay_data(outputStream* out, int depth_adjust) {
+  out->print(" %d %d %d ", inline_level() + depth_adjust, caller_bci(), _late_inline);
   method()->dump_name_as_ascii(out);
   for (int i = 0 ; i < _subtrees.length(); i++) {
-    _subtrees.at(i)->dump_replay_data(out);
+    _subtrees.at(i)->dump_replay_data(out, depth_adjust);
   }
 }
 

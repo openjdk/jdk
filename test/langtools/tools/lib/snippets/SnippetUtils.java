@@ -24,6 +24,7 @@
 package snippets;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,6 +44,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
@@ -86,6 +89,34 @@ import com.sun.source.util.JavacTask;
  * code to compile and run snippets, where that is appropriate.
  */
 public class SnippetUtils {
+    /**
+     * Exception used to report a configuration issue that prevents
+     * the test from executing as expected.
+     */
+    public static class ConfigurationException extends Exception {
+        public ConfigurationException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Exception used to report that a snippet could not be found.
+     */
+    public static class SnippetNotFoundException extends Exception {
+        public SnippetNotFoundException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Exception used to report that a doc comment could not be found.
+     */
+    public static class DocCommentNotFoundException extends Exception {
+        public DocCommentNotFoundException(String message) {
+            super(message);
+        }
+    }
+
     private static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
     private final StandardJavaFileManager fileManager;
@@ -105,8 +136,10 @@ public class SnippetUtils {
      * @param modules the modules
      *
      * @throws IllegalArgumentException if no modules are specified
+     * @throws ConfigurationException if the main source directory cannot be found
+     *                                or if a module's source directory cannot be found
      */
-    public SnippetUtils(String... modules) {
+    public SnippetUtils(String... modules) throws ConfigurationException {
         this(findSourceDir(), null, null, Set.of(modules));
     }
 
@@ -126,13 +159,29 @@ public class SnippetUtils {
      * @param modules the modules
      *
      * @throws IllegalArgumentException if no modules are specified
+     * @throws ConfigurationException if {@code srcDir} does not exist
+     *                                or if a module's source directory cannot be found
      */
-    public SnippetUtils(Path srcDir, PrintWriter pw, DiagnosticListener<JavaFileObject> dl, Set<String> modules) {
+    public SnippetUtils(Path srcDir, PrintWriter pw, DiagnosticListener<JavaFileObject> dl, Set<String> modules)
+            throws ConfigurationException {
         if (modules.isEmpty()) {
             throw new IllegalArgumentException("no modules specified");
         }
 
+        if (!Files.exists(srcDir)) {
+            throw new ConfigurationException("directory not found: " + srcDir);
+        }
+
         this.srcDir = srcDir;
+
+        for (var m : modules) {
+            var moduleSourceDir = getModuleSourceDir(m);
+            if (!Files.exists(moduleSourceDir)) {
+                throw new ConfigurationException(("cannot find source directory for " + m
+                        + ": " + moduleSourceDir));
+            }
+        }
+
         fileManager = compiler.getStandardFileManager(dl, null, null);
 
         List<String> opts = new ArrayList<>();
@@ -189,9 +238,15 @@ public class SnippetUtils {
      *
      * @param tree the doc comment tree
      * @param id   the id
+     *
+     * @throws SnippetNotFoundException if the snippet cannot be found
      */
-    public SnippetTree getSnippetById(DocCommentTree tree, String id) {
-        return new SnippetFinder().scan(tree, id);
+    public SnippetTree getSnippetById(DocCommentTree tree, String id) throws SnippetNotFoundException {
+        SnippetTree result = new SnippetFinder().scan(tree, id);
+        if (result == null) {
+            throw new SnippetNotFoundException(id);
+        }
+        return result;
     }
 
     /**
@@ -199,10 +254,18 @@ public class SnippetUtils {
      *
      * @param element the element
      * @param id      the id
+     *
+     * @throws DocCommentNotFoundException if the doc comment for the element cannot be found
+     * @throws SnippetNotFoundException if the snippet cannot be found
      */
-    public SnippetTree getSnippetById(Element element, String id) {
-        DocCommentTree tree = getDocCommentTree(element);
-        return new SnippetFinder().scan(tree, id);
+    public SnippetTree getSnippetById(Element element, String id)
+            throws DocCommentNotFoundException, SnippetNotFoundException {
+        DocCommentTree docCommentTree = getDocCommentTree(element);
+        if (docCommentTree == null) {
+            var name = (element instanceof QualifiedNameable q) ? q.getQualifiedName() : element.getSimpleName();
+            throw new DocCommentNotFoundException(element.getKind() + " " + name);
+        }
+        return getSnippetById(docCommentTree, id);
     }
 
     /**
@@ -528,7 +591,7 @@ public class SnippetUtils {
         return SourceKind.OTHER;
     }
 
-    private static Path findSourceDir() {
+    private static Path findSourceDir() throws ConfigurationException {
         String testSrc = System.getProperty("test.src");
         Path p = Path.of(testSrc).toAbsolutePath();
         while (p.getParent() != null) {
@@ -538,6 +601,6 @@ public class SnippetUtils {
             }
             p = p.getParent();
         }
-        throw new IllegalArgumentException("Cannot find src/ from " + testSrc);
+        throw new ConfigurationException("Cannot find src/ from " + testSrc);
     }
 }

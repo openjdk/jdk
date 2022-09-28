@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,21 @@ package sun.security.provider;
 
 import java.io.*;
 import java.security.PublicKey;
-import java.util.*;
 import java.security.cert.*;
+import java.util.*;
 
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.X509CertificateEvent;
-import sun.security.util.KeyUtil;
-import sun.security.util.Pem;
-import sun.security.x509.*;
+
 import sun.security.pkcs.PKCS7;
+import sun.security.pkcs.ParsingException;
 import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
-import sun.security.util.DerValue;
 import sun.security.util.Cache;
-import java.util.Base64;
-import sun.security.pkcs.ParsingException;
+import sun.security.util.DerValue;
+import sun.security.util.KeyUtil;
+import sun.security.x509.X509CRLImpl;
+import sun.security.x509.X509CertImpl;
 
 /**
  * This class defines a certificate factory for X.509 v3 certificates {@literal &}
@@ -98,15 +98,7 @@ public class X509Factory extends CertificateFactorySpi {
         try {
             byte[] encoding = readOneBlock(is);
             if (encoding != null) {
-                X509CertImpl cert = getFromCache(certCache, encoding);
-                if (cert != null) {
-                    return cert;
-                }
-                cert = new X509CertImpl(encoding);
-                addToCache(certCache, cert.getEncodedInternal(), cert);
-                // record cert details if necessary
-                commitEvent(cert);
-                return cert;
+                return cachedGetX509Cert(encoding);
             } else {
                 throw new IOException("Empty input");
             }
@@ -114,6 +106,19 @@ public class X509Factory extends CertificateFactorySpi {
             throw new CertificateException("Could not parse certificate: " +
                     ioe.toString(), ioe);
         }
+    }
+
+    public static X509CertImpl cachedGetX509Cert(byte[] encoding)
+            throws CertificateException {
+        X509CertImpl cert = getFromCache(certCache, encoding);
+        if (cert != null) {
+            return cert;
+        }
+        cert = new X509CertImpl(encoding);
+        addToCache(certCache, cert.getEncodedInternal(), cert);
+        // record cert details if necessary
+        commitEvent(cert);
+        return cert;
     }
 
     /**
@@ -125,7 +130,7 @@ public class X509Factory extends CertificateFactorySpi {
         int read = 0;
         byte[] buffer = new byte[2048];
         while (length > 0) {
-            int n = in.read(buffer, 0, length<2048?length:2048);
+            int n = in.read(buffer, 0, Math.min(length, 2048));
             if (n <= 0) {
                 break;
             }
@@ -671,7 +676,7 @@ public class X509Factory extends CertificateFactorySpi {
 
     /**
      * Read one BER data block. This method is aware of indefinite-length BER
-     * encoding and will read all of the sub-sections in a recursive way
+     * encoding and will read all the subsections in a recursive way
      *
      * @param is    Read from this InputStream
      * @param bout  Write into this OutputStream
@@ -768,7 +773,7 @@ public class X509Factory extends CertificateFactorySpi {
         return tag;
     }
 
-    private void commitEvent(X509CertImpl info) {
+    private static void commitEvent(X509CertImpl info) {
         X509CertificateEvent xce = new X509CertificateEvent();
         if (xce.shouldCommit() || EventHelper.isLoggingSecurity()) {
             PublicKey pKey = info.getPublicKey();

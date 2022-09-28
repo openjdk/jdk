@@ -39,6 +39,7 @@
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/c2compiler.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/locknode.hpp"
@@ -284,12 +285,51 @@ int C2SafepointPollStubTable::estimate_stub_size() const {
   return result;
 }
 
+// Nmethod entry barrier stubs
+C2EntryBarrierStub* C2EntryBarrierStubTable::add_entry_barrier() {
+  assert(_stub == NULL, "There can only be one entry barrier stub");
+  _stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+  return _stub;
+}
+
+void C2EntryBarrierStubTable::emit(CodeBuffer& cb) {
+  if (_stub == NULL) {
+    // No stub - nothing to do
+    return;
+  }
+
+  C2_MacroAssembler masm(&cb);
+  // Make sure there is enough space in the code buffer
+  if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
+
+  intptr_t before = masm.offset();
+  masm.emit_entry_barrier_stub(_stub);
+  intptr_t after = masm.offset();
+  int actual_size = (int)(after - before);
+  int expected_size = masm.entry_barrier_stub_size();
+  assert(actual_size == expected_size, "Estimated size is wrong, expected %d, was %d", expected_size, actual_size);
+}
+
+int C2EntryBarrierStubTable::estimate_stub_size() const {
+  if (BarrierSet::barrier_set()->barrier_set_nmethod() == NULL) {
+    // No nmethod entry barrier?
+    return 0;
+  }
+
+  return C2_MacroAssembler::entry_barrier_stub_size();
+}
+
 PhaseOutput::PhaseOutput()
   : Phase(Phase::Output),
     _code_buffer("Compile::Fill_buffer"),
     _first_block_size(0),
     _handler_table(),
     _inc_table(),
+    _safepoint_poll_table(),
+    _entry_barrier_table(),
     _oop_map_set(NULL),
     _scratch_buffer_blob(NULL),
     _scratch_locs_memory(NULL),
@@ -816,7 +856,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == NULL) {
-      ciKlass* cik = t->is_oopptr()->klass();
+      ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,
@@ -860,7 +900,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       array->append(new ConstantIntValue((jint)0));
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     } else if ( t->base() == Type::RawPtr ) {
-      // jsr/ret return address which must be restored into a the full
+      // jsr/ret return address which must be restored into the full
       // width 64-bit stack slot.
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     }
@@ -890,8 +930,16 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
+    } else if (C->regalloc()->is_oop(local)) {
+      assert(t->base() == Type::OopPtr || t->base() == Type::InstPtr ||
+             t->base() == Type::AryPtr,
+             "Unexpected type: %s", t->msg());
+      array->append(new_loc_value( C->regalloc(), regnum, Location::oop ));
     } else {
-      array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
+      assert(t->base() == Type::Int || t->base() == Type::Half ||
+             t->base() == Type::FloatCon || t->base() == Type::FloatBot,
+             "Unexpected type: %s", t->msg());
+      array->append(new_loc_value( C->regalloc(), regnum, Location::normal ));
     }
     return;
   }
@@ -996,7 +1044,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
-  bool is_opt_native = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1015,8 +1062,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         is_method_handle_invoke = true;
       }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
-    } else if (mcall->is_MachCallNative()) {
-      is_opt_native = true;
     }
 
     // Check if a call returns an object.
@@ -1089,7 +1134,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == NULL) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->klass();
+          ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           ObjectValue* sv = new ObjectValue(spobj->_idx,
@@ -1145,7 +1190,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->should_reexecute(),
       rethrow_exception,
       is_method_handle_invoke,
-      is_opt_native,
       return_oop,
       has_ea_local_in_scope,
       arg_escape,
@@ -1306,6 +1350,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
   stub_req += safepoint_poll_table()->estimate_stub_size();
+  stub_req += entry_barrier_table()->estimate_stub_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
@@ -1435,7 +1480,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     if (!block->is_connector()) {
       stringStream st;
       block->dump_head(C->cfg(), &st);
-      MacroAssembler(cb).block_comment(st.as_string());
+      MacroAssembler(cb).block_comment(st.freeze());
     }
     jmp_target[i] = 0;
     jmp_offset[i] = 0;
@@ -1816,6 +1861,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   safepoint_poll_table()->emit(*cb);
   if (C->failing())  return;
 
+  // Fill in stubs for calling the runtime from nmethod entries.
+  entry_barrier_table()->emit(*cb);
+  if (C->failing())  return;
+
 #ifndef PRODUCT
   // Information on the size of the method, without the extraneous code
   Scheduling::increment_method_size(cb->insts_size());
@@ -1884,13 +1933,13 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        tty->print_raw(method_metadata_str.as_string());
+        tty->print_raw(method_metadata_str.freeze());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      tty->print_raw(dump_asm_str.as_string());
+      tty->print_raw(dump_asm_str.freeze());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
         xtty->tail("opto_assembly");
@@ -3362,8 +3411,9 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      compiler,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->rtm_state(),
-                                     C->native_invokers());
+                                     C->has_monitors(),
+                                     0,
+                                     C->rtm_state());
 
     if (C->log() != NULL) { // Print code cache state into compiler log
       C->log()->code_cache_state();

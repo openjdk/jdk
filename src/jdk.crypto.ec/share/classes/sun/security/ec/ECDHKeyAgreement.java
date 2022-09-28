@@ -176,7 +176,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         // (point of infinity).  However, the point of infinity has no
         // affine coordinates, although the point of infinity could
         // be encoded.  Per IEEE 1363.3-2013 (see section A.6.4.1),
-        // the point of inifinity is represented by a pair of
+        // the point of infinity is represented by a pair of
         // coordinates (x, y) not on the curve.  For EC prime finite
         // field (q = p^m), the point of infinity is (0, 0) unless
         // b = 0; in which case it is (0, 1).
@@ -205,7 +205,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         // Check the order of the point.
         //
         // Compute nQ (using elliptic curve arithmetic), and verify that
-        // nQ is the the identity element.
+        // nQ is the identity element.
         ImmutableIntegerModuloP xElem = ops.getField().getElement(x);
         ImmutableIntegerModuloP yElem = ops.getField().getElement(y);
         AffinePoint affP = new AffinePoint(xElem, yElem);

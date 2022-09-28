@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,15 @@ package sun.security.pkcs10;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.cert.CertificateException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import sun.security.util.*;
+import sun.security.util.DerEncoder;
+import sun.security.util.DerInputStream;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
 
 /**
  * This class defines the PKCS10 attributes for the request.
@@ -49,8 +51,8 @@ import sun.security.util.*;
  */
 public class PKCS10Attributes implements DerEncoder {
 
-    private Hashtable<String, PKCS10Attribute> map =
-                        new Hashtable<String, PKCS10Attribute>(3);
+    private final Hashtable<String, PKCS10Attribute> map =
+            new Hashtable<>(3);
 
     /**
      * Default constructor for the PKCS10 attribute.
@@ -174,18 +176,16 @@ public class PKCS10Attributes implements DerEncoder {
         Collection<PKCS10Attribute> othersAttribs =
                 ((PKCS10Attributes)other).getAttributes();
         PKCS10Attribute[] attrs =
-            othersAttribs.toArray(new PKCS10Attribute[othersAttribs.size()]);
+            othersAttribs.toArray(new PKCS10Attribute[0]);
         int len = attrs.length;
         if (len != map.size())
             return false;
         PKCS10Attribute thisAttr, otherAttr;
-        String key = null;
+        String key;
         for (int i=0; i < len; i++) {
             otherAttr = attrs[i];
             key = otherAttr.getAttributeId().toString();
 
-            if (key == null)
-                return false;
             thisAttr = map.get(key);
             if (thisAttr == null)
                 return false;
@@ -213,7 +213,6 @@ public class PKCS10Attributes implements DerEncoder {
      * @return  a string representation of this PKCS10Attributes.
      */
     public String toString() {
-        String s = map.size() + "\n" + map.toString();
-        return s;
+        return map.size() + "\n" + map;
     }
 }

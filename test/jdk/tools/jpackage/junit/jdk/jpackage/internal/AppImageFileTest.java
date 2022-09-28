@@ -35,7 +35,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.junit.function.ThrowingRunnable;
 
+/*
+ * @test
+ * @modules jdk.jpackage
+ * @compile --patch-module jdk.jpackage=${test.src} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED AppImageFileTest.java
+ * @run junit/othervm --patch-module jdk.jpackage=${test.classes} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED jdk.jpackage.internal.AppImageFileTest
+ */
 public class AppImageFileTest {
 
     @Rule
@@ -45,6 +52,7 @@ public class AppImageFileTest {
     public void testIdentity() throws IOException {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put(Arguments.CLIOptions.NAME.getId(), "Foo");
+        params.put(Arguments.CLIOptions.APPCLASS.getId(), "TestClass");
         params.put(Arguments.CLIOptions.VERSION.getId(), "2.3");
         params.put(Arguments.CLIOptions.DESCRIPTION.getId(), "Duck is the King");
         AppImageFile aif = create(params);
@@ -66,20 +74,26 @@ public class AppImageFileTest {
 
         params = new LinkedHashMap<>();
         params.put(Arguments.CLIOptions.NAME.getId(), "foo");
-        params.put(Arguments.CLIOptions.VERSION.getId(), "");
+        params.put(Arguments.CLIOptions.APPCLASS.getId(), "TestClass");
+        params.put(Arguments.CLIOptions.VERSION.getId(), "1.0");
         create(params);
     }
 
     @Test
     public void testInavlidXml() throws IOException {
-        assertInvalid(createFromXml("<foo/>"));
-        assertInvalid(createFromXml("<jpackage-state/>"));
-        assertInvalid(createFromXml(JPACKAGE_STATE_OPEN, "</jpackage-state>"));
-        assertInvalid(createFromXml(
+        assertInvalid(() -> createFromXml("<foo/>"));
+        assertInvalid(() -> createFromXml("<jpackage-state/>"));
+        assertInvalid(() -> createFromXml(JPACKAGE_STATE_OPEN, "</jpackage-state>"));
+        assertInvalid(() -> createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<main-launcher></main-launcher>",
                 "</jpackage-state>"));
-        assertInvalid(createFromXml(
+        assertInvalid(() -> createFromXml(
+                JPACKAGE_STATE_OPEN,
+                    "<main-launcher>Foo</main-launcher>",
+                    "<main-class></main-class>",
+                "</jpackage-state>"));
+        assertInvalid(() -> createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<launcher>A</launcher>",
                     "<launcher>B</launcher>",
@@ -90,18 +104,30 @@ public class AppImageFileTest {
     public void testValidXml() throws IOException {
         Assert.assertEquals("Foo", (createFromXml(
                 JPACKAGE_STATE_OPEN,
+                    "<app-version>1.0</app-version>",
                     "<main-launcher>Foo</main-launcher>",
+                    "<main-class>main.Class</main-class>",
+                    "<signed>false</signed>",
+                    "<app-store>false</app-store>",
                 "</jpackage-state>")).getLauncherName());
 
         Assert.assertEquals("Boo", (createFromXml(
                 JPACKAGE_STATE_OPEN,
+                    "<app-version>1.0</app-version>",
                     "<main-launcher>Boo</main-launcher>",
                     "<main-launcher>Bar</main-launcher>",
+                    "<main-class>main.Class</main-class>",
+                    "<signed>false</signed>",
+                    "<app-store>false</app-store>",
                 "</jpackage-state>")).getLauncherName());
 
         var file = createFromXml(
                 JPACKAGE_STATE_OPEN,
+                    "<app-version>1.0</app-version>",
                     "<main-launcher>Foo</main-launcher>",
+                    "<main-class>main.Class</main-class>",
+                    "<signed>false</signed>",
+                    "<app-store>false</app-store>",
                     "<launcher></launcher>",
                 "</jpackage-state>");
         Assert.assertEquals("Foo", file.getLauncherName());
@@ -113,10 +139,61 @@ public class AppImageFileTest {
     public void testMainLauncherName() throws IOException {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("name", "Foo");
+        params.put("main-class", "main.Class");
         params.put("description", "Duck App Description");
         AppImageFile aif = create(params);
 
         Assert.assertEquals("Foo", aif.getLauncherName());
+    }
+
+    @Test
+    public void testMainClass() throws IOException {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "Foo");
+        params.put("main-class", "main.Class");
+        params.put("description", "Duck App Description");
+        AppImageFile aif = create(params);
+
+        Assert.assertEquals("main.Class", aif.getMainClass());
+    }
+
+    @Test
+    public void testMacSign() throws IOException {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "Foo");
+        params.put("main-class", "main.Class");
+        params.put("description", "Duck App Description");
+        params.put("mac-sign", Boolean.TRUE);
+        AppImageFile aif = create(params);
+
+        Assert.assertTrue(aif.isSigned());
+    }
+
+    @Test
+    public void testCopyAsSigned() throws IOException {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "Foo");
+        params.put("main-class", "main.Class");
+        params.put("description", "Duck App Description");
+        params.put("mac-sign", Boolean.FALSE);
+
+        AppImageFile aif = create(params);
+        Assert.assertFalse(aif.isSigned());
+
+        aif = aif.copyAsSigned();
+        Assert.assertTrue(aif.isSigned());
+    }
+
+    @Test
+    public void testMacAppStore() throws IOException {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "Foo");
+        params.put("main-class", "main.Class");
+        params.put("description", "Duck App Description");
+        params.put("mac-app-store", Boolean.TRUE);
+        AppImageFile aif = create(params);
+
+        Assert.assertTrue(aif.isAppStore());
     }
 
     @Test
@@ -133,6 +210,7 @@ public class AppImageFileTest {
         launchersAsMap.add(addLauncher3Params);
 
         params.put("name", "Duke App");
+        params.put("main-class", "main.Class");
         params.put("description", "Duke App Description");
         params.put("add-launcher", launchersAsMap);
         AppImageFile aif = create(params);
@@ -145,7 +223,6 @@ public class AppImageFileTest {
 
         Assert.assertTrue(names.contains("Launcher2Name"));
         Assert.assertTrue(names.contains("Launcher3Name"));
-
     }
 
     private AppImageFile create(Map<String, Object> params) throws IOException {
@@ -153,9 +230,13 @@ public class AppImageFileTest {
         return AppImageFile.load(tempFolder.getRoot().toPath());
     }
 
-    private void assertInvalid(AppImageFile file) {
-        Assert.assertNull(file.getLauncherName());
-        Assert.assertNull(file.getAddLaunchers());
+    private void assertInvalid(ThrowingRunnable action) {
+        Exception ex = Assert.assertThrows(RuntimeException.class, action);
+        Assert.assertTrue(ex instanceof RuntimeException);
+        Assert.assertTrue(ex.getMessage()
+                .contains("generated by another jpackage version or malformed"));
+        Assert.assertTrue(ex.getMessage()
+                .endsWith(".jpackage.xml\""));
     }
 
     private AppImageFile createFromXml(String... xmlData) throws IOException {

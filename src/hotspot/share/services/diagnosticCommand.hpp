@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,21 +382,6 @@ public:
     JavaPermission p = {"java.lang.management.ManagementPermission",
                         "monitor", NULL};
     return p;
-  }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
-class TouchedMethodsDCmd : public DCmd {
-public:
-  TouchedMethodsDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
-  static const char* name() {
-    return "VM.print_touched_methods";
-  }
-  static const char* description() {
-    return "Print all methods that have ever been touched during the lifetime of this JVM.";
-  }
-  static const char* impact() {
-    return "Medium: Depends on Java content.";
   }
   virtual void execute(DCmdSource source, TRAPS);
 };
@@ -921,6 +906,32 @@ public:
                         "monitor", NULL};
     return p;
   }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class ThreadDumpToFileDCmd : public DCmdWithParser {
+private:
+  void dumpToFile(Symbol* name, Symbol* signature, const char* path, bool overwrite, TRAPS);
+protected:
+  DCmdArgument<bool> _overwrite;
+  DCmdArgument<char*> _format;
+  DCmdArgument<char*> _filepath;
+public:
+  ThreadDumpToFileDCmd(outputStream *output, bool heap);
+  static const char *name() {
+    return "Thread.dump_to_file";
+  }
+  static const char *description() {
+    return "Dump threads, with stack traces, to a file in plain text or JSON format.";
+  }
+  static const char* impact() {
+    return "Medium: Depends on the number of threads.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,11 +172,16 @@ public class TestDefaultConfigurations {
         insertSetting(doc, EventNames.JavaExceptionThrow, "threshold", "0 ns");
         insertSetting(doc, EventNames.JavaErrorThrow, "threshold", "0 ns");
         insertSetting(doc, EventNames.SecurityProperty, "threshold", "0 ns");
+        insertSetting(doc, EventNames.SecurityProviderService, "threshold", "0 ns");
         insertSetting(doc, EventNames.TLSHandshake, "threshold", "0 ns");
         insertSetting(doc, EventNames.X509Certificate, "threshold", "0 ns");
         insertSetting(doc, EventNames.X509Validation, "threshold", "0 ns");
         insertSetting(doc, EventNames.ProcessStart, "threshold", "0 ns");
         insertSetting(doc, EventNames.Deserialization, "threshold", "0 ns");
+        insertSetting(doc, EventNames.VirtualThreadStart, "threshold", "0 ns");
+        insertSetting(doc, EventNames.VirtualThreadEnd, "threshold", "0 ns");
+        insertSetting(doc, EventNames.VirtualThreadEnd, "stackTrace", "false");
+        insertSetting(doc, EventNames.VirtualThreadSubmitFailed, "threshold", "0 ns");
 
         return doc;
     }

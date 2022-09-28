@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public class TooSmallStackSize {
         String min_stack_allowed = checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "64");
 
         /*
-         * Try again with a the minimum stack size that was given in the error message
+         * Try again with the minimum stack size that was given in the error message
          */
         checkMinStackAllowed("-XX:ThreadStackSize=", ThreadStackSizeString, min_stack_allowed);
 

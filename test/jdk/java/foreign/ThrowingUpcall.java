@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,10 @@
  * questions.
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SymbolLookup;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySession;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -39,13 +38,12 @@ public class ThrowingUpcall extends NativeTestHelper {
 
     static {
         System.loadLibrary("TestUpcall");
-        SymbolLookup lookup = SymbolLookup.loaderLookup();
-        downcallVoid = CLinker.systemCLinker().downcallHandle(
-            lookup.lookup("f0_V__").orElseThrow(),
+        downcallVoid = Linker.nativeLinker().downcallHandle(
+            findNativeOrThrow("f0_V__"),
                 FunctionDescriptor.ofVoid(C_POINTER)
         );
-        downcallNonVoid = CLinker.systemCLinker().downcallHandle(
-            lookup.lookup("f10_I_I_").orElseThrow(),
+        downcallNonVoid = Linker.nativeLinker().downcallHandle(
+                findNativeOrThrow("f10_I_I_"),
                 FunctionDescriptor.of(C_INT, C_INT, C_POINTER)
         );
 
@@ -74,8 +72,8 @@ public class ThrowingUpcall extends NativeTestHelper {
         MethodHandle invoker = MethodHandles.exactInvoker(MethodType.methodType(void.class));
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            NativeSymbol stub = CLinker.systemCLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            Addressable stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), session);
 
             downcallVoid.invoke(stub); // should call Shutdown.exit(1);
         }
@@ -87,8 +85,8 @@ public class ThrowingUpcall extends NativeTestHelper {
         MethodHandle invoker = MethodHandles.exactInvoker(MethodType.methodType(int.class, int.class));
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            NativeSymbol stub = CLinker.systemCLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            Addressable stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), session);
 
             downcallNonVoid.invoke(42, stub); // should call Shutdown.exit(1);
         }

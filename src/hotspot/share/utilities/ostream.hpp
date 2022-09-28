@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -100,7 +101,7 @@ class outputStream : public ResourceObj {
    void print_raw(const char* str, size_t len)   { write(str,         len); }
    void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
    void print_raw_cr(const char* str, size_t len){ write(str,         len); cr(); }
-   void print_data(void* data, size_t len, bool with_ascii);
+   void print_data(void* data, size_t len, bool with_ascii, bool rel_addr=true);
    void put(char ch);
    void sp(int count = 1);
    void cr();
@@ -191,6 +192,7 @@ class ttyUnlocker: StackObj {
 // for writing to strings; buffer will expand automatically.
 // Buffer will always be zero-terminated.
 class stringStream : public outputStream {
+  DEBUG_ONLY(bool _is_frozen = false);
   char*  _buffer;
   size_t _written;  // Number of characters written, excluding termin. zero
   size_t _capacity;
@@ -215,9 +217,18 @@ class stringStream : public outputStream {
   // Return number of characters written into buffer, excluding terminating zero and
   // subject to truncation in static buffer mode.
   size_t      size() const { return _written; }
+  // Returns internal buffer containing the accumulated string.
+  // Returned buffer is only guaranteed to be valid as long as stream is not modified
   const char* base() const { return _buffer; }
+  // Freezes stringStream (no further modifications possible) and returns pointer to it.
+  // No-op if stream is frozen already.
+  // Returns the internal buffer containing the accumulated string.
+  const char* freeze() NOT_DEBUG(const) {
+    DEBUG_ONLY(_is_frozen = true);
+    return _buffer;
+  };
   void  reset();
-  // copy to a resource, or C-heap, array as requested
+  // Copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
 };
 
@@ -248,12 +259,25 @@ class fileStream : public outputStream {
 class fdStream : public outputStream {
  protected:
   int  _fd;
+  static fdStream _stdout_stream;
+  static fdStream _stderr_stream;
  public:
   fdStream(int fd = -1) : _fd(fd) { }
   bool is_open() const { return _fd != -1; }
   void set_fd(int fd) { _fd = fd; }
   int fd() const { return _fd; }
   virtual void write(const char* c, size_t len);
+  void flush() {};
+
+  // predefined streams for unbuffered IO to stdout, stderr
+  static fdStream* stdout_stream() { return &_stdout_stream; }
+  static fdStream* stderr_stream() { return &_stderr_stream; }
+};
+
+// A /dev/null equivalent stream
+class nullStream : public outputStream {
+public:
+  void write(const char* c, size_t len) {}
   void flush() {};
 };
 

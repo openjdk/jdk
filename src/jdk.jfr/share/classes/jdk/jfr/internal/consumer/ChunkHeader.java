@@ -31,7 +31,6 @@ import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataDescriptor;
-import jdk.jfr.internal.Utils;
 
 public final class ChunkHeader {
     public static final long HEADER_SIZE = 68;
@@ -163,6 +162,8 @@ public final class ChunkHeader {
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finalChunk=" + finalChunk);
                     absoluteChunkEnd = absoluteChunkStart + chunkSize;
                     return;
+                } else if (finished) {
+                    throw new IOException("No metadata event found in finished chunk.");
                 }
             }
         }

@@ -1,0 +1,7 @@
+# exercise ServiceLoader and legacy (class load) approach
+security.provider.1=sun.security.provider.Sun
+security.provider.2=SunRsaSign
+security.provider.3=sun.security.ssl.SunJSSE
+security.provider.4=com.sun.crypto.provider.SunJCE
+security.provider.5=SunJGSS
+security.provider.6=SunSASL

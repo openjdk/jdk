@@ -29,6 +29,7 @@
 #include "gc/g1/g1MemoryPool.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/memoryPool.hpp"
 
 class G1GenerationCounters : public GenerationCounters {

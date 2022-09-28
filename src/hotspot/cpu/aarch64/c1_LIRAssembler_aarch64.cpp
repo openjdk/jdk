@@ -282,10 +282,9 @@ void LIR_Assembler::osr_entry() {
         __ bind(L);
       }
 #endif
-      __ ldr(r19, Address(OSR_buf, slot_offset + 0));
+      __ ldp(r19, r20, Address(OSR_buf, slot_offset));
       __ str(r19, frame_map()->address_for_monitor_lock(i));
-      __ ldr(r19, Address(OSR_buf, slot_offset + 1*BytesPerWord));
-      __ str(r19, frame_map()->address_for_monitor_object(i));
+      __ str(r20, frame_map()->address_for_monitor_object(i));
     }
   }
 }
@@ -332,7 +331,7 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {
     __ mov(reg, zr);
   } else {
-    __ movoop(reg, o, /*immediate*/true);
+    __ movoop(reg, o);
   }
 }
 
@@ -964,7 +963,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       if (UseCompressedOops && !wide) {
         __ ldrw(dest->as_register(), as_Address(from_addr));
       } else {
-         __ ldr(dest->as_register(), as_Address(from_addr));
+        __ ldr(dest->as_register(), as_Address(from_addr));
       }
       break;
     case T_METADATA:
@@ -2037,6 +2036,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
     return;
   }
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 
@@ -2047,6 +2047,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
     return;
   }
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 void LIR_Assembler::emit_static_call_stub() {
@@ -2556,6 +2557,10 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
   if (UseHeavyMonitors) {
+    if (op->info() != NULL) {
+      add_debug_info_for_null_check_here(op->info());
+      __ null_check(obj, -1);
+    }
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
@@ -2685,7 +2690,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   assert_different_registers(val, crc, res);
   uint64_t offset;
   __ adrp(res, ExternalAddress(StubRoutines::crc_table_addr()), offset);
-  if (offset) __ add(res, res, offset);
+  __ add(res, res, offset);
 
   __ mvnw(crc, crc); // ~crc
   __ update_byte_crc32(crc, val, res);
@@ -2899,6 +2904,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   if (info != NULL) {
     add_call_info_here(info);
   }
+  __ post_call_nop();
 }
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {

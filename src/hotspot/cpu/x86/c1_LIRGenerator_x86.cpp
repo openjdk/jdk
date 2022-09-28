@@ -336,7 +336,6 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
 }
 
-
 // _ineg, _lneg, _fneg, _dneg
 void LIRGenerator::do_NegateOp(NegateOp* x) {
   LIRItem value(x->x(), this);
@@ -361,7 +360,6 @@ void LIRGenerator::do_NegateOp(NegateOp* x) {
 
   set_result(x, round_item(reg));
 }
-
 
 // for  _fadd, _fmul, _fsub, _fdiv, _frem
 //      _dadd, _dmul, _dsub, _ddiv, _drem

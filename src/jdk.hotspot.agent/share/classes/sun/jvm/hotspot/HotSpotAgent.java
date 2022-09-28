@@ -265,7 +265,7 @@ public class HotSpotAgent {
     /** This opens a core file on the local machine and starts a debug
      server, allowing remote machines to connect and examine this
      core file. Uses supplied uniqueID to uniquely identify a specific
-     debugee */
+     debuggee */
     public synchronized void startServer(String javaExecutableName,
                                          String coreFileName,
                                          String serverID,
@@ -488,7 +488,7 @@ public class HotSpotAgent {
         RemoteDebugger remote =
         (RemoteDebugger) RMIHelper.lookup(debugServerID);
         debugger = new RemoteDebuggerClient(remote);
-        machDesc = ((RemoteDebuggerClient) debugger).getMachineDescription();
+        machDesc = debugger.getMachineDescription();
         os = debugger.getOS();
         setupJVMLibNames(os);
         cpu = debugger.getCPU();

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
  * @library ../
  * @run testng/othervm
@@ -30,37 +31,33 @@
  *   TestVirtualCalls
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
 
 import java.lang.invoke.MethodHandle;
 
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.MemoryAddress;
 import org.testng.annotations.*;
 
 import static org.testng.Assert.assertEquals;
 
 public class TestVirtualCalls extends NativeTestHelper {
 
-    static final CLinker abi = CLinker.systemCLinker();
+    static final Linker abi = Linker.nativeLinker();
 
     static final MethodHandle func;
-    static final NativeSymbol funcA;
-    static final NativeSymbol funcB;
-    static final NativeSymbol funcC;
+    static final Addressable funcA;
+    static final Addressable funcB;
+    static final Addressable funcC;
 
     static {
         func = abi.downcallHandle(
                 FunctionDescriptor.of(C_INT));
 
         System.loadLibrary("Virtual");
-        SymbolLookup lookup = SymbolLookup.loaderLookup();
-        funcA = lookup.lookup("funcA").get();
-        funcB = lookup.lookup("funcB").get();
-        funcC = lookup.lookup("funcC").get();
+        funcA = findNativeOrThrow("funcA");
+        funcB = findNativeOrThrow("funcB");
+        funcC = findNativeOrThrow("funcC");
     }
 
     @Test
@@ -72,7 +69,7 @@ public class TestVirtualCalls extends NativeTestHelper {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullTarget() throws Throwable {
-        int x = (int) func.invokeExact((NativeSymbol) null);
+        int x = (int) func.invokeExact((Addressable) null);
     }
 
 }

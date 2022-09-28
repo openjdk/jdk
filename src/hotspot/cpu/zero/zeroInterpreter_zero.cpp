@@ -65,7 +65,7 @@ void ZeroInterpreter::initialize_code() {
   // generate interpreter
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
-    ZeroInterpreterGenerator g(_code);
+    ZeroInterpreterGenerator g;
     if (PrintInterpreter) print();
   }
 }
@@ -334,15 +334,20 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     markWord disp = lockee->mark().set_unlocked();
     monitor->lock()->set_displaced_header(disp);
     bool call_vm = UseHeavyMonitors;
+    bool inc_monitor_count = true;
     if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
       // Is it simple recursive case?
       if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
         monitor->lock()->set_displaced_header(markWord::from_pointer(NULL));
       } else {
+        inc_monitor_count = false;
         CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
         if (HAS_PENDING_EXCEPTION)
           goto unwind_and_return;
       }
+    }
+    if (inc_monitor_count) {
+      THREAD->inc_held_monitor_count();
     }
   }
 
@@ -479,12 +484,17 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     oop rcvr = monitor->obj();
     monitor->set_obj(NULL);
 
+    bool dec_monitor_count = true;
     if (header.to_pointer() != NULL) {
       markWord old_header = markWord::encode(lock);
       if (rcvr->cas_set_mark(header, old_header) != old_header) {
         monitor->set_obj(rcvr);
+        dec_monitor_count = false;
         InterpreterRuntime::monitorexit(monitor);
       }
+    }
+    if (dec_monitor_count) {
+      THREAD->dec_held_monitor_count();
     }
   }
 

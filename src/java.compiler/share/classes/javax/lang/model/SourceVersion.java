@@ -40,6 +40,7 @@ import java.util.HashSet;
  * model future releases of the language.
  *
  * @since 1.6
+ * @see java.lang.reflect.ClassFileFormatVersion
  */
 public enum SourceVersion {
     /*
@@ -66,7 +67,8 @@ public enum SourceVersion {
      *  17: sealed classes, floating-point always strict (pattern
      *      matching for switch in preview)
      *  18: no changes (pattern matching for switch in second preview)
-     *  19: TBD
+     *  19: no changes (pattern matching for switch in third preview,
+     *      record patterns in preview)
      */
 
     /**
@@ -346,9 +348,27 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 19.
      *
+     * No major changes from the prior release.
+     *
      * @since 19
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se19/html/index.html">
+     * <cite>The Java Language Specification, Java SE 19 Edition</cite></a>
      */
-    RELEASE_19;
+    RELEASE_19,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 20.
+     *
+     * @since 20
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se20/html/index.html">
+     * <cite>The Java Language Specification, Java SE 20 Edition</cite></a>
+     */
+    RELEASE_20;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -357,7 +377,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_19;
+        return RELEASE_20;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -372,7 +392,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(19, intVersion)):
+            valueOf("RELEASE_" + Math.min(20, intVersion)):
             RELEASE_10;
     }
 
@@ -616,7 +636,8 @@ public enum SourceVersion {
      * {@code "17"}, to the corresponding source version, {@code
      * RELEASE_17}, is:
      *
-     * <pre>{@code SourceVersion.valueOf(Runtime.Version.parse("17"))}</pre>
+     * {@snippet lang="java" :
+     * SourceVersion.valueOf(Runtime.Version.parse("17"))}
      *
      * @param rv runtime version to map to a source version
      * @throws IllegalArgumentException if the feature of version

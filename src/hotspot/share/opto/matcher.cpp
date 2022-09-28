@@ -41,7 +41,7 @@
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "opto/vectornode.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
@@ -1306,13 +1306,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mach_call_rt->_name = call->as_CallRuntime()->_name;
       mach_call_rt->_leaf_no_fp = call->is_CallLeafNoFP();
     }
-    else if( mcall->is_MachCallNative() ) {
-      MachCallNativeNode* mach_call_native = mcall->as_MachCallNative();
-      CallNativeNode* call_native = call->as_CallNative();
-      mach_call_native->_name = call_native->_name;
-      mach_call_native->_arg_regs = call_native->_arg_regs;
-      mach_call_native->_ret_regs = call_native->_ret_regs;
-    }
     msfpt = mcall;
   }
   // This is a non-call safepoint
@@ -1347,8 +1340,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // These are usually backing store for register arguments for varargs.
   if( call != NULL && call->is_CallRuntime() )
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
-  if( call != NULL && call->is_CallNative() )
-    out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call, call->as_CallNative()->_shadow_space_bytes);
 
 
   // Do the normal argument list (parameters) register masks
@@ -2261,8 +2252,10 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVD:
     case Op_FmaVF:
     case Op_MacroLogicV:
-    case Op_LoadVectorMasked:
     case Op_VectorCmpMasked:
+    case Op_CompressV:
+    case Op_CompressM:
+    case Op_ExpandV:
     case Op_VectorLoadMask:
       set_shared(n); // Force result into register (it will be anyways)
       break;
@@ -2333,9 +2326,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
   }
 
   switch(opcode) {       // Handle some opcodes special
-    case Op_StorePConditional:
-    case Op_StoreIConditional:
-    case Op_StoreLConditional:
     case Op_CompareAndExchangeB:
     case Op_CompareAndExchangeS:
     case Op_CompareAndExchangeI:
@@ -2366,14 +2356,26 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     case Op_CMoveI:
     case Op_CMoveL:
     case Op_CMoveN:
-    case Op_CMoveP:
-    case Op_CMoveVF:
-    case Op_CMoveVD:  {
+    case Op_CMoveP: {
       // Restructure into a binary tree for Matching.  It's possible that
       // we could move this code up next to the graph reshaping for IfNodes
       // or vice-versa, but I do not want to debug this for Ladybird.
       // 10/2/2000 CNC.
       Node* pair1 = new BinaryNode(n->in(1), n->in(1)->in(1));
+      n->set_req(1, pair1);
+      Node* pair2 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair2);
+      n->del_req(3);
+      break;
+    }
+    case Op_CMoveVF:
+    case Op_CMoveVD: {
+      // Restructure into a binary tree for Matching:
+      // CMoveVF (Binary bool mask) (Binary src1 src2)
+      Node* in_cc = n->in(1);
+      assert(in_cc->is_Con(), "The condition input of cmove vector node must be a constant.");
+      Node* bol = new BoolNode(in_cc, (BoolTest::mask)in_cc->get_int());
+      Node* pair1 = new BinaryNode(bol, in_cc);
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);

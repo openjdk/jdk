@@ -239,14 +239,14 @@ final class CertStatusExtension {
         }
     }
 
-    static enum CertStatusRequestType {
+    enum CertStatusRequestType {
         OCSP        ((byte)0x01,    "ocsp"),        // RFC 6066/6961
         OCSP_MULTI  ((byte)0x02,    "ocsp_multi");  // RFC 6961
 
         final byte id;
         final String name;
 
-        private CertStatusRequestType(byte id, String name) {
+        CertStatusRequestType(byte id, String name) {
             this.id = id;
             this.name = name;
         }
@@ -287,10 +287,11 @@ final class CertStatusExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"certificate status type\": {0}\n" +
-                "\"encoded certificate status\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "certificate status type": {0}
+                            "encoded certificate status": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -404,17 +405,19 @@ final class CertStatusExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"certificate status type\": {0}\n" +
-                "\"OCSP status request\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "certificate status type": {0}
+                            "OCSP status request": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             MessageFormat requestFormat = new MessageFormat(
-                "\"responder_id\": {0}\n" +
-                "\"request extensions\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "responder_id": {0}
+                            "request extensions": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             String ridStr = "<empty>";
@@ -477,10 +480,11 @@ final class CertStatusExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"certificate status response type\": {0}\n" +
-                "\"encoded certificate status\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "certificate status response type": {0}
+                            "encoded certificate status": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -515,10 +519,11 @@ final class CertStatusExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"certificate status response type\": {0}\n" +
-                "\"OCSP status response\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "certificate status response type": {0}
+                            "OCSP status response": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             Object[] messageFields = {

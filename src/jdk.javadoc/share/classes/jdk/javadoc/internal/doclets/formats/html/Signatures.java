@@ -33,7 +33,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import javax.lang.model.element.Element;
@@ -75,7 +74,7 @@ public class Signatures {
                 ? "open module" : "module";
         signature.add(label);
         signature.add(" ");
-        var nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        var nameSpan = HtmlTree.SPAN(HtmlStyle.elementName);
         nameSpan.add(mdle.getQualifiedName().toString());
         signature.add(nameSpan);
         return signature;
@@ -91,7 +90,7 @@ public class Signatures {
             signature.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
         }
         signature.add("package ");
-        var nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        var nameSpan = HtmlTree.SPAN(HtmlStyle.elementName);
         nameSpan.add(pkg.getQualifiedName().toString());
         signature.add(nameSpan);
         return signature;
@@ -128,7 +127,7 @@ public class Signatures {
             }
             content.add(HtmlTree.SPAN(HtmlStyle.modifiers, modifiers));
 
-            var nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            var nameSpan = HtmlTree.SPAN(HtmlStyle.elementName);
             Content className = Text.of(utils.getSimpleName(typeElement));
             if (configuration.getOptions().linkSource()) {
                 writer.addSrcLink(typeElement, className, nameSpan);
@@ -146,12 +145,11 @@ public class Signatures {
                 content.add(getRecordComponents());
             }
             if (!utils.isAnnotationInterface(typeElement)) {
-                var extendsImplements = new HtmlTree(TagName.SPAN)
-                        .setStyle(HtmlStyle.extendsImplements);
+                var extendsImplements = HtmlTree.SPAN(HtmlStyle.extendsImplements);
                 if (!utils.isPlainInterface(typeElement)) {
                     TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
                     if (superclass != null) {
-                        content.add(DocletConstants.NL);
+                        content.add(Text.NL);
                         extendsImplements.add("extends ");
                         Content link = writer.getLink(new HtmlLinkInfo(configuration,
                                 HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
@@ -168,7 +166,7 @@ public class Signatures {
                             continue;
                         }
                         if (isFirst) {
-                            extendsImplements.add(DocletConstants.NL);
+                            extendsImplements.add(Text.NL);
                             extendsImplements.add(utils.isPlainInterface(typeElement) ? "extends " : "implements ");
                             isFirst = false;
                         } else {
@@ -189,11 +187,11 @@ public class Signatures {
                     .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
                     .toList();
             if (!linkablePermits.isEmpty()) {
-                var permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
+                var permitsSpan = HtmlTree.SPAN(HtmlStyle.permits);
                 boolean isFirst = true;
                 for (TypeMirror type : linkablePermits) {
                     if (isFirst) {
-                        content.add(DocletConstants.NL);
+                        content.add(Text.NL);
                         permitsSpan.add("permits");
                         permitsSpan.add(" ");
                         isFirst = false;
@@ -222,7 +220,7 @@ public class Signatures {
             for (RecordComponentElement e : typeElement.getRecordComponents()) {
                 content.add(sep);
                 writer.getAnnotations(e.getAnnotationMirrors(), false)
-                        .forEach(a -> { content.add(a).add(" "); });
+                        .forEach(a -> content.add(a).add(" "));
                 Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
                         e.asType()));
                 content.add(link);
@@ -472,7 +470,7 @@ public class Signatures {
             }
 
             // Name
-            var nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            var nameSpan = HtmlTree.SPAN(HtmlStyle.elementName);
             if (memberWriter.options.linkSource()) {
                 Content name = Text.of(memberWriter.name(element));
                 memberWriter.writer.addSrcLink(element, name, nameSpan);
@@ -531,7 +529,7 @@ public class Signatures {
          */
         private int appendTypeParameters(Content target, int lastLineSeparator) {
             // Apply different wrapping strategies for type parameters
-            // depending of combined length of type parameters and return type.
+            // depending on the combined length of type parameters and return type.
             int typeParamLength = typeParameters.charCount();
 
             if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
@@ -545,7 +543,7 @@ public class Signatures {
 
             // sum below includes length of modifiers plus type params added above
             if (lineLength + returnType.charCount() > RETURN_TYPE_MAX_LINE_LENGTH) {
-                target.add(DocletConstants.NL);
+                target.add(Text.NL);
                 newLastLineSeparator = target.charCount();
             } else {
                 target.add(Entity.NO_BREAK_SPACE);
@@ -575,7 +573,7 @@ public class Signatures {
             // Exceptions
             if (exceptions != null && !exceptions.isEmpty()) {
                 CharSequence indent = " ".repeat(Math.max(0, indentSize + 1 - 7));
-                target.add(DocletConstants.NL)
+                target.add(Text.NL)
                         .add(indent)
                         .add("throws ")
                         .add(HtmlTree.SPAN(HtmlStyle.exceptions, exceptions));

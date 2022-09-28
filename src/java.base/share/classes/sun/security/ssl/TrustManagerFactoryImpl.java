@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.ssl;
 
-import java.io.*;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
@@ -62,7 +61,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
             } catch (RuntimeException re) {
                 if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
                     SSLLogger.fine(
-                        "SunX509: skip default keystor", re);
+                        "SunX509: skip default keystore", re);
                 }
                 throw re;
             } catch (Exception e) {
@@ -105,30 +104,6 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
         return new TrustManager[] { trustManager };
     }
 
-    /*
-     * Try to get an InputStream based on the file we pass in.
-     */
-    @SuppressWarnings("removal")
-    private static FileInputStream getFileInputStream(final File file)
-            throws Exception {
-        return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<FileInputStream>() {
-                    @Override
-                    public FileInputStream run() throws Exception {
-                        try {
-                            if (file.exists()) {
-                                return new FileInputStream(file);
-                            } else {
-                                return null;
-                            }
-                        } catch (FileNotFoundException e) {
-                            // couldn't find it, oh well.
-                            return null;
-                        }
-                    }
-                });
-    }
-
     public static final class SimpleFactory extends TrustManagerFactoryImpl {
         @Override
         X509TrustManager getInstance(
@@ -162,11 +137,10 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
             }
             CertPathParameters params =
                 ((CertPathTrustManagerParameters)spec).getParameters();
-            if (!(params instanceof PKIXBuilderParameters)) {
+            if (!(params instanceof PKIXBuilderParameters pkixParams)) {
                 throw new InvalidAlgorithmParameterException
                     ("Encapsulated parameters must be PKIXBuilderParameters");
             }
-            PKIXBuilderParameters pkixParams = (PKIXBuilderParameters)params;
             return new X509TrustManagerImpl(Validator.TYPE_PKIX, pkixParams);
         }
     }

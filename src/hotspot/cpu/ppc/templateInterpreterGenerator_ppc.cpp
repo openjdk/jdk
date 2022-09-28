@@ -1184,7 +1184,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   address entry = __ pc();
 
-  const bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  const bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // -----------------------------------------------------------------------------
   // Allocate a new frame that represents the native callee (i2n frame).
@@ -1436,7 +1436,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ li(R0/*thread_state*/, _thread_in_native_trans);
   __ release();
   __ stw(R0/*thread_state*/, thread_(thread_state));
-  __ fence();
+  if (!UseSystemMemoryBarrier) {
+    __ fence();
+  }
 
   // Now before we return to java we must look for a current safepoint
   // (a new safepoint can not start since we entered native_trans).
@@ -1578,7 +1580,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                   return_pc /* return pc */);
   __ merge_frames(/*top_frame_sp*/ R21_sender_SP, noreg, R11_scratch1, R12_scratch2);
 
-  // Load the PC of the the exception handler into LR.
+  // Load the PC of the exception handler into LR.
   __ mtlr(R3_RET);
 
   // Load exception into R3_ARG1 and clear pending exception in thread.
@@ -1608,7 +1610,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 // Generic interpreted method entry to (asm) interpreter.
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
   address entry = __ pc();
   // Generate the code to allocate the interpreter stack frame.
   Register Rsize_of_parameters = R4_ARG2, // Written by generate_fixed_frame.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,12 +261,6 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread) {
     }
 
 
-    /* get JVMTI phase */
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
-        NSK_COMPLAIN0("[ThreadStart hook] Failed to get JVMTI phase\n");
-        result = STATUS_FAILED;
-    }
-
     /* Acquire event lock,
      * so only one StartThread callback could be proceeded at the time
      */
@@ -276,6 +270,12 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread) {
     }
 
     {
+        /* get JVMTI phase */
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
+            NSK_COMPLAIN0("[ThreadStart hook] Failed to get JVMTI phase\n");
+            result = STATUS_FAILED;
+        }
+
         /* Get thread name */
         inf.name = (char*) "UNKNOWN";
         if (phase == JVMTI_PHASE_LIVE) {
@@ -335,17 +335,20 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread) {
         }
 
         /* check that thread is not in SUSPENDED state */
-        if (!NSK_JVMTI_VERIFY(jvmti_env->GetThreadState(thread, &thrStat))) {
-            NSK_COMPLAIN1("[ThreadStart hook] Failed to get thread state for thread#%d\n", eventsCount);
-            result = STATUS_FAILED;
-        }
+        if (phase == JVMTI_PHASE_LIVE) {
+            /* GetThreadState may only be called during the live phase */
+            if (!NSK_JVMTI_VERIFY(jvmti_env->GetThreadState(thread, &thrStat))) {
+                NSK_COMPLAIN1("[ThreadStart hook] Failed to get thread state for thread#%d\n", eventsCount);
+                result = STATUS_FAILED;
+            }
 
-        NSK_DISPLAY2(">>> [ThreadStart hook] threadState=%s (%x)\n",
-                TranslateState(thrStat), thrStat);
+            NSK_DISPLAY2(">>> [ThreadStart hook] threadState=%s (%x)\n",
+                    TranslateState(thrStat), thrStat);
 
-        if (thrStat & JVMTI_THREAD_STATE_SUSPENDED) {
-            NSK_COMPLAIN1("[ThreadStart hook] \"%s\" was self-suspended\n", inf.name);
-            env->FatalError("[ThreadStart hook] could not recover");
+            if (thrStat & JVMTI_THREAD_STATE_SUSPENDED) {
+                NSK_COMPLAIN1("[ThreadStart hook] \"%s\" was self-suspended\n", inf.name);
+                env->FatalError("[ThreadStart hook] could not recover");
+            }
         }
 
         eventsCount++;
@@ -429,7 +432,17 @@ void JNICALL VMInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr) {
 void JNICALL VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
     NSK_DISPLAY0(">>> VMDeath event\n");
 
+    // Sync to prevent WRONG_PHASE error code in the middle of events.
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorEnter(thr_event_lock))) {
+        NSK_COMPLAIN0("[VMDeath hook] Failed to acquire thr_event_lock\n");
+        result = STATUS_FAILED;
+    }
     terminate_debug_agent = JNI_TRUE;
+
+    if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorExit(thr_event_lock))) {
+        NSK_COMPLAIN0("[VMDeath hook] Failed to release thr_event_lock\n");
+        result = STATUS_FAILED;
+    }
 }
 
 #ifdef STATIC_BUILD

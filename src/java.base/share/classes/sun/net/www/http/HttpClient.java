@@ -768,9 +768,12 @@ public class HttpClient extends NetworkClient {
             closeServer();
             cachedHttpClient = false;
             if (!failedOnce && requests != null) {
+                Thread thread = Thread.currentThread();
+                boolean doNotRetry = thread.isVirtual() && thread.isInterrupted();
                 failedOnce = true;
                 if (getRequestMethod().equals("CONNECT")
                     || streaming
+                    || doNotRetry
                     || (httpuc.getRequestMethod().equals("POST")
                         && !retryPostProp)) {
                     // do not retry the request
@@ -897,7 +900,15 @@ public class HttpClient extends NetworkClient {
                             responses.findValue("Keep-Alive"));
                         /* default should be larger in case of proxy */
                         keepAliveConnections = p.findInt("max", usingProxy?50:5);
+                        if (keepAliveConnections < 0) {
+                            keepAliveConnections = usingProxy?50:5;
+                        }
                         keepAliveTimeout = p.findInt("timeout", -1);
+                        if (keepAliveTimeout < -1) {
+                            // if the server specified a negative (invalid) value
+                            // then we set to -1, which is equivalent to no value
+                            keepAliveTimeout = -1;
+                        }
                     }
                 } else if (b[7] != '0') {
                     /*
@@ -957,7 +968,21 @@ public class HttpClient extends NetworkClient {
             code = Integer.parseInt(resp, ind, ind + 3, 10);
         } catch (Exception e) {}
 
-        if (code == HTTP_CONTINUE && ignoreContinue) {
+        if (code == 101) {
+            // We don't support protocol upgrade through the "Upgrade:" request header, so if a
+            // server still unexpectedly sends a 101 response, we consider that a protocol violation
+            // and close the connection.
+            closeServer();
+            logFinest("Closed connection due to unexpected 101 response");
+            // clear off the response headers so that they don't get propagated
+            // to the application
+            responses.reset();
+            throw new ProtocolException("Unexpected 101 response from server");
+        }
+        // ignore interim informational responses and continue to wait for final response.
+        if ((code == HTTP_CONTINUE && ignoreContinue)
+                || (code >= 102 && code <= 199)) {
+            logFinest("Ignoring interim informational 1xx response: " + code);
             responses.reset();
             return parseHTTPHeader(responses, pi, httpuc);
         }

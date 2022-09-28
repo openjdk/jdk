@@ -30,7 +30,14 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.function.Function;
 
 import javax.lang.model.SourceVersion;
@@ -203,9 +210,9 @@ public class HtmlDoclet extends AbstractDoclet {
      * @throws DocletException if there is a problem while writing the other files
      */
     @Override // defined by AbstractDoclet
-    protected void generateOtherFiles(ClassTree classtree)
+    protected void generateOtherFiles(ClassTree classTree)
             throws DocletException {
-        super.generateOtherFiles(classtree);
+        super.generateOtherFiles(classTree);
         HtmlOptions options = configuration.getOptions();
         if (options.linkSource()) {
             SourceToHTMLConverter.convertRoot(configuration, DocPaths.SOURCE_OUTPUT);
@@ -228,11 +235,11 @@ public class HtmlDoclet extends AbstractDoclet {
         }
         // do early to reduce memory footprint
         if (options.classUse()) {
-            ClassUseWriter.generate(configuration, classtree);
+            ClassUseWriter.generate(configuration, classTree);
         }
 
         if (options.createTree()) {
-            TreeWriter.generate(configuration, classtree);
+            TreeWriter.generate(configuration, classTree);
         }
 
         if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.DEPRECATED))) {
@@ -256,6 +263,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
+            ExternalSpecsWriter.generate(configuration);
             SystemPropertiesWriter.generate(configuration);
             configuration.mainIndex.addElements();
             IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
@@ -302,9 +310,6 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.X_IMG));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.X_IMG), true, false);
             copyJqueryFiles();
-
-            f = DocFile.createFileForOutput(configuration, DocPaths.JQUERY_OVERRIDES_CSS);
-            f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.JQUERY_OVERRIDES_CSS), true, true);
         }
 
         copyLegalFiles(options.createIndex());
@@ -314,19 +319,7 @@ public class HtmlDoclet extends AbstractDoclet {
         List<String> files = Arrays.asList(
                 DocPaths.JQUERY_JS.getPath(),
                 DocPaths.JQUERY_UI_JS.getPath(),
-                DocPaths.JQUERY_UI_CSS.getPath(),
-                DocPaths.JQUERY_UI_STRUCTURE_CSS.getPath(),
-                "images/ui-bg_glass_65_dadada_1x400.png",
-                "images/ui-icons_454545_256x240.png",
-                "images/ui-bg_glass_95_fef1ec_1x400.png",
-                "images/ui-bg_glass_75_dadada_1x400.png",
-                "images/ui-bg_highlight-soft_75_cccccc_1x100.png",
-                "images/ui-icons_888888_256x240.png",
-                "images/ui-icons_2e83ff_256x240.png",
-                "images/ui-icons_cd0a0a_256x240.png",
-                "images/ui-bg_glass_55_fbf9ee_1x400.png",
-                "images/ui-icons_222222_256x240.png",
-                "images/ui-bg_glass_75_e6e6e6_1x400.png");
+                DocPaths.JQUERY_UI_CSS.getPath());
         DocFile f;
         for (String file : files) {
             DocPath filePath = DocPaths.SCRIPT_DIR.resolve(file);
@@ -404,7 +397,7 @@ public class HtmlDoclet extends AbstractDoclet {
     }
 
     @Override // defined by AbstractDoclet
-    protected void generatePackageFiles(ClassTree classtree) throws DocletException {
+    protected void generatePackageFiles(ClassTree classTree) throws DocletException {
         HtmlOptions options = configuration.getOptions();
         Set<PackageElement> packages = configuration.packages;
         List<PackageElement> pList = new ArrayList<>(packages);

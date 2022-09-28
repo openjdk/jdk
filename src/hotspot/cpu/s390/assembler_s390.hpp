@@ -392,7 +392,10 @@ class Argument {
     // Only 5 registers may contain integer parameters.
     n_register_parameters = 5,
     // Can have up to 4 floating registers.
-    n_float_register_parameters = 4
+    n_float_register_parameters = 4,
+
+    n_int_register_parameters_j = n_register_parameters,
+    n_float_register_parameters_j = n_float_register_parameters
   };
 
   // creation

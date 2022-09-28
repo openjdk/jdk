@@ -86,9 +86,9 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
             throw new InvalidKeyException
                 ("Wrong algorithm: AES or Rijndael required");
         }
-        if (!isKeySizeValid(key.length)) {
-            throw new InvalidKeyException("Invalid AES key length: " +
-                key.length + " bytes");
+
+        if (key == null) {      // Unlikely, but just double check it.
+            throw new InvalidKeyException("Empty key");
         }
 
         if (!MessageDigest.isEqual(key, lastKey)) {
@@ -217,7 +217,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
             for (t = 0; t < 8; t++) {
                 cox[i][t] = B[t];
                 for (j = 0; j < 8; j++) {
-                    cox[i][t] ^= A[t][j] * box[i][j];
+                    cox[i][t] ^= (byte)(A[t][j] * box[i][j]);
                 }
             }
         }
@@ -227,7 +227,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         for (i = 0; i < 256; i++) {
             S[i] = (byte)(cox[i][0] << 7);
             for (t = 1; t < 8; t++) {
-                    S[i] ^= cox[i][t] << (7-t);
+                    S[i] ^= (byte)(cox[i][t] << (7-t));
             }
             Si[S[i] & 0xFF] = (byte) i;
         }
@@ -276,7 +276,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
             for (t = 0; t < 4; t++) {
                 if (i != t) {
                     for (j = i+1; j < 8; j++) {
-                        AA[t][j] ^= mul(AA[i][j], AA[t][i]);
+                        AA[t][j] ^= (byte)(mul(AA[i][j], AA[t][i]));
                     }
                     AA[t][i] = 0;
                 }
@@ -602,13 +602,11 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
      * @exception InvalidKeyException  If the key is invalid.
      */
     private void makeSessionKey(byte[] k) throws InvalidKeyException {
-        if (k == null) {
-            throw new InvalidKeyException("Empty key");
-        }
         if (!isKeySizeValid(k.length)) {
-             throw new InvalidKeyException("Invalid AES key length: " +
-                                           k.length + " bytes");
+            throw new InvalidKeyException("Invalid AES key length: " +
+                    k.length + " bytes");
         }
+
         int ROUNDS          = getRounds(k.length);
         int ROUND_KEY_COUNT = (ROUNDS + 1) * 4;
 
@@ -695,7 +693,6 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         }
         sessionK = new int[][] { expandedKe, expandedKd };
     }
-
 
     /**
      * Return The number of rounds for a given Rijndael keysize.
