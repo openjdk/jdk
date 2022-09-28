@@ -528,7 +528,10 @@ public:
 
   // mv
   void mv(Register Rd, address addr)                  { li(Rd, (int64_t)addr); }
-  void mv(Register Rd, address addr, int32_t &offset) { li(Rd, (int64_t)addr, offset); }
+  void mv(Register Rd, address addr, int32_t &offset) {
+    offset = ((int32_t)(uintptr_t)addr << 20) >> 20;
+    li(Rd, (uintptr_t)addr - offset);
+  }
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
   inline void mv(Register Rd, T o)                    { li(Rd, (int64_t)o); }
@@ -890,6 +893,18 @@ public:
                    int* receiver_offset);
 
   void rt_call(address dest, Register tmp = t0);
+
+  void call(const address &dest, Register temp = t0) {
+    assert_cond(dest != NULL);
+    assert(temp != noreg, "temp must not be empty register!");
+    int32_t offset = 0;
+    mv(temp, dest, offset);
+    jalr(x1, temp, offset);
+  }
+
+  void ret() {
+    jalr(x0, x1, 0);
+  }
 
 private:
 

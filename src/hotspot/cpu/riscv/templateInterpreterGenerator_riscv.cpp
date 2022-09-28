@@ -190,7 +190,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
-      __ call(fn, t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_cos :
       entry_point = __ pc();
@@ -203,7 +203,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
-      __ call(fn, t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_tan :
       entry_point = __ pc();
@@ -216,7 +216,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
-      __ call(fn, t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_log :
       entry_point = __ pc();
@@ -229,7 +229,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
-      __ call(fn, t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_log10 :
       entry_point = __ pc();
@@ -242,7 +242,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
-      __ call(fn, t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_exp :
       entry_point = __ pc();
@@ -255,7 +255,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
-      __ call(fn, t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_pow :
       entry_point = __ pc();
@@ -269,7 +269,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
-      __ call(fn, t0);
+      __ call(fn);
       break;
     case Interpreter::java_lang_math_fmaD :
       if (UseFMA) {
@@ -1162,7 +1162,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans), t1);
+    __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
@@ -1211,7 +1211,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     __ push_call_clobbered_registers();
     __ mv(c_rarg0, xthread);
-    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages), t1);
+    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ pop_call_clobbered_registers();
     __ bind(no_reguard);
   }

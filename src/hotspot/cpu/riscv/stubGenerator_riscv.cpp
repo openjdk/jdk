@@ -651,7 +651,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    __ call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64), t0);
+    __ call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
     __ ebreak();
 
     return start;
@@ -3738,7 +3738,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ mv(c_rarg0, xthread);
     BLOCK_COMMENT("call runtime_entry");
-    __ call(runtime_entry, t0);
+    __ call(runtime_entry);
 
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);

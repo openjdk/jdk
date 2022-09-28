@@ -564,7 +564,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
   push_reg(RegSet::of(t0, xmethod), sp);   // push << t0 & xmethod >> to sp
-  call(entry_point, t0);
+  call(entry_point);
   if (retaddr != NULL) {
     bind(*retaddr);
   }

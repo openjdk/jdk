@@ -302,7 +302,8 @@ public:
       lui(Rd, upper);
       offset = lower;
     } else {
-      li(Rd, adr.offset(), offset);
+      offset = ((int32_t)adr.offset() << 20) >> 20;
+      li(Rd, adr.offset() - offset);
     }
     add(Rd, Rd, adr.base());
   }
@@ -318,7 +319,6 @@ public:
   }
 
   void _li(Register Rd, int64_t imm);  // optimized load immediate
-  void li(Register Rd, int64_t imm, int32_t &offset);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
   void movptr(Register Rd, address addr);
@@ -332,17 +332,6 @@ public:
   void jal(const Address &adr, Register temp = t0);
   void jr(Register Rs);
   void jalr(Register Rs);
-  void ret();
-  void call(const address &dest, Register temp = t0);
-  void call(const Address &adr, Register temp = t0);
-  void tail(const address &dest, Register temp = t0);
-  void tail(const Address &adr, Register temp = t0);
-  void call(Label &l, Register temp) {
-    call(target(l), temp);
-  }
-  void tail(Label &l, Register temp) {
-    tail(target(l), temp);
-  }
 
   static inline uint32_t extract(uint32_t val, unsigned msb, unsigned lsb) {
     assert_cond(msb >= lsb && msb <= 31);
