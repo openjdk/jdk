@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,34 @@
  * questions.
  */
 
-/* @test
- * @bug 8205132
- * @summary Test Thread.countStackFrames()
- * @run testng CountStackFrames
- */
+#include <stdio.h>
+#include <stdlib.h>
 
-import org.testng.annotations.Test;
+#include "jni.h"
 
-public class CountStackFrames {
+static const char* jni_error_code(int ret) {
+  switch(ret) {
+  case JNI_OK: return "JNI_OK";
+  case JNI_ERR: return "JNI_ERR";
+  case JNI_EDETACHED: return "JNI_EDETACHED";
+  case JNI_EVERSION: return "JNI_EVERSION";
+  case JNI_ENOMEM: return "JNI_ENOMEM";
+  case JNI_EEXIST: return "JNI_EEXIST";
+  case JNI_EINVAL: return "JNI_EINVAL";
+  default: return "Invalid JNI error code";
+  }
+}
 
-    // current thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testCurrentThread() {
-        Thread.currentThread().countStackFrames();
-    }
-
-    // unstarted thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testUnstartedThread() {
-        Thread thread = new Thread(() -> { });
-        thread.countStackFrames();
-    }
-
-    // terminated thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testTerminatedThread() throws Exception {
-        Thread thread = new Thread(() -> { });
-        thread.start();
-        thread.join();
-        thread.countStackFrames();
-    }
-
+JNIEXPORT jboolean JNICALL
+Java_TestActiveDestroy_tryDestroyJavaVM(JNIEnv *env, jclass cls) {
+  JavaVM* jvm;
+  int res = (*env)->GetJavaVM(env, &jvm);
+  if (res != JNI_OK) {
+    fprintf(stderr, "GetJavaVM failed: %s\n", jni_error_code(res));
+    exit(1);
+  }
+  printf("Calling DestroyJavaVM from active thread\n");
+  res = (*jvm)->DestroyJavaVM(jvm);
+  printf("DestroyJavaVM returned: %s\n", jni_error_code(res));
+  return res == JNI_OK;
 }

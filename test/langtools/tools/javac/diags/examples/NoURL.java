@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,12 @@
  * questions.
  */
 
-#include "native_thread.cpp"
-#include "nsk_tools.cpp"
-#include "jni_tools.cpp"
-#include "jvmti_tools.cpp"
-#include "agent_tools.cpp"
-#include "jvmti_FollowRefObjects.cpp"
-#include "Injector.cpp"
-#include "JVMTITools.cpp"
-#include "agent_common.cpp"
-#include "thrstat004.cpp"
+// key: compiler.err.dc.no.url
+// key: compiler.note.note
+// key: compiler.note.proc.messager
+// run: backdoor
+// options: -processor DocCommentProcessor -proc:only
+
+/** @spec */
+class NoURL { }
+
