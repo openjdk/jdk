@@ -3882,6 +3882,8 @@ JVM_ENTRY(void, JVM_VirtualThreadMountBegin(JNIEnv* env, jobject vthread, jboole
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
   JvmtiVTMSTransitionDisabler::start_VTMS_transition(vthread, /* is_mount */ true);
 #else
   fatal("Should only be called with JVMTI enabled");
@@ -3906,6 +3908,7 @@ JVM_ENTRY(void, JVM_VirtualThreadMountEnd(JNIEnv* env, jobject vthread, jboolean
     }
   }
   assert(thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   JvmtiVTMSTransitionDisabler::finish_VTMS_transition(vthread, /* is_mount */ true);
   if (first_mount) {
     // thread start
@@ -3954,7 +3957,7 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboo
       }
     }
   }
-
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   JvmtiVTMSTransitionDisabler::start_VTMS_transition(vthread, /* is_mount */ false);
 
@@ -3977,7 +3980,22 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboole
     return;
   }
   assert(thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   JvmtiVTMSTransitionDisabler::finish_VTMS_transition(vthread, /* is_mount */ false);
+#else
+  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+  assert(thread->is_in_tmp_VTMS_transition() != (bool)hide, "sanity check");
+  thread->toggle_is_in_tmp_VTMS_transition();
 #else
   fatal("Should only be called with JVMTI enabled");
 #endif

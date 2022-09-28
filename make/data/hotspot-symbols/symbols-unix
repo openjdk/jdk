@@ -224,4 +224,5 @@ JVM_VirtualThreadMountBegin
 JVM_VirtualThreadMountEnd
 JVM_VirtualThreadUnmountBegin
 JVM_VirtualThreadUnmountEnd
+JVM_VirtualThreadHideFrames
 #
