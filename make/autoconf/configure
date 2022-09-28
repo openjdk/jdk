@@ -158,32 +158,69 @@ generate_configure_script() {
     custom_script_dir_include=""
   fi
 
-  mkdir -p $build_support_dir
+  echo '$build_support_dir  :-  ' $build_support_dir
+  echo 
+
+  mkdir -p "$build_support_dir"
   # Call autoconf but replace the "magic" variable in configure.ac if requested.
 
-  cat $conf_script_dir/configure.ac | eval $custom_patcher | \
-      ${AUTOCONF} -W all $custom_script_dir_include -I$conf_script_dir - \
-      > $generated_script
+  echo '$conf_script_dir  :-  ' $conf_script_dir
+  echo 
+
+  echo '$custom_patcher  :-  ' $custom_patcher
+  echo 
+
+  echo '$custom_script_dir_include  :-  ' $custom_script_dir_include
+  echo 
+
+  echo '$generated_script  :-  ' $generated_script
+  echo 
+
+  echo "ERROR IS COMING HERE  :  $0  :  Line 179"
+  echo 
+
+  echo '${AUTOCONF}  :  ' ${AUTOCONF}
+
+  echo 
+
+  cat "$conf_script_dir/configure.ac" | eval $custom_patcher | \
+      ${AUTOCONF} -W all $custom_script_dir_include -I"$conf_script_dir" - \
+      > "$generated_script"
   rm -rf autom4te.cache
 
   # Sanity check
-  if test ! -s $generated_script; then
+  if test ! -s "$generated_script"; then
     echo "Error: Failed to generate runnable configure script" 1>&2
-    rm -f $generated_script
+    rm -f "$generated_script"
     exit 1
   fi
 }
 
 test_generated_up_to_date() {
-  conf_source_files="$conf_script_dir/configure.ac $conf_script_dir/*.m4"
+  echo '$conf_script_dir  :-  ' $conf_script_dir
+  echo 
+
+  #declare -a config_file_array
+  config_file_array[0]="$conf_script_dir/configure.ac"
+  config_file_array[1]="$conf_script_dir/*.m4"
+
+  #conf_source_files="$conf_script_dir/configure.ac $conf_script_dir/*.m4"
   if test "x$CUSTOM_CONFIG_DIR" != x; then
-    conf_custom_source_files="$CUSTOM_CONFIG_DIR/*.m4"
+    #conf_custom_source_files="$CUSTOM_CONFIG_DIR/*.m4"
+    config_file_array[2]="$CUSTOM_CONFIG_DIR/*.m4"
   else
-    conf_custom_source_files=""
+    #conf_custom_source_files=""
+    config_file_array[2]=""
   fi
 
-  for file in $conf_source_files $conf_custom_source_files ; do
-    if test $file -nt $generated_script; then
+  echo 'elements count  :-  ' ${#config_file_array[@]}
+  echo 
+
+  #for file in $conf_source_files $conf_custom_source_files ; do
+  for file in "${config_file_array[@]}" ; do
+    echo "file  :-  " $file
+    echo 
+    if test "$file" -nt "$generated_script"; then
       return 0
     fi
   done
@@ -197,7 +234,18 @@ if test "x$1" = xautogen; then
   shift
 fi
 
-if test ! -s $generated_script; then
+echo '$generated_script  :-  ' $generated_script
+echo 
+
+fileExistsWithContent=`test -s "$generated_script"`
+echo 'test -s $generated_script :-  ' $fileExistsWithContent
+echo 
+
+fileDoesNotExist=`test ! -s "$generated_script"`
+echo 'test ! -s $generated_script :-  ' $fileDoesNotExist
+echo 
+
+if test ! -s "$generated_script"; then
   # Generated script is missing, so we need to create it
   echo "Runnable configure script is not present"
   run_autoconf=true
@@ -352,7 +400,7 @@ fi
 RCDIR=`mktemp -dt jdk-build-configure.tmp.XXXXXX` || exit $?
 trap "rm -rf \"$RCDIR\"" EXIT
 conf_logfile=./configure.log
-(exec 3>&1 ; ((. $generated_script "${conf_processed_arguments[@]}" 2>&1 1>&3 ) \
+(exec 3>&1 ; ((. "$generated_script" "${conf_processed_arguments[@]}" 2>&1 1>&3 ) \
     ; echo $? > "$RCDIR/rc" ) \
     | tee -a $conf_logfile 1>&2 ; exec 3>&-) | tee -a $conf_logfile
 
@@ -379,7 +427,7 @@ EOT
 
     # Print additional help, e.g. a list of toolchains and JVM features.
     # This must be done by the autoconf script.
-    ( CONFIGURE_PRINT_ADDITIONAL_HELP=true . $generated_script PRINTF=printf )
+    ( CONFIGURE_PRINT_ADDITIONAL_HELP=true . "$generated_script" PRINTF=printf )
 
     cat <<EOT
 
