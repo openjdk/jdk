@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -82,21 +83,16 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
     // Load jump addr:
-    // Zero R1
-    __ z_xgr(Z_R1_scratch, Z_R1_scratch);
-    // Add high-order bits
-    __ z_aih(Z_R1_scratch, (int64_t)StubRoutines::zarch::nmethod_entry_barrier() >> 32);
-    // Add low-order bits
-    __ z_afi(Z_R1_scratch, (int64_t)StubRoutines::zarch::nmethod_entry_barrier());
+    __ load_const(Z_R1_scratch, (uint64_t)&StubRoutines::zarch::nmethod_entry_barrier); // 2*6 bytes
 
     // Load value from current java object:
-    __ z_lg(tmp, in_bytes(bs_nm->thread_disarmed_offset()), Z_thread);
+    __ z_lg(tmp, in_bytes(bs_nm->thread_disarmed_offset()), Z_thread); // 6 bytes
 
     // Compare to current patched value:
-    __ z_cfi(tmp, /* to be patched */ -1);
+    __ z_cfi(tmp, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)
 
     // Conditional Jump
-    __ z_bcr(Assembler::bcondNotEqual, Z_R1_scratch);
+    __ z_bcr(Assembler::bcondNotEqual, Z_R1_scratch); // 2 bytes
 
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }

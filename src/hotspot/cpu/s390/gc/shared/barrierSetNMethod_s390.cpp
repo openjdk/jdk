@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
@@ -31,17 +32,26 @@
 
 class NativeMethodBarrier: public NativeInstruction {
   private:
+    static const int GUARD_INSTRUCTION_OFFSET = 3*6; // bytes
+
+    address get_barrier_start_address() const {
+      return NativeInstruction::addr_at(0);
+    }
+
     NativeMovRegMem* get_patchable_instruction_handle() const {
-      address guard_addr = NativeInstruction::addr_at(guard_offset);
+      address guard_addr = get_barrier_start_address() + GUARD_INSTRUCTION_OFFSET;
 
       return reinterpret_cast<NativeMovRegMem*>(guard_addr);
     }
 
   public:
-    static const int guard_offset = 14;
+    static const int BARRIER_TOTAL_LENGTH = GUARD_INSTRUCTION_OFFSET + 6 + 2; // bytes
 
     int get_guard_value() const {
       NativeMovRegMem* guard_addr = get_patchable_instruction_handle();
+
+      // TODO: This returns the value at the start of the instruction
+      // NOT the constant (to be patched value)
 
       // Access memory at guard address
       return guard_addr->offset();
@@ -50,21 +60,36 @@ class NativeMethodBarrier: public NativeInstruction {
     void set_guard_value(int value) {
       NativeMovRegMem* guard_addr = get_patchable_instruction_handle();
 
+      // TODO: This returns the value at the start of the instruction
+      // NOT the constant (to be patched value)
+
       // Set memory at guard address
       guard_addr->set_offset(value);
     }
 
     void verify() const {
-      uint* current_instruction = reinterpret_cast<uint*>(NativeInstruction::addr_at(0));
+      /* Expect the following instruction sequence:
+       * iihf + 0
+       * iilf + 6
+       * lg   +12
+       * cfi  +18 (patchable)
+       * bcr  +22
+       * ---  +24
+       */
+      const address start = get_barrier_start_address();
 
-      // TODO: Implement
-      ShouldNotReachHere();
+      assert(Assembler::is_equal(start[0],  IIHF_ZOPC, RIL_MASK), "check load_const (1/2)");
+      assert(Assembler::is_equal(start[6],  IILF_ZOPC, RIL_MASK), "check load_const (2/2)");
+      assert(Assembler::is_equal(start[12], LG_ZOPC, RIL_MASK), "check LG");
+      assert(Assembler::is_equal(start[18], CFI_ZOPC, RIL_MASK), "check CFI");
+      get_patchable_instruction_handle()->verify();
+      assert(Assembler::is_equal(start[22], BCR_ZOPC, RIL_MASK), "check BCR");
     }
 
 };
 
 static NativeMethodBarrier* get_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() - NativeMethodBarrier::guard_offset;
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() - NativeMethodBarrier::BARRIER_TOTAL_LENGTH;
   auto barrier = reinterpret_cast<NativeMethodBarrier*>(barrier_address);
 
   debug_only(barrier->verify());
