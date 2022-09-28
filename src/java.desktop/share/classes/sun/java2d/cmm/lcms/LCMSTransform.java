@@ -81,7 +81,7 @@ final class LCMSTransform implements ColorTransform {
      *
      * @param  renderingIntent the desired rendering intent, could be ignored if
      *         unsupported. If the {@link ColorTransform#Any} is passed then we
-     *         will try to use {@code ICC_Profile.icPerceptual} intent
+     *         will try to use {@code ICC_Profile.icPerceptual} intent.
      * @param  profiles the list of color profiles
      */
     LCMSTransform(int renderingIntent, ICC_Profile... profiles) {
