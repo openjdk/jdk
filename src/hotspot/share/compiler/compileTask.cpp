@@ -468,6 +468,9 @@ void CompileTask::print_ul(const nmethod* nm, const char* msg) {
                nm->is_osr_method() ? nm->osr_entry_bci() : -1,
                /*is_blocking*/ false,
                msg, /* short form */ true, /* cr */ true);
+    if (nm->consts_size() < 0) {
+      ls.print_cr("NEGATIVE constants section size: %d", nm->consts_size());
+    }
   }
 }
 
