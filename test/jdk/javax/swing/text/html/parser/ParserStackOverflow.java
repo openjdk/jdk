@@ -25,14 +25,14 @@
  * @bug 7172359
  * @summary  Verifies HTML parser StackOverflowError on invalid HTML: <li> tag
  *           inside an <option>
- * @run main ParserCrash
+ * @run main ParserStackOverflow
  */
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import java.io.StringReader;
 import java.io.Reader;
 
-public class ParserCrash {
+public class ParserStackOverflow {
     /*
      * li element inside an option will crash javax.swing.text.html.parser.Parser
      */
@@ -45,7 +45,7 @@ public class ParserCrash {
         Reader reader = new StringReader(badHtml);
         kit.read(reader, doc, 0); // StackOverflowError here
 
-        System.out.println("Succeeded! (expected StackOverflowError");
+        System.out.println("Succeeded! (no StackOverflowError");
     }
 }
 
