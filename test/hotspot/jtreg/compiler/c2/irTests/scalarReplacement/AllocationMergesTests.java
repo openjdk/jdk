@@ -33,6 +33,8 @@ import compiler.lib.ir_framework.*;
  */
 public class AllocationMergesTests {
 
+    private static Point global = new Point(2022, 2023);
+
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+ReduceAllocationMerges",
                                    "-XX:CompileCommand=exclude,*::dummy*");
@@ -296,37 +298,27 @@ public class AllocationMergesTests {
             return 1984;
     }
 
-
-    // ------------------ Some Objects Will be Scalar Replaced in These Tests ------------------- //
-
-
     @Test
-    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-    @IR(failOn = { IRNode.ALLOC })
-    int testSubclasses(boolean c1, boolean c2, int x, int y, int w, int z) {
-        new A();
-        Root s = new Home(x, y);
-        new B();
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "1" })
+    int testObjectIdentity(boolean cond, int x, int y) {
+        Point o = new Point(x, y);
 
-        if (c1) {
-            new C();
-            s = new Etc("Hello");
-            new D();
-        }
-        else {
-            new E();
-            s = new Usr(y, x, z);
-            new F();
+        if (cond) {
+            o = global;
+            dummy();
         }
 
-        new G();
+        dummy();
 
-        return s.a;
+        return o == global ? o.x + o.y : 0;
     }
+
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(counts = { IRNode.ALLOC, "2" })
+    // The merge won't be reduced because there is a SafePoint/Call referring to the merge
     int testSubclassesTrapping(boolean c1, boolean c2, int x, int y, int w, int z) {
         new A();
         Root s = new Home(x, y);
@@ -344,6 +336,34 @@ public class AllocationMergesTests {
         }
 
         dummy();
+
+        return s.a;
+    }
+
+    // ------------------ Some Objects Will be Scalar Replaced in These Tests ------------------- //
+
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(failOn = { IRNode.ALLOC })
+    // Since there is no Call/SafePoint after the merge we can reduce the allocation
+    int testSubclasses(boolean c1, boolean c2, int x, int y, int w, int z) {
+        new A();
+        Root s = new Home(x, y);
+        new B();
+
+        if (c1) {
+            new C();
+            s = new Etc("Hello");
+            new D();
+        }
+        else {
+            new E();
+            s = new Usr(y, x, z);
+            new F();
+        }
+
+        new G();
 
         return s.a;
     }

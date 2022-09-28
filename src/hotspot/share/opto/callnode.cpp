@@ -1811,7 +1811,6 @@ bool ReducedAllocationMergeNode::register_use(Node* n) {
   else if (n->is_DecodeN()) {
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* addp = n->fast_out(i);
-      assert(addp->is_AddP(), "DecodeN user is not an AddP");
       register_addp(addp->as_AddP());
     }
   }

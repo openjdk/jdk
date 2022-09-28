@@ -604,6 +604,7 @@ private:
   //    - SafePointNode or uncommon traps
   //    - DecodeN->AddP->Loads
   bool can_reduce_this_phi(const Node* n) const;
+  bool can_reduce_this_phi_users(const Node* phi, bool& has_call_as_user) const;
 
   bool reduce_this_phi(PhiNode* n);
 

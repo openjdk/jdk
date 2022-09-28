@@ -532,103 +532,19 @@ bool ConnectionGraph::is_read_only(Node* merge_phi_region, Node* base) const {
   return true;
 }
 
-bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
-  if (!is_ideal_node_in_graph(phi->_idx)) return false;
-  if (ptnode_adr(phi->_idx)->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
-
-  const Type* phi_t  = _igvn->type(phi);
-
-  // Found a Memory edge coming from the same Region as the Phi
-  bool found_memory_edge = false;
-
-  // Is any of the users of the Phi a Call node?
-  bool has_call_as_user = false;
-
-  // Ignoring any ConP#Null, is there any of the Phi inputs Non Scalar Replaceable?
-  bool has_nonnull_nonsr_input = false;
-
-  // Ignoring ConP#Null inputs, are all the inputs to the Phi of the same Klass?
-  bool mixed_klasses = false;
-
-
-  // If not an InstPtr bail out
-  if (phi_t == NULL || phi_t->make_oopptr() == NULL || phi_t->make_oopptr()->isa_instptr() == NULL) {
-    return false;
-  }
-
-  // Validate inputs:
-  //    Check whether this Phi node actually point to any scalar replaceable
-  //    Allocate node of the same Klass as the Phi.
-  //    Also checks that there is no write to any of the inputs after the
-  //    merge occurs.
-  bool has_noescape_allocate = false;
-  ciInstanceKlass* klass = phi_t->make_oopptr()->is_instptr()->instance_klass();
-  for (uint in_idx = 1; in_idx < phi->req(); in_idx++) {
-    // come_from_allocate returns NULL if the source isn't an Allocate
-    const Node* input = come_from_allocate(phi->in(in_idx));
-    PointsToNode* input_ptn = input != NULL ? ptnode_adr(input->_idx) : NULL;
-
-    // Check if input comes from scalar replaceable Allocate
-    bool is_sr_input = (input_ptn != NULL && input_ptn->scalar_replaceable());
-    has_nonnull_nonsr_input |= !is_sr_input;
-    has_noescape_allocate |= is_sr_input;
-
-    // Check if there is no write to the input after it is merged.
-    // If there is a write to any input after the merge we need to bail out.
-    if (!is_read_only(phi->in(0), phi->in(in_idx))) {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input has a store after the merge.", phi->_idx, in_idx);)
-      return false;
-    }
-
-    const Type* input_t = _igvn->type(phi->in(in_idx))->make_oopptr();
-    if (input_t == NULL || input_t->isa_instptr() == NULL) {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input is not an InstPtr.", phi->_idx, in_idx);)
-      return false;
-    }
-
-    if (klass != input_t->is_instptr()->instance_klass()) {
-      mixed_klasses = true;
-    }
-
-    klass = input_t->is_instptr()->instance_klass();
-  }
-
-  // If there was no input that can be removed then there is
-  // no profit doing the reduction of inputs.
-  if (!has_noescape_allocate) {
-    NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. There is not any NoEscape Allocate as input.", phi->_idx);)
-    return false;
-  }
-
-  // Try to find a BOT memory Phi coming from same region
-  Node* reg = phi->in(0);
-  for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
-    Node* n = reg->fast_out(i);
-    if (n->is_Phi() && n->bottom_type() == Type::MEMORY) {
-      if (_compile->get_alias_index(n->adr_type()) == Compile::AliasIdxBot) {
-        found_memory_edge = true;
-        break;
-      }
-    }
-  }
-
-  if (!found_memory_edge && has_nonnull_nonsr_input) {
-    NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Did not find memory edge on Region.", phi->_idx);)
-    return false;
-  }
-
-  // Validate outputs:
-  //    Check if we can in fact later replace the uses of the
-  //    current Phi by Phi's of individual fields.
-  //    Conditions checked:
-  //       - The only consumers of the Phi are:
-  //           - AddP (with constant offset)
-  //           -   - Load
-  //           - Safepoint
-  //           - uncommon_trap
-  //           - DecodeN
-  //
-  // TODO: add support for other kind of users.
+// Validate outputs:
+//    Check if we can in fact later replace the uses of the
+//    current Phi by Phi's of individual fields.
+//    Conditions checked:
+//       - The only consumers of the Phi are:
+//           - AddP (with constant offset)
+//           -   - Load
+//           - Safepoint
+//           - uncommon_trap
+//           - DecodeN
+//
+// TODO: add support for other kind of users.
+bool ConnectionGraph::can_reduce_this_phi_users(const Node* phi, bool& has_call_as_user) const {
   for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
     Node* use = phi->fast_out(i);
 
@@ -659,8 +575,8 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
       for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
         Node* use_use = use->fast_out(j);
 
-        if (!use_use->is_AddP()) {
-          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. DecodeN use is not a Load. %d %s", phi->_idx, use_use->_idx, use_use->Name());)
+        if (!use_use->is_AddP() || use_use->in(AddPNode::Offset)->find_intptr_t_con(-1) == -1) {
+          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. DecodeN use is not a AddP with constant offset. %d %s", phi->_idx, use_use->_idx, use_use->Name());)
           return false;
         }
 
@@ -680,9 +596,112 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
     }
   }
 
-  if (mixed_klasses && has_call_as_user) {
-    NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Inputs aren't of the same instance klass.", phi->_idx);)
+  return true;
+}
+
+bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
+  if (!is_ideal_node_in_graph(phi->_idx)) return false;
+  if (ptnode_adr(phi->_idx)->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
+
+  const Type* phi_t  = _igvn->type(phi);
+
+  // Found a Memory edge coming from the same Region as the Phi
+  bool found_memory_edge = false;
+
+  // Is any of the users of the Phi a Call node?
+  bool has_call_as_user = false;
+
+  // Is any of the Phi inputs Non Scalar Replaceable?
+  bool has_nonsr_input = false;
+
+  // Ignoring ConP#Null inputs, are all the inputs to the Phi of the same Klass?
+  bool mixed_klasses = false;
+
+
+  // If not an InstPtr bail out
+  if (phi_t == NULL || phi_t->make_oopptr() == NULL || phi_t->make_oopptr()->isa_instptr() == NULL) {
     return false;
+  }
+
+  // Validate inputs:
+  //    Check whether this Phi node actually point to only scalar replaceable
+  //    Allocate nodes of the same Klass as the Phi.
+  //    Also checks that there is no write to any of the inputs after the
+  //    merge occurs.
+  bool has_noescape_allocate = false;
+  ciInstanceKlass* klass = phi_t->make_oopptr()->is_instptr()->instance_klass();
+  for (uint in_idx = 1; in_idx < phi->req(); in_idx++) {
+    // come_from_allocate returns NULL if the source isn't an Allocate
+    const Node* input = come_from_allocate(phi->in(in_idx));
+    PointsToNode* input_ptn = input != NULL ? ptnode_adr(input->_idx) : NULL;
+
+    // Check if input comes from scalar replaceable Allocate
+    bool is_sr_input = (input_ptn != NULL && input_ptn->scalar_replaceable());
+    has_nonsr_input |= !is_sr_input;
+    has_noescape_allocate |= is_sr_input;
+
+    // Check if there is no write to the input after it is merged.
+    // If there is a write to any input after the merge we need to bail out.
+    if (!is_read_only(phi->in(0), phi->in(in_idx))) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input has a store after the merge.", phi->_idx, in_idx);)
+      return false;
+    }
+
+    const Type* input_t = _igvn->type(phi->in(in_idx))->make_oopptr();
+    if (input_t == NULL || input_t->isa_instptr() == NULL) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input is not an InstPtr.", phi->_idx, in_idx);)
+      return false;
+    }
+
+    if (klass != input_t->is_instptr()->instance_klass()) {
+      mixed_klasses = true;
+    }
+  }
+
+  // If there was no input that can be removed then there is
+  // no profit doing the reduction of inputs.
+  if (!has_noescape_allocate) {
+    NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. There is not any NoEscape Allocate as input.", phi->_idx);)
+    return false;
+  }
+
+  // Try to find a BOT memory Phi coming from same region
+  Node* reg = phi->in(0);
+  for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
+    Node* n = reg->fast_out(i);
+    if (n->is_Phi() && n->bottom_type() == Type::MEMORY) {
+      if (_compile->get_alias_index(n->adr_type()) == Compile::AliasIdxBot) {
+        found_memory_edge = true;
+        break;
+      }
+    }
+  }
+
+  if (!found_memory_edge && has_nonsr_input) {
+    NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Did not find memory edge on Region.", phi->_idx);)
+    return false;
+  }
+
+  if (can_reduce_this_phi_users(phi, has_call_as_user) == false) {
+    return false;
+  }
+
+  // A few more restrictions apply if there is a SafePoint/Uncommon Trap using the merge.
+  if (has_call_as_user) {
+    // If one of the inputs of the Phi aren't scalar replaceable we need to bail out because
+    // current logic for handling deoptimization doesn't handle merges of scalar replaceable
+    // allocations mixed with non-scalar replaceable ones.
+    if (has_nonsr_input) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. One of the inputs is not a scalar replaceable Allocate and the original Phi is used by a Call.", phi->_idx);)
+      return false;
+    }
+
+    // If the inputs to the original Phi have different Klass'es and the Phi has a SafePoint/Uncommon trap as a
+    // user we can't solve the merge because we can only have one Klass type when rematerializing the objects.
+    if (mixed_klasses) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Inputs aren't of the same instance klass.", phi->_idx);)
+      return false;
+    }
   }
 
   NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will reduce Phi %d during invocation %d", phi->_idx, _invocation);)
