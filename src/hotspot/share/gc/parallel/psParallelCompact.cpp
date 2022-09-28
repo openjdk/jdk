@@ -432,8 +432,6 @@ bool ParallelCompactData::initialize(MemRegion covered_region)
 
   assert(region_align_down(_region_start) == _region_start,
          "region start not aligned");
-  assert((region_size & RegionSizeOffsetMask) == 0,
-         "region size not a multiple of RegionSize");
 
   bool result = initialize_region_data(region_size) && initialize_block_data();
   return result;
@@ -470,7 +468,10 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
 bool ParallelCompactData::initialize_region_data(size_t region_size)
 {
-  const size_t count = (region_size + RegionSizeOffsetMask) >> Log2RegionSize;
+  assert((region_size & RegionSizeOffsetMask) == 0,
+         "region size not a multiple of RegionSize");
+
+  const size_t count = region_size >> Log2RegionSize;
   _region_vspace = create_vspace(count, sizeof(RegionData));
   if (_region_vspace != 0) {
     _region_data = (RegionData*)_region_vspace->reserved_low_addr();
