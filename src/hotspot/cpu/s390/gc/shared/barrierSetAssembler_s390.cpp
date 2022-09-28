@@ -85,9 +85,9 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
     // Zero R1
     __ z_xgr(Z_R1_scratch, Z_R1_scratch);
     // Add high-order bits
-    __ z_aih(Z_R1_scratch, (long)StubRoutines::zarch::nmethod_entry_barrier() >> 32);
+    __ z_aih(Z_R1_scratch, (int64_t)StubRoutines::zarch::nmethod_entry_barrier() >> 32);
     // Add low-order bits
-    __ z_afi(Z_R1_scratch, (long)StubRoutines::zarch::nmethod_entry_barrier());
+    __ z_afi(Z_R1_scratch, (int64_t)StubRoutines::zarch::nmethod_entry_barrier());
 
     // Load value from current java object:
     __ z_lg(tmp, in_bytes(bs_nm->thread_disarmed_offset()), Z_thread);
