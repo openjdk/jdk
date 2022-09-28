@@ -226,7 +226,7 @@ void Assembler::ret() {
       jalr(REGISTER, temp, ((int32_t)distance << 20) >> 20);      \
     } else {                                                      \
       int32_t offset = 0;                                         \
-      movptr(temp, dest, offset);                                 \
+      li(temp, (uintptr_t)dest, offset);                          \
       jalr(REGISTER, temp, offset);                               \
     }                                                             \
   }
