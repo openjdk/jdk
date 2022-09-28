@@ -22,13 +22,20 @@
  */
 
 /*
- * @test
+ * @test id=platform
  * @summary Basic tests for new thread-per-task executors
- * @compile --enable-preview -source ${jdk.version} ThreadPerTaskExecutorTest.java
- * @run testng/othervm/timeout=300 --enable-preview ThreadPerTaskExecutorTest
+ * @enablePreview
+ * @run testng/othervm -DthreadFactory=platform ThreadPerTaskExecutorTest
+ */
+
+/*
+ * @test id=virtual
+ * @enablePreview
+ * @run testng/othervm -DthreadFactory=virtual ThreadPerTaskExecutorTest
  */
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -54,6 +61,7 @@ public class ThreadPerTaskExecutorTest {
     };
 
     private ScheduledExecutorService scheduler;
+    private Object[][] threadFactories;
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -62,7 +70,19 @@ public class ThreadPerTaskExecutorTest {
             thread.setDaemon(true);
             return thread;
         };
-        scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+
+        // thread factories
+        String value = System.getProperty("threadFactory");
+        List<ThreadFactory> list = new ArrayList<>();
+        if (value == null || value.equals("platform"))
+            list.add(Thread.ofPlatform().factory());
+        if (value == null || value.equals("virtual"))
+            list.add(Thread.ofVirtual().factory());
+        assertTrue(list.size() > 0, "No thread factories for tests");
+        this.threadFactories = list.stream()
+                .map(f -> new Object[] { f })
+                .toArray(Object[][]::new);
     }
 
     @AfterClass
@@ -72,20 +92,15 @@ public class ThreadPerTaskExecutorTest {
 
     @DataProvider(name = "factories")
     public Object[][] factories() {
-        return new Object[][] {
-            { Executors.defaultThreadFactory(), },
-            { Thread.ofVirtual().factory(), },
-        };
+        return threadFactories;
     }
 
     @DataProvider(name = "executors")
     public Object[][] executors() {
-        var defaultThreadFactory = Executors.defaultThreadFactory();
-        var virtualThreadFactory = Thread.ofVirtual().factory();
-        return new Object[][] {
-            { Executors.newThreadPerTaskExecutor(defaultThreadFactory), },
-            { Executors.newThreadPerTaskExecutor(virtualThreadFactory), },
-        };
+        return Arrays.stream(threadFactories)
+                .map(f -> Executors.newThreadPerTaskExecutor((ThreadFactory) f[0]))
+                .map(e -> new Object[] { e })
+                .toArray(Object[][]::new);
     }
 
     /**
@@ -216,7 +231,7 @@ public class ThreadPerTaskExecutorTest {
         Future<String> future;
         try (executor) {
             future = executor.submit(() -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(50));
                 return "foo";
             });
         }
@@ -419,7 +434,7 @@ public class ThreadPerTaskExecutorTest {
             class FooException extends Exception { }
             Callable<String> task1 = () -> { throw new FooException(); };
             Callable<String> task2 = () -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(50));
                 throw new FooException();
             };
             try {
@@ -455,7 +470,7 @@ public class ThreadPerTaskExecutorTest {
         try (executor) {
             class FooException extends Exception { }
             Callable<String> task1 = () -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(50));
                 return "foo";
             };
             Callable<String> task2 = () -> { throw new FooException(); };
@@ -657,7 +672,7 @@ public class ThreadPerTaskExecutorTest {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(50));
                 return "bar";
             };
 
@@ -684,7 +699,7 @@ public class ThreadPerTaskExecutorTest {
             class BarException extends Exception { }
             Callable<String> task1 = () -> { throw new FooException(); };
             Callable<String> task2 = () -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(50));
                 throw new BarException();
             };
 
@@ -711,7 +726,7 @@ public class ThreadPerTaskExecutorTest {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(50));
                 return "bar";
             };
 

@@ -22,12 +22,19 @@
  */
 
 /*
- * @test
+ * @test id=platform
  * @bug 8284199
  * @summary Basic tests for StructuredTaskScope
  * @enablePreview
  * @modules jdk.incubator.concurrent
- * @run testng/othervm StructuredTaskScopeTest
+ * @run testng/othervm -DthreadFactory=platform StructuredTaskScopeTest
+ */
+
+/*
+ * @test id=virtual
+ * @enablePreview
+ * @modules jdk.incubator.concurrent
+ * @run testng/othervm -DthreadFactory=virtual StructuredTaskScopeTest
  */
 
 import jdk.incubator.concurrent.StructuredTaskScope;
@@ -37,6 +44,7 @@ import jdk.incubator.concurrent.StructureViolationException;
 import java.time.Duration;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.List;
 import java.util.Set;
@@ -65,6 +73,7 @@ import static org.testng.Assert.*;
 
 public class StructuredTaskScopeTest {
     private ScheduledExecutorService scheduler;
+    private Object[][] threadFactories;
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -73,7 +82,19 @@ public class StructuredTaskScopeTest {
             thread.setDaemon(true);
             return thread;
         };
-        scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+
+        // thread factories
+        String value = System.getProperty("threadFactory");
+        List<ThreadFactory> list = new ArrayList<>();
+        if (value == null || value.equals("platform"))
+            list.add(Thread.ofPlatform().factory());
+        if (value == null || value.equals("virtual"))
+            list.add(Thread.ofVirtual().factory());
+        assertTrue(list.size() > 0, "No thread factories for tests");
+        this.threadFactories = list.stream()
+                .map(f -> new Object[] { f })
+                .toArray(Object[][]::new);
     }
 
     @AfterClass
@@ -86,12 +107,7 @@ public class StructuredTaskScopeTest {
      */
     @DataProvider
     public Object[][] factories() {
-        var defaultThreadFactory = Executors.defaultThreadFactory();
-        var virtualThreadFactory = Thread.ofVirtual().factory();
-        return new Object[][] {
-                { defaultThreadFactory, },
-                { virtualThreadFactory, },
-        };
+        return threadFactories;
     }
 
     /**
@@ -284,9 +300,9 @@ public class StructuredTaskScopeTest {
                 return null;
             });
 
-            // start a second task to shutdown the scope after 500ms
+            // start a second task to shutdown the scope
             Future<String> future2 = scope.fork(() -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(100));
                 scope.shutdown();
                 return null;
             });
@@ -319,7 +335,7 @@ public class StructuredTaskScopeTest {
     public void testJoinWithThreads(ThreadFactory factory) throws Exception {
         try (var scope = new StructuredTaskScope(null, factory)) {
             Future<String> future = scope.fork(() -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(50));
                 return "foo";
             });
             scope.join();
@@ -362,7 +378,7 @@ public class StructuredTaskScopeTest {
     public void testInterruptJoin1(ThreadFactory factory) throws Exception {
         try (var scope = new StructuredTaskScope(null, factory)) {
             Future<String> future = scope.fork(() -> {
-                Thread.sleep(Duration.ofSeconds(3));
+                Thread.sleep(Duration.ofMillis(100));
                 return "foo";
             });
 
@@ -446,7 +462,7 @@ public class StructuredTaskScopeTest {
                 return "foo";
             });
             Future<String> future2 = scope.fork(() -> {
-                Thread.sleep(Duration.ofMillis(500));
+                Thread.sleep(Duration.ofMillis(50));
                 return null;
             });
             scope.join();
@@ -542,7 +558,7 @@ public class StructuredTaskScopeTest {
             try {
                 for (int i = 0; i < 3; i++) {
                     try {
-                        scope.joinUntil(Instant.now().plusSeconds(1));
+                        scope.joinUntil(Instant.now().plusMillis(50));
                         fail();
                     } catch (TimeoutException expected) {
                         assertFalse(future.isDone());
@@ -598,11 +614,11 @@ public class StructuredTaskScopeTest {
     public void testInterruptJoinUntil1(ThreadFactory factory) throws Exception {
         try (var scope = new StructuredTaskScope(null, factory)) {
             Future<String> future = scope.fork(() -> {
-                Thread.sleep(Duration.ofSeconds(3));
+                Thread.sleep(Duration.ofMillis(100));
                 return "foo";
             });
 
-            // join should throw
+            // joinUntil should throw
             Thread.currentThread().interrupt();
             try {
                 scope.joinUntil(Instant.now().plusSeconds(10));
@@ -628,7 +644,7 @@ public class StructuredTaskScopeTest {
                 return "foo";
             });
 
-            // join should throw
+            // joinUntil should throw
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 scope.joinUntil(Instant.now().plusSeconds(10));
@@ -787,7 +803,7 @@ public class StructuredTaskScopeTest {
             scope.join();
 
             // release task after a delay
-            scheduler.schedule(latch::countDown, 1, TimeUnit.SECONDS);
+            scheduler.schedule(latch::countDown, 100, TimeUnit.MILLISECONDS);
 
             // invoke close with interrupt status set
             Thread.currentThread().interrupt();
@@ -870,7 +886,7 @@ public class StructuredTaskScopeTest {
         try (var scope = new StructuredTaskScope(null, factory)) {
 
             Future<String> future = scope.fork(() -> {
-                Thread.sleep(Duration.ofMillis(100));
+                Thread.sleep(Duration.ofMillis(20));
                 return "foo";
             });
 
@@ -890,7 +906,7 @@ public class StructuredTaskScopeTest {
         try (var scope = new StructuredTaskScope(null, factory)) {
 
             Future<String> future = scope.fork(() -> {
-                Thread.sleep(Duration.ofMillis(100));
+                Thread.sleep(Duration.ofMillis(20));
                 throw new FooException();
             });
 
@@ -917,7 +933,7 @@ public class StructuredTaskScopeTest {
 
             // timed-get, should timeout
             try {
-                future.get(100, TimeUnit.MICROSECONDS);
+                future.get(20, TimeUnit.MILLISECONDS);
                 fail();
             } catch (TimeoutException expected) { }
 

@@ -22,11 +22,18 @@
  */
 
 /*
- * @test
+ * @test id=platform
  * @summary Basic tests for ThreadFlock
  * @modules java.base/jdk.internal.misc
- * @compile --enable-preview -source ${jdk.version} ThreadFlockTest.java
- * @run testng/othervm --enable-preview ThreadFlockTest
+ * @enablePreview
+ * @run testng/othervm -DthreadFactory=platform ThreadFlockTest
+ */
+
+/*
+ * @test id=virtual
+ * @modules java.base/jdk.internal.misc
+ * @enablePreview
+ * @run testng/othervm -DthreadFactory=virtual ThreadFlockTest
  */
 
 import java.time.Duration;
@@ -46,6 +53,7 @@ import static org.testng.Assert.*;
 
 public class ThreadFlockTest {
     private ScheduledExecutorService scheduler;
+    private Object[][] threadFactories;
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -54,7 +62,19 @@ public class ThreadFlockTest {
             thread.setDaemon(true);
             return thread;
         };
-        scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+
+        // thread factories
+        String value = System.getProperty("threadFactory");
+        List<ThreadFactory> list = new ArrayList<>();
+        if (value == null || value.equals("platform"))
+            list.add(Thread.ofPlatform().factory());
+        if (value == null || value.equals("virtual"))
+            list.add(Thread.ofVirtual().factory());
+        assertTrue(list.size() > 0, "No thread factories for tests");
+        this.threadFactories = list.stream()
+                .map(f -> new Object[] { f })
+                .toArray(Object[][]::new);
     }
 
     @AfterClass
@@ -64,12 +84,7 @@ public class ThreadFlockTest {
 
     @DataProvider(name = "factories")
     public Object[][] factories() {
-        var defaultThreadFactory = Executors.defaultThreadFactory();
-        var virtualThreadFactory = Thread.ofVirtual().factory();
-        return new Object[][] {
-                { defaultThreadFactory, },
-                { virtualThreadFactory, },
-        };
+        return threadFactories;
     }
 
     /**
@@ -381,7 +396,7 @@ public class ThreadFlockTest {
             AtomicBoolean done = new AtomicBoolean();
             Runnable task = () -> {
                 try {
-                    Thread.sleep(Duration.ofSeconds(1));
+                    Thread.sleep(Duration.ofMillis(50));
                     done.set(true);
                 } catch (InterruptedException e) { }
             };
@@ -782,7 +797,7 @@ public class ThreadFlockTest {
         var exception = new AtomicReference<Exception>();
         Runnable sleepTask = () -> {
             try {
-                Thread.sleep(Duration.ofSeconds(1));
+                Thread.sleep(Duration.ofMillis(50));
             } catch (Exception e) {
                 exception.set(e);
             }
