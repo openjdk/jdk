@@ -833,8 +833,7 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
 
   bool should_run_young_gc =  (cause == GCCause::_wb_young_gc)
                            || (cause == GCCause::_gc_locker)
-                DEBUG_ONLY(|| (cause == GCCause::_scavenge_alot))
-                           ;
+                DEBUG_ONLY(|| (cause == GCCause::_scavenge_alot));
 
   const GenerationType max_generation = should_run_young_gc
                                       ? YoungGen
