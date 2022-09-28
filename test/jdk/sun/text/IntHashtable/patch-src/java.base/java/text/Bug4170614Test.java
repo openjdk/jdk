@@ -142,15 +142,15 @@ public class Bug4170614Test {
 
     public static void testPatternEntry() throws Exception {
         PatternEntry fred = new PatternEntry(1,
-                                             new StringBuffer("hello"),
-                                             new StringBuffer("up"));
+                                             new StringBuilder("hello"),
+                                             new StringBuilder("up"));
         PatternEntry barney = new PatternEntry(1,
-                                               new StringBuffer("hello"),
-                                               new StringBuffer("down"));
+                                               new StringBuilder("hello"),
+                                               new StringBuilder("down"));
         // (equals() only considers the "chars" field, so fred and barney are equal)
         PatternEntry homer = new PatternEntry(1,
-                                              new StringBuffer("goodbye"),
-                                              new StringBuffer("up"));
+                                              new StringBuilder("goodbye"),
+                                              new StringBuilder("up"));
 
         if (fred.equals(barney)) {
             System.out.println("fred.equals(barney)");
