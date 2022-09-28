@@ -158,7 +158,7 @@ public class PrintGlyphVectorTest extends Component implements Printable {
     }
 
     public static void main(String[] arg) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
+        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS, true);
         createTestUI();
         passFailJFrame.awaitAndCheck();
     }
