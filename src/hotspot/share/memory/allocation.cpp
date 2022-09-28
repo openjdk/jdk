@@ -49,6 +49,7 @@ char* AllocateHeap(size_t size,
 char* AllocateHeap(size_t size,
                    MEMFLAGS flags,
                    AllocFailType alloc_failmode /* = AllocFailStrategy::EXIT_OOM*/) {
+  assert(flags != mtInvalid, "Illegal memory flag used");
   return AllocateHeap(size, flags, CALLER_PC, alloc_failmode);
 }
 

@@ -130,6 +130,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
   f(mtStringDedup,    "String Deduplication")                                        \
   f(mtObjectMonitor,  "Object Monitors")                                             \
   f(mtNone,           "Unknown")                                                     \
+  f(mtInvalid,        "Invalid memory type")                                         \
   //end
 
 #define MEMORY_TYPE_DECLARE_ENUM(type, human_readable) \
@@ -174,7 +175,7 @@ char* ReallocateHeap(char *old,
 // handles NULL pointers
 void FreeHeap(void* p);
 
-template<MEMFLAGS F>
+template<MEMFLAGS F = mtInvalid>
 class CHeapObj {
  public:
   ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f = F) throw() {
