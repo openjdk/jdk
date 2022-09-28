@@ -122,6 +122,11 @@ public class KeepAliveCache
      */
     @SuppressWarnings("removal")
     public void put(final URL url, Object obj, HttpClient http) {
+        // this method may need to close an HttpClient, either because
+        // it is not cacheable, or because the cache is at its capacity.
+        // In the latter case, we close the least recently used client.
+        // The client to close is stored in oldClient, and is closed
+        // after cacheLock is released.
         HttpClient oldClient = null;
         cacheLock.lock();
         try {
