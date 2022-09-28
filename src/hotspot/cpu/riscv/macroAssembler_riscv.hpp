@@ -531,8 +531,8 @@ public:
   void mv(Register Rd, address addr, int32_t &offset) {
     // Split address into a lower 12-bit sign-extended offset and the remainder,
     // so that the offset could be encoded in jalr or load/store instruction.
-    offset = ((int32_t)(uintptr_t)addr << 20) >> 20;
-    li(Rd, (uintptr_t)addr - offset);
+    offset = ((int32_t)(int64_t)addr << 20) >> 20;
+    li(Rd, (int64_t)addr - offset);
   }
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
