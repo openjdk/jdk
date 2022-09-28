@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @summary Verify lambda expression can't mutate a final field
  * @bug 8043179
- * @author archie.cobbs
+ * @author archiecobbs
  * @compile/fail/ref=LambdaMutateFinalField.out -XDrawDiagnostics LambdaMutateFinalField.java
  */
 class LambdaMutateFinalField {
