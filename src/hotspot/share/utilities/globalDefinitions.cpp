@@ -237,7 +237,7 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "*conflict*"
 };
 const char* type2name(BasicType t) {
-  if (t < (T_CONFLICT + 1)) {
+  if (t < ARRAY_SIZE(type2name_tab)) {
     return type2name_tab[t];
   } else if (t == T_ILLEGAL) {
     return "*illegal*";
