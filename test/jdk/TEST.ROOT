@@ -11,11 +11,15 @@
 #
 # A "headful" test requires a graphical environment to meaningfully
 # run. Tests that are not headful are "headless".
+# A test flagged with key sound needs audio devices on the system, this
+# may be accompanied by the headful keyword since audio device access 
+# is often linked to access to desktop resources and headful systems are
+# also more likely to have audio devices (ie meaning both input and output)
 # A test flagged with key "printer" requires a printer to succeed, else
 # throws a PrinterException or the like.
 # A test flagged with cgroups uses cgroups.
 
-keys=2d dnd headful i18n intermittent printer randomness jfr cgroups
+keys=2d dnd headful sound i18n intermittent printer randomness jfr cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \
