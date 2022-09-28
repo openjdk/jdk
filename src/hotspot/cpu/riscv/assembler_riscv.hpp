@@ -302,7 +302,7 @@ public:
       lui(Rd, upper);
       offset = lower;
     } else {
-      movptr(Rd, (address)(uintptr_t)adr.offset(), offset);
+      li(Rd, adr.offset(), offset);
     }
     add(Rd, Rd, adr.base());
   }
@@ -318,6 +318,7 @@ public:
   }
 
   void _li(Register Rd, int64_t imm);  // optimized load immediate
+  void li(Register Rd, int64_t imm, int32_t &offset);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
   void movptr(Register Rd, address addr);

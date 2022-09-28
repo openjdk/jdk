@@ -116,6 +116,31 @@ void Assembler::_li(Register Rd, int64_t imm) {
   }
 }
 
+void Assembler::li(Register Rd, int64_t imm, int32_t &offset) {
+  // int64_t is in range 0x8000 0000 0000 0000 ~ 0x7fff ffff ffff ffff
+  int shift = 12;
+  int64_t upper = imm, lower = imm;
+  // Split imm to a lower 12-bit sign-extended part and the remainder,
+  // because addi will sign-extend the lower imm.
+  lower = ((int32_t)imm << 20) >> 20;
+  upper -= lower;
+
+  // Test whether imm is a 32-bit integer.
+  if (!(((imm) & ~(int64_t)0x7fffffff) == 0 ||
+        (((imm) & ~(int64_t)0x7fffffff) == ~(int64_t)0x7fffffff))) {
+    while (((upper >> shift) & 1) == 0) { shift++; }
+    upper >>= shift;
+    li(Rd, upper);
+    slli(Rd, Rd, shift);
+  } else {
+    // 32-bit integer
+    if (upper != 0) {
+      lui(Rd, (int32_t)upper);
+    }
+  }
+  offset = lower;
+}
+
 void Assembler::li64(Register Rd, int64_t imm) {
   // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
   // (imm[31:20] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.

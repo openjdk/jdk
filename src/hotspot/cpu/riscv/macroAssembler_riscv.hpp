@@ -527,12 +527,13 @@ public:
   }
 
   // mv
-  void mv(Register Rd, address addr)          { li(Rd, (int64_t)addr); }
+  void mv(Register Rd, address addr)                  { li(Rd, (int64_t)addr); }
+  void mv(Register Rd, address addr, int32_t &offset) { li(Rd, (int64_t)addr, offset); }
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  inline void mv(Register Rd, T o)            { li(Rd, (int64_t)o); }
+  inline void mv(Register Rd, T o)                    { li(Rd, (int64_t)o); }
 
-  inline void mvw(Register Rd, int32_t imm32) { mv(Rd, imm32); }
+  inline void mvw(Register Rd, int32_t imm32)         { mv(Rd, imm32); }
 
   void mv(Register Rd, Address dest);
   void mv(Register Rd, RegisterOrConstant src);
