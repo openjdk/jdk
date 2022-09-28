@@ -1850,6 +1850,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_VectorLoadMask:
+    case Op_VectorMaskCast:
       if (size_in_bits == 256 && UseAVX < 2) {
         return false; // Implementation limitation
       }
@@ -8386,7 +8387,6 @@ instruct vstoreMask_evex(vec dst, kReg mask, immI size) %{
 %}
 
 instruct vmaskcast_evex(kReg dst) %{
-  predicate(Matcher::vector_length(n) == Matcher::vector_length(n->in(1)));
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vector_mask_cast $dst" %}
@@ -8397,8 +8397,7 @@ instruct vmaskcast_evex(kReg dst) %{
 %}
 
 instruct vmaskcast(vec dst) %{
-  predicate((Matcher::vector_length(n) == Matcher::vector_length(n->in(1))) &&
-            (Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1))));
+  predicate(Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vector_mask_cast $dst" %}
@@ -8409,11 +8408,7 @@ instruct vmaskcast(vec dst) %{
 %}
 
 instruct vmaskcast_avx(vec dst, vec src) %{
-  predicate(Matcher::vector_length(n) == Matcher::vector_length(n->in(1)) &&
-            Matcher::vector_length_in_bytes(n) != Matcher::vector_length_in_bytes(n->in(1)) &&
-            (UseAVX >= 2 ||
-             (Matcher::vector_length_in_bytes(n) != 32 &&
-              Matcher::vector_length_in_bytes(n->in(1)) != 32)));
+  predicate(Matcher::vector_length_in_bytes(n) != Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
   format %{ "vector_mask_cast $dst, $src" %}
   ins_encode %{
@@ -8421,40 +8416,6 @@ instruct vmaskcast_avx(vec dst, vec src) %{
     BasicType src_bt = Matcher::vector_element_basic_type(this, $src);
     BasicType dst_bt = Matcher::vector_element_basic_type(this);
     __ vector_mask_cast($dst$$XMMRegister, $src$$XMMRegister, dst_bt, src_bt, vlen);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmaskcast_avx1_32B_expand(vec dst, vec src, vec xtmp1, vec xtmp2) %{
-  predicate(UseAVX == 1 && Matcher::vector_length_in_bytes(n) == 32 &&
-            Matcher::vector_length(n) == Matcher::vector_length(n->in(1)) &&
-            Matcher::vector_length_in_bytes(n) > Matcher::vector_length_in_bytes(n->in(1)));
-  match(Set dst (VectorMaskCast src));
-  effect(TEMP xtmp1, TEMP xtmp2);
-  format %{ "vector_mask_cast $dst, $src\t! using $xtmp1, $xtmp2 as TEMP" %}
-  ins_encode %{
-    int vlen = Matcher::vector_length(this);
-    BasicType src_bt = Matcher::vector_element_basic_type(this, $src);
-    BasicType dst_bt = Matcher::vector_element_basic_type(this);
-    __ vector_mask_cast($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                                 $xtmp2$$XMMRegister, dst_bt, src_bt, vlen);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmaskcast_avx1_32B_shrink(vec dst, vec src, vec xtmp) %{
-  predicate(UseAVX == 1 && Matcher::vector_length_in_bytes(n->in(1)) == 32 &&
-            Matcher::vector_length(n) == Matcher::vector_length(n->in(1)) &&
-            Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
-  match(Set dst (VectorMaskCast src));
-  effect(TEMP xtmp);
-  format %{ "vector_mask_cast $dst, $src\t! using $xtmp as TEMP" %}
-  ins_encode %{
-    int vlen = Matcher::vector_length(this);
-    BasicType src_bt = Matcher::vector_element_basic_type(this, $src);
-    BasicType dst_bt = Matcher::vector_element_basic_type(this);
-    __ vector_mask_cast($dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister,
-                                 xnoreg, dst_bt, src_bt, vlen);
   %}
   ins_pipe(pipe_slow);
 %}

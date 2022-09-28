@@ -341,9 +341,6 @@ public:
 
   void vector_mask_cast(XMMRegister dst, XMMRegister src, BasicType dst_bt, BasicType src_bt, int vlen);
 
-  void vector_mask_cast(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
-                        XMMRegister xtmp2, BasicType dst_bt, BasicType src_bt, int vlen);
-
 #ifdef _LP64
   void vector_round_double_evex(XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
                                 Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2);
