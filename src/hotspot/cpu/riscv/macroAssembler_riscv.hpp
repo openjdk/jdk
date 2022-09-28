@@ -529,6 +529,8 @@ public:
   // mv
   void mv(Register Rd, address addr)                  { li(Rd, (int64_t)addr); }
   void mv(Register Rd, address addr, int32_t &offset) {
+    // Split address into a lower 12-bit sign-extended offset and the remainder,
+    // so that the offset could be encoded in jalr or load/store instruction.
     offset = ((int32_t)(uintptr_t)addr << 20) >> 20;
     li(Rd, (uintptr_t)addr - offset);
   }
@@ -894,7 +896,7 @@ public:
 
   void rt_call(address dest, Register tmp = t0);
 
-  void call(const address &dest, Register temp = t0) {
+  void call(const address dest, Register temp = t0) {
     assert_cond(dest != NULL);
     assert(temp != noreg, "temp must not be empty register!");
     int32_t offset = 0;
