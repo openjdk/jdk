@@ -99,7 +99,7 @@ public final class JCAUtil {
         return result;
     }
 
-    public static void tryCommitXCertEvent(Certificate cert) {
+    public static void tryCommitCertEvent(Certificate cert) {
         if ((X509CertificateEvent.isTurnedOn() || EventHelper.isLoggingSecurity()) &&
                 (cert instanceof X509Certificate x509)) {
             PublicKey pKey = x509.getPublicKey();

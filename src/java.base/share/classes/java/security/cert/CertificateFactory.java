@@ -350,7 +350,7 @@ public class CertificateFactory {
         throws CertificateException
     {
         Certificate c = certFacSpi.engineGenerateCertificate(inStream);
-        JCAUtil.tryCommitXCertEvent(c);
+        JCAUtil.tryCommitCertEvent(c);
         return c;
     }
 
