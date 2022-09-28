@@ -6053,7 +6053,11 @@ void PhaseIdealLoop::dump_real_LCA(Node* early, Node* wrong_lca) {
     nodes_seen.push(n2);
   }
 
-  assert(real_LCA != NULL, "must always find an LCA");
+  if(real_LCA == NULL) {
+    tty->print_cr("No LCA found for early %d (idom[%d]) and (wrong) LCA %d (idom[%d]):", early->_idx, count_2, wrong_lca->_idx, count_1);
+    return;
+  }
+  
   tty->print_cr("Real LCA of early %d (idom[%d]) and (wrong) LCA %d (idom[%d]):", early->_idx, count_2, wrong_lca->_idx, count_1);
   real_LCA->dump();
 }
