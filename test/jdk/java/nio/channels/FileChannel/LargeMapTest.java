@@ -24,11 +24,12 @@
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -40,13 +41,12 @@ import static java.nio.file.StandardOpenOption.*;
  * @summary Ensure that memory mapping beyond 32-bit range does not cause an
  *          EXCEPTION_ACCESS_VIOLATION.
  * @requires vm.bits == 64
- * @run main/othervm/timeout=240 LargeMapTest
+ * @run main/othervm LargeMapTest
  */
 public class LargeMapTest {
-    private static final String FILE = "test.dat";
-    private static final long LENGTH = 8000000000L;
-    private static final long OFFSET = 3704800000L;
-    private static final int  BUFSIZ = 100000;
+    private static final long LENGTH = (1L << 32) + 512;
+    private static final int  EXTRA  = 1024;
+    private static final long BASE   = LENGTH - EXTRA;
 
     public static void main(String[] args) throws IOException {
         System.out.println(System.getProperty("sun.arch.data.model"));
@@ -55,32 +55,30 @@ public class LargeMapTest {
 
         System.out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        Path p = Path.of(FILE);
+        Path p = Files.createTempFile("test", ".dat");
+        Files.delete(p); // re-create as sparse
         p.toFile().deleteOnExit();
-        try (FileChannel fc = FileChannel.open(p, CREATE, WRITE)) {
-            fc.position(LENGTH - 1);
-            fc.write(ByteBuffer.wrap(new byte[] {27}));
+        ByteBuffer bb;
+        try (FileChannel fc = FileChannel.open(p, CREATE_NEW, SPARSE, WRITE)) {
+            fc.position(BASE);
+            Random r = new Random(System.nanoTime());
+            byte[] b = new byte[EXTRA];
+            r.nextBytes(b);
+            bb = ByteBuffer.wrap(b);
+            fc.write(bb);
             long t1 = System.nanoTime();
             System.out.printf("  Wrote large file in %d ns (%d ms) %n",
                     t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
         }
+        bb.rewind();
 
-        long offset = OFFSET;
-        ByteBuffer bb = ByteBuffer.allocateDirect(BUFSIZ);
-
-        try (FileChannel fc = FileChannel.open(p, READ, WRITE);) {
-            MemorySegment mbb = MemorySegment.ofBuffer(bb);
+        try (FileChannel fc = FileChannel.open(p, READ, WRITE)) {
             MemorySegment mappedMemorySegment =
                 fc.map(FileChannel.MapMode.READ_WRITE, 0, p.toFile().length(),
                        MemorySession.openImplicit());
-
-            final int interval = BUFSIZ*1000;
-            while (offset < LENGTH) {
-                if (offset % interval == 0)
-                    System.out.println("offset: " + offset);
-                MemorySegment target = mappedMemorySegment.asSlice(offset, BUFSIZ);
-                offset = offset + BUFSIZ;
-                target.copyFrom(mbb);
+            MemorySegment target = mappedMemorySegment.asSlice(BASE, EXTRA);
+            if (!target.asByteBuffer().equals(bb)) {
+                throw new RuntimeException("Expected buffers to be equal");
             }
         }
     }
