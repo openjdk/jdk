@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,26 +32,21 @@ import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
-import org.openide.util.NbBundle.Messages;
 import org.openide.util.actions.CallableSystemAction;
 
-/**
- * @author Thomas Wuerthinger
- */
-@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ZoomInAction")
-@ActionRegistration(displayName = "#CTL_ZoomInAction")
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ZoomResetAction")
+@ActionRegistration(displayName = "#CTL_ZoomResetAction")
 @ActionReferences({
-        @ActionReference(path = "Menu/View", position = 450),
-        @ActionReference(path = "Shortcuts", name = "D-EQUALS"),
-        @ActionReference(path = "Shortcuts", name = "DS-MINUS")
+        @ActionReference(path = "Menu/View", position = 550),
+        @ActionReference(path = "Shortcuts", name = "D-0")
 })
-@Messages({
-        "CTL_ZoomInAction=Zoom in",
-        "HINT_ZoomInAction=Zoom into the graph"
+@NbBundle.Messages({
+        "CTL_ZoomResetAction=Reset zoom (100%",
+        "HINT_ZoomResetAction=Rest the zoom level to 100%"
 })
-public final class ZoomInAction extends CallableSystemAction {
+public final class ZoomResetAction extends CallableSystemAction {
 
-    public ZoomInAction() {
+    public ZoomResetAction() {
         putValue(Action.SHORT_DESCRIPTION, getDescription());
         putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
     }
@@ -60,17 +55,17 @@ public final class ZoomInAction extends CallableSystemAction {
     public void performAction() {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
-            editor.zoomIn();
+            editor.setZoomLevel(100);
         }
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomInAction");
+        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomResetAction");
     }
 
     private String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomInAction");
+        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomResetAction");
     }
 
     @Override
@@ -85,6 +80,6 @@ public final class ZoomInAction extends CallableSystemAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/zoomIn.svg"; // NOI18N
+        return "com/sun/hotspot/igv/view/images/zoomReset.svg"; // NOI18N
     }
 }
