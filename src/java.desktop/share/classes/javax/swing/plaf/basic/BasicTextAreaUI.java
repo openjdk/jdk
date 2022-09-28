@@ -137,12 +137,10 @@ public class BasicTextAreaUI extends BasicTextUI {
     }
 
     /**
-     * Creates the view for an element.  Returns a WrappedPlainView or
-     * PlainView if non-bidi text is handled
-     * else returns PlainParagraph or BoxView if bidi text is being handled.
+     * Creates the view for an element.
      *
      * @param elem the element
-     * @return the view
+     * @return the view for the element
      */
     public View create(Element elem) {
         Document doc = elem.getDocument();

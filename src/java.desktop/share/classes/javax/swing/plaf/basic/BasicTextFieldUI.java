@@ -86,7 +86,7 @@ public class BasicTextFieldUI extends BasicTextUI {
      * Creates a view (FieldView) based on an element.
      *
      * @param elem the element
-     * @return the view
+     * @return the view for the element
      */
     public View create(Element elem) {
         Document doc = elem.getDocument();
