@@ -56,6 +56,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
   if test "x$with_jvm_variants" = x; then
     with_jvm_variants="server"
   fi
+  with_jvm_variants="server,client,minimal,core,zero"
   JVM_VARIANTS_OPT="$with_jvm_variants"
 
   # Has the user listed more than one variant?
@@ -72,7 +73,6 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
   # JVM_VARIANTS is a space-separated list.
   # Also use minimal, not minimal1 (which is kept for backwards compatibility).
   JVM_VARIANTS=`$ECHO $JVM_VARIANTS_OPT | $SED -e 's/,/ /g' -e 's/minimal1/minimal/'`
-  JVM_VARIANTS="server client minimal core zero"
   AC_MSG_RESULT([$JVM_VARIANTS])
 
   # Check that the selected variants are valid
