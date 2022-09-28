@@ -24,7 +24,7 @@
  * @test
  * @key headful
  * @bug 4314194 8075916
- * @summary  Verifies Disable checkbox and radiobutton color is honored in all L&F
+ * @summary  Verifies disabled color for JCheckbox and JRadiobutton is honored in all L&F
  * @run main bug4314194
  */
 
@@ -48,48 +48,31 @@ public class bug4314194 {
     private static Point point;
     private static Rectangle rect;
     private static Robot robot;
-    private static Color radioButtonColor = Color.RED;
-    private static Color checkboxColor = Color.GREEN;
-    private static int tolerance = 20;
+    private static final Color radioButtonColor = Color.RED;
+    private static final Color checkboxColor = Color.GREEN;
+    private static final int tolerance = 20;
 
-    private static void blockTillDisplayed(Component comp) {
-        Point p = null;
-        while (p == null) {
-            try {
-                p = comp.getLocationOnScreen();
-            } catch (IllegalStateException e) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ie) {
-                }
-            }
-        }
-    }
+    private static boolean checkComponent(Component comp, Color c) throws Exception {
+        int correctColoredPixels = 0;
+        int totalPixels = 0;
 
-    private static boolean checkComponent(Component comp, Color c) throws Exception{
-        int correctColoredPixels=0, totalPixels=0;
         SwingUtilities.invokeAndWait(() -> {
             point = comp.getLocationOnScreen();
             rect = comp.getBounds();
         });
-        robot.waitForIdle();
 
-        int y = point.y+rect.height/2;
-        for (int x=point.x; x<point.x+rect.width; x++) {
-            Color color = robot
-                    .getPixelColor(x, y);
+        int y = point.y + rect.height / 2;
+        for (int x = point.x; x < point.x + rect.width; x++) {
+            Color color = robot.getPixelColor(x, y);
             robot.waitForIdle();
 
-            if (color.equals(c))
+            if (color.equals(c)) {
                 correctColoredPixels++;
+            }
             totalPixels++;
         }
 
-        if (((double)correctColoredPixels/totalPixels*100) < tolerance) {
-            return false;
-        } else {
-            return true;
-        }
+        return ((double)correctColoredPixels/totalPixels*100) >= tolerance;
     }
 
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
@@ -103,62 +86,58 @@ public class bug4314194 {
         }
     }
 
+    private static void createUI() {
+        UIManager.getDefaults().put("CheckBox.disabledText", checkboxColor);
+        UIManager.getDefaults().put("RadioButton.disabledText", radioButtonColor);
+
+        checkBox = new JCheckBox("WWWWW");
+        radioButton = new JRadioButton("WWWWW");
+        checkBox.setFont(checkBox.getFont().deriveFont(50.0f));
+        radioButton.setFont(radioButton.getFont().deriveFont(50.0f));
+        checkBox.setEnabled(false);
+        radioButton.setEnabled(false);
+
+        frame = new JFrame("bug4314194");
+        frame.getContentPane().add(radioButton, BorderLayout.SOUTH);
+        frame.getContentPane().add(checkBox, BorderLayout.NORTH);
+        frame.pack();
+        frame.setAlwaysOnTop(true);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+
+
     public static void main(String[] args) throws Exception {
         robot = new Robot();
         robot.setAutoDelay(100);
 
         for (UIManager.LookAndFeelInfo laf :
-                UIManager.getInstalledLookAndFeels()) {
-            System.out.println("Testing L&F: " + laf.getClassName());
+                 UIManager.getInstalledLookAndFeels()) {
             if (laf.getClassName().contains("Motif")) {
+                System.out.println("Skipping Motif L&F as it is deprecated");
                 continue;
             }
-            setLookAndFeel(laf);
+            System.out.println("Testing L&F: " + laf.getClassName());
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    public void run() {
-                        UIManager.getDefaults().put("CheckBox.disabledText",
-                                checkboxColor);
-                        UIManager.getDefaults().put("RadioButton.disabledText",
-                                radioButtonColor);
-                        checkBox = new JCheckBox("WWWWW");
-                        radioButton = new JRadioButton("WWWWW");
-                        checkBox.setFont(checkBox.getFont().deriveFont(50.0f));
-                        radioButton.setFont(radioButton.getFont().deriveFont(50.0f));
-                        checkBox.setEnabled(false);
-                        radioButton.setEnabled(false);
-
-                        frame = new JFrame("bug4314194");
-                        frame.getContentPane().add(radioButton, BorderLayout.SOUTH);
-                        frame.getContentPane().add(checkBox, BorderLayout.NORTH);
-                        frame.pack();
-                        frame.setAlwaysOnTop(true);
-                        frame.setLocationRelativeTo(null);
-                        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                        frame.setVisible(true);
-                    }
-                });
-
+                SwingUtilities.invokeAndWait(() -> createUI());
                 robot.waitForIdle();
-                robot.delay(500);
+                robot.delay(1000);
 
-                blockTillDisplayed(frame);
-
-                boolean colorFound = checkComponent(checkBox, checkboxColor);
-                if (!colorFound) {
+                if (!checkComponent(checkBox, checkboxColor)) {
                     throw new RuntimeException("Correct color not set for Checkbox");
                 }
 
-                colorFound = checkComponent(radioButton, radioButtonColor);
-                if (!colorFound) {
+                if (!checkComponent(radioButton, radioButtonColor)) {
                     throw new RuntimeException("Correct color not set for RadioButton");
                 }
             } finally {
                 if (frame != null) {
-                    SwingUtilities.invokeAndWait(frame::dispose);
+                    SwingUtilities.invokeAndWait(() -> frame.dispose());
                 }
             }
         }
-
     }
 }
+
