@@ -25,7 +25,7 @@
  * @key headful
  * @bug 4314194 8075916
  * @summary  Verifies Disable checkbox and radiobutton color is honored in Nimbus
- * @run bug4314194
+ * @run main bug4314194
  */
 
 import java.awt.BorderLayout;
