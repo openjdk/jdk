@@ -43,9 +43,7 @@ import javax.swing.UIManager;
 
 public class TestNimbusLabel
 {
-    private static JLabel label;
     private static JFrame frame;
-    private static boolean passed = false;
     private static int colorTolerance = 5;
 
     private static boolean checkPixel(Color color) {
@@ -64,6 +62,7 @@ public class TestNimbusLabel
     }
 
     public static void main(String[] args) throws Exception {
+        boolean passed = false;
 
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
@@ -72,8 +71,8 @@ public class TestNimbusLabel
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
                 UIManager.getDefaults().put("Label.foreground",
-                                            java.awt.Color.red);
-                label =
+                                            Color.RED);
+                JLabel label =
                     new JLabel("<html><body>This text should be in red</body></html>");
 
                 frame.getContentPane().add(label);
@@ -92,13 +91,13 @@ public class TestNimbusLabel
             int y = p.y + d.height/2;
 
             for (int x = p.x; x < p.x + d.width; x++) {
-                    System.out.println("color(" + x + "," + y + ")=" +
-                                        robot.getPixelColor(x, y));
-                    Color color = robot.getPixelColor(x, y);
-                    if (checkPixel(color)) {
-                        passed = true;
-                        break;
-                    }
+                Color color = robot.getPixelColor(x, y);
+                System.out.println("color(" + x + "," + y + ")=" +
+                                    color);
+                if (checkPixel(color)) {
+                    passed = true;
+                    break;
+                }
             }
             if (!passed) {
                 BufferedImage img =
