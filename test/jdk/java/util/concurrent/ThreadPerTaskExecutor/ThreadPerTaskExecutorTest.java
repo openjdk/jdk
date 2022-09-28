@@ -463,7 +463,7 @@ public class ThreadPerTaskExecutorTest {
 
     /**
      * Test invokeAny where some, not all, tasks complete normally. The
-     * completion of the last task is delayed.
+     * completion of the first task to complete normally is delayed.
      */
     @Test(dataProvider = "executors")
     public void testInvokeAny6(ExecutorService executor) throws Exception {

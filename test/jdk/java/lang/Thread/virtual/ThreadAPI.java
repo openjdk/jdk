@@ -400,7 +400,7 @@ public class ThreadAPI {
     public void testJoin5() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             try {
-                Thread.sleep(20);
+                Thread.sleep(50);
             } catch (InterruptedException e) { }
         });
         thread.join();
@@ -422,7 +422,7 @@ public class ThreadAPI {
     public void testJoin7() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             try {
-                Thread.sleep(20);
+                Thread.sleep(50);
             } catch (InterruptedException e) { }
         });
         thread.join(10*1000);
@@ -444,7 +444,7 @@ public class ThreadAPI {
     public void testJoin11() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             try {
-                Thread.sleep(20);
+                Thread.sleep(50);
             } catch (InterruptedException e) { }
         });
         assertTrue(thread.join(Duration.ofSeconds(10)));
@@ -734,7 +734,7 @@ public class ThreadAPI {
     public void testJoin31() throws Exception {
         Thread thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
-                for (int i=0; i<10; i++) {
+                for (int i = 0; i < 10; i++) {
                     LockSupport.parkNanos(Duration.ofMillis(20).toNanos());
                 }
             }
@@ -1368,7 +1368,7 @@ public class ThreadAPI {
 
         });
         // attempt to disrupt sleep
-        for (int i=0; i<5; i++) {
+        for (int i = 0; i < 5; i++) {
             Thread.sleep(20);
             LockSupport.unpark(thread);
         }

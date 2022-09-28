@@ -300,7 +300,7 @@ public class StructuredTaskScopeTest {
                 return null;
             });
 
-            // start a second task to shutdown the scope
+            // start a second task to shutdown the scope after a short delay
             Future<String> future2 = scope.fork(() -> {
                 Thread.sleep(Duration.ofMillis(100));
                 scope.shutdown();
