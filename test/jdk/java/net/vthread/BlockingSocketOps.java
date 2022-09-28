@@ -27,7 +27,7 @@
  * @summary Test virtual threads doing blocking I/O on java.net sockets
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 BlockingSocketOps
+ * @run testng/othervm BlockingSocketOps
  */
 
 /**
@@ -36,7 +36,7 @@
  *    the I/O poller configured to use direct registration
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 -Djdk.useDirectRegister BlockingSocketOps
+ * @run testng/othervm -Djdk.useDirectRegister BlockingSocketOps
  */
 
 /**
@@ -44,7 +44,7 @@
  * @requires vm.continuations
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
+ * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
  */
 
 import java.io.Closeable;
@@ -718,8 +718,7 @@ public class BlockingSocketOps {
     }
 
     /**
-     * Runs the given task asynchronously after the current virtual thread has
-     * parked, or after a max wait time, whichever is first.
+     * Runs the given task asynchronously after the current virtual thread has parked.
      * @return the thread started to run the task
      */
     static Thread runAfterParkedAsync(ThrowingRunnable task) {
