@@ -394,7 +394,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="tvfun" description="Funafuti, Tuvalu" alias="Pacific/Funafuti"/>
             <type name="twtpe" description="Taipei, Taiwan" alias="Asia/Taipei ROC"/>
             <type name="tzdar" description="Dar es Salaam, Tanzania" alias="Africa/Dar_es_Salaam"/>
-            <type name="uaiev" description="Kyiv, Ukraine" alias="Europe/Kiev"/>
+            <type name="uaiev" description="Kyiv, Ukraine" alias="Europe/Kiev Europe/Kyiv"/>
             <type name="uaozh" description="Zaporizhia (Zaporozhye), Ukraine" alias="Europe/Zaporozhye"/>
             <type name="uasip" description="Simferopol, Ukraine" alias="Europe/Simferopol"/>
             <type name="uauzh" description="Uzhhorod (Uzhgorod), Ukraine" alias="Europe/Uzhgorod"/>
