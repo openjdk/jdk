@@ -37,7 +37,10 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @bug 8287794
- * @summary Test various reverse bytes ideal transforms on X86(AVX2, AVX512) and AARCH64(NEON)
+ * @summary Test various reverse bytes ideal transforms on X86(AVX2, AVX512) and AArch64(NEON).
+ *          For AArch64(SVE), we have a specific optimization,
+ *          ReverseBytesV (ReverseBytesV X MASK) MASK => X, which eliminates both ReverseBytesV
+ *          nodes. The test cases for AArch64(SVE) are in TestReverseByteTransformsSVE.java.
  * @requires vm.compiler2.enabled
  * @requires !(vm.cpu.features ~= ".*sve.*")
  * @modules jdk.incubator.vector
