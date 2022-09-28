@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,24 @@
  * questions.
  */
 
-/* @test
- * @bug 8205132
- * @summary Test Thread.countStackFrames()
- * @run testng CountStackFrames
+/*
+ * @test
+ * @bug     8290482
+ * @summary Tests that DestroyJavaVM from an active thread fails.
+ * @run main/native TestActiveDestroy
  */
 
-import org.testng.annotations.Test;
+public class TestActiveDestroy {
 
-public class CountStackFrames {
+    static native boolean tryDestroyJavaVM();
 
-    // current thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testCurrentThread() {
-        Thread.currentThread().countStackFrames();
+    static {
+        System.loadLibrary("activeDestroy");
     }
 
-    // unstarted thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testUnstartedThread() {
-        Thread thread = new Thread(() -> { });
-        thread.countStackFrames();
+    public static void main(String[] args) throws Throwable {
+        if (tryDestroyJavaVM()) {
+            throw new Error("DestroyJavaVM succeeded when it should not!");
+        }
     }
-
-    // terminated thread
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testTerminatedThread() throws Exception {
-        Thread thread = new Thread(() -> { });
-        thread.start();
-        thread.join();
-        thread.countStackFrames();
-    }
-
 }

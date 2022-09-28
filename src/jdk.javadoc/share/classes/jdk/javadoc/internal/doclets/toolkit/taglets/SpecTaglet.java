@@ -44,12 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
 
     public SpecTaglet() {
-        super(DocTree.Kind.SPEC, true, EnumSet.allOf(Location.class));
-    }
-
-    @Override
-    public boolean isBlockTag() {
-        return true;
+        super(DocTree.Kind.SPEC, false, EnumSet.allOf(Location.class));
     }
 
     @Override

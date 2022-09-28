@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,34 @@
  * questions.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 
-/*
- * @test
- *
- * @summary converted from VM Testbase nsk/jvmti/GetThreadState/thrstat004.
- * VM Testbase keywords: [quick, jpda, jvmti, noras]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test exercises JVMTI function
- *       GetThreadState(thread, threadStatusPtr)
- *     The test checks if the function returns:
- *       - JVMTI_ERROR_NULL_POINTER if threadStatusPtr is null
- *       - JVMTI_ERROR_NULL_POINTER if suspendStatusPtr is null
- *       - JVMTI_ERROR_INVALID_THREAD if thread is not a thread object
- * COMMENTS
- *     Converted the test to use GetThreadState instead of GetThreadStatus.
- *     Ported from JVMDI.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm/native -agentlib:thrstat004 nsk.jvmti.GetThreadState.thrstat004
- */
+#include "jni.h"
 
+static const char* jni_error_code(int ret) {
+  switch(ret) {
+  case JNI_OK: return "JNI_OK";
+  case JNI_ERR: return "JNI_ERR";
+  case JNI_EDETACHED: return "JNI_EDETACHED";
+  case JNI_EVERSION: return "JNI_EVERSION";
+  case JNI_ENOMEM: return "JNI_ENOMEM";
+  case JNI_EEXIST: return "JNI_EEXIST";
+  case JNI_EINVAL: return "JNI_EINVAL";
+  default: return "Invalid JNI error code";
+  }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_TestActiveDestroy_tryDestroyJavaVM(JNIEnv *env, jclass cls) {
+  JavaVM* jvm;
+  int res = (*env)->GetJavaVM(env, &jvm);
+  if (res != JNI_OK) {
+    fprintf(stderr, "GetJavaVM failed: %s\n", jni_error_code(res));
+    exit(1);
+  }
+  printf("Calling DestroyJavaVM from active thread\n");
+  res = (*jvm)->DestroyJavaVM(jvm);
+  printf("DestroyJavaVM returned: %s\n", jni_error_code(res));
+  return res == JNI_OK;
+}
