@@ -46,7 +46,10 @@ public class AddLNodeIdealizationTests {
                  "test17", "test18", "test19",
                  "test20", "test21", "test22",
                  "test23", "test24", "test25",
-                 "test26", "test27"})
+                 "test26", "test27", "test28",
+                 "test29", "test30", "test31",
+                 "test32", "test33", "test34",
+                 "test35", "test36", "test37"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -92,7 +95,17 @@ public class AddLNodeIdealizationTests {
         Asserts.assertEQ(a - b                       , test24(a, b));
         Asserts.assertEQ(b - a                       , test25(a, b));
         Asserts.assertEQ(a - b                       , test26(a, b));
-        Asserts.assertEQ(2021 - a                    , test27(a));
+        Asserts.assertEQ(b - a                       , test27(a, b));
+        Asserts.assertEQ(a + 1                       , test28(a));
+        Asserts.assertEQ(a                           , test29(a));
+        Asserts.assertEQ((-1 - a) - b                , test30(a, b));
+        Asserts.assertEQ((b - a) + (-1)              , test31(a, b));
+        Asserts.assertEQ((b - a) + (-1)              , test32(a, b));
+        Asserts.assertEQ(~a                          , test33(a));
+        Asserts.assertEQ(~a                          , test34(a));
+        Asserts.assertEQ(~a                          , test35(a));
+        Asserts.assertEQ(~a                          , test36(a));
+        Asserts.assertEQ((~a + b) + (~a | c)         , test37(a, b, c));
     }
 
     @Test
@@ -328,10 +341,93 @@ public class AddLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD, IRNode.XOR})
+    @IR(failOn = {IRNode.XOR})
     @IR(counts = {IRNode.SUB, "1"})
-    // Checks ~x + c => (c - 1) - x
-    public long test27(long x) {
-        return ~x + 2022;
+    // Checks ~x - ~y => y - x
+    public long test27(long x, long y) {
+        return ~x - ~y; // transformed to y - x
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.XOR})
+    @IR(counts = {IRNode.ADD, "1"})
+    // Checks 0 - ~x => x + 1
+    public long test28(long x) {
+        return 0 - ~x; // transformed to x + 1
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.XOR, IRNode.ADD})
+    // Checks -1 - ~x => x
+    public long test29(long x) {
+        return -1 - ~x;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.XOR})
+    @IR(counts = {IRNode.SUB, "2"})
+    // Checks ~x - y => (-1 - x) -y
+    public long test30(long x, long y) {
+        return ~x - y;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.SUB, "1",
+                  IRNode.ADD, "1"})
+    // Checks ~x + y => (y - x) + (-1)
+    public long test31(long x, long y) {
+        return ~x + y;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.SUB, "1",
+                  IRNode.ADD, "1"})
+    // Checks y + ~x => (y - x) + (-1)
+    public long test32(long x, long y) {
+        return y + ~x;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.ADD})
+    @IR(counts = {IRNode.XOR, "1"})
+    // Checks ~(x + 0) => ~x, should not be transformed into -1-x
+    public long test33(long x) {
+        return ~(x + 0);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.ADD})
+    @IR(counts = {IRNode.XOR, "1"})
+    // Checks ~(x - 0) => ~x, should not be transformed into -1-x
+    public long test34(long x) {
+        return ~(x - 0);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.ADD})
+    @IR(counts = {IRNode.XOR, "1"})
+    // Checks ~x + 0 => ~x, should not be transformed into -1-x
+    public long test35(long x) {
+        return ~x + 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.ADD})
+    @IR(counts = {IRNode.XOR, "1"})
+    // Checks ~x - 0 => ~x, should not be transformed into -1-x
+    public long test36(long x) {
+        return ~x - 0;
+    }
+
+    @Test
+    @IR(counts = {IRNode.XOR, "1"})
+    // Checks ~x + y should NOT be transformed into (y - x) + (-1)
+    // because ~x has one non-arithmetic user.
+    public long test37(long x, long y, long z) {
+        long u = ~x + y;
+        long v = ~x | z;
+        return u + v;
     }
 }

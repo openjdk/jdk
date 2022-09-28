@@ -323,16 +323,6 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     }
   }
 
-  // Convert ~x - rhs, which is (x ^ (-1)) - rhs, into (-1 - x) - rhs.
-  if (op1 == Op_XorI && phase->type(in1->in(2)) == TypeInt::MINUS_1) {
-    return new SubINode(phase->transform(new SubINode(phase->intcon(-1), in1->in(1))), in2);
-  }
-
-  // Convert lhs - ~x, which is lhs - (x ^ (-1)), into lhs - (-1 - x).
-  if (op2 == Op_XorI && phase->type(in2->in(2)) == TypeInt::MINUS_1) {
-    return new SubINode(in1, phase->transform(new SubINode(phase->intcon(-1), in2->in(1))));
-  }
-
   return NULL;
 }
 
@@ -508,16 +498,6 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ( t21 && t22 && zero == TypeLong::ZERO && t22->is_con(63) ) {
       return new URShiftLNode(in21, in22);
     }
-  }
-
-  // Convert ~x - rhs, which is (x ^ (-1)) - rhs, into (-1 - x) - rhs.
-  if (op1 == Op_XorL && phase->type(in1->in(2)) == TypeLong::MINUS_1) {
-    return new SubLNode(phase->transform(new SubLNode(phase->longcon(-1), in1->in(1))), in2);
-  }
-
-  // Convert lhs - ~x, which is lhs - (x ^ (-1)), into lhs - (-1 - x).
-  if (op2 == Op_XorL && phase->type(in2->in(2)) == TypeLong::MINUS_1) {
-    return new SubLNode(in1, phase->transform(new SubLNode(phase->longcon(-1), in2->in(1))));
   }
 
   return NULL;
