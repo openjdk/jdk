@@ -137,7 +137,7 @@ public class BasicTextAreaUI extends BasicTextUI {
     }
 
     /**
-     * Creates the view for an element.
+     * Creates a view for an element.
      *
      * @param elem the element
      * @return the view for the element
