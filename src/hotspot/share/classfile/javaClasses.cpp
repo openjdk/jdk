@@ -2001,7 +2001,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
 
-      // Pick some initial length
+      // Pick minimum length that will cover most cases
       int init_length = 64;
       _methods = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<Method*>(init_length, mtInternal);
       _bcis = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(init_length, mtInternal);
