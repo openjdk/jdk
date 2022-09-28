@@ -386,7 +386,7 @@ public class StructuredTaskScopeTest {
             Thread.currentThread().interrupt();
             try {
                 scope.join();
-                fail();
+                fail("join did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.interrupted());   // interrupt status should be clear
             }
@@ -412,7 +412,7 @@ public class StructuredTaskScopeTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 scope.join();
-                fail();
+                fail("join did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.interrupted());   // interrupt status should be clear
             }
@@ -559,7 +559,7 @@ public class StructuredTaskScopeTest {
                 for (int i = 0; i < 3; i++) {
                     try {
                         scope.joinUntil(Instant.now().plusMillis(50));
-                        fail();
+                        fail("joinUntil did not throw");
                     } catch (TimeoutException expected) {
                         assertFalse(future.isDone());
                     }
@@ -588,7 +588,7 @@ public class StructuredTaskScopeTest {
                 // now
                 try {
                     scope.joinUntil(Instant.now());
-                    fail();
+                    fail("joinUntil did not throw");
                 } catch (TimeoutException expected) {
                     assertFalse(future.isDone());
                 }
@@ -596,7 +596,7 @@ public class StructuredTaskScopeTest {
                 // in the past
                 try {
                     scope.joinUntil(Instant.now().minusSeconds(1));
-                    fail();
+                    fail("joinUntil did not throw");
                 } catch (TimeoutException expected) {
                     assertFalse(future.isDone());
                 }
@@ -622,7 +622,7 @@ public class StructuredTaskScopeTest {
             Thread.currentThread().interrupt();
             try {
                 scope.joinUntil(Instant.now().plusSeconds(10));
-                fail();
+                fail("joinUntil did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.interrupted());   // interrupt status should be clear
             }
@@ -634,7 +634,7 @@ public class StructuredTaskScopeTest {
     }
 
     /**
-     * Test interrupt of thread blocked in joinUntil
+     * Test interrupt of thread blocked in joinUntil.
      */
     @Test(dataProvider = "factories")
     public void testInterruptJoinUntil2(ThreadFactory factory) throws Exception {
@@ -648,7 +648,7 @@ public class StructuredTaskScopeTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 scope.joinUntil(Instant.now().plusSeconds(10));
-                fail();
+                fail("joinUntil did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.interrupted());   // interrupt status should be clear
             }
@@ -862,7 +862,7 @@ public class StructuredTaskScopeTest {
                 scope1.join();
                 try {
                     scope1.close();
-                    fail();
+                    fail("close did not throw");
                 } catch (StructureViolationException expected) { }
 
                 // underlying flock should be closed, fork should return a cancelled task
@@ -934,7 +934,7 @@ public class StructuredTaskScopeTest {
             // timed-get, should timeout
             try {
                 future.get(20, TimeUnit.MILLISECONDS);
-                fail();
+                fail("Future.get did not throw");
             } catch (TimeoutException expected) { }
 
             future.cancel(true);

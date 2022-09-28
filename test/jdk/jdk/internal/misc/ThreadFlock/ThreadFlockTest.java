@@ -446,7 +446,7 @@ public class ThreadFlockTest {
                 long startMillis = millisTime();
                 try {
                     flock.awaitAll(Duration.ofSeconds(2));
-                    fail();
+                    fail("awaitAll did not throw");
                 } catch (TimeoutException e) {
                     checkDuration(startMillis, 1900, 4000);
                 }
@@ -473,8 +473,8 @@ public class ThreadFlockTest {
             try {
                 for (int i = 0; i < 3; i++) {
                     try {
-                        flock.awaitAll(Duration.ofSeconds(1));
-                        fail();
+                        flock.awaitAll(Duration.ofMillis(50));
+                        fail("awaitAll did not throw");
                     } catch (TimeoutException expected) { }
                 }
             } finally {
@@ -503,11 +503,11 @@ public class ThreadFlockTest {
             try {
                 try {
                     flock.awaitAll(Duration.ofSeconds(0));
-                    fail();
+                    fail("awaitAll did not throw");
                 } catch (TimeoutException expected) { }
                 try {
                     flock.awaitAll(Duration.ofSeconds(-1));
-                    fail();
+                    fail("awaitAll did not throw");
                 } catch (TimeoutException expected) { }
             } finally {
                 thread.interrupt();
@@ -542,7 +542,7 @@ public class ThreadFlockTest {
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll();
-                fail();
+                fail("awaitAll did not throw");
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -552,9 +552,9 @@ public class ThreadFlockTest {
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
-                fail();
+                fail("awaitAll did not throw");
             } catch (TimeoutException e) {
-                fail();
+                fail("TimeoutException not expected");
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -594,7 +594,7 @@ public class ThreadFlockTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 flock.awaitAll();
-                fail();
+                fail("awaitAll did not throw");
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -603,9 +603,9 @@ public class ThreadFlockTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
-                fail();
+                fail("awaitAll did not throw");
             } catch (TimeoutException e) {
-                fail();
+                fail("TimeoutException not expected");
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -721,7 +721,7 @@ public class ThreadFlockTest {
 
             // schedule thread to invoke wakeup
             Thread thread2 = factory.newThread(() -> {
-                try { Thread.sleep(Duration.ofSeconds(1)); } catch (Exception e) { }
+                try { Thread.sleep(Duration.ofMillis(500)); } catch (Exception e) { }
                 flock.wakeup();
             });
             flock.start(thread2);
@@ -973,7 +973,7 @@ public class ThreadFlockTest {
             try (var flock2 = ThreadFlock.open("flock2")) {
                 try {
                     flock1.close();
-                    fail();
+                    fail("close did not throw");
                 } catch (RuntimeException e) {
                     assertTrue(e.toString().contains("Structure"));
                 }

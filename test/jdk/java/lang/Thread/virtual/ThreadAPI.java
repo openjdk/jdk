@@ -28,7 +28,7 @@
  * @enablePreview
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run testng/othervm/timeout=300 ThreadAPI
+ * @run testng ThreadAPI
  */
 
 /*
@@ -37,7 +37,7 @@
  * @enablePreview
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ThreadAPI
+ * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ThreadAPI
  */
 
 import java.time.Duration;
@@ -662,7 +662,7 @@ public class ThreadAPI {
      */
     @Test
     public void testJoin28() throws Exception {
-        long nanos = TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS);
+        long nanos = TimeUnit.NANOSECONDS.convert(100, TimeUnit.MILLISECONDS);
         VThreadRunner.run(() -> {
             var thread = new Thread(() -> LockSupport.parkNanos(nanos));
             thread.start();
@@ -735,7 +735,7 @@ public class ThreadAPI {
         Thread thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 for (int i=0; i<10; i++) {
-                    LockSupport.parkNanos(Duration.ofMillis(100).toNanos());
+                    LockSupport.parkNanos(Duration.ofMillis(20).toNanos());
                 }
             }
         });
@@ -762,12 +762,12 @@ public class ThreadAPI {
         Thread thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 while (!done.get()) {
-                    LockSupport.parkNanos(Duration.ofMillis(100).toNanos());
+                    LockSupport.parkNanos(Duration.ofMillis(20).toNanos());
                 }
             }
         });
         try {
-            assertFalse(thread.join(Duration.ofSeconds(1)));
+            assertFalse(thread.join(Duration.ofMillis(100)));
         } finally {
             done.set(true);
         }
@@ -1227,13 +1227,13 @@ public class ThreadAPI {
     }
 
     /**
-     * Tasks that sleep for 2 seconds.
+     * Tasks that sleep for 1 second.
      */
-    @DataProvider(name = "twoSecondSleepers")
-    public Object[][] twoSecondSleepers() {
+    @DataProvider(name = "oneSecondSleepers")
+    public Object[][] oneSecondSleepers() {
         ThrowingRunnable[] sleepers = {
-                () -> Thread.sleep(2000),
-                () -> Thread.sleep(Duration.ofSeconds(2))
+                () -> Thread.sleep(1000),
+                () -> Thread.sleep(Duration.ofSeconds(1))
         };
         return Arrays.stream(sleepers)
                 .map(s -> new Object[] { s })
@@ -1243,12 +1243,12 @@ public class ThreadAPI {
     /**
      * Test Thread.sleep duration.
      */
-    @Test(dataProvider = "twoSecondSleepers")
+    @Test(dataProvider = "oneSecondSleepers")
     public void testSleep3(ThrowingRunnable sleeper) throws Exception {
         VThreadRunner.run(() -> {
             long start = millisTime();
             sleeper.run();
-            expectDuration(start, /*min*/1900, /*max*/4000);
+            expectDuration(start, /*min*/900, /*max*/4000);
         });
     }
 
@@ -1343,8 +1343,8 @@ public class ThreadAPI {
             LockSupport.unpark(Thread.currentThread());
 
             long start = millisTime();
-            Thread.sleep(2000);
-            expectDuration(start, /*min*/1900, /*max*/4000);
+            Thread.sleep(1000);
+            expectDuration(start, /*min*/900, /*max*/4000);
 
             // check that parking permit was not consumed
             LockSupport.park();
@@ -1358,14 +1358,11 @@ public class ThreadAPI {
     public void testSleep7() throws Exception {
         AtomicReference<Exception> exc = new AtomicReference<>();
         var thread = Thread.ofVirtual().start(() -> {
-            long start = millisTime();
             try {
-                Thread.sleep(2000);
-                long elapsed = millisTime() - start;
-                if (elapsed < 1900) {
-                    exc.set(new RuntimeException("sleep too short"));
-                }
-            } catch (InterruptedException e) {
+                long start = millisTime();
+                Thread.sleep(1000);
+                expectDuration(start, /*min*/900, /*max*/4000);
+            } catch (Exception e) {
                 exc.set(e);
             }
 
@@ -1390,9 +1387,9 @@ public class ThreadAPI {
         VThreadRunner.run(() -> {
             long start = millisTime();
             synchronized (lock) {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             }
-            expectDuration(start, /*min*/1900, /*max*/4000);
+            expectDuration(start, /*min*/900, /*max*/4000);
         });
     }
 

@@ -416,7 +416,7 @@ public class ThreadPerTaskExecutorTest {
             Callable<String> task2 = () -> { throw new FooException(); };
             try {
                 executor.invokeAny(Set.of(task1, task2));
-                fail();
+                fail("invokeAny did not throw");
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
                 assertTrue(cause instanceof FooException);
@@ -439,7 +439,7 @@ public class ThreadPerTaskExecutorTest {
             };
             try {
                 executor.invokeAny(Set.of(task1, task2));
-                fail();
+                fail("invokeAny did not throw");
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
                 assertTrue(cause instanceof FooException);
@@ -573,7 +573,7 @@ public class ThreadPerTaskExecutorTest {
             Thread.currentThread().interrupt();
             try {
                 executor.invokeAny(Set.of(task1, task2));
-                fail();
+                fail("invokeAny did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
             } finally {
@@ -599,7 +599,7 @@ public class ThreadPerTaskExecutorTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 executor.invokeAny(Set.of(task1, task2));
-                fail();
+                fail("invokeAny did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
             } finally {
@@ -796,7 +796,7 @@ public class ThreadPerTaskExecutorTest {
             Thread.currentThread().interrupt();
             try {
                 executor.invokeAll(List.of(task1, task2));
-                fail();
+                fail("invokeAll did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
             } finally {
@@ -820,7 +820,7 @@ public class ThreadPerTaskExecutorTest {
             Thread.currentThread().interrupt();
             try {
                 executor.invokeAll(List.of(task1, task2), 1, TimeUnit.SECONDS);
-                fail();
+                fail("invokeAll did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
             } finally {
@@ -830,7 +830,7 @@ public class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test interrupt with thread blocked in invokeAll
+     * Test interrupt with thread blocked in invokeAll.
      */
     @Test(dataProvider = "executors")
     public void testInvokeAllInterrupt4(ExecutorService executor) throws Exception {
@@ -840,7 +840,7 @@ public class ThreadPerTaskExecutorTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 executor.invokeAll(Set.of(task1, task2));
-                fail();
+                fail("invokeAll did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
 
@@ -856,7 +856,7 @@ public class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test interrupt with thread blocked in timed-invokeAll
+     * Test interrupt with thread blocked in timed-invokeAll.
      */
     @Test(dataProvider = "executors")
     public void testInvokeAllInterrupt6(ExecutorService executor) throws Exception {
@@ -866,7 +866,7 @@ public class ThreadPerTaskExecutorTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 executor.invokeAll(Set.of(task1, task2), 1, TimeUnit.DAYS);
-                fail();
+                fail("invokeAll did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
 
