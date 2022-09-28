@@ -80,7 +80,7 @@ public class CertId {
                   SerialNumber serialNumber) throws IOException {
 
         // compute issuerNameHash
-        MessageDigest md = null;
+        MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA1");
         } catch (NoSuchAlgorithmException nsae) {
@@ -206,29 +206,23 @@ public class CertId {
             return false;
         }
 
-        if (hashAlgId.equals(that.getHashAlgorithm()) &&
-            Arrays.equals(issuerNameHash, that.getIssuerNameHash()) &&
-            Arrays.equals(issuerKeyHash, that.getIssuerKeyHash()) &&
-            certSerialNumber.getNumber().equals(that.getSerialNumber())) {
-            return true;
-        } else {
-            return false;
-        }
+        return hashAlgId.equals(that.getHashAlgorithm()) &&
+                Arrays.equals(issuerNameHash, that.getIssuerNameHash()) &&
+                Arrays.equals(issuerKeyHash, that.getIssuerKeyHash()) &&
+                certSerialNumber.getNumber().equals(that.getSerialNumber());
     }
 
     /**
      * Create a string representation of the CertId.
      */
     @Override public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("CertId \n");
-        sb.append("Algorithm: " + hashAlgId.toString() +"\n");
-        sb.append("issuerNameHash \n");
         HexDumpEncoder encoder = new HexDumpEncoder();
-        sb.append(encoder.encode(issuerNameHash));
-        sb.append("\nissuerKeyHash: \n");
-        sb.append(encoder.encode(issuerKeyHash));
-        sb.append("\n" +  certSerialNumber.toString());
-        return sb.toString();
+        return "CertId \n" +
+                "Algorithm: " + hashAlgId.toString() + "\n" +
+                "issuerNameHash \n" +
+                encoder.encode(issuerNameHash) +
+                "\nissuerKeyHash: \n" +
+                encoder.encode(issuerKeyHash) +
+                "\n" + certSerialNumber.toString();
     }
 }

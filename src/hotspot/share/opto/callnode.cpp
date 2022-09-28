@@ -1454,7 +1454,7 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   assert(Opcode() == Op_SafePoint, "only value for safepoint in loops");
   int nb = igvn->C->root()->find_prec_edge(this);
   if (nb != -1) {
-    igvn->C->root()->rm_prec(nb);
+    igvn->delete_precedence_of(igvn->C->root(), nb);
   }
 }
 
@@ -1611,7 +1611,7 @@ Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         frame = phase->transform(frame);
         // Halt & Catch Fire
         Node* halt = new HaltNode(nproj, frame, "unexpected negative array length");
-        phase->C->root()->add_req(halt);
+        igvn->add_input_to(phase->C->root(), halt);
         phase->transform(halt);
 
         igvn->replace_node(catchproj, phase->C->top());

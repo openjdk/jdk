@@ -463,7 +463,6 @@ class Compile : public Phase {
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
-  void print_inlining_stream_free();
   void print_inlining_init();
   void print_inlining_reinit();
   void print_inlining_commit();
@@ -477,7 +476,7 @@ class Compile : public Phase {
 
   void* barrier_set_state() const { return _barrier_set_state; }
 
-  outputStream* print_inlining_stream() const {
+  stringStream* print_inlining_stream() {
     assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
     return _print_inlining_stream;
   }
@@ -491,7 +490,7 @@ class Compile : public Phase {
   void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     stringStream ss;
     CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
-    print_inlining_stream()->print("%s", ss.as_string());
+    print_inlining_stream()->print("%s", ss.freeze());
   }
 
 #ifndef PRODUCT
@@ -951,7 +950,7 @@ class Compile : public Phase {
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              remove_useless_nodes (Unique_Node_List &useful);
+  void              disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist);
 
   void              remove_useless_node(Node* dead);
 
