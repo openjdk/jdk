@@ -174,7 +174,7 @@ public final class SealedGraph implements Taglet {
                 styles.put(TOOLTIP, node.getQualifiedName().toString());
                 if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
                     // This indicates that the hierarchy is not closed
-                    styles.put(STYLE, "dotted");
+                    styles.put(STYLE, "dashed");
                 }
             }
 
