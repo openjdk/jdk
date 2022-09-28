@@ -50,7 +50,7 @@ public final class UnicodeArgsTest {
     public void test8246042(boolean onCommandLine) {
         final String testString;
 
-        String encoding = System.getProperty("file.encoding");
+        String encoding = System.getProperty("native.encoding");
         switch (encoding) {
         default:
             testString = new String(Character.toChars(0x00E9));
