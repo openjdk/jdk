@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
@@ -108,6 +109,8 @@
 
 class BootstrapInfo;
 class ClassFileStream;
+class ConstantPoolCache;
+class ConstantPoolCacheEntry;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;

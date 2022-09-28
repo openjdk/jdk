@@ -75,7 +75,6 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -433,8 +432,6 @@ bool ParallelCompactData::initialize(MemRegion covered_region)
 
   assert(region_align_down(_region_start) == _region_start,
          "region start not aligned");
-  assert((region_size & RegionSizeOffsetMask) == 0,
-         "region size not a multiple of RegionSize");
 
   bool result = initialize_region_data(region_size) && initialize_block_data();
   return result;
@@ -471,7 +468,10 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
 bool ParallelCompactData::initialize_region_data(size_t region_size)
 {
-  const size_t count = (region_size + RegionSizeOffsetMask) >> Log2RegionSize;
+  assert((region_size & RegionSizeOffsetMask) == 0,
+         "region size not a multiple of RegionSize");
+
+  const size_t count = region_size >> Log2RegionSize;
   _region_vspace = create_vspace(count, sizeof(RegionData));
   if (_region_vspace != 0) {
     _region_data = (RegionData*)_region_vspace->reserved_low_addr();
@@ -962,8 +962,8 @@ void PSParallelCompact::pre_compact()
   // Increment the invocation count
   heap->increment_total_collections(true);
 
-  Continuations::on_gc_marking_cycle_start();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_start();
+  CodeCache::arm_all_nmethods();
 
   // We need to track unique mark sweep invocations as well.
   _total_invocations++;
@@ -995,8 +995,8 @@ void PSParallelCompact::post_compact()
   GCTraceTime(Info, gc, phases) tm("Post Compact", &_gc_timer);
   ParCompactionManager::remove_all_shadow_regions();
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
@@ -1684,10 +1684,8 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
          "should be in vm thread");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  GCCause::Cause gc_cause = heap->gc_cause();
   assert(!heap->is_gc_active(), "not reentrant");
 
-  PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
   if (ScavengeBeforeFullGC) {
@@ -1745,7 +1743,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                                         Threads::number_of_non_daemon_threads());
     ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);
 
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(&_gc_tracer);
     GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause, true);
 
     heap->pre_full_gc_dump(&_gc_timer);
@@ -2056,12 +2054,13 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
+    CodeCache::UnloadingScope scope(is_alive_closure());
 
     // Follow system dictionary roots and unload classes.
     bool purged_class = SystemDictionary::do_unloading(&_gc_timer);
 
     // Unload nmethods.
-    CodeCache::do_unloading(is_alive_closure(), purged_class);
+    CodeCache::do_unloading(purged_class);
 
     // Prune dead klasses from subklass/sibling/implementor lists.
     Klass::clean_weak_klass_links(purged_class);
@@ -2429,6 +2428,10 @@ public:
     // Once a thread has drained it's stack, it should try to steal regions from
     // other threads.
     compaction_with_stealing_work(&_terminator, worker_id);
+
+    // At this point all regions have been compacted, so it's now safe
+    // to update the deferred objects that cross region boundaries.
+    cm->drain_deferred_objects();
   }
 };
 
@@ -2458,20 +2461,11 @@ void PSParallelCompact::compact() {
     ParallelScavengeHeap::heap()->workers().run_task(&task);
 
 #ifdef  ASSERT
-    // Verify that all regions have been processed before the deferred updates.
+    // Verify that all regions have been processed.
     for (unsigned int id = old_space_id; id < last_space_id; ++id) {
       verify_complete(SpaceId(id));
     }
 #endif
-  }
-
-  {
-    GCTraceTime(Trace, gc, phases) tm("Deferred Updates", &_gc_timer);
-    // Update the deferred objects, if any.
-    ParCompactionManager* cm = ParCompactionManager::get_vmthread_cm();
-    for (unsigned int id = old_space_id; id < last_space_id; ++id) {
-      update_deferred_objects(cm, SpaceId(id));
-    }
   }
 
   DEBUG_ONLY(write_block_fill_histogram());
@@ -2600,32 +2594,22 @@ PSParallelCompact::SpaceId PSParallelCompact::space_id(HeapWord* addr) {
   return last_space_id;
 }
 
-void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
-                                                SpaceId id) {
-  assert(id < last_space_id, "bad space id");
-
+void PSParallelCompact::update_deferred_object(ParCompactionManager* cm, HeapWord *addr) {
+#ifdef ASSERT
   ParallelCompactData& sd = summary_data();
-  const SpaceInfo* const space_info = _space_info + id;
+  size_t region_idx = sd.addr_to_region_idx(addr);
+  assert(sd.region(region_idx)->completed(), "first region must be completed before deferred updates");
+  assert(sd.region(region_idx + 1)->completed(), "second region must be completed before deferred updates");
+#endif
+
+  const SpaceInfo* const space_info = _space_info + space_id(addr);
   ObjectStartArray* const start_array = space_info->start_array();
-
-  const MutableSpace* const space = space_info->space();
-  assert(space_info->dense_prefix() >= space->bottom(), "dense_prefix not set");
-  HeapWord* const beg_addr = space_info->dense_prefix();
-  HeapWord* const end_addr = sd.region_align_up(space_info->new_top());
-
-  const RegionData* const beg_region = sd.addr_to_region_ptr(beg_addr);
-  const RegionData* const end_region = sd.addr_to_region_ptr(end_addr);
-  const RegionData* cur_region;
-  for (cur_region = beg_region; cur_region < end_region; ++cur_region) {
-    HeapWord* const addr = cur_region->deferred_obj_addr();
-    if (addr != NULL) {
-      if (start_array != NULL) {
-        start_array->allocate_block(addr);
-      }
-      cm->update_contents(cast_to_oop(addr));
-      assert(oopDesc::is_oop_or_null(cast_to_oop(addr)), "Expected an oop or NULL at " PTR_FORMAT, p2i(cast_to_oop(addr)));
-    }
+  if (start_array != NULL) {
+    start_array->allocate_block(addr);
   }
+
+  cm->update_contents(cast_to_oop(addr));
+  assert(oopDesc::is_oop(cast_to_oop(addr)), "Expected an oop at " PTR_FORMAT, p2i(cast_to_oop(addr)));
 }
 
 // Skip over count live words starting from beg, and return the address of the
@@ -2872,7 +2856,6 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (closure.is_full()) {
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      region_ptr->set_deferred_obj_addr(NULL);
       closure.complete_region(cm, dest_addr, region_ptr);
       return;
     }
@@ -2917,7 +2900,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (status == ParMarkBitMap::would_overflow) {
       // The last object did not fit.  Note that interior oop updates were
       // deferred, then copy enough of the object to fill the region.
-      region_ptr->set_deferred_obj_addr(closure.destination());
+      cm->push_deferred_object(closure.destination());
       status = closure.copy_until_full(); // copies from closure.source()
 
       decrement_destination_counts(cm, src_space_id, src_region_idx,
@@ -2929,7 +2912,6 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (status == ParMarkBitMap::full) {
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      region_ptr->set_deferred_obj_addr(NULL);
       closure.complete_region(cm, dest_addr, region_ptr);
       return;
     }

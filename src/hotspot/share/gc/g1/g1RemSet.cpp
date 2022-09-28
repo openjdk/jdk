@@ -103,21 +103,6 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   // to (>=) HeapRegion::CardsPerRegion (completely scanned).
   uint volatile* _card_table_scan_state;
 
-  // Return "optimal" number of chunks per region we want to use for claiming areas
-  // within a region to claim. Dependent on the region size as proxy for the heap
-  // size, we limit the total number of chunks to limit memory usage and maintenance
-  // effort of that table vs. granularity of distributing scanning work.
-  // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
-  // and so on seems to be such a good trade-off.
-  static uint get_chunks_per_region(uint log_region_size) {
-    // Limit the expected input values to current known possible values of the
-    // (log) region size. Adjust as necessary after testing if changing the permissible
-    // values for region size.
-    assert(log_region_size >= 20 && log_region_size <= 29,
-           "expected value in [20,29], but got %u", log_region_size);
-    return 1u << (log_region_size / 2 - 4);
-  }
-
   uint _scan_chunks_per_region;         // Number of chunks per region.
   uint8_t _log_scan_chunks_per_region;  // Log of number of chunks per region.
   bool* _region_scan_chunks;
@@ -284,7 +269,7 @@ public:
     _max_reserved_regions(0),
     _collection_set_iter_state(NULL),
     _card_table_scan_state(NULL),
-    _scan_chunks_per_region(get_chunks_per_region(HeapRegion::LogOfHRGrainBytes)),
+    _scan_chunks_per_region(G1CollectedHeap::get_chunks_per_region()),
     _log_scan_chunks_per_region(log2i(_scan_chunks_per_region)),
     _region_scan_chunks(NULL),
     _num_total_scan_chunks(0),
@@ -1268,7 +1253,23 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
     void assert_bitmap_clear(HeapRegion* hr, const G1CMBitMap* bitmap) {
       assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
-             "Bitmap should have no mark for region %u", hr->hrm_index());
+             "Bitmap should have no mark for region %u (%s)", hr->hrm_index(), hr->get_short_type_str());
+    }
+
+    bool should_clear_region(HeapRegion* hr) const {
+      // The bitmap for young regions must obviously be clear as we never mark through them;
+      // old regions are only in the collection set after the concurrent cycle completed,
+      // so their bitmaps must also be clear except when the pause occurs during the
+      // Concurrent Cleanup for Next Mark phase. Only at that point the region's bitmap may
+      // contain marks while being in the collection set at the same time.
+      //
+      // There is one exception: shutdown might have aborted the Concurrent Cleanup for Next
+      // Mark phase midway, which might have also left stale marks in old generation regions.
+      // There might actually have been scheduled multiple collections, but at that point we do
+      // not care that much about performance and just do the work multiple times if needed.
+      return (_g1h->collector_state()->clearing_bitmap() ||
+              _g1h->concurrent_mark_is_terminating()) &&
+              hr->is_old();
     }
 
   public:
@@ -1279,14 +1280,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
       // Evacuation failure uses the bitmap to record evacuation failed objects,
       // so the bitmap for the regions in the collection set must be cleared if not already.
-      //
-      // A clear bitmap is obvious for young regions as we never mark through them;
-      // old regions are only in the collection set after the concurrent cycle completed,
-      // so their bitmaps must also be clear except when the pause occurs during the
-      // concurrent bitmap clear. At that point the region's bitmap may contain marks
-      // while being in the collection set at the same time.
-      if (_g1h->collector_state()->clearing_bitmap() && hr->is_old()) {
+      if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
+        hr->reset_top_at_mark_start();
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
@@ -1322,8 +1318,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     virtual bool do_heap_region(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!r->is_starts_humongous() ||
-          !g1h->region_attr(r->hrm_index()).is_humongous() ||
+      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate() ||
           r->rem_set()->is_empty()) {
         return false;
       }
@@ -1491,7 +1486,7 @@ public:
     }
 
     // Apply closure to log entries in the HCC.
-    if (_initial_evacuation && G1HotCardCache::default_use_cache()) {
+    if (_initial_evacuation && G1HotCardCache::use_cache()) {
       assert(merge_remset_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
       G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeHCC, worker_id);
       G1MergeLogBufferCardsClosure cl(g1h, _scan_state);
@@ -1603,7 +1598,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 }
 
 bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
-  assert(!_g1h->is_gc_active(), "Only call concurrently");
+  assert(!SafepointSynchronize::is_at_safepoint(), "Only call concurrently");
 
   CardValue* card_ptr = *card_ptr_addr;
   // Find the start address represented by the card.
@@ -1657,9 +1652,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   //   * a pointer to a "hot" card that was evicted from the "hot" cache.
   //
 
-  if (_hot_card_cache->use_cache()) {
-    assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
-
+  if (G1HotCardCache::use_cache()) {
     const CardValue* orig_card_ptr = card_ptr;
     card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {

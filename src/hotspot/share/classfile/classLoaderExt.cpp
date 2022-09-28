@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
@@ -81,17 +82,36 @@ void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
 
 void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable* met) {
   ResourceMark rm(current);
-  for (int i = 0; i < met->table_size(); i++) {
-    for (ModuleEntry* m = met->bucket(i); m != NULL;) {
+  GrowableArray<char*>* module_paths = new GrowableArray<char*>(5);
+
+  class ModulePathsGatherer : public ModuleClosure {
+    JavaThread* _current;
+    GrowableArray<char*>* _module_paths;
+   public:
+    ModulePathsGatherer(JavaThread* current, GrowableArray<char*>* module_paths) :
+      _current(current), _module_paths(module_paths) {}
+    void do_module(ModuleEntry* m) {
       char* path = m->location()->as_C_string();
       if (strncmp(path, "file:", 5) == 0) {
         path = ClassLoader::skip_uri_protocol(path);
-        ClassLoader::setup_module_search_path(current, path);
+        char* path_copy = NEW_RESOURCE_ARRAY(char, strlen(path) + 1);
+        strcpy(path_copy, path);
+        _module_paths->append(path_copy);
       }
-      m = m->next();
     }
+  };
+
+  ModulePathsGatherer gatherer(current, module_paths);
+  {
+    MutexLocker ml(Module_lock);
+    met->modules_do(&gatherer);
+  }
+
+  for (int i = 0; i < module_paths->length(); i++) {
+    ClassLoader::setup_module_search_path(current, module_paths->at(i));
   }
 }
+
 void ClassLoaderExt::setup_module_paths(JavaThread* current) {
   Arguments::assert_is_dumping_archive();
   _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +
@@ -162,8 +182,7 @@ char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, 
   return found;
 }
 
-void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry,
-                                          bool check_for_duplicates) {
+void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry) {
   ResourceMark rm(current);
   jint manifest_size;
   char* manifest = read_manifest(current, entry, &manifest_size);

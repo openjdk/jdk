@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -60,6 +61,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -79,7 +81,6 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
-#include "services/threadIdTable.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/timer.hpp"
@@ -89,10 +90,12 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
+#include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -373,7 +376,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Get the Java runtime name, version, and vendor info after java.lang.System is initialized.
   // Some values are actually configure-time constants but some can be set via the jlink tool and
   // so must be read dynamically. We treat them all the same.
-  InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
+  InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, vmSymbols::java_lang_VersionProps(),
                                                             Handle(), Handle());
   {
     ResourceMark rm(main_thread);
@@ -550,6 +553,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
+
+  if (UseSystemMemoryBarrier) {
+    if (!SystemMemoryBarrier::initialize()) {
+      vm_shutdown_during_initialization("Failed to initialize the requested system memory barrier synchronization.");
+      return JNI_EINVAL;
+    }
+    log_debug(os)("Using experimental system memory barrier synchronization");
+  }
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
@@ -1043,10 +1054,14 @@ void Threads::destroy_vm() {
 #ifdef ASSERT
   _vm_complete = false;
 #endif
-  // Wait until we are the last non-daemon thread to execute
+  // Wait until we are the last non-daemon thread to execute, or
+  // if we are a daemon then wait until the last non-daemon thread has
+  // executed.
+  bool daemon = java_lang_Thread::is_daemon(thread->threadObj());
+  int expected = daemon ? 0 : 1;
   {
     MonitorLocker nu(Threads_lock);
-    while (Threads::number_of_non_daemon_threads() > 1)
+    while (Threads::number_of_non_daemon_threads() > expected)
       // This wait should make safepoint checks, wait without a timeout.
       nu.wait(0);
   }
@@ -1151,6 +1166,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_9) return JNI_TRUE;
   if (version == JNI_VERSION_10) return JNI_TRUE;
   if (version == JNI_VERSION_19) return JNI_TRUE;
+  if (version == JNI_VERSION_20) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -1223,9 +1239,11 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     if (!is_daemon) {
       _number_of_non_daemon_threads--;
 
-      // Only one thread left, do a notify on the Threads_lock so a thread waiting
-      // on destroy_vm will wake up.
-      if (number_of_non_daemon_threads() == 1) {
+      // If this is the last non-daemon thread then we need to do
+      // a notify on the Threads_lock so a thread waiting
+      // on destroy_vm will wake up. But that thread could be a daemon
+      // or non-daemon, so we notify for both the 0 and 1 case.
+      if (number_of_non_daemon_threads() <= 1) {
         ml.notify_all();
       }
     }

@@ -27,7 +27,6 @@ package jdk.jfr.internal.instrument;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
@@ -47,6 +46,7 @@ import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.DeserializationEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
+import jdk.jfr.events.SecurityProviderServiceEvent;
 import jdk.jfr.events.SocketReadEvent;
 import jdk.jfr.events.SocketWriteEvent;
 import jdk.jfr.events.TLSHandshakeEvent;
@@ -72,6 +72,7 @@ public final class JDKEvents {
         DeserializationEvent.class,
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
+        SecurityProviderServiceEvent.class,
         ThreadSleepEvent.class,
         TLSHandshakeEvent.class,
         VirtualThreadStartEvent.class,
@@ -96,6 +97,7 @@ public final class JDKEvents {
         jdk.internal.event.DeserializationEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
+        jdk.internal.event.SecurityProviderServiceEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,
         jdk.internal.event.TLSHandshakeEvent.class,
         jdk.internal.event.VirtualThreadStartEvent.class,

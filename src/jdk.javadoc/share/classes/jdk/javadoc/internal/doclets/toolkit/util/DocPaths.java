@@ -64,6 +64,9 @@ public class DocPaths {
     /** The name of the file for the element list. */
     public static final DocPath ELEMENT_LIST = DocPath.create("element-list");
 
+    /** The name of the file for all references to external specifications. */
+    public static final DocPath EXTERNAL_SPECS = DocPath.create("external-specs.html");
+
     /** The name of the image file showing a magnifying glass on the search box. */
     public static final DocPath GLASS_IMG = DocPath.create("glass.png");
 
@@ -93,9 +96,6 @@ public class DocPaths {
 
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
-
-    /** The name of the stylesheet file overriding jQuery UI stylesheet. */
-    public static final DocPath JQUERY_OVERRIDES_CSS = DocPath.create("jquery-ui.overrides.css");
 
     /** The name of the default jQuery javascript file. */
     public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.0.min.js");

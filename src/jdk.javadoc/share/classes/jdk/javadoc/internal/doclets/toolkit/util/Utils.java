@@ -101,6 +101,7 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -1233,32 +1234,6 @@ public class Utils {
         }
         result.append(text, pos, textLength);
         return result.toString();
-    }
-
-    public CharSequence normalizeNewlines(CharSequence text) {
-        StringBuilder sb = new StringBuilder();
-        final int textLength = text.length();
-        final String NL = DocletConstants.NL;
-        int pos = 0;
-        for (int i = 0; i < textLength; i++) {
-            char ch = text.charAt(i);
-            switch (ch) {
-                case '\n' -> {
-                    sb.append(text, pos, i);
-                    sb.append(NL);
-                    pos = i + 1;
-                }
-                case '\r' -> {
-                    sb.append(text, pos, i);
-                    sb.append(NL);
-                    if (i + 1 < textLength && text.charAt(i + 1) == '\n')
-                        i++;
-                    pos = i + 1;
-                }
-            }
-        }
-        sb.append(text, pos, textLength);
-        return sb;
     }
 
     /**
@@ -2426,6 +2401,10 @@ public class Utils {
 
     public List<? extends SerialFieldTree> getSerialFieldTrees(VariableElement field) {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
+    }
+
+    public List<? extends SpecTree> getSpecTrees(Element element) {
+        return getBlockTags(element, SPEC, SpecTree.class);
     }
 
     public List<ThrowsTree> getThrowsTrees(Element element) {

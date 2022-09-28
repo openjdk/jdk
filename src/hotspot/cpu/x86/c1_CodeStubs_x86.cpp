@@ -544,7 +544,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    __ incrementl(ExternalAddress((address)&Runtime1::_arraycopy_slowcase_cnt));
+    __ incrementl(ExternalAddress((address)&Runtime1::_arraycopy_slowcase_cnt), rscratch1);
   }
 #endif
 

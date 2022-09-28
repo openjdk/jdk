@@ -79,12 +79,9 @@ inline void JavaThread::clear_carrier_thread_suspended() {
 
 class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   OopHandle _exception;
-  bool _is_ThreadDeath;
  public:
   AsyncExceptionHandshake(OopHandle& o, const char* name = "AsyncExceptionHandshake")
-  : AsyncHandshakeClosure(name), _exception(o) {
-    _is_ThreadDeath = exception()->is_a(vmClasses::ThreadDeath_klass());
-  }
+  : AsyncHandshakeClosure(name), _exception(o) { }
 
   ~AsyncExceptionHandshake() {
     Thread* current = Thread::current();
@@ -108,7 +105,6 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
     return _exception.resolve();
   }
   bool is_async_exception()   { return true; }
-  bool is_ThreadDeath()       { return _is_ThreadDeath; }
 };
 
 class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
@@ -129,8 +125,8 @@ inline void JavaThread::set_pending_unsafe_access_error() {
   }
 }
 
-inline bool JavaThread::has_async_exception_condition(bool ThreadDeath_only) {
-  return handshake_state()->has_async_exception_operation(ThreadDeath_only);
+inline bool JavaThread::has_async_exception_condition() {
+  return handshake_state()->has_async_exception_operation();
 }
 
 inline JavaThread::NoAsyncExceptionDeliveryMark::NoAsyncExceptionDeliveryMark(JavaThread *t) : _target(t) {
@@ -145,9 +141,9 @@ inline JavaThreadState JavaThread::thread_state() const    {
 #if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  return (JavaThreadState) Atomic::load_acquire((volatile jint*)&_thread_state);
+  return Atomic::load_acquire(&_thread_state);
 #else
-  return _thread_state;
+  return Atomic::load(&_thread_state);
 #endif
 }
 
@@ -157,9 +153,9 @@ inline void JavaThread::set_thread_state(JavaThreadState s) {
 #if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  Atomic::release_store((volatile jint*)&_thread_state, (jint)s);
+  Atomic::release_store(&_thread_state, s);
 #else
-  _thread_state = s;
+  Atomic::store(&_thread_state, s);
 #endif
 }
 

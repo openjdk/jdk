@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -296,6 +299,12 @@ public abstract class BaseOptions {
     private int sourceTabSize;
 
     /**
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
+     */
+    private URI specBaseURI;
+
+    /**
      * Value for command-line option {@code --override-methods summary}
      * or {@code --override-methods detail}.
      * Specifies whether those methods that override a supertype's method
@@ -320,12 +329,17 @@ public abstract class BaseOptions {
 
     private final BaseConfiguration config;
 
+    /**
+     * The default amount of space between tab stops.
+     */
+    public static final int DEFAULT_TAB_STOP_LENGTH = 8;
+
     protected BaseOptions(BaseConfiguration config) {
         this.config = config;
 
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
-        sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+        sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
         groupPairs = new ArrayList<>(0);
     }
 
@@ -597,7 +611,7 @@ public abstract class BaseOptions {
                         }
                         if (sourceTabSize <= 0) {
                             messages.warning("doclet.sourcetab_warning");
-                            sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+                            sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
                         }
                         return true;
                     }
@@ -662,6 +676,26 @@ public abstract class BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         allowScriptInComments = true;
                         return true;
+                    }
+                },
+
+                new Option(resources, "--spec-base-url", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String arg = args.get(0);
+                        try {
+                            if (!arg.endsWith("/")) {
+                                // to ensure that URI.resolve works as expected
+                                arg += "/";
+                            }
+                            specBaseURI = new URI(arg);
+                            return true;
+                        } catch (URISyntaxException e) {
+                            config.reporter.print(ERROR,
+                                    config.getDocResources().getText("doclet.Invalid_URL",
+                                            e.getMessage()));
+                            return false;
+                        }
                     }
                 },
 
@@ -1043,6 +1077,14 @@ public abstract class BaseOptions {
      */
     public int sourceTabSize() {
         return sourceTabSize;
+    }
+
+    /**
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
+     */
+    public URI specBaseURI() {
+        return specBaseURI;
     }
 
     /**
