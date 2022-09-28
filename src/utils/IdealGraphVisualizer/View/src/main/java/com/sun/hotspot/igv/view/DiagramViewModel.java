@@ -184,6 +184,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void setHideDuplicates(boolean hideDuplicates) {
+        this.hideDuplicates = hideDuplicates;
         InputGraph currentGraph = getFirstGraph();
         if (hideDuplicates) {
             // Back up to the unhidden equivalent graph
