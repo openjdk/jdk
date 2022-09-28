@@ -220,15 +220,9 @@ void Assembler::ret() {
   void Assembler::NAME(const address &dest, Register temp) {      \
     assert_cond(dest != NULL);                                    \
     assert(temp != noreg, "temp must not be empty register!");    \
-    int64_t distance = dest - pc();                               \
-    if (is_offset_in_range(distance, 32)) {                       \
-      auipc(temp, distance + 0x800);                              \
-      jalr(REGISTER, temp, ((int32_t)distance << 20) >> 20);      \
-    } else {                                                      \
-      int32_t offset = 0;                                         \
-      li(temp, (uintptr_t)dest, offset);                          \
-      jalr(REGISTER, temp, offset);                               \
-    }                                                             \
+    int32_t offset = 0;                                           \
+    li(temp, (uintptr_t)dest, offset);                            \
+    jalr(REGISTER, temp, offset);                                 \
   }
 
   INSN(call, x1);
