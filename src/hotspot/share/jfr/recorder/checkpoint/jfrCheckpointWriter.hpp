@@ -70,9 +70,9 @@ class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   const u1* session_data(size_t* size, bool move = false, const JfrCheckpointContext* ctx = NULL);
   void release();
   JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type = GENERIC);
- public:
-  JfrCheckpointWriter(JfrCheckpointType type = GENERIC);
-  JfrCheckpointWriter(Thread* thread, bool header = true, JfrCheckpointType mode = GENERIC, bool global_lease = true);
+public:
+  JfrCheckpointWriter(bool header = true, JfrCheckpointType mode = GENERIC, JfrCheckpointBufferKind kind = JFR_GLOBAL);
+  JfrCheckpointWriter(Thread* thread, bool header = true, JfrCheckpointType mode = GENERIC, JfrCheckpointBufferKind kind = JFR_GLOBAL);
   ~JfrCheckpointWriter();
   void write_type(JfrTypeId type_id);
   void write_count(u4 nof_entries);
