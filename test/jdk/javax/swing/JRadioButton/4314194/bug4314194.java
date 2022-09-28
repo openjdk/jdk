@@ -24,7 +24,7 @@
  * @test
  * @key headful
  * @bug 4314194 8075916
- * @summary  Verifies Disable checkbox and radiobutton color is honored in Nimbus
+ * @summary  Verifies Disable checkbox and radiobutton color is honored in all L&F
  * @run main bug4314194
  */
 
