@@ -1161,17 +1161,12 @@ bool ciMethod::was_executed_more_than(int times) {
 // ------------------------------------------------------------------
 // ciMethod::has_unloaded_classes_in_signature
 bool ciMethod::has_unloaded_classes_in_signature() {
-  VM_ENTRY_MARK;
-  {
-    ExceptionMark em(THREAD);
-    methodHandle m(THREAD, get_Method());
-    bool has_unloaded = Method::has_unloaded_classes_in_signature(m, thread);
-    if( HAS_PENDING_EXCEPTION ) {
-      CLEAR_PENDING_EXCEPTION;
-      return true;     // Declare that we may have unloaded classes
+  for (ciSignatureStream str(signature()); !str.is_done(); str.next()) {
+    if (!str.type()->is_loaded()) {
+      return true;
     }
-    return has_unloaded;
   }
+  return false;
 }
 
 // ------------------------------------------------------------------
