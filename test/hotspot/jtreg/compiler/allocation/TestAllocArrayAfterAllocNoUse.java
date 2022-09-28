@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,32 @@
  * questions.
  */
 
-#include "native_thread.cpp"
-#include "nsk_tools.cpp"
-#include "jni_tools.cpp"
-#include "jvmti_tools.cpp"
-#include "agent_tools.cpp"
-#include "jvmti_FollowRefObjects.cpp"
-#include "Injector.cpp"
-#include "JVMTITools.cpp"
-#include "agent_common.cpp"
-#include "thrstat005.cpp"
+/**
+ * @test
+ * @bug 8279125
+ * @summary fatal error: no reachable node should have no use
+ * @requires vm.flavor == "server"
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-DoEscapeAnalysis TestAllocArrayAfterAllocNoUse
+ *
+ */
+
+public class TestAllocArrayAfterAllocNoUse {
+    private static Object field;
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test();
+        }
+    }
+
+    private static void test() {
+        try {
+            final TestAllocArrayAfterAllocNoUse o = new TestAllocArrayAfterAllocNoUse();
+        } catch (Exception e) {
+            final int[] array = new int[100];
+            field = array;
+        }
+
+    }
+}

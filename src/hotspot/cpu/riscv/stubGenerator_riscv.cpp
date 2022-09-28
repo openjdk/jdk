@@ -652,7 +652,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
     int32_t offset = 0;
-    __ movptr_with_offset(t0, CAST_FROM_FN_PTR(address, MacroAssembler::debug64), offset);
+    __ movptr(t0, CAST_FROM_FN_PTR(address, MacroAssembler::debug64), offset);
     __ jalr(x1, t0, offset);
     __ ebreak();
 
@@ -3741,7 +3741,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(c_rarg0, xthread);
     BLOCK_COMMENT("call runtime_entry");
     int32_t offset = 0;
-    __ movptr_with_offset(t0, runtime_entry, offset);
+    __ movptr(t0, runtime_entry, offset);
     __ jalr(x1, t0, offset);
 
     // Generate oop map
