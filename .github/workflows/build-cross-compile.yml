@@ -40,6 +40,12 @@ on:
       extra-conf-options:
         required: false
         type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
+        required: false
+        type: string
 
 jobs:
   build-cross-compile:

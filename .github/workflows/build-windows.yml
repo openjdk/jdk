@@ -48,6 +48,12 @@ on:
       msvc-toolset-architecture:
         required: true
         type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
+        required: false
+        type: string
 
 env:
   # These are needed to make the MSYS2 bash work properly

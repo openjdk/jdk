@@ -45,6 +45,12 @@ on:
       xcode-toolset-version:
         required: true
         type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
+        required: false
+        type: string
 
 jobs:
   build-macos:
