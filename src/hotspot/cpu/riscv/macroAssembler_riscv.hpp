@@ -683,7 +683,7 @@ public:
   //     code is patched, and the new destination may not be reachable by a simple JAL
   //     instruction.
   //
-  //   - indirect call: movptr_with_offset + jalr
+  //   - indirect call: movptr + jalr
   //     This too can reach anywhere in the address space, but it cannot be
   //     patched while code is running, so it must only be modified at a safepoint.
   //     This form of call is most suitable for targets at fixed addresses, which

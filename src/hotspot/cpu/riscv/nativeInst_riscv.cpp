@@ -280,7 +280,7 @@ address NativeJump::jump_destination() const {
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
-  // As a special case we also use sequence movptr_with_offset(r,0), jalr(r,0)
+  // As a special case we also use sequence movptr(r,0), jalr(r,0)
   // i.e. jump to 0 when we need leave space for a wide immediate
   // load
 
@@ -392,7 +392,7 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   MacroAssembler a(&cb);
 
   int32_t offset = 0;
-  a.movptr_with_offset(t0, entry, offset); // lui, addi, slli, addi, slli
+  a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
   a.jalr(x0, t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);

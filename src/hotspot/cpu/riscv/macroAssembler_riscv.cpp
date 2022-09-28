@@ -556,7 +556,7 @@ void MacroAssembler::emit_static_call_stub() {
 
   // Jump to the entry point of the i2c stub.
   int32_t offset = 0;
-  movptr_with_offset(t0, 0, offset);
+  movptr(t0, 0, offset);
   jalr(x0, t0, offset);
 }
 
@@ -565,7 +565,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        Label *retaddr) {
   int32_t offset = 0;
   push_reg(RegSet::of(t0, xmethod), sp);   // push << t0 & xmethod >> to sp
-  movptr_with_offset(t0, entry_point, offset);
+  movptr(t0, entry_point, offset);
   jalr(x1, t0, offset);
   if (retaddr != NULL) {
     bind(*retaddr);
@@ -2689,7 +2689,6 @@ void MacroAssembler::load_byte_map_base(Register reg) {
 }
 
 void MacroAssembler::la_patchable(Register reg1, const Address &dest, int32_t &offset) {
-  relocInfo::relocType rtype = dest.rspec().reloc()->type();
   unsigned long low_address = (uintptr_t)CodeCache::low_bound();
   unsigned long high_address = (uintptr_t)CodeCache::high_bound();
   unsigned long dest_address = (uintptr_t)dest.target();
@@ -2709,7 +2708,7 @@ void MacroAssembler::la_patchable(Register reg1, const Address &dest, int32_t &o
     auipc(reg1, (int32_t)distance + 0x800);
     offset = ((int32_t)distance << 20) >> 20;
   } else {
-    movptr_with_offset(reg1, dest.target(), offset);
+    movptr(reg1, dest.target(), offset);
   }
 }
 
