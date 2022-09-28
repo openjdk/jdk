@@ -28,6 +28,12 @@ package com.sun.java.swing;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -134,5 +140,77 @@ public class SwingUtilities3 {
             }
         }
         return delegate;
+    }
+
+    @FunctionalInterface
+    public interface PaintInterface {
+        void paintUnscaledBorder(Component c, Graphics g, int x, int y,
+                                 int w, int h, double scaleX, int strokeWidth);
+    }
+
+    /**
+     * Round the double to nearest integer, make sure we round
+     * to lower integer value for 0.5
+     *
+     * @param d number to be rounded
+     * @return a {@code int} which is the rounded value of provided number
+     */
+    private static int roundDown(double d)
+    {
+        double decP = (Math.ceil(d) - d);
+        return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
+    }
+
+    public static void paintBorder(Component c, Graphics g, int x, int y,
+                            int w, int h, PaintInterface paintFunction) {
+
+        //STEP 1: RESET TRANSFORM
+        //save old values
+        Graphics2D g2d = (Graphics2D) g;
+        AffineTransform at = g2d.getTransform();
+        Stroke oldStk = g2d.getStroke();
+        Color oldColor = g2d.getColor();
+
+        boolean resetTransform;
+        int stkWidth = 1;
+
+        // if m01 or m10 is non-zero, then there is a rotation or shear
+        // skip resetting the transform
+        resetTransform = (at.getShearX() == 0) && (at.getShearY() == 0);
+
+        if (resetTransform) {
+            g2d.setTransform(new AffineTransform());
+            stkWidth = roundDown(Math.min(at.getScaleX(), at.getScaleY()));
+            g2d.setStroke(new BasicStroke((float) stkWidth));
+        }
+
+        int xtranslation = 0;
+        int ytranslation = 0;
+        int width = 0;
+        int height = 0;
+
+        if (resetTransform) {
+            width = roundDown(at.getScaleX() * w);
+            height = roundDown(at.getScaleY() * h);
+            xtranslation = roundDown(at.getScaleX() * x + at.getTranslateX());
+            ytranslation = roundDown(at.getScaleY() * y + at.getTranslateY());
+        } else {
+            width = w;
+            height = h;
+            xtranslation = x;
+            ytranslation = y;
+        }
+        g2d.translate(xtranslation, ytranslation);
+
+        //STEP 2: Call respective paintBorder with transformed values
+        paintFunction.paintUnscaledBorder(c, g, x, y, width, height, at.getScaleX(), stkWidth);
+
+        //STEP 3: RESTORE TRANSFORM
+        g2d.translate(-xtranslation, -ytranslation);
+        if (resetTransform) {
+            g2d.setColor(oldColor);
+            g2d.setTransform(at);
+            g2d.setStroke(oldStk);
+        }
     }
 }

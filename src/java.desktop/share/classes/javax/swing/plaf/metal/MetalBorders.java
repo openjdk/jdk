@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,41 @@
 
 package javax.swing.plaf.metal;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
+import com.sun.java.swing.SwingUtilities3;
+import sun.swing.StringUIClientPropertyKey;
+import sun.swing.SwingUtilities2;
+
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.MatteBorder;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
-
-import java.awt.Component;
-import java.awt.Insets;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.Insets;
 import java.awt.Window;
-
-import sun.swing.StringUIClientPropertyKey;
-import sun.swing.SwingUtilities2;
 
 
 /**
@@ -225,8 +244,12 @@ public class MetalBorders {
         public InternalFrameBorder() {}
 
         public void paintBorder(Component c, Graphics g, int x, int y,
-                          int w, int h) {
+                                int w, int h) {
+            SwingUtilities3.paintBorder(c, g, x, y, w, h, this::paintUnscaledBorder);
+        }
 
+        private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
+                                         int w, int h, double scale, int stroke) {
             Color background;
             Color highlight;
             Color shadow;
@@ -241,41 +264,54 @@ public class MetalBorders {
                 shadow = MetalLookAndFeel.getControlInfo();
             }
 
-              g.setColor(background);
-              // Draw outermost lines
-              g.drawLine( 1, 0, w-2, 0);
-              g.drawLine( 0, 1, 0, h-2);
-              g.drawLine( w-1, 1, w-1, h-2);
-              g.drawLine( 1, h-1, w-2, h-1);
+            // border and corner scaling
+            int scaledCorner = (int) Math.round(corner * scale);
+            // loop constraint for bulk of the border
+            int loopCount = (int) Math.round(5 * scale);
 
-              // Draw the bulk of the border
-              for (int i = 1; i < 5; i++) {
-                  g.drawRect(x+i,y+i,w-(i*2)-1, h-(i*2)-1);
-              }
+            // midpoint at which highlight & shadow lines
+            // are positioned on the border
+            int midPoint = loopCount/2;
 
-              if (c instanceof JInternalFrame &&
-                               ((JInternalFrame)c).isResizable()) {
-                  g.setColor(highlight);
-                  // Draw the Long highlight lines
-                  g.drawLine( corner+1, 3, w-corner, 3);
-                  g.drawLine( 3, corner+1, 3, h-corner);
-                  g.drawLine( w-2, corner+1, w-2, h-corner);
-                  g.drawLine( corner+1, h-2, w-corner, h-2);
+            g.setColor(background);
+            // Draw outermost lines
+            g.drawLine( 0, 0, w-1, 0);
+            g.drawLine( 0, 1, 0, h-1);
+            g.drawLine( w-1, 1, w-1, h-1);
+            g.drawLine( 1, h-1, w-1, h-1);
 
-                  g.setColor(shadow);
-                  // Draw the Long shadow lines
-                  g.drawLine( corner, 2, w-corner-1, 2);
-                  g.drawLine( 2, corner, 2, h-corner-1);
-                  g.drawLine( w-3, corner, w-3, h-corner-1);
-                  g.drawLine( corner, h-3, w-corner-1, h-3);
-              }
+            // Draw the bulk of the border
+            for (int i = 1; i <= loopCount; i++) {
+                g.drawRect(x+i,y+i,w-(i*2)-1, h-(i*2)-1);
+            }
 
-          }
+            if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
+                // Draw the Long highlight lines
+                g.setColor(highlight);
+                g.drawLine(scaledCorner + 1, midPoint+stroke,
+                        w- scaledCorner, midPoint+stroke); //top
+                g.drawLine(midPoint+stroke, scaledCorner + 1,
+                        midPoint+stroke, h- scaledCorner); //left
+                g.drawLine(w-midPoint, scaledCorner + 1,
+                        w-midPoint, h- scaledCorner); //right
+                g.drawLine(scaledCorner + 1, h-midPoint,
+                        w- scaledCorner, h-midPoint); //bottom
 
-          public Insets getBorderInsets(Component c, Insets newInsets) {
-              newInsets.set(5, 5, 5, 5);
-              return newInsets;
-          }
+                // Draw the Long shadow lines
+                g.setColor(shadow);
+                g.drawLine(scaledCorner, midPoint, w- scaledCorner -1, midPoint);
+                g.drawLine(midPoint, scaledCorner, midPoint, h- scaledCorner -1);
+                g.drawLine(w-(midPoint+stroke), scaledCorner,
+                        w-(midPoint+stroke), h- scaledCorner -1);
+                g.drawLine(scaledCorner, h-(midPoint+stroke),
+                        w- scaledCorner -1, h-(midPoint+stroke));
+            }
+        }
+
+        public Insets getBorderInsets(Component c, Insets newInsets) {
+            newInsets.set(5, 5, 5, 5);
+            return newInsets;
+        }
     }
 
     /**
