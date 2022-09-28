@@ -25,7 +25,7 @@
  * @key headful
  * @bug 4314194 8075916
  * @summary  Verifies Disable checkbox and radiobutton color is honored in Nimbus
- * @run TestDisabledChkboxRadioBtn
+ * @run bug4314194
  */
 
 import java.awt.BorderLayout;
@@ -41,7 +41,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-public class TestDisabledChkboxRadioBtn {
+public class bug4314194 {
     private static JFrame frame;
     private static JRadioButton radioButton;
     private static JCheckBox checkBox;
