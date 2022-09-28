@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1003,15 +1003,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
     /**
      * Performs a <a href="package-summary.html#Reduction">reduction</a> on the
      * elements of this stream, using the provided identity, accumulation and
-     * combining functions.  This is equivalent to:
-     * <pre>{@code
-     *     U result = identity;
-     *     for (T element : this stream)
-     *         result = accumulator.apply(result, element)
-     *     return result;
-     * }</pre>
-     *
-     * but is not constrained to execute sequentially.
+     * combining functions.
      *
      * <p>The {@code identity} value must be an identity for the combiner
      * function.  This means that for all {@code u}, {@code combiner(identity, u)}
@@ -1056,14 +1048,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * reduction</a> operation on the elements of this stream.  A mutable
      * reduction is one in which the reduced value is a mutable result container,
      * such as an {@code ArrayList}, and elements are incorporated by updating
-     * the state of the result rather than by replacing the result.  This
-     * produces a result equivalent to:
-     * <pre>{@code
-     *     R result = supplier.get();
-     *     for (T element : this stream)
-     *         accumulator.accept(result, element);
-     *     return result;
-     * }</pre>
+     * the state of the result rather than by replacing the result.
      *
      * <p>Like {@link #reduce(Object, BinaryOperator)}, {@code collect} operations
      * can be parallelized without requiring additional synchronization.

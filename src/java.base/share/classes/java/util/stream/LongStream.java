@@ -586,14 +586,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * reduction</a> operation on the elements of this stream.  A mutable
      * reduction is one in which the reduced value is a mutable result container,
      * such as an {@code ArrayList}, and elements are incorporated by updating
-     * the state of the result rather than by replacing the result.  This
-     * produces a result equivalent to:
-     * <pre>{@code
-     *     R result = supplier.get();
-     *     for (long element : this stream)
-     *         accumulator.accept(result, element);
-     *     return result;
-     * }</pre>
+     * the state of the result rather than by replacing the result.
      *
      * <p>Like {@link #reduce(long, LongBinaryOperator)}, {@code collect} operations
      * can be parallelized without requiring additional synchronization.
