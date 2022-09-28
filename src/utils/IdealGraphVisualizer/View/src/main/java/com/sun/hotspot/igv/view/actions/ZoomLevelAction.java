@@ -48,15 +48,14 @@ public final class ZoomLevelAction extends JComboBox<String> implements ChangedL
         assert levelStr != null;
         levelStr = levelStr.replaceAll("\\s","");
         levelStr = levelStr.replaceFirst("%","");
-        try{
+        try {
             int level = Integer.parseInt(levelStr);
-            if (level > 0 && level < 1000) {
             int minLevel = (int) (diagramScene.getZoomMinFactor() * 100.0);
             int maxLevel = (int) (diagramScene.getZoomMaxFactor() * 100.0);
             level = Math.max(level, minLevel);
             level = Math.min(level, maxLevel);
             setZoomLevel(level);
-        } catch(NumberFormatException ignored) {
+        } catch(NumberFormatException exception) {
             changed(diagramScene);
         }
     }
