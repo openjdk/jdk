@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.DerValue;
-import sun.security.util.KeyUtil;
 import sun.security.x509.X509CRLImpl;
 import sun.security.x509.X509CertImpl;
 
@@ -114,8 +113,6 @@ public class X509Factory extends CertificateFactorySpi {
         }
         cert = new X509CertImpl(encoding);
         addToCache(certCache, cert.getEncodedInternal(), cert);
-        // record cert details if necessary
-        JCAUtil.commitX509CertEvent(cert);
         return cert;
     }
 

@@ -34,7 +34,6 @@ import java.util.Objects;
 
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
-import sun.security.x509.X509CertImpl;
 
 /**
  * This class defines the functionality of a certificate factory, which is
@@ -351,10 +350,7 @@ public class CertificateFactory {
         throws CertificateException
     {
         Certificate c = certFacSpi.engineGenerateCertificate(inStream);
-        if (c instanceof X509Certificate cert && !(c instanceof X509CertImpl)) {
-           // X509CertImpl will cache and commit the event when necessary
-           JCAUtil.commitX509CertEvent(cert);
-        }
+        JCAUtil.tryCommitXCertEvent(c);
         return c;
     }
 

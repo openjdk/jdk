@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.jca;
 
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
 import jdk.internal.event.EventHelper;
@@ -98,18 +99,19 @@ public final class JCAUtil {
         return result;
     }
 
-    public static void commitX509CertEvent(X509Certificate info) {
-        if (X509CertificateEvent.isTurnedOn() || EventHelper.isLoggingSecurity()) {
-            PublicKey pKey = info.getPublicKey();
-            String algId = info.getSigAlgName();
-            String serNum = info.getSerialNumber().toString(16);
-            String subject = info.getSubjectX500Principal().getName();
-            String issuer = info.getIssuerX500Principal().getName();
+    public static void tryCommitXCertEvent(Certificate cert) {
+        if ((X509CertificateEvent.isTurnedOn() || EventHelper.isLoggingSecurity()) &&
+                (cert instanceof X509Certificate x509)) {
+            PublicKey pKey = x509.getPublicKey();
+            String algId = x509.getSigAlgName();
+            String serNum = x509.getSerialNumber().toString(16);
+            String subject = x509.getSubjectX500Principal().getName();
+            String issuer = x509.getIssuerX500Principal().getName();
             String keyType = pKey.getAlgorithm();
             int length = KeyUtil.getKeySize(pKey);
-            int hashCode = info.hashCode();
-            long beginDate = info.getNotBefore().getTime();
-            long endDate = info.getNotAfter().getTime();
+            int hashCode = x509.hashCode();
+            long beginDate = x509.getNotBefore().getTime();
+            long endDate = x509.getNotAfter().getTime();
             if (X509CertificateEvent.isTurnedOn()) {
                 X509CertificateEvent xce = new X509CertificateEvent();
                 xce.algorithm = algId;

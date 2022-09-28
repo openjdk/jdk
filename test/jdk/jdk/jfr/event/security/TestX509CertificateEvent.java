@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,14 +50,14 @@ public class TestX509CertificateEvent {
 
             TestCertificate.ONE.certificate();
             TestCertificate.TWO.certificate();
-            // Generate twice to make sure only one event per certificate is generated
+            // Generate twice to make sure we (now) capture all generate cert events
             TestCertificate.ONE.certificate();
             TestCertificate.TWO.certificate();
 
             recording.stop();
 
             List<RecordedEvent> events = Events.fromRecording(recording);
-            Asserts.assertEquals(events.size(), 2, "Incorrect number of X509Certificate events");
+            Asserts.assertEquals(events.size(), 4, "Incorrect number of X509Certificate events");
             assertEvent(events, TestCertificate.ONE);
             assertEvent(events, TestCertificate.TWO);
         }
