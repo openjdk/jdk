@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.RandomFactory;
+import jdk.test.lib.util.FileUtils;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -43,6 +44,7 @@ import static java.nio.file.StandardOpenOption.*;
  * @summary Ensure that memory mapping beyond 32-bit range does not cause an
  *          EXCEPTION_ACCESS_VIOLATION.
  * @requires vm.bits == 64
+ * @library /test/lib
  * @run main/othervm LargeMapTest
  */
 public class LargeMapTest {
@@ -58,11 +60,9 @@ public class LargeMapTest {
 
         System.out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        Path p = Files.createTempFile("test", ".dat");
-        Files.delete(p); // re-create as sparse
-        p.toFile().deleteOnExit();
+        Path p = FileUtils.createSparseTempFile("test", ".dat");
         ByteBuffer bb;
-        try (FileChannel fc = FileChannel.open(p, CREATE_NEW, SPARSE, WRITE)) {
+        try (FileChannel fc = FileChannel.open(p, WRITE)) {
             fc.position(BASE);
             byte[] b = new byte[EXTRA];
             GEN.nextBytes(b);
@@ -83,5 +83,6 @@ public class LargeMapTest {
                 throw new RuntimeException("Expected buffers to be equal");
             }
         }
+        Files.delete(p);
     }
 }

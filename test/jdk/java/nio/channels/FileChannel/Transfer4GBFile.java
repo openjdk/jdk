@@ -24,6 +24,7 @@
 /* @test
  * @bug 4638365
  * @summary Test FileChannel.transferFrom and transferTo for 4GB files
+ * @library /test/lib
  * @run testng/timeout=300 Transfer4GBFile
  */
 
@@ -37,10 +38,12 @@ import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.FileAlreadyExistsException;
 import java.util.concurrent.TimeUnit;
 
+import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.Test;
 
 public class Transfer4GBFile {
@@ -51,15 +54,12 @@ public class Transfer4GBFile {
     // Test transferTo with large file
     @Test
     public void xferTest04() throws Exception { // for bug 4638365
-        File source = File.createTempFile("blah", null);
-        source.delete(); // need CREATE_NEW to make the file sparse
-        source.deleteOnExit();
+        Path source = FileUtils.createSparseTempFile("blah", null);
         long testSize = ((long)Integer.MAX_VALUE) * 2;
 
         out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        try (FileChannel fc = FileChannel.open(source.toPath(),
-                StandardOpenOption.CREATE_NEW, StandardOpenOption.SPARSE,
+        try (FileChannel fc = FileChannel.open(source,
                 StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             fc.write(ByteBuffer.wrap("Use the source!".getBytes()), testSize - 40);
             long t1 = System.nanoTime();
@@ -70,8 +70,8 @@ public class Transfer4GBFile {
         File sink = File.createTempFile("sink", null);
         sink.deleteOnExit();
 
-        FileInputStream fis = new FileInputStream(source);
-        FileChannel sourceChannel = fis.getChannel();
+        FileChannel sourceChannel = FileChannel.open(source,
+                StandardOpenOption.READ);
 
         RandomAccessFile raf = new RandomAccessFile(sink, "rw");
         FileChannel sinkChannel = raf.getChannel();
@@ -85,7 +85,7 @@ public class Transfer4GBFile {
         sourceChannel.close();
         sinkChannel.close();
 
-        source.delete();
+        Files.delete(source);
         sink.delete();
     }
 
@@ -98,25 +98,9 @@ public class Transfer4GBFile {
         initTestFile(source, 100);
 
         // Create the sink file as a sparse file if possible
-        File sink = null;
-        FileChannel fc = null;
-        while (fc == null) {
-            sink = File.createTempFile("sink", null);
-            // re-create as a sparse file
-            sink.delete();
-            try {
-                fc = FileChannel.open(sink.toPath(),
-                                      StandardOpenOption.CREATE_NEW,
-                                      StandardOpenOption.WRITE,
-                                      StandardOpenOption.SPARSE);
-            } catch (FileAlreadyExistsException ignore) {
-                // someone else got it
-            }
-        }
-        sink.deleteOnExit();
-
+        Path sink = FileUtils.createSparseTempFile("sink", null);
         long testSize = ((long)Integer.MAX_VALUE) * 2;
-        try {
+        try (FileChannel fc = FileChannel.open(sink, StandardOpenOption.WRITE)){
             out.println("  Writing large file...");
             long t0 = System.nanoTime();
             fc.write(ByteBuffer.wrap("Use the source!".getBytes()),
@@ -128,30 +112,25 @@ public class Transfer4GBFile {
             // Can't set up the test, abort it
             err.println("xferTest05 was aborted.");
             return;
-        } finally {
-            fc.close();
         }
 
         // Get new channels for the source and sink and attempt transfer
         FileChannel sourceChannel = new FileInputStream(source).getChannel();
         try {
-            FileChannel sinkChannel = new RandomAccessFile(sink, "rw").getChannel();
-            try {
+            try (FileChannel sinkChannel = FileChannel.open(sink, StandardOpenOption.WRITE)) {
                 long bytesWritten = sinkChannel.transferFrom(sourceChannel,
                                                              testSize - 40, 10);
                 if (bytesWritten != 10) {
                     throw new RuntimeException("Transfer test 5 failed " +
                                                bytesWritten);
                 }
-            } finally {
-                sinkChannel.close();
             }
         } finally {
             sourceChannel.close();
         }
 
         source.delete();
-        sink.delete();
+        Files.delete(sink);
     }
 
     /**

@@ -24,10 +24,10 @@
 /* @test
  * @bug 6253145
  * @summary Test FileChannel.transferTo with file positions up to 8GB
+ * @library /test/lib
  * @run testng/timeout=300 TransferTo6GBFile
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
@@ -36,9 +36,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 
+import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.Test;
 
 public class TransferTo6GBFile {
@@ -52,15 +55,11 @@ public class TransferTo6GBFile {
         final long G = 1024L * 1024L * 1024L;
 
         // Create 6GB file
-
-        File file = File.createTempFile("source", null);
-        file.delete(); // need CREATE_NEW to make the file sparse
-        file.deleteOnExit();
+        Path file = FileUtils.createSparseTempFile("source", null);
 
         out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        FileChannel fc = FileChannel.open(file.toPath(),
-                StandardOpenOption.CREATE_NEW, StandardOpenOption.SPARSE,
+        FileChannel fc = FileChannel.open(file,
                 StandardOpenOption.READ, StandardOpenOption.WRITE);
         try {
             fc.write(ByteBuffer.wrap("0123456789012345".getBytes("UTF-8")), 6*G);
@@ -150,7 +149,7 @@ public class TransferTo6GBFile {
             source.close();
             ssc.close();
             fc.close();
-            file.delete();
+            Files.delete(file);
         }
     }
 

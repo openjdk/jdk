@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
+import jdk.test.lib.util.FileUtils;
 
 public class Transfer2GPlus {
     private static final long BASE   = (long)Integer.MAX_VALUE;
@@ -56,9 +57,7 @@ public class Transfer2GPlus {
     private static final Random GEN  = RandomFactory.getRandom();
 
     public static void main(String[] args) throws IOException {
-        Path src = Files.createTempFile("src", ".dat");
-        Files.delete(src); // need CREATE_NEW to make the file sparse
-        src.toFile().deleteOnExit();
+        Path src = FileUtils.createSparseTempFile("src", ".dat");
         long t0 = System.nanoTime();
         byte[] b = createSrcFile(src);
         long t1 = System.nanoTime();
@@ -74,13 +73,13 @@ public class Transfer2GPlus {
         t1 = System.nanoTime();
         System.out.printf("  Copied to byte channel in %d ns (%d ms) %n",
                 t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
+        Files.delete(src);
     }
 
     // Create a file of size LENGTH with EXTRA random bytes at offset BASE.
     private static byte[] createSrcFile(Path src)
         throws IOException {
-        try (FileChannel fc = FileChannel.open(src, StandardOpenOption.CREATE_NEW,
-                StandardOpenOption.SPARSE, StandardOpenOption.WRITE)) {
+        try (FileChannel fc = FileChannel.open(src, StandardOpenOption.WRITE)) {
             fc.position(BASE);
             byte[] b = new byte[EXTRA];
             GEN.nextBytes(b);
