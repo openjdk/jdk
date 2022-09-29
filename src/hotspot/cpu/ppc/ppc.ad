@@ -6841,9 +6841,9 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
     n2->_opnds[1] = op_src;
     n2->_opnds[2] = op_dst;
     n2->_bottom_type = _bottom_type;
-    ra_->set_oop(n2, true);
 
     assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
+    ra_->set_oop(n2, true);
 
     ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
     ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -6879,7 +6879,6 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
     n2->_opnds[1] = op_src;
     n2->_opnds[2] = op_dst;
     n2->_bottom_type = _bottom_type;
-    ra_->set_oop(n2, true);
 
     cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
     n_cond_set->add_req(n_region, n_compare, n2);
@@ -6887,9 +6886,9 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
     n_cond_set->_opnds[1] = op_crx;
     n_cond_set->_opnds[2] = op_dst;
     n_cond_set->_bottom_type = _bottom_type;
-    ra_->set_oop(n_cond_set, true);
 
     assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
+    ra_->set_oop(n_cond_set, true);
 
     ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
     ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
