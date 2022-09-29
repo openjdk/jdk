@@ -1349,7 +1349,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
   // With RVC a call instruction may get 2-byte aligned.
   // The address of the call instruction needs to be 4-byte aligned to
   // ensure that it does not span a cache line so that it can be patched.
-  __ align(4);
+  __ align(NativeInstruction::instruction_size);
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
@@ -1372,7 +1372,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
-  assert((__ offset() % 4) == 0, "bad alignment");
+  MacroAssembler::assert_alignment(call_pc);
   address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");
@@ -2142,16 +2142,6 @@ void LIR_Assembler::typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile
   }
 
   __ bind(done);
-}
-
-void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {
-  _masm->code_section()->relocate(adr, relocInfo::poll_type);
-  int pc_offset = code_offset();
-  flush_debug_info(pc_offset);
-  info->record_debug_info(compilation()->debug_info_recorder(), pc_offset);
-  if (info->exception_handlers() != NULL) {
-    compilation()->add_exception_handlers_for_pco(pc_offset, info->exception_handlers());
-  }
 }
 
 void LIR_Assembler::type_profile(Register obj, ciMethodData* md, Register klass_RInfo, Register k_RInfo,

@@ -189,7 +189,7 @@ $(eval $(call SetupBuildDemo, Font2DTest, \
 $(eval $(call SetupBuildDemo, J2Ddemo, \
     DEMO_SUBDIR := jfc, \
     MAIN_CLASS := java2d.J2Ddemo, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked cast, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked cast lossy-conversions, \
     JAR_NAME := J2Ddemo, \
 ))
 

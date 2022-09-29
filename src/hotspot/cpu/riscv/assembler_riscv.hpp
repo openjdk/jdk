@@ -302,7 +302,8 @@ public:
       lui(Rd, upper);
       offset = lower;
     } else {
-      movptr_with_offset(Rd, (address)(uintptr_t)adr.offset(), offset);
+      offset = ((int32_t)adr.offset() << 20) >> 20;
+      li(Rd, adr.offset() - offset);
     }
     add(Rd, Rd, adr.base());
   }
@@ -321,7 +322,7 @@ public:
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
   void movptr(Register Rd, address addr);
-  void movptr_with_offset(Register Rd, address addr, int32_t &offset);
+  void movptr(Register Rd, address addr, int32_t &offset);
   void movptr(Register Rd, uintptr_t imm64);
   void j(const address &dest, Register temp = t0);
   void j(const Address &adr, Register temp = t0);
@@ -331,17 +332,6 @@ public:
   void jal(const Address &adr, Register temp = t0);
   void jr(Register Rs);
   void jalr(Register Rs);
-  void ret();
-  void call(const address &dest, Register temp = t0);
-  void call(const Address &adr, Register temp = t0);
-  void tail(const address &dest, Register temp = t0);
-  void tail(const Address &adr, Register temp = t0);
-  void call(Label &l, Register temp) {
-    call(target(l), temp);
-  }
-  void tail(Label &l, Register temp) {
-    tail(target(l), temp);
-  }
 
   static inline uint32_t extract(uint32_t val, unsigned msb, unsigned lsb) {
     assert_cond(msb >= lsb && msb <= 31);
@@ -486,10 +476,9 @@ public:
 
 #define INSN_ENTRY_RELOC(result_type, header)                               \
   result_type header {                                                      \
-    InstructionMark im(this);                                               \
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
-    code_section()->relocate(inst_mark(), InternalAddress(dest).rspec());
+    relocate(InternalAddress(dest).rspec());
 
   // Load/store register (all modes)
 #define INSN(NAME, op, funct3)                                                                     \
@@ -524,7 +513,7 @@ public:
       NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                               \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
-      movptr_with_offset(Rd, dest, offset);                                                        \
+      movptr(Rd, dest, offset);                                                                    \
       NAME(Rd, Rd, offset);                                                                        \
     }                                                                                              \
   }                                                                                                \
@@ -534,7 +523,7 @@ public:
   void NAME(Register Rd, const Address &adr, Register temp = t0) {                                 \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        code_section()->relocate(pc(), adr.rspec());                                               \
+        relocate(adr.rspec());                                                                     \
         NAME(Rd, adr.target());                                                                    \
         break;                                                                                     \
       }                                                                                            \
@@ -598,7 +587,7 @@ public:
       NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                             \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
-      movptr_with_offset(temp, dest, offset);                                                      \
+      movptr(temp, dest, offset);                                                                  \
       NAME(Rd, temp, offset);                                                                      \
     }                                                                                              \
   }                                                                                                \
@@ -608,7 +597,7 @@ public:
   void NAME(FloatRegister Rd, const Address &adr, Register temp = t0) {                            \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        code_section()->relocate(pc(), adr.rspec());                                               \
+        relocate(adr.rspec());                                                                     \
         NAME(Rd, adr.target(), temp);                                                              \
         break;                                                                                     \
       }                                                                                            \
@@ -743,7 +732,7 @@ public:
       NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                             \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
-      movptr_with_offset(temp, dest, offset);                                                      \
+      movptr(temp, dest, offset);                                                                  \
       NAME(Rs, temp, offset);                                                                      \
     }                                                                                              \
   }                                                                                                \
@@ -751,7 +740,7 @@ public:
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
         assert_different_registers(Rs, temp);                                                      \
-        code_section()->relocate(pc(), adr.rspec());                                               \
+        relocate(adr.rspec());                                                                     \
         NAME(Rs, adr.target(), temp);                                                              \
         break;                                                                                     \
       }                                                                                            \
@@ -787,14 +776,14 @@ public:
       NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                             \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
-      movptr_with_offset(temp, dest, offset);                                                      \
+      movptr(temp, dest, offset);                                                                  \
       NAME(Rs, temp, offset);                                                                      \
     }                                                                                              \
   }                                                                                                \
   void NAME(FloatRegister Rs, const Address &adr, Register temp = t0) {                            \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        code_section()->relocate(pc(), adr.rspec());                                               \
+        relocate(adr.rspec());                                                                     \
         NAME(Rs, adr.target(), temp);                                                              \
         break;                                                                                     \
       }                                                                                            \
@@ -882,7 +871,7 @@ public:
     } else {                                                                                  \
       assert_different_registers(Rd, temp);                                                   \
       int32_t off = 0;                                                                        \
-      movptr_with_offset(temp, dest, off);                                                    \
+      movptr(temp, dest, off);                                                                \
       jalr(Rd, temp, off);                                                                    \
     }                                                                                         \
   }                                                                                           \

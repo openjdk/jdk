@@ -52,8 +52,8 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
 
   _byte_map_size = mapper->reserved().byte_size();
 
-  _guard_index = cards_required(_whole_heap.word_size()) - 1;
-  _last_valid_index = _guard_index - 1;
+  size_t num_cards = cards_required(_whole_heap.word_size());
+  _last_valid_index = num_cards - 1;
 
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
