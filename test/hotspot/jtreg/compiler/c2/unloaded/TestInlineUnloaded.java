@@ -40,7 +40,7 @@
  *                  compiler.c2.unloaded.TestInlineUnloaded$Parent$TestCase
  *                  compiler.c2.unloaded.TestInlineUnloaded$Parent$Invoker
  *                  compiler.c2.unloaded.TestInlineUnloaded$Parent$TestNull
- *                  compiler.c2.unloaded.TestInlineUnloaded$Parent$TestLoaded
+ *                  compiler.c2.unloaded.TestInlineUnloaded$Parent$TestLoadedRemotely
  *                  compiler.c2.unloaded.TestInlineUnloaded$Parent$TestUnloaded
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar caller.jar
  *                  compiler.c2.unloaded.TestInlineUnloaded$Caller
@@ -55,16 +55,11 @@
 package compiler.c2.unloaded;
 
 import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Consumer;
 
 public class TestInlineUnloaded {
