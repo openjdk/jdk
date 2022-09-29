@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,7 +473,7 @@ public class InstanceKlass extends Klass {
     long access = getAccessFlags();
     // But check if it happens to be member class.
     U2Array innerClassList = getInnerClasses();
-    int length = (innerClassList == null)? 0 : (int) innerClassList.length();
+    int length = (innerClassList == null)? 0 : innerClassList.length();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
           Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
@@ -522,7 +522,7 @@ public class InstanceKlass extends Klass {
 
   private boolean isInInnerClasses(Symbol sym, boolean includeLocals) {
     U2Array innerClassList = getInnerClasses();
-    int length = ( innerClassList == null)? 0 : (int) innerClassList.length();
+    int length = ( innerClassList == null)? 0 : innerClassList.length();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
@@ -882,22 +882,22 @@ public class InstanceKlass extends Klass {
       return null;
     }
     Address addr = getAddress().getAddressAt(breakpoints.getOffset());
-    return (BreakpointInfo) VMObjectFactory.newObject(BreakpointInfo.class, addr);
+    return VMObjectFactory.newObject(BreakpointInfo.class, addr);
   }
 
   public IntArray  getMethodOrdering() {
     Address addr = getAddress().getAddressAt(methodOrdering.getOffset());
-    return (IntArray) VMObjectFactory.newObject(IntArray.class, addr);
+    return VMObjectFactory.newObject(IntArray.class, addr);
   }
 
   public U2Array getFields() {
     Address addr = getAddress().getAddressAt(fields.getOffset());
-    return (U2Array) VMObjectFactory.newObject(U2Array.class, addr);
+    return VMObjectFactory.newObject(U2Array.class, addr);
   }
 
   public U2Array getInnerClasses() {
     Address addr = getAddress().getAddressAt(innerClasses.getOffset());
-    return (U2Array) VMObjectFactory.newObject(U2Array.class, addr);
+    return VMObjectFactory.newObject(U2Array.class, addr);
   }
 
 
@@ -992,7 +992,7 @@ public class InstanceKlass extends Klass {
   }
 
   private static int linearSearch(MethodArray methods, String name, String signature) {
-    int len = (int) methods.length();
+    int len = methods.length();
     for (int index = 0; index < len; index++) {
       Method m = methods.at(index);
       if (m.getSignature().equals(signature) && m.getName().equals(name)) {
@@ -1014,7 +1014,7 @@ public class InstanceKlass extends Klass {
         sub = sub.getNextSiblingKlass();
     }
 
-    final int length = (int) cp.getLength();
+    final int length = cp.getLength();
     out.print("ciInstanceKlass " + getName().asString() + " " + (isLinked() ? 1 : 0) + " " + (isInitialized() ? 1 : 0) + " " + length);
     for (int index = 1; index < length; index++) {
       out.print(" " + cp.getTags().at(index));
