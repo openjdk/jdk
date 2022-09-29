@@ -112,9 +112,9 @@ class PatternEntry {
     // ===== privates =====
 
     void addToBuilder(StringBuilder toAddTo,
-                     boolean showExtension,
-                     boolean showWhiteSpace,
-                     PatternEntry lastEntry)
+                      boolean showExtension,
+                      boolean showWhiteSpace,
+                      PatternEntry lastEntry)
     {
         if (showWhiteSpace && toAddTo.length() > 0)
             if (strength == Collator.PRIMARY || lastEntry != null)
