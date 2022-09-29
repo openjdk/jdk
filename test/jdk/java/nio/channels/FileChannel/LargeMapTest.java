@@ -84,6 +84,5 @@ public class LargeMapTest {
                 throw new RuntimeException("Expected buffers to be equal");
             }
         }
-        Files.delete(p);
     }
 }

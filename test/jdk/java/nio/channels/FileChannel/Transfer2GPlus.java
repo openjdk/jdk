@@ -73,7 +73,6 @@ public class Transfer2GPlus {
         t1 = System.nanoTime();
         System.out.printf("  Copied to byte channel in %d ns (%d ms) %n",
                 t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
-        Files.delete(src);
     }
 
     // Create a file of size LENGTH with EXTRA random bytes at offset BASE.
