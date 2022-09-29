@@ -58,7 +58,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * IEEE 754 floating-point values include finite nonzero values,
  * signed zeros ({@code +0.0} and {@code -0.0}), signed infinities
- * {@linkplain Double#POSITIVE_INFINITY positive infinity} and
+ * ({@linkplain Double#POSITIVE_INFINITY positive infinity} and
  * {@linkplain Double#NEGATIVE_INFINITY negative infinity}), and
  * {@linkplain Double#NaN NaN} (not-a-number).
  *
@@ -142,6 +142,43 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * -0.0}, and NaN, allows instances of wrapper classes to be used as
  * elements of a {@link java.util.SortedSet SortedSet} or as keys of a
  * {@link java.util.SortedMap SortedMap}.
+ *
+ * <p>While {@code ==} is not an equivalence relation, several useful
+ * equivalence relations can be defined over floating-point values including:
+ *
+ * <dl>
+ * <dt><i>bit-wise equivalence</i>:</dt>
+ * <dd>The bits of the two floating-point values are the same. This
+ * equivalence relation for {@code double} values {@code a} and {@code b} is
+ * implemented by the expression
+ * <br>{@code Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b)}<br>
+ * Under this relation, {@code +0.0} and {@code -0.0} are distinguished
+ * from each other and every bit pattern encoding a NaN is distinguished
+ * form other bit patterns encoding a NaN.
+ * </dd>
+ *
+ * <dt><i>representation equivalence</i>:</dt>
+ * <dd>The two floating-point values represent the the same IEEE 754
+ * <i>datum</i>. In particular, for {@linkplain #isFinite(double)
+ * finite} values, the sign, {@linkplain Math#getExponent(double)
+ * exponent}, and significand components of the
+ * floating-point values are the same. Under this relation:
+ * <ul>
+ * <li> {@code +0.0} and {@code -0.0} are distinguished from each other.
+ * <li> every bit pattern encoding a NaN is considered equivalent to each other
+ * <li> an infinite value is equivalent to an infinite value of the same sign
+ * </ul>
+ * Expressions implementing this equivalence relation include:
+ * <ul>
+ * <li>{@code Double.doubleToLongBits(a) == Double.doubleToLongBits(b)}
+ * <li>{@code Double.valueOf(a).equals(Double.valueOf(b))}
+ * <li>{@code Double.compare(a, b) == 0}
+ * </ul>
+ * Note that representation equivalence is often an appropriate notion
+ * of equivalence to test the behavior of {@linkplain StrictMath math
+ * libraries}.
+ * </dd>
+ * </dl>
  *
  * @jls 4.2.3 Floating-Point Types, Formats, and Values
  * @jls 4.2.4. Floating-Point Operations
