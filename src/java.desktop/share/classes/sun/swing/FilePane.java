@@ -1122,11 +1122,11 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     @SuppressWarnings("serial") // JDK-implementation class
     class DetailsTableCellRenderer extends DefaultTableCellRenderer {
-        JFileChooser chooser;
-        DateFormat df;
-        static final double baseFileSize = 1000.0;
-        final MessageFormat mf = new MessageFormat("");
-        final NumberFormat nf = NumberFormat.getNumberInstance();
+        private final JFileChooser chooser;
+        private final DateFormat df;
+        private final MessageFormat mf = new MessageFormat("");
+        private final NumberFormat nf = NumberFormat.getNumberInstance();
+        private static final double baseFileSize = 1000.0;
 
         DetailsTableCellRenderer(JFileChooser chooser) {
             this.chooser = chooser;
