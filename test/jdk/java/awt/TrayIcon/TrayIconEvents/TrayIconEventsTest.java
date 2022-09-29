@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.awt.image.BufferedImage;
 
 public class TrayIconEventsTest {
 
-    private static boolean isOEL7;
+    private static boolean isOel7orLater;
     TrayIcon icon;
     ExtendedRobot robot;
 
@@ -82,7 +82,7 @@ public class TrayIconEventsTest {
                         "\"Always show all icons and notifications on the taskbar\" true " +
                         "to avoid this problem. Or change behavior only for Java SE " +
                         "tray icon.");
-            isOEL7 = SystemTrayIconHelper.isOel7();
+            isOel7orLater = SystemTrayIconHelper.isOel7orLater();
             new TrayIconEventsTest().doTest();
         }
     }
@@ -201,7 +201,7 @@ public class TrayIconEventsTest {
         Point iconPosition = SystemTrayIconHelper.getTrayIconLocation(icon);
         if (iconPosition == null)
             throw new RuntimeException("Unable to find the icon location!");
-        if (isOEL7) {
+        if (isOel7orLater) {
             // close tray
             robot.mouseMove(100,100);
             robot.click(InputEvent.BUTTON1_MASK);
@@ -210,7 +210,7 @@ public class TrayIconEventsTest {
 
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle();
-        if(!isOEL7) {
+        if(!isOel7orLater) {
             SystemTrayIconHelper.doubleClick(robot);
 
             if (!actionPerformed) {
@@ -227,7 +227,7 @@ public class TrayIconEventsTest {
 
         for (int i = 0; i < buttonTypes.length; i++) {
             mousePressed = false;
-            if(isOEL7) {
+            if(isOel7orLater) {
                 SystemTrayIconHelper.openTrayIfNeeded(robot);
                 robot.mouseMove(iconPosition.x, iconPosition.y);
                 robot.click(buttonTypes[i]);
@@ -250,7 +250,7 @@ public class TrayIconEventsTest {
 
             mouseReleased = false;
             mouseClicked = false;
-            if(isOEL7) {
+            if(isOel7orLater) {
                 SystemTrayIconHelper.openTrayIfNeeded(robot);
                 robot.mouseMove(iconPosition.x, iconPosition.y);
                 robot.click(buttonTypes[i]);
@@ -283,7 +283,7 @@ public class TrayIconEventsTest {
                         buttonNames[i] + " pressed & released");
         }
 
-        if (!isOEL7) {
+        if (!isOel7orLater) {
             mouseMoved = false;
             robot.mouseMove(iconPosition.x + 100, iconPosition.y);
             robot.glide(iconPosition.x, iconPosition.y);

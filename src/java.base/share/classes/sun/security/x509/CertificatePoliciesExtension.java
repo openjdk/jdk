@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ implements CertAttrSet<String> {
             throw new IOException("Invalid encoding for " +
                                    "CertificatePoliciesExtension.");
         }
-        certPolicies = new ArrayList<PolicyInformation>();
+        certPolicies = new ArrayList<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             PolicyInformation policy = new PolicyInformation(seq);

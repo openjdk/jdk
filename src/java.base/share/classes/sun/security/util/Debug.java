@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class Debug {
 
     /**
      * Get a Debug object corresponding to whether or not the given
-     * option is set. Set the prefix to be prefix.
+     * option is set. Set the prefix to prefix.
      */
     public static Debug getInstance(String option, String prefix)
     {
@@ -214,7 +214,7 @@ public class Debug {
     }
 
     /**
-     * PrintStream for debug methods. Currently only System.err is supported.
+     * PrintStream for debug methods. Currently, only System.err is supported.
      */
     public PrintStream getPrintStream() {
         return System.err;

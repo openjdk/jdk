@@ -1498,7 +1498,6 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
       warning("%s", msg1);
       warning("%s", msg2);
     }
-    ResourceMark rm;
     stringStream s;
     // Dump code cache into a buffer before locking the tty.
     {
@@ -1507,7 +1506,7 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
     }
     {
       ttyLocker ttyl;
-      tty->print("%s", s.as_string());
+      tty->print("%s", s.freeze());
     }
 
     if (full_count == 1) {
