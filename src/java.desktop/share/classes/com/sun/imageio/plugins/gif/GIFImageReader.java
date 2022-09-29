@@ -651,15 +651,19 @@ public class GIFImageReader extends ImageReader {
         byte[] data = new byte[0];
         while (true) {
             int length = stream.readUnsignedByte();
-            if (length == 0) {
-                break;
+            if (ignoreMetadata) {
+                stream.skipBytes(length);
+                if (length > 0) {
+                    continue;
+                } else {
+                    break;
+                }
             }
             byte[] newData = new byte[data.length + length];
             System.arraycopy(data, 0, newData, 0, data.length);
             stream.readFully(newData, data.length, length);
             data = newData;
         }
-
         return data;
     }
 
@@ -726,66 +730,88 @@ public class GIFImageReader extends ImageReader {
                         int terminator = stream.readUnsignedByte();
                     } else if (label == 0x1) { // Plain text extension
                         int length = stream.readUnsignedByte();
-                        imageMetadata.hasPlainTextExtension = true;
-                        imageMetadata.textGridLeft =
-                            stream.readUnsignedShort();
-                        imageMetadata.textGridTop =
-                            stream.readUnsignedShort();
-                        imageMetadata.textGridWidth =
-                            stream.readUnsignedShort();
-                        imageMetadata.textGridHeight =
-                            stream.readUnsignedShort();
-                        imageMetadata.characterCellWidth =
-                            stream.readUnsignedByte();
-                        imageMetadata.characterCellHeight =
-                            stream.readUnsignedByte();
-                        imageMetadata.textForegroundColor =
-                            stream.readUnsignedByte();
-                        imageMetadata.textBackgroundColor =
-                            stream.readUnsignedByte();
+                        if (!ignoreMetadata) {
+                            imageMetadata.hasPlainTextExtension = true;
+                            imageMetadata.textGridLeft =
+                                    stream.readUnsignedShort();
+                            imageMetadata.textGridTop =
+                                    stream.readUnsignedShort();
+                            imageMetadata.textGridWidth =
+                                    stream.readUnsignedShort();
+                            imageMetadata.textGridHeight =
+                                    stream.readUnsignedShort();
+                            imageMetadata.characterCellWidth =
+                                    stream.readUnsignedByte();
+                            imageMetadata.characterCellHeight =
+                                    stream.readUnsignedByte();
+                            imageMetadata.textForegroundColor =
+                                    stream.readUnsignedByte();
+                            imageMetadata.textBackgroundColor =
+                                    stream.readUnsignedByte();
+                        } else {
+                            stream.skipBytes(length);
+                        }
                         imageMetadata.text = concatenateBlocks();
                     } else if (label == 0xfe) { // Comment extension
                         byte[] comment = concatenateBlocks();
-                        if (imageMetadata.comments == null) {
-                            imageMetadata.comments = new ArrayList<>();
+                        if (!ignoreMetadata) {
+                            if (imageMetadata.comments == null) {
+                                imageMetadata.comments = new ArrayList<>();
+                            }
+                            imageMetadata.comments.add(comment);
                         }
-                        imageMetadata.comments.add(comment);
                     } else if (label == 0xff) { // Application extension
                         int blockSize = stream.readUnsignedByte();
+                        int offset = 0;
+                        byte[] blockData = new byte[blockSize];
                         byte[] applicationID = new byte[8];
                         byte[] authCode = new byte[3];
+                        if (!ignoreMetadata) {
+                            // read available data
+                            stream.readFully(blockData);
 
-                        // read available data
-                        byte[] blockData = new byte[blockSize];
-                        stream.readFully(blockData);
-
-                        int offset = copyData(blockData, 0, applicationID);
-                        offset = copyData(blockData, offset, authCode);
+                            offset =
+                                copyData(blockData, 0, applicationID);
+                            offset = copyData(blockData, offset, authCode);
+                        } else {
+                            stream.skipBytes(blockSize);
+                            offset = blockSize;
+                        }
 
                         byte[] applicationData = concatenateBlocks();
 
                         if (offset < blockSize) {
                             int len = blockSize - offset;
-                            byte[] data =
-                                new byte[len + applicationData.length];
+                            if (!ignoreMetadata) {
+                                byte[] data =
+                                    new byte[len + applicationData.length];
 
-                            System.arraycopy(blockData, offset, data, 0, len);
-                            System.arraycopy(applicationData, 0, data, len,
-                                             applicationData.length);
+                                System.arraycopy(blockData, offset,
+                                    data, 0, len);
+                                System.arraycopy(applicationData, 0,
+                                    data, len,
+                                    applicationData.length);
 
-                            applicationData = data;
+                                applicationData = data;
+                            } else {
+                                stream.skipBytes(len);
+                            }
                         }
 
-                        // Init lists if necessary
-                        if (imageMetadata.applicationIDs == null) {
-                            imageMetadata.applicationIDs = new ArrayList<>();
-                            imageMetadata.authenticationCodes =
-                                new ArrayList<>();
-                            imageMetadata.applicationData = new ArrayList<>();
+                        if (!ignoreMetadata) {
+                            // Init lists if necessary
+                            if (imageMetadata.applicationIDs == null) {
+                                imageMetadata.applicationIDs =
+                                    new ArrayList<>();
+                                imageMetadata.authenticationCodes =
+                                    new ArrayList<>();
+                                imageMetadata.applicationData =
+                                    new ArrayList<>();
+                            }
+                            imageMetadata.applicationIDs.add(applicationID);
+                            imageMetadata.authenticationCodes.add(authCode);
+                            imageMetadata.applicationData.add(applicationData);
                         }
-                        imageMetadata.applicationIDs.add(applicationID);
-                        imageMetadata.authenticationCodes.add(authCode);
-                        imageMetadata.applicationData.add(applicationData);
                     } else {
                         // Skip over unknown extension blocks
                         int length = 0;
