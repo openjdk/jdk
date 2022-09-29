@@ -1724,7 +1724,7 @@ int SR_initialize() {
 
   // Set up signal handler for suspend/resume
   act.sa_flags = SA_RESTART|SA_SIGINFO;
-  act.sa_handler = (void (*)(int)) SR_handler;
+  act.sa_handler = CAST_FROM_FN_PTR(sa_handler_t, SR_handler);
 
   // SR_signum is blocked when the handler runs.
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);

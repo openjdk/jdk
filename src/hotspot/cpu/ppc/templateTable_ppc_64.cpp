@@ -237,7 +237,7 @@ void TemplateTable::sipush() {
   __ get_2_byte_integer_at_bcp(1, R17_tos, InterpreterMacroAssembler::Signed);
 }
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   Register Rscratch1 = R11_scratch1,
            Rscratch2 = R12_scratch2,
            Rcpool    = R3_ARG1;
@@ -301,7 +301,7 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
   int index_size = wide ? sizeof(u2) : sizeof(u1);
