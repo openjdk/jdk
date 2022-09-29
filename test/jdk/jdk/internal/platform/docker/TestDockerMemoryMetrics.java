@@ -100,6 +100,7 @@ public class TestDockerMemoryMetrics {
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
                 .addClassOptions("memory", value);
         if (addCgroupMount) {
+            // Extra cgroup mount should be ignored by product code
             opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
         }
         DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");

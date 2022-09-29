@@ -193,6 +193,7 @@ public class TestMemoryAwareness {
             .addJavaOpts("--add-exports")
             .addJavaOpts("java.base/jdk.internal.platform=ALL-UNNAMED");
         if (addCgroupMounts) {
+            // Extra cgroup mount should be ignored by product code
             opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
         }
 

@@ -119,6 +119,7 @@ public class TestDockerCpuMetrics {
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
         if (addCgroupMount) {
+            // Extra cgroup mount should be ignored by product code
             opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
         }
         opts.addJavaOpts("-cp", "/test-classes/");
@@ -138,6 +139,7 @@ public class TestDockerCpuMetrics {
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsCpuTester");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
         if (addCgroupMount) {
+            // Extra cgroup mount should be ignored by product code
             opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
         }
         opts.addDockerOpts("--cpu-period=" + period).addDockerOpts("--cpu-quota=" + quota);

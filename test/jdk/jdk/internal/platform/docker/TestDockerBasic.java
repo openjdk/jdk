@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8293540
  * @summary Verify that -XshowSettings:system works
  * @requires docker.support
  * @library /test/lib
@@ -61,6 +62,7 @@ public class TestDockerBasic {
         opts.addJavaOpts("-XshowSettings:system");
         opts.addDockerOpts("--memory", "300m");
         if (addCgroupMounts) {
+            // Extra cgroup mount should be ignored by product code
             opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
         }
         DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0)
