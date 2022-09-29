@@ -422,7 +422,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         if (runpath != 0) {
             /* ensure storage for runpath + colon + NULL */
             if ((JLI_StrLen(runpath) + 1 + 1) > new_runpath_size) {
-            	JLI_Perror(JRE_ERROR11);
+                JLI_Perror(JRE_ERROR11);
                 exit(1);
             }
             JLI_StrCat(new_runpath, ":");

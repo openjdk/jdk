@@ -40,7 +40,6 @@
 #include "emessages.h"
 #include "java_md.h"
 #include "jli_util.h"
-#include "jni_util.h"
 #include "manifest_info.h"
 #include "wildcard.h"
 #include "splashscreen.h"
