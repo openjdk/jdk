@@ -33,6 +33,7 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.util.PropertiesSheet;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import javax.swing.Action;
 import org.openide.actions.OpenAction;
@@ -67,7 +68,7 @@ public class GraphNode extends AbstractNode {
     }
 
     public String getHtmlDisplayName() {
-        String htmlDisplayName = getDisplayName();
+        String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
         if (selected) {
             htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
         }

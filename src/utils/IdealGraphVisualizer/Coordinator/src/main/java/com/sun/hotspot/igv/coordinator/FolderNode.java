@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.coordinator;
 import com.sun.hotspot.igv.coordinator.actions.RemoveCookie;
 import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.util.PropertiesSheet;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import java.util.List;
 import java.util.HashMap;
@@ -144,7 +145,7 @@ public class FolderNode extends AbstractNode {
     }
 
     public String getHtmlDisplayName() {
-        String htmlDisplayName = getDisplayName();
+        String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
         if (selected) {
             htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
         }
