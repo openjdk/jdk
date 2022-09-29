@@ -73,7 +73,7 @@ static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
 static const ZStatPhaseGeneration ZPhaseGenerationOld("Generation Collection (Major)", ZGenerationId::old);
 
 static const ZStatPhasePause      ZPhasePauseMarkStartYoung("Pause Mark Start", ZGenerationId::young);
-static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Pause Mark Start", ZGenerationId::young);
+static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Pause Mark Start (Major)", ZGenerationId::young);
 static const ZStatPhaseConcurrent ZPhaseConcurrentMarkYoung("Concurrent Mark", ZGenerationId::young);
 static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinueYoung("Concurrent Mark Continue", ZGenerationId::young);
 static const ZStatPhasePause      ZPhasePauseMarkEndYoung("Pause Mark End", ZGenerationId::young);
