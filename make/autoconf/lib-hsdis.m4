@@ -175,7 +175,11 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
       fi
     else
       binutils_cc="$CC $SYSROOT_CFLAGS"
-      binutils_target=""
+      if test "x$host" = "x$build"; then
+        binutils_target=""
+      else
+        binutils_target="--host=$host"
+      fi
     fi
     binutils_cflags="$binutils_cflags $MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
 
