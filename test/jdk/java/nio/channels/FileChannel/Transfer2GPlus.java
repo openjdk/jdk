@@ -47,11 +47,13 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.RandomFactory;
 
 public class Transfer2GPlus {
     private static final long BASE   = (long)Integer.MAX_VALUE;
     private static final int  EXTRA  = 1024;
     private static final long LENGTH = BASE + EXTRA;
+    private static final Random GEN  = RandomFactory.getRandom();
 
     public static void main(String[] args) throws IOException {
         Path src = Files.createTempFile("src", ".dat");
@@ -80,9 +82,8 @@ public class Transfer2GPlus {
         try (FileChannel fc = FileChannel.open(src, StandardOpenOption.CREATE_NEW,
                 StandardOpenOption.SPARSE, StandardOpenOption.WRITE)) {
             fc.position(BASE);
-            Random r = new Random(System.nanoTime());
             byte[] b = new byte[EXTRA];
-            r.nextBytes(b);
+            GEN.nextBytes(b);
             fc.write(ByteBuffer.wrap(b));
             return b;
         }

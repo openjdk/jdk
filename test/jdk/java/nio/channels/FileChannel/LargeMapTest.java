@@ -21,6 +21,8 @@
  * questions.
  */
 
+import jdk.test.lib.RandomFactory;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 
@@ -47,6 +49,7 @@ public class LargeMapTest {
     private static final long LENGTH = (1L << 32) + 512;
     private static final int  EXTRA  = 1024;
     private static final long BASE   = LENGTH - EXTRA;
+    private static final Random GEN  = RandomFactory.getRandom();
 
     public static void main(String[] args) throws IOException {
         System.out.println(System.getProperty("sun.arch.data.model"));
@@ -61,9 +64,8 @@ public class LargeMapTest {
         ByteBuffer bb;
         try (FileChannel fc = FileChannel.open(p, CREATE_NEW, SPARSE, WRITE)) {
             fc.position(BASE);
-            Random r = new Random(System.nanoTime());
             byte[] b = new byte[EXTRA];
-            r.nextBytes(b);
+            GEN.nextBytes(b);
             bb = ByteBuffer.wrap(b);
             fc.write(bb);
             long t1 = System.nanoTime();
