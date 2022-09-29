@@ -563,10 +563,8 @@ void MacroAssembler::emit_static_call_stub() {
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
-  int32_t offset = 0;
   push_reg(RegSet::of(t0, xmethod), sp);   // push << t0 & xmethod >> to sp
-  movptr(t0, entry_point, offset);
-  jalr(x1, t0, offset);
+  call(entry_point);
   if (retaddr != NULL) {
     bind(*retaddr);
   }
