@@ -507,6 +507,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/BufferedInputStream/TransferTo.java                     8294541 generic-all
 java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
 java/io/File/GetXSpace.java                                     8291911 windows-all
 
