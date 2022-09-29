@@ -962,8 +962,8 @@ Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (phase->type(in2) == TypeLong::MINUS_1) { // follows LHS^(-1), i.e., ~LHS
     if (phase->is_IterGVN()) {
       if (is_used_in_only_arithmetic(this, T_LONG)
-          // used only once and contains arithmetic
-          || (outcnt() == 1 && (in1->Opcode() == Op_AddL || in1->Opcode() == Op_SubL))) {
+          // LHS is arithmetic
+          || (in1->Opcode() == Op_AddL || in1->Opcode() == Op_SubL)) {
         return new SubLNode(in2, in1);
       }
     } else {

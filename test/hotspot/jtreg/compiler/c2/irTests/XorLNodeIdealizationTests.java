@@ -42,7 +42,7 @@ public class XorLNodeIdealizationTests {
                  "test7", "test8", "test9",
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
-                 "test16"})
+                 "test16", "test17"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -76,6 +76,7 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(~a                 , test14(a));
         Asserts.assertEQ(~a                 , test15(a));
         Asserts.assertEQ((~a + b) + (~a | c), test16(a, b, c));
+        Asserts.assertEQ(-2023 - a          , test17(a));
     }
 
     @Test
@@ -207,5 +208,13 @@ public class XorLNodeIdealizationTests {
         long u = ~x + y;
         long v = ~x | z;
         return u + v;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR, IRNode.ADD})
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks ~(x + c) => (-c-1) - x
+    public long test17(long x) {
+        return ~(x + 2022);
     }
 }
