@@ -439,6 +439,8 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
   // Clone the object
   Raw::clone_in_heap(src, dst, size);
 
+  assert(ZHeap::heap()->is_young(to_zaddress(dst)), "ZColorStoreGoodOopClosure is only valid for young objects");
+
   // Color store good before handing out
   ZColorStoreGoodOopClosure cl_sg;
   ZIterator::oop_iterate(dst, &cl_sg);
