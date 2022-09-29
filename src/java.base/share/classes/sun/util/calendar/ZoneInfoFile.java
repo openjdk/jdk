@@ -582,10 +582,7 @@ public final class ZoneInfoFile {
                     // we can then pass in the dom = -1, dow > 0 into ZoneInfo
                     //
                     // hacking, assume the >=24 is the result of ZRB optimization for
-                    // "last", it works for now. From tzdata2020d this hacking
-                    // will not work for Asia/Gaza and Asia/Hebron which follow
-                    // Palestine DST rules.
-                    // No need of hacking for Plaestine DST rules from tz2022d
+                    // "last", it works for now.
                     if (dom < 0 || dom >= 24) {
                         params[1] = -1;
                         params[2] = toCalendarDOW[dow];
@@ -608,7 +605,6 @@ public final class ZoneInfoFile {
                     params[7] = 0;
                 } else {
                     // hacking: see comment above
-                    // No need of hacking for Asia/Gaza and Asia/Hebron from tz2021e
                     if (dom < 0 || dom >= 24) {
                         params[6] = -1;
                         params[7] = toCalendarDOW[dow];
