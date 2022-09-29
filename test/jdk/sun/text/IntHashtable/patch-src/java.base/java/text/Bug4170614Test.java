@@ -67,7 +67,7 @@ import sun.text.IntHashtable;
 
 /**
  * This class tests some internal hashCode() functions.
- * Bug #4170614 complained that we had two iternal classes that
+ * Bug #4170614 complained that we had two internal classes that
  * break the invariant that if a.equals(b) than a.hashCode() ==
  * b.hashCode().  This is because these classes overrode equals()
  * but not hashCode().  These are both purely internal classes, and
