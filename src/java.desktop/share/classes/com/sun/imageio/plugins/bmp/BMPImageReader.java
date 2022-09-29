@@ -630,8 +630,8 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             iis.mark();
             iis.skipBytes(profileData - size);
-            byte[] profile = new byte[profileSize];
-            iis.readFully(profile, 0, profileSize);
+            byte[] profile = ReaderUtil.
+                    staggeredReadByteStream(iis, profileSize);
             iis.reset();
 
             try {
