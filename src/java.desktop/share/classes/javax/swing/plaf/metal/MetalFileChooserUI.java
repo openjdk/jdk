@@ -1266,7 +1266,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         public void actionPerformed(ActionEvent e) {
             directoryComboBox.hidePopup();
             File f = (File)directoryComboBox.getSelectedItem();
-            if (!getFileChooser().getCurrentDirectory().equals(f)) {
+            File curDir = getFileChooser().getCurrentDirectory();
+
+            if (curDir != null && !curDir.equals(f)) {
                 getFileChooser().setCurrentDirectory(f);
             }
         }
