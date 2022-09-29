@@ -877,8 +877,8 @@ Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (phase->type(in2) == TypeInt::MINUS_1) { // follows LHS^(-1), i.e., ~LHS
     if (phase->is_IterGVN()) {
       if (is_used_in_only_arithmetic(this, T_INT)
-          // used only once and contains arithmetic
-          || (outcnt() == 1 && (in1->Opcode() == Op_AddI || in1->Opcode() == Op_SubI))) {
+          // LHS is arithmetic
+          || (in1->Opcode() == Op_AddI || in1->Opcode() == Op_SubI)) {
         return new SubINode(in2, in1);
       }
     } else {
