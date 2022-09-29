@@ -61,6 +61,7 @@ public class LargeMapTest {
         System.out.println("  Writing large file...");
         long t0 = System.nanoTime();
         Path p = FileUtils.createSparseTempFile("test", ".dat");
+        p.toFile().deleteOnExit();
         ByteBuffer bb;
         try (FileChannel fc = FileChannel.open(p, WRITE)) {
             fc.position(BASE);

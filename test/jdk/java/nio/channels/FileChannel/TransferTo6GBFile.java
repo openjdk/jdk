@@ -56,6 +56,7 @@ public class TransferTo6GBFile {
 
         // Create 6GB file
         Path file = FileUtils.createSparseTempFile("source", null);
+        file.toFile().deleteOnExit();
 
         out.println("  Writing large file...");
         long t0 = System.nanoTime();

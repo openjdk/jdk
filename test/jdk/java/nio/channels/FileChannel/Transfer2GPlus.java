@@ -57,6 +57,7 @@ public class Transfer2GPlus {
 
     public static void main(String[] args) throws IOException {
         Path src = FileUtils.createSparseTempFile("src", ".dat");
+        src.toFile().deleteOnExit();
         long t0 = System.nanoTime();
         byte[] b = createSrcFile(src);
         long t1 = System.nanoTime();

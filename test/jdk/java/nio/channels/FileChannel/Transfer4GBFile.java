@@ -51,6 +51,7 @@ public class Transfer4GBFile {
     @Test
     public void xferTest04() throws Exception { // for bug 4638365
         Path source = FileUtils.createSparseTempFile("blah", null);
+        source.toFile().deleteOnExit();
         long testSize = ((long)Integer.MAX_VALUE) * 2;
 
         out.println("  Writing large file...");
@@ -64,6 +65,7 @@ public class Transfer4GBFile {
         }
 
         Path sink = Files.createTempFile("sink", null);
+        sink.toFile().deleteOnExit();
 
         try (FileChannel sourceChannel = FileChannel.open(source,
                      StandardOpenOption.READ);
@@ -87,10 +89,12 @@ public class Transfer4GBFile {
     public void xferTest05() throws Exception { // for bug 4638365
         // Create a source file & large sink file for the test
         Path source = Files.createTempFile("blech", null);
+        source.toFile().deleteOnExit();
         initTestFile(source, 100);
 
         // Create the sink file as a sparse file if possible
         Path sink = FileUtils.createSparseTempFile("sink", null);
+        sink.toFile().deleteOnExit();
         long testSize = ((long)Integer.MAX_VALUE) * 2;
         try (FileChannel fc = FileChannel.open(sink, StandardOpenOption.WRITE)){
             out.println("  Writing large file...");
