@@ -83,6 +83,8 @@ endif
 
 # Additional disabled warnings are due to code in the test source.
 
+# TODO: Should merge once JDK-8294314 is in.
+
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
@@ -102,6 +104,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc) \
         undef stringop-overflow, \
+    DISABLED_WARNINGS_gcc_test_signals.cpp := cast-function-type, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
         undef switch format-nonliteral tautological-undefined-compare \
         self-assign-overloaded, \
