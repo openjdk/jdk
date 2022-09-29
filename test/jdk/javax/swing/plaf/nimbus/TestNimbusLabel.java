@@ -44,7 +44,7 @@ import javax.swing.UIManager;
 public class TestNimbusLabel
 {
     private static JFrame frame;
-    private static int colorTolerance = 5;
+    private static final int colorTolerance = 5;
 
     private static boolean checkPixel(Color color) {
         int red1 = color.getRed();
@@ -53,12 +53,9 @@ public class TestNimbusLabel
         int red2 = Color.red.getRed();
         int blue2 = Color.red.getBlue();
         int green2 = Color.red.getGreen();
-        if ((Math.abs(red1 - red2) < colorTolerance) &&
+        return ((Math.abs(red1 - red2) < colorTolerance) &&
                 (Math.abs(green1 - green2) < colorTolerance) &&
-                (Math.abs(blue1 - blue2) < colorTolerance)) {
-            return true;
-        }
-        return false;
+                (Math.abs(blue1 - blue2) < colorTolerance));
     }
 
     public static void main(String[] args) throws Exception {
@@ -100,10 +97,7 @@ public class TestNimbusLabel
                 }
             }
             if (!passed) {
-                BufferedImage img =
-                    robot.createScreenCapture(new Rectangle(p.x, p.y,
-                            d.width,
-                            d.height));
+                BufferedImage img = robot.createScreenCapture(new Rectangle(p, d));
                 ImageIO.write(img, "png", new File("label.png"));
                 throw new RuntimeException("Label.foreground color not honoured");
             }
