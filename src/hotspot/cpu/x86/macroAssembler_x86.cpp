@@ -3125,10 +3125,46 @@ void MacroAssembler::sign_extend_short(Register reg) {
   }
 }
 
+void MacroAssembler::testl(Address dst, int32_t imm32) {
+  if (imm32 >= 0 && is8bit(imm32)) {
+    testb(dst, imm32);
+  } else {
+    Assembler::testl(dst, imm32);
+  }
+}
+
+void MacroAssembler::testl(Register dst, int32_t imm32) {
+  if (imm32 >= 0 && is8bit(imm32) && dst->has_byte_register()) {
+    testb(dst, imm32);
+  } else {
+    Assembler::testl(dst, imm32);
+  }
+}
+
 void MacroAssembler::testl(Register dst, AddressLiteral src) {
-  assert(reachable(src), "Address should be reachable");
+  assert(always_reachable(src), "Address should be reachable");
   testl(dst, as_Address(src));
 }
+
+#ifdef _LP64
+
+void MacroAssembler::testq(Address dst, int32_t imm32) {
+  if (imm32 >= 0) {
+    testl(dst, imm32);
+  } else {
+    Assembler::testq(dst, imm32);
+  }
+}
+
+void MacroAssembler::testq(Register dst, int32_t imm32) {
+  if (imm32 >= 0) {
+    testl(dst, imm32);
+  } else {
+    Assembler::testq(dst, imm32);
+  }
+}
+
+#endif
 
 void MacroAssembler::pcmpeqb(XMMRegister dst, XMMRegister src) {
   assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");

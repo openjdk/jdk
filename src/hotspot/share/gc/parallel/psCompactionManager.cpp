@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,8 @@ ParCompactionManager::ParCompactionManager() {
   _start_array = old_gen()->start_array();
 
   reset_bitmap_query_cache();
+
+  _deferred_obj_array = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(10, mtGC);
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
@@ -165,6 +167,15 @@ void ParCompactionManager::drain_region_stacks() {
   } while (!region_stack()->is_empty());
 }
 
+void ParCompactionManager::drain_deferred_objects() {
+  while (!_deferred_obj_array->is_empty()) {
+    HeapWord* addr = _deferred_obj_array->pop();
+    assert(addr != NULL, "expected a deferred object");
+    PSParallelCompact::update_deferred_object(this, addr);
+  }
+  _deferred_obj_array->clear_and_deallocate();
+}
+
 size_t ParCompactionManager::pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr) {
   MonitorLocker ml(_shadow_region_monitor, Mutex::_no_safepoint_check_flag);
   while (true) {
@@ -193,6 +204,10 @@ void ParCompactionManager::push_shadow_region(size_t shadow_region) {
 
 void ParCompactionManager::remove_all_shadow_regions() {
   _shadow_region_array->clear();
+}
+
+void ParCompactionManager::push_deferred_object(HeapWord* addr) {
+  _deferred_obj_array->push(addr);
 }
 
 #ifdef ASSERT
