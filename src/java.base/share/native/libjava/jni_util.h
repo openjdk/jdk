@@ -336,20 +336,6 @@ void* getProcessHandle();
 void buildJniFunctionName(const char *sym, const char *cname,
                           char *jniEntryName);
 
-// RUNTIME - Errors that were passed through the runtime
-// SYSTEM - Errors that occurred on the system without going through the C runtime
-//  This can happen in the case of the Windows API, for instance
-typedef enum {
-    RUNTIME,
-    SYSTEM
-} ErrorOrigin;
-
-JNIEXPORT size_t JNICALL
-getLastErrorString(char *buf, size_t len, ErrorOrigin origin);
-
-JNIEXPORT int JNICALL
-getErrorString(int err, char *buf, size_t len, ErrorOrigin origin);
-
 #ifdef STATIC_BUILD
 /* Macros for handling declaration of static/dynamic
  * JNI library Load/Unload functions

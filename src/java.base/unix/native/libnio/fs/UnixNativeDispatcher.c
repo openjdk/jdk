@@ -346,15 +346,15 @@ Java_sun_nio_fs_UnixNativeDispatcher_getcwd(JNIEnv* env, jclass this) {
 JNIEXPORT jbyteArray
 Java_sun_nio_fs_UnixNativeDispatcher_strerror(JNIEnv* env, jclass this, jint error)
 {
-    char tmpbuf[1024];
+    char* buf = NULL;
     jsize len;
     jbyteArray bytes;
 
-    getErrorString(error, tmpbuf, sizeof(tmpbuf), SYSTEM);
-    len = strlen(tmpbuf);
+    buf = strerror(error);
+    len = buf == NULL ? 0 : strlen(buf);
     bytes = (*env)->NewByteArray(env, len);
     if (bytes != NULL) {
-        (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)tmpbuf);
+        (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*) buf);
     }
     return bytes;
 }

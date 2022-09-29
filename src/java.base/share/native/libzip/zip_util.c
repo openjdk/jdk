@@ -1493,7 +1493,6 @@ JNIEXPORT jboolean
 ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
 {
     char *msg;
-    char tmpbuf[1024];
 
     if (entry == 0) {
         jio_fprintf(stderr, "jzentry was invalid");
@@ -1518,8 +1517,7 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             ZIP_Unlock(zip);
             if (n == -1) {
                 if (msg == 0) {
-                    getErrorString(errno, tmpbuf, sizeof(tmpbuf), RUNTIME);
-                    msg = tmpbuf;
+                    msg = strerror(errno);
                 }
                 jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
                 return JNI_FALSE;
@@ -1535,8 +1533,7 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
                 msg = zip->msg;
             }
             if (msg == 0) {
-                getErrorString(errno, tmpbuf, sizeof(tmpbuf), RUNTIME);
-                msg = tmpbuf;
+                msg = strerror(errno);
             }
             jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
             return JNI_FALSE;

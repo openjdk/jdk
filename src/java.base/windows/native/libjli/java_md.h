@@ -45,8 +45,6 @@
  * Utility declarations.
  */
 
-void writeWindowMessage(const char* message, ...);
-
 int UnsetEnv(char *name);
 
 #endif /* JAVA_MD_H */

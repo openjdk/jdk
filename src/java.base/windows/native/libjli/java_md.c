@@ -539,23 +539,6 @@ static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar
     return ERROR_SUCCESS;
 }
 
-void writeWindowMessage(const char* format, ...) {
-    va_list list;
-    va_start(list, format);
-    char *message;
-
-    /* get the length of the string we need */
-    int n = _vscprintf(format, list);
-
-    message = (char *) JLI_MemAlloc(n + 1);
-    _vsnprintf(message, n, format, list);
-    message[n]='\0';
-    MessageBox(NULL, message, "Java Virtual Machine Launcher",
-        (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
-    JLI_MemFree(message);
-    va_end(list);
-}
-
 /* taken from hotspot and slightly adjusted for jli lib;
  * creates a UNC/ELP path from input 'path'
  * the return buffer is allocated in C heap and needs to be freed using

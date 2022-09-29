@@ -59,20 +59,3 @@ void buildJniFunctionName(const char *sym, const char *cname,
         strcat(jniEntryName, cname);
     }
 }
-
-/* libc is part of the OS on Unix, so ErrorOrigin is ignored */
-JNIEXPORT size_t JNICALL
-getLastErrorString(char *buf, size_t len, ErrorOrigin origin)
-{
-    if (errno == 0 || len < 1) return 0;
-    getErrorString(errno, buf, len, origin);
-    return strlen(buf);
-}
-
-/* libc is part of the OS on Unix, so ErrorOrigin is ignored */
-JNIEXPORT int JNICALL
-getErrorString(int err, char *buf, size_t len, ErrorOrigin origin)
-{
-    if (err == 0 || len < 1) return 0;
-    return strerror_r(err, buf, len);
-}
