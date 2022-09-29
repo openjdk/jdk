@@ -328,7 +328,6 @@ class NativeMovConstReg: public NativeInstruction {
  public:
   enum RISCV_specific_constants {
     movptr_instruction_size             =    6 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr().
-    movptr_with_offset_instruction_size =    5 * NativeInstruction::instruction_size, // lui, addi, slli, addi, slli. See movptr_with_offset().
     load_pc_relative_instruction_size   =    2 * NativeInstruction::instruction_size, // auipc, ld
     instruction_offset                  =    0,
     displacement_offset                 =    0
@@ -342,12 +341,12 @@ class NativeMovConstReg: public NativeInstruction {
     // However, when the instruction at 5 * instruction_size isn't addi,
     // the next instruction address should be addr_at(5 * instruction_size)
     if (nativeInstruction_at(instruction_address())->is_movptr()) {
-      if (is_addi_at(addr_at(movptr_with_offset_instruction_size))) {
+      if (is_addi_at(addr_at(movptr_instruction_size - NativeInstruction::instruction_size))) {
         // Assume: lui, addi, slli, addi, slli, addi
         return addr_at(movptr_instruction_size);
       } else {
         // Assume: lui, addi, slli, addi, slli
-        return addr_at(movptr_with_offset_instruction_size);
+        return addr_at(movptr_instruction_size - NativeInstruction::instruction_size);
       }
     } else if (is_load_pc_relative_at(instruction_address())) {
       // Assume: auipc, ld

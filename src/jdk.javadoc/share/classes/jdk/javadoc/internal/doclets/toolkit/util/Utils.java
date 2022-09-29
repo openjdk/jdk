@@ -101,6 +101,7 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -2400,6 +2401,10 @@ public class Utils {
 
     public List<? extends SerialFieldTree> getSerialFieldTrees(VariableElement field) {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
+    }
+
+    public List<? extends SpecTree> getSpecTrees(Element element) {
+        return getBlockTags(element, SPEC, SpecTree.class);
     }
 
     public List<ThrowsTree> getThrowsTrees(Element element) {

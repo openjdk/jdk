@@ -776,11 +776,7 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   Handle exception(current, current->vm_result());
   assert(exception() != NULL, "vm result should be set");
   current->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(vmClasses::ThreadDeath_klass())) {
-    exception = get_preinitialized_exception(
-                       vmClasses::IllegalMonitorStateException_klass(),
-                       CATCH);
-  }
+  exception = get_preinitialized_exception(vmClasses::IllegalMonitorStateException_klass(), CATCH);
   current->set_vm_result(exception());
 JRT_END
 
