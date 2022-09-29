@@ -87,7 +87,7 @@ DISABLED_WARNINGS_gcc := parentheses comment unknown-pragmas address \
     delete-non-virtual-dtor char-subscripts array-bounds int-in-bool-context \
     ignored-qualifiers  missing-field-initializers implicit-fallthrough \
     empty-body strict-overflow sequence-point maybe-uninitialized \
-    misleading-indentation cast-function-type shift-negative-value
+    misleading-indentation shift-negative-value
 
 ifeq ($(call check-jvm-feature, zero), true)
   DISABLED_WARNINGS_gcc += return-type switch clobbered
@@ -144,6 +144,8 @@ $(call FillFindCache, $(JVM_SRC_DIRS))
 ################################################################################
 # Now set up the actual compilation of the main hotspot native library
 
+# TODO: Should merge once JDK-8294314 is in.
+
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
@@ -156,6 +158,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
+    DISABLED_WARNINGS_gcc_templateTable.cpp := cast-function-type, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
