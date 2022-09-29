@@ -137,13 +137,6 @@ void CreateExecutionEnvironment(int *argc, char ***argv,
 JNIEXPORT void JNICALL
 JLI_ReportErrorMessage(const char * message, ...);
 
-/*
- * Just like JLI_ReportErrorMessage, except that it concatenates the system
- * error message, if any. See jni_util.h on usage of ErrorOrigin.
- */
-JNIEXPORT void JNICALL
-JLI_ReportErrorMessageSys(ErrorOrigin origin, const char * message, ...);
-
 /* Reports an error message only to stderr. */
 JNIEXPORT void JNICALL
 JLI_ReportMessage(const char * message, ...);

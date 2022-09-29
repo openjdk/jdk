@@ -42,8 +42,10 @@
 #define JLONG_FORMAT_SPECIFIER "%I64d"
 
 /*
- * Function prototypes.
+ * Utility declarations.
  */
+
+void writeWindowMessage(const char* message, ...);
 
 int UnsetEnv(char *name);
 

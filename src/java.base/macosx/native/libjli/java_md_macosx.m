@@ -301,7 +301,7 @@ static void *apple_main (void *arg)
         main_fptr = (int (*)())dlsym(RTLD_DEFAULT, "main");
 #endif
         if (main_fptr == NULL) {
-            JLI_ReportErrorMessageSys(SYSTEM, "error locating main entrypoint");
+            JLI_Perror("error locating main entrypoint");
             exit(1);
         }
     }
@@ -346,11 +346,11 @@ static void MacOSXStartup(int argc, char *argv[]) {
     // Fire up the main thread
     pthread_t main_thr;
     if (pthread_create(&main_thr, NULL, &apple_main, &args) != 0) {
-        JLI_ReportErrorMessageSys(SYSTEM, "Could not create main thread");
+        JLI_Perror("Could not create main thread");
         exit(1);
     }
     if (pthread_detach(main_thr)) {
-        JLI_ReportErrorMessageSys(SYSTEM, "pthread_detach() failed");
+        JLI_Perror("pthread_detach() failed");
         exit(1);
     }
 

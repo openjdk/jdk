@@ -81,6 +81,8 @@ JLI_GetAppArgIndex();
 #define JLI_StrCSpn(p1, p2)     strcspn((p1), (p2))
 #define JLI_StrPBrk(p1, p2)     strpbrk((p1), (p2))
 
+#define JLI_Perror              perror
+
 /* On Windows lseek() is in io.h rather than the location dictated by POSIX. */
 #ifdef _WIN32
 #include <windows.h>

@@ -539,6 +539,23 @@ static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar
     return ERROR_SUCCESS;
 }
 
+void writeWindowMessage(const char* format, ...) {
+    va_list list;
+    va_start(list, format);
+    char *message;
+
+    /* get the length of the string we need */
+    int n = _vscprintf(format, list);
+
+    message = (char *) JLI_MemAlloc(n + 1);
+    _vsnprintf(message, n, format, list);
+    message[n]='\0';
+    MessageBox(NULL, message, "Java Virtual Machine Launcher",
+        (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
+    JLI_MemFree(message);
+    va_end(list);
+}
+
 /* taken from hotspot and slightly adjusted for jli lib;
  * creates a UNC/ELP path from input 'path'
  * the return buffer is allocated in C heap and needs to be freed using
@@ -601,88 +618,6 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
     } else {
         vfprintf(stderr, fmt, vl);
         fprintf(stderr, "\n");
-    }
-    va_end(vl);
-}
-
-
-JNIEXPORT void JNICALL
-JLI_ReportErrorMessageSys(ErrorOrigin origin, const char *fmt, ...)
-{
-    va_list vl;
-
-    DWORD       errval;
-    jboolean freeit = JNI_FALSE;
-    char  *errtext = NULL;
-
-    va_start(vl, fmt);
-
-    if (origin == SYSTEM) {
-        if ((errval = GetLastError()) != 0) {               /* Platform SDK / DOS Error */
-                int n = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|
-                    FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                    NULL, errval, 0, (LPTSTR)&errtext, 0, NULL);
-                if (errtext == NULL || n == 0) {                /* Paranoia check */
-                    char* buffer = "Java detected but could not determine the underlying error";
-                    errtext = (char*) JLI_MemAlloc(strlen(buffer) + 1);
-                    JLI_StrCpy(errtext, buffer);
-                    n = 0;
-                } else {
-                    freeit = JNI_TRUE;
-                    if (n > 3) {                                /* Drop final CR, LF */
-                        if (errtext[n - 1] == '\n') n--;
-                        if (errtext[n - 1] == '\r') n--;
-                        if (errtext[n - 1] == '.') n--;         /* Drop '.' to match getErrorString */
-                        errtext[n] = '\0';
-                    }
-                }
-            }
-    } else if (origin == RUNTIME) {
-        errtext = (char*) JLI_MemAlloc(1024);                   /* Matches Unix buffer size */
-        if(strerror_s(errtext, 1024, errno) != 0) {             /* strerror_s isn't actually part of C11, neither is strerrlen_s... */
-            char* buffer = "Java detected but could not determine the underlying error";
-            errtext = (char*) JLI_MemRealloc(errtext, strlen(buffer) + 1);
-            JLI_StrCpy(errtext, buffer);
-        }
-    }
-
-    if (IsJavaw()) {
-        char *message;
-        int mlen;
-        /* get the length of the string we need */
-        int len = mlen =  _vscprintf(fmt, vl) + 1;
-        if (errtext != NULL) {
-           mlen += 2 + (int)JLI_StrLen(errtext);
-        }
-
-        message = (char *)JLI_MemAlloc(mlen);
-        _vsnprintf(message, len, fmt, vl);
-
-        if (errtext != NULL) {
-            message[len] = ':';
-            message[len + 1] = ' ';
-            JLI_StrCat(message, errtext);
-        } {
-            message[len] = '\0';
-        }
-
-        MessageBox(NULL, message, "Java Virtual Machine Launcher",
-            (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
-
-        JLI_MemFree(message);
-    } else {
-        vfprintf(stderr, fmt, vl);
-        if (errtext != NULL) {
-           fprintf(stderr, ": %s", errtext);
-        }
-        fprintf(stderr, "\n");
-    }
-    if (errtext != NULL) {
-        if (freeit) {
-            (void)LocalFree((HLOCAL)errtext);
-        } else {
-            free(errtext);
-        }
     }
     va_end(vl);
 }
