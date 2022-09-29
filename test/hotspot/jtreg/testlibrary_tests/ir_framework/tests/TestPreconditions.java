@@ -39,7 +39,7 @@ public class TestPreconditions {
         TestFramework.runWithFlags("-XX:LoopMaxUnroll=8");
     }
 
-    // The IR check should not be applied, since LoopMaxUnroll is set to 8.
+    // The IR check should not be applied, since the VM is run with LoopMaxUnroll=8.
     @Test
     @IR(applyIf = {"LoopMaxUnroll", "= 0"},
         counts = {IRNode.LOOP, ">= 1000"})
