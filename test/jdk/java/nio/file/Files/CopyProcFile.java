@@ -124,8 +124,9 @@ public class CopyProcFile {
             } catch (IOException ignore) {}
             throw e;
         }
-        if (Files.mismatch(Path.of(BUFFERED_COPY), Path.of(SOURCE)) != -1)
+        if (Files.mismatch(Path.of(BUFFERED_COPY), Path.of(SOURCE)) != -1) {
             throw new RuntimeException("Copy does not match source");
+        }
     }
 
     @AfterTest(alwaysRun=true)
@@ -161,13 +162,15 @@ public class CopyProcFile {
     public static void testCopyAndTransfer(FHolder f) throws IOException {
         try {
             long size = f.apply(SOURCE, TARGET);
-            if (size != theSize)
+            if (size != theSize) {
                 throw new RuntimeException("Size: expected " + theSize +
                                            "; actual: " + size);
+            }
             long mismatch = Files.mismatch(Path.of(BUFFERED_COPY),
                                            Path.of(TARGET));
-            if (mismatch != -1)
+            if (mismatch != -1) {
                 throw new RuntimeException("Target does not match copy");
+            }
         } finally {
             try {
                 Files.delete(Path.of(TARGET));
