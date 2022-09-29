@@ -30,11 +30,10 @@
  * @run main/othervm/timeout=300 Transfer2GPlus
  */
 
-import java.io.File;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -131,28 +130,58 @@ public class Transfer2GPlus {
     // Exercises transferToArbitraryChannel() on all platforms.
     private static void testToWritableByteChannel(Path src, byte[] expected)
         throws IOException {
-        File file = File.createTempFile("dst", ".dat");
-        file.deleteOnExit();
-        try (FileChannel srcCh = FileChannel.open(src)) {
-            // The FileOutputStream is wrapped so that newChannel() does not
-            // return a FileChannelImpl and so make a faster path be taken.
-            try (DataOutputStream stream =
-                new DataOutputStream(new FileOutputStream(file))) {
-                try (WritableByteChannel wbc = Channels.newChannel(stream)) {
-                    long n;
-                    if ((n = srcCh.transferTo(0, LENGTH, wbc)) < LENGTH)
-                        throw new RuntimeException("Too few bytes transferred: " +
-                            n + " < " + LENGTH);
+        // transfer src to channel that is not FileChannelImpl
+        try (FileChannel srcCh = FileChannel.open(src);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream(EXTRA);
+             OutputStream os = new SkipBytesStream(baos, BASE);
+             WritableByteChannel wbc = Channels.newChannel(os)){
 
-                    System.out.println("Transferred " + n + " bytes");
+            long n;
+            if ((n = srcCh.transferTo(0, LENGTH, wbc)) < LENGTH)
+                throw new RuntimeException("Too few bytes transferred: " +
+                        n + " < " + LENGTH);
 
-                    RandomAccessFile raf = new RandomAccessFile(file, "r");
-                    raf.seek(BASE);
-                    byte[] b = new byte[EXTRA];
-                    raf.read(b);
-                    if (!Arrays.equals(b, expected))
-                        throw new RuntimeException("Unexpected values");
-                }
+            System.out.println("Transferred " + n + " bytes");
+
+            byte[] b = baos.toByteArray();
+            if (!Arrays.equals(b, expected))
+                throw new RuntimeException("Unexpected values");
+        }
+    }
+
+    /**
+     * Stream that discards the first bytesToSkip bytes, then passes through
+     */
+    static class SkipBytesStream extends FilterOutputStream {
+
+        private long bytesToSkip;
+
+        public SkipBytesStream(OutputStream out, long bytesToSkip) {
+            super(out);
+            this.bytesToSkip = bytesToSkip;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            if (bytesToSkip > 0) {
+                bytesToSkip--;
+            } else {
+                super.write(b);
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            // check copied from FilterOutputStream
+            if ((off | len | (b.length - (len + off)) | (off + len)) < 0)
+                throw new IndexOutOfBoundsException();
+
+            if (bytesToSkip >= len) {
+                bytesToSkip -= len;
+            } else {
+                int skip = (int)bytesToSkip;
+                bytesToSkip = 0;
+                super.write(b, off + skip, len - skip);
             }
         }
     }
