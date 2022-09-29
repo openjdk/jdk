@@ -29,15 +29,11 @@
  */
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -67,34 +63,30 @@ public class Transfer4GBFile {
                     t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
         }
 
-        File sink = File.createTempFile("sink", null);
-        sink.deleteOnExit();
+        Path sink = Files.createTempFile("sink", null);
 
-        FileChannel sourceChannel = FileChannel.open(source,
-                StandardOpenOption.READ);
+        try (FileChannel sourceChannel = FileChannel.open(source,
+                     StandardOpenOption.READ);
+             FileChannel sinkChannel = FileChannel.open(sink,
+                     StandardOpenOption.WRITE)) {
 
-        RandomAccessFile raf = new RandomAccessFile(sink, "rw");
-        FileChannel sinkChannel = raf.getChannel();
-
-        long bytesWritten = sourceChannel.transferTo(testSize -40, 10,
-                                                     sinkChannel);
-        if (bytesWritten != 10) {
-            throw new RuntimeException("Transfer test 4 failed " +
-                                       bytesWritten);
+            long bytesWritten = sourceChannel.transferTo(testSize - 40, 10,
+                    sinkChannel);
+            if (bytesWritten != 10) {
+                throw new RuntimeException("Transfer test 4 failed " +
+                        bytesWritten);
+            }
         }
-        sourceChannel.close();
-        sinkChannel.close();
 
         Files.delete(source);
-        sink.delete();
+        Files.delete(sink);
     }
 
     // Test transferFrom with large file
     @Test
     public void xferTest05() throws Exception { // for bug 4638365
         // Create a source file & large sink file for the test
-        File source = File.createTempFile("blech", null);
-        source.deleteOnExit();
+        Path source = Files.createTempFile("blech", null);
         initTestFile(source, 100);
 
         // Create the sink file as a sparse file if possible
@@ -115,38 +107,30 @@ public class Transfer4GBFile {
         }
 
         // Get new channels for the source and sink and attempt transfer
-        FileChannel sourceChannel = new FileInputStream(source).getChannel();
-        try {
-            try (FileChannel sinkChannel = FileChannel.open(sink, StandardOpenOption.WRITE)) {
-                long bytesWritten = sinkChannel.transferFrom(sourceChannel,
-                                                             testSize - 40, 10);
-                if (bytesWritten != 10) {
-                    throw new RuntimeException("Transfer test 5 failed " +
-                                               bytesWritten);
-                }
+        try (FileChannel sourceChannel = FileChannel.open(source, StandardOpenOption.READ);
+             FileChannel sinkChannel = FileChannel.open(sink, StandardOpenOption.WRITE)) {
+            long bytesWritten = sinkChannel.transferFrom(sourceChannel,
+                    testSize - 40, 10);
+            if (bytesWritten != 10) {
+                throw new RuntimeException("Transfer test 5 failed " +
+                        bytesWritten);
             }
-        } finally {
-            sourceChannel.close();
         }
 
-        source.delete();
+        Files.delete(source);
         Files.delete(sink);
     }
 
     /**
      * Creates file blah of specified size in bytes.
      */
-    private static void initTestFile(File blah, long size) throws Exception {
-        if (blah.exists())
-            blah.delete();
-        FileOutputStream fos = new FileOutputStream(blah);
-        BufferedWriter awriter
-            = new BufferedWriter(new OutputStreamWriter(fos, "8859_1"));
+    private static void initTestFile(Path blah, long size) throws Exception {
+        try (BufferedWriter awriter = Files.newBufferedWriter(blah,
+                StandardCharsets.ISO_8859_1)) {
 
-        for(int i=0; i<size; i++) {
-            awriter.write("e");
+            for (int i = 0; i < size; i++) {
+                awriter.write("e");
+            }
         }
-        awriter.flush();
-        awriter.close();
     }
 }
