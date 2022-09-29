@@ -2446,6 +2446,7 @@ void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask
 }
 
 void C2_MacroAssembler::vectortest(BasicType bt, XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes) {
+  assert(vlen_in_bytes <= 32, "");
   int esize = type2aelembytes(bt);
   if (vlen_in_bytes == 32) {
     assert(vtmp == xnoreg, "required.");

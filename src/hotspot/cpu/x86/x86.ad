@@ -8013,8 +8013,7 @@ instruct vabsnegD(vec dst, vec src) %{
 
 #ifdef _LP64
 instruct vptest_lt16(rFlagsRegU cr, legVec src1, legVec src2, legVec vtmp) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 4 &&
-            Matcher::vector_length_in_bytes(n->in(1)) <  16);
+  predicate(Matcher::vector_length_in_bytes(n->in(1)) < 16);
   match(Set cr (VectorTest src1 src2));
   effect(TEMP vtmp);
   format %{ "vptest_lt16  $src1, $src2\t! using $vtmp as TEMP" %}
@@ -8027,41 +8026,13 @@ instruct vptest_lt16(rFlagsRegU cr, legVec src1, legVec src2, legVec vtmp) %{
 %}
 
 instruct vptest_ge16(rFlagsRegU cr, legVec src1, legVec src2) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 16 &&
-            Matcher::vector_length_in_bytes(n->in(1)) <  64);
+  predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 16);
   match(Set cr (VectorTest src1 src2));
   format %{ "vptest_ge16  $src1, $src2\n\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src1);
     int vlen = Matcher::vector_length_in_bytes(this, $src1);
     __ vectortest(bt, $src1$$XMMRegister, $src2$$XMMRegister, xnoreg, vlen);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vptest_alltrue_64(rFlagsRegU cr, vec src1, vec src2, kReg ktmp) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(1)) == 64 &&
-            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set cr (VectorTest src1 src2));
-  effect(TEMP ktmp);
-  format %{ "vptest_alltrue_64  $src1, $src2\t! using $ktmp as TEMP" %}
-  ins_encode %{
-    int vlen = Matcher::vector_length_in_bytes(this, $src1);
-    __ evptestnmd($ktmp$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, Assembler::AVX_512bit);
-    __ kortestwl($ktmp$$KRegister, $ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vptest_anytrue_64(rFlagsRegU cr, vec src1, vec src2, kReg ktmp) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(1)) == 64 &&
-            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set cr (VectorTest src1 src2));
-  effect(TEMP ktmp);
-  format %{ "vptest_anytrue_64  $src1, $src2\t! using $ktmp as TEMP" %}
-  ins_encode %{
-    __ evptestmd($ktmp$$KRegister, $src1$$XMMRegister, $src1$$XMMRegister, Assembler::AVX_512bit);
-    __ kortestwl($ktmp$$KRegister, $ktmp$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
