@@ -63,6 +63,8 @@ public:
 
   int       arg_size_for_bc(Bytecodes::Code bc)  { return size() + (Bytecodes::has_receiver(bc) ? 1 : 0); }
 
+  bool has_unloaded_classes();
+
   bool equals(ciSignature* that);
 
   void print_signature();

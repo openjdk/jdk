@@ -1161,12 +1161,12 @@ bool ciMethod::was_executed_more_than(int times) {
 // ------------------------------------------------------------------
 // ciMethod::has_unloaded_classes_in_signature
 bool ciMethod::has_unloaded_classes_in_signature() {
-  for (ciSignatureStream str(signature()); !str.is_done(); str.next()) {
-    if (!str.type()->is_loaded()) {
-      return true;
-    }
-  }
-  return false;
+  // ciSignature is resolved against some accessing class and
+  // signature classes aren't required to be local. As a benefit,
+  // it makes signature classes visible through loader constraints.
+  // So, encountering an unloaded class signals it is absent both in
+  // the callee (local) and caller contexts.
+  return signature()->has_unloaded_classes();
 }
 
 // ------------------------------------------------------------------
