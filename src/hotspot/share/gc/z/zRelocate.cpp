@@ -820,14 +820,26 @@ private:
   }
 
   void update_remset_for_fields(zaddress from_addr, zaddress to_addr) const {
-    if (_forwarding->to_age() == ZPageAge::old) {
-      // Need to deal with remset when moving objects to the old generation
-      if (_forwarding->from_age() == ZPageAge::old) {
-        update_remset_old_to_old(from_addr, to_addr);
-      } else {
-        update_remset_promoted(to_addr);
-      }
+    if (_forwarding->to_age() != ZPageAge::old) {
+      // No remembered set in young pages
+      return;
     }
+
+    // Need to deal with remset when moving objects to the old generation
+    if (_forwarding->from_age() == ZPageAge::old) {
+      update_remset_old_to_old(from_addr, to_addr);
+      return;
+    }
+
+    if (ZAbort::should_abort() && ZHeap::heap()->is_young(to_addr)) {
+      // During VM shutdown, a mutator may pin the object before the GC relocates it.
+      // Then it will get stuck in the young generation, and hence won't really be
+      // a promotion any longer.
+      return;
+    }
+
+    // Normal promotion
+    update_remset_promoted(to_addr);
   }
 
   bool try_relocate_object(zaddress from_addr) {
