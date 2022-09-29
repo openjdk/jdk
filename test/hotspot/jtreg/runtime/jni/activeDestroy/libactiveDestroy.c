@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,34 @@
  * questions.
  */
 
-#include "native_thread.cpp"
-#include "nsk_tools.cpp"
-#include "jni_tools.cpp"
-#include "jvmti_tools.cpp"
-#include "agent_tools.cpp"
-#include "jvmti_FollowRefObjects.cpp"
-#include "Injector.cpp"
-#include "JVMTITools.cpp"
-#include "agent_common.cpp"
-#include "thrstat004.cpp"
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "jni.h"
+
+static const char* jni_error_code(int ret) {
+  switch(ret) {
+  case JNI_OK: return "JNI_OK";
+  case JNI_ERR: return "JNI_ERR";
+  case JNI_EDETACHED: return "JNI_EDETACHED";
+  case JNI_EVERSION: return "JNI_EVERSION";
+  case JNI_ENOMEM: return "JNI_ENOMEM";
+  case JNI_EEXIST: return "JNI_EEXIST";
+  case JNI_EINVAL: return "JNI_EINVAL";
+  default: return "Invalid JNI error code";
+  }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_TestActiveDestroy_tryDestroyJavaVM(JNIEnv *env, jclass cls) {
+  JavaVM* jvm;
+  int res = (*env)->GetJavaVM(env, &jvm);
+  if (res != JNI_OK) {
+    fprintf(stderr, "GetJavaVM failed: %s\n", jni_error_code(res));
+    exit(1);
+  }
+  printf("Calling DestroyJavaVM from active thread\n");
+  res = (*jvm)->DestroyJavaVM(jvm);
+  printf("DestroyJavaVM returned: %s\n", jni_error_code(res));
+  return res == JNI_OK;
+}
