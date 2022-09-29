@@ -208,9 +208,9 @@ test_generated_up_to_date() {
   if test "x$CUSTOM_CONFIG_DIR" != x; then
     #conf_custom_source_files="$CUSTOM_CONFIG_DIR/*.m4"
     config_file_array[2]="$CUSTOM_CONFIG_DIR/*.m4"
-  else
+  #else
     #conf_custom_source_files=""
-    config_file_array[2]=""
+    #config_file_array[2]=""
   fi
 
   echo 'elements count  :-  ' ${#config_file_array[@]}
