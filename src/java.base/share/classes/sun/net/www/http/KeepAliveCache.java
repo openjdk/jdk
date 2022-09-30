@@ -320,13 +320,12 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
     HttpClient get() {
         lock();
         try {
-            if (isEmpty()) {
+            // check the most recent connection, use if still valid
+            KeepAliveEntry e = peekFirst();
+            if (e == null) {
                 return null;
             }
-
-            // check the most recent connection, use if still valid
             long currentTime = System.currentTimeMillis();
-            KeepAliveEntry e = peekFirst();
             if ((currentTime - e.idleStartTime) > nap) {
                 return null; // all connections stale - will be cleaned up later
             } else {
