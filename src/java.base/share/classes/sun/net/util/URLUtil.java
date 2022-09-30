@@ -55,10 +55,10 @@ public class URLUtil {
              * built-in protocols, so avoid calling toLowerCase for these and
              * use identity tests for speed
              */
-            if (protocol != "file" && protocol != "jrt" && protocol && != "jar") {
+            if (protocol != "file" && protocol != "jrt" && protocol != "jar") {
                 protocol = protocol.toLowerCase();
             }
-            strForm.append(protocol.toLowerCase());
+            strForm.append(protocol);
             strForm.append("://");
         }
 
