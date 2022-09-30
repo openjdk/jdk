@@ -61,18 +61,14 @@ void CardTable::initialize_card_size() {
   log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  _card_size);
 }
 
-size_t CardTable::compute_byte_map_size() {
-  assert(_guard_index == cards_required(_whole_heap.word_size()) - 1,
-                                        "uninitialized, check declaration order");
+size_t CardTable::compute_byte_map_size(size_t num_bytes) {
   assert(_page_size != 0, "uninitialized, check declaration order");
   const size_t granularity = os::vm_allocation_granularity();
-  return align_up(_guard_index + 1, MAX2(_page_size, granularity));
+  return align_up(num_bytes, MAX2(_page_size, granularity));
 }
 
 CardTable::CardTable(MemRegion whole_heap) :
   _whole_heap(whole_heap),
-  _guard_index(0),
-  _last_valid_index(0),
   _page_size(os::vm_page_size()),
   _byte_map_size(0),
   _byte_map(NULL),
@@ -92,10 +88,11 @@ CardTable::~CardTable() {
 }
 
 void CardTable::initialize() {
-  _guard_index = cards_required(_whole_heap.word_size()) - 1;
-  _last_valid_index = _guard_index - 1;
+  size_t num_cards = cards_required(_whole_heap.word_size());
 
-  _byte_map_size = compute_byte_map_size();
+  // each card takes 1 byte; + 1 for the guard card
+  size_t num_bytes = num_cards + 1;
+  _byte_map_size = compute_byte_map_size(num_bytes);
 
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
@@ -108,7 +105,7 @@ void CardTable::initialize() {
 
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
 
-  os::trace_page_sizes("Card Table", _guard_index + 1, _guard_index + 1,
+  os::trace_page_sizes("Card Table", num_bytes, num_bytes,
                        _page_size, heap_rs.base(), heap_rs.size());
   if (!heap_rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
@@ -122,18 +119,15 @@ void CardTable::initialize() {
   _byte_map = (CardValue*) heap_rs.base();
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
-  assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
+  assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
 
-  CardValue* guard_card = &_byte_map[_guard_index];
-  HeapWord* guard_page = align_down((HeapWord*)guard_card, _page_size);
-  _guard_region = MemRegion(guard_page, _page_size);
-  os::commit_memory_or_exit((char*)guard_page, _page_size, _page_size,
-                            !ExecMem, "card table last card");
-  *guard_card = last_card;
+  CardValue* guard_card = &_byte_map[num_cards];
+  assert(is_aligned(guard_card, _page_size), "must be on its own OS page");
+  _guard_region = MemRegion((HeapWord*)guard_card, _page_size);
 
   log_trace(gc, barrier)("CardTable::CardTable: ");
-  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[_last_valid_index]: " PTR_FORMAT,
-                  p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
+  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[last_valid_index()]: " PTR_FORMAT,
+                  p2i(&_byte_map[0]), p2i(&_byte_map[last_valid_index()]));
   log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT, p2i(_byte_map_base));
 }
 
@@ -172,14 +166,13 @@ HeapWord* CardTable::largest_prev_committed_end(int ind) const {
 }
 
 MemRegion CardTable::committed_unique_to_self(int self, MemRegion mr) const {
+  assert(mr.intersection(_guard_region).is_empty(), "precondition");
   MemRegion result = mr;
   for (int r = 0; r < _cur_covered_regions; r += 1) {
     if (r != self) {
       result = result.minus(_committed[r]);
     }
   }
-  // Never include the guard page.
-  result = result.minus(_guard_region);
   return result;
 }
 
@@ -187,7 +180,6 @@ void CardTable::resize_covered_region(MemRegion new_region) {
   // We don't change the start of a region, only the end.
   assert(_whole_heap.contains(new_region),
            "attempt to cover area not in reserved area");
-  debug_only(verify_guard();)
   // collided is true if the expansion would push into another committed region
   debug_only(bool collided = false;)
   int const ind = find_covering_region_by_base(new_region.start());
@@ -301,7 +293,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
     } else {
       entry = byte_after(old_region.last());
     }
-    assert(index_for(new_region.last()) <  _guard_index,
+    assert(index_for(new_region.last()) <=  last_valid_index(),
       "The guard card will be overwritten");
     // This line commented out cleans the newly expanded region and
     // not the aligned up expanded region.
@@ -342,7 +334,6 @@ void CardTable::resize_covered_region(MemRegion new_region) {
   // Touch the last card of the covered region to show that it
   // is committed (or SEGV).
   debug_only((void) (*byte_for(_covered[ind].last()));)
-  debug_only(verify_guard();)
 }
 
 // Note that these versions are precise!  The scanning code has to handle the
@@ -384,12 +375,6 @@ uintx CardTable::ct_max_alignment_constraint() {
   return GCCardSizeInBytes * os::vm_page_size();
 }
 
-void CardTable::verify_guard() {
-  // For product build verification
-  guarantee(_byte_map[_guard_index] == last_card,
-            "card table guard has been modified");
-}
-
 void CardTable::invalidate(MemRegion mr) {
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
@@ -397,10 +382,6 @@ void CardTable::invalidate(MemRegion mr) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (!mri.is_empty()) dirty_MemRegion(mri);
   }
-}
-
-void CardTable::verify() {
-  verify_guard();
 }
 
 #ifndef PRODUCT
