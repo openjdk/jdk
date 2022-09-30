@@ -147,10 +147,10 @@ public class InverseDepsAnalyzer extends DepsAnalyzer {
                     m.descriptor().requires().stream()
                         // filter "requires static" if the module is not resolved in the configuration
                         .filter(req -> !req.modifiers().contains(Requires.Modifier.STATIC)
-                        || configuration.findModule(req.name()).isPresent())
-                        .map(Requires::name)
-                        .map(configuration::findModule)  // must be present
-                        .forEach(v -> builder.addEdge(v.get(), m));
+                            || configuration.findModule(req.name()).isPresent())
+                            .map(Requires::name)
+                            .map(configuration::findModule)  // must be present
+                            .forEach(v -> builder.addEdge(v.get(), m));
                 });
 
             // add the dependences from the analysis

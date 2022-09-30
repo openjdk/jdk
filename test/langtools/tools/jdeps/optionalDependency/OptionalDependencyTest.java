@@ -26,7 +26,7 @@
  * @bug 8293701
  * @library ../lib
  * @build CompilerUtils
- * @run testng OptionalDependencyError
+ * @run testng OptionalDependencyTest
  * @summary Tests optional dependency handling
  */
 
@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertTrue;
 
-public class OptionalDependencyError {
+public class OptionalDependencyTest {
     private static final String TEST_SRC = System.getProperty("test.src");
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
 
@@ -67,12 +67,12 @@ public class OptionalDependencyError {
     }
 
     /*
-     * 
+     * Test if a requires static dependence is resolved in the configuration.
      */
     @Test
-    public void noOptionalDependencyError() {
+    public void optionalDependenceResolved() {
         JdepsRunner jdepsRunner = new JdepsRunner("--module-path", "m2.jar:m3.jar",
-                                                  "--inverse", "--add-modules", "m3",
+                                                  "--inverse",
                                                   "--package", "p2", "m1.jar");
         int rc = jdepsRunner.run(true);
         assertTrue(rc == 0);
