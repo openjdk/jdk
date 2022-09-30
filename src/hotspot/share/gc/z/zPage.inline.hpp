@@ -366,10 +366,6 @@ inline void ZPage::clear_remset_range_non_par_current(uintptr_t l_offset, size_t
   _remembered_set.unset_range_non_par_current(l_offset, size);
 }
 
-inline void ZPage::remset_mark_dirty() {
-  _remembered_set.dirty();
-}
-
 inline BitMapReverseIterator ZPage::remset_reverse_iterator_previous() {
   return _remembered_set.iterator_reverse_previous();
 }

@@ -82,9 +82,11 @@ private:
   const ZGeneration* generation() const;
 
   void reset_seqnum();
-  void reset_remembered_set(ZPageAge prev_age, ZPageResetType type);
+  void reset_remembered_set();
 
   ZPage* split_with_pmem(ZPageType type, const ZPhysicalMemory& pmem);
+
+  void verify_remset_after_reset(ZPageAge prev_age, ZPageResetType type);
 
 public:
   ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
@@ -171,7 +173,7 @@ public:
   void clear_remset_range_non_par_current(uintptr_t l_offset, size_t size);
   void swap_remset_bitmaps();
 
-  void remset_mark_dirty();
+  void remset_clear();
 
   BitMapReverseIterator remset_reverse_iterator_previous();
   BitMapIterator remset_iterator_limited_current(uintptr_t l_offset, size_t size);

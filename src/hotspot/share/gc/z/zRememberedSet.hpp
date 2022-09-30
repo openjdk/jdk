@@ -93,7 +93,6 @@ public:
   static int _current;
 
   CHeapBitMap _bitmap[2];
-  bool        _dirty;
 
   CHeapBitMap* current();
   const CHeapBitMap* current() const;
@@ -138,11 +137,6 @@ public:
   void clear_current();
   void clear_previous(const char* where);
   void swap_remset_bitmaps();
-
-  // Support for free without clearing
-  void dirty();
-  bool is_dirty() const;
-  void clean();
 
   BitMapReverseIterator iterator_reverse_previous();
   BitMapIterator iterator_limited_current(uintptr_t offset, size_t size);

@@ -85,31 +85,15 @@ void ZPage::reset_seqnum() {
   Atomic::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
-void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
-  if (is_young()) {
-    // Remset not needed
-    return;
-  }
+void ZPage::remset_clear() {
+  _remembered_set.clear_all("remset_clear");
+}
 
+void ZPage::verify_remset_after_reset(ZPageAge prev_age, ZPageResetType type) {
   // Young-to-old reset
   if (prev_age != ZPageAge::old) {
-    if (!_remembered_set.is_initialized()) {
-      _remembered_set.initialize(size());
-      return;
-    }
-
-    // Workaround for free_empty_pages
-    if (_remembered_set.is_dirty()) {
-      log_msg(" (cleaning dirty remset)");
-      _remembered_set.clean();
-    }
-
     verify_remset_cleared_previous();
     verify_remset_cleared_current();
-    // We don't clear the remset when pages are recycled and transition from
-    // old to young. Therefore we can end up in a situation where a young page
-    // already has an initialized remset.
-    _remembered_set.clear_all("reset young-to-old");
     return;
   }
 
@@ -122,7 +106,8 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
 
   case ZPageResetType::InPlaceRelocation:
     // Relocation failed and page is being compacted in-place.
-    // Need to be careful with the remembered set bits.
+    // The remset bits are flipped each young mark start, so
+    // the verification code below needs to use the right remset.
     if (ZGeneration::old()->active_remset_is_current()) {
       verify_remset_cleared_previous();
     } else {
@@ -132,21 +117,27 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
 
   case ZPageResetType::FlipAging:
     fatal("Should not have called this for old-to-old flipping");
-    // Page stayed in the old gen. Needs new, fresh bits.
-    _remembered_set.clear_all("clear all flip aging");
     break;
 
   case ZPageResetType::Allocation:
-    // Workaround for free_empty_pages
-    if (_remembered_set.is_dirty()) {
-      log_msg(" (cleaning dirty remset)");
-      _remembered_set.clean();
-    }
-
     verify_remset_cleared_previous();
     verify_remset_cleared_current();
     break;
   };
+}
+
+void ZPage::reset_remembered_set() {
+  if (is_young()) {
+    // Remset not needed
+    return;
+  }
+
+  // Clearing of remsets is done when freeing a page, so this code only
+  // needs to ensure the remset is initialized the first time a page
+  // becomes old.
+  if (!_remembered_set.is_initialized()) {
+    _remembered_set.initialize(size());
+  }
 }
 
 void ZPage::reset(ZPageAge age, ZPageResetType type) {
@@ -165,7 +156,8 @@ void ZPage::reset(ZPageAge age, ZPageResetType type) {
     _top = start();
   }
 
-  reset_remembered_set(prev_age, type);
+  reset_remembered_set();
+  verify_remset_after_reset(prev_age, type);
 
   if (type != ZPageResetType::InPlaceRelocation || (prev_age != ZPageAge::old && age == ZPageAge::old)) {
     // Promoted in-place relocations reset the live map,
@@ -267,7 +259,6 @@ bool ZPage::is_remset_cleared_previous() const {
 
 #ifdef ASSERT
 void ZPage::verify_remset_cleared_current() const {
-  assert(!_remembered_set.is_dirty(), "Remset is dirty");
   if (!is_remset_cleared_current()) {
     log_msg(" Current remset not cleared");
     assert(is_remset_cleared_current(), "Should be cleared "
@@ -277,7 +268,6 @@ void ZPage::verify_remset_cleared_current() const {
 }
 
 void ZPage::verify_remset_cleared_previous() const {
-  assert(!_remembered_set.is_dirty(), "Remset is dirty");
   if (!is_remset_cleared_previous()) {
     log_msg(" Previous remset not cleared");
     assert(is_remset_cleared_previous(), "Should be cleared "

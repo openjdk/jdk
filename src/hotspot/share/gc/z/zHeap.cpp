@@ -256,13 +256,10 @@ size_t ZHeap::free_empty_pages(const ZArray<ZPage*>* pages) {
   // Remove page table entries
   ZArrayIterator<ZPage*> iter(pages);
   for (ZPage* page; iter.next(&page);) {
-    if (page->is_old() && !(page->is_remset_cleared_current() && page->is_remset_cleared_previous())) {
+    if (page->is_old()) {
       // The remset of pages should be clean when installed into the page
-      // cache. However, the YC could be remset scanning pages (scan_page),
-      // while the OC is freeing empty pages. Therefore, we can't touch the
-      // remset bits here. Simply mark them as dirty and force the page reset
-      // to clear the bits.
-      page->remset_mark_dirty();
+      // cache.
+      page->remset_clear();
     }
     _page_table.remove(page);
     freed += page->size();

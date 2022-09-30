@@ -37,8 +37,7 @@ void ZRememberedSet::flip() {
 }
 
 ZRememberedSet::ZRememberedSet() :
-    _bitmap(),
-    _dirty(false) {
+    _bitmap() {
   // Defer initialization of the bitmaps until the owning
   // page becomes old and its remembered set is initialized.
 }
@@ -95,24 +94,6 @@ void ZRememberedSet::swap_remset_bitmaps() {
     return true;
   });
   current()->clear_large();
-}
-
-void ZRememberedSet::dirty() {
-  assert(!_dirty, "Unexpected");
-  assert(is_initialized(), "Unexpected");
-  _dirty = true;
-}
-
-bool ZRememberedSet::is_dirty() const {
-  return _dirty;
-}
-
-void ZRememberedSet::clean() {
-  assert(_dirty, "Unexpected");
-
-  clear_all("clean");
-
-  _dirty = false;
 }
 
 BitMapReverseIterator ZRememberedSet::iterator_reverse_previous() {
