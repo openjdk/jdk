@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Stress test that reaches the process limit for thread count, or time limit.
  * @key stress
- * @run main ThreadCountLimit
+ * @run main/othervm -Xmx1g ThreadCountLimit
  */
 
 import java.util.concurrent.CountDownLatch;
@@ -36,36 +36,18 @@ public class ThreadCountLimit {
   static final int TIME_LIMIT_MS = 5000; // Create as many threads as possible in 5 sec
 
   static class Worker extends Thread {
-    private final int index;
     private final CountDownLatch startSignal;
 
-    Worker(int index, CountDownLatch startSignal) {
-      this.index = index;
+    Worker(CountDownLatch startSignal) {
       this.startSignal = startSignal;
     }
 
     @Override
     public void run() {
-      if ((index % 250) == 0) {
-        System.out.println("INFO: thread " + index + " waiting to start");
-      }
-
       try {
         startSignal.await();
       } catch (InterruptedException e) {
-        throw new Error("Unexpected: " + e);
-      }
-
-      setName(String.valueOf(index));
-
-      Thread.yield();
-
-      if (index != Integer.parseInt(getName())) {
-        throw new Error("setName/getName failed!");
-      }
-
-      if ((index % 250) == 0) {
-        System.out.println("INFO: thread " + getName() + " working");
+        throw new Error("Unexpected", e);
       }
     }
   }
@@ -74,27 +56,37 @@ public class ThreadCountLimit {
     CountDownLatch startSignal = new CountDownLatch(1);
     ArrayList<Worker> workers = new ArrayList<Worker>();
 
+    boolean reachedTimeLimit = false;
+    boolean reachedNativeOOM = false;
+    int countAtTimeLimit = -1;
+    int countAtNativeOOM = -1;
+
+    // This is dangerous loop: it depletes system resources,
+    // so doing additional things there that may end up allocating
+    // Java/native memory risks failing the VM prematurely.
+    // Avoid doing unnecessary calls, printouts, etc.
+
     int count = 1;
     long start = System.currentTimeMillis();
     try {
       while (true) {
-        Worker w = new Worker(count, startSignal);
+        Worker w = new Worker(startSignal);
         w.start();
         workers.add(w);
         count++;
 
         long end = System.currentTimeMillis();
         if ((end - start) > TIME_LIMIT_MS) {
-          // Windows path or a system with very large ulimit
-          System.out.println("INFO: reached the time limit " + TIME_LIMIT_MS + " ms, with " + count + " threads created");
+          reachedTimeLimit = true;
+          countAtTimeLimit = count;
           break;
         }
       }
     } catch (OutOfMemoryError e) {
       if (e.getMessage().contains("unable to create native thread")) {
         // Linux, macOS path
-        long end = System.currentTimeMillis();
-        System.out.println("INFO: reached this process thread count limit at " + count + " [" + (end - start) + " ms]");
+        reachedNativeOOM = true;
+        countAtNativeOOM = count;
       } else {
         throw e;
       }
@@ -107,7 +99,18 @@ public class ThreadCountLimit {
         w.join();
       }
     } catch (InterruptedException e) {
-      throw new Error("Unexpected: " + e);
+      throw new Error("Unexpected", e);
+    }
+
+    // Now that all threads have joined, we are away from dangerous
+    // VM state and have enough memory to perform any other things.
+    if (reachedTimeLimit) {
+       // Windows path or a system with very large ulimit
+       System.out.println("INFO: reached the time limit " + TIME_LIMIT_MS +
+                          " ms, with " + countAtTimeLimit + " threads created");
+    } else if (reachedNativeOOM) {
+       System.out.println("INFO: reached this process thread count limit with " +
+                           countAtNativeOOM + " threads created");
     }
   }
 }
