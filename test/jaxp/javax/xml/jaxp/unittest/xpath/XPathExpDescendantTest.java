@@ -24,7 +24,17 @@
 package xpath;
 
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /*
  * @test
@@ -36,29 +46,109 @@ import org.testng.annotations.DataProvider;
 public class XPathExpDescendantTest extends XPathTestBase {
 
     /*
-     * DataProvider: provides XPath descendant expressions and expected number of nodes returned
+     * DataProvider: provides XPath Axis descendant expressions and equivalent xpath expression.
      */
-    @DataProvider(name = "namespaceXpath")
-    public Object[][] getNamespaceXpathExpression() {
+    @DataProvider(name = "descendantXpath")
+    public Object[][] getDescendantXpathExpression() {
         return new Object[][] {
-                {"/Customers/namespace::foo", "foo", "xmlns", "xmlns:foo","www.foo.com"},
-                {"/Customers/namespace::xml", "xml", "xml", "xmlns:xml", "http://www.w3.org/XML/1998/namespace"},
-                {"//Customer/Name/namespace::foo", "foo", "xmlns", "xmlns:foo","www.foo.com"},
-                {"/Customers/Customer/Name/namespace::foo", "foo", "xmlns", "xmlns:foo","www.foo.com"},
-                {"//Customer/Name/namespace::xml", "xml", "xml", "xmlns:xml","http://www.w3.org/XML/1998/namespace"},
-                {"/Customers/Customer/Name/namespace::xml", "xml", "xml", "xmlns:xml","http://www.w3.org/XML/1998/namespace"},
-                {"//Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"},
-                {"/Customers/Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"},
-                {"//www.foo.com:Customer/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
-                {"/Customers/*[name() = 'foo:Customer']/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
-                {"/Customers/*[namespace-uri() = 'www.foo.com']/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
-                {"/Customers/*[contains(name(.), 'foo:')]/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
-                {"/Customers/*[starts-with(name(.), 'foo:')]/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
-                {"//*[local-name()='Customer' and namespace-uri() = 'www.foo.com']/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
-                {"/Customers/VendCustomer/default-namespace-uri:Address/namespace::*[name()='']", "xmlns", null, "xmlns","default-namespace-uri"},
-                {"/Customers/VendCustomer/default-namespace-uri:Address/redeclared-namespace-uri:City/namespace::*[name()='']", "xmlns", null, "xmlns","redeclared-namespace-uri"}
+                {"/Customers/descendant::*", "/Customers//*"},
+                {"/Customers/descendant::Customer", "//Customer"},
+                {"/Customers/descendant::foo:Customer", "//foo:Customer"},
+                {"/Customers/Customer[@id='x1']/descendant::Address", "/Customers/Customer[@id='x1']/Address"},
+                {"/Customers/Customer[@id='x1']/descendant::*", "/Customers/Customer[@id='x1']//*"},
+                {"/Customers/foo:Customer/foo:Address/descendant::*", "/Customers/foo:Customer/foo:Address//*"},
+                {"/Customers/descendant-or-self::*", "//*"},
+                {"/Customers/descendant-or-self::Customer", "/Customers/Customer"},
+                {"/Customers/descendant-or-self::foo:Customer", "/Customers/foo:Customer"},
+                {"/Customers/Customer[@id='x1']/descendant-or-self::Address", "/Customers/Customer[@id = 'x1']/Address"},
+                {"/Customers/Customer[@id='x1']/descendant-or-self::*", "/Customers/Customer[@id='x1'] | /Customers/Customer[@id = 'x1']//*"},
+                {"/Customers/foo:Customer/foo:Address/descendant-or-self::*", "/Customers/foo:Customer/foo:Address | /Customers/foo:Customer/foo:Address//*"}
         };
     }
 
+    /*
+     * DataProvider: provides XPath descendant expressions and expected number of descendant nodes returned
+     */
+    @DataProvider(name = "descendantXpathNodeCount")
+    public Object[][] getDescendantXpathExpressionNodeCount() {
+        return new Object[][] {
+                {"/Customers/descendant::*", 40},
+                {"/Customers/descendant::Customer", 3},
+                {"/Customers/descendant::foo:Customer", 1},
+                {"/Customers/Customer[@id='x1']/descendant::Address", 1},
+                {"/Customers/Customer[@id='x1']/descendant::*", 9},
+                {"/Customers/foo:Customer/foo:Address/descendant::*", 3},
+                {"/Customers/Customer[@id='x1']/Address/descendant::Address", 0},
+                {"/Customers/descendant-or-self::*", 41},
+                {"/Customers/descendant-or-self::Customer", 3},
+                {"/Customers/descendant-or-self::foo:Customer", 1},
+                {"/Customers/Customer[@id='x1']/descendant-or-self::Address", 1},
+                {"/Customers/Customer[@id='x1']/Address/descendant-or-self::Address", 1},
+                {"/Customers/Customer[@id='x1']/descendant-or-self::*", 10},
+                {"/Customers/foo:Customer/foo:Address/descendant-or-self::*", 4}
+        };
+    }
 
+    /*
+     * DataProvider: provides XPath descendant expressions which should return null.
+     */
+    @DataProvider(name = "descendantXpathEmpty")
+    public Object[][] getDescendantXpathExpressionEmpty() {
+        return new Object[][] {
+                {"/Customers/Customer/Name/descendant::*"},
+                {"/Customers/foo:Customer/descendant::Name"},
+                {"/Customers/Customer/descendant::foo:Name"},
+                {"/Customers/descendant::id"},
+                {"/Customers/Customer/Name/descendant-or-self::id"},
+                {"/Customers/foo:Customer/descendant-or-self::Name"},
+                {"/Customers/Customer/descendant-or-self::foo:Name"},
+                {"/Customers/descendant-or-self::id"}
+        };
+    }
+
+    /**
+     * Verifies descendant xpath expression returns same nodes as returns when used normal xpath expression
+     * @param  descexp  descendant XPath expression.
+     * @param  expath   normal xPath expression
+     * @throws XPathExpressionException
+     */
+    @Test(dataProvider = "descendantXpath")
+    public void descendantExpTests(String descexp, String expath) throws XPathExpressionException {
+        Document doc = documentOf(DECLARATION + RAW_XML);
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        NodeList actualNodeList = (NodeList) xPath.evaluate(descexp, doc, XPathConstants.NODESET);
+        NodeList expectedNodeList = (NodeList) xPath.evaluate(expath, doc, XPathConstants.NODESET);
+        Assert.assertEquals(actualNodeList.getLength(), expectedNodeList.getLength());
+
+        for(int i = 0; i < actualNodeList.getLength(); i++) {
+            actualNodeList.item(i).equals(expectedNodeList.item(i));
+        }
+    }
+
+    /**
+     * Verifies descendant xpath expression return descendant nodes list with correct number of nodes.
+     * @param  exp       XPath expression.
+     * @param  nodeCount number of descendant nodes in nodelist.
+     * @throws XPathExpressionException
+     */
+    @Test(dataProvider = "descendantXpathNodeCount")
+    public void descendantNodesCountTests(String exp, int nodeCount) throws XPathExpressionException {
+        Document doc = documentOf(DECLARATION + RAW_XML);
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        NodeList nodeList = (NodeList) xPath.evaluate(exp, doc, XPathConstants.NODESET);
+        Assert.assertEquals(nodeList.getLength(), nodeCount);
+    }
+
+    /**
+     * Verifies descendant xpath expression return no nodes if descendant expression context nodes don't have matching descendants
+     * @param  exp     XPath expression.
+     * @throws XPathExpressionException
+     */
+    @Test(dataProvider = "descendantXpathEmpty")
+    public void DescendantScopeTests(String exp) throws XPathExpressionException {
+        Document doc = documentOf(DECLARATION + RAW_XML);
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        Node node = xPath.evaluateExpression(exp, doc, Node.class);
+        Assert.assertNull(node);
+    }
 }
