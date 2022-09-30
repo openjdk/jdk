@@ -28,8 +28,7 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CountsAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.FailOnAttributeParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawCheckAttribute;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 import compiler.lib.ir_framework.shared.TestFormat;
@@ -54,8 +53,8 @@ public class CompilePhaseIRRuleBuilder {
     private CompilePhaseIRRuleBuilder(IRMethod irMethod, IR irAnno) {
         this.irMethod = irMethod;
         this.irAnno = irAnno;
-        this.rawFailOnConstraints = new FailOnAttributeParser(irAnno.failOn()).parse();
-        this.rawCountsConstraints = new CountsAttributeParser(irAnno.counts()).parse();
+        this.rawFailOnConstraints = RawCheckAttribute.createFailOn(irAnno).parse();
+        this.rawCountsConstraints = RawCheckAttribute.createCounts(irAnno).parse();
     }
 
     /**
@@ -133,7 +132,7 @@ public class CompilePhaseIRRuleBuilder {
     }
 
     private List<Constraint> parseRawConstraints(List<RawConstraint> rawConstraints,
-                                                        CompilePhase compilePhase) {
+                                                 CompilePhase compilePhase) {
         List<Constraint> constraintResultList = new ArrayList<>();
         for (RawConstraint rawConstraint : rawConstraints) {
             constraintResultList.add(rawConstraint.parse(compilePhase, irMethod));

@@ -26,15 +26,11 @@ package compiler.lib.ir_framework.flag;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CheckAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.CountsAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser.FailOnAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawCheckAttribute;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -65,17 +61,15 @@ class MethodCompilePhaseCollector {
     public void collectCompilePhases(IR irAnno) {
         for (CompilePhase compilePhase : irAnno.phase()) {
             if (compilePhase == CompilePhase.DEFAULT) {
-                addDefaultPhasesForConstraint(new FailOnAttributeParser(irAnno.failOn()));
-                addDefaultPhasesForConstraint(new CountsAttributeParser(irAnno.counts()));
+                addDefaultPhasesForConstraint(RawCheckAttribute.createFailOn(irAnno));
+                addDefaultPhasesForConstraint(RawCheckAttribute.createCounts(irAnno));
             } else {
                 compilePhases.add(compilePhase);
             }
         }
     }
 
-    private void addDefaultPhasesForConstraint(CheckAttributeParser checkAttributeParser) {
-        checkAttributeParser.parse();
-        List<RawConstraint> rawConstraints = checkAttributeParser.parse();
-        rawConstraints.forEach(rawConstraint -> compilePhases.add(rawConstraint.getCompilePhaseForDefault()));
+    private void addDefaultPhasesForConstraint(RawCheckAttribute rawCheckAttribute) {
+        compilePhases.addAll(rawCheckAttribute.parseDefaultCompilePhases());
     }
 }

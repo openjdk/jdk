@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Scanner;
-import java.util.function.Consumer;
 
 import static compiler.lib.ir_framework.CompilePhase.*;
 
@@ -82,7 +81,6 @@ public class TestCompileCommandFileWriter {
     }
 
     private void check(Class<?> testClass, boolean findIdeal, boolean findOpto, CompilePhase... compilePhases) throws IOException {
-        CompileCommandFileWriter.createFile(testClass);
         try (Scanner scanner = new Scanner(Paths.get(FlagVM.TEST_VM_COMPILE_COMMANDS_FILE))) {
             boolean foundIdeal = false;
             boolean foundOpto = false;

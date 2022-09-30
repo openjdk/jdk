@@ -21,34 +21,26 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawFailOnConstraint;
 
 /**
- * This class represents a raw constraint of a {@link IR#failOn()} attribute.
- *
- * @see IR#failOn()
+ * Action that is performed when reading a constraint of a {@link IR#failOn}.
  */
-public class RawFailOnConstraint implements RawConstraint {
-    private final RawIRNode rawIRNode;
-    private final int constraintIndex;
-
-    public RawFailOnConstraint(RawIRNode rawIRNode, int constraintIndex) {
-        this.rawIRNode = rawIRNode;
-        this.constraintIndex = constraintIndex;
+class RawFailOnAction implements RawConstraintAction {
+    @Override
+    public RawConstraint createRawConstraint(CheckAttributeStringIterator checkAttributeStringIterator, int constraintIndex) {
+        RawIRNode rawIRNode = new RawIRNode(checkAttributeStringIterator);
+        return new RawFailOnConstraint(rawIRNode, constraintIndex);
     }
 
-    public FailOnConstraint parse(CompilePhase compilePhase, IRMethod irMethod) {
-        if (compilePhase == CompilePhase.DEFAULT) {
-            compilePhase = rawIRNode.defaultPhase();
-        }
-        return new FailOnConstraint(rawIRNode.regex(compilePhase), constraintIndex, compilePhase,
-                                    irMethod.getOutput(compilePhase));
+    @Override
+    public CompilePhase defaultPhase(CheckAttributeStringIterator checkAttributeStringIterator) {
+        RawIRNode rawIRNode = new RawIRNode(checkAttributeStringIterator);
+        return rawIRNode.defaultPhase();
     }
 }
-

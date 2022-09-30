@@ -21,30 +21,40 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawFailOnConstraint;
 
 /**
- * This class parses a the {@link IR#failOn()}) check attribute as found in a {@link IR @IR} annotation. It returns a
- * list of {@link RawConstraint} containing {@link RawFailOnConstraint} objects.
+ * This class represents a single string found in a check attribute of an {@link IR} annotation.
  *
- * @see IR#counts()
- * @see RawFailOnConstraint
+ * @see IR
  */
-public class FailOnAttributeParser extends CheckAttributeParser {
+class CheckAttributeString {
+    private static final CheckAttributeString INVALID = new CheckAttributeString();
+    private final String value;
 
-    public FailOnAttributeParser(String[] failOnAttribute) {
-        super(failOnAttribute);
+    private CheckAttributeString(String value) {
+        this.value = value;
     }
 
-    @Override
-    protected RawConstraint parseNextConstraint() {
-        String rawNodeString = checkAttributeIterator.getNextElement();
-        String userProvidedPostfix = getUserProvidedPostfix();
-        return new RawFailOnConstraint(rawNodeString, userProvidedPostfix,
-                                       checkAttributeIterator.getCurrentConstraintIndex());
+    private CheckAttributeString() {
+        this.value = "";
+    }
+
+    public String value() {
+        return value;
+    }
+
+    public boolean isValid() {
+        return this != INVALID;
+    }
+
+    public static CheckAttributeString create(String value) {
+        return new CheckAttributeString(value);
+    }
+
+    public static CheckAttributeString getInvalid() {
+        return INVALID;
     }
 }

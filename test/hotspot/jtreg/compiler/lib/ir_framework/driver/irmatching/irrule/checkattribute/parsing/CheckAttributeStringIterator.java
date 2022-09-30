@@ -21,34 +21,42 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraint;
+
+import java.util.Arrays;
+import java.util.ListIterator;
 
 /**
- * This class represents a raw constraint of a {@link IR#failOn()} attribute.
+ * This class represents an iterator on check attribute strings found in ({@link IR#failOn()} or {@link IR#counts()})
+ * or an {@link IR @IR} annotation. The iterator returns a {@link CheckAttributeString} that wraps the check attribute
+ * string. If there are no elements left, a special invalid {@link CheckAttributeString} is returned.
  *
- * @see IR#failOn()
+ * @see IR
+ * @see CheckAttributeString
  */
-public class RawFailOnConstraint implements RawConstraint {
-    private final RawIRNode rawIRNode;
-    private final int constraintIndex;
+public class CheckAttributeStringIterator {
+    private final ListIterator<String> iterator;
 
-    public RawFailOnConstraint(RawIRNode rawIRNode, int constraintIndex) {
-        this.rawIRNode = rawIRNode;
-        this.constraintIndex = constraintIndex;
+    public CheckAttributeStringIterator(String[] checkAttribute) {
+        this.iterator = Arrays.stream(checkAttribute).toList().listIterator();
     }
 
-    public FailOnConstraint parse(CompilePhase compilePhase, IRMethod irMethod) {
-        if (compilePhase == CompilePhase.DEFAULT) {
-            compilePhase = rawIRNode.defaultPhase();
+    public final CheckAttributeString next() {
+        if (iterator.hasNext()) {
+            return CheckAttributeString.create(iterator.next());
+        } else {
+            return CheckAttributeString.getInvalid();
         }
-        return new FailOnConstraint(rawIRNode.regex(compilePhase), constraintIndex, compilePhase,
-                                    irMethod.getOutput(compilePhase));
     }
-}
 
+    public boolean hasNext() {
+        return iterator.hasNext();
+    }
+
+    public int nextIndex() {
+        return iterator.nextIndex();
+    }
+
+}

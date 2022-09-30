@@ -21,22 +21,16 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 
 /**
- * Interface to represent a single raw constraint as found in the {@link IR @IR} annotation(i.e. {@link IRNode}
- * placeholder strings are not replaced by default regexes, yet). A raw constraint can be parsed into a
- * {@link Constraint} by calling {@link #parse(CompilePhase, IRMethod)}. This replaces the IR node placeholder strings
- * by actual regexes and merge composite nodes together.
- *
- * @see Constraint
+ * Interface describing actions that can performed when reading a constraint in a check attribute.
  */
-public interface RawConstraint {
-    Constraint parse(CompilePhase compilePhase, IRMethod irMethod);
+interface RawConstraintAction {
+    RawConstraint createRawConstraint(CheckAttributeStringIterator attributeIterator, int constraintIndex);
+    CompilePhase defaultPhase(CheckAttributeStringIterator checkAttributeStringIterator);
 }
+

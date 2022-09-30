@@ -1132,10 +1132,19 @@ public class IRNode {
         return irNodeString.startsWith(PREFIX);
     }
 
-    public static String getCompositeNodeName(String irNodeString) {
-        TestFramework.check(irNodeString.length() > COMPOSITE_PREFIX.length() + POSTFIX.length(),
-                            "Invalid composite node placeholder: " + irNodeString);
-        return irNodeString.substring(COMPOSITE_PREFIX.length(), irNodeString.length() - POSTFIX.length());
+    /**
+     * Returns "IRNode.XYZ", where XYZ is one of the IR node placeholder variable names defined above.
+     */
+    public static String getIRNodeAccessString(String irNodeString) {
+        int prefixLength;
+        if (isCompositeIRNode(irNodeString)) {
+            TestFramework.check(irNodeString.length() > COMPOSITE_PREFIX.length() + POSTFIX.length(),
+                                "Invalid composite node placeholder: " + irNodeString);
+            prefixLength = COMPOSITE_PREFIX.length();
+        } else {
+            prefixLength = PREFIX.length();
+        }
+        return "IRNode." + irNodeString.substring(prefixLength, irNodeString.length() - POSTFIX.length());
     }
 
     /**
