@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,12 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
-import java.nio.channels.FileChannel;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -427,15 +425,4 @@ public final class FileUtils {
             {"/sbin/lsof", "-p"},
             {"/usr/local/bin/lsof", "-p"},
     };
-
-    public static Path createSparseTempFile(String prefix, String suffix) throws IOException {
-        Path file = Files.createTempFile(prefix, suffix);
-        Files.delete(file); // need CREATE_NEW to make the file sparse
-
-        FileChannel fc = FileChannel.open(file,
-                StandardOpenOption.CREATE_NEW, StandardOpenOption.SPARSE,
-                StandardOpenOption.WRITE);
-        fc.close();
-        return file;
-    }
 }

@@ -24,7 +24,6 @@
 /* @test
  * @bug 6253145
  * @summary Test FileChannel.transferTo with file positions up to 8GB
- * @library /test/lib
  * @run testng/timeout=300 TransferTo6GBFile
  */
 
@@ -40,7 +39,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.Test;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -56,7 +54,7 @@ public class TransferTo6GBFile {
         final long G = 1024L * 1024L * 1024L;
 
         // Create 6GB file
-        Path file = FileUtils.createSparseTempFile("source", null);
+        Path file = FileChannelUtils.createSparseTempFile("source", null);
         file.toFile().deleteOnExit();
 
         out.println("  Writing large file...");

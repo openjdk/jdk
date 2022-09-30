@@ -22,7 +22,6 @@
  */
 
 import jdk.test.lib.RandomFactory;
-import jdk.test.lib.util.FileUtils;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -60,7 +59,7 @@ public class LargeMapTest {
 
         System.out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        Path p = FileUtils.createSparseTempFile("test", ".dat");
+        Path p = FileChannelUtils.createSparseTempFile("test", ".dat");
         p.toFile().deleteOnExit();
         ByteBuffer bb;
         try (FileChannel fc = FileChannel.open(p, WRITE)) {

@@ -47,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
-import jdk.test.lib.util.FileUtils;
 
 import static java.nio.file.StandardOpenOption.*;
 
@@ -58,7 +57,7 @@ public class Transfer2GPlus {
     private static final Random GEN  = RandomFactory.getRandom();
 
     public static void main(String[] args) throws IOException {
-        Path src = FileUtils.createSparseTempFile("src", ".dat");
+        Path src = FileChannelUtils.createSparseTempFile("src", ".dat");
         src.toFile().deleteOnExit();
         long t0 = System.nanoTime();
         byte[] b = createSrcFile(src);

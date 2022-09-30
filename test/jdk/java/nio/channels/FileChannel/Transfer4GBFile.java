@@ -24,7 +24,6 @@
 /* @test
  * @bug 4638365
  * @summary Test FileChannel.transferFrom and transferTo for 4GB files
- * @library /test/lib
  * @run testng/timeout=300 Transfer4GBFile
  */
 
@@ -38,7 +37,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.Test;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -51,7 +49,7 @@ public class Transfer4GBFile {
     // Test transferTo with large file
     @Test
     public void xferTest04() throws Exception { // for bug 4638365
-        Path source = FileUtils.createSparseTempFile("blah", null);
+        Path source = FileChannelUtils.createSparseTempFile("blah", null);
         source.toFile().deleteOnExit();
         long testSize = ((long)Integer.MAX_VALUE) * 2;
 
@@ -91,7 +89,7 @@ public class Transfer4GBFile {
         initTestFile(source, 100);
 
         // Create the sink file as a sparse file if possible
-        Path sink = FileUtils.createSparseTempFile("sink", null);
+        Path sink = FileChannelUtils.createSparseTempFile("sink", null);
         sink.toFile().deleteOnExit();
         long testSize = ((long)Integer.MAX_VALUE) * 2;
         try (FileChannel fc = FileChannel.open(sink, WRITE)){
