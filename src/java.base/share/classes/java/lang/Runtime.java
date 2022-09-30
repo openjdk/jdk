@@ -60,10 +60,6 @@ import jdk.internal.reflect.Reflection;
  * the operating system.</li>
  * </ol>
  *
- * <p>In contrast to {@link #exit exit}, the {@link #halt halt} method does not initiate the
- * shutdown sequence. See the <a href="#termination">Java Virtual Machine Termination</a> section
- * below.
- *
  * <p>At the beginning of the shutdown sequence, the registered shutdown hooks are
  * {@linkplain Thread#start started} in some unspecified order. They run concurrently
  * with any daemon or non-daemon threads that were {@linkplain Thread#isAlive() alive}
@@ -89,6 +85,8 @@ import jdk.internal.reflect.Reflection;
  * <h2><a id="termination">Java Virtual Machine Termination</a></h2>
  *
  * <p>The JVM terminates when the shutdown sequence finishes or when {@link #halt halt} is called.
+ * In contrast to {@link #exit exit}, the {@link #halt halt} method does not initiate the
+ * shutdown sequence.
  *
  * <p>When the JVM terminates, all threads are immediately prevented from executing any further
  * Java code. This includes shutdown hooks as well as daemon and non-daemon threads. The
@@ -103,13 +101,13 @@ import jdk.internal.reflect.Reflection;
  * <a href="{@docRoot}/../specs/jni/invocation.html#jni_createjavavm">{@code JNI_CreateJavaVM}</a>
  * function to launch the JVM. Subsequently, the native code invokes the
  * <a href="{@docRoot}/../specs/jni/invocation.html#destroyjavavm">{@code DestroyJavaVM}</a>
- * function to await termination of that JVM. The {@code DestroyJavaVM} function is responsible for
- * initiating the shutdown sequence when the number of {@linkplain Thread#isAlive() running}
+ * function to await termination of that JVM. The {@code DestroyJavaVM} function is responsible
+ * for initiating the shutdown sequence when the number of {@linkplain Thread#isAlive() live}
  * non-daemon threads first drops to zero. When the shutdown sequence completes and the JVM
- * terminates, control is returned to the native code that invoked {@code DestroyJavaVM}.
- * <p>
- * This differs from the {@link #exit exit} or {@link #halt halt} methods. These methods typically
- * terminate the OS process hosting the JVM and do not interact with the JNI Invocation API.
+ * terminates, control is returned to the native code that invoked {@code DestroyJavaVM}. This
+ * behavior differs from the {@link #exit exit} or {@link #halt halt} methods. These methods
+ * typically terminate the OS process hosting the JVM and do not interact with the JNI Invocation
+ * API.
  *
  * @see     java.lang.Runtime#getRuntime()
  * @jls     12.8 Program Exit
@@ -197,8 +195,8 @@ public class Runtime {
      * machine and should therefore be coded defensively. They should, in
      * particular, be written to be thread-safe and to avoid deadlocks insofar
      * as possible. They should also not rely blindly upon services that may
-     * have registered their own shutdown hooks and therefore may themselves in
-     * the process of shutting down. Attempts to use other thread-based
+     * have registered their own shutdown hooks and therefore may themselves be
+     * in the process of shutting down. Attempts to use other thread-based
      * services such as the AWT event-dispatch thread, for example, may lead to
      * deadlocks.
      * <p>
