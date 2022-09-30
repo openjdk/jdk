@@ -4618,6 +4618,8 @@ void C2_MacroAssembler::vector_unsigned_cast(XMMRegister dst, XMMRegister src, i
 void C2_MacroAssembler::vector_mask_cast(XMMRegister dst, XMMRegister src,
                                          BasicType dst_bt, BasicType src_bt, int vlen) {
   int vlen_enc = vector_length_encoding(MAX2(type2aelembytes(src_bt), type2aelembytes(dst_bt)) * vlen);
+  assert(vlen_enc != AVX_512bit, "");
+
   int dst_bt_size = type2aelembytes(dst_bt);
   int src_bt_size = type2aelembytes(src_bt);
   if (dst_bt_size > src_bt_size) {
