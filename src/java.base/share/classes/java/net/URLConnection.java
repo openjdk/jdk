@@ -44,7 +44,6 @@ import java.util.List;
 import java.security.Permission;
 import java.security.AccessController;
 
-import sun.net.util.URLUtil;
 import sun.security.util.SecurityConstants;
 import sun.net.www.MessageHeader;
 import sun.security.action.GetPropertyAction;

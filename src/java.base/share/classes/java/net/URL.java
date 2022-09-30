@@ -43,7 +43,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import sun.net.util.IPAddressUtil;
-import sun.net.util.URLUtil;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetPropertyAction;
 
@@ -436,7 +435,7 @@ public final class URL implements java.io.Serializable {
             }
         }
 
-        protocol = URLUtil.lowerCaseProtocol(protocol);
+        protocol = lowerCaseProtocol(protocol);
         this.protocol = protocol;
         if (host != null) {
 
