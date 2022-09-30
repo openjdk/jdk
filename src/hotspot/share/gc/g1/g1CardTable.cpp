@@ -53,7 +53,6 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
   _byte_map_size = mapper->reserved().byte_size();
 
   size_t num_cards = cards_required(_whole_heap.word_size());
-  _last_valid_index = num_cards - 1;
 
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
@@ -64,11 +63,11 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
   _byte_map = (CardValue*) mapper->reserved().start();
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
-  assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
+  assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
 
   log_trace(gc, barrier)("G1CardTable::G1CardTable: ");
-  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[_last_valid_index]: " PTR_FORMAT,
-                         p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
+  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[last_valid_index()]: " PTR_FORMAT,
+                         p2i(&_byte_map[0]), p2i(&_byte_map[last_valid_index()]));
   log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT,  p2i(_byte_map_base));
 }
 

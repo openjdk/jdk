@@ -21,19 +21,19 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @requires vm.debug != true
- * @compile --enable-preview -source ${jdk.version} PinALot.java
- * @run main/othervm --enable-preview PinALot
  * @summary Stress test timed park when pinned
+ * @requires vm.debug != true
+ * @enablePreview
+ * @run main PinALot 500000
  */
 
-/**
+/*
  * @test
  * @requires vm.debug == true
- * @compile --enable-preview -source ${jdk.version} PinALot.java
- * @run main/othervm/timeout=300 --enable-preview PinALot 200000
+ * @enablePreview
+ * @run main/othervm/timeout=300 PinALot 200000
  */
 
 import java.time.Duration;
