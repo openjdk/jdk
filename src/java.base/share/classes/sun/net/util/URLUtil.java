@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLPermission;
 import java.security.Permission;
+import java.util.Locale;
 
 /**
  * URL Utility class.
@@ -50,16 +51,16 @@ public class URLUtil {
         String protocol = url.getProtocol();
         if (protocol != null) {
             /* protocol is compared case-insensitive, so convert to lowercase */
-            protocol = protocol.toLowerCase();
-            strForm.append(protocol);
+            strForm.append(lowerCaseProtocol(protocol));
             strForm.append("://");
         }
 
         String host = url.getHost();
         if (host != null) {
             /* host is compared case-insensitive, so convert to lowercase */
-            host = host.toLowerCase();
-            strForm.append(host);
+            if (!host.isEmpty()) {
+                strForm.append(host.toLowerCase());
+            }
 
             int port = url.getPort();
             if (port == -1) {
@@ -78,6 +79,22 @@ public class URLUtil {
         }
 
         return strForm.toString();
+    }
+
+    /**
+     * Returns the protocol in lower case. Special cases known protocols
+     * to avoid loading locale classes during startup.
+     */
+    public static String lowerCaseProtocol(String protocol) {
+        if (protocol.equals("jrt")) {
+            return "jrt";
+        } else if (protocol.equals("file")) {
+            return "file";
+        } else if (protocol.equals("jar")) {
+            return "jar";
+        } else {
+            return protocol.toLowerCase(Locale.ROOT);
+        }
     }
 
     public static Permission getConnectPermission(URL url) throws IOException {

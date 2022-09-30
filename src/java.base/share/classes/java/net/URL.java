@@ -38,7 +38,6 @@ import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectInputStream.GetField;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -48,6 +47,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import sun.net.util.IPAddressUtil;
+import sun.net.util.URLUtil;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetPropertyAction;
 
@@ -440,7 +440,7 @@ public final class URL implements java.io.Serializable {
             }
         }
 
-        protocol = toLowerCase(protocol);
+        protocol = URLUtil.lowerCaseProtocol(protocol);
         this.protocol = protocol;
         if (host != null) {
 
@@ -633,7 +633,7 @@ public final class URL implements java.io.Serializable {
             for (i = start ; !aRef && (i < limit) &&
                      ((c = spec.charAt(i)) != '/') ; i++) {
                 if (c == ':') {
-                    String s = toLowerCase(spec.substring(start, i));
+                    String s = URLUtil.lowerCaseProtocol(spec.substring(start, i));
                     if (isValidProtocol(s)) {
                         newProtocol = s;
                         start = i + 1;
@@ -1377,18 +1377,6 @@ public final class URL implements java.io.Serializable {
                 });
         } finally {
             endLookup(key);
-        }
-    }
-
-    /**
-     * Returns the protocol in lower case. Special cases known protocols
-     * to avoid loading locale classes during startup.
-     */
-    static String toLowerCase(String protocol) {
-        if (protocol.equals("jrt") || protocol.equals("file") || protocol.equals("jar")) {
-            return protocol;
-        } else {
-            return protocol.toLowerCase(Locale.ROOT);
         }
     }
 
