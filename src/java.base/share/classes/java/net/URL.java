@@ -32,11 +32,16 @@ import java.net.spi.URLStreamHandlerProvider;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.Hashtable;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectInputStream.GetField;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 import jdk.internal.access.JavaNetURLAccess;
 import jdk.internal.access.SharedSecrets;
