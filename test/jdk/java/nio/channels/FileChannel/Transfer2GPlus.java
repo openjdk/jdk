@@ -26,7 +26,7 @@
  * @bug 8271308
  * @summary Verify that transferTo() copies more than Integer.MAX_VALUE bytes
  * @library .. /test/lib
- * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform jdk.test.lib.RandomFactory FileChannelUtils
  * @run main/othervm/timeout=300 Transfer2GPlus
  * @key randomness
  */

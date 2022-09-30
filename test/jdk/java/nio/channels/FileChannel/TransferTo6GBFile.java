@@ -24,6 +24,7 @@
 /* @test
  * @bug 6253145
  * @summary Test FileChannel.transferTo with file positions up to 8GB
+ * @build FileChannelUtils
  * @run testng/timeout=300 TransferTo6GBFile
  */
 

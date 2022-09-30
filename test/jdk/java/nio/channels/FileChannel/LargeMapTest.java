@@ -43,6 +43,7 @@ import static java.nio.file.StandardOpenOption.*;
  *          EXCEPTION_ACCESS_VIOLATION.
  * @requires vm.bits == 64
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory FileChannelUtils
  * @run main/othervm LargeMapTest
  * @key randomness
  */
