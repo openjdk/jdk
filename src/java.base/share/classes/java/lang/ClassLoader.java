@@ -765,7 +765,7 @@ public abstract class ClassLoader {
     // that are currently loading each class by this class loader.  The class name is mapped to
     // the thread that is first seen loading that class, then removed when loading is complete
     // for that class.
-    private final Thread curThreadLoadingClass(String name, Thread thread) {
+    private final Thread threadLoadingClass(String name, Thread thread) {
         return threadLoadingClassMap.putIfAbsent(name, thread);
     }
 
@@ -786,7 +786,7 @@ public abstract class ClassLoader {
     private Thread waitForThreadLoadingClass(String name, Thread currentThread) {
         Thread thread;
         boolean interrupted = false;
-        while ((thread = curThreadLoadingClass(name, currentThread)) != null) {
+        while ((thread = threadLoadingClass(name, currentThread)) != null) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -817,7 +817,7 @@ public abstract class ClassLoader {
         // The JVM calls loadClass directly for parallel-capable class loaders
         assert (parallelLockMap == null);
         Thread currentThread = Thread.currentThread();
-        Thread thread = curThreadLoadingClass(name, currentThread);
+        Thread thread = threadLoadingClass(name, currentThread);
         // Another thread is loading the class.
         if (thread != null && thread != currentThread) {
             // notify loading thread once
