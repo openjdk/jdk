@@ -35,10 +35,8 @@ import java.util.List;
  * @see Constraint
  * @see FailOn
  */
-public class FailOnConstraintFailure extends ConstraintFailure {
-
-    public FailOnConstraintFailure(Constraint constraint, List<String> matchedNodes) {
-        super(constraint, matchedNodes);
+public record FailOnConstraintFailure(Constraint constraint, List<String> matchedNodes) implements ConstraintFailure {
+    public FailOnConstraintFailure {
         TestFramework.check(!matchedNodes.isEmpty(), "must have at least one matched node");
     }
 

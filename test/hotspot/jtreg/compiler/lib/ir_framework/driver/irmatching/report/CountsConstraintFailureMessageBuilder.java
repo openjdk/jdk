@@ -24,46 +24,42 @@
 package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.shared.Comparison;
 
 /**
  * This class creates a failure message for a {@link IR#counts} constraint failure.
  */
-public class CountsConstraintFailureMessageBuilder extends ConstraintFailureMessageBuilder {
-    private final CountsConstraintFailure constraintFailure;
+public class CountsConstraintFailureMessageBuilder {
+    private final ConstraintFailureMessageBuilder constrainFailureMessageBuilder;
+    private final Comparison<Integer> comparison;
+    private final int matchedNodesSize;
+    private final int indentation;
 
-    public CountsConstraintFailureMessageBuilder(CountsConstraintFailure constraintFailure, int indentation) {
-        super(indentation);
-        this.constraintFailure = constraintFailure;
+    public CountsConstraintFailureMessageBuilder(CountsConstraintFailure countsConstraintFailure, int indentation) {
+        this.constrainFailureMessageBuilder = new ConstraintFailureMessageBuilder(countsConstraintFailure, indentation);
+        this.comparison = countsConstraintFailure.constraint().getComparison();
+        this.matchedNodesSize = countsConstraintFailure.matchedNodes().size();
+        this.indentation = indentation;
     }
 
-    @Override
-    protected String getMatchedPrefix(ConstraintFailure constraintFailure) {
-        return "Matched";
-    }
-
-
-    @Override
     public String build() {
-        return buildConstraintHeader(constraintFailure) + buildFailedComparisonMessage(constraintFailure) +
-               buildMatchedCountsNodesMessage(constraintFailure);
+        return constrainFailureMessageBuilder.buildConstraintHeader() + buildFailedComparisonMessage() +
+               buildMatchedCountsNodesMessage();
     }
 
-    private String buildFailedComparisonMessage(CountsConstraintFailure constraintFailure) {
-        Comparison<Integer> comparison = constraintFailure.getComparison();
-        String failedComparison = "[found] " + constraintFailure.getMatchedNodes().size() + " "
+    private String buildFailedComparisonMessage() {
+        String failedComparison = "[found] " + matchedNodesSize + " "
                                   + comparison.getComparator() + " " + comparison.getGivenValue() + " [given]";
         return ReportBuilder.getIndentation(indentation + 2) + "- Failed comparison: " + failedComparison
                + System.lineSeparator();
     }
 
-    private String buildMatchedCountsNodesMessage(CountsConstraintFailure constraintFailure) {
-        if (constraintFailure.getMatchedNodes().isEmpty()) {
+    private String buildMatchedCountsNodesMessage() {
+        if (matchedNodesSize == 0) {
             return buildEmptyNodeMatchesMessage();
         } else {
-            return buildMatchedNodesMessage(constraintFailure);
+            return constrainFailureMessageBuilder.buildMatchedNodesMessage("Matched");
         }
     }
 

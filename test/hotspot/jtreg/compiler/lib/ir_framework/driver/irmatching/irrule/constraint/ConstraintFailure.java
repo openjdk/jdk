@@ -24,42 +24,20 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 
 import java.util.List;
 
 /**
- * Base class representing a failure when applying a constraint (i.e. regex matching) on a compile phase output.
+ * Interface representing a when applying a {@link Constraint} on a compile phase output.
  *
  * @see Constraint
- * @see CheckAttribute
- * @see CheckAttributeMatchResult
  */
-abstract public class ConstraintFailure implements MatchResult {
-    private final String nodeRegex;
-    private final int constraintIndex;
-    protected final List<String> matchedNodes;
-
-    public ConstraintFailure(Constraint constraint, List<String> matchedNodes) {
-        this.nodeRegex = constraint.getRegex();
-        this.constraintIndex = constraint.getIndex();
-        this.matchedNodes = matchedNodes;
-    }
-
-    public String getNodeRegex() {
-        return nodeRegex;
-    }
-
-    public int getConstraintIndex() {
-        return constraintIndex;
-    }
-
-    public List<String> getMatchedNodes() {
-        return matchedNodes;
-    }
-
-    public boolean fail() {
+public interface ConstraintFailure extends MatchResult {
+    @Override
+    default boolean fail() {
         return true;
     }
+
+    Constraint constraint();
+    List<String> matchedNodes();
 }

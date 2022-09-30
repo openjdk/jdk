@@ -108,7 +108,11 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
 
     @Override
     public void doAction(FailOnConstraintFailure failOnConstraintFailure) {
-        msg.append(new FailOnConstraintFailureMessageBuilder(failOnConstraintFailure, irRuleIndentation + 6).build());
+        ConstraintFailureMessageBuilder constrainFailureMessageBuilder =
+                new ConstraintFailureMessageBuilder(failOnConstraintFailure,irRuleIndentation + 6);
+        String failureMessage = constrainFailureMessageBuilder.buildConstraintHeader() +
+                                constrainFailureMessageBuilder.buildMatchedNodesMessage("Matched forbidden");
+        msg.append(failureMessage);
     }
 
     @Override

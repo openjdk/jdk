@@ -31,36 +31,38 @@ import java.util.stream.Collectors;
 /**
  * Base class to create a failure message for a failed constraint.
  */
-abstract public class ConstraintFailureMessageBuilder {
-    protected final int indentation;
+public class ConstraintFailureMessageBuilder {
+    private final String nodeRegex;
+    private final int constraintIndex;
+    private final List<String> matchedNodes;
+    private final int indentation;
 
-    public ConstraintFailureMessageBuilder(int indentation) {
+    public ConstraintFailureMessageBuilder(ConstraintFailure constraintFailure, int indentation) {
+        this.nodeRegex = constraintFailure.constraint().getRegex();
+        this.constraintIndex = constraintFailure.constraint().getIndex();
+        this.matchedNodes = constraintFailure.matchedNodes();
         this.indentation = indentation;
     }
 
-    abstract public String build();
-
-    protected String buildConstraintHeader(ConstraintFailure constraintFailure) {
+    public String buildConstraintHeader() {
         return ReportBuilder.getIndentation(indentation) + "* Constraint "
-               + constraintFailure.getConstraintIndex() + ": \"" + constraintFailure.getNodeRegex() + "\""
+               + constraintIndex + ": \"" + nodeRegex + "\""
                + System.lineSeparator();
     }
 
-    protected String buildMatchedNodesMessage(ConstraintFailure constraintFailure) {
-        return buildMatchedNodesHeader(constraintFailure) + buildMatchedNodesBody(constraintFailure);
+    public String buildMatchedNodesMessage(String matchedPrefix) {
+        return buildMatchedNodesHeader(matchedPrefix) + buildMatchedNodesBody();
     }
 
-    private String buildMatchedNodesHeader(ConstraintFailure constraintFailure) {
-        int matchCount = constraintFailure.getMatchedNodes().size();
-        return ReportBuilder.getIndentation(indentation + 2) + "- " + getMatchedPrefix(constraintFailure)
+    private String buildMatchedNodesHeader(String matchedPrefix) {
+        int matchCount = matchedNodes.size();
+        return ReportBuilder.getIndentation(indentation + 2) + "- " + matchedPrefix
                + " node" + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
     }
 
-    abstract protected String getMatchedPrefix(ConstraintFailure constraintFailure);
-
-    private String buildMatchedNodesBody(ConstraintFailure constraintFailure) {
+    private String buildMatchedNodesBody() {
         StringBuilder builder = new StringBuilder();
-        List<String> matches = addWhiteSpacePrefixForEachLine(constraintFailure.getMatchedNodes());
+        List<String> matches = addWhiteSpacePrefixForEachLine(matchedNodes);
         matches.forEach(match -> builder.append(ReportBuilder.getIndentation(indentation + 4))
                                         .append("* ").append(match).append(System.lineSeparator()));
         return builder.toString();

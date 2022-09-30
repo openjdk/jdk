@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-import compiler.lib.ir_framework.shared.Comparison;
 
 import java.util.List;
 
@@ -35,16 +34,23 @@ import java.util.List;
  * @see CountsConstraint
  * @see Counts
  */
-public class CountsConstraintFailure extends ConstraintFailure {
-    private final Comparison<Integer> comparison;
+public class CountsConstraintFailure implements ConstraintFailure {
+    private final CountsConstraint countsConstraint;
+    private final List<String> matchedNodes;
 
-    public CountsConstraintFailure(CountsConstraint constraint, List<String> matches) {
-        super(constraint, matches);
-        this.comparison = constraint.getComparison();
+    public CountsConstraintFailure(CountsConstraint countsConstraint, List<String> matchedNodes) {
+        this.countsConstraint = countsConstraint;
+        this.matchedNodes = matchedNodes;
     }
 
-    public Comparison<Integer> getComparison() {
-        return comparison;
+    @Override
+    public CountsConstraint constraint() {
+        return countsConstraint;
+    }
+
+    @Override
+    public List<String> matchedNodes() {
+        return matchedNodes;
     }
 
     @Override

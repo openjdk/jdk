@@ -402,13 +402,13 @@ class FailureBuilder implements MatchResultAction {
     @Override
     public void doAction(FailOnConstraintFailure failOnConstraintFailure) {
         failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.FAIL_ON,
-                                 failOnConstraintFailure.getConstraintIndex()));
+                                 failOnConstraintFailure.constraint().getIndex()));
     }
 
     @Override
     public void doAction(CountsConstraintFailure countsConstraintFailure) {
         failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.COUNTS,
-                                 countsConstraintFailure.getConstraintIndex()));
+                                 countsConstraintFailure.constraint().getIndex()));
     }
 }
 
