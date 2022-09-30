@@ -57,7 +57,6 @@ public final class ChunkHeader {
     private long metadataPosition = 0;
     private long durationNanos;
     private long absoluteChunkEnd;
-    private boolean isFinished;
     private boolean finished;
     private boolean finalChunk;
 
@@ -154,9 +153,8 @@ public final class ChunkHeader {
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: metadataPosition=" + metadataPosition);
                     this.durationNanos = durationNanos;
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: durationNanos =" + durationNanos);
-                    isFinished = fileState2 == 0;
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: generation=" + fileState2);
-                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finished=" + isFinished);
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finished=" + finished);
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: fileSize=" + input.size());
                     this.finalChunk = (flagByte & MASK_FINAL_CHUNK) != 0;
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finalChunk=" + finalChunk);
@@ -199,7 +197,7 @@ public final class ChunkHeader {
     }
 
     public boolean isFinished() throws IOException {
-        return isFinished;
+        return finished;
     }
 
     public ChunkHeader nextHeader() throws IOException {
