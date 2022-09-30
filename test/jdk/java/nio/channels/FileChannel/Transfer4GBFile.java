@@ -36,11 +36,12 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.Test;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class Transfer4GBFile {
 
@@ -56,8 +57,7 @@ public class Transfer4GBFile {
 
         out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        try (FileChannel fc = FileChannel.open(source,
-                StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+        try (FileChannel fc = FileChannel.open(source, READ, WRITE)) {
             fc.write(ByteBuffer.wrap("Use the source!".getBytes()), testSize - 40);
             long t1 = System.nanoTime();
             out.printf("  Wrote large file in %d ns (%d ms) %n",
@@ -67,10 +67,8 @@ public class Transfer4GBFile {
         Path sink = Files.createTempFile("sink", null);
         sink.toFile().deleteOnExit();
 
-        try (FileChannel sourceChannel = FileChannel.open(source,
-                     StandardOpenOption.READ);
-             FileChannel sinkChannel = FileChannel.open(sink,
-                     StandardOpenOption.WRITE)) {
+        try (FileChannel sourceChannel = FileChannel.open(source, READ);
+             FileChannel sinkChannel = FileChannel.open(sink, WRITE)) {
 
             long bytesWritten = sourceChannel.transferTo(testSize - 40, 10,
                     sinkChannel);
@@ -96,7 +94,7 @@ public class Transfer4GBFile {
         Path sink = FileUtils.createSparseTempFile("sink", null);
         sink.toFile().deleteOnExit();
         long testSize = ((long)Integer.MAX_VALUE) * 2;
-        try (FileChannel fc = FileChannel.open(sink, StandardOpenOption.WRITE)){
+        try (FileChannel fc = FileChannel.open(sink, WRITE)){
             out.println("  Writing large file...");
             long t0 = System.nanoTime();
             fc.write(ByteBuffer.wrap("Use the source!".getBytes()),
@@ -111,8 +109,8 @@ public class Transfer4GBFile {
         }
 
         // Get new channels for the source and sink and attempt transfer
-        try (FileChannel sourceChannel = FileChannel.open(source, StandardOpenOption.READ);
-             FileChannel sinkChannel = FileChannel.open(sink, StandardOpenOption.WRITE)) {
+        try (FileChannel sourceChannel = FileChannel.open(source, READ);
+             FileChannel sinkChannel = FileChannel.open(sink, WRITE)) {
             long bytesWritten = sinkChannel.transferFrom(sourceChannel,
                     testSize - 40, 10);
             if (bytesWritten != 10) {

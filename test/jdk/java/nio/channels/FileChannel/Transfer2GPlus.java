@@ -40,7 +40,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +47,8 @@ import java.util.concurrent.TimeUnit;
 import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.util.FileUtils;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class Transfer2GPlus {
     private static final long BASE   = (long)Integer.MAX_VALUE;
@@ -78,7 +79,7 @@ public class Transfer2GPlus {
     // Create a file of size LENGTH with EXTRA random bytes at offset BASE.
     private static byte[] createSrcFile(Path src)
         throws IOException {
-        try (FileChannel fc = FileChannel.open(src, StandardOpenOption.WRITE)) {
+        try (FileChannel fc = FileChannel.open(src, WRITE)) {
             fc.position(BASE);
             byte[] b = new byte[EXTRA];
             GEN.nextBytes(b);
@@ -94,8 +95,7 @@ public class Transfer2GPlus {
         Path dst = Files.createTempFile("dst", ".dat");
         dst.toFile().deleteOnExit();
         try (FileChannel srcCh = FileChannel.open(src)) {
-            try (FileChannel dstCh = FileChannel.open(dst,
-                 StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            try (FileChannel dstCh = FileChannel.open(dst, READ, WRITE)) {
                 long total = 0L;
                 if ((total = srcCh.transferTo(0, LENGTH, dstCh)) < LENGTH) {
                     if (!Platform.isLinux())

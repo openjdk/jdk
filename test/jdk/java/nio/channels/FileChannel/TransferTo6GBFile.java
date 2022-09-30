@@ -38,11 +38,12 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.Test;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class TransferTo6GBFile {
 
@@ -60,8 +61,7 @@ public class TransferTo6GBFile {
 
         out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        FileChannel fc = FileChannel.open(file,
-                StandardOpenOption.READ, StandardOpenOption.WRITE);
+        FileChannel fc = FileChannel.open(file, READ, WRITE);
         try {
             fc.write(ByteBuffer.wrap("0123456789012345".getBytes("UTF-8")), 6*G);
             long t1 = System.nanoTime();
