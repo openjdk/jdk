@@ -40,7 +40,6 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
 
   OptoReg::Name dst = ra_->get_reg_first(inst0);
   MachNode* inst1 = nullptr;
-  int inst1_index = -1;
   OptoReg::Name src1 = OptoReg::Bad;
 
   if (inst0->in(1)->is_MachSpillCopy()) {
@@ -55,24 +54,21 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
   }
   assert(dst != src1, "");
 
-  // Go up the block to find inst1, if any node writes to src1 then coalescing fails
-  for (int pos = block_index - 1; pos >= 0; pos--) {
-    Node* curr = block->get_node(pos);
-    if (curr == inst1) {
-      inst1_index = pos;
-      break;
-    }
-
-    OptoReg::Name out = ra_->get_reg_first(curr);
-    if (out == src1) {
-      return false;
-    }
-  }
-  if (inst1_index == -1) {
+  // Only coalesce if inst1 is immediately followed by inst0
+  // Can be improved for more general cases
+  if (block->get_node(block_index - 1) != inst1) {
     return false;
   }
-  // mov d, s1; add d, d should be transformed into lea d, [s1 + s1]
-  Node* inst2 = imm ? nullptr : ((inst0->in(2) == inst1) ? inst1->in(1) : inst0->in(2));
+  int inst1_index = block_index - 1;
+  Node* inst2;
+  if (imm) {
+    inst2 = nullptr;
+  } else {
+    inst2 = inst0->in(2);
+    if (inst2 == inst1) {
+      inst2 = inst2->in(1);
+    }
+  }
 
   // See VM_Version::supports_fast_3op_lea()
   if (!imm) {
@@ -97,10 +93,6 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
   assert(proj != nullptr, "");
   // If some node uses the flag, cannot remove
   if (proj->outcnt() > 0) {
-    return false;
-  }
-  // If some node read the MachSpillCopy other than inst0, cannot remove
-  if (inst1->outcnt() > 2 || (inst1->outcnt() == 2 && (imm || inst0->in(2) != inst1))) {
     return false;
   }
 
