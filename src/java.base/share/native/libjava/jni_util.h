@@ -336,6 +336,10 @@ void* getProcessHandle();
 void buildJniFunctionName(const char *sym, const char *cname,
                           char *jniEntryName);
 
+#ifdef _WIN32
+JNIEXPORT size_t JNICALL getLastWinErrorString(char*, size_t);
+#endif
+
 #ifdef STATIC_BUILD
 /* Macros for handling declaration of static/dynamic
  * JNI library Load/Unload functions

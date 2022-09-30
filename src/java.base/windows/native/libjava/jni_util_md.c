@@ -62,3 +62,31 @@ void buildJniFunctionName(const char *sym, const char *cname,
     }
     return;
 }
+
+JNIEXPORT size_t JNICALL
+getLastWinErrorString(char *buffer, size_t size) {
+
+    DWORD error;
+
+    if ((error = GetLastError()) != 0) {
+        /* DOS error */
+        size_t n = (size_t) FormatMessage(
+                FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                error,
+                0,
+                buffer,
+                (DWORD) size,
+                NULL);
+        if (n > 3) {
+            /* Drop final '.', CR, LF */
+            if (buffer[n - 1] == '\n') n--;
+            if (buffer[n - 1] == '\r') n--;
+            if (buffer[n - 1] == '.') n--;
+            buffer[n] = '\0';
+        }
+        return n;
+    } else {
+        return 0;
+    }
+}

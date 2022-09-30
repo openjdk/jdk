@@ -848,7 +848,12 @@ jzfile *
 ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
                  jboolean usemmap)
 {
+#ifdef _WIN32
     char errbuf[256];
+#else
+    int error;
+    char* errbuf = NULL;
+#endif
     jlong len;
     jzfile *zip;
 
@@ -863,8 +868,16 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     zip->lastModified = lastModified;
 
     if (zfd == -1) {
-        if (pmsg && getLastErrorString(errbuf, sizeof(errbuf), SYSTEM) > 0)
+#ifdef _WIN32
+        /* ZFILE_Open */
+        if (pmsg && getLastWinErrorString(errbuf, sizeof(errbuf)) > 0) {
+#else
+        error = errno;
+        if (error != 0) errbuf = strerror(error);
+        if (errbuf != NULL) {
+#endif
             *pmsg = strdup(errbuf);
+        }
         freeZip(zip);
         return NULL;
     }
@@ -881,8 +894,15 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
                 *pmsg = strdup("zip file is empty");
             }
         } else { /* error */
-            if (pmsg && getLastErrorString(errbuf, sizeof(errbuf), SYSTEM) > 0)
+#ifdef _WIN32
+            if (pmsg && getLastWinErrorString(errbuf, sizeof(errbuf)) > 0) {
+#else
+            error = errno;
+            if (error != 0) errbuf = strerror(error);
+            if (errbuf != NULL) {
+#endif
                 *pmsg = strdup(errbuf);
+            }
         }
         ZFILE_Close(zfd);
         freeZip(zip);
@@ -1493,6 +1513,7 @@ JNIEXPORT jboolean
 ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
 {
     char *msg;
+    char* buffer = NULL;
 
     if (entry == 0) {
         jio_fprintf(stderr, "jzentry was invalid");
@@ -1517,7 +1538,9 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             ZIP_Unlock(zip);
             if (n == -1) {
                 if (msg == 0) {
-                    msg = strerror(errno);
+                    int error = errno;
+                	if (error != 0) buffer = strerror(error);
+                	if (buffer != NULL) msg = buffer;
                 }
                 jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
                 return JNI_FALSE;
@@ -1533,7 +1556,9 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
                 msg = zip->msg;
             }
             if (msg == 0) {
-                msg = strerror(errno);
+                int error = errno;
+            	if (error != 0) buffer = strerror(error);
+            	if (buffer != NULL) msg = buffer;
             }
             jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
             return JNI_FALSE;

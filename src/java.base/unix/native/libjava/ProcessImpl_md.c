@@ -322,11 +322,11 @@ throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
     const char *detail = defaultDetail;
     char *errmsg;
     size_t fmtsize;
+    char* buf = NULL;
     jstring s;
 
-    if (errnum != 0 && errnum != EINVAL) {
-        detail = strerror(errnum);
-    }
+    if (errnum != 0) buf = strerror(errnum);
+    if (buf != NULL) detail = buf;
     /* ASCII Decimal representation uses 2.4 times as many bits as binary. */
     fmtsize = sizeof(IOE_FORMAT) + strlen(detail) + 3 * sizeof(errnum);
     errmsg = NEW(char, fmtsize);

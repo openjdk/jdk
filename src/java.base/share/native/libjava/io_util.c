@@ -204,14 +204,21 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 void
 throwFileNotFoundException(JNIEnv *env, jstring path)
 {
-    char buf[256];
-    size_t n;
     jobject x;
     jstring why = NULL;
 
-    n = getLastErrorString(buf, sizeof(buf), SYSTEM);
+#ifdef _WIN32
+    /* The implementation on Windows uses the Windows API */
+    char buf[256];
+    size_t n = getLastWinErrorString(buf, sizeof(buf));
     if (n > 0) {
-        why = JNU_NewStringPlatform(env, buf);
+#else
+    char* buf = NULL;
+    int error = errno;
+    if (error != 0) buf = strerror(error);
+    if (buf != NULL) {
+#endif
+    	why = JNU_NewStringPlatform(env, buf);
         CHECK_NULL(why);
     }
     x = JNU_NewObjectByName(env,
