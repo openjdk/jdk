@@ -28,6 +28,7 @@
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
  * @run main/othervm/timeout=300 Transfer2GPlus
+ * @key randomness
  */
 
 import java.io.ByteArrayOutputStream;

@@ -30,7 +30,6 @@ import java.lang.foreign.MemorySession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +45,7 @@ import static java.nio.file.StandardOpenOption.*;
  * @requires vm.bits == 64
  * @library /test/lib
  * @run main/othervm LargeMapTest
+ * @key randomness
  */
 public class LargeMapTest {
     private static final long LENGTH = (1L << 32) + 512;
