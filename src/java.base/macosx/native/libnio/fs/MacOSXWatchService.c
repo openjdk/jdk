@@ -35,7 +35,7 @@ static jmethodID        callbackMID;
 static __thread jobject watchService;
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_MacOSXWatchService_initIDs(JNIEnv* env, __unused jclass clazz)
+Java_sun_nio_fs_MacOSXWatchService_initIDs(JNIEnv* env, jclass clazz)
 {
     callbackMID = (*env)->GetMethodID(env, clazz,
                                       "handleEvents", "(J[Ljava/lang/String;J)V");
@@ -78,7 +78,7 @@ callJavaCallback(JNIEnv* env,
  * file-system events from an FSEventStream.
  */
 static void
-callback(__unused ConstFSEventStreamRef streamRef,
+callback(ConstFSEventStreamRef streamRef,
          __unused void *clientCallBackInfo,
          size_t numEventsTotal,
          void *eventPaths,
@@ -213,7 +213,7 @@ Java_sun_nio_fs_MacOSXWatchService_CFRunLoopGetCurrent(__unused JNIEnv* env,
  * there are event sources attached to it.
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_MacOSXWatchService_CFRunLoopRun(__unused JNIEnv* env,
+Java_sun_nio_fs_MacOSXWatchService_CFRunLoopRun(JNIEnv* env,
                                                 __unused jclass clazz,
                                                 jlong watchServiceObject)
 {
