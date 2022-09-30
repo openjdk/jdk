@@ -187,30 +187,6 @@ void Assembler::li32(Register Rd, int32_t imm) {
 
 #undef INSN
 
-void Assembler::ret() {
-  jalr(x0, x1, 0);
-}
-
-#define INSN(NAME, REGISTER)                                      \
-  void Assembler::NAME(const address &dest, Register temp) {      \
-    assert_cond(dest != NULL);                                    \
-    assert(temp != noreg, "temp must not be empty register!");    \
-    int64_t distance = dest - pc();                               \
-    if (is_offset_in_range(distance, 32)) {                       \
-      auipc(temp, distance + 0x800);                              \
-      jalr(REGISTER, temp, ((int32_t)distance << 20) >> 20);      \
-    } else {                                                      \
-      int32_t offset = 0;                                         \
-      movptr(temp, dest, offset);                                 \
-      jalr(REGISTER, temp, offset);                               \
-    }                                                             \
-  }
-
-  INSN(call, x1);
-  INSN(tail, x0);
-
-#undef INSN
-
 #define INSN(NAME, REGISTER)                                   \
   void Assembler::NAME(const Address &adr, Register temp) {    \
     switch (adr.getMode()) {                                   \
@@ -232,8 +208,6 @@ void Assembler::ret() {
 
   INSN(j,    x0);
   INSN(jal,  x1);
-  INSN(call, x1);
-  INSN(tail, x0);
 
 #undef INSN
 
