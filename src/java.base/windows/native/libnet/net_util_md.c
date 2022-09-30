@@ -196,7 +196,7 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
 void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                    const char *defaultDetail) {
-    JNU_ThrowByNameWithMessageAndLastError(env, name, defaultDetail);
+	throwByNameWithMessageAndWinError(env, name, defaultDetail);
 }
 
 jint  IPv4_supported()

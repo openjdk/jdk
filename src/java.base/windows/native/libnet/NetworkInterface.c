@@ -210,7 +210,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
                 break;
             default:
                 SetLastError(ret);
-                JNU_ThrowByNameWithMessageAndLastError(env,
+                throwByNameWithMessageAndWinError(env,
                     JNU_JAVANETPKG "SocketException",
                     "IP Helper Library GetIfTable function failed");
                 break;
@@ -410,7 +410,7 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
                 break;
             default:
                 SetLastError(ret);
-                JNU_ThrowByNameWithMessageAndLastError(env,
+                throwByNameWithMessageAndWinError(env,
                     JNU_JAVANETPKG "SocketException",
                     "IP Helper Library GetIpAddrTable function failed");
                 break;

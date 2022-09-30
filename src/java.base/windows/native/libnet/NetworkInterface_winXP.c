@@ -129,7 +129,7 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
                 return ERROR_SUCCESS;
             default:
                 SetLastError(ret);
-                JNU_ThrowByNameWithMessageAndLastError(env,
+                throwByNameWithMessageAndWinError(env,
                     JNU_JAVANETPKG "SocketException",
                     "IP Helper Library GetAdaptersAddresses function failed");
                 break;
@@ -199,7 +199,7 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
                 break;
             default:
                 SetLastError(val);
-                JNU_ThrowByNameWithMessageAndLastError(env,
+                throwByNameWithMessageAndWinError(env,
                     JNU_JAVANETPKG "SocketException",
                     "IP Helper Library GetAdaptersAddresses function failed");
                 break;

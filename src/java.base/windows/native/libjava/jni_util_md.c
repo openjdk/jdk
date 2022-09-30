@@ -90,3 +90,56 @@ getLastWinErrorString(char *buffer, size_t size) {
         return 0;
     }
 }
+
+JNIEXPORT void JNICALL
+throwByNameWithMessageAndWinError
+  (JNIEnv *env, const char *name, const char *message) {
+
+    char buf[256];
+    size_t n = getLastWinErrorString(buf, sizeof(buf));
+    size_t messagelen = message == NULL ? 0 : strlen(message);
+
+    if (n > 0) {
+        jstring s = JNU_NewStringPlatform(env, buf);
+        if (s != NULL) {
+            jobject x = NULL;
+            if (messagelen) {
+                jstring s2 = NULL;
+                size_t messageextlen = messagelen + 4;
+                char *str1 = (char *)malloc((messageextlen) * sizeof(char));
+                if (str1 == 0) {
+                    JNU_ThrowOutOfMemoryError(env, 0);
+                    return;
+                }
+                jio_snprintf(str1, messageextlen, " (%s)", message);
+                s2 = (*env)->NewStringUTF(env, str1);
+                free(str1);
+                JNU_CHECK_EXCEPTION(env);
+                if (s2 != NULL) {
+                    jstring s3 = JNU_CallMethodByName(
+                                     env, NULL, s, "concat",
+                                     "(Ljava/lang/String;)Ljava/lang/String;",
+                                     s2).l;
+                    (*env)->DeleteLocalRef(env, s2);
+                    JNU_CHECK_EXCEPTION(env);
+                    if (s3 != NULL) {
+                        (*env)->DeleteLocalRef(env, s);
+                        s = s3;
+                    }
+                }
+            }
+            x = JNU_NewObjectByName(env, name, "(Ljava/lang/String;)V", s);
+            if (x != NULL) {
+                (*env)->Throw(env, x);
+            }
+        }
+    }
+
+    if (!(*env)->ExceptionOccurred(env)) {
+        if (messagelen) {
+            JNU_ThrowByName(env, name, message);
+        } else {
+            JNU_ThrowByName(env, name, "no further information");
+        }
+    }
+}

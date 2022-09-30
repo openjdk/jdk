@@ -66,7 +66,7 @@ int NET_SocketAvailable(int s, int *pbytes) {
 void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                    const char *defaultDetail) {
-    JNU_ThrowByNameWithMessageAndLastError(env, name, defaultDetail);
+    JNU_PerrorThrowByNameWithMessage(env, name, defaultDetail);
 }
 
 void
