@@ -283,6 +283,11 @@ public final class EditorTopComponent extends TopComponent {
         scene.setZoomPercentage(percentage);
     }
 
+    public static boolean isOpen(EditorTopComponent editor) {
+        Set<TopComponent> topComponents = getRegistry().getOpened();
+        return topComponents.contains(editor);
+    }
+
     public static EditorTopComponent getActive() {
         TopComponent topComponent = getRegistry().getActivated();
         if (topComponent instanceof EditorTopComponent) {
