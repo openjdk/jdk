@@ -610,6 +610,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_base64_encodeBlock();
   case vmIntrinsics::_base64_decodeBlock:
     return inline_base64_decodeBlock();
+  case vmIntrinsics::_poly1305_processBlocks:
+    return inline_poly1305_processBlocks();
 
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
@@ -6958,6 +6960,39 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
                                  src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(result);
+  return true;
+}
+
+bool LibraryCallKit::inline_poly1305_processBlocks() {
+  address stubAddr;
+  const char *stubName;
+  assert(UsePolyIntrinsics, "need Poly intrinsics support");
+  assert(callee()->signature()->size() == 5, "poly1305_processBlocks has 5 parameters");
+  stubAddr = StubRoutines::poly1305_processBlocks();
+  stubName = "poly1305_processBlocks";
+
+  if (!stubAddr) return false;
+  Node* input = argument(0);
+  Node* input_offset = argument(1);
+  Node* len = argument(2);
+  Node* acc = argument(3);
+  Node* r = argument(4);
+
+  input = must_be_not_null(input, true);
+  acc = must_be_not_null(acc, true);
+  r = must_be_not_null(r, true);
+
+  Node* input_start = array_element_address(input, intcon(0), T_BYTE);
+  assert(input_start, "input array is NULL");
+  Node* acc_start = array_element_address(acc, intcon(0), T_BYTE);
+  assert(acc_start, "acc array is NULL");
+  Node* r_start = array_element_address(r, intcon(0), T_BYTE);
+  assert(r_start, "r array is NULL");
+
+  Node* call = make_runtime_call(RC_LEAF,
+                                 OptoRuntime::poly1305_processBlocks_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 input_start, input_offset, len, acc_start, r_start);
   return true;
 }
 

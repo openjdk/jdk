@@ -34,6 +34,8 @@ import java.util.Objects;
 
 import sun.security.util.math.*;
 import sun.security.util.math.intpoly.*;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This class represents the Poly1305 function defined in RFC 7539.
@@ -165,11 +167,17 @@ final class Poly1305 {
                 blockOffset = 0;
             }
         }
-        while (len >= BLOCK_LENGTH) {
-            processBlock(input, offset, BLOCK_LENGTH);
-            offset += BLOCK_LENGTH;
-            len -= BLOCK_LENGTH;
-        }
+
+        int blockMultipleLength = (len/BLOCK_LENGTH) * BLOCK_LENGTH;
+        byte[] aBytes = this.a.asByteArray(BLOCK_LENGTH+1);
+        byte[] rBytes = this.r.asByteArray(BLOCK_LENGTH);
+
+        processMultipleBlocksCheck(input, offset, blockMultipleLength, aBytes, rBytes);
+        processMultipleBlocks(input, offset, blockMultipleLength, aBytes, rBytes);
+        this.a.setValue(aBytes, 0, aBytes.length, (byte) 0);
+        offset += blockMultipleLength;
+        len -= blockMultipleLength;
+
         if (len > 0) { // and len < BLOCK_LENGTH
             System.arraycopy(input, offset, block, 0, len);
             blockOffset = len;
@@ -235,12 +243,36 @@ final class Poly1305 {
         a.setProduct(r);                // a = (a * r) % p
     }
 
+    // Emulate intrinsic, no access to class variables, but means extra conversions
+    @ForceInline
+    @IntrinsicCandidate
+    private static void processMultipleBlocks(byte[] input, int offset, int length, byte[] aBytes, byte[] rBytes) {
+        MutableIntegerModuloP A = ipl1305.getElement(aBytes).mutable();
+        MutableIntegerModuloP R = ipl1305.getElement(rBytes).mutable();
+        MutableIntegerModuloP temp = ipl1305.get0().mutable();
+        while (length >= BLOCK_LENGTH) {
+            temp.setValue(input, offset, BLOCK_LENGTH, (byte)0x01);
+            A.setSum(temp);                    // A += (temp | 0x01)
+            A.setProduct(R);                   // A =  (A * R) % p
+            offset += BLOCK_LENGTH;
+            length -= BLOCK_LENGTH;
+        }
+
+        A.asByteArray(aBytes);
+    }
+
+    private static void processMultipleBlocksCheck(byte[] input, int offset, int length, byte[] a, byte[] r) {
+        Objects.checkFromIndexSize(offset, length, input.length);
+        Objects.checkFromIndexSize(0, BLOCK_LENGTH+1, a.length);
+        Objects.checkFromIndexSize(0, BLOCK_LENGTH, r.length);
+    }
+
     /**
      * Partition the authentication key into the R and S components, clamp
      * the R value, and instantiate IntegerModuloP objects to R and S's
      * numeric values.
      */
-    private void setRSVals() {
+    private void setRSVals() { //throws InvalidKeyException {
         // Clamp the bytes in the "r" half of the key.
         keyBytes[3] &= 15;
         keyBytes[7] &= 15;
@@ -249,6 +281,22 @@ final class Poly1305 {
         keyBytes[4] &= (byte)252;
         keyBytes[8] &= (byte)252;
         keyBytes[12] &= (byte)252;
+
+        // byte keyIsZero = 0;
+        // for (int i = 0; i < RS_LENGTH; i++) {
+        //     keyIsZero |= keyBytes[i];
+        // }
+        // if (keyIsZero == 0) {
+        //     throw new InvalidKeyException("R is set to zero");
+        // }
+
+        // keyIsZero = 0;
+        // for (int i = RS_LENGTH; i < 2*RS_LENGTH; i++) {
+        //     keyIsZero |= keyBytes[i];
+        // }
+        // if (keyIsZero == 0) {
+        //     throw new InvalidKeyException("S is set to zero");
+        // }
 
         // Create IntegerModuloP elements from the r and s values
         r = ipl1305.getElement(keyBytes, 0, RS_LENGTH, (byte)0);

@@ -28,3 +28,17 @@
  * @run main java.base/com.sun.crypto.provider.Poly1305UnitTest
  * @summary Unit test for com.sun.crypto.provider.Poly1305.
  */
+
+ /*
+ * @test
+ * @modules java.base/com.sun.crypto.provider
+ * @run main java.base/com.sun.crypto.provider.Poly1305IntrinsicFuzzTest
+ * @summary Unit test for com.sun.crypto.provider.Poly1305.
+ */
+
+  /*
+ * @test
+ * @modules java.base/com.sun.crypto.provider
+ * @run main java.base/com.sun.crypto.provider.Poly1305KAT
+ * @summary Unit test for com.sun.crypto.provider.Poly1305.
+ */

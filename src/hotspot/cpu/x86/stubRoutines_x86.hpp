@@ -33,7 +33,7 @@ static bool returns_to_call_stub(address return_pc) { return return_pc == _call_
 
 enum platform_dependent_constants {
   code_size1 = 20000 LP64_ONLY(+10000),                    // simply increase if too small (assembler will crash if too small)
-  code_size2 = 35300 LP64_ONLY(+35000) WINDOWS_ONLY(+2048) // simply increase if too small (assembler will crash if too small)
+  code_size2 = 35300 LP64_ONLY(+45000) WINDOWS_ONLY(+2048) // simply increase if too small (assembler will crash if too small)
 };
 
 class x86 {
@@ -192,6 +192,7 @@ class x86 {
   static address _join_1_2_base64;
   static address _join_2_3_base64;
   static address _decoding_table_base64;
+  static address _poly1305_mask_addr;
 #endif
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
@@ -323,6 +324,7 @@ class x86 {
   static address base64_vbmi_join_1_2_addr() { return _join_1_2_base64; }
   static address base64_vbmi_join_2_3_addr() { return _join_2_3_base64; }
   static address base64_decoding_table_addr() { return _decoding_table_base64; }
+  static address poly1305_mask_addr() { return _poly1305_mask_addr;}
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);

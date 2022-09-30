@@ -1883,6 +1883,10 @@ private:
   void pmaddwd(XMMRegister dst, XMMRegister src);
   void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void evpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void evpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
+  void evpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void evpmadd52huq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
   // Multiply add accumulate
   void evpdpwssd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -1981,6 +1985,11 @@ private:
 
   // Interleave Low Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);
+
+  void evpunpcklqdq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void evpunpcklqdq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
+  void evpunpckhqdq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+  void evpunpckhqdq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
   // Vector sum of absolute difference.
   void vpsadbw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2084,6 +2093,10 @@ private:
   void shldl(Register dst, Register src, int8_t imm8);
   void shrdl(Register dst, Register src);
   void shrdl(Register dst, Register src, int8_t imm8);
+#ifdef _LP64
+  void shldq(Register dst, Register src, int8_t imm8);
+  void shrdq(Register dst, Register src, int8_t imm8);
+#endif
 
   void shll(Register dst, int imm8);
   void shll(Register dst);
@@ -2609,6 +2622,7 @@ private:
   void vpand(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpand(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpandq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpandq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   // Andn packed integers
   void pandn(XMMRegister dst, XMMRegister src);
@@ -2619,6 +2633,7 @@ private:
   void vpor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpor(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vporq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vporq(XMMRegister dst, XMMRegister nds, Address     src, int vector_len);
 
   // Xor packed integers
   void pxor(XMMRegister dst, XMMRegister src);
@@ -2632,6 +2647,7 @@ private:
   void vpternlogd(XMMRegister dst, int imm8, XMMRegister src2, XMMRegister src3, int vector_len);
   void vpternlogd(XMMRegister dst, int imm8, XMMRegister src2, Address     src3, int vector_len);
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, XMMRegister src3, int vector_len);
+  void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, Address     src3, int vector_len);
 
   // Vector compress/expand instructions.
   void evpcompressb(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);

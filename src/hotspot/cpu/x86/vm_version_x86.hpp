@@ -222,7 +222,9 @@ class VM_Version : public Abstract_VM_Version {
                avx512dq : 1,
                         : 1,
                     adx : 1,
-                        : 3,
+                        : 1,
+             avx512ifma : 1,
+                        : 1,
              clflushopt : 1,
                    clwb : 1,
                         : 1,
@@ -374,7 +376,8 @@ protected:
     decl(RDPID,             "rdpid",             49) /* RDPID instruction */ \
     decl(FSRM,              "fsrm",              50) /* Fast Short REP MOV */ \
     decl(GFNI,              "gfni",              51) /* Vector GFNI instructions */ \
-    decl(AVX512_BITALG,     "avx512_bitalg",     52) /* Vector sub-word popcount and bit gather instructions */
+    decl(AVX512_BITALG,     "avx512_bitalg",     52) /* Vector sub-word popcount and bit gather instructions */ \
+    decl(AVX512_IFMA,       "avx512_ifma",       53) /* Integer Vector FMA instructions*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -654,6 +657,7 @@ public:
   static bool supports_adx()          { return (_features & CPU_ADX) != 0; }
   static bool supports_evex()         { return (_features & CPU_AVX512F) != 0; }
   static bool supports_avx512dq()     { return (_features & CPU_AVX512DQ) != 0; }
+  static bool supports_avx512ifma()   { return (_features & CPU_AVX512_IFMA) != 0; }
   static bool supports_avx512pf()     { return (_features & CPU_AVX512PF) != 0; }
   static bool supports_avx512er()     { return (_features & CPU_AVX512ER) != 0; }
   static bool supports_avx512cd()     { return (_features & CPU_AVX512CD) != 0; }

@@ -387,6 +387,9 @@ class StubGenerator: public StubCodeGenerator {
   // Ghash single and multi block operations using AVX instructions
   address generate_avx_ghash_processBlocks();
 
+  // Poly1305 multiblock using IFMA instructions
+  address generate_poly1305_masksCP();
+  address generate_poly1305_processBlocks();
 
   // BASE64 stubs
 

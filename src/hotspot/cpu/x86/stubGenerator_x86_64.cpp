@@ -1955,6 +1955,90 @@ address StubGenerator::generate_base64_encodeBlock()
   return start;
 }
 
+address StubGenerator::generate_poly1305_masksCP() {
+  StubCodeMark mark(this, "StubRoutines", "generate_poly1305_masksCP");
+  address start = __ pc();
+  // OFFSET 0: high_bit
+  __ emit_data64(0x0000010000000000, relocInfo::none);
+  __ emit_data64(0x0000010000000000, relocInfo::none);
+  __ emit_data64(0x0000010000000000, relocInfo::none);
+  __ emit_data64(0x0000010000000000, relocInfo::none);
+  __ emit_data64(0x0000010000000000, relocInfo::none);
+  __ emit_data64(0x0000010000000000, relocInfo::none);
+  __ emit_data64(0x0000010000000000, relocInfo::none);
+  __ emit_data64(0x0000010000000000, relocInfo::none);
+
+  // OFFSET 64: mask_44
+  __ emit_data64(0xfffffffffff, relocInfo::none);
+  __ emit_data64(0xfffffffffff, relocInfo::none);
+  __ emit_data64(0xfffffffffff, relocInfo::none);
+  __ emit_data64(0xfffffffffff, relocInfo::none);
+  __ emit_data64(0xfffffffffff, relocInfo::none);
+  __ emit_data64(0xfffffffffff, relocInfo::none);
+  __ emit_data64(0xfffffffffff, relocInfo::none);
+  __ emit_data64(0xfffffffffff, relocInfo::none);
+
+  // OFFSET 128: mask_42
+  __ emit_data64(0x3ffffffffff, relocInfo::none);
+  __ emit_data64(0x3ffffffffff, relocInfo::none);
+  __ emit_data64(0x3ffffffffff, relocInfo::none);
+  __ emit_data64(0x3ffffffffff, relocInfo::none);
+  __ emit_data64(0x3ffffffffff, relocInfo::none);
+  __ emit_data64(0x3ffffffffff, relocInfo::none);
+  __ emit_data64(0x3ffffffffff, relocInfo::none);
+  __ emit_data64(0x3ffffffffff, relocInfo::none);
+
+  return start;
+}
+
+address StubGenerator::generate_poly1305_processBlocks() {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
+  address start = __ pc();
+  __ enter();
+  
+  // Save all 'SOE' registers
+  __ push(rbx);
+  #ifdef _WIN64
+  __ push(rsi);
+  __ push(rdi);
+  #endif
+  __ push(r12);
+  __ push(r13);
+  __ push(r14);
+  __ push(r15);
+
+  // Normalize input
+  // JAVA: void processBlocks(byte[] input, int offset, int len, byte[] a, byte[] r)
+  const Register input        = rdi; //input+offset
+  const Register length       = rbx;
+  const Register accumulator  = rcx;
+  const Register R            = r8;
+
+  __ lea(input, Address(c_rarg0, c_rarg1));
+  __ mov(length, c_rarg2);
+  #ifdef _WIN64 // R and acc already in correct position for linux
+  __ mov(accumulator, r9);  // arg#3 - acc
+  __ movptr(R, Address(rbp, 6 * wordSize)); // arg#4 - R
+  #endif
+
+  __ poly1305_process_blocks(input, length, accumulator, R);
+
+  __ pop(r15);
+  __ pop(r14);
+  __ pop(r13);
+  __ pop(r12);
+  #ifdef _WIN64
+  __ pop(rdi);
+  __ pop(rsi);
+  #endif
+  __ pop(rbx);
+
+  __ leave();
+  __ ret(0);
+  return start;
+}
+
 // base64 AVX512vbmi tables
 address StubGenerator::base64_vbmi_lookup_lo_addr() {
   __ align64();
@@ -3663,6 +3747,11 @@ void StubGenerator::generate_initial() {
     // set table address before stub generation which use it
     StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+  }
+
+  if (UsePolyIntrinsics) {
+    StubRoutines::x86::_poly1305_mask_addr = generate_poly1305_masksCP();
+    StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
   }
 
   if (UseCRC32CIntrinsics) {
