@@ -513,6 +513,11 @@ void ZReferenceProcessor::enqueue_references() {
     SuspendibleThreadSetJoiner sts_joiner;
 
     // Prepend internal pending list to external pending list
+    if (_pending_list_tail != _pending_list.addr()) {
+      // The tail could be a discovered field in the heap; apply store barriers
+      ZBarrier::store_barrier_on_heap_oop_field(_pending_list_tail, false /* heal */);
+    }
+
     *_pending_list_tail = swap_pending_list(_pending_list.get());
 
     // Notify ReferenceHandler thread
