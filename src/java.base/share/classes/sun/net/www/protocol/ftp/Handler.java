@@ -63,7 +63,9 @@ public class Handler extends java.net.URLStreamHandler {
         try {
             connection = new FtpURLConnection(u, p);
         } catch (IllegalArgumentException e) {
-            throw new MalformedURLException(e.getMessage());
+            var mfue = new MalformedURLException(e.getMessage());
+            mfue.initCause(e);
+            throw mfue;
         }
         return connection;
     }
