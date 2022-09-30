@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,21 +364,16 @@ public final class Recording implements Closeable {
     /**
      * Writes recording data to a file.
      * <p>
-     * For a dump to succeed the recording must be be running, or
-     * both stopped and to disk. If the recording is in any other state, an
-     * {@link IOException} is thrown.
+     * Recording must be started, but not necessarily stopped.
      *
      * @param destination the location where recording data is written, not
      *        {@code null}
      *
      * @throws IOException if the recording can't be copied to the specified
-     *         location, for example if the recording is closed
+     *         location
      *
      * @throws SecurityException if a security manager exists and the caller doesn't
      *         have {@code FilePermission} to write to the destination path
-     *
-     *  @see #getState()
-     *  @see #isToDisk()
      */
     public void dump(Path destination) throws IOException {
         Objects.requireNonNull(destination, "destination");
