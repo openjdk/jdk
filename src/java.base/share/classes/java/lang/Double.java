@@ -154,7 +154,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <br>{@code Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b)}<br>
  * Under this relation, {@code +0.0} and {@code -0.0} are distinguished
  * from each other and every bit pattern encoding a NaN is distinguished
- * form other bit patterns encoding a NaN.
+ * from every other bit patterns encoding a NaN.
  * </dd>
  *
  * <dt><i>representation equivalence</i>:</dt>
