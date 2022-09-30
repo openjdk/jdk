@@ -160,7 +160,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
      * @param content the content to which the index link will be added
      */
     protected void addIndexLink(HtmlId id, String headingKey, Content content) {
-        // The "contents-" + id value is used in JavaScript code to toggle visiblity of the link.
+        // The "contents-" + id value is used in JavaScript code to toggle visibility of the link.
         var li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey))).setId(HtmlId.of("contents-" + id.name()));
         content.add(li);
