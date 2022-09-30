@@ -102,6 +102,8 @@ public class Switches {
         assertEquals("OK", totalPatternAndNull(null));
         assertEquals("1", nullAfterTotal(Integer.valueOf(42)));
         assertEquals("OK", nullAfterTotal(null));
+        testSimpleSwitch();
+        testSimpleSwitchExpression();
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -664,6 +666,22 @@ public class Switches {
         };
     }
 
+    void testSimpleSwitch() {
+        Object o = "";
+        int res;
+        switch (o) {
+            default -> res = 1;
+        };
+        assertEquals(1, res);
+    }
+
+    void testSimpleSwitchExpression() {
+        Object o = "";
+        int res = switch (o) {
+            default -> 1;
+        };
+        assertEquals(1, res);
+    }
     //verify that for cases like:
     //case ConstantClassClash ->
     //ConstantClassClash is interpreted as a field, not as a class

@@ -45,6 +45,7 @@ import com.sun.tools.javac.tree.JCTree.JCCatch;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCConditional;
+import com.sun.tools.javac.tree.JCTree.JCConstantCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCContinue;
 import com.sun.tools.javac.tree.JCTree.JCDefaultCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
@@ -70,6 +71,7 @@ import com.sun.tools.javac.tree.JCTree.JCNewArray;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCOpens;
 import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
+import com.sun.tools.javac.tree.JCTree.JCPatternCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCPrimitiveTypeTree;
 import com.sun.tools.javac.tree.JCTree.JCProvides;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
@@ -296,6 +298,18 @@ public class TreeDiffer extends TreeScanner {
     public void visitCase(JCCase tree) {
         JCCase that = (JCCase) parameter;
         result = scan(tree.labels, that.labels) && scan(tree.stats, that.stats);
+    }
+
+    @Override
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+        JCConstantCaseLabel that = (JCConstantCaseLabel) parameter;
+        result = scan(tree.expr, that.expr);
+    }
+
+    @Override
+    public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+        JCPatternCaseLabel that = (JCPatternCaseLabel) parameter;
+        result = scan(tree.pat, that.pat) && scan(tree.guard, that.guard);
     }
 
     @Override
@@ -642,10 +656,9 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitVarDef(JCVariableDecl tree) {
         JCVariableDecl that = (JCVariableDecl) parameter;
-        boolean synthetic = (tree.mods.flags & Flags.SYNTHETIC) != 0;
         result =
                 scan(tree.mods, that.mods)
-                        && (tree.name == that.name || synthetic)
+                        && tree.name == that.name
                         && scan(tree.nameexpr, that.nameexpr)
                         && scan(tree.vartype, that.vartype)
                         && scan(tree.init, that.init);
