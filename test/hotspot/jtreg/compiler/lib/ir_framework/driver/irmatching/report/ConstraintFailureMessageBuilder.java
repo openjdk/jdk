@@ -38,8 +38,8 @@ public class ConstraintFailureMessageBuilder {
     private final int indentation;
 
     public ConstraintFailureMessageBuilder(ConstraintFailure constraintFailure, int indentation) {
-        this.nodeRegex = constraintFailure.constraint().getRegex();
-        this.constraintIndex = constraintFailure.constraint().getIndex();
+        this.nodeRegex = constraintFailure.constraint().regex();
+        this.constraintIndex = constraintFailure.constraint().index();
         this.matchedNodes = constraintFailure.matchedNodes();
         this.indentation = indentation;
     }

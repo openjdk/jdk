@@ -47,7 +47,7 @@ public class IRMatcher {
      * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
      */
     public void match() {
-        TestClassResult result = testClass.match();
+        MatchResult result = testClass.match();
         if (result.fail()) {
             reportFailures(result);
         }
@@ -58,7 +58,7 @@ public class IRMatcher {
      * an exact description of the failure (method, rule, compile phase, check attribute, and constraint) and the
      * associated compile phase output of the failure.
      */
-    private void reportFailures(TestClassResult result) {
+    private void reportFailures(MatchResult result) {
         String failureMsg = new FailureMessageBuilder(result).build();
         String compilationOutput =  new CompilationOutputBuilder(result).build();
         throwIfNoSafepointWhilePrinting(failureMsg, compilationOutput);

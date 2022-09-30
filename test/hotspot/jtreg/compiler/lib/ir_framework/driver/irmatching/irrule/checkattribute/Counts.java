@@ -24,8 +24,8 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 
 import java.util.List;
 
@@ -44,12 +44,12 @@ public class Counts extends CheckAttribute {
 
 
     @Override
-    public CheckAttributeMatchResult match() {
+    public MatchResult match() {
         CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeType.COUNTS);
         for (Constraint constraint : constraints) {
-            ConstraintFailure constraintFailure = constraint.match();
-            if (constraintFailure != null) {
-                checkAttributeMatchResult.addFailure(constraintFailure);
+            MatchResult constraintMatchResult = constraint.match();
+            if (constraintMatchResult.fail()) {
+                checkAttributeMatchResult.addFailure(constraintMatchResult);
             }
         }
         return checkAttributeMatchResult;

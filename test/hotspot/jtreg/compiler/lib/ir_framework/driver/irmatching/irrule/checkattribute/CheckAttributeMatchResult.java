@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.ArrayList;
@@ -39,7 +38,7 @@ import java.util.List;
  * @see CheckAttributeType
  */
 public class CheckAttributeMatchResult implements MatchResult {
-    private final List<ConstraintFailure> constraintFailures = new ArrayList<>();
+    private final List<MatchResult> constraintFailures = new ArrayList<>();
     private final CheckAttributeType checkAttributeType;
 
     CheckAttributeMatchResult(CheckAttributeType checkAttributeType) {
@@ -55,7 +54,7 @@ public class CheckAttributeMatchResult implements MatchResult {
         return !constraintFailures.isEmpty();
     }
 
-    public void addFailure(ConstraintFailure constraintFailure) {
+    public void addFailure(MatchResult constraintFailure) {
         constraintFailures.add(constraintFailure);
     }
 

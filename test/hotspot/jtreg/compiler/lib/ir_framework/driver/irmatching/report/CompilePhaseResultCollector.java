@@ -21,23 +21,30 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
+package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.List;
+import java.util.Comparator;
+import java.util.Set;
+import java.util.TreeSet;
 
-public class FailOnConstraint extends Constraint {
-    public FailOnConstraint(String regex, int index, CompilePhase compilePhase, String compilationOutput) {
-        super(regex, index, compilePhase, compilationOutput);
-    }
+/**
+ * Sort {@link CompilePhaseIRRuleMatchResult} of an IR rule by the {@link CompilePhase} enum definition order.
+ */
+class CompilePhaseResultCollector implements MatchResultVisitor {
+    private final Set<CompilePhaseIRRuleMatchResult> compilePhaseIRRuleMatchResults = new TreeSet<>(Comparator.comparingInt(r -> r.getCompilePhase().ordinal()));
 
     @Override
-    public ConstraintFailure match() {
-        List<String> matchedNodes = getMatchedNodes(compilationOutput);
-        if (!matchedNodes.isEmpty()) {
-            return new FailOnConstraintFailure(this, matchedNodes);
-        }
-        return null;
+    public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+        compilePhaseIRRuleMatchResults.add(compilePhaseIRRuleMatchResult);
+    }
+
+    public Set<CompilePhaseIRRuleMatchResult> collectSorted(IRRuleMatchResult irRuleMatchResult) {
+        irRuleMatchResult.acceptChildren(this);
+        return compilePhaseIRRuleMatchResults;
     }
 }

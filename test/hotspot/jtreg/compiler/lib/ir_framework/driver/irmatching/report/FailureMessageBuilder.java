@@ -1,5 +1,6 @@
 package compiler.lib.ir_framework.driver.irmatching.report;
 
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
@@ -9,24 +10,23 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConst
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
-import compiler.lib.ir_framework.driver.irmatching.visitor.PreOrderMatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
  * This class creates the complete failure message of each IR matching failure by visiting each match result element.
  */
-public class FailureMessageBuilder extends ReportBuilder implements MatchResultAction {
+public class FailureMessageBuilder extends ReportBuilder implements MatchResultVisitor {
     /**
      * Initial indentation for an IR rule match result message.
      */
     private int irRuleIndentation;
 
-    public FailureMessageBuilder(TestClassResult testClassResult) {
+    public FailureMessageBuilder(MatchResult testClassResult) {
         super(testClassResult);
     }
 
     @Override
-    public void doAction(TestClassResult testClassResult) {
+    public void visit(TestClassResult testClassResult) {
         FailCountVisitor failCountVisitor = new FailCountVisitor();
         testClassResult.acceptChildren(failCountVisitor);
         int failedMethodCount = failCountVisitor.getIrMethodCount();
@@ -38,6 +38,7 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
            .append(")").append(System.lineSeparator())
            .append(getTitleSeparator(failedMethodCount, failedIRRulesCount))
            .append(System.lineSeparator());
+        testClassResult.acceptChildren(this);
     }
 
     private static String getTitleSeparator(int failedMethodCount, int failedIRRulesCount) {
@@ -45,8 +46,9 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
     }
 
     @Override
-    public void doAction(IRMethodMatchResult irMethodMatchResult) {
+    public void visit(IRMethodMatchResult irMethodMatchResult) {
         appendIRMethodHeader(irMethodMatchResult);
+        irMethodMatchResult.acceptChildren(this);
     }
 
     private void appendIRMethodHeader(IRMethodMatchResult irMethodMatchResult) {
@@ -59,7 +61,7 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
     }
 
     @Override
-    public void doAction(NotCompiledResult notCompiledResult) {
+    public void visit(NotCompiledResult notCompiledResult) {
         appendIRMethodHeader(notCompiledResult);
         msg.append(getIndentation(irRuleIndentation))
            .append("* Method was not compiled. Did you specify a @Run method in STANDALONE mode? In this case, make " +
@@ -68,14 +70,17 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
     }
 
     @Override
-    public void doAction(IRRuleMatchResult irRuleMatchResult) {
+    public void visit(IRRuleMatchResult irRuleMatchResult) {
         msg.append(getIndentation(irRuleIndentation)).append("* @IR rule ").append(irRuleMatchResult.getRuleId()).append(": \"")
            .append(irRuleMatchResult.getIRAnno()).append("\"").append(System.lineSeparator());
+        CompilePhaseResultCollector compilePhaseResultCollector = new CompilePhaseResultCollector();
+        irRuleMatchResult.acceptChildren(this, compilePhaseResultCollector.collectSorted(irRuleMatchResult));
     }
 
     @Override
-    public void doAction(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+    public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
         appendCompilePhaseIRRule(compilePhaseIRRuleMatchResult);
+        compilePhaseIRRuleMatchResult.acceptChildren(this);
     }
 
     private void appendCompilePhaseIRRule(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
@@ -85,7 +90,7 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
     }
 
     @Override
-    public void doAction(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
+    public void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
         appendCompilePhaseIRRule(noCompilePhaseCompilationResult);
         msg.append(getIndentation(irRuleIndentation + 4))
            .append("- NO compilation output found for this phase! Make sure this phase is emitted or remove it from ")
@@ -94,7 +99,7 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
     }
 
     @Override
-    public void doAction(CheckAttributeMatchResult checkAttributeMatchResult) {
+    public void visit(CheckAttributeMatchResult checkAttributeMatchResult) {
         String checkAttributeFailureMsg;
         switch (checkAttributeMatchResult.getCheckAttributeKind()) {
             case FAIL_ON -> checkAttributeFailureMsg = "failOn: Graph contains forbidden nodes";
@@ -104,10 +109,11 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
         }
         msg.append(getIndentation(irRuleIndentation + 4)).append("- ").append(checkAttributeFailureMsg)
            .append(":").append(System.lineSeparator());
+        checkAttributeMatchResult.acceptChildren(this);
     }
 
     @Override
-    public void doAction(FailOnConstraintFailure failOnConstraintFailure) {
+    public void visit(FailOnConstraintFailure failOnConstraintFailure) {
         ConstraintFailureMessageBuilder constrainFailureMessageBuilder =
                 new ConstraintFailureMessageBuilder(failOnConstraintFailure,irRuleIndentation + 6);
         String failureMessage = constrainFailureMessageBuilder.buildConstraintHeader() +
@@ -116,17 +122,17 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultA
     }
 
     @Override
-    public void doAction(CountsConstraintFailure countsConstraintFailure) {
-        msg.append(new CountsConstraintFailureMessageBuilder(countsConstraintFailure, irRuleIndentation + 6).build());
+    public void visit(CountsConstraintFailure countsConstraintMatchResult) {
+        msg.append(new CountsConstraintFailureMessageBuilder(countsConstraintMatchResult, irRuleIndentation + 6).build());
     }
 
     @Override
     public String build() {
-        PreOrderMatchResultVisitor visitor = new PreOrderMatchResultVisitor(this);
-        visitResults(visitor);
+        visitResults(this);
         msg.append(System.lineSeparator())
            .append(">>> Check stdout for compilation output of the failed methods")
            .append(System.lineSeparator()).append(System.lineSeparator());
         return msg.toString();
     }
 }
+

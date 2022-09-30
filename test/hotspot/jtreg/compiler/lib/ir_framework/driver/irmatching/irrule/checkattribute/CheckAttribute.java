@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
@@ -45,5 +46,5 @@ abstract public class CheckAttribute implements Matchable {
     }
 
     @Override
-    abstract public CheckAttributeMatchResult match();
+    abstract public MatchResult match();
 }

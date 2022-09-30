@@ -25,13 +25,14 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
+import compiler.lib.ir_framework.shared.Comparison;
 
 import java.util.List;
-import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -43,43 +44,86 @@ import java.util.stream.Collectors;
  * <p>
  *
  * {@link FailOn} can directly use this class while {@link Counts} need some more information stored with the subclass
- * {@link CountsConstraint}.
  *
  * @see CheckAttribute
  * @see FailOn
  */
-abstract public class Constraint implements Matchable {
+public class Constraint implements Matchable {
     private final String regex;
     private final int index; // constraint indices start at 1.
     private final CompilePhase compilePhase;
     protected final String compilationOutput;
+    private final ConstraintCheck constraintCheck;
 
-    public Constraint(String regex, int index, CompilePhase compilePhase, String compilationOutput) {
+    private Constraint(ConstraintCheck constraintCheck, String regex, int index, CompilePhase compilePhase,
+                       String compilationOutput) {
+        this.constraintCheck = constraintCheck;
         this.regex = regex;
         this.index = index;
         this.compilePhase = compilePhase;
         this.compilationOutput = compilationOutput;
     }
 
-    public String getRegex() {
+    public static Constraint createFailOn(String regex, int index, CompilePhase compilePhase, String compilationOutput) {
+        return new Constraint(new FailOnConstraintCheck(), regex, index, compilePhase, compilationOutput);
+    }
+
+    public static Constraint createCounts(String regex, int index, Comparison<Integer> comparison,
+                                          CompilePhase compilePhase, String compilationOutput) {
+        return new Constraint(new CountsConstraintCheck(comparison), regex, index, compilePhase, compilationOutput);
+    }
+
+    public String regex() {
         return regex;
     }
 
-    public int getIndex() {
+    public int index() {
         return index;
     }
 
-    public CompilePhase getCompilePhase() {
+    public CompilePhase compilePhase() {
         return compilePhase;
     }
 
-    protected List<String> getMatchedNodes(String compilationOutput) {
+    protected List<String> matchNodes(String compilationOutput) {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(compilationOutput);
-        return matcher.results().map(MatchResult::group).collect(Collectors.toList());
+        return matcher.results().map(java.util.regex.MatchResult::group).collect(Collectors.toList());
     }
 
     @Override
-    abstract public ConstraintFailure match();
+    public MatchResult match() {
+        List<String> matchedNodes = matchNodes(compilationOutput);
+        return constraintCheck.check(this, matchedNodes);
+    }
 }
 
+interface ConstraintCheck {
+    MatchResult check(Constraint constraint, List<String> matchedNodes);
+}
+
+class FailOnConstraintCheck implements ConstraintCheck {
+    @Override
+    public MatchResult check(Constraint constraint, List<String> matchedNodes) {
+        if (!matchedNodes.isEmpty()) {
+            return new FailOnConstraintFailure(constraint, matchedNodes);
+        }
+        return ConstraintSuccess.getInstance();
+    }
+}
+
+class CountsConstraintCheck implements ConstraintCheck {
+    private final Comparison<Integer> comparison;
+
+    CountsConstraintCheck(Comparison<Integer> comparison) {
+        this.comparison = comparison;
+    }
+
+    @Override
+    public MatchResult check(Constraint constraint, List<String> matchedNodes) {
+        if (!comparison.compare(matchedNodes.size())) {
+            return new CountsConstraintFailure(constraint, matchedNodes, comparison);
+        }
+        return ConstraintSuccess.getInstance();
+    }
+}

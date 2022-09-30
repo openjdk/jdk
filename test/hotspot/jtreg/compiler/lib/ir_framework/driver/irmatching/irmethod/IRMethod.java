@@ -27,9 +27,9 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
@@ -97,9 +97,9 @@ public class IRMethod implements Matchable {
     @Override
     public IRMethodMatchResult match() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
-        List<IRRuleMatchResult> results = new ArrayList<>();
+        List<MatchResult> results = new ArrayList<>();
         for (IRRule irRule : irRules) {
-            IRRuleMatchResult result = irRule.match();
+            MatchResult result = irRule.match();
             if (result.fail()) {
                 results.add(result);
             }

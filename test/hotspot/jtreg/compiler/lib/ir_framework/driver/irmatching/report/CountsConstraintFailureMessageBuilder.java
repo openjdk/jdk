@@ -36,10 +36,10 @@ public class CountsConstraintFailureMessageBuilder {
     private final int matchedNodesSize;
     private final int indentation;
 
-    public CountsConstraintFailureMessageBuilder(CountsConstraintFailure countsConstraintFailure, int indentation) {
-        this.constrainFailureMessageBuilder = new ConstraintFailureMessageBuilder(countsConstraintFailure, indentation);
-        this.comparison = countsConstraintFailure.constraint().getComparison();
-        this.matchedNodesSize = countsConstraintFailure.matchedNodes().size();
+    public CountsConstraintFailureMessageBuilder(CountsConstraintFailure countsConstraintMatchResult, int indentation) {
+        this.constrainFailureMessageBuilder = new ConstraintFailureMessageBuilder(countsConstraintMatchResult, indentation);
+        this.comparison = countsConstraintMatchResult.comparison();
+        this.matchedNodesSize = countsConstraintMatchResult.matchedNodes().size();
         this.indentation = indentation;
     }
 

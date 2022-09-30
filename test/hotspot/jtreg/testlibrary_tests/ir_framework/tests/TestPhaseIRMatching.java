@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.FlagVMProcess;
 import compiler.lib.ir_framework.driver.TestVMProcess;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
@@ -36,8 +36,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConst
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
-import compiler.lib.ir_framework.driver.irmatching.visitor.PreOrderMatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import jdk.test.lib.Asserts;
 
 import java.lang.annotation.Repeatable;
@@ -72,7 +71,7 @@ public class TestPhaseIRMatching {
         List<String> testVMFlags = flagVMProcess.getTestVMFlags();
         TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1);
         IRMatcher matcher = new IRMatcher(testVMProcess.getHotspotPidFileName(), testVMProcess.getIrEncoding(), testClass);
-        TestClassResult result = matcher.getTestClass().match();
+        MatchResult result = matcher.getTestClass().match();
         List<Failure> expectedFails = new ExpectedFailsBuilder().build(testClass);
         List<Failure> foundFailures = new FailureBuilder().build(result);
         if (!expectedFails.equals(foundFailures)) {
@@ -360,55 +359,57 @@ class NoCompilationOutput {
 }
 
 
-class FailureBuilder implements MatchResultAction {
+class FailureBuilder implements MatchResultVisitor {
     private String methodName;
     private int ruleId;
     private CompilePhase compilePhase;
     private final Set<Failure> failures = new HashSet<>();
 
-    public List<Failure> build(TestClassResult testClassResult) {
-        PreOrderMatchResultVisitor preOrderMatchResultVisitor = new PreOrderMatchResultVisitor(this);
-        testClassResult.accept(preOrderMatchResultVisitor);
+    public List<Failure> build(MatchResult testClassResult) {
+        testClassResult.accept(this);
         return Failure.sort(failures);
     }
 
     @Override
-    public void doAction(IRMethodMatchResult irMethodMatchResult) {
+    public void visit(IRMethodMatchResult irMethodMatchResult) {
         methodName = irMethodMatchResult.getIRMethod().getMethod().getName();
+        irMethodMatchResult.acceptChildren(this);
     }
 
     @Override
-    public void doAction(NotCompiledResult notCompiledResult) {
+    public void visit(NotCompiledResult notCompiledResult) {
         methodName = notCompiledResult.getIRMethod().getMethod().getName();
         failures.add(new Failure(methodName, -1, CompilePhase.DEFAULT, CheckAttributeType.FAIL_ON, -1));
     }
 
     @Override
-    public void doAction(IRRuleMatchResult irRuleMatchResult) {
+    public void visit(IRRuleMatchResult irRuleMatchResult) {
         ruleId = irRuleMatchResult.getRuleId();
+        irRuleMatchResult.acceptChildren(this);
     }
 
     @Override
-    public void doAction(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+    public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
         compilePhase = compilePhaseIRRuleMatchResult.getCompilePhase();
+        compilePhaseIRRuleMatchResult.acceptChildren(this);
     }
 
     @Override
-    public void doAction(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
+    public void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
         CompilePhase compilePhase = noCompilePhaseCompilationResult.getCompilePhase();
         failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.FAIL_ON, -1));
     }
 
     @Override
-    public void doAction(FailOnConstraintFailure failOnConstraintFailure) {
+    public void visit(FailOnConstraintFailure failOnConstraintFailure) {
         failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.FAIL_ON,
-                                 failOnConstraintFailure.constraint().getIndex()));
+                                 failOnConstraintFailure.constraint().index()));
     }
 
     @Override
-    public void doAction(CountsConstraintFailure countsConstraintFailure) {
+    public void visit(CountsConstraintFailure countsConstraintMatchResult) {
         failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.COUNTS,
-                                 countsConstraintFailure.constraint().getIndex()));
+                                 countsConstraintMatchResult.constraint().index()));
     }
 }
 

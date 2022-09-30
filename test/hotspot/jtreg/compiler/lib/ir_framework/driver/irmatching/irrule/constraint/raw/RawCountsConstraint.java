@@ -29,7 +29,6 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraint;
 import compiler.lib.ir_framework.shared.Comparison;
 
 /**
@@ -48,11 +47,12 @@ public class RawCountsConstraint implements RawConstraint {
         this.comparison = comparison;
     }
 
+    @Override
     public Constraint parse(CompilePhase compilePhase, IRMethod irMethod) {
         if (compilePhase == CompilePhase.DEFAULT) {
             compilePhase = rawIRNode.defaultPhase();
         }
-        return new CountsConstraint(rawIRNode.regex(compilePhase), constraintIndex, compilePhase, comparison,
-                                    irMethod.getOutput(compilePhase));
+        return Constraint.createCounts(rawIRNode.regex(compilePhase), constraintIndex, comparison, compilePhase,
+                                       irMethod.getOutput(compilePhase));
     }
 }

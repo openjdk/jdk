@@ -58,7 +58,7 @@ public class TestClass implements Matchable {
     }
 
     @Override
-    public TestClassResult match() {
+    public MatchResult match() {
         TestClassResult result = new TestClassResult();
         for (IRMethod irMethod : irMethods) {
             IRMethodMatchResult IRMethodMatchResult = irMethod.match();

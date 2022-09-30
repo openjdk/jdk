@@ -25,9 +25,9 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 
@@ -60,9 +60,9 @@ public class CompilePhaseIRRule implements Matchable {
         return compilePhaseIRRuleMatchResult;
     }
 
-    private void matchCheckAttribute(CheckAttribute checkAttribute, Consumer<CheckAttributeMatchResult> consumer) {
+    private void matchCheckAttribute(CheckAttribute checkAttribute, Consumer<MatchResult> consumer) {
         if (checkAttribute != null) {
-            CheckAttributeMatchResult matchResult = checkAttribute.match();
+            MatchResult matchResult = checkAttribute.match();
             if (matchResult.fail()) {
                 consumer.accept(matchResult);
             }

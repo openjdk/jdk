@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
@@ -35,8 +34,8 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
  */
 public class CompilePhaseIRRuleMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
-    private CheckAttributeMatchResult failOnFailures = null;
-    private CheckAttributeMatchResult countsFailures = null;
+    private MatchResult failOnFailures = null;
+    private MatchResult countsFailures = null;
 
     public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase) {
         this.compilePhase = compilePhase;
@@ -51,11 +50,11 @@ public class CompilePhaseIRRuleMatchResult implements MatchResult {
         return compilePhase;
     }
 
-    public void setFailOnMatchResult(CheckAttributeMatchResult failOnFailures) {
+    public void setFailOnMatchResult(MatchResult failOnFailures) {
         this.failOnFailures = failOnFailures;
     }
 
-    public void setCountsMatchResult(CheckAttributeMatchResult countsFailures) {
+    public void setCountsMatchResult(MatchResult countsFailures) {
         this.countsFailures = countsFailures;
     }
 

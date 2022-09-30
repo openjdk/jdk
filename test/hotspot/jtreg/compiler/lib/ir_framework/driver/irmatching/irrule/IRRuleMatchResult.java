@@ -29,8 +29,8 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.Comparator;
-import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class represents an IR matching result of an {@link IRRule} (applied to all compile phases specified in
@@ -42,12 +42,7 @@ import java.util.TreeSet;
 public class IRRuleMatchResult implements MatchResult {
     private final int irRuleId;
     private final IR irAnno;
-    /**
-     * List of all compile phase match results for this IR rule which is sorted by the {@link CompilePhase} enum
-     * definition order.
-     */
-    private final TreeSet<CompilePhaseIRRuleMatchResult> compilePhaseIRRuleMatchResults
-            = new TreeSet<>(Comparator.comparingInt(r -> r.getCompilePhase().ordinal()));
+    private final List<MatchResult> compilePhaseIRRuleMatchResults = new ArrayList<>();
 
     public IRRuleMatchResult(IRRule irRule) {
         this.irRuleId = irRule.getRuleId();
@@ -62,7 +57,7 @@ public class IRRuleMatchResult implements MatchResult {
         return irAnno;
     }
 
-    public void addCompilePhaseIRMatchResult(CompilePhaseIRRuleMatchResult result) {
+    public void addCompilePhaseIRMatchResult(MatchResult result) {
         compilePhaseIRRuleMatchResults.add(result);
     }
 

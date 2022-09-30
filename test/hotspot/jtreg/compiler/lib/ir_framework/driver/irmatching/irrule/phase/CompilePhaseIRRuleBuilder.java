@@ -98,7 +98,7 @@ public class CompilePhaseIRRuleBuilder {
     private void createConstraintLists(Map<CompilePhase, ConstraintLists> constraintsMap, List<Constraint> constraints,
                                        boolean isFailOn) {
         Map<CompilePhase, List<Constraint>> constraintsByCompilePhase =
-                constraints.stream().collect(Collectors.groupingBy(Constraint::getCompilePhase));
+                constraints.stream().collect(Collectors.groupingBy(Constraint::compilePhase));
         constraintsByCompilePhase.forEach((phase, constraintList) -> {
             ConstraintLists constraintLists = constraintsMap.get(phase);
             if (constraintLists == null) {

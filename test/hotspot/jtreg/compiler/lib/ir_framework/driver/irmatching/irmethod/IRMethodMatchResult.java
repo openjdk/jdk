@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
 
@@ -39,9 +38,9 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
     /**
      * List of all IR rule match results which could have been applied on different compile phases.
      */
-    private final List<IRRuleMatchResult> irRulesMatchResults;
+    private final List<MatchResult> irRulesMatchResults;
 
-    public IRMethodMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
+    public IRMethodMatchResult(IRMethod irMethod, List<MatchResult> irRulesMatchResults) {
         this.irMethod = irMethod;
         this.irRulesMatchResults = irRulesMatchResults;
     }

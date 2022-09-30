@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRule;
@@ -66,7 +67,7 @@ public class IRRule implements Matchable {
      * Apply this IR rule by checking any failOn and counts attributes.
      */
     @Override
-    public IRRuleMatchResult match() {
+    public MatchResult match() {
         IRRuleMatchResult irRuleMatchResult = new IRRuleMatchResult(this);
         for (CompilePhaseIRRule compilePhaseIRRule : compilePhaseIRRules) {
             CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult = compilePhaseIRRule.match();

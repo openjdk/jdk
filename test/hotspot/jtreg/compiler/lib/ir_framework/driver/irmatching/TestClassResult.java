@@ -26,8 +26,8 @@ package compiler.lib.ir_framework.driver.irmatching;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class represents a test class matching result of a {@link TestClass}.
@@ -38,7 +38,7 @@ public class TestClassResult implements MatchResult {
     /**
      * List of all IR method results, sorted by method names.
      */
-    private final Set<IRMethodMatchResult> results = new TreeSet<>();
+    private final List<MatchResult> results = new ArrayList<>();
 
     @Override
     public boolean fail() {

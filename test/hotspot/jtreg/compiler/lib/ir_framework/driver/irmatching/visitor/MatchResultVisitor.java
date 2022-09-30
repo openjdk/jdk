@@ -38,14 +38,32 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCo
  * This interface specifies default visit methods for each {@link MatchResult} class which can be overridden.
  */
 public interface MatchResultVisitor {
-    default void visit(TestClassResult testClassResult) {}
-    default void visit(IRMethodMatchResult irMethodMatchResult) {}
+    default void visit(TestClassResult testClassResult) {
+        testClassResult.acceptChildren(this);
+    }
+
+    default void visit(IRMethodMatchResult irMethodMatchResult) {
+        irMethodMatchResult.acceptChildren(this);
+    }
+
     default void visit(NotCompiledResult notCompiledResult) {}
-    default void visit(IRRuleMatchResult irRuleMatchResult) {}
-    default void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {}
+
+    default void visit(IRRuleMatchResult irRuleMatchResult) {
+        irRuleMatchResult.acceptChildren(this);
+    }
+
+    default void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+        compilePhaseIRRuleMatchResult.acceptChildren(this);
+    }
+
     default void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {}
-    default void visit(CheckAttributeMatchResult checkAttributeMatchResult) {}
+
+    default void visit(CheckAttributeMatchResult checkAttributeMatchResult) {
+        checkAttributeMatchResult.acceptChildren(this);
+    }
+
     default void visit(FailOnConstraintFailure failOnConstraintFailure) {}
-    default void visit(CountsConstraintFailure countsConstraintFailure) {}
+
+    default void visit(CountsConstraintFailure countsConstraintMatchResult) {}
 }
 

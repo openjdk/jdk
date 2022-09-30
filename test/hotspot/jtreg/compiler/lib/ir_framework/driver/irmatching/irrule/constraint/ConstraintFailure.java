@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.List;
 
@@ -40,4 +41,23 @@ public interface ConstraintFailure extends MatchResult {
 
     Constraint constraint();
     List<String> matchedNodes();
+}
+
+class ConstraintSuccess implements MatchResult {
+    private static final ConstraintSuccess INSTANCE = new ConstraintSuccess();
+    private ConstraintSuccess() {}
+
+    public static ConstraintSuccess getInstance() {
+        return INSTANCE;
+    }
+
+    @Override
+    public boolean fail() {
+        return false;
+    }
+
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        // Must not be visited.
+    }
 }

@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
@@ -34,9 +34,9 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 abstract class ReportBuilder {
     protected final StringBuilder msg = new StringBuilder();
     private int methodNumber = 0;
-    private final TestClassResult testClassResult;
+    private final MatchResult testClassResult;
 
-    public ReportBuilder(TestClassResult testClassResult) {
+    public ReportBuilder(MatchResult testClassResult) {
         this.testClassResult = testClassResult;
     }
 

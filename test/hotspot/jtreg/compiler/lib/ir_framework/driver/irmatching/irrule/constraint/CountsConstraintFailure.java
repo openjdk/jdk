@@ -25,34 +25,17 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+import compiler.lib.ir_framework.shared.Comparison;
 
 import java.util.List;
 
 /**
- * This class represents a failure when applying a {@link CountsConstraint} on a compile phase output.
+ * This class represents a failure when applying a {@link Constraint} on a compile phase output.
  *
- * @see CountsConstraint
  * @see Counts
  */
-public class CountsConstraintFailure implements ConstraintFailure {
-    private final CountsConstraint countsConstraint;
-    private final List<String> matchedNodes;
-
-    public CountsConstraintFailure(CountsConstraint countsConstraint, List<String> matchedNodes) {
-        this.countsConstraint = countsConstraint;
-        this.matchedNodes = matchedNodes;
-    }
-
-    @Override
-    public CountsConstraint constraint() {
-        return countsConstraint;
-    }
-
-    @Override
-    public List<String> matchedNodes() {
-        return matchedNodes;
-    }
-
+public record CountsConstraintFailure(Constraint constraint, List<String> matchedNodes,
+                                      Comparison<Integer> comparison) implements ConstraintFailure {
     @Override
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);

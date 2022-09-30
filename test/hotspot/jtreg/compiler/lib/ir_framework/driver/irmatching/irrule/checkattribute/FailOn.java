@@ -25,8 +25,8 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -53,13 +53,13 @@ public class FailOn extends CheckAttribute {
 
     public FailOn(List<Constraint> constraints, String compilationOutput) {
         super(constraints);
-        String patternString = constraints.stream().map(Constraint::getRegex).collect(Collectors.joining("|"));
+        String patternString = constraints.stream().map(Constraint::regex).collect(Collectors.joining("|"));
         Pattern pattern = Pattern.compile(String.join("|", patternString));
         this.quickMatcher = pattern.matcher(compilationOutput);
     }
 
     @Override
-    public CheckAttributeMatchResult match() {
+    public MatchResult match() {
         CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeType.FAIL_ON);
         if (hasNoMatch()) {
             return checkAttributeMatchResult;
@@ -75,9 +75,9 @@ public class FailOn extends CheckAttribute {
 
     public void match(CheckAttributeMatchResult checkAttributeMatchResult) {
         for (Constraint constraint : constraints) {
-            ConstraintFailure constraintFailure = constraint.match();
-            if (constraintFailure != null) {
-                checkAttributeMatchResult.addFailure(constraintFailure);
+            MatchResult constraintMatchResult = constraint.match();
+            if (constraintMatchResult.fail()) {
+                checkAttributeMatchResult.addFailure(constraintMatchResult);
             }
         }
     }
