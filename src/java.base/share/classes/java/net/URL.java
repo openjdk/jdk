@@ -32,15 +32,11 @@ import java.net.spi.URLStreamHandlerProvider;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Hashtable;
+import java.util.*;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectInputStream.GetField;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 
 import jdk.internal.access.JavaNetURLAccess;
 import jdk.internal.access.SharedSecrets;
@@ -633,7 +629,7 @@ public final class URL implements java.io.Serializable {
             for (i = start ; !aRef && (i < limit) &&
                      ((c = spec.charAt(i)) != '/') ; i++) {
                 if (c == ':') {
-                    String s = URLUtil.lowerCaseProtocol(spec.substring(start, i));
+                    String s = lowerCaseProtocol(spec.substring(start, i));
                     if (isValidProtocol(s)) {
                         newProtocol = s;
                         start = i + 1;
@@ -1377,6 +1373,22 @@ public final class URL implements java.io.Serializable {
                 });
         } finally {
             endLookup(key);
+        }
+    }
+
+    /**
+     * Returns the protocol in lower case. Special cases known protocols
+     * to avoid loading locale classes during startup.
+     */
+    static String lowerCaseProtocol(String protocol) {
+        if (protocol.equals("jrt")) {
+            return "jrt";
+        } else if (protocol.equals("file")) {
+            return "file";
+        } else if (protocol.equals("jar")) {
+            return "jar";
+        } else {
+            return protocol.toLowerCase(Locale.ROOT);
         }
     }
 

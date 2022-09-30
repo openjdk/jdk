@@ -50,8 +50,15 @@ public class URLUtil {
 
         String protocol = url.getProtocol();
         if (protocol != null) {
-            /* protocol is compared case-insensitive, so convert to lowercase */
-            strForm.append(lowerCaseProtocol(protocol));
+            /* protocol is compared case-insensitive, so convert to lowercase
+             * if needed. URL will store from lower-cased String literals for
+             * built-in protocols, so avoid calling toLowerCase for these and
+             * use identity tests for speed
+             */
+            if (protocol != "file" && protocol != "jrt" && protocol && != "jar") {
+                protocol = protocol.toLowerCase();
+            }
+            strForm.append(protocol.toLowerCase());
             strForm.append("://");
         }
 
@@ -79,22 +86,6 @@ public class URLUtil {
         }
 
         return strForm.toString();
-    }
-
-    /**
-     * Returns the protocol in lower case. Special cases known protocols
-     * to avoid loading locale classes during startup.
-     */
-    public static String lowerCaseProtocol(String protocol) {
-        if (protocol.equals("jrt")) {
-            return "jrt";
-        } else if (protocol.equals("file")) {
-            return "file";
-        } else if (protocol.equals("jar")) {
-            return "jar";
-        } else {
-            return protocol.toLowerCase(Locale.ROOT);
-        }
     }
 
     public static Permission getConnectPermission(URL url) throws IOException {

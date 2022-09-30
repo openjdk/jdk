@@ -1094,7 +1094,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static void setDefaultUseCaches(String protocol, boolean defaultVal) {
-        protocol = URLUtil.lowerCaseProtocol(protocol);
+        protocol = URL.lowerCaseProtocol(protocol);
         defaultCaching.put(protocol, defaultVal);
     }
 
@@ -1110,7 +1110,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static boolean getDefaultUseCaches(String protocol) {
-        Boolean protoDefault = defaultCaching.get(URLUtil.lowerCaseProtocol(protocol));
+        Boolean protoDefault = defaultCaching.get(URL.lowerCaseProtocol(protocol));
         if (protoDefault != null) {
             return protoDefault.booleanValue();
         } else {
