@@ -1,7 +1,6 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2022, BELLSOFT. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +20,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_RISCV_CODEBUFFER_RISCV_HPP
-#define CPU_RISCV_CODEBUFFER_RISCV_HPP
+/**
+* @test
+* @summary Test intrinsic for Double.isFinite.
+* @requires os.arch == "riscv64"
+* @library /test/lib /
+* @run driver compiler.intrinsics.TestDoubleIsFinite
+*/
 
-private:
-  void pd_initialize() {}
-  bool pd_finalize_stubs();
+package compiler.intrinsics;
+import compiler.lib.ir_framework.*;
 
-public:
-  void flush_bundle(bool start_new_bundle) {}
-  static constexpr bool supports_shared_stubs() { return true; }
+public class TestDoubleIsFinite extends TestDoubleClassCheck {
+    public static void main(String args[]) {
+        TestFramework.run(TestDoubleIsFinite.class);
+    }
 
-  void share_trampoline_for(address dest, int caller_offset);
-
-#endif // CPU_RISCV_CODEBUFFER_RISCV_HPP
+    @Test // needs to be run in (fast) debug mode
+    @Warmup(10000)
+    @IR(counts = {"IsFiniteD", ">= 1"}) // At least one IsFiniteD node is generated if intrinsic is used
+    public void testIsFinite() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            outputs[i] = Double.isFinite(inputs[i]);
+        }
+        checkResult("isFinite");
+    }
+}

@@ -69,7 +69,6 @@ size_t CardTable::compute_byte_map_size(size_t num_bytes) {
 
 CardTable::CardTable(MemRegion whole_heap) :
   _whole_heap(whole_heap),
-  _last_valid_index(0),
   _page_size(os::vm_page_size()),
   _byte_map_size(0),
   _byte_map(NULL),
@@ -90,7 +89,6 @@ CardTable::~CardTable() {
 
 void CardTable::initialize() {
   size_t num_cards = cards_required(_whole_heap.word_size());
-  _last_valid_index = num_cards - 1;
 
   // each card takes 1 byte; + 1 for the guard card
   size_t num_bytes = num_cards + 1;
@@ -121,15 +119,15 @@ void CardTable::initialize() {
   _byte_map = (CardValue*) heap_rs.base();
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
-  assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
+  assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
 
   CardValue* guard_card = &_byte_map[num_cards];
   assert(is_aligned(guard_card, _page_size), "must be on its own OS page");
   _guard_region = MemRegion((HeapWord*)guard_card, _page_size);
 
   log_trace(gc, barrier)("CardTable::CardTable: ");
-  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[_last_valid_index]: " PTR_FORMAT,
-                  p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
+  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[last_valid_index()]: " PTR_FORMAT,
+                  p2i(&_byte_map[0]), p2i(&_byte_map[last_valid_index()]));
   log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT, p2i(_byte_map_base));
 }
 
@@ -295,7 +293,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
     } else {
       entry = byte_after(old_region.last());
     }
-    assert(index_for(new_region.last()) <=  _last_valid_index,
+    assert(index_for(new_region.last()) <=  last_valid_index(),
       "The guard card will be overwritten");
     // This line commented out cleans the newly expanded region and
     // not the aligned up expanded region.
