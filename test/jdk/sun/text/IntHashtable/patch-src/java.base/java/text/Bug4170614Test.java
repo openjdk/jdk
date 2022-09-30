@@ -22,11 +22,6 @@
  */
 
 /*
-    (this test doesn't have an at-test tag because it's run by Bug4170614TestRun.java
-     instead of directly by the test harness)
-*/
-
-/*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
@@ -61,6 +56,15 @@
  * DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
  *
  */
+
+/* @test
+ * @bug 4170614
+ * @summary Test internal hashCode() and equals() functions
+ * @library ../../../../patch-src
+ * @build java.base/java.text.Bug4170614Test
+ * @run main java.base/java.text.Bug4170614Test
+ */
+
 package java.text;
 import sun.text.IntHashtable;
 
