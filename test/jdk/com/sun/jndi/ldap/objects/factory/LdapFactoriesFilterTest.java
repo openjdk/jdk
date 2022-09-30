@@ -36,9 +36,9 @@ import java.util.Hashtable;
 /*
  * @test
  * @bug 8290368
- * @summary test how JDK system properties controls objects reconstruction
- *  from naming references with a local object factory specified obtained
- *  during LDAP lookup operations.
+ * @summary Checks if LDAP specific objects factory filter system and security
+ *  properties can be used to restrict usage of object factories during
+ *  LDAP lookup operations.
  * @modules java.naming/com.sun.jndi.ldap
  * @library /test/lib ../../lib /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils TestFactory

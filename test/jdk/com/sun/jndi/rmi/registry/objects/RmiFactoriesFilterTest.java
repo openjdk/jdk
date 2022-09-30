@@ -33,9 +33,9 @@ import java.util.Hashtable;
 /*
  * @test
  * @bug 8290368
- * @summary Checks if RMI specific objects factory filter system property
- *  (jdk.jndi.rmi.object.factoriesFilter) can be used to restrict usages
- *  of object factories during RMI lookup operations.
+ * @summary Checks if RMI specific objects factory filter system and security
+ *  properties can be used to restrict usage of object factories during
+ *  RMI lookup operations.
  * @modules java.rmi/sun.rmi.registry
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
@@ -104,20 +104,17 @@ import java.util.Hashtable;
 public class RmiFactoriesFilterTest {
 
     public static void main(String[] args) throws Exception {
+        boolean classExpectedToLoad = Boolean.parseBoolean(args[0]);
+        int registryPort;
         try {
-            boolean classExpectedToLoad = Boolean.parseBoolean(args[0]);
-            int registryPort;
-            try {
-                Registry registry = TestLibrary.createRegistryOnEphemeralPort();
-                registryPort = TestLibrary.getRegistryPort(registry);
-                System.out.println("Registry port: " + registryPort);
-            } catch (RemoteException re) {
-                throw new RuntimeException("Failed to create registry", re);
-            }
-
-            loadUsingFactoryFromTCCL(registryPort, classExpectedToLoad);
-        } finally {
+            Registry registry = TestLibrary.createRegistryOnEphemeralPort();
+            registryPort = TestLibrary.getRegistryPort(registry);
+            System.out.println("Registry port: " + registryPort);
+        } catch (RemoteException re) {
+            throw new RuntimeException("Failed to create registry", re);
         }
+
+        loadUsingFactoryFromTCCL(registryPort, classExpectedToLoad);
     }
 
     private static void loadUsingFactoryFromTCCL(int registryPort, boolean classExpectedToLoad)
