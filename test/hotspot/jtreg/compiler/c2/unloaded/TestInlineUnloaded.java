@@ -173,10 +173,6 @@ public class TestInlineUnloaded {
             Runnable r = (Runnable) test.getDeclaredConstructor(testClass, invClass)
                                        .newInstance(caller, callee);
 
-            if (args.length > 1 && "-preload".equals(args[1])) {
-                Class.forName(THIS_CLASS + "$Parent$U", false, parentCL);
-            }
-
             for (int i = 0; i < 20_000; i ++) {
                 r.run();
             }
