@@ -88,21 +88,25 @@ public final class ChunkHeader {
         if (major != 1 && major != 2) {
             throw new IOException("File version " + major + "." + minor + ". Only Flight Recorder files of version 1.x and 2.x can be read by this JDK.");
         }
-        long c = input.readRawLong(); // chunk size
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: chunkSize=" + c);
-        long cp = input.readRawLong(); // constant pool position
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: constantPoolPosition=" + cp);
-        long mp = input.readRawLong(); // metadata position
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: metadataPosition=" + mp);
-        chunkStartNanos = input.readRawLong(); // nanos since epoch
+        // Chunk size, constant pool position and metadata position are
+        // updated by JVM and not reliable to read
+        input.skipBytes(3 * Long.BYTES);
+
+        chunkStartNanos = input.readRawLong();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: startNanos=" + chunkStartNanos);
-        durationNanos = input.readRawLong(); // duration nanos, not used
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: durationNanos=" + durationNanos);
+
+        // Duration nanos, updated by JVM and not reliable to read
+        input.skipBytes(Long.BYTES);
+
         chunkStartTicks = input.readRawLong();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: startTicks=" + chunkStartTicks);
+
         ticksPerSecond = input.readRawLong();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: ticksPerSecond=" + ticksPerSecond);
-        input.readRawInt(); // ignore file state and flag bits
+
+        // File state and flag bit, updated by JVM and not reliable to read
+        input.skipBytes(Integer.BYTES);
+
         refresh();
         input.position(absoluteEventStart);
     }
