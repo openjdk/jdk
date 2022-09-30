@@ -232,7 +232,11 @@ static void runUnitTestsInner(int argc, char** argv) {
   bool is_vmassert_test = false;
   bool is_othervm_test = false;
   // death tests facility is used for both regular death tests, other vm and vmassert tests
+#ifndef GTEST_FLAG_GET
   if (::testing::internal::GTEST_FLAG(internal_run_death_test).length() > 0) {
+#else
+  if (::testing::GTEST_FLAG(internal_run_death_test).length() > 0) {
+#endif
     // when we execute death test, filter value equals to test name
     const char* test_name = ::testing::GTEST_FLAG(filter).c_str();
     const char* const othervm_suffix = "_other_vm"; // TEST_OTHER_VM
