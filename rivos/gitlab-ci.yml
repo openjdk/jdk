@@ -1,0 +1,282 @@
+
+include:
+  - project: 'rv/it/int/rivos-sdk'
+    ref: rivos/main
+    file: '/packager/gitlab-ci-packaging-helper.yml'
+
+variables:
+  CACHE_VERSION: "v2"
+
+prepare-version:
+  after_script:
+    - |
+      source make/conf/version-numbers.conf
+      if test -n "${CI_COMMIT_TAG}" && test "${CI_COMMIT_TAG}" =~ '^jdk\-\(.*\)-rivos$'; then
+        echo "JDK_VERSION_PKG=$(echo "${CI_COMMIT_TAG}" | sed 's/^jdk-\(.*\)-rivos$/\1/')" >> gitvars.env
+        echo "JDK_VERSION_TAG=${JDK_VERSION_PKG}" >> gitvars.env
+        echo "JDK_VERSION_PRE=ea" >> gitvars.env
+        echo "JDK_VERSION_OPT=" >> gitvars.env
+      else
+        echo "JDK_VERSION_PKG=${DEFAULT_VERSION_FEATURE}" >> gitvars.env
+        echo "JDK_VERSION_TAG=${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}" >> gitvars.env
+        echo "JDK_VERSION_PRE=internal" >> gitvars.env
+        echo "JDK_VERSION_OPT=${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}" >> gitvars.env
+      fi
+    # Debugging helper
+    - cat gitvars.env
+
+create-sysroot-ubuntu-jammy-amd64:
+  stage: prebuild
+  image: ubuntu:20.04
+  cache:
+    - key: sysroot-ubuntu-jammy-amd64-${CACHE_VERSION}
+      paths:
+        - sysroot-ubuntu-jammy-amd64
+  script:
+    # early exit if sysroot-ubuntu-jammy-amd64 is coming from the cache
+    - test -d sysroot-ubuntu-jammy-amd64 && exit 0
+    - apt-get update
+    - apt-get install -y debootstrap
+    - |
+      debootstrap                                                              \
+        --verbose                                                              \
+        --components=main,universe                                             \
+        --include=symlinks,qemu-user-static                                    \
+        --resolve-deps                                                         \
+        jammy                                                                  \
+        sysroot-ubuntu-jammy-amd64
+    - chroot sysroot-ubuntu-jammy-amd64 symlinks -cr .
+    - rm -rf sysroot-ubuntu-jammy-amd64/{dev,proc,run,sys}
+  artifacts:
+    when: always
+    paths:
+      - sysroot-ubuntu-jammy-amd64
+
+create-sysroot-ubuntu-jammy-rv64:
+  stage: prebuild
+  image: ubuntu:20.04
+  tags:
+    - docker-qemu-binfmt
+  dependencies:
+    - create-sysroot-ubuntu-jammy-amd64
+  needs:
+    - create-sysroot-ubuntu-jammy-amd64
+  cache:
+    - when: on_success
+      key: sysroot-ubuntu-jammy-rv64-${CACHE_VERSION}
+      paths:
+        - sysroot-ubuntu-jammy-rv64
+  script:
+    # early exit if sysroot-ubuntu-jammy-rv64 is coming from the cache
+    - test -d sysroot-ubuntu-jammy-rv64 && exit 0
+    - apt-get update
+    - apt-get install -y debootstrap qemu-user-static
+    - |
+      qemu-debootstrap                                                         \
+        --verbose                                                              \
+        --arch=riscv64                                                         \
+        --components=main,universe                                             \
+        --include=symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
+        --resolve-deps                                                         \
+        jammy                                                                  \
+        sysroot-ubuntu-jammy-rv64
+    - cp -a sysroot-ubuntu-jammy-amd64/usr/bin/qemu-riscv64-static sysroot-ubuntu-jammy-rv64/usr/bin
+    - chroot sysroot-ubuntu-jammy-rv64 symlinks -cr .
+    - rm -rf sysroot-ubuntu-jammy-rv64/{dev,proc,run,sys}
+  artifacts:
+    when: always
+    paths:
+      - sysroot-ubuntu-jammy-rv64
+
+build-linux-amd64:
+  stage: build
+  image: ubuntu:20.04
+  dependencies:
+    - prepare-version
+  needs:
+    - prepare-version
+  script:
+    - apt-get update
+    - |
+      apt-get install -y                                                       \
+        autoconf                                                               \
+        build-essential                                                        \
+        curl                                                                   \
+        file                                                                   \
+        g++                                                                    \
+        gcc                                                                    \
+        libx11-dev                                                             \
+        libxext-dev                                                            \
+        libxrender-dev                                                         \
+        libxrandr-dev                                                          \
+        libxtst-dev                                                            \
+        libxt-dev                                                              \
+        libcups2-dev                                                           \
+        libfontconfig1-dev                                                     \
+        libasound2-dev                                                         \
+        libfreetype6-dev                                                       \
+        libpng-dev                                                             \
+        unzip                                                                  \
+        zip                                                                    \
+        zlib1g-dev
+    - |
+      mkdir -p /usr/lib/jvm/zulu-18
+      curl -L https://cdn.azul.com/zulu/bin/zulu18.32.13-ca-jdk18.0.2.1-linux_x64.tar.gz \
+        | tar -xzf - -C /usr/lib/jvm/zulu-18 --strip-components 1
+    - |
+      bash configure                                                           \
+        --openjdk-target=x86_64-linux-gnu                                      \
+        --with-conf-name=linux-amd64                                           \
+        --with-vendor-name="Rivos Inc"                                         \
+        --with-version-pre="${JDK_VERSION_PRE}"                                \
+        --with-version-opt="${JDK_VERSION_OPT}"                                \
+        --with-boot-jdk=/usr/lib/jvm/zulu-18                                   \
+        --disable-precompiled-headers                                          \
+        --with-zlib=system
+    - make jdk-image test-image LOG_LEVEL=info
+  artifacts:
+    when: always
+    paths:
+      - config.log # in case of error during configure
+      - build/linux-amd64/images/jdk
+      - build/linux-amd64/images/test
+
+build-linux-rv64:
+  stage: build
+  image: ubuntu:20.04
+  dependencies:
+    - prepare-version
+    - create-sysroot-ubuntu-jammy-rv64
+    - build-linux-amd64
+  needs:
+    - prepare-version
+    - create-sysroot-ubuntu-jammy-rv64
+    - build-linux-amd64
+  script:
+    - apt-get update
+    - |
+      apt-get install -y                                                       \
+        autoconf                                                               \
+        build-essential                                                        \
+        curl                                                                   \
+        file                                                                   \
+        g++                                                                    \
+        g++-riscv64-linux-gnu                                                  \
+        gcc                                                                    \
+        gcc-riscv64-linux-gnu                                                  \
+        libasound2-dev                                                         \
+        libcups2-dev                                                           \
+        libxrandr-dev                                                          \
+        libxtst-dev                                                            \
+        unzip                                                                  \
+        zip                                                                    \
+        zlib1g-dev
+    - |
+      mkdir -p /usr/lib/jvm/zulu-18
+      curl -L https://cdn.azul.com/zulu/bin/zulu18.32.13-ca-jdk18.0.2.1-linux_x64.tar.gz \
+        | tar -xzf - -C /usr/lib/jvm/zulu-18 --strip-components 1
+    - |
+      bash configure                                                           \
+        --openjdk-target=riscv64-linux-gnu                                     \
+        --with-conf-name=linux-rv64                                            \
+        --with-vendor-name="Rivos Inc"                                         \
+        --with-version-pre="${JDK_VERSION_PRE}"                                \
+        --with-version-opt="${JDK_VERSION_OPT}"                                \
+        --with-sysroot=$(pwd)/sysroot-ubuntu-jammy-rv64                        \
+        --with-boot-jdk=/usr/lib/jvm/zulu-18                                   \
+        --with-build-jdk=$(pwd)/build/linux-amd64/images/jdk                   \
+        --disable-precompiled-headers                                          \
+        --with-zlib=system
+    - make jdk-image test-image LOG_LEVEL=info
+  artifacts:
+    when: always
+    paths:
+      - config.log # in case of error during configure
+      - build/linux-rv64/images/jdk
+      - build/linux-rv64/images/test
+
+package-tar:
+  stage: deploy
+  image: ubuntu:20.04
+  dependencies:
+    - prepare-version
+    - build-linux-amd64
+    - build-linux-rv64
+  needs:
+    - prepare-version
+    - build-linux-amd64
+    - build-linux-rv64
+  script:
+    - apt-get update
+    - apt-get install -y curl
+    - tar -czf jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz -C build/linux-amd64/images jdk
+    - 'curl -i --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jdk/${JDK_VERSION_TAG}/jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz"'
+    - tar -czf jdk-${JDK_VERSION_TAG}-linux-rv64.tar.gz -C build/linux-rv64/images jdk
+    - 'curl -i --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file jdk-${JDK_VERSION_TAG}-linux-rv64.tar.gz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jdk/${JDK_VERSION_TAG}/jdk-${JDK_VERSION_TAG}-linux-rv64.tar.gz"'
+
+package-deb:
+  extends: .deploy-deb
+  dependencies:
+    - prepare-version
+    - build-linux-amd64
+    - build-linux-rv64
+  needs:
+    - prepare-version
+    - build-linux-amd64
+    - build-linux-rv64
+  variables:
+    PKG_ARCH: "all"
+    PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
+    PKG_LICENSE: "GPL-2.0 license"
+    PKG_UPSTREAM_VERSION: "${JDK_VERSION_PKG}"
+  before_script:
+    # clean up pre-built binaries from the rivos-sdk
+    - rm -rf /rivos/jdk /rivos/sysroot/riscv/rivos/jdk
+    # move the previous temporary install
+    - mkdir -p /rivos/sysroot/riscv/rivos
+    - cp -a build/linux-amd64/images/jdk /rivos/
+    - cp -a build/linux-rv64/images/jdk /rivos/sysroot/riscv/rivos
+    # remove *.debuginfo files, they take a lot of space
+    - find /rivos/jdk /rivos/sysroot/riscv/rivos/jdk -type f -name '*.debuginfo' -exec rm -f {} \; -print
+
+package-deb-dbg:
+  extends: .deploy-deb
+  dependencies:
+    - prepare-version
+    - build-linux-amd64
+    - build-linux-rv64
+  needs:
+    - prepare-version
+    - build-linux-amd64
+    - build-linux-rv64
+  variables:
+    PKG_ARCH: "all"
+    PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
+    PKG_LICENSE: "GPL-2.0 license"
+    PKG_NAME: "${PROJECT_NAME}-dbg"
+    PKG_UPSTREAM_VERSION: "${JDK_VERSION_PKG}"
+  before_script:
+    # clean up pre-built binaries from the rivos-sdk
+    - rm -rf /rivos/jdk /rivos/sysroot/riscv/rivos/jdk
+    # move the previous temporary install
+    - mkdir -p /rivos/sysroot/riscv/rivos
+    - cp -a build/linux-amd64/images/jdk /rivos/
+    - cp -a build/linux-rv64/images/jdk /rivos/sysroot/riscv/rivos
+    # remove non *.debuginfo files, we only want *.debuginfo for the -dbg package
+    - find /rivos/jdk /rivos/sysroot/riscv/rivos/jdk \( -xtype f -or -xtype l \) -not -name '*.debuginfo' -exec rm -f {} \; -print
+    - find /rivos/jdk /rivos/sysroot/riscv/rivos/jdk -type d -print | sort -r | xargs -I{} bash -c "rmdir {} || true"
+
+deploy-module-ubuntu:
+  extends: .deploy-module
+  dependencies:
+    - prepare-version
+    - build-linux-amd64
+  needs:
+    - prepare-version
+    - build-linux-amd64
+  variables:
+    CONTENT_PATH: "build/linux-amd64/images/jdk"
+
+# Rebuild the rivos-sdk where we are exporting the artifacts built here.
+update-sdk:
+  extends: .update-sdk
