@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,10 +504,23 @@ public abstract class URLStreamHandler {
                              String query, String ref) {
         if (this != u.handler) {
             throw new SecurityException("handler for url different from " +
-                                        "this handler");
-        } else if (host != null && u.isBuiltinStreamHandler(this)) {
-            String s = IPAddressUtil.checkHostString(host);
-            if (s != null) throw new IllegalArgumentException(s);
+                    "this handler");
+        }
+        // if early parsing, perform additional checks here rather than waiting
+        // for openConnection()
+        boolean earlyURLParsing = IPAddressUtil.earlyURLParsing();
+        boolean isBuiltInHandler = u.isBuiltinStreamHandler(this);
+        if (host != null && isBuiltInHandler) {
+            String errMsg = IPAddressUtil.checkHostString(host);
+            if (errMsg != null) throw new IllegalArgumentException(errMsg);
+        }
+        if (userInfo != null && isBuiltInHandler && earlyURLParsing) {
+            String errMsg = IPAddressUtil.checkUserInfo(userInfo);
+            if (errMsg != null) throw new IllegalArgumentException(errMsg);
+        }
+        if (authority != null && isBuiltInHandler && earlyURLParsing) {
+            String errMsg = IPAddressUtil.checkAuth(authority);
+            if (errMsg != null) throw new IllegalArgumentException(errMsg);
         }
         // ensure that no one can reset the protocol on a given URL.
         u.set(u.getProtocol(), host, port, authority, userInfo, path, query, ref);
