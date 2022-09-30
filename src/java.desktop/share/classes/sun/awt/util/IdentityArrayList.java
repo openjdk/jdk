@@ -143,7 +143,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
         elementData = c.toArray();
         size = elementData.length;
         // defend against c.toArray (incorrectly) not returning Object[]
-        // (see e.g. https://bugs.openjdk.java.net/browse/JDK-6260652)
+        // (see e.g. https://bugs.openjdk.org/browse/JDK-6260652)
         if (elementData.getClass() != Object[].class)
             elementData = Arrays.copyOf(elementData, size, Object[].class);
     }

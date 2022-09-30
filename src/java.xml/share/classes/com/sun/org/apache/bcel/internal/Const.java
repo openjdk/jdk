@@ -469,7 +469,7 @@ public final class Const {
 
   /**
    * Marks a constant pool entry as dynamically computed.
-   * @see  <a href="https://bugs.openjdk.java.net/secure/attachment/74618/constant-dynamic.html">
+   * @see  <a href="https://bugs.openjdk.org/secure/attachment/74618/constant-dynamic.html">
    * Change request for JEP 309</a>
    * @since 6.3
    */

@@ -112,7 +112,7 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
      * this is denoted by the {@code IntrinsicCandidate} annotation. In earlier JDK versions, this
      * method returns true.
      *
-     * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8076112">JDK-8076112</a>
+     * @see <a href="https://bugs.openjdk.org/browse/JDK-8076112">JDK-8076112</a>
      */
     boolean isIntrinsicCandidate();
 

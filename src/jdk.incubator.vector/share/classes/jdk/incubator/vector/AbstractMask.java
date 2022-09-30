@@ -225,7 +225,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         // For integral types, *all* lane bits will be set.
         // The bits for -1.0 are like {0b10111*0000*}.
         // FIXME: Use a conversion intrinsic for this operation.
-        // https://bugs.openjdk.java.net/browse/JDK-8225740
+        // https://bugs.openjdk.org/browse/JDK-8225740
         return (AbstractVector<E>) zero.blend(mone, this);
     }
 

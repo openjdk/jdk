@@ -114,7 +114,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         // are already clipped.  At this point we convert
         // them from internal ints (or bytes) into the ETYPE.
         // FIXME: Use a conversion intrinsic for this operation.
-        // https://bugs.openjdk.java.net/browse/JDK-8225740
+        // https://bugs.openjdk.org/browse/JDK-8225740
         return (AbstractVector<E>) vspecies().fromIntValues(toArray());
     }
 

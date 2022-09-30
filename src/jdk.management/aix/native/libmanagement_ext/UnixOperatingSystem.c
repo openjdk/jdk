@@ -25,7 +25,7 @@
  */
 
 /* Empty stubs for now to satisfy the new build process.                 */
-/* Implement and update https://bugs.openjdk.java.net/browse/JDK-8030957 */
+/* Implement and update https://bugs.openjdk.org/browse/JDK-8030957 */
 
 #include <jni.h>
 #include "com_sun_management_internal_OperatingSystemImpl.h"
