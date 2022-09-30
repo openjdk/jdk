@@ -93,7 +93,6 @@ public class SwitchNull {
             case C: return 2;
             case null: return -1;
         }
-        throw new AssertionError(String.valueOf(e));
     }
 
     private int switchEnumWithDefault(E e) {

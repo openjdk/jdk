@@ -694,7 +694,7 @@ public class Flow {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
             }
-            if (!tree.hasUnconditionalPattern) {
+            if (!tree.hasUnconditionalPattern && !exhaustiveSwitch) {
                 alive = Liveness.ALIVE;
             }
             alive = alive.or(resolveBreaks(tree, prevPendingExits));
