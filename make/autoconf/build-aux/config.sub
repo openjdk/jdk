@@ -27,8 +27,6 @@
 # autoconf system (which might easily get lost in a future update), we
 # wrap it and fix the broken property, if needed.
 
-echo "Executing Script  :-  $0"
-
 DIR=`dirname $0`
 
 if echo $* | grep linux-musl >/dev/null ; then

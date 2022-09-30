@@ -22,27 +22,6 @@
 # questions.
 #
 
-echo "inner configure"
-pwd
-echo
-
-echo '$?  :-  ' $?
-echo '$*  :-  ' $*
-echo '$@  :-  ' $@
-echo 
-
-echo '$0  :-  ' $0
-echo '$1  :-  ' $1
-echo '$2  :-  ' $2
-echo '$3  :-  ' $3
-echo '$4  :-  ' $4
-echo '$5  :-  ' $5
-echo '$6  :-  ' $6
-echo '$7  :-  ' $7
-echo '$8  :-  ' $8
-echo '$9  :-  ' $9
-echo 
-
 if test "x$1" != xCHECKME; then
   echo "ERROR: Calling this wrapper script directly is not supported."
   echo "Use the 'configure' script in the top-level directory instead."
@@ -158,30 +137,8 @@ generate_configure_script() {
     custom_script_dir_include=""
   fi
 
-  echo '$build_support_dir  :-  ' $build_support_dir
-  echo 
-
   mkdir -p "$build_support_dir"
   # Call autoconf but replace the "magic" variable in configure.ac if requested.
-
-  echo '$conf_script_dir  :-  ' $conf_script_dir
-  echo 
-
-  echo '$custom_patcher  :-  ' $custom_patcher
-  echo 
-
-  echo '$custom_script_dir_include  :-  ' $custom_script_dir_include
-  echo 
-
-  echo '$generated_script  :-  ' $generated_script
-  echo 
-
-  echo "ERROR IS COMING HERE  :  $0  :  Line 179"
-  echo 
-
-  echo '${AUTOCONF}  :  ' ${AUTOCONF}
-
-  echo 
 
   cat "$conf_script_dir/configure.ac" | eval $custom_patcher | \
       ${AUTOCONF} -W all $custom_script_dir_include -I"$conf_script_dir" - \
