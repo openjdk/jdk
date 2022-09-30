@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLPermission;
 import java.security.Permission;
-import java.util.Locale;
 
 /**
  * URL Utility class.
