@@ -63,23 +63,11 @@ import javax.swing.UIManager;
  * in the border region at different scales by checking the midpoints
  * and corners of the border.
  *
- * @requires (os.family == "mac")
+ * @requires (os.family == "mac" | os.family == "linux")
  * @run main/othervm -Dsun.java2d.uiScale=1 InternalFrameBorderTest
  * @run main/othervm -Dsun.java2d.uiScale=2 InternalFrameBorderTest
  */
 
-/*
- * @test
- * @bug 8015739
- * @key headful
- * @summary Tests whether background color of JInternalFrame is visible
- * in the border region at different scales by checking the midpoints
- * and corners of the border.
- * @requires (os.family == "linux")
- *
- * @run main/othervm -Dsun.java2d.uiScale=1 InternalFrameBorderTest
- * @run main/othervm -Dsun.java2d.uiScale=2 InternalFrameBorderTest
- */
 public class InternalFrameBorderTest {
     private static final int FRAME_SIZE = 300;
     private static final int INTFRAME_SIZE = 200;
