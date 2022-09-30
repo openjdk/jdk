@@ -218,7 +218,7 @@ throwFileNotFoundException(JNIEnv *env, jstring path)
     if (error != 0) buf = strerror(error);
     if (buf != NULL) {
 #endif
-    	why = JNU_NewStringPlatform(env, buf);
+        why = JNU_NewStringPlatform(env, buf);
         CHECK_NULL(why);
     }
     x = JNU_NewObjectByName(env,

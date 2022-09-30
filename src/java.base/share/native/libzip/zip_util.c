@@ -1539,8 +1539,8 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             if (n == -1) {
                 if (msg == 0) {
                     int error = errno;
-                	if (error != 0) buffer = strerror(error);
-                	if (buffer != NULL) msg = buffer;
+                    if (error != 0) buffer = strerror(error);
+                    if (buffer != NULL) msg = buffer;
                 }
                 jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
                 return JNI_FALSE;
@@ -1557,8 +1557,8 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             }
             if (msg == 0) {
                 int error = errno;
-            	if (error != 0) buffer = strerror(error);
-            	if (buffer != NULL) msg = buffer;
+                if (error != 0) buffer = strerror(error);
+                if (buffer != NULL) msg = buffer;
             }
             jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
             return JNI_FALSE;
