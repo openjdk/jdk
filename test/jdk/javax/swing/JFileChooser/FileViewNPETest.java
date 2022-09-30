@@ -65,10 +65,16 @@ public class FileViewNPETest {
         //Initialize the components
         final String INSTRUCTIONS = """
                 Instructions to Test:
-                1. Select any folder except "C:\\temp" (In windows) / "/tmp"
-                (In linux) and click to traverse through it.
-                2. Repeat the traversal try (2 times) and on second try if
-                NPE occurs then test FAILS else test PASS.
+                1. The traversable folder set is "C:\\temp" (In windows)
+                & "/tmp" (In linux), other than these folder all other
+                folders are considered as non-traversable.
+                2. When file chooser appears on screen, select any
+                non-traversable folder (ex-C:/ in windows, / folder in linux)
+                from "Look-In" ComboBox by mouse click/key press. (The folder
+                will not be opened since its non-traversable). Select the same
+                folder again.
+                3. If NPE occurs on second selection then test FAILS, else test
+                is PASS.
                 """;
         frame = new JFrame("JFileChooser File View NPE test");
         passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 5, 40);
