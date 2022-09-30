@@ -88,8 +88,6 @@
   nonstatic_field(BarrierSet::FakeRtti,        _concrete_tag,                                 BarrierSet::Name)                      \
                                                                                                                                      \
   nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
-  nonstatic_field(CardTable,                   _guard_index,                                  const size_t)                          \
-  nonstatic_field(CardTable,                   _last_valid_index,                             const size_t)                          \
   nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                                \
