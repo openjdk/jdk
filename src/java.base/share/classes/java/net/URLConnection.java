@@ -43,6 +43,8 @@ import java.util.Map;
 import java.util.List;
 import java.security.Permission;
 import java.security.AccessController;
+
+import sun.net.util.URLUtil;
 import sun.security.util.SecurityConstants;
 import sun.net.www.MessageHeader;
 import sun.security.action.GetPropertyAction;
@@ -1092,7 +1094,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static void setDefaultUseCaches(String protocol, boolean defaultVal) {
-        protocol = protocol.toLowerCase(Locale.US);
+        protocol = URLUtil.lowerCaseProtocol(protocol);
         defaultCaching.put(protocol, defaultVal);
     }
 
@@ -1108,7 +1110,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static boolean getDefaultUseCaches(String protocol) {
-        Boolean protoDefault = defaultCaching.get(protocol.toLowerCase(Locale.US));
+        Boolean protoDefault = defaultCaching.get(URLUtil.lowerCaseProtocol(protocol));
         if (protoDefault != null) {
             return protoDefault.booleanValue();
         } else {
