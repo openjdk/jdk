@@ -31,13 +31,13 @@
  * AccessBridgeCalls.c is available for download from the OpenJDK repository using
  * the following link:
  *
- * http://hg.openjdk.org/jdk9/jdk9/jdk/raw-file/tip/src/jdk.accessibility/windows/native/bridge/AccessBridgeCalls.c
+ * https://git.openjdk.org/jdk/blob/master/src/jdk.accessibility/windows/native/bridge/AccessBridgeCalls.c
  *
  * Also note that the API is used in the jaccessinspector and jaccesswalker tools.
  * The source for those tools is available in the OpenJDK repository at these links:
  *
- * http://hg.openjdk.org/jdk9/jdk9/jdk/file/tip/src/jdk.accessibility/windows/native/jaccessinspector/jaccessinspector.cpp
- * http://hg.openjdk.org/jdk9/jdk9/jdk/file/tip/src/jdk.accessibility/windows/native/jaccesswalker/jaccesswalker.cpp
+ * https://git.openjdk.org/jdk/blob/master/src/jdk.accessibility/windows/native/jaccessinspector/jaccessinspector.cpp
+ * https://git.openjdk.org/jdk/blob/master/src/jdk.accessibility/windows/native/jaccesswalker/jaccesswalker.cpp
  *
  *
  */
