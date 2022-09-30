@@ -403,12 +403,13 @@ inline bool ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_i
   return oop_arraycopy_in_heap_no_check_cast(dst, src, length);
 }
 
-class ZColorStoreGoodOopClosure : public BasicOopIterateClosure {
+class ZStoreBarrierOopClosure : public BasicOopIterateClosure {
 public:
   virtual void do_oop(oop* p_) {
-    zpointer* p = (zpointer*)p_;
+    volatile zpointer* p = (volatile zpointer*)p_;
     const zpointer ptr = ZBarrier::load_atomic(p);
     const zaddress addr = ZPointer::uncolor(ptr);
+    ZBarrier::store_barrier_on_heap_oop_field(p, false /* heal */);
     *p = ZAddress::store_good(addr);
   }
 
@@ -442,7 +443,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
   assert(ZHeap::heap()->is_young(to_zaddress(dst)), "ZColorStoreGoodOopClosure is only valid for young objects");
 
   // Color store good before handing out
-  ZColorStoreGoodOopClosure cl_sg;
+  ZStoreBarrierOopClosure cl_sg;
   ZIterator::oop_iterate(dst, &cl_sg);
 }
 
