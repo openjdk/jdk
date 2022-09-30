@@ -1332,8 +1332,14 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # for America/Santiago will start on midnight of September 11th;
 # and will end on April 1st, 2023. Magallanes region (America/Punta_Arenas)
 # will keep UTC -3 "indefinitely"...  This is because on September 4th
-# we will have a voting whether to approve a new Constitution....
-# https://www.interior.gob.cl/noticias/2022/08/09/comunicado-el-proximo-sabado-10-de-septiembre-los-relojes-se-deben-adelantar-una-hora/
+# we will have a voting whether to approve a new Constitution.
+#
+# From Eduardo Romero Urra (2022-08-17):
+# https://www.diariooficial.interior.gob.cl/publicaciones/2022/08/13/43327/01/2172567.pdf
+#
+# From Paul Eggert (2022-08-17):
+# Although the presidential decree stops at fall 2026, assume that
+# similar DST rules will continue thereafter.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	-

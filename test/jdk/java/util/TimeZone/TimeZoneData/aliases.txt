@@ -183,6 +183,8 @@ Link	Etc/UTC			Etc/UCT
 Link	Europe/London		Europe/Belfast
 Link	Europe/Kyiv		Europe/Kiev
 Link	Europe/Chisinau		Europe/Tiraspol
+Link	Europe/Kyiv		Europe/Uzhgorod
+Link	Europe/Kyiv		Europe/Zaporozhye
 Link	Europe/London		GB
 Link	Europe/London		GB-Eire
 Link	Etc/GMT			GMT+0
