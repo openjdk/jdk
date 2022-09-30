@@ -603,7 +603,8 @@ private:
       // live_words data are current wrt to the _mark_bitmap. We use this information
       // to only clear ranges of the bitmap that require clearing.
       if (is_clear_concurrent_undo()) {
-        // No need to clear bitmaps for empty regions.
+        // No need to clear bitmaps for empty regions (which includes regions we
+        // did not mark through).
         if (_cm->live_words(r->hrm_index()) == 0) {
           assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
           return r->bottom();
@@ -652,7 +653,7 @@ private:
       }
       assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
 
-      r->note_end_of_clearing();
+      r->reset_top_at_mark_start();
 
       return false;
     }
@@ -1887,7 +1888,6 @@ void G1ConcurrentMark::flush_all_task_caches() {
 void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr) {
   assert_at_safepoint();
   _mark_bitmap.clear_range(MemRegion(hr->bottom(), hr->end()));
-  hr->note_end_of_clearing();
 }
 
 HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {

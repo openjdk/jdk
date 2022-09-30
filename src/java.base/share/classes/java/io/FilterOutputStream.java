@@ -190,17 +190,9 @@ public class FilterOutputStream extends OutputStream {
                 try {
                     out.close();
                 } catch (Throwable closeException) {
-                   // evaluate possible precedence of flushException over closeException
-                   if ((flushException instanceof ThreadDeath) &&
-                       !(closeException instanceof ThreadDeath)) {
-                       flushException.addSuppressed(closeException);
-                       throw (ThreadDeath) flushException;
-                   }
-
                     if (flushException != closeException) {
                         closeException.addSuppressed(flushException);
                     }
-
                     throw closeException;
                 }
             }

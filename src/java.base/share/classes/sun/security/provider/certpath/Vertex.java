@@ -49,7 +49,7 @@ import sun.security.x509.X509CertImpl;
 final class Vertex {
 
     private static final Debug debug = Debug.getInstance("certpath");
-    private X509Certificate cert;
+    private final X509Certificate cert;
     private int index;
     private Throwable throwable;
 
@@ -134,7 +134,7 @@ final class Vertex {
     public String certToString() {
         StringBuilder sb = new StringBuilder();
 
-        X509CertImpl x509Cert = null;
+        X509CertImpl x509Cert;
         try {
             x509Cert = X509CertImpl.toImpl(cert);
         } catch (CertificateException ce) {
@@ -214,13 +214,11 @@ final class Vertex {
      * the way other Vertex.xToString() methods display
      * information.
      *
-     * @return String form of index as "Last cert?  [Yes/No]
+     * @return String form of index as "Last cert?  [Yes/No]"
      */
     public String moreToString() {
-        StringBuilder sb = new StringBuilder("Last cert?  ");
-        sb.append((index == -1) ? "Yes" : "No");
-        sb.append("\n");
-        return sb.toString();
+        return "Last cert?  " + ((index == -1) ? "Yes" : "No") +
+                "\n";
     }
 
     /**
