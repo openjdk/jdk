@@ -144,17 +144,29 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@link java.util.SortedMap SortedMap}.
  *
  * <p>While {@code ==} is not an equivalence relation, several useful
- * equivalence relations can be defined over floating-point values including:
+ * equivalence relations can be defined over floating-point
+ * values. Comparing numerical equality to various kinds of
+ * equivalence:
  *
  * <dl>
+ * <dt><i>numerical equality</i> ({@code ==} operator): (<em>Not</em>
+ * an equivalence relation)</dt>
+ * <dd>Two floating-point values represent the same extended real
+ * number. The extended real numbers are the real numbers augmented
+ * with positive infinity and negative infinity. Under numerical
+ * equality, {@code +0.0} and {@code -0.0} are equal since they both
+ * map to the same real value, 0. A NaN does not map to any real
+ * number and is not equal to any value, including itself.
+ * </dd>
+ *
  * <dt><i>bit-wise equivalence</i>:</dt>
  * <dd>The bits of the two floating-point values are the same. This
  * equivalence relation for {@code double} values {@code a} and {@code b} is
  * implemented by the expression
- * <br>{@code Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b)}<br>
+ * <br>{@code Double.doubleTo}<code><b>Raw</b></code>{@code LongBits(a) == Double.doubleTo}<code><b>Raw</b></code>{@code LongBits(b)}<br>
  * Under this relation, {@code +0.0} and {@code -0.0} are distinguished
  * from each other and every bit pattern encoding a NaN is distinguished
- * from every other bit patterns encoding a NaN.
+ * from every other bit pattern encoding a NaN.
  * </dd>
  *
  * <dt><i>representation equivalence</i>:</dt>
