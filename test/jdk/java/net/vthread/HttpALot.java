@@ -29,11 +29,9 @@
  * @modules jdk.httpserver
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} HttpALot.java
- * @comment The test launch command intentionally uses -Dsun.net.httpserver.nodelay=true
+ * @comment This test runs with -Dsun.net.httpserver.nodelay=true
  *          to enable TCP_NODELAY on the sockets "accept()"ed by the HttpServer. This is
- *          to avoid (occasional 40 milli seconds) delays in receiving responses from the server.
- *          Given the number of requests being fired in this test, the delayed responses can
- *          accumulate into longer test run duration
+ *          to avoid occasional 40ms delays receiving responses from the server on Linux.
  * @run main/othervm/timeout=600
  *     --enable-preview
  *     -Dsun.net.httpserver.nodelay=true
