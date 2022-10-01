@@ -56,7 +56,7 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
 
   // Only coalesce if inst1 is immediately followed by inst0
   // Can be improved for more general cases
-  if (block->get_node(block_index - 1) != inst1) {
+  if (block_index < 1 || block->get_node(block_index - 1) != inst1) {
     return false;
   }
   int inst1_index = block_index - 1;
