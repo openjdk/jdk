@@ -99,21 +99,11 @@ public class Diagnostics extends Util {
 
         checkWarning(true, JDK8 + "-Xlint:-options -Xlint:path -endorseddirs classes   Main.java");
         checkWarning(true, JDK8 + "-Xlint:-options -Xlint      -extdirs      classes   Main.java");
-        // disabled in original: there is no setting for ${BCP} (i.e. bootclasspath)
-        // #Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-Xbootclasspath:classes${PS}${BCP}" Main.java
-
 
         /*----------------------------------------------------------------
          * No warning for missing elts in "system" paths
          *----------------------------------------------------------------*/
-        // the following are all disabled in the original, because the system properties
-        // given with `-J-D....` are no longer supported in the JVM
-        // # No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Djava.endorsed.dirs=classes" Main.java
-        // # No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Djava.ext.dirs=classes"      Main.java
-        // # No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Xbootclasspath/p:classes"    Main.java
-        // # No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Xbootclasspath/a:classes"    Main.java
-        // # No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Xbootclasspath:classes${PS}${BCP}" Main.java
-        // TODO? there are other system paths we could check, such as --module-path
+        // TODO? there are system paths we could check, such as --module-path
 
         /*----------------------------------------------------------------
          * No warning if class path element exists
@@ -125,8 +115,6 @@ public class Diagnostics extends Util {
         checkWarning(false, JDK8 + "-Xlint:path -extdirs       classes Main.java");
         checkWarning(false, JDK8 + "-Xlint:path -Xbootclasspath/p:classes Main.java");
         checkWarning(false, JDK8 + "-Xlint:path -Xbootclasspath/a:classes Main.java");
-        // disabled in original: there is no setting for ${BCP} (i.e. bootclasspath)
-        // #No Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-Xbootclasspath:classes${PS}${BCP}" Main.java
 
         jar("cf", "classes.jar", "Main.class");
         tb.copyFile("classes.jar", "classes.war");

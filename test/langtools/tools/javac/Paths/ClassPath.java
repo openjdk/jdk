@@ -126,18 +126,6 @@ public class ClassPath extends Util {
         expectPass(JAVAC, "-cp jars/B.zip Main.java");
         expectPass(JAVA, "-cp jars/B.zip${PS}. Main");
 
-        /*
-         * The following lines are commented out in the original,
-         * because the options or properties are no longer supported in the launcher
-        # Success "$javac" ${TESTTOOLVMOPTS} -extdirs "jars"        -cp None Main.java
-        # Success "$javac" ${TESTTOOLVMOPTS} -Djava.ext.dirs="jars" -cp None Main.java
-        # Success "$java" ${TESTVMOPTS}  -Djava.ext.dirs="jars" -cp .    Main
-
-        # Success "$javac" ${TESTTOOLVMOPTS} -endorseddirs "jars"        -cp None Main.java
-        # Success "$javac" ${TESTTOOLVMOPTS} -Djava.endorsed.dirs="jars" -cp None Main.java
-        # Success "$java" ${TESTVMOPTS}  -Djava.endorsed.dirs="jars" -cp .    Main
-        */
-
         expectFail(JAVA, "-Xbootclasspath/p:jars/A.jar -cp .    Main");
         expectFail(JAVA, "-Xbootclasspath/a:jars/B.zip -cp .    Main");
         expectFail(JAVAC, "-Xbootclasspath/p:jars/A.jar -cp None Main.java");
@@ -180,17 +168,7 @@ public class ClassPath extends Util {
                 }
                 """);
 
-        // The following is intentionally slightly different from the original.
-        // The original is just
-        //      Success "$javac" ${TESTTOOLVMOPTS} Hello.java Bye.java
-        // with no setting of the classpath.
-        // This fails with the default translation, using ToolProvider,
-        // because executing that way can pick up the CLASSPATH env variable
-        // set by jtreg. The env variable cannot be unset in this VM, so the
-        // workaround/solution is either unset it when exec-ing javac, or
-        // to set it to an equivalent non-empty path, such as by using `-cp .`.
-        // Either way, this is just an interim step to compile these files,
-        // and not one of the test cases being exercised.
+        // Set an empty classpath to override any inherited setting of CLASSPATH
         expectPass(classpath(""), JAVAC, "Hello.java Bye.java");
 
         // test jar creation without manifest

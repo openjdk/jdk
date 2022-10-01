@@ -122,19 +122,5 @@ public class ClassPath2 extends Util {
         expectPass(JAVAC, "-cp jars/sub/B.zip Main.java");
         expectPass(JAVA, "-cp jars/sub/B.zip${PS}. Main");
 
-        /*
-         * Test 2: Use of extension directories is incorrect
-         */
-
-        /*
-         * The following lines are commented out in the original,
-         * because the options or properties are no longer supported in the launcher
-        # Success "$javac" ${TESTTOOLVMOPTS} -extdirs jars          -cp None Main.java
-        # Success "$java"  ${TESTVMOPTS}     -Djava.ext.dirs="jars" -cp .    Main
-
-        # Success "$javac" ${TESTTOOLVMOPTS} -extdirs jars/sub          -cp None Main.java
-        # Success "$java"  ${TESTVMOPTS}     -Djava.ext.dirs="jars/sub" -cp .    Main
-         */
-
     }
 }
