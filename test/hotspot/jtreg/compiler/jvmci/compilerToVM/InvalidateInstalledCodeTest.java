@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,20 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @library ../common/patches
- * @ignore 8249621
- * @ignore 8163894
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.code.site
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @build compiler.jvmci.compilerToVM.InvalidateInstalledCodeTest
- * @build jdk.test.whitebox.WhiteBox
+ *        jdk.test.whitebox.WhiteBox jdk.test.whitebox.parser.DiagnosticCommand
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
+ *                                jdk.test.whitebox.parser.DiagnosticCommand
+ * @run junit/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   compiler.jvmci.compilerToVM.InvalidateInstalledCodeTest
@@ -48,75 +48,58 @@
 
 package compiler.jvmci.compilerToVM;
 
+import compiler.jvmci.common.CodeInstallerTest;
 import compiler.jvmci.common.CTVMUtilities;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.CompilationResult;
 import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.site.Site;
+import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.test.whitebox.code.NMethod;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
+import jdk.vm.ci.hotspot.HotSpotNmethod;
+import jdk.vm.ci.meta.Assumptions.Assumption;
 
 import java.util.List;
+import org.junit.Test;
 
-public class InvalidateInstalledCodeTest {
-    private static final CodeCacheProvider CACHE_PROVIDER
-            = HotSpotJVMCIRuntime.runtime().getHostJVMCIBackend()
-                    .getCodeCache();
+public class InvalidateInstalledCodeTest extends CodeInstallerTest {
 
-    public static void main(String[] args) {
-        InvalidateInstalledCodeTest test
-                = new InvalidateInstalledCodeTest();
+    @Test
+    public void testInvalidation() {
         List<CompileCodeTestCase> testCases
                 = CompileCodeTestCase.generate(/* bci = */ 0);
         testCases.addAll(CompileCodeTestCase.generate(/* bci = */ -1));
-        testCases.forEach(test::check);
-        test.checkNull();
+        testCases.forEach(t -> check(t));
+        checkNull();
     }
 
     private void checkNull() {
         Utils.runAndCheckException(
-                () -> CompilerToVMHelper.invalidateInstalledCode(null),
+                () -> CompilerToVMHelper.invalidateHotSpotNmethod(null, true),
                 NullPointerException.class);
     }
 
     private void check(CompileCodeTestCase testCase) {
-        System.out.println(testCase);
-        HotSpotResolvedJavaMethod javaMethod
-                = CTVMUtilities.getResolvedMethod(testCase.executable);
-        HotSpotCompilationRequest compRequest = new HotSpotCompilationRequest(
-                javaMethod, testCase.bci, /* jvmciEnv = */ 0L);
-        String name = testCase.executable.getName();
-        CompilationResult compResult = new CompilationResult(name);
-        // to pass sanity check of default -1
-        compResult.setTotalFrameSize(0);
-        compResult.close();
-        InstalledCode installedCode = CACHE_PROVIDER.installCode(
-                compRequest, compResult,
-                new InstalledCode(name), /* speculationLog = */ null,
-                /* isDefault = */ false);
-        Asserts.assertTrue(installedCode.isValid(), testCase
-                + " : code is invalid even before invalidation");
+        HotSpotResolvedJavaMethod javaMethod = CTVMUtilities.getResolvedMethod(testCase.executable);
+        HotSpotNmethod nmethod = (HotSpotNmethod) installEmptyCode(new Site[0], new Assumption[0],
+                new Comment[0], 8, new DataPatch[0], null);
 
-        NMethod beforeInvalidation = testCase.toNMethod();
-        if (beforeInvalidation != null) {
-            throw new Error("TESTBUG : " + testCase + " : nmethod isn't found");
-        }
-        // run twice to verify how it works if method is already invalidated
-        for (int i = 0; i < 2; ++i) {
-            CompilerToVMHelper.invalidateInstalledCode(installedCode);
-            Asserts.assertFalse(installedCode.isValid(), testCase
-                            + " : code is valid after invalidation, i = " + i);
-            NMethod afterInvalidation = testCase.toNMethod();
-            if (afterInvalidation != null) {
-                System.err.println("before: " + beforeInvalidation);
-                System.err.println("after: " + afterInvalidation);
-                throw new AssertionError(testCase
-                        + " : method hasn't been invalidated, i = " + i);
-            }
-        }
+        Asserts.assertTrue(nmethod.isValid(), testCase + " : code is invalid even before invalidation");
+
+        Asserts.assertTrue(nmethod.isValid(), testCase + " : code is not valid, i = " + nmethod);
+        Asserts.assertTrue(nmethod.isAlive(), testCase + " : code is not alive, i = " + nmethod);
+
+        // Make nmethod non-entrant but still alive
+        CompilerToVMHelper.invalidateHotSpotNmethod(nmethod, false);
+        Asserts.assertFalse(nmethod.isValid(), testCase + " : code is valid, i = " + nmethod);
+        Asserts.assertTrue(nmethod.isAlive(), testCase + " : code is not alive, i = " + nmethod);
+
+        // Deoptimize the nmethod and cut the link to it from the HotSpotNmethod
+        CompilerToVMHelper.invalidateHotSpotNmethod(nmethod, true);
+        Asserts.assertFalse(nmethod.isValid(), testCase + " : code is valid, i = " + nmethod);
+        Asserts.assertFalse(nmethod.isAlive(), testCase + " : code is alive, i = " + nmethod);
     }
 }
