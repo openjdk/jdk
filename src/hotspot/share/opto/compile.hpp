@@ -463,7 +463,6 @@ class Compile : public Phase {
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
-  void print_inlining_stream_free();
   void print_inlining_init();
   void print_inlining_reinit();
   void print_inlining_commit();
@@ -477,7 +476,7 @@ class Compile : public Phase {
 
   void* barrier_set_state() const { return _barrier_set_state; }
 
-  outputStream* print_inlining_stream() const {
+  stringStream* print_inlining_stream() {
     assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
     return _print_inlining_stream;
   }

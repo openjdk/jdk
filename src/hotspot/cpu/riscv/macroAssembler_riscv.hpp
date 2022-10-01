@@ -28,7 +28,9 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.hpp"
+#include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "nativeInst_riscv.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -48,6 +50,9 @@ class MacroAssembler: public Assembler {
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
+  static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
+    assert(is_aligned(pc, alignment), "bad alignment");
+  }
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP
@@ -640,7 +645,7 @@ public:
   void reserved_stack_check();
 
   void get_polling_page(Register dest, relocInfo::relocType rtype);
-  address read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
+  void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
   // RISCV64 OpenJDK uses four different types of calls:
   //   - direct call: jal pc_relative_offset
@@ -678,7 +683,7 @@ public:
   //     code is patched, and the new destination may not be reachable by a simple JAL
   //     instruction.
   //
-  //   - indirect call: movptr_with_offset + jalr
+  //   - indirect call: movptr + jalr
   //     This too can reach anywhere in the address space, but it cannot be
   //     patched while code is running, so it must only be modified at a safepoint.
   //     This form of call is most suitable for targets at fixed addresses, which
@@ -868,6 +873,22 @@ public:
   void vmnot_m(VectorRegister vd, VectorRegister vs);
   void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked);
   void vfneg_v(VectorRegister vd, VectorRegister vs);
+
+
+  // support for argument shuffling
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void object_move(OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
+
+  void rt_call(address dest, Register tmp = t0);
 
 private:
 

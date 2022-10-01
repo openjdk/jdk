@@ -138,6 +138,7 @@ jobs:
           --openjdk-target=${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}
           --with-sysroot=sysroot
           --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
+          --with-jmod-compress=zip-1
           CC=${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}-g++-${{ inputs.gcc-major-version }}
           ${{ inputs.extra-conf-options }} || (
