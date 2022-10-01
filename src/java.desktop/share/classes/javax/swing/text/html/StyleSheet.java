@@ -1818,8 +1818,6 @@ public class StyleSheet extends StyleContext {
     }
 
 
-    static final Border noBorder = new EmptyBorder(0,0,0,0);
-
     /**
      * Class to carry out some of the duties of
      * CSS formatting.  Implementations of this
@@ -2519,7 +2517,6 @@ public class StyleSheet extends StyleContext {
         private boolean checkedForStart;
         private int start;
         private CSS.Value type;
-        URL imageurl;
         private StyleSheet ss = null;
         Icon img = null;
         private int bulletgap = 5;
@@ -3222,8 +3219,6 @@ public class StyleSheet extends StyleContext {
 
 
     // ---- Variables ---------------------------------------------
-
-    static final int DEFAULT_FONT_SIZE = 3;
 
     private transient Object fontSizeInherit;
 
