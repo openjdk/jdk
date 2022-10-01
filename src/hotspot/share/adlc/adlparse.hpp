@@ -64,7 +64,7 @@ class RegList;
 // ***** Peephole Section *****
 class PeepPredicate;
 class PeepMatch;
-class PeepPrecedure;
+class PeepProcedure;
 class PeepConstraint;
 class PeepReplace;
 
