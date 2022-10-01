@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8284161 8294610
+ * @bug 8284161
  * @summary Stress test the HTTP protocol handler and HTTP server
  * @requires vm.debug != true
  * @modules jdk.httpserver
