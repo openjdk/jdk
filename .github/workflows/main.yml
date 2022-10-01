@@ -26,9 +26,9 @@
 name: 'OpenJDK GHA Sanity Checks'
 
 on:
-  push:
-    branches-ignore:
-      - pr/*
+  pull_request:
+    branches:
+      - rivos/main
   workflow_dispatch:
     inputs:
       platforms:
@@ -78,7 +78,7 @@ jobs:
 
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
-            elif [[ $GITHUB_EVENT_NAME == push ]]; then
+            elif [[ $GITHUB_EVENT_NAME == push || $GITHUB_EVENT_NAME == pull_request ]]; then
               input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
             else
               echo 'Internal error in GHA'
