@@ -70,9 +70,11 @@ JNU_ThrowIOException(JNIEnv *env, const char *msg);
 JNIEXPORT void JNICALL
 JNU_ThrowClassNotFoundException(JNIEnv *env, const char *msg);
 
-/* Throw an exception by name, using the string returned by
- * getLastErrorString for the detail string. If the last-error
- * string is NULL, use the given default detail string.
+/*
+ * Throw an exception by name, using the C error string for the
+ * detail string. If the C error string is NULL, use the given
+ * default detail string. Is similar to C's perror(), but for
+ * exceptions.
  */
 JNIEXPORT void JNICALL
 JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
