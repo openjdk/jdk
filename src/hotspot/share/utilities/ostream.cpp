@@ -43,20 +43,16 @@
 extern "C" void jio_print(const char* s, size_t len);
 extern "C" int jio_printf(const char *fmt, ...);
 
-outputStream::outputStream(int width) {
-  _width       = width;
+outputStream::outputStream() {
   _position    = 0;
-  _newlines    = 0;
   _precount    = 0;
   _indentation = 0;
   _scratch     = NULL;
   _scratch_len = 0;
 }
 
-outputStream::outputStream(int width, bool has_time_stamps) {
-  _width       = width;
+outputStream::outputStream(bool has_time_stamps) {
   _position    = 0;
-  _newlines    = 0;
   _precount    = 0;
   _indentation = 0;
   _scratch     = NULL;
@@ -64,11 +60,12 @@ outputStream::outputStream(int width, bool has_time_stamps) {
   if (has_time_stamps)  _stamp.update();
 }
 
-void outputStream::update_position(const char* s, size_t len) {
+bool outputStream::update_position(const char* s, size_t len) {
+  bool saw_newline = false;
   for (size_t i = 0; i < len; i++) {
     char ch = s[i];
     if (ch == '\n') {
-      _newlines += 1;
+      saw_newline = true;
       _precount += _position + 1;
       _position = 0;
     } else if (ch == '\t') {
@@ -79,6 +76,7 @@ void outputStream::update_position(const char* s, size_t len) {
       _position += 1;
     }
   }
+  return saw_newline;
 }
 
 // Execute a vsprintf, using the given buffer if necessary.
@@ -400,7 +398,6 @@ void stringStream::zero_terminate() {
 void stringStream::reset() {
   assert(_is_frozen == false, "Modification forbidden");
   _written = 0; _precount = 0; _position = 0;
-  _newlines = 0;
   zero_terminate();
 }
 
@@ -893,17 +890,17 @@ void defaultStream::write(const char* s, size_t len) {
   intx holder = hold(thread_id);
 
   if (DisplayVMOutput &&
-      (_outer_xmlStream == NULL || !_outer_xmlStream->inside_attrs())) {
+      (_outer_xmlStream == nullptr || !_outer_xmlStream->inside_attrs())) {
     // print to output stream. It can be redirected by a vfprintf hook
     jio_print(s, len);
   }
 
   // print to log file
-  if (has_log_file()) {
-    int nl0 = _newlines;
-    xmlTextStream::write(s, len);
+  if (has_log_file() && _outer_xmlStream != nullptr) {
+     _outer_xmlStream->write_text(s, len);
+    bool nl = update_position(s, len);
     // flush the log file too, if there were any newlines
-    if (nl0 != _newlines){
+    if (nl) {
       flush();
     }
   } else {

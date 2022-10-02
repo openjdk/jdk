@@ -44,7 +44,7 @@ public class SummaryAPIListBuilder {
      * List of summary type Lists.
      */
     private final Map<SummaryElementKind, SortedSet<Element>> summaryMap;
-    private final BaseConfiguration configuration;
+    protected final BaseConfiguration configuration;
     protected final Utils utils;
     private final Predicate<Element> belongsToSummary;
 
