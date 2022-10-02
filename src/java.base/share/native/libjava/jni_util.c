@@ -100,7 +100,7 @@ JNU_ThrowIOException(JNIEnv *env, const char *msg)
  * default detail string. Is similar to C's strerror().
  */
 JNIEXPORT void JNICALL
-JNU_ThrowPerrorByName(JNIEnv *env, const char *name,
+JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                              const char *defaultDetail)
 {
     char* buf = NULL;

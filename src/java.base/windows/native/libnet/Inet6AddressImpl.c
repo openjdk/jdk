@@ -83,7 +83,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     if (error) {
         // report error
-        NET_ThrowByNameWithLastError(env, "java/net/UnknownHostException",
+        NET_ThrowByNameWithNetError(env, "java/net/UnknownHostException",
                                      hostname);
         goto cleanupAndReturn;
     } else {
@@ -348,7 +348,7 @@ tcp_ping6(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
     case WSAEWOULDBLOCK:    // this is expected as we'll probably have to wait
         break;
     default:
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
+        NET_ThrowByNameWithNetError(env, JNU_JAVANETPKG "ConnectException",
                                      "connect failed");
         WSACloseEvent(hEvent);
         closesocket(fd);

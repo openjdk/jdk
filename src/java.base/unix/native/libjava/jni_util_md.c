@@ -44,7 +44,7 @@ extern int __xpg_strerror_r(int, char *, size_t);
  */
 JNIEXPORT void JNICALL
 JNU_ThrowIOExceptionWithIOError(JNIEnv *env, const char *defaultDetail) {
-    JNU_ThrowPerrorByName(env, "java/io/IOException", defaultDetail);
+    JNU_ThrowByNameWithLastError(env, "java/io/IOException", defaultDetail);
 }
 
 void* getProcessHandle() {

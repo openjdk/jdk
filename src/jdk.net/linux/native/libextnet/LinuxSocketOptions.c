@@ -45,7 +45,7 @@ static void handleError(JNIEnv *env, jint rv, const char *errmsg) {
             JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
                     "unsupported socket option");
         } else {
-            JNU_ThrowPerrorByName(env, "java/net/SocketException", errmsg);
+            JNU_ThrowByNameWithLastError(env, "java/net/SocketException", errmsg);
         }
     }
 }

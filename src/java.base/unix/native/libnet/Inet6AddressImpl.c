@@ -505,7 +505,7 @@ tcp_ping6(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
     case EINPROGRESS:   // this is expected as we'll probably have to wait
         break;
     default:
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
+        NET_ThrowByNameWithNetError(env, JNU_JAVANETPKG "ConnectException",
                                      "connect failed");
         close(fd);
         return JNI_FALSE;

@@ -194,7 +194,7 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
 }
 
 void
-NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
+NET_ThrowByNameWithNetError(JNIEnv *env, const char *name,
                    const char *defaultDetail) {
     throwByNameWithMessageAndWinError(env, name, defaultDetail);
 }

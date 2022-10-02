@@ -81,7 +81,7 @@ int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,
                                                int gai_error);
-void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
+void NET_ThrowByNameWithNetError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
 
 #endif /* NET_UTILS_MD_H */

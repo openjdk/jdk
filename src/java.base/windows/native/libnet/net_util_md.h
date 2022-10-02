@@ -108,7 +108,7 @@ typedef union {
 
 int NET_Socket(int domain, int type, int protocol);
 
-void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
+void NET_ThrowByNameWithNetError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
 
 JNIEXPORT int JNICALL NET_WinBind(int s, SOCKETADDRESS *sa, int len,

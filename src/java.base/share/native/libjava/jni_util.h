@@ -75,7 +75,7 @@ JNU_ThrowClassNotFoundException(JNIEnv *env, const char *msg);
  * string is NULL, use the given default detail string.
  */
 JNIEXPORT void JNICALL
-JNU_ThrowPerrorByName(JNIEnv *env, const char *name,
+JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                              const char *defaultDetail);
 
 /*
