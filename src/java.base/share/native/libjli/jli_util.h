@@ -99,8 +99,7 @@ JLI_GetAppArgIndex();
         } else { \
             fprintf(stderr, "JLI_Perror failed\n"); \
         } \
-    } \
-    ((void*) 0)
+    } ((void*) 0)
 
 /* On Windows lseek() is in io.h rather than the location dictated by POSIX. */
 #ifdef _WIN32
