@@ -211,7 +211,7 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_openProcess
                 /* include the last error in the default detail message */
                 sprintf(err_mesg, "OpenProcess(pid=%d) failed; LastError=0x%x",
                     (int)pid, (int)GetLastError());
-                JNU_ThrowIOExceptionWithLastError(env, err_mesg);
+                JNU_ThrowIOExceptionWithIOError(env, err_mesg);
             }
             return (jlong)0;
         }
@@ -302,7 +302,7 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
     LocalFree(sa.lpSecurityDescriptor);
 
     if (hPipe == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "CreateNamedPipe failed");
+        JNU_ThrowIOExceptionWithIOError(env, "CreateNamedPipe failed");
     }
     return (jlong)hPipe;
 }
@@ -331,7 +331,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connectPipe
     fConnected = ConnectNamedPipe((HANDLE)hPipe, NULL) ?
         TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
     if (!fConnected) {
-        JNU_ThrowIOExceptionWithLastError(env, "ConnectNamedPipe failed");
+        JNU_ThrowIOExceptionWithIOError(env, "ConnectNamedPipe failed");
     }
 }
 
@@ -364,7 +364,7 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_readPipe
         if (GetLastError() == ERROR_BROKEN_PIPE) {
             return (jint)-1;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "ReadFile");
+            JNU_ThrowIOExceptionWithIOError(env, "ReadFile");
         }
     } else {
         if (nread == 0) {
@@ -443,7 +443,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
 
     pData = (DataBlock*) VirtualAllocEx( hProcess, 0, sizeof(DataBlock), MEM_COMMIT, PAGE_READWRITE );
     if (pData == NULL) {
-        JNU_ThrowIOExceptionWithLastError(env, "VirtualAllocEx failed");
+        JNU_ThrowIOExceptionWithIOError(env, "VirtualAllocEx failed");
         return;
     }
     WriteProcessMemory( hProcess, (LPVOID)pData, (LPCVOID)&data, (SIZE_T)sizeof(DataBlock), NULL );
@@ -456,7 +456,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
 
     pCode = (PDWORD) VirtualAllocEx( hProcess, 0, stubLen, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
     if (pCode == NULL) {
-        JNU_ThrowIOExceptionWithLastError(env, "VirtualAllocEx failed");
+        JNU_ThrowIOExceptionWithIOError(env, "VirtualAllocEx failed");
         VirtualFreeEx(hProcess, pData, 0, MEM_RELEASE);
         (*env)->ReleaseByteArrayElements(env, stub, stubCode, JNI_ABORT);
         return;
@@ -476,7 +476,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
                                   NULL );
     if (hThread != NULL) {
         if (WaitForSingleObject(hThread, INFINITE) != WAIT_OBJECT_0) {
-            JNU_ThrowIOExceptionWithLastError(env, "WaitForSingleObject failed");
+            JNU_ThrowIOExceptionWithIOError(env, "WaitForSingleObject failed");
         } else {
             DWORD exitCode;
             GetExitCodeThread(hThread, &exitCode);
@@ -509,7 +509,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
             JNU_ThrowIOException(env,
                 "Insufficient memory or insufficient privileges to attach");
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "CreateRemoteThread failed");
+            JNU_ThrowIOExceptionWithIOError(env, "CreateRemoteThread failed");
         }
     }
 

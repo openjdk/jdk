@@ -71,7 +71,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferFrom0(JNIEnv *env, jobject this,
         if (errno == EINTR) {
             return IOS_INTERRUPTED;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Transfer failed");
         return IOS_THROWN;
     }
     return n;
@@ -106,7 +106,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
                     // ignore and try sendfile()
                     break;
                 default:
-                    JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
+                    JNU_ThrowIOExceptionWithIOError(env, "Copy failed");
                     return IOS_THROWN;
             }
         }
@@ -123,7 +123,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
         if (errno == EINTR) {
             return IOS_INTERRUPTED;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Transfer failed");
         return IOS_THROWN;
     }
     return n;

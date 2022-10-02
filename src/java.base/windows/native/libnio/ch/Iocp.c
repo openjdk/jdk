@@ -67,7 +67,7 @@ Java_sun_nio_ch_Iocp_createIoCompletionPort(JNIEnv* env, jclass this,
                                          ck,
                                          (DWORD)concurrency);
     if (port == NULL) {
-        JNU_ThrowIOExceptionWithLastError(env, "CreateIoCompletionPort failed");
+        JNU_ThrowIOExceptionWithIOError(env, "CreateIoCompletionPort failed");
     }
     return ptr_to_jlong(port);
 }
@@ -96,7 +96,7 @@ Java_sun_nio_ch_Iocp_getQueuedCompletionStatus(JNIEnv* env, jclass this,
                                   &lpOverlapped,
                                   INFINITE);
     if (res == 0 && lpOverlapped == NULL) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetQueuedCompletionStatus failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetQueuedCompletionStatus failed");
     } else {
         DWORD ioResult = (res == 0) ? GetLastError() : 0;
         (*env)->SetIntField(env, obj, completionStatus_error, ioResult);
@@ -121,7 +121,7 @@ Java_sun_nio_ch_Iocp_postQueuedCompletionStatus(JNIEnv* env, jclass this,
                                      (DWORD)completionKey,
                                      NULL);
     if (res == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "PostQueuedCompletionStatus");
+        JNU_ThrowIOExceptionWithIOError(env, "PostQueuedCompletionStatus");
     }
 }
 

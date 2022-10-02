@@ -54,7 +54,7 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_WEPoll_create(JNIEnv *env, jclass clazz) {
     HANDLE h = epoll_create1(0);
     if (h == NULL) {
-        JNU_ThrowIOExceptionWithLastError(env, "epoll_create1 failed");
+        JNU_ThrowIOExceptionWithIOError(env, "epoll_create1 failed");
     }
     return ptr_to_jlong(h);
 }
@@ -81,7 +81,7 @@ Java_sun_nio_ch_WEPoll_wait(JNIEnv *env, jclass clazz, jlong h,
     struct epoll_event *events = jlong_to_ptr(address);
     int res = epoll_wait(jlong_to_ptr(h), events, numfds, timeout);
     if (res < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "epoll_wait failed");
+        JNU_ThrowIOExceptionWithIOError(env, "epoll_wait failed");
         return IOS_THROWN;
     }
     return res;

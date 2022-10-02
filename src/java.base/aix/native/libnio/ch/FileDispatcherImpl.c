@@ -47,7 +47,7 @@ handle(JNIEnv *env, jlong rv, char *msg)
         return rv;
     if (errno == EINTR)
         return IOS_INTERRUPTED;
-    JNU_ThrowIOExceptionWithLastError(env, msg);
+    JNU_ThrowIOExceptionWithIOError(env, msg);
     return IOS_THROWN;
 }
 
@@ -118,7 +118,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
             return IOS_INTERRUPTED;
         if (errno == ENOTSOCK)
             return IOS_UNSUPPORTED;
-        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Transfer failed");
         return IOS_THROWN;
     }
 

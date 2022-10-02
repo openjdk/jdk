@@ -114,7 +114,7 @@ Java_sun_nio_ch_WindowsSelectorImpl_00024SubSelector_poll0(JNIEnv *env, jobject 
     /* Call select */
     if ((result = select(0 , readfds, writefds, exceptfds, tv))
                                                              == SOCKET_ERROR) {
-        JNU_ThrowIOExceptionWithLastError(env, "Select failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Select failed");
         return IOS_THROWN;
     }
 

@@ -202,7 +202,7 @@ Java_sun_nio_fs_LinuxNativeDispatcher_directCopy0
                         // ignore and try sendfile()
                         break;
                     default:
-                        JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
+                        JNU_ThrowIOExceptionWithIOError(env, "Copy failed");
                         return IOS_THROWN;
                 }
             }

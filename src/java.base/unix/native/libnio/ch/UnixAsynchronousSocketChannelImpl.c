@@ -45,7 +45,7 @@ Java_sun_nio_ch_UnixAsynchronousSocketChannelImpl_checkConnect(JNIEnv *env,
 
     result = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &arglen);
     if (result < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "getsockopt");
+        JNU_ThrowIOExceptionWithIOError(env, "getsockopt");
     } else {
         if (error)
             handleSocketError(env, error);

@@ -165,7 +165,7 @@ Java_sun_nio_ch_UnixDomainSockets_accept0(JNIEnv *env, jclass clazz, jobject fdo
             return IOS_UNAVAILABLE;
         if (errno == EINTR)
             return IOS_INTERRUPTED;
-        JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Accept failed");
         return IOS_THROWN;
     }
 

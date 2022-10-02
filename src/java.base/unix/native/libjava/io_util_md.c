@@ -162,7 +162,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
         int devnull = open("/dev/null", O_WRONLY);
         if (devnull < 0) {
             (*env)->SetIntField(env, this, IO_fd_fdID, fd);
-            JNU_ThrowIOExceptionWithLastError(env, "open /dev/null failed");
+            JNU_ThrowIOExceptionWithIOError(env, "open /dev/null failed");
         } else {
             dup2(devnull, fd);
             close(devnull);
@@ -176,7 +176,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
         result = close(fd);
 #endif
         if (result == -1 && errno != EINTR) {
-            JNU_ThrowIOExceptionWithLastError(env, "close failed");
+            JNU_ThrowIOExceptionWithIOError(env, "close failed");
         }
     }
 }

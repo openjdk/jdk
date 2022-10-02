@@ -67,7 +67,7 @@ static int create(JNIEnv* env)
 #endif
 
     if (s < 0)
-        JNU_ThrowIOExceptionWithLastError(env, "socket");
+        JNU_ThrowIOExceptionWithIOError(env, "socket");
     return s;
 }
 
@@ -111,9 +111,9 @@ Java_sun_net_sdp_SdpSupport_convert0(JNIEnv *env, jclass cls, int fd)
 
         RESTARTABLE(dup2(s, fd), res);
         if (res < 0)
-            JNU_ThrowIOExceptionWithLastError(env, "dup2");
+            JNU_ThrowIOExceptionWithIOError(env, "dup2");
         res = close(s);
         if (res < 0 && !(*env)->ExceptionOccurred(env))
-            JNU_ThrowIOExceptionWithLastError(env, "close");
+            JNU_ThrowIOExceptionWithIOError(env, "close");
     }
 }

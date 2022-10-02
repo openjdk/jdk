@@ -74,7 +74,7 @@ Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl_initIDs(JNIEnv* env, 
         s = socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s == INVALID_SOCKET) {
-        JNU_ThrowIOExceptionWithLastError(env, "socket failed");
+        JNU_ThrowIOExceptionWithIOError(env, "socket failed");
         return;
     }
     rv = WSAIoctl(s,
@@ -87,7 +87,7 @@ Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl_initIDs(JNIEnv* env, 
                   NULL,
                   NULL);
     if (rv != 0)
-        JNU_ThrowIOExceptionWithLastError(env, "WSAIoctl failed");
+        JNU_ThrowIOExceptionWithIOError(env, "WSAIoctl failed");
     closesocket(s);
 }
 
@@ -117,7 +117,7 @@ Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl_accept0(JNIEnv* env, 
         if (error == ERROR_IO_PENDING) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "AcceptEx failed");
+        JNU_ThrowIOExceptionWithIOError(env, "AcceptEx failed");
         return IOS_THROWN;
     }
 
@@ -142,5 +142,5 @@ Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl_closesocket0(JNIEnv* 
     SOCKET s = (SOCKET)jlong_to_ptr(socket);
 
     if (closesocket(s) == SOCKET_ERROR)
-        JNU_ThrowIOExceptionWithLastError(env, "closesocket failed");
+        JNU_ThrowIOExceptionWithIOError(env, "closesocket failed");
 }

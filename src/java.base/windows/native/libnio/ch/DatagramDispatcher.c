@@ -76,7 +76,7 @@ Java_sun_nio_ch_DatagramDispatcher_read0(JNIEnv *env, jclass clazz, jobject fdo,
                 JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException", 0);
                 return IOS_THROWN;
             }
-            JNU_ThrowIOExceptionWithLastError(env, "WSARecv failed");
+            JNU_ThrowIOExceptionWithIOError(env, "WSARecv failed");
             return IOS_THROWN;
         }
     }
@@ -129,7 +129,7 @@ Java_sun_nio_ch_DatagramDispatcher_readv0(JNIEnv *env, jclass clazz,
                 JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException", 0);
                 return IOS_THROWN;
             }
-            JNU_ThrowIOExceptionWithLastError(env, "WSARecv failed");
+            JNU_ThrowIOExceptionWithIOError(env, "WSARecv failed");
             return IOS_THROWN;
         }
     }
@@ -171,7 +171,7 @@ Java_sun_nio_ch_DatagramDispatcher_write0(JNIEnv *env, jclass clazz,
             JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException", 0);
             return IOS_THROWN;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "WSASend failed");
+        JNU_ThrowIOExceptionWithIOError(env, "WSASend failed");
         return IOS_THROWN;
     }
 
@@ -221,7 +221,7 @@ Java_sun_nio_ch_DatagramDispatcher_writev0(JNIEnv *env, jclass clazz,
             JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException", 0);
             return IOS_THROWN;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "WSASend failed");
+        JNU_ThrowIOExceptionWithIOError(env, "WSASend failed");
         return IOS_THROWN;
     }
 

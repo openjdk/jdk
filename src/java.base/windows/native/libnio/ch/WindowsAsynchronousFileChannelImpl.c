@@ -57,7 +57,7 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_readFile(JNIEnv* env, jclass 
             return IOS_UNAVAILABLE;
         if (error == ERROR_HANDLE_EOF)
             return IOS_EOF;
-        JNU_ThrowIOExceptionWithLastError(env, "ReadFile failed");
+        JNU_ThrowIOExceptionWithIOError(env, "ReadFile failed");
         return IOS_THROWN;
     }
 
@@ -85,7 +85,7 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_writeFile(JNIEnv* env, jclass
         int error = GetLastError();
         if (error == ERROR_IO_PENDING)
             return IOS_UNAVAILABLE;
-        JNU_ThrowIOExceptionWithLastError(env, "WriteFile failed");
+        JNU_ThrowIOExceptionWithIOError(env, "WriteFile failed");
         return IOS_THROWN;
     }
 
@@ -115,7 +115,7 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_lockFile(JNIEnv *env, jobject
         if (error == ERROR_IO_PENDING) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "LockFile failed");
+        JNU_ThrowIOExceptionWithIOError(env, "LockFile failed");
         return IOS_THROWN;
     }
     return 0;

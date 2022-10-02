@@ -145,7 +145,7 @@ handleSocketError(JNIEnv *env, jint errorValue)
             break;
     }
     errno = errorValue;
-    JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
+    JNU_ThrowPerrorByName(env, xn, "NioSocketError");
     return IOS_THROWN;
 }
 
@@ -159,7 +159,7 @@ Java_sun_nio_ch_sctp_SctpNet_init
   (JNIEnv *env, jclass cl) {
     int sp[2];
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "socketpair failed");
+        JNU_ThrowIOExceptionWithIOError(env, "socketpair failed");
         return;
     }
     preCloseFD = sp[0];
@@ -191,7 +191,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpNet_socket0
 
     if (fd < 0) {
         if (errno == EPROTONOSUPPORT || errno == ESOCKTNOSUPPORT) {
-            JNU_ThrowByNameWithLastError(env, "java/lang/UnsupportedOperationException",
+            JNU_ThrowPerrorByName(env, "java/lang/UnsupportedOperationException",
                                          "Protocol not supported");
             return IOS_THROWN;
         } else {
@@ -306,7 +306,7 @@ Java_sun_nio_ch_sctp_SctpNet_close0
     if (fd != -1) {
         int rv = close(fd);
         if (rv < 0)
-            JNU_ThrowIOExceptionWithLastError(env, "Close failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Close failed");
     }
 }
 
@@ -320,7 +320,7 @@ Java_sun_nio_ch_sctp_SctpNet_preClose0
   (JNIEnv *env, jclass clazz, jint fd) {
     if (preCloseFD >= 0) {
         if (dup2(preCloseFD, fd) < 0)
-            JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
+            JNU_ThrowIOExceptionWithIOError(env, "dup2 failed");
     }
 }
 
@@ -501,7 +501,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setIntOption0
     int arglen;
 
     if (mapSocketOption(opt, &klevel, &kopt) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "Unsupported socket option");
         return;
     }
@@ -522,7 +522,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setIntOption0
     }
 
     if (NET_SetSockOpt(fd, klevel, kopt, parg, arglen) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "sun_nio_ch_sctp_SctpNet.setIntOption0");
     }
 }
@@ -542,7 +542,7 @@ JNIEXPORT int JNICALL Java_sun_nio_ch_sctp_SctpNet_getIntOption0
 
     memset((char *) &linger, 0, sizeof(linger));
     if (mapSocketOption(opt, &klevel, &kopt) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "Unsupported socket option");
         return -1;
     }
@@ -556,7 +556,7 @@ JNIEXPORT int JNICALL Java_sun_nio_ch_sctp_SctpNet_getIntOption0
     }
 
     if (NET_GetSockOpt(fd, klevel, kopt, arg, &arglen) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.Net.getIntOption");
         return -1;
     }
@@ -580,7 +580,7 @@ JNIEXPORT jobject JNICALL Java_sun_nio_ch_sctp_SctpNet_getPrimAddrOption0
     prim.ssp_assoc_id = assocId;
 
     if (getsockopt(fd, IPPROTO_SCTP, SCTP_PRIMARY_ADDR, &prim, &prim_len) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.SctpNet.getPrimAddrOption0");
         return NULL;
     }
@@ -606,7 +606,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setPrimAddrOption0
     prim.ssp_assoc_id = assocId;
 
     if (setsockopt(fd, IPPROTO_SCTP, SCTP_PRIMARY_ADDR, &prim, sizeof(prim)) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.SctpNet.setPrimAddrOption0");
     }
 }
@@ -631,7 +631,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setPeerPrimAddrOption0
 
     if (setsockopt(fd, IPPROTO_SCTP, SCTP_SET_PEER_PRIMARY_ADDR, &prim,
                    sizeof(prim)) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.SctpNet.setPeerPrimAddrOption0");
     }
 }
@@ -649,7 +649,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_getInitMsgOption0
 
     if (getsockopt(fd, IPPROTO_SCTP, SCTP_INITMSG, &sctp_initmsg,
             &sim_len) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.SctpNet.getInitMsgOption0");
         return;
     }
@@ -675,7 +675,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setInitMsgOption0
 
     if (setsockopt(fd, IPPROTO_SCTP, SCTP_INITMSG, &sctp_initmsg,
           sizeof(sctp_initmsg)) < 0) {
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+        JNU_ThrowPerrorByName(env, JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.SctpNet.setInitMsgOption0");
     }
 }

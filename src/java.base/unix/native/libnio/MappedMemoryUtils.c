@@ -87,7 +87,7 @@ Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong addres
     assert(vec[numPages] == '\x7f'); /* Check sentinel. */
 
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "mincore failed");
+        JNU_ThrowIOExceptionWithIOError(env, "mincore failed");
         free(vec);
         return JNI_FALSE;
     }
@@ -110,7 +110,7 @@ Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
     char *a = (char *)jlong_to_ptr(address);
     int result = madvise((caddr_t)a, (size_t)len, MADV_WILLNEED);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "madvise failed");
+        JNU_ThrowIOExceptionWithIOError(env, "madvise failed");
     }
 }
 
@@ -121,7 +121,7 @@ Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
     char *a = (char *)jlong_to_ptr(address);
     int result = madvise((caddr_t)a, (size_t)len, MADV_DONTNEED);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "madvise failed");
+        JNU_ThrowIOExceptionWithIOError(env, "madvise failed");
     }
 }
 
@@ -132,6 +132,6 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
     void* a = (void *)jlong_to_ptr(address);
     int result = msync(a, (size_t)len, MS_SYNC);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "msync failed");
+        JNU_ThrowIOExceptionWithIOError(env, "msync failed");
     }
 }

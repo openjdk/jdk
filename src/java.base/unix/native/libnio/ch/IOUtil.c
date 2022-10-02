@@ -81,7 +81,7 @@ Java_sun_nio_ch_IOUtil_configureBlocking(JNIEnv *env, jclass clazz,
                                          jobject fdo, jboolean blocking)
 {
     if (configureBlocking(fdval(env, fdo), blocking) < 0)
-        JNU_ThrowIOExceptionWithLastError(env, "Configure blocking failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Configure blocking failed");
 }
 
 JNIEXPORT jlong JNICALL
@@ -90,13 +90,13 @@ Java_sun_nio_ch_IOUtil_makePipe(JNIEnv *env, jobject this, jboolean blocking)
     int fd[2];
 
     if (pipe(fd) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Pipe failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Pipe failed");
         return 0;
     }
     if (blocking == JNI_FALSE) {
         if ((configureBlocking(fd[0], JNI_FALSE) < 0)
             || (configureBlocking(fd[1], JNI_FALSE) < 0)) {
-            JNU_ThrowIOExceptionWithLastError(env, "Configure blocking failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Configure blocking failed");
             close(fd[0]);
             close(fd[1]);
             return 0;
@@ -122,7 +122,7 @@ Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
         int n = read(fd, buf, sizeof(buf));
         tn += n;
         if ((n < 0) && (errno != EAGAIN && errno != EWOULDBLOCK))
-            JNU_ThrowIOExceptionWithLastError(env, "Drain");
+            JNU_ThrowIOExceptionWithIOError(env, "Drain");
         if (n == (int)sizeof(buf))
             continue;
         return (tn > 0) ? JNI_TRUE : JNI_FALSE;
@@ -142,7 +142,7 @@ Java_sun_nio_ch_IOUtil_drain1(JNIEnv *env, jclass cl, jint fd)
         } else if (errno == EINTR) {
             return IOS_INTERRUPTED;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "read");
+            JNU_ThrowIOExceptionWithIOError(env, "read");
             return IOS_THROWN;
         }
     }
@@ -154,7 +154,7 @@ Java_sun_nio_ch_IOUtil_fdLimit(JNIEnv *env, jclass this)
 {
     struct rlimit rlp;
     if (getrlimit(RLIMIT_NOFILE, &rlp) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "getrlimit failed");
+        JNU_ThrowIOExceptionWithIOError(env, "getrlimit failed");
         return -1;
     }
     if (rlp.rlim_max == RLIM_INFINITY ||
@@ -217,7 +217,7 @@ convertReturnVal(JNIEnv *env, jint n, jboolean reading)
         return IOS_INTERRUPTED;
     else {
         const char *msg = reading ? "Read failed" : "Write failed";
-        JNU_ThrowIOExceptionWithLastError(env, msg);
+        JNU_ThrowIOExceptionWithIOError(env, msg);
         return IOS_THROWN;
     }
 }
@@ -242,7 +242,7 @@ convertLongReturnVal(JNIEnv *env, jlong n, jboolean reading)
         return IOS_INTERRUPTED;
     else {
         const char *msg = reading ? "Read failed" : "Write failed";
-        JNU_ThrowIOExceptionWithLastError(env, msg);
+        JNU_ThrowIOExceptionWithIOError(env, msg);
         return IOS_THROWN;
     }
 }

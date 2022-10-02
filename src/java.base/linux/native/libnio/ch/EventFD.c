@@ -39,7 +39,7 @@ Java_sun_nio_ch_EventFD_eventfd0(JNIEnv *env, jclass klazz)
 {
     int efd = eventfd((uint64_t)0, 0);
     if (efd == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "eventfd failed");
+        JNU_ThrowIOExceptionWithIOError(env, "eventfd failed");
         return IOS_THROWN;
     }
     return efd;

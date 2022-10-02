@@ -53,7 +53,7 @@ Java_java_io_Console_echo(JNIEnv *env,
     jboolean old;
     int tty = fileno(stdin);
     if (tcgetattr(tty, &tio) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "tcgetattr failed");
+        JNU_ThrowIOExceptionWithIOError(env, "tcgetattr failed");
         return !on;
     }
     old = (tio.c_lflag & ECHO) != 0;
@@ -63,7 +63,7 @@ Java_java_io_Console_echo(JNIEnv *env,
         tio.c_lflag &= ~ECHO;
     }
     if (tcsetattr(tty, TCSANOW, &tio) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "tcsetattr failed");
+        JNU_ThrowIOExceptionWithIOError(env, "tcsetattr failed");
     }
     return old;
 }

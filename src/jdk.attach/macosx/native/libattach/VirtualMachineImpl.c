@@ -63,7 +63,7 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_socket
 {
     int fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (fd == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "socket");
+        JNU_ThrowIOExceptionWithIOError(env, "socket");
     }
     return (jint)fd;
 }
@@ -123,7 +123,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_sendQuitTo
   (JNIEnv *env, jclass cls, jint pid)
 {
     if (kill((pid_t)pid, SIGQUIT)) {
-        JNU_ThrowIOExceptionWithLastError(env, "kill");
+        JNU_ThrowIOExceptionWithIOError(env, "kill");
     }
 }
 
@@ -224,7 +224,7 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_read
 
     RESTARTABLE(read(fd, buf, len), n);
     if (n == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "read");
+        JNU_ThrowIOExceptionWithIOError(env, "read");
     } else {
         if (n == 0) {
             n = -1;     // EOF
@@ -259,7 +259,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_write
             off += n;
             remaining -= n;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "write");
+            JNU_ThrowIOExceptionWithIOError(env, "write");
             return;
         }
 
@@ -289,7 +289,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_createAttachFile
         if (isCopy) {
             JNU_ReleaseStringPlatformChars(env, path, _path);
         }
-        JNU_ThrowIOExceptionWithLastError(env, "open");
+        JNU_ThrowIOExceptionWithIOError(env, "open");
         return;
     }
 

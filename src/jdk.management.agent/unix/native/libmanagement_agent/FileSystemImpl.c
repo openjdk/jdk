@@ -64,7 +64,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_internal_agent_FileSystemImpl_isAccessUserOn
         if (stat64(path, &sb) == 0) {
             res = ((sb.st_mode & (S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)) == 0) ? JNI_TRUE : JNI_FALSE;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "stat64 failed");
+            JNU_ThrowIOExceptionWithIOError(env, "stat64 failed");
         }
         if (isCopy) {
             JNU_ReleaseStringPlatformChars(env, str, path);

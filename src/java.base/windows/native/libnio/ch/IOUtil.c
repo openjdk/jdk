@@ -96,7 +96,7 @@ convertReturnVal(JNIEnv *env, jint n, jboolean reading)
             return 0;
         }
     }
-    JNU_ThrowIOExceptionWithLastError(env, "Read/write failed");
+    JNU_ThrowIOExceptionWithIOError(env, "Read/write failed");
     return IOS_THROWN;
 }
 
@@ -112,7 +112,7 @@ convertLongReturnVal(JNIEnv *env, jlong n, jboolean reading)
             return 0;
         }
     }
-    JNU_ThrowIOExceptionWithLastError(env, "Read/write failed");
+    JNU_ThrowIOExceptionWithIOError(env, "Read/write failed");
     return IOS_THROWN;
 }
 
@@ -163,7 +163,7 @@ Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
         int n = recv((SOCKET) fd, buf, sizeof(buf), 0);
         if (n == SOCKET_ERROR) {
             if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                JNU_ThrowIOExceptionWithLastError(env, "recv failed");
+                JNU_ThrowIOExceptionWithIOError(env, "recv failed");
             }
             return readBytes;
         }
@@ -180,7 +180,7 @@ Java_sun_nio_ch_IOUtil_write1(JNIEnv *env, jclass cl, jint fd, jbyte b)
 {
     int n = send((SOCKET) fd, &b, 1, 0);
     if (n == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) {
-        JNU_ThrowIOExceptionWithLastError(env, "send failed");
+        JNU_ThrowIOExceptionWithIOError(env, "send failed");
         return IOS_THROWN;
     }
     return (n == 1) ? 1 : 0;

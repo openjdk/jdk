@@ -98,7 +98,7 @@ Java_java_io_UnixFileSystem_canonicalize0(JNIEnv *env, jobject this,
         char canonicalPath[PATH_MAX];
         if (JDK_Canonicalize((char *)path,
                          canonicalPath, PATH_MAX) < 0) {
-            JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
+            JNU_ThrowIOExceptionWithIOError(env, "Bad pathname");
         } else {
 #ifdef MACOSX
             rv = newStringPlatform(env, canonicalPath);
@@ -279,10 +279,10 @@ Java_java_io_UnixFileSystem_createFileExclusively0(JNIEnv *env, jclass cls,
             fd = handleOpen(path, O_RDWR | O_CREAT | O_EXCL, 0666);
             if (fd < 0) {
                 if (errno != EEXIST)
-                    JNU_ThrowIOExceptionWithLastError(env, "Could not open file");
+                    JNU_ThrowIOExceptionWithIOError(env, "Could not open file");
             } else {
                 if (close(fd) == -1)
-                    JNU_ThrowIOExceptionWithLastError(env, "Could not close file");
+                    JNU_ThrowIOExceptionWithIOError(env, "Could not close file");
                 rv = JNI_TRUE;
             }
         }

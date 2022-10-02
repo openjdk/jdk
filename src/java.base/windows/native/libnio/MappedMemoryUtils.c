@@ -103,6 +103,6 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
     }
 
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Flush failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Flush failed");
     }
 }

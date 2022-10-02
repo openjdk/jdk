@@ -56,7 +56,7 @@ Java_sun_nio_ch_FileKey_init(JNIEnv *env, jobject this, jobject fdo)
 
     RESTARTABLE(fstat64(fdval(env, fdo), &fbuf), res);
     if (res < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "fstat64 failed");
+        JNU_ThrowIOExceptionWithIOError(env, "fstat64 failed");
     } else {
         (*env)->SetLongField(env, this, key_st_dev, (jlong)fbuf.st_dev);
         (*env)->SetLongField(env, this, key_st_ino, (jlong)fbuf.st_ino);

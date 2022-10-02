@@ -48,7 +48,7 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
     if (nread == 0) { /* EOF */
         return -1;
     } else if (nread == -1) { /* error */
-        JNU_ThrowIOExceptionWithLastError(env, "Read error");
+        JNU_ThrowIOExceptionWithIOError(env, "Read error");
     }
     return ret & 0xFF;
 }
@@ -110,7 +110,7 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         if (nread > 0) {
             (*env)->SetByteArrayRegion(env, bytes, off, nread, (jbyte *)buf);
         } else if (nread == -1) {
-            JNU_ThrowIOExceptionWithLastError(env, "Read error");
+            JNU_ThrowIOExceptionWithIOError(env, "Read error");
         } else { /* EOF */
             nread = -1;
         }
@@ -138,7 +138,7 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid)
         n = IO_Write(fd, &c, 1);
     }
     if (n == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Write error");
+        JNU_ThrowIOExceptionWithIOError(env, "Write error");
     }
 }
 
@@ -189,7 +189,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
                 n = IO_Write(fd, buf+off, len);
             }
             if (n == -1) {
-                JNU_ThrowIOExceptionWithLastError(env, "Write error");
+                JNU_ThrowIOExceptionWithIOError(env, "Write error");
                 break;
             }
             off += n;
@@ -214,7 +214,7 @@ throwFileNotFoundException(JNIEnv *env, jstring path)
     if (n > 0) {
 #else
     char* buf = NULL;
-    int error = errno;
+    const int error = errno;
     if (error != 0) buf = strerror(error);
     if (buf != NULL) {
 #endif

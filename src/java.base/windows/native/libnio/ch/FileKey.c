@@ -57,6 +57,6 @@ Java_sun_nio_ch_FileKey_init(JNIEnv *env, jobject this, jobject fdo)
         (*env)->SetLongField(env, this, key_indexHigh, fileInfo.nFileIndexHigh);
         (*env)->SetLongField(env, this, key_indexLow, fileInfo.nFileIndexLow);
     } else {
-        JNU_ThrowIOExceptionWithLastError(env, "GetFileInformationByHandle failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetFileInformationByHandle failed");
     }
 }

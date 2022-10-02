@@ -75,7 +75,7 @@ Java_sun_nio_ch_SocketDispatcher_read0(JNIEnv *env, jclass clazz, jobject fdo,
         if (theErr == WSAECONNRESET) {
             JNU_ThrowByName(env, "sun/net/ConnectionResetException", "Connection reset");
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "Read failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Read failed");
         }
         return IOS_THROWN;
     }
@@ -135,7 +135,7 @@ Java_sun_nio_ch_SocketDispatcher_readv0(JNIEnv *env, jclass clazz, jobject fdo,
         if (theErr == WSAECONNRESET) {
             JNU_ThrowByName(env, "sun/net/ConnectionResetException", "Connection reset");
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "Vector read failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Vector read failed");
         }
         return IOS_THROWN;
     }
@@ -185,7 +185,7 @@ Java_sun_nio_ch_SocketDispatcher_write0(JNIEnv *env, jclass clazz, jobject fdo,
                if (theErr == WSAECONNRESET) {
                    JNU_ThrowIOException(env, "Connection reset by peer");
                } else {
-                   JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+                   JNU_ThrowIOExceptionWithIOError(env, "Write failed");
                }
                return IOS_THROWN;
             }
@@ -271,7 +271,7 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
         if (theErr == WSAECONNRESET) {
             JNU_ThrowIOException(env, "Connection reset by peer");
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "Vector write failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Vector write failed");
         }
         return IOS_THROWN;
     }
@@ -283,6 +283,6 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_SocketDispatcher_close0(JNIEnv *env, jclass clazz, jint fd)
 {
     if (closesocket(fd) == SOCKET_ERROR) {
-        JNU_ThrowIOExceptionWithLastError(env, "Socket close failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Socket close failed");
     }
 }

@@ -281,7 +281,7 @@ Java_sun_nio_ch_Net_accept(JNIEnv *env, jclass clazz, jobject fdo, jobject newfd
         if (theErr == WSAEWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Accept failed");
         return IOS_THROWN;
     }
 
@@ -777,7 +777,7 @@ Java_sun_nio_ch_Net_sendOOB(JNIEnv* env, jclass this, jobject fdo, jbyte b)
         if (WSAGetLastError() == WSAEWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "send failed");
+            JNU_ThrowIOExceptionWithIOError(env, "send failed");
             return IOS_THROWN;
         }
     } else {
@@ -794,7 +794,7 @@ Java_sun_nio_ch_Net_discardOOB(JNIEnv* env, jclass clazz, jobject fdo)
         int n = recv(fdval(env, fdo), (char*)&buf, sizeof(buf), MSG_OOB);
         if (n == SOCKET_ERROR) {
             if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                JNU_ThrowIOExceptionWithLastError(env, "recv failed");
+                JNU_ThrowIOExceptionWithIOError(env, "recv failed");
             }
             return discarded;
         }

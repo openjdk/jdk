@@ -88,7 +88,7 @@ JNIEXPORT void JNICALL
 Java_java_io_FileCleanable_cleanupClose0(JNIEnv *env, jclass fdClass, jint unused, jlong handle) {
     if (handle != -1) {
         if (!CloseHandle((HANDLE)handle)) {
-            JNU_ThrowIOExceptionWithLastError(env, "close failed");
+            JNU_ThrowIOExceptionWithIOError(env, "close failed");
         }
     }
 }

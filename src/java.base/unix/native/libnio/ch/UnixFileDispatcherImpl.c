@@ -60,7 +60,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_init(JNIEnv *env, jclass cl)
 {
     int sp[2];
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "socketpair failed");
+        JNU_ThrowIOExceptionWithIOError(env, "socketpair failed");
         return;
     }
     preCloseFD = sp[0];
@@ -132,7 +132,7 @@ handle(JNIEnv *env, jlong rv, char *msg)
         return rv;
     if (errno == EINTR)
         return IOS_INTERRUPTED;
-    JNU_ThrowIOExceptionWithLastError(env, msg);
+    JNU_ThrowIOExceptionWithIOError(env, msg);
     return IOS_THROWN;
 }
 
@@ -229,7 +229,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject 
             return sun_nio_ch_UnixFileDispatcherImpl_NO_LOCK;
         if (errno == EINTR)
             return sun_nio_ch_UnixFileDispatcherImpl_INTERRUPTED;
-        JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Lock failed");
     }
     return 0;
 }
@@ -253,7 +253,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_release0(JNIEnv *env, jobject this,
     fl.l_type = F_UNLCK;
     lockResult = fcntl(fd, cmd, &fl);
     if (lockResult < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Release failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Release failed");
     }
 }
 
@@ -262,7 +262,7 @@ static void closeFileDescriptor(JNIEnv *env, int fd) {
     if (fd != -1) {
         int result = close(fd);
         if (result < 0)
-            JNU_ThrowIOExceptionWithLastError(env, "Close failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Close failed");
     }
 }
 
@@ -279,7 +279,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_preClose0(JNIEnv *env, jclass clazz, jobj
     jint fd = fdval(env, fdo);
     if (preCloseFD >= 0) {
         if (dup2(preCloseFD, fd) < 0)
-            JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
+            JNU_ThrowIOExceptionWithIOError(env, "dup2 failed");
     }
 }
 
@@ -287,7 +287,7 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_UnixFileDispatcherImpl_dup0(JNIEnv *env, jobject this, jobject fdo1, jobject fdo2)
 {
     if (dup2(fdval(env, fdo1), fdval(env, fdo2)) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
+        JNU_ThrowIOExceptionWithIOError(env, "dup2 failed");
     }
 }
 
@@ -365,7 +365,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject f
 
     if (mapAddress == MAP_FAILED) {
         if (map_sync && errno == ENOTSUP) {
-            JNU_ThrowIOExceptionWithLastError(env, "map with mode MAP_SYNC unsupported");
+            JNU_ThrowIOExceptionWithIOError(env, "map with mode MAP_SYNC unsupported");
             return IOS_THROWN;
         }
 
@@ -402,30 +402,30 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
     jint orig_flag;
     orig_flag = fcntl(fd, F_GETFL);
     if (orig_flag == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        JNU_ThrowIOExceptionWithIOError(env, "DirectIO setup failed");
         return -1;
     }
     result = fcntl(fd, F_SETFL, orig_flag | O_DIRECT);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        JNU_ThrowIOExceptionWithIOError(env, "DirectIO setup failed");
         return result;
     }
 #elif defined(F_NOCACHE)
     result = fcntl(fd, F_NOCACHE, 1);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        JNU_ThrowIOExceptionWithIOError(env, "DirectIO setup failed");
         return result;
     }
 #elif defined(DIRECTIO_ON)
     result = directio(fd, DIRECTIO_ON);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        JNU_ThrowIOExceptionWithIOError(env, "DirectIO setup failed");
         return result;
     }
 #endif
     result = fstatvfs64(fd, &file_stat);
     if(result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        JNU_ThrowIOExceptionWithIOError(env, "DirectIO setup failed");
         return result;
     } else {
         result = (int)file_stat.f_frsize;

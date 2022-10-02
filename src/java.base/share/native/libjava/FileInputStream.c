@@ -84,7 +84,7 @@ Java_java_io_FileInputStream_length0(JNIEnv *env, jobject this) {
         return -1;
     }
     if ((length = IO_GetLength(fd)) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetLength failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetLength failed");
     }
     return length;
 }
@@ -100,7 +100,7 @@ Java_java_io_FileInputStream_position0(JNIEnv *env, jobject this) {
         return -1;
     }
     if ((ret = IO_Lseek(fd, 0L, SEEK_CUR)) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek failed");
     }
     return ret;
 }
@@ -115,9 +115,9 @@ Java_java_io_FileInputStream_skip0(JNIEnv *env, jobject this, jlong toSkip) {
         return 0;
     }
     if ((cur = IO_Lseek(fd, (jlong)0, (jint)SEEK_CUR)) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek error");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek error");
     } else if ((end = IO_Lseek(fd, toSkip, (jint)SEEK_CUR)) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek error");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek error");
     }
     return (end - cur);
 }
@@ -138,6 +138,6 @@ Java_java_io_FileInputStream_available0(JNIEnv *env, jobject this) {
         }
         return jlong_to_jint(ret);
     }
-    JNU_ThrowIOExceptionWithLastError(env, NULL);
+    JNU_ThrowIOExceptionWithIOError(env, NULL);
     return 0;
 }

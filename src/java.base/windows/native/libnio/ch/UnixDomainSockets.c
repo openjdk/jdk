@@ -225,7 +225,7 @@ Java_sun_nio_ch_UnixDomainSockets_accept0(JNIEnv *env, jclass clazz, jobject fdo
         if (theErr == WSAEWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Accept failed");
         return IOS_THROWN;
     }
 
@@ -246,7 +246,7 @@ Java_sun_nio_ch_UnixDomainSockets_localAddress0(JNIEnv *env, jclass clazz, jobje
     int sa_len = sizeof(sa);
 
     if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) == SOCKET_ERROR) {
-        JNU_ThrowIOExceptionWithLastError(env, "getsockname");
+        JNU_ThrowIOExceptionWithIOError(env, "getsockname");
         return NULL;
     }
     return sockaddrToUnixAddressBytes(env, &sa, sa_len);

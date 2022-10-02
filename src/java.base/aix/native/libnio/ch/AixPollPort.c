@@ -95,7 +95,7 @@ Java_sun_nio_ch_AixPollPort_pollsetCreate(JNIEnv *env, jclass c) {
      * cannot predict this number so we leave it at OPEN_MAX. */
     pollset_t ps = _pollset_create(-1);
     if (ps < 0) {
-       JNU_ThrowIOExceptionWithLastError(env, "pollset_create failed");
+       JNU_ThrowIOExceptionWithIOError(env, "pollset_create failed");
     }
     return (int)ps;
 }
@@ -123,7 +123,7 @@ Java_sun_nio_ch_AixPollPort_pollsetPoll(JNIEnv *env, jclass c,
 
     RESTARTABLE(_pollset_poll(ps, events, numfds, -1), res);
     if (res < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "pollset_poll failed");
+        JNU_ThrowIOExceptionWithIOError(env, "pollset_poll failed");
     }
     return res;
 }
@@ -138,7 +138,7 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_AixPollPort_socketpair(JNIEnv* env, jclass clazz, jintArray sv) {
     int sp[2];
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "socketpair failed");
+        JNU_ThrowIOExceptionWithIOError(env, "socketpair failed");
     } else {
         jint res[2];
         res[0] = (jint)sp[0];
@@ -154,7 +154,7 @@ Java_sun_nio_ch_AixPollPort_interrupt(JNIEnv *env, jclass c, jint fd) {
     buf[0] = 1;
     RESTARTABLE(write(fd, buf, 1), res);
     if (res < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "write failed");
+        JNU_ThrowIOExceptionWithIOError(env, "write failed");
     }
 }
 
@@ -164,7 +164,7 @@ Java_sun_nio_ch_AixPollPort_drain1(JNIEnv *env, jclass cl, jint fd) {
     char buf[1];
     RESTARTABLE(read(fd, buf, 1), res);
     if (res < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "drain1 failed");
+        JNU_ThrowIOExceptionWithIOError(env, "drain1 failed");
     }
 }
 

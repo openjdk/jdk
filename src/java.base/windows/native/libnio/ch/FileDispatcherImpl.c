@@ -50,7 +50,7 @@ Java_sun_nio_ch_FileDispatcherImpl_read0(JNIEnv *env, jclass clazz, jobject fdo,
     HANDLE h = (HANDLE)(handleval(env, fdo));
 
     if (h == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Invalid handle");
+        JNU_ThrowIOExceptionWithIOError(env, "Invalid handle");
         return IOS_THROWN;
     }
     result = ReadFile(h,          /* File handle to read */
@@ -66,7 +66,7 @@ Java_sun_nio_ch_FileDispatcherImpl_read0(JNIEnv *env, jclass clazz, jobject fdo,
         if (error == ERROR_NO_DATA) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Read failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Read failed");
         return IOS_THROWN;
     }
     return convertReturnVal(env, (jint)read, JNI_TRUE);
@@ -86,7 +86,7 @@ Java_sun_nio_ch_FileDispatcherImpl_readv0(JNIEnv *env, jclass clazz, jobject fdo
     HANDLE h = (HANDLE)(handleval(env, fdo));
 
     if (h == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Invalid handle");
+        JNU_ThrowIOExceptionWithIOError(env, "Invalid handle");
         return IOS_THROWN;
     }
 
@@ -114,7 +114,7 @@ Java_sun_nio_ch_FileDispatcherImpl_readv0(JNIEnv *env, jclass clazz, jobject fdo
         if (error == ERROR_NO_DATA) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Read failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Read failed");
         return IOS_THROWN;
     }
 
@@ -132,14 +132,14 @@ Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo
     OVERLAPPED ov;
 
     if (h == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Invalid handle");
+        JNU_ThrowIOExceptionWithIOError(env, "Invalid handle");
         return IOS_THROWN;
     }
 
     currPos.QuadPart = 0;
     result = SetFilePointerEx(h, currPos, &currPos, FILE_CURRENT);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek failed");
         return IOS_THROWN;
     }
 
@@ -162,14 +162,14 @@ Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo
             return IOS_UNAVAILABLE;
         }
         if (error != ERROR_HANDLE_EOF) {
-            JNU_ThrowIOExceptionWithLastError(env, "Read failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Read failed");
             return IOS_THROWN;
         }
     }
 
     result = SetFilePointerEx(h, currPos, NULL, FILE_BEGIN);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek failed");
         return IOS_THROWN;
     }
 
@@ -203,7 +203,7 @@ Java_sun_nio_ch_FileDispatcherImpl_write0(JNIEnv *env, jclass clazz, jobject fdo
     }
 
     if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Write failed");
         return IOS_THROWN;
     }
 
@@ -252,7 +252,7 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz, jobject fd
     }
 
     if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Write failed");
         return IOS_THROWN;
     }
 
@@ -272,7 +272,7 @@ Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fd
     currPos.QuadPart = 0;
     result = SetFilePointerEx(h, currPos, &currPos, FILE_CURRENT);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek failed");
         return IOS_THROWN;
     }
 
@@ -287,13 +287,13 @@ Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fd
                        &ov);             /* position to write at */
 
     if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Write failed");
         return IOS_THROWN;
     }
 
     result = SetFilePointerEx(h, currPos, NULL, FILE_BEGIN);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek failed");
         return IOS_THROWN;
     }
 
@@ -319,7 +319,7 @@ Java_sun_nio_ch_FileDispatcherImpl_seek0(JNIEnv *env, jclass clazz,
 
     result = SetFilePointerEx(h, where, &where, whence);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "SetFilePointerEx failed");
+        JNU_ThrowIOExceptionWithIOError(env, "SetFilePointerEx failed");
         return IOS_THROWN;
     }
     return (jlong)where.QuadPart;
@@ -337,12 +337,12 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
         if (result == 0) {
             int error = GetLastError();
             if (error != ERROR_ACCESS_DENIED) {
-                JNU_ThrowIOExceptionWithLastError(env, "Force failed");
+                JNU_ThrowIOExceptionWithIOError(env, "Force failed");
                 return IOS_THROWN;
             }
         }
     } else {
-        JNU_ThrowIOExceptionWithLastError(env, "Force failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Force failed");
         return IOS_THROWN;
     }
     return 0;
@@ -362,7 +362,7 @@ Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
                                         &eofInfo,
                                         sizeof(eofInfo));
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Truncation failed");
         return IOS_THROWN;
     }
     return 0;
@@ -377,7 +377,7 @@ Java_sun_nio_ch_FileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
 
     result = GetFileSizeEx(h, &size);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Size failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Size failed");
         return IOS_THROWN;
     }
     return (jlong)size.QuadPart;
@@ -417,13 +417,13 @@ Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
             error = GetLastError();
         }
         if (error != ERROR_LOCK_VIOLATION) {
-            JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Lock failed");
             return sun_nio_ch_FileDispatcherImpl_NO_LOCK;
         }
         if (flags & LOCKFILE_FAIL_IMMEDIATELY) {
             return sun_nio_ch_FileDispatcherImpl_NO_LOCK;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Lock failed");
         return sun_nio_ch_FileDispatcherImpl_NO_LOCK;
     }
     return sun_nio_ch_FileDispatcherImpl_LOCKED;
@@ -455,7 +455,7 @@ Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
             error = GetLastError();
         }
         if (error != ERROR_NOT_LOCKED) {
-            JNU_ThrowIOExceptionWithLastError(env, "Release failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Release failed");
         }
     }
 }
@@ -467,7 +467,7 @@ Java_sun_nio_ch_FileDispatcherImpl_close0(JNIEnv *env, jclass clazz, jobject fdo
     if (h != INVALID_HANDLE_VALUE) {
         int result = CloseHandle(h);
         if (result == 0)
-            JNU_ThrowIOExceptionWithLastError(env, "Close failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Close failed");
     }
 }
 
@@ -480,7 +480,7 @@ Java_sun_nio_ch_FileDispatcherImpl_duplicateHandle(JNIEnv *env, jclass this, jlo
     BOOL res = DuplicateHandle(hProcess, hFile, hProcess, &hResult, 0, FALSE,
                                DUPLICATE_SAME_ACCESS);
     if (res == 0)
-       JNU_ThrowIOExceptionWithLastError(env, "DuplicateHandle failed");
+       JNU_ThrowIOExceptionWithIOError(env, "DuplicateHandle failed");
     return ptr_to_jlong(hResult);
 }
 
@@ -545,7 +545,7 @@ Java_sun_nio_ch_FileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject fdo,
         NULL);           /* No name for object */
 
     if (mapping == NULL) {
-        JNU_ThrowIOExceptionWithLastError(env, "Map failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Map failed");
         return IOS_THROWN;
     }
 
@@ -559,7 +559,7 @@ Java_sun_nio_ch_FileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject fdo,
 
     result = CloseHandle(mapping);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Map failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Map failed");
         return IOS_THROWN;
     }
 
@@ -567,7 +567,7 @@ Java_sun_nio_ch_FileDispatcherImpl_map0(JNIEnv *env, jclass klass, jobject fdo,
         if (mapError == ERROR_NOT_ENOUGH_MEMORY)
             JNU_ThrowOutOfMemoryError(env, "Map failed");
         else
-            JNU_ThrowIOExceptionWithLastError(env, "Map failed");
+            JNU_ThrowIOExceptionWithIOError(env, "Map failed");
         return IOS_THROWN;
     }
 
@@ -583,7 +583,7 @@ Java_sun_nio_ch_FileDispatcherImpl_unmap0(JNIEnv *env, jclass klass,
 
     result = UnmapViewOfFile(a);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Unmap failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Unmap failed");
         return IOS_THROWN;
     }
     return 0;
@@ -616,7 +616,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jclass klass,
     where.QuadPart = position;
     result = SetFilePointerEx(src, where, &where, FILE_BEGIN);
     if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "SetFilePointerEx failed");
+        JNU_ThrowIOExceptionWithIOError(env, "SetFilePointerEx failed");
         return IOS_THROWN;
     }
 
@@ -637,7 +637,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jclass klass,
         if (WSAENOTSOCK == error) {
             return IOS_UNSUPPORTED_CASE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "transfer failed");
+        JNU_ThrowIOExceptionWithIOError(env, "transfer failed");
         return IOS_THROWN;
     }
     return chunkSize;
@@ -666,7 +666,7 @@ Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass this,
                                      &numberOfFreeClusters,
                                      &totalNumberOfClusters);
         if (res == 0) {
-            JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+            JNU_ThrowIOExceptionWithIOError(env, "DirectIO setup failed");
         }
         result = bytesPerSector;
     }

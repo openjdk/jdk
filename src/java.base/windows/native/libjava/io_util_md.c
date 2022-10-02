@@ -557,7 +557,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
     }
 
     if (CloseHandle(h) == 0) { /* Returns zero on failure */
-        JNU_ThrowIOExceptionWithLastError(env, "close failed");
+        JNU_ThrowIOExceptionWithIOError(env, "close failed");
     }
 }
 

@@ -92,7 +92,7 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
     // Get buffer size needed to read all processes
     int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
     if (sysctl(mib, 4, NULL, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowPerrorByName(env,
             "java/lang/RuntimeException", "sysctl failed");
         return -1;
     }
@@ -106,7 +106,7 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 
     // Read process info for all processes
     if (sysctl(mib, 4, buffer, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowPerrorByName(env,
             "java/lang/RuntimeException", "sysctl failed");
         free(buffer);
         return -1;
@@ -189,7 +189,7 @@ pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t jpid,
     int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
 
     if (sysctl(mib, 4, &kp, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowPerrorByName(env,
             "java/lang/RuntimeException", "sysctl failed");
         return -1;
     }
@@ -251,7 +251,7 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     mib[1] = KERN_ARGMAX;
     size = sizeof(maxargs);
     if (sysctl(mib, 2, &maxargs, &size, NULL, 0) == -1) {
-            JNU_ThrowByNameWithLastError(env,
+            JNU_ThrowPerrorByName(env,
                 "java/lang/RuntimeException", "sysctl failed");
         return;
     }
@@ -274,7 +274,7 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
         if (sysctl(mib, 3, args, &size, NULL, 0) == -1) {
             if (errno != EINVAL && errno != EIO) {
                 // If the pid is invalid, the information returned is empty and no exception
-                JNU_ThrowByNameWithLastError(env,
+                JNU_ThrowPerrorByName(env,
                     "java/lang/RuntimeException", "sysctl failed");
             }
             break;

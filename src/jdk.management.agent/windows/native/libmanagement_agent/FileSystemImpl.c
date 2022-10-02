@@ -120,7 +120,7 @@ static jboolean isSecuritySupported(JNIEnv* env, const char* path) {
                                fsNameLength);
     if (res == 0) {
         free(root);
-        JNU_ThrowIOExceptionWithLastError(env, "GetVolumeInformation failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetVolumeInformation failed");
         return JNI_FALSE;
     }
 
@@ -140,7 +140,7 @@ static SECURITY_DESCRIPTOR* getFileSecurityDescriptor(JNIEnv* env, const char* p
 
     GetFileSecurityA(path, info , 0, 0, &len);
     if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetFileSecurity failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetFileSecurity failed");
         return NULL;
     }
     sd = (SECURITY_DESCRIPTOR *)malloc(len);
@@ -148,7 +148,7 @@ static SECURITY_DESCRIPTOR* getFileSecurityDescriptor(JNIEnv* env, const char* p
         JNU_ThrowOutOfMemoryError(env, 0);
     } else {
         if (!(*GetFileSecurityA)(path, info, sd, len, &len)) {
-            JNU_ThrowIOExceptionWithLastError(env, "GetFileSecurity failed");
+            JNU_ThrowIOExceptionWithIOError(env, "GetFileSecurity failed");
             free(sd);
             return NULL;
         }
@@ -165,7 +165,7 @@ static SID* getFileOwner(JNIEnv* env, SECURITY_DESCRIPTOR* sd) {
     BOOL defaulted;
 
     if (!GetSecurityDescriptorOwner(sd, &owner, &defaulted)) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetSecurityDescriptorOwner failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetSecurityDescriptorOwner failed");
         return NULL;
     }
     return owner;
@@ -180,7 +180,7 @@ static ACL* getFileDACL(JNIEnv* env, SECURITY_DESCRIPTOR* sd) {
     int defaulted, present;
 
     if (!GetSecurityDescriptorDacl(sd, &present, &acl, &defaulted)) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetSecurityDescriptorDacl failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetSecurityDescriptorDacl failed");
         return NULL;
     }
     if (!present) {
@@ -210,7 +210,7 @@ static jboolean isAccessUserOnly(JNIEnv* env, SID* owner, ACL* acl) {
      */
     if (!GetAclInformation(acl, (void *) &acl_size_info, sizeof(acl_size_info),
                            AclSizeInformation)) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetAclInformation failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetAclInformation failed");
         return JNI_FALSE;
     }
 
@@ -224,7 +224,7 @@ static jboolean isAccessUserOnly(JNIEnv* env, SID* owner, ACL* acl) {
         SID* sid;
 
         if (!GetAce(acl, i, &ace)) {
-            JNU_ThrowIOExceptionWithLastError(env, "GetAce failed");
+            JNU_ThrowIOExceptionWithIOError(env, "GetAce failed");
             return -1;
         }
         if (((ACCESS_ALLOWED_ACE *)ace)->Header.AceType != ACCESS_ALLOWED_ACE_TYPE) {

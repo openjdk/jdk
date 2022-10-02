@@ -59,7 +59,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_EPoll_create(JNIEnv *env, jclass clazz) {
     int epfd = epoll_create1(EPOLL_CLOEXEC);
     if (epfd < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "epoll_create1 failed");
+        JNU_ThrowIOExceptionWithIOError(env, "epoll_create1 failed");
     }
     return epfd;
 }
@@ -88,7 +88,7 @@ Java_sun_nio_ch_EPoll_wait(JNIEnv *env, jclass clazz, jint epfd,
         if (errno == EINTR) {
             return IOS_INTERRUPTED;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "epoll_wait failed");
+            JNU_ThrowIOExceptionWithIOError(env, "epoll_wait failed");
             return IOS_THROWN;
         }
     }

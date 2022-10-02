@@ -31,6 +31,30 @@
 #include "jni.h"
 #include "jni_util.h"
 
+/*
+ * Convenience method.
+ * IO on Windows uses the Windows API.
+ */
+JNIEXPORT void JNICALL
+JNU_ThrowIOExceptionWithIOError(JNIEnv *env, const char *defaultDetail) {
+    char buf[256];
+    size_t n = getLastWinErrorString(buf, 256);
+
+    if (n > 0) {
+        jstring s = JNU_NewStringPlatform(env, buf);
+        if (s != NULL) {
+            jobject x = JNU_NewObjectByName(env, "java/io/IOException",
+                                            "(Ljava/lang/String;)V", s);
+            if (x != NULL) {
+                (*env)->Throw(env, x);
+            }
+        }
+    }
+    if (!(*env)->ExceptionOccurred(env)) {
+        JNU_ThrowByName(env, "java/io/IOException", defaultDetail);
+    }
+}
+
 void* getProcessHandle() {
     return (void*)GetModuleHandle(NULL);
 }
@@ -141,5 +165,25 @@ throwByNameWithMessageAndWinError
         } else {
             JNU_ThrowByName(env, name, "no further information");
         }
+    }
+}
+
+JNIEXPORT void JNICALL
+throwByNameWithWinError(JNIEnv *env, const char *name, const char *defaultDetail) {
+    char buf[256];
+    size_t n = getLastWinErrorString(buf, sizeof(buf));
+
+    if (n > 0) {
+        jstring s = JNU_NewStringPlatform(env, buf);
+        if (s != NULL) {
+            jobject x = JNU_NewObjectByName(env, name,
+                                            "(Ljava/lang/String;)V", s);
+            if (x != NULL) {
+                (*env)->Throw(env, x);
+            }
+        }
+    }
+    if (!(*env)->ExceptionOccurred(env)) {
+        JNU_ThrowByName(env, name, defaultDetail);
     }
 }

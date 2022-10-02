@@ -71,7 +71,7 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_initIDs(JNIEnv* env, jclass
         s = socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s == INVALID_SOCKET) {
-        JNU_ThrowIOExceptionWithLastError(env, "socket failed");
+        JNU_ThrowIOExceptionWithIOError(env, "socket failed");
         return;
     }
     rv = WSAIoctl(s,
@@ -84,7 +84,7 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_initIDs(JNIEnv* env, jclass
                   NULL,
                   NULL);
     if (rv != 0)
-        JNU_ThrowIOExceptionWithLastError(env, "WSAIoctl failed");
+        JNU_ThrowIOExceptionWithIOError(env, "WSAIoctl failed");
     closesocket(s);
 }
 
@@ -112,7 +112,7 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_connect0(JNIEnv* env, jclas
         if (error == ERROR_IO_PENDING) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "ConnectEx failed");
+        JNU_ThrowIOExceptionWithIOError(env, "ConnectEx failed");
         return IOS_THROWN;
     }
     return 0;
@@ -133,7 +133,7 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_shutdown0(JNIEnv *env, jcla
 {
     SOCKET s =(SOCKET) jlong_to_ptr(socket);
     if (shutdown(s, how) == SOCKET_ERROR) {
-        JNU_ThrowIOExceptionWithLastError(env, "shutdown failed");
+        JNU_ThrowIOExceptionWithIOError(env, "shutdown failed");
     }
 }
 
@@ -144,7 +144,7 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_closesocket0(JNIEnv* env, j
 {
     SOCKET s = (SOCKET)jlong_to_ptr(socket);
     if (closesocket(s) == SOCKET_ERROR)
-        JNU_ThrowIOExceptionWithLastError(env, "closesocket failed");
+        JNU_ThrowIOExceptionWithIOError(env, "closesocket failed");
 }
 
 
@@ -175,7 +175,7 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_read0(JNIEnv* env, jclass t
         if (error == WSAESHUTDOWN) {
             return IOS_EOF;       // input shutdown
         }
-        JNU_ThrowIOExceptionWithLastError(env, "WSARecv failed");
+        JNU_ThrowIOExceptionWithIOError(env, "WSARecv failed");
         return IOS_THROWN;
     }
     return IOS_UNAVAILABLE;
@@ -207,7 +207,7 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_write0(JNIEnv* env, jclass 
         if (error == WSAESHUTDOWN) {
             return IOS_EOF;     // output shutdown
         }
-        JNU_ThrowIOExceptionWithLastError(env, "WSASend failed");
+        JNU_ThrowIOExceptionWithIOError(env, "WSASend failed");
         return IOS_THROWN;
     }
     return IOS_UNAVAILABLE;

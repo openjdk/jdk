@@ -70,7 +70,7 @@ Java_java_io_Console_echo(JNIEnv *env, jclass cls, jboolean on)
     DWORD fdwMode;
     jboolean old;
     if (! GetConsoleMode(hStdIn, &fdwMode)) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetConsoleMode failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetConsoleMode failed");
         return !on;
     }
     old = (fdwMode & ENABLE_ECHO_INPUT) != 0;
@@ -80,7 +80,7 @@ Java_java_io_Console_echo(JNIEnv *env, jclass cls, jboolean on)
         fdwMode &= ~ENABLE_ECHO_INPUT;
     }
     if (! SetConsoleMode(hStdIn, fdwMode)) {
-        JNU_ThrowIOExceptionWithLastError(env, "SetConsoleMode failed");
+        JNU_ThrowIOExceptionWithIOError(env, "SetConsoleMode failed");
     }
     return old;
 }

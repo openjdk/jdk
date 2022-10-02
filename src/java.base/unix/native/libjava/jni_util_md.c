@@ -38,6 +38,15 @@ extern int __xpg_strerror_r(int, char *, size_t);
 #define strerror_r(a, b, c) __xpg_strerror_r((a), (b), (c))
 #endif
 
+/*
+ * Convenience method.
+ * Call JNU_ThrowByNameWithLastError for java.io.IOException.
+ */
+JNIEXPORT void JNICALL
+JNU_ThrowIOExceptionWithIOError(JNIEnv *env, const char *defaultDetail) {
+    JNU_ThrowPerrorByName(env, "java/io/IOException", defaultDetail);
+}
+
 void* getProcessHandle() {
     static void *procHandle = NULL;
     if (procHandle != NULL) {

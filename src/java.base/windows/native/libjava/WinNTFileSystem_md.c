@@ -311,7 +311,7 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
         }
     } END_UNICODE_STRING(env, path);
     if (rv == NULL && !(*env)->ExceptionCheck(env)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
+        JNU_ThrowIOExceptionWithIOError(env, "Bad pathname");
     }
     return rv;
 }
@@ -347,7 +347,7 @@ Java_java_io_WinNTFileSystem_canonicalizeWithPrefix0(JNIEnv *env, jobject this,
         } END_UNICODE_STRING(env, pathWithCanonicalPrefix);
     } END_UNICODE_STRING(env, canonicalPrefix);
     if (rv == NULL && !(*env)->ExceptionCheck(env)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
+        JNU_ThrowIOExceptionWithIOError(env, "Bad pathname");
     }
     return rv;
 }
@@ -639,7 +639,7 @@ Java_java_io_WinNTFileSystem_createFileExclusively0(JNIEnv *env, jclass cls,
             DWORD a = GetFileAttributesW(pathbuf);
             if (a == INVALID_FILE_ATTRIBUTES) {
                 SetLastError(error);
-                JNU_ThrowIOExceptionWithLastError(env, "Could not open file");
+                JNU_ThrowIOExceptionWithIOError(env, "Could not open file");
             }
         }
         free(pathbuf);
@@ -995,7 +995,7 @@ Java_java_io_WinNTFileSystem_getNameMax0(JNIEnv *env, jobject this,
     }
 
     if (res == 0) {
-        JNU_ThrowIOExceptionWithLastError(env,
+        JNU_ThrowIOExceptionWithIOError(env,
             "Could not get maximum component length");
     }
 

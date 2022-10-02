@@ -100,7 +100,7 @@ Java_java_io_RandomAccessFile_getFilePointer(JNIEnv *env, jobject this) {
         return -1;
     }
     if ((ret = IO_Lseek(fd, 0L, SEEK_CUR)) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek failed");
     }
     return ret;
 }
@@ -117,7 +117,7 @@ Java_java_io_RandomAccessFile_length0(JNIEnv *env, jobject this) {
         return -1;
     }
     if ((length = IO_GetLength(fd)) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetLength failed");
+        JNU_ThrowIOExceptionWithIOError(env, "GetLength failed");
     }
     return length;
 }
@@ -136,7 +136,7 @@ Java_java_io_RandomAccessFile_seek0(JNIEnv *env,
     if (pos < jlong_zero) {
         JNU_ThrowIOException(env, "Negative seek offset");
     } else if (IO_Lseek(fd, pos, SEEK_SET) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        JNU_ThrowIOExceptionWithIOError(env, "Seek failed");
     }
 }
 
@@ -162,5 +162,5 @@ Java_java_io_RandomAccessFile_setLength0(JNIEnv *env, jobject this,
     return;
 
  fail:
-    JNU_ThrowIOExceptionWithLastError(env, "setLength failed");
+    JNU_ThrowIOExceptionWithIOError(env, "setLength failed");
 }

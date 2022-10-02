@@ -64,7 +64,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_KQueue_create(JNIEnv *env, jclass clazz) {
     int kqfd = kqueue();
     if (kqfd < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "kqueue failed");
+        JNU_ThrowIOExceptionWithIOError(env, "kqueue failed");
         return IOS_THROWN;
     }
     return kqfd;
@@ -105,7 +105,7 @@ Java_sun_nio_ch_KQueue_poll(JNIEnv *env, jclass clazz, jint kqfd, jlong address,
         if (errno == EINTR) {
             return IOS_INTERRUPTED;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "kqueue failed");
+            JNU_ThrowIOExceptionWithIOError(env, "kqueue failed");
             return IOS_THROWN;
         }
     }

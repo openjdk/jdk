@@ -46,7 +46,7 @@ Java_sun_nio_ch_PollSelectorImpl_poll(JNIEnv *env, jclass clazz,
         if (errno == EINTR) {
             return IOS_INTERRUPTED;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "poll failed");
+            JNU_ThrowIOExceptionWithIOError(env, "poll failed");
             return IOS_THROWN;
         }
     }

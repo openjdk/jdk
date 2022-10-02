@@ -491,7 +491,7 @@ Java_java_lang_ProcessImpl_openForAtomicAppend(JNIEnv *env, jclass ignored, jstr
         NULL);
     free(pathbuf);
     if (h == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "CreateFileW");
+        JNU_ThrowIOExceptionWithIOError(env, "CreateFileW");
     }
     return ptr_to_jlong(h);
 }
