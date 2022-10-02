@@ -1702,7 +1702,7 @@ public final class Long extends Number
         if (divisor > 0) {
             return remainderUnsigned0(dividend, divisor);
         } else if (divisor < 0) {
-            return compareUnsigned(dividend, divisor) >= 0 
+            return compareUnsigned(dividend, divisor) >= 0
                     ? (dividend - divisor)
                     : dividend;
         } else {
