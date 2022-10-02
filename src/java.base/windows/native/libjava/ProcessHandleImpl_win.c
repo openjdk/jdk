@@ -111,7 +111,7 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
     }
     do {
         if (!GetExitCodeProcess(handle, &exitValue)) {
-        	throwByNameWithWinError(env,
+            throwByNameWithWinError(env,
                 "java/lang/RuntimeException", "GetExitCodeProcess");
             break;
         }
@@ -124,7 +124,7 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
                                        FALSE,    /* Wait for ANY event */
                                        INFINITE) /* Wait forever */
                 == WAIT_FAILED) {
-            	throwByNameWithWinError(env,
+                throwByNameWithWinError(env,
                     "java/lang/RuntimeException", "WaitForMultipleObjects");
                 break;
             }
@@ -514,7 +514,7 @@ static void procToUser(JNIEnv *env, HANDLE handle, jobject jinfo) {
                               token_len, &token_len);
     CloseHandle(tokenHandle);           // always close handle
     if (!ret) {
-    	throwByNameWithWinError(env,
+        throwByNameWithWinError(env,
             "java/lang/RuntimeException", "GetTokenInformation");
         return;
     }
