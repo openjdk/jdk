@@ -81,7 +81,26 @@ JLI_GetAppArgIndex();
 #define JLI_StrCSpn(p1, p2)     strcspn((p1), (p2))
 #define JLI_StrPBrk(p1, p2)     strpbrk((p1), (p2))
 
-#define JLI_Perror              perror
+/*
+ * Beginning with the UCRT in Visual Studio 2015 and Windows 10, snprintf is
+ * no longer identical to _snprintf. snprintf is now the one from C99, so we
+ * can remove the compatibility hack.
+ * https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/snprintf-snprintf-snprintf-l-snwprintf-snwprintf-l?view=msvc-170
+ */
+#define JLI_Snprintf            snprintf
+
+/* Support for using perror with printf arguments */
+#define JLI_Perror(...) \
+    { \
+        const int len = snprintf(NULL, 0, __VA_ARGS__); \
+        if (len > -1) { \
+            char buffer[len + 1]; \
+            if (snprintf(buffer, len + 1, __VA_ARGS__) > -1) perror(buffer); \
+        } else { \
+            fprintf(stderr, "JLI_Perror failed\n"); \
+        } \
+    } \
+    ((void*) 0)
 
 /* On Windows lseek() is in io.h rather than the location dictated by POSIX. */
 #ifdef _WIN32
@@ -90,7 +109,6 @@ JLI_GetAppArgIndex();
 #include <process.h>
 #define JLI_StrCaseCmp(p1, p2)          stricmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strnicmp((p1), (p2), (p3))
-int JLI_Snprintf(char *buffer, size_t size, const char *format, ...);
 int JLI_Open(const char* name, int flags);
 JNIEXPORT void JNICALL
 JLI_CmdToArgs(char *cmdline);
@@ -100,7 +118,6 @@ JLI_CmdToArgs(char *cmdline);
 #include <strings.h>
 #define JLI_StrCaseCmp(p1, p2)          strcasecmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strncasecmp((p1), (p2), (p3))
-#define JLI_Snprintf                    snprintf
 #define JLI_Open                        open
 #ifdef __linux__
 #define _LARGFILE64_SOURCE
