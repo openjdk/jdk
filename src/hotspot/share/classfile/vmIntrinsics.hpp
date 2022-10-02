@@ -228,10 +228,10 @@ class methodHandle;
                                                                                                                         \
   do_intrinsic(_divideUnsigned_i,         java_lang_Integer,      divideUnsigned_name,      int2_int_signature,  F_S)   \
   do_intrinsic(_remainderUnsigned_i,      java_lang_Integer,      remainderUnsigned_name,   int2_int_signature,  F_S)   \
-   do_name(     divideUnsigned_name,                             "divideUnsigned")                                      \
+   do_name(     divideUnsigned_name,                             "divideUnsigned0")                                     \
   do_intrinsic(_divideUnsigned_l,         java_lang_Long,         divideUnsigned_name,      long2_long_signature, F_S)  \
   do_intrinsic(_remainderUnsigned_l,      java_lang_Long,         remainderUnsigned_name,   long2_long_signature, F_S)  \
-   do_name(     remainderUnsigned_name,                          "remainderUnsigned")                                   \
+   do_name(     remainderUnsigned_name,                          "remainderUnsigned0")                                  \
                                                                                                                         \
   do_intrinsic(_numberOfLeadingZeros_i,   java_lang_Integer,      numberOfLeadingZeros_name,int_int_signature,   F_S)   \
   do_intrinsic(_numberOfLeadingZeros_l,   java_lang_Long,         numberOfLeadingZeros_name,long_int_signature,  F_S)   \

@@ -22,8 +22,8 @@
  */
 package org.openjdk.bench.java.lang;
 
-import java.util.random.RandomGenerator;
 import java.util.concurrent.TimeUnit;
+import java.util.random.RandomGeneratorFactory;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -47,8 +47,11 @@ import org.openjdk.jmh.annotations.Warmup;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 public class LongDivMod {
+    @Param({"mixed", "positive", "negative"})
+    String divisorType;
     @Param({"1024"})
     int BUFFER_SIZE;
+
     long[] dividends, divisors, quotients, remainders;
 
     @Setup
@@ -57,11 +60,23 @@ public class LongDivMod {
         divisors = new long[BUFFER_SIZE];
         quotients =  new long[BUFFER_SIZE];
         remainders =  new long[BUFFER_SIZE];
-        var rng = RandomGenerator.getDefault();
+        var rng = RandomGeneratorFactory.getDefault().create(0);
         for (int i = 0; i < BUFFER_SIZE; i++) {
             dividends[i] = rng.nextLong();
             long divisor = rng.nextLong();
-            divisors[i] = divisor == 0 ? 1 : divisor;
+            divisor = divisor == 0 ? 1 : divisor;
+            if (divisorType.equals("positive")) {
+                if (divisor == Long.MIN_VALUE) {
+                    divisor = Long.MAX_VALUE;
+                } else if (divisor < 0) {
+                    divisor = -divisor;
+                }
+            } else if (divisorType.equals("negative")) {
+                if (divisor > 0) {
+                    divisor = -divisor;
+                }
+            }
+            divisors[i] = divisor;
         }
     }
 
