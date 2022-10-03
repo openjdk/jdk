@@ -1642,7 +1642,6 @@ void java_lang_Class::set_classRedefinedCount(oop the_class_mirror, int value) {
 int java_lang_Thread_FieldHolder::_group_offset;
 int java_lang_Thread_FieldHolder::_priority_offset;
 int java_lang_Thread_FieldHolder::_stackSize_offset;
-int java_lang_Thread_FieldHolder::_stillborn_offset;
 int java_lang_Thread_FieldHolder::_daemon_offset;
 int java_lang_Thread_FieldHolder::_thread_status_offset;
 
@@ -1650,7 +1649,6 @@ int java_lang_Thread_FieldHolder::_thread_status_offset;
   macro(_group_offset,         k, vmSymbols::group_name(),    threadgroup_signature, false); \
   macro(_priority_offset,      k, vmSymbols::priority_name(), int_signature,         false); \
   macro(_stackSize_offset,     k, "stackSize",                long_signature,        false); \
-  macro(_stillborn_offset,     k, "stillborn",                bool_signature,        false); \
   macro(_daemon_offset,        k, vmSymbols::daemon_name(),   bool_signature,        false); \
   macro(_thread_status_offset, k, "threadStatus",             int_signature,         false)
 
@@ -1681,14 +1679,6 @@ void java_lang_Thread_FieldHolder::set_priority(oop holder, ThreadPriority prior
 
 jlong java_lang_Thread_FieldHolder::stackSize(oop holder) {
   return holder->long_field(_stackSize_offset);
-}
-
-bool java_lang_Thread_FieldHolder::is_stillborn(oop holder) {
-  return holder->bool_field(_stillborn_offset) != 0;
-}
-
-void java_lang_Thread_FieldHolder::set_stillborn(oop holder) {
-  holder->bool_field_put(_stillborn_offset, true);
 }
 
 bool java_lang_Thread_FieldHolder::is_daemon(oop holder) {
@@ -1854,21 +1844,6 @@ oop java_lang_Thread::threadGroup(oop java_thread) {
 }
 
 
-bool java_lang_Thread::is_stillborn(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != NULL, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::is_stillborn(holder);
-}
-
-
-// We never have reason to turn the stillborn bit off
-void java_lang_Thread::set_stillborn(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != NULL, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_stillborn(holder);
-}
-
-
 bool java_lang_Thread::is_alive(oop java_thread) {
   JavaThread* thr = java_lang_Thread::thread(java_thread);
   return (thr != NULL);
@@ -1959,11 +1934,12 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
     GrowableArray<int>*     _bcis;
 
     GetStackTraceClosure(Handle java_thread) :
-        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false) {
-      // Pick some initial length
-      int init_length = MaxJavaStackTraceDepth / 2;
-      _methods = new GrowableArray<Method*>(init_length);
-      _bcis = new GrowableArray<int>(init_length);
+        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
+        _methods(nullptr), _bcis(nullptr) {
+    }
+    ~GetStackTraceClosure() {
+      delete _methods;
+      delete _bcis;
     }
 
     bool read_reset_retry() {
@@ -1999,6 +1975,11 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
+
+      // Pick minimum length that will cover most cases
+      int init_length = 64;
+      _methods = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<Method*>(init_length, mtInternal);
+      _bcis = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
       for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops
