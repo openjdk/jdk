@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main PrimeTest
- * @bug 8026236 8074460 8078672
+ * @bug 8026236 8074460 8078672 8294593
  * @summary test primality verification methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @author bpb
  * @key randomness
@@ -84,6 +84,10 @@ public class PrimeTest {
 
         if (!primeTest || !nonPrimeTest || !mersennePrimeTest) {
             throw new Exception("PrimeTest FAILED!");
+        }
+
+        if (!checkHugeFails()) {
+            throw new Exception("Primality test on huge integer should fail but succeeded");
         }
 
         System.out.println("PrimeTest succeeded!");
@@ -230,4 +234,19 @@ public class PrimeTest {
 
         return result;
     }
+
+    private static boolean checkHugeFails() {
+        try {
+            // huge odd integer
+            BigInteger a = BigInteger.ONE.shiftLeft(500_000_000 + 1)
+                    .setBit(0);
+            a.isProbablePrime(1);
+            // not expected to reach here
+            return false;
+        } catch (ArithmeticException e) {
+            // this is the expected behavior
+            return true;
+        }
+    }
+
 }
