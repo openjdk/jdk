@@ -33,5 +33,5 @@ public interface GraphViewer {
 
     void view(InputGraph graph, boolean clone);
 
-    void view_difference(InputGraph firstGraph, InputGraph secondGraph);
+    void viewDifference(InputGraph firstGraph, InputGraph secondGraph);
 }

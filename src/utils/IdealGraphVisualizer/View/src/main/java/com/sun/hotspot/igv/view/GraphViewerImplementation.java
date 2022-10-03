@@ -38,7 +38,7 @@ import org.openide.util.lookup.ServiceProvider;
 public class GraphViewerImplementation implements GraphViewer {
 
     @Override
-    public void view_difference(InputGraph firstGraph, InputGraph secondGraph) {
+    public void viewDifference(InputGraph firstGraph, InputGraph secondGraph) {
         if (firstGraph.getGroup() != secondGraph.getGroup()) {
             InputGraph diffGraph = Difference.createDiffGraph(firstGraph, secondGraph);
             view(diffGraph, true);
