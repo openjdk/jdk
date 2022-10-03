@@ -40,11 +40,11 @@ extern int __xpg_strerror_r(int, char *, size_t);
 
 /*
  * Convenience method.
- * Call JNU_ThrowByNameWithLastError for java.io.IOException.
+ * Call JNU_ThrowByNameWithStrerror for java.io.IOException.
  */
 JNIEXPORT void JNICALL
 JNU_ThrowIOExceptionWithIOError(JNIEnv *env, const char *defaultDetail) {
-    JNU_ThrowByNameWithLastError(env, "java/io/IOException", defaultDetail);
+    JNU_ThrowByNameWithStrerror(env, "java/io/IOException", defaultDetail);
 }
 
 void* getProcessHandle() {

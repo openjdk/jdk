@@ -66,7 +66,7 @@ int NET_SocketAvailable(int s, int *pbytes) {
 void
 NET_ThrowByNameWithNetError(JNIEnv *env, const char *name,
                    const char *defaultDetail) {
-    JNU_ThrowPerrorByNameWithMessage(env, name, defaultDetail);
+    JNU_ThrowByNamePerror(env, name, defaultDetail);
 }
 
 void
@@ -85,7 +85,7 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
         break;
     default:
         errno = errorNumber;
-        JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", msg);
+        JNU_ThrowByNameWithStrerror(env, JNU_JAVANETPKG "SocketException", msg);
         break;
     }
 }

@@ -101,7 +101,7 @@ JNU_ThrowIOException(JNIEnv *env, const char *msg)
  * exceptions.
  */
 JNIEXPORT void JNICALL
-JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
+JNU_ThrowByNameWithStrerror(JNIEnv *env, const char *name,
                              const char *defaultDetail)
 {
     char* buf = NULL;
@@ -129,7 +129,7 @@ JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
  * C perror() for exceptions.
  */
 JNIEXPORT void JNICALL
-JNU_ThrowPerrorByNameWithMessage
+JNU_ThrowByNamePerror
   (JNIEnv *env, const char *name, const char *message)
 {
     char* buf = NULL;

@@ -537,7 +537,7 @@ jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
      * position integer as a filename.
      */
     if ((dir = opendir("/proc")) == NULL) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowByNameWithStrerror(env,
             "java/lang/RuntimeException", "Unable to open /proc");
         return -1;
     }

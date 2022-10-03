@@ -77,7 +77,7 @@ JNU_ThrowClassNotFoundException(JNIEnv *env, const char *msg);
  * exceptions.
  */
 JNIEXPORT void JNICALL
-JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
+JNU_ThrowByNameWithStrerror(JNIEnv *env, const char *name,
                              const char *defaultDetail);
 
 /*
@@ -86,7 +86,7 @@ JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
  * C perror() for exceptions.
  */
 JNIEXPORT void JNICALL
-JNU_ThrowPerrorByNameWithMessage
+JNU_ThrowByNamePerror
   (JNIEnv *env, const char *name, const char *message);
 
 /* Throw an IOException, using the error string from the currently failing

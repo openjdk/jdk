@@ -218,7 +218,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         int arg = 0;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg,
                        sizeof(int)) < 0) {
-            JNU_ThrowByNameWithLastError(env,
+            JNU_ThrowByNameWithStrerror(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set IPV6_V6ONLY");
             close(fd);
@@ -230,7 +230,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         int arg = 1;
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
                        sizeof(arg)) < 0) {
-            JNU_ThrowByNameWithLastError(env,
+            JNU_ThrowByNameWithStrerror(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set SO_REUSEADDR");
             close(fd);
@@ -244,7 +244,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         int level = (domain == AF_INET6) ? IPPROTO_IPV6 : IPPROTO_IP;
         if ((setsockopt(fd, level, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
             (errno != ENOPROTOOPT)) {
-            JNU_ThrowByNameWithLastError(env,
+            JNU_ThrowByNameWithStrerror(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set IP_MULTICAST_ALL");
             close(fd);
@@ -257,7 +257,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         int arg = 1;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &arg,
                        sizeof(arg)) < 0) {
-            JNU_ThrowByNameWithLastError(env,
+            JNU_ThrowByNameWithStrerror(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set IPV6_MULTICAST_HOPS");
             close(fd);
@@ -506,7 +506,7 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
         n = getsockopt(fdval(env, fdo), level, opt, arg, &arglen);
     }
     if (n < 0) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowByNameWithStrerror(env,
                                      JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.Net.getIntOption");
         return -1;
@@ -565,7 +565,7 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
         n = setsockopt(fdval(env, fdo), level, opt, parg, arglen);
     }
     if (n < 0) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowByNameWithStrerror(env,
                                      JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.Net.setIntOption");
     }
@@ -944,6 +944,6 @@ jint handleSocketError(JNIEnv *env, jint errorValue)
             break;
     }
     errno = errorValue;
-    JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
+    JNU_ThrowByNameWithStrerror(env, xn, "NioSocketError");
     return IOS_THROWN;
 }

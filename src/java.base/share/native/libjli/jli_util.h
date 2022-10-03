@@ -95,11 +95,16 @@ JLI_GetAppArgIndex();
         const int len = snprintf(NULL, 0, __VA_ARGS__); \
         if (len > -1) { \
             char buffer[len + 1]; \
-            if (snprintf(buffer, len + 1, __VA_ARGS__) > -1) perror(buffer); \
+            if (snprintf(buffer, len + 1, __VA_ARGS__) > -1) { \
+                perror(buffer); \
+            } else { \
+                fprintf(stderr, "Failed to write to error buffer while logging error\n"); \
+            } \
         } else { \
-            fprintf(stderr, "JLI_Perror failed\n"); \
+            fprintf(stderr, "Failed to allocate error buffer while logging error\n"); \
         } \
-    } ((void) 0)
+    } \
+    ((void) 0)
 
 /* On Windows lseek() is in io.h rather than the location dictated by POSIX. */
 #ifdef _WIN32
