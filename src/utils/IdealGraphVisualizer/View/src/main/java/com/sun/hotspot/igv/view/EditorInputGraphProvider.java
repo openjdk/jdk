@@ -42,7 +42,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     public EditorInputGraphProvider() {
         editor = null;
     }
-    
+
     public EditorInputGraphProvider(EditorTopComponent editor) {
         this.editor = editor;
     }

@@ -55,7 +55,7 @@ public class DiffGraphCookie implements Node.Cookie {
 
     public boolean isPossible() {
         InputGraph currentGraph = getCurrentGraph();
-        return currentGraph != null && !currentGraph.isDiffGraph();
+        return currentGraph != null && !currentGraph.isDiffGraph() && currentGraph != graph;
     }
 
     public void openDiff() {
