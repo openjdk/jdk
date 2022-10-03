@@ -40,7 +40,9 @@ import com.sun.hotspot.igv.view.actions.CustomizablePanAction;
 import com.sun.hotspot.igv.view.actions.MouseZoomAction;
 import com.sun.hotspot.igv.view.widgets.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelListener;
 import java.util.List;
 import java.util.*;
 import javax.swing.*;
@@ -106,13 +108,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     @SuppressWarnings("unchecked")
     public <T> T getWidget(Object o) {
-        Widget w = this.findWidget(o);
+        Widget w = findWidget(o);
         return (T) w;
     }
 
     @SuppressWarnings("unchecked")
     public <T> T getWidget(Object o, Class<T> klass) {
-        Widget w = this.findWidget(o);
+        Widget w = findWidget(o);
         return (T) w;
     }
 
@@ -204,16 +206,16 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         @Override
         public void filteredChanged(SelectionCoordinator source) {
-            DiagramScene.this.setHighlightedObjects(idSetToObjectSet(source.getHighlightedObjects()));
-            DiagramScene.this.validate();
+            setHighlightedObjects(idSetToObjectSet(source.getHighlightedObjects()));
+            validate();
         }
     };
     private final ControllableChangedListener<SelectionCoordinator> selectedCoordinatorListener = new ControllableChangedListener<SelectionCoordinator>() {
 
         @Override
         public void filteredChanged(SelectionCoordinator source) {
-            DiagramScene.this.gotoSelection(source.getSelectedObjects());
-            DiagramScene.this.validate();
+            gotoSelection(source.getSelectedObjects());
+            validate();
         }
     };
 
@@ -258,14 +260,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     public DiagramScene(Action[] actions, Action[] actionsWithSelection, DiagramViewModel model) {
-
         this.actions = actions;
         this.actionsWithSelection = actionsWithSelection;
 
         content = new InstanceContent();
         lookup = new AbstractLookup(content);
 
-        this.setCheckClipping(true);
+        setCheckClipping(true);
 
         MouseZoomAction mouseZoomAction = new MouseZoomAction(this);
         scrollPane = createScrollPane(mouseZoomAction);
@@ -276,7 +277,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         // pressed without any modifier keys, otherwise it will not consume it
         // and the selection action (below) will handle the event
         panAction = new CustomizablePanAction(MouseEvent.BUTTON1_DOWN_MASK);
-        this.getActions().addAction(panAction);
+        getActions().addAction(panAction);
 
         selectAction = new CustomSelectAction(new SelectProvider() {
             public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
@@ -305,24 +306,24 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             }
         });
 
-        this.getActions().addAction(selectAction);
+        getActions().addAction(selectAction);
 
         blockLayer = new LayerWidget(this);
-        this.addChild(blockLayer);
+        addChild(blockLayer);
 
         connectionLayer = new LayerWidget(this);
-        this.addChild(connectionLayer);
+        addChild(connectionLayer);
 
         mainLayer = new LayerWidget(this);
-        this.addChild(mainLayer);
+        addChild(mainLayer);
 
-        this.setBorder(BorderFactory.createLineBorder(Color.white, BORDER_SIZE));
-        this.setLayout(LayoutFactory.createAbsoluteLayout());
-        this.getActions().addAction(mouseZoomAction);
-        this.getActions().addAction(ActionFactory.createPopupMenuAction(popupMenuProvider));
+        setBorder(BorderFactory.createLineBorder(Color.white, BORDER_SIZE));
+        setLayout(LayoutFactory.createAbsoluteLayout());
+        getActions().addAction(mouseZoomAction);
+        getActions().addAction(ActionFactory.createPopupMenuAction((widget, localLocation) -> createPopupMenu()));
 
         LayerWidget selectLayer = new LayerWidget(this);
-        this.addChild(selectLayer);
+        addChild(selectLayer);
         RectangularSelectDecorator rectangularSelectDecorator = () -> {
             Widget widget = new Widget(DiagramScene.this);
             widget.setBorder(BorderFactory.createLineBorder(Color.black, 2));
@@ -369,12 +370,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
             setSelectedObjects(selectedObjects);
         };
-        this.getActions().addAction(ActionFactory.createRectangularSelectAction(rectangularSelectDecorator, selectLayer, rectangularSelectProvider));
+        getActions().addAction(ActionFactory.createRectangularSelectAction(rectangularSelectDecorator, selectLayer, rectangularSelectProvider));
 
-        boolean b = this.getUndoRedoEnabled();
-        this.setUndoRedoEnabled(false);
-        this.setNewModel(model);
-        this.setUndoRedoEnabled(b);
+        boolean b = getUndoRedoEnabled();
+        setUndoRedoEnabled(false);
+        setNewModel(model);
+        setUndoRedoEnabled(b);
         ObjectSceneListener selectionChangedListener = new ObjectSceneListener() {
 
             @Override
@@ -448,21 +449,21 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
             @Override
             public void hoverChanged(ObjectSceneEvent e, Object oldObject, Object newObject) {
-                Set<Object> newHighlightedObjects = new HashSet<>(DiagramScene.this.getHighlightedObjects());
+                Set<Object> newHighlightedObjects = new HashSet<>(getHighlightedObjects());
                 if (oldObject != null) {
                     newHighlightedObjects.remove(oldObject);
                 }
                 if (newObject != null) {
                     newHighlightedObjects.add(newObject);
                 }
-                DiagramScene.this.setHighlightedObjects(newHighlightedObjects);
+                setHighlightedObjects(newHighlightedObjects);
             }
 
             @Override
             public void focusChanged(ObjectSceneEvent arg0, Object arg1, Object arg2) {
             }
         };
-        this.addObjectSceneListener(selectionChangedListener, ObjectSceneEventType.OBJECT_SELECTION_CHANGED, ObjectSceneEventType.OBJECT_HIGHLIGHTING_CHANGED, ObjectSceneEventType.OBJECT_HOVER_CHANGED);
+        addObjectSceneListener(selectionChangedListener, ObjectSceneEventType.OBJECT_SELECTION_CHANGED, ObjectSceneEventType.OBJECT_HIGHLIGHTING_CHANGED, ObjectSceneEventType.OBJECT_HOVER_CHANGED);
     }
 
     public DiagramViewModel getModel() {
@@ -491,7 +492,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         if (f.getCluster() != null) {
             name += "B" + f.getCluster().toString();
         }
-        final boolean hidden = !this.getWidget(f, FigureWidget.class).isVisible();
+        final boolean hidden = !getWidget(f, FigureWidget.class).isVisible();
         if (hidden) {
             if (f.getCluster() != null) {
                 name += ", ";
@@ -542,9 +543,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         rebuilding = true;
 
-        Collection<Object> objects = new ArrayList<>(this.getObjects());
+        Collection<Object> objects = new ArrayList<>(getObjects());
         for (Object o : objects) {
-            this.removeObject(o);
+            removeObject(o);
         }
 
         Diagram d = getModel().getDiagram();
@@ -574,7 +575,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             w.getActions().addAction(hoverAction);
             w.setVisible(false);
 
-            this.addObject(f, w);
+            addObject(f, w);
 
             for (InputSlot s : f.getInputSlots()) {
                 SlotWidget sw = new InputSlotWidget(s, this, w, w);
@@ -597,13 +598,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             for (InputBlock bn : d.getInputBlocks()) {
                 BlockWidget w = new BlockWidget(this, d, bn);
                 w.setVisible(false);
-                this.addObject(bn, w);
+                addObject(bn, w);
                 blockLayer.addChild(w);
             }
         }
 
         rebuilding = false;
-        this.smallUpdate(true);
+        smallUpdate(true);
     }
 
     protected boolean isRebuilding() {
@@ -611,11 +612,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     private void smallUpdate(boolean relayout) {
-        this.updateHiddenNodes(model.getHiddenNodes(), relayout);
-        boolean b = this.getUndoRedoEnabled();
-        this.setUndoRedoEnabled(false);
-        this.setUndoRedoEnabled(b);
-        this.validate();
+        updateHiddenNodes(model.getHiddenNodes(), relayout);
+        boolean b = getUndoRedoEnabled();
+        setUndoRedoEnabled(false);
+        setUndoRedoEnabled(b);
+        validate();
     }
 
     private boolean isVisible(Connection c) {
@@ -739,7 +740,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         Diagram diagram = getModel().getDiagram();
 
-        SceneAnimator animator = this.getSceneAnimator();
+        SceneAnimator animator = getSceneAnimator();
         connectionLayer.removeChildren();
         int visibleFigureCount = 0;
         for (Figure f : diagram.getFigures()) {
@@ -804,7 +805,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             }
         }
 
-        this.validate();
+        validate();
     }
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
 
@@ -901,7 +902,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return lookup;
     }
 
-    public void gotoFigures(final List<Figure> figures) {
+    private void gotoFigures(final List<Figure> figures) {
         Rectangle overall = null;
         getModel().showFigures(figures);
         for (Figure f : figures) {
@@ -951,9 +952,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private void gotoSelection(Set<Integer> ids) {
 
         Rectangle overall = null;
-        Set<Integer> hiddenNodes = new HashSet<>(this.getModel().getHiddenNodes());
+        Set<Integer> hiddenNodes = new HashSet<>(getModel().getHiddenNodes());
         hiddenNodes.removeAll(ids);
-        this.getModel().setHiddenNodes(hiddenNodes);
+        getModel().setHiddenNodes(hiddenNodes);
 
         Set<Object> objects = idSetToObjectSet(ids);
         for (Object o : objects) {
@@ -999,7 +1000,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         viewRect.y = Math.max(0, viewRect.y);
         viewRect.y = Math.min(getScrollPane().getViewport().getViewSize().height - viewRect.height, viewRect.y);
         getView().scrollRectToVisible(viewRect);
-
     }
 
     @Override
@@ -1136,14 +1136,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         if (doRelayout) {
             relayout(oldVisibleWidgets);
         }
-        this.validate();
+        validate();
         addUndo();
     }
 
     private void showFigure(Figure f) {
         HashSet<Integer> newHiddenNodes = new HashSet<>(getModel().getHiddenNodes());
         newHiddenNodes.remove(f.getInputNode().getId());
-        this.getModel().setHiddenNodes(newHiddenNodes);
+        getModel().setHiddenNodes(newHiddenNodes);
     }
 
     private void centerWidget(Widget w) {
@@ -1169,7 +1169,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         JPopupMenu menu = new JPopupMenu();
 
         Action[] currentActions = actionsWithSelection;
-        if (this.getSelectedObjects().isEmpty()) {
+        if (getSelectedObjects().isEmpty()) {
             currentActions = actions;
         }
         for (Action a : currentActions) {
@@ -1231,8 +1231,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
     private boolean undoRedoEnabled = true;
 
-    private void setUndoRedoEnabled(boolean b) {
-        this.undoRedoEnabled = b;
+    private void setUndoRedoEnabled(boolean enable) {
+        undoRedoEnabled = enable;
     }
 
     private boolean getUndoRedoEnabled() {
@@ -1272,7 +1272,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         DiagramViewModel newModelCopy = model.copy();
 
         if (undoRedoEnabled) {
-            this.getUndoRedoManager().undoableEditHappened(new UndoableEditEvent(this, new DiagramUndoRedo(this, this.getScrollPosition(), modelCopy, newModelCopy)));
+            getUndoRedoManager().undoableEditHappened(new UndoableEditEvent(this, new DiagramUndoRedo(this, getScrollPosition(), modelCopy, newModelCopy)));
         }
 
         this.modelCopy = newModelCopy;

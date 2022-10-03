@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.view.EditorTopComponent;
@@ -36,7 +37,6 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.SwingUtilities;
@@ -65,7 +65,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     public static final String PREFERRED_ID = "OutlineTopComponent";
     private ExplorerManager manager;
     private final GraphDocument document;
-    private final Server server;
     private FolderNode root;
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
@@ -81,13 +80,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         document = new GraphDocument();
         initListView();
         initToolbar();
-
-        server = new Server(g -> {
-            synchronized(OutlineTopComponent.this) {
-                g.setParent(getDocument());
-                getDocument().addElement(g);
-            }
-        });
+        initReceivers();
     }
 
     private void initListView() {
@@ -128,6 +121,18 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         boolean enableButton = !document.getElements().isEmpty();
         saveAllAction.setEnabled(enableButton);
         removeAllAction.setEnabled(enableButton);
+    }
+
+    private void initReceivers() {
+
+        final GroupCallback callback = g -> {
+            synchronized(OutlineTopComponent.this) {
+                g.setParent(getDocument());
+                getDocument().addElement(g);
+            }
+        };
+
+        new Server(callback);
     }
 
     public void clear() {
@@ -227,8 +232,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             selectedGraphs = new GraphNode[0];
             selectedFolders.clear();
             if (lastProvider != null) {
-                try {
-                    InputGraph graph = lastProvider.getGraph();
+                // Try to fetch and select the latest active graph.
+                InputGraph graph = lastProvider.getGraph();
+                if (graph != null) {
                     if (graph.isDiffGraph()) {
                         EditorTopComponent editor = EditorTopComponent.getActive();
                         if (editor != null) {
@@ -239,8 +245,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                     } else {
                         selectedGraphs = new GraphNode[]{FolderNode.getGraphNode(graph)};
                     }
-                } catch (Exception e) {
-                    Exceptions.printStackTrace(e);
                 }
             }
             try {

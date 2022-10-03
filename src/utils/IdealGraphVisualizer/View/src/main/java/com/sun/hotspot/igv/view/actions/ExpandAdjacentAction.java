@@ -40,7 +40,7 @@ abstract public class ExpandAdjacentAction extends CallableSystemAction {
         if (editor != null) {
             Set<Figure> oldSelection = editor.getModel().getSelectedFigures();
             Set<Figure> figures = new HashSet<>(oldSelection);
-            for (Figure f : editor.getModel().getDiagramToView().getFigures()) {
+            for (Figure f : editor.getModel().getDiagram().getFigures()) {
                 if (oldSelection.contains(f)) {
                     continue;
                 }

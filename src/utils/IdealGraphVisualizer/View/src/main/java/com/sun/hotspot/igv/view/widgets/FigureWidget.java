@@ -61,7 +61,6 @@ import org.openide.util.ImageUtilities;
  */
 public class FigureWidget extends Widget implements Properties.Provider, PopupMenuProvider, DoubleClickHandler {
 
-    public static final boolean VERTICAL_LAYOUT = true;
     private static final double LABEL_ZOOM_FACTOR = 0.3;
     private Figure figure;
     private Widget middleWidget;
@@ -78,10 +77,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
 
     public boolean isBoundary() {
         return boundary;
-    }
-
-    public Node getNode() {
-        return node;
     }
 
     @Override

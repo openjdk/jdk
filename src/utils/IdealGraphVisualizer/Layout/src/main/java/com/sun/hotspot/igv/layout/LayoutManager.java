@@ -33,5 +33,5 @@ public interface LayoutManager {
 
     void doLayout(LayoutGraph graph);
 
-    public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks);
+    void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks);
 }

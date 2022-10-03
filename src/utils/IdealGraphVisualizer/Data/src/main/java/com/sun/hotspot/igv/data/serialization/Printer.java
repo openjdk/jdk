@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public class Printer {
 
-    private InputStream in;
+    private final InputStream in;
 
     public Printer() {
         this(null);

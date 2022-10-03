@@ -58,6 +58,7 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
             }
             document.clear();
         }
+        getChangedEvent().fire();
     }
 
     @Override

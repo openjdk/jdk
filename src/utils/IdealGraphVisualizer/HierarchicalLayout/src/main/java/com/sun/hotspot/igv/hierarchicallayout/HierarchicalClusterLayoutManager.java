@@ -175,13 +175,13 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
         Timing t = null;
 
         if (TRACE) {
-            new Timing("Child timing");
+            t = new Timing("Child timing");
             t.start();
         }
 
         for (Cluster c : cluster) {
             ClusterNode n = clusterNodes.get(c);
-            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()), new HashSet<Link>());
+            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()), new HashSet<>());
             n.updateSize();
         }
 

@@ -45,10 +45,6 @@ public abstract class Event<L> {
         listener.add(l);
     }
 
-    /**
-     * Remove listener
-     * @param l
-     */
     public void removeListener(final L l) {
         listener.remove(l);
     }

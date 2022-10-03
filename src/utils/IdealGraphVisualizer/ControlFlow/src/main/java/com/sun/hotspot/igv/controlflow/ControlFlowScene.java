@@ -8,7 +8,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -58,29 +58,29 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     private InputGraph oldGraph;
     private final LayerWidget edgeLayer;
     private final LayerWidget mainLayer;
-    private final WidgetAction hoverAction = this.createWidgetHoverAction();
+    private final WidgetAction hoverAction = createWidgetHoverAction();
     private final WidgetAction selectAction = new DoubleClickSelectAction(this);
     private final WidgetAction moveAction = ActionFactory.createMoveAction(null, this);
 
     public ControlFlowScene() {
         selection = new HashSet<>();
 
-        this.getInputBindings().setZoomActionModifiers(0);
-        this.setLayout(LayoutFactory.createAbsoluteLayout());
+        getInputBindings().setZoomActionModifiers(0);
+        setLayout(LayoutFactory.createAbsoluteLayout());
 
         mainLayer = new LayerWidget(this);
-        this.addChild(mainLayer);
+        addChild(mainLayer);
 
         edgeLayer = new LayerWidget(this);
-        this.addChild(edgeLayer);
+        addChild(edgeLayer);
 
         LayerWidget selectLayer = new LayerWidget(this);
-        this.addChild(selectLayer);
+        addChild(selectLayer);
 
-        this.getActions().addAction(hoverAction);
-        this.getActions().addAction(selectAction);
-        this.getActions().addAction(ActionFactory.createRectangularSelectAction(this, selectLayer, this));
-        this.getActions().addAction(ActionFactory.createMouseCenteredZoomAction(1.1));
+        getActions().addAction(hoverAction);
+        getActions().addAction(selectAction);
+        getActions().addAction(ActionFactory.createRectangularSelectAction(this, selectLayer, this));
+        getActions().addAction(ActionFactory.createMouseCenteredZoomAction(1.1));
     }
 
     public void setGraph(InputGraph g) {
@@ -89,12 +89,12 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         }
         oldGraph = g;
 
-        ArrayList<InputBlock> blocks = new ArrayList<>(this.getNodes());
+        ArrayList<InputBlock> blocks = new ArrayList<>(getNodes());
         for (InputBlock b : blocks) {
             removeNode(b);
         }
 
-        ArrayList<InputBlockEdge> edges = new ArrayList<>(this.getEdges());
+        ArrayList<InputBlockEdge> edges = new ArrayList<>(getEdges());
         for (InputBlockEdge e : edges) {
             removeEdge(e);
         }
@@ -107,15 +107,15 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
             addEdge(e);
             assert g.getBlocks().contains(e.getFrom());
             assert g.getBlocks().contains(e.getTo());
-            this.setEdgeSource(e, e.getFrom());
-            this.setEdgeTarget(e, e.getTo());
+            setEdgeSource(e, e.getFrom());
+            setEdgeTarget(e, e.getTo());
         }
 
         GraphLayout<InputBlock, InputBlockEdge> layout = new HierarchicalGraphLayout<>();
         SceneLayout sceneLayout = LayoutFactory.createSceneGraphLayout(this, layout);
         sceneLayout.invokeLayout();
 
-        this.validate();
+        validate();
     }
 
     public void clearSelection() {
@@ -149,14 +149,17 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         selectionChanged();
     }
 
+    @Override
     public boolean isAimingAllowed(Widget widget, Point point, boolean b) {
         return false;
     }
 
+    @Override
     public boolean isSelectionAllowed(Widget widget, Point point, boolean b) {
         return true;
     }
 
+    @Override
     public void select(Widget widget, Point point, boolean change) {
         if (widget == this) {
             clearSelection();
@@ -179,18 +182,22 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         }
     }
 
-    public void movementStarted(Widget widget) {
-    }
+    @Override
+    public void movementStarted(Widget widget) {}
 
-    public void movementFinished(Widget widget) {
-    }
+    @Override
 
+    public void movementFinished(Widget widget) {}
+
+    @Override
     public Point getOriginalLocation(Widget widget) {
         return widget.getPreferredLocation();
     }
 
+    @Override
     public void setNewLocation(Widget widget, Point location) {
-        if (selection.contains(widget)) {
+        assert widget instanceof BlockWidget;
+        if (selection.contains((BlockWidget) widget)) {
             // move entire selection
             Point originalLocation = getOriginalLocation(widget);
             int xOffset = location.x - originalLocation.x;
@@ -205,6 +212,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         }
     }
 
+    @Override
     public Widget createSelectionWidget() {
         Widget widget = new Widget(this);
         widget.setOpaque(false);
@@ -213,6 +221,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         return widget;
     }
 
+    @Override
     public void performSelection(Rectangle rectangle) {
 
         if (rectangle.width < 0) {
@@ -226,7 +235,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         }
 
         boolean changed = false;
-        for (InputBlock b : this.getNodes()) {
+        for (InputBlock b : getNodes()) {
             BlockWidget w = (BlockWidget) findWidget(b);
             assert w.getBounds() != null;
             Rectangle r = new Rectangle(w.getBounds());
@@ -252,6 +261,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
 
     }
 
+    @Override
     protected Widget attachNodeWidget(InputBlock node) {
         BlockWidget w = new BlockWidget(this, node);
         mainLayer.addChild(w);
@@ -261,6 +271,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         return w;
     }
 
+    @Override
     protected Widget attachEdgeWidget(InputBlockEdge edge) {
         BlockConnectionWidget w = new BlockConnectionWidget(this, edge);
         switch (edge.getState()) {
@@ -277,16 +288,18 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         return w;
     }
 
+    @Override
     protected void attachEdgeSourceAnchor(InputBlockEdge edge, InputBlock oldSourceNode, InputBlock sourceNode) {
-        Widget w = this.findWidget(edge);
+        Widget w = findWidget(edge);
         assert w instanceof ConnectionWidget;
         ConnectionWidget cw = (ConnectionWidget) w;
         cw.setSourceAnchor(AnchorFactory.createRectangularAnchor(findWidget(sourceNode)));
 
     }
 
+    @Override
     protected void attachEdgeTargetAnchor(InputBlockEdge edge, InputBlock oldTargetNode, InputBlock targetNode) {
-        Widget w = this.findWidget(edge);
+        Widget w = findWidget(edge);
         assert w instanceof ConnectionWidget;
         ConnectionWidget cw = (ConnectionWidget) w;
         cw.setTargetAnchor(AnchorFactory.createRectangularAnchor(findWidget(targetNode)));

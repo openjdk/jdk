@@ -56,7 +56,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public boolean isDiffGraph() {
-        return this.isDiffGraph;
+        return isDiffGraph;
     }
 
     @Override

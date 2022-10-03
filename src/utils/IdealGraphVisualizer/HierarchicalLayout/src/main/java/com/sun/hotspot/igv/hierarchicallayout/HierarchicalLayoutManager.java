@@ -554,36 +554,32 @@ public class HierarchicalLayoutManager implements LayoutManager {
         }
         return n1.preds.size() - n2.preds.size();
     };
-    private static final Comparator<LayoutNode> nodeProcessingUpComparator = new Comparator<LayoutNode>() {
-
-        @Override
-        public int compare(LayoutNode n1, LayoutNode n2) {
-            int n1VIP = 0;
-            for (LayoutEdge e : n1.succs) {
-                if (e.vip) {
-                    n1VIP++;
-                }
+    private static final Comparator<LayoutNode> nodeProcessingUpComparator = (n1, n2) -> {
+        int n1VIP = 0;
+        for (LayoutEdge e : n1.succs) {
+            if (e.vip) {
+                n1VIP++;
             }
-            int n2VIP = 0;
-            for (LayoutEdge e : n2.succs) {
-                if (e.vip) {
-                    n2VIP++;
-                }
-            }
-            if (n1VIP != n2VIP) {
-                return n2VIP - n1VIP;
-            }
-            if (n1.vertex == null) {
-                if (n2.vertex == null) {
-                    return 0;
-                }
-                return -1;
-            }
-            if (n2.vertex == null) {
-                return 1;
-            }
-            return n1.succs.size() - n2.succs.size();
         }
+        int n2VIP = 0;
+        for (LayoutEdge e : n2.succs) {
+            if (e.vip) {
+                n2VIP++;
+            }
+        }
+        if (n1VIP != n2VIP) {
+            return n2VIP - n1VIP;
+        }
+        if (n1.vertex == null) {
+            if (n2.vertex == null) {
+                return 0;
+            }
+            return -1;
+        }
+        if (n2.vertex == null) {
+            return 1;
+        }
+        return n1.succs.size() - n2.succs.size();
     };
 
     private class AssignXCoordinates extends AlgorithmPart {
@@ -630,18 +626,17 @@ public class HierarchicalLayoutManager implements LayoutManager {
             for (int i = 0; i < SWEEP_ITERATIONS; i++) {
                 sweepDown();
                 adjustSpace();
-                sweepUp(false);
+                sweepUp();
                 adjustSpace();
             }
 
             sweepDown();
             adjustSpace();
-            sweepUp(true);
+            sweepUp();
         }
 
         private void adjustSpace() {
             for (int i = 0; i < layers.length; i++) {
-                int curX = 0;
                 for (LayoutNode n : layers[i]) {
                     space[i].add(n.x);
                 }
@@ -726,21 +721,11 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
         }
 
-        private void sweepUp(boolean onlyDummies) {
+        private void sweepUp() {
             for (int i = layers.length - 1; i >= 0; i--) {
                 NodeRow r = new NodeRow(space[i]);
                 for (LayoutNode n : upProcessingOrder[i]) {
                     int optimal = calculateOptimalUp(n);
-                    r.insert(n, optimal);
-                }
-            }
-        }
-
-        private void doubleSweep() {
-            for (int i = layers.length - 2; i >= 0; i--) {
-                NodeRow r = new NodeRow(space[i]);
-                for (LayoutNode n : upProcessingOrder[i]) {
-                    int optimal = calculateOptimalBoth(n);
                     r.insert(n, optimal);
                 }
             }
@@ -1492,7 +1477,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
 
                 final int offset = xOffset + DUMMY_WIDTH;
 
-                int curX = 0;
+                int curY = 0;
                 int curWidth = node.width + reversedDown.size() * offset;
                 for (int pos : reversedDown) {
                     ArrayList<LayoutEdge> reversedSuccs = new ArrayList<>();
@@ -1504,15 +1489,15 @@ public class HierarchicalLayoutManager implements LayoutManager {
                     }
 
                     ArrayList<Point> startPoints = new ArrayList<>();
-                    startPoints.add(new Point(curWidth, curX));
-                    startPoints.add(new Point(pos, curX));
+                    startPoints.add(new Point(curWidth, curY));
+                    startPoints.add(new Point(pos, curY));
                     startPoints.add(new Point(pos, reversedDown.size() * offset));
                     for (LayoutEdge e : reversedSuccs) {
                         reversedLinkStartPoints.put(e.link, startPoints);
                     }
 
-                    node.inOffsets.put(pos, -curX);
-                    curX += offset;
+                    node.inOffsets.put(pos, -curY);
+                    curY += offset;
                     node.height += offset;
                     node.yOffset += offset;
                     curWidth -= offset;
@@ -1524,13 +1509,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                 }
                 node.width += widthFactor * offset;
 
-                if (hasReversedDown) {
-                    curX = -offset;
-                } else {
-                    curX = offset;
-                }
-
-                curX = 0;
+                int curX = 0;
                 int minX = 0;
                 if (hasReversedDown) {
                     minX = -offset * reversedUp.size();

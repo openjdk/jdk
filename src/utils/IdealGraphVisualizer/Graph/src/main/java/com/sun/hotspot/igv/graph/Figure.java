@@ -43,15 +43,15 @@ public class Figure extends Properties.Entity implements Vertex {
     public static final int WARNING_WIDTH = 16;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
-    private InputNode inputNode;
-    private Diagram diagram;
+    private final InputNode inputNode;
+    private final Diagram diagram;
     private Point position;
-    private List<Figure> predecessors;
-    private List<Figure> successors;
+    private final List<Figure> predecessors;
+    private final List<Figure> successors;
     private Color color;
     private String warning;
-    private int id;
-    private String idString;
+    private final int id;
+    private final String idString;
     private String[] lines;
     private int heightCash = -1;
     private int widthCash = -1;
@@ -180,19 +180,11 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public Set<Figure> getPredecessorSet() {
-        Set<Figure> result = new HashSet<>();
-        for (Figure f : getPredecessors()) {
-            result.add(f);
-        }
-        return Collections.unmodifiableSet(result);
+        return Collections.unmodifiableSet(new HashSet<>(getPredecessors()));
     }
 
     public Set<Figure> getSuccessorSet() {
-        Set<Figure> result = new HashSet<>();
-        for (Figure f : getSuccessors()) {
-            result.add(f);
-        }
-        return Collections.unmodifiableSet(result);
+        return Collections.unmodifiableSet(new HashSet<>(getSuccessors()));
     }
 
     public List<Figure> getSuccessors() {
@@ -241,13 +233,6 @@ public class Figure extends Properties.Entity implements Vertex {
         return slot;
     }
 
-    public InputSlot createInputSlot(int index) {
-        InputSlot slot = new InputSlot(this, index);
-        inputSlots.add(slot);
-        inputSlots.sort(Slot.slotIndexComparator);
-        return slot;
-    }
-
     public void removeSlot(Slot s) {
 
         assert inputSlots.contains(s) || outputSlots.contains(s);
@@ -259,15 +244,12 @@ public class Figure extends Properties.Entity implements Vertex {
 
         if (inputSlots.contains(s)) {
             inputSlots.remove(s);
-        } else if (outputSlots.contains(s)) {
-            outputSlots.remove(s);
-        }
+        } else outputSlots.remove(s);
     }
 
-    public OutputSlot createOutputSlot() {
+    public void createOutputSlot() {
         OutputSlot slot = new OutputSlot(this, -1);
         outputSlots.add(slot);
-        return slot;
     }
 
     public OutputSlot createOutputSlot(int index) {
@@ -331,8 +313,8 @@ public class Figure extends Properties.Entity implements Vertex {
         String[] strings = diagram.getNodeText().split("\n");
         List<String> result = new ArrayList<>(strings.length + 1);
 
-        for (int i = 0; i < strings.length; i++) {
-            result.add(getProperties().resolveString(strings[i]));
+        for (String string : strings) {
+            result.add(getProperties().resolveString(string));
         }
 
         if (hasInputList()) {
@@ -395,9 +377,5 @@ public class Figure extends Properties.Entity implements Vertex {
     @Override
     public int compareTo(Vertex f) {
         return toString().compareTo(f.toString());
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(this.getPosition(), new Dimension(this.getWidth(), this.getHeight()));
     }
 }

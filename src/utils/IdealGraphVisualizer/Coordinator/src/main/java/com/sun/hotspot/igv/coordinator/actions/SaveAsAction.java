@@ -30,7 +30,11 @@ import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.serialization.Printer;
 import com.sun.hotspot.igv.settings.Settings;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.file.Files;
 import javax.swing.Action;
 import javax.swing.JFileChooser;
 import org.openide.nodes.Node;
@@ -81,7 +85,7 @@ public final class SaveAsAction extends NodeAction {
             }
             Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
             try {
-                try (Writer writer = new OutputStreamWriter(new FileOutputStream(file))) {
+                try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()))) {
                     Printer p = new Printer();
                     p.export(writer, doc);
                 }

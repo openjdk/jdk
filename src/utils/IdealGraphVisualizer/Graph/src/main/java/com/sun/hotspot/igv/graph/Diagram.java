@@ -41,6 +41,7 @@ public class Diagram {
     public static final Font FONT = new Font("Arial", Font.PLAIN, 12);
     public static final Font SLOT_FONT = new Font("Arial", Font.PLAIN, 10);
     public static final Font BOLD_FONT = FONT.deriveFont(Font.BOLD);
+
     // Whether widgets derived from this diagram should be adapted for the
     // control-flow graph view.
     private boolean cfg;
@@ -83,7 +84,6 @@ public class Diagram {
         }
 
         for (InputEdge e : graph.getEdges()) {
-
             int from = e.getFrom();
             int to = e.getTo();
             Figure fromFigure = figureHash.get(from);

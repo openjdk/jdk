@@ -61,7 +61,7 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
 
         treeView = new BeanTreeView();
         treeView.setRootVisible(false);
-        this.add(BorderLayout.CENTER, treeView);
+        add(BorderLayout.CENTER, treeView);
         associateLookup(ExplorerUtils.createLookup(manager, getActionMap()));
     }
 

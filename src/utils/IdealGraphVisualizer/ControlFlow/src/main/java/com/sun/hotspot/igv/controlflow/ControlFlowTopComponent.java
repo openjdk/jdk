@@ -8,7 +8,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -50,12 +50,11 @@ final class ControlFlowTopComponent extends TopComponent implements ChangedListe
         setToolTipText(NbBundle.getMessage(ControlFlowTopComponent.class, "HINT_ControlFlowTopComponent"));
 
         scene = new ControlFlowScene();
-        this.setLayout(new BorderLayout());
-        this.associateLookup(scene.getLookup());
-
+        setLayout(new BorderLayout());
+        associateLookup(scene.getLookup());
 
         JScrollPane panel = new JScrollPane(scene.createView());
-        this.add(panel, BorderLayout.CENTER);
+        add(panel, BorderLayout.CENTER);
     }
 
     /**

@@ -184,13 +184,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             filterSettings.add(setting);
 
             // Sort alphabetically
-            filterSettings.sort(new Comparator<FilterSetting>() {
-
-                @Override
-                public int compare(FilterSetting o1, FilterSetting o2) {
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
+            filterSettings.sort(Comparator.comparing(FilterSetting::getName));
 
             updateComboBox();
         }

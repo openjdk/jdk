@@ -8,7 +8,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -50,14 +50,12 @@ public class BlockConnectionWidget extends ConnectionWidget implements Link {
     private final Port inputSlot;
     private final Port outputSlot;
     private List<Point> points;
-    private final InputBlockEdge edge;
     private boolean isDashed = false;
     private boolean isBold = false;
 
     public BlockConnectionWidget(ControlFlowScene scene, InputBlockEdge edge) {
         super(scene);
 
-        this.edge = edge;
         this.from = (BlockWidget) scene.findWidget(edge.getFrom());
         this.to = (BlockWidget) scene.findWidget(edge.getTo());
         inputSlot = to.getInputSlot();

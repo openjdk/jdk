@@ -38,16 +38,17 @@ import org.openide.util.Utilities;
  */
 public class LookupHistory {
 
-    private static Map<Class, LookupHistoryImpl> cache = new HashMap<>();
+    private static final Map<Class, LookupHistoryImpl> cache = new HashMap<>();
 
     private static class LookupHistoryImpl<T> extends Event<ChangedListener<T>> implements LookupListener {
 
         private final Class<T> klass;
+        private final Result<T> result;
         private T last;
 
         public LookupHistoryImpl(Class<T> klass) {
             this.klass = klass;
-            Result<T> result = Utilities.actionsGlobalContext().lookupResult(klass);
+            result = Utilities.actionsGlobalContext().lookupResult(klass);
             result.addLookupListener(this);
             last = Utilities.actionsGlobalContext().lookup(klass);
             fire();
