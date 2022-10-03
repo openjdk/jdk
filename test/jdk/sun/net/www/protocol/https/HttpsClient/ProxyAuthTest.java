@@ -101,6 +101,17 @@ public class ProxyAuthTest extends SSLSocketTemplate {
     }
 
     @Override
+    protected void doServerSide() throws Exception {
+        if (expectSuccess) {
+            super.doServerSide();
+        } else {
+            // we don't expect anything to connect to the server
+            serverPort = 443;
+            serverCondition.countDown();
+        }
+    }
+
+    @Override
     protected void runServerApplication(SSLSocket socket) throws Exception {
         String response = "Proxy authentication for tunneling succeeded ..";
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
