@@ -71,7 +71,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private Server binaryServer;
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
-
+    private GraphNode[] selectedGraphs = new GraphNode[0];
+    private final Set<FolderNode> selectedFolders = new HashSet<>();
 
     private OutlineTopComponent() {
         initComponents();
@@ -224,9 +225,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         treeView.requestFocus();
         return super.requestFocusInWindow(temporary);
     }
-
-    private GraphNode[] selectedGraphs = new GraphNode[0];
-    private final Set<FolderNode> selectedFolders = new HashSet<>();
 
     @Override
     public void changed(InputGraphProvider lastProvider) {

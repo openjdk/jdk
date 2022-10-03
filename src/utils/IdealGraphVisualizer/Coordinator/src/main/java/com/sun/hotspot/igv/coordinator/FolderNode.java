@@ -50,6 +50,7 @@ public class FolderNode extends AbstractNode {
     // NetBeans node corresponding to each opened graph. Used to highlight the
     // focused graph in the Outline window.
     private static Map<InputGraph, GraphNode> graphNode = new HashMap<>();
+    private boolean selected = false;
 
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
 
@@ -137,7 +138,6 @@ public class FolderNode extends AbstractNode {
         }
     }
 
-    private boolean selected = false;
     public void setSelected(boolean selected) {
         this.selected = selected;
         fireDisplayNameChange(null, null);

@@ -53,14 +53,15 @@ import org.openide.util.lookup.InstanceContent;
  * @author Thomas Wuerthinger
  */
 public class GraphNode extends AbstractNode {
+
     private InputGraph graph;
+    private boolean selected = false;
 
     /** Creates a new instance of GraphNode */
     public GraphNode(InputGraph graph) {
         this(graph, new InstanceContent());
     }
 
-    private boolean selected = false;
     public void setSelected(boolean selected) {
         this.selected = selected;
         fireDisplayNameChange(null, null);
