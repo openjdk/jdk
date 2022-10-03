@@ -348,11 +348,20 @@ public:
 
   void vector_round_float_avx(XMMRegister dst, XMMRegister src, AddressLiteral float_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
                               Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4);
+#endif // _LP64
 
+  void udivI(Register rax, Register divisor, Register rdx);
+  void umodI(Register rax, Register divisor, Register rdx);
+  void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
+
+#ifdef _LP64
   void reverseI(Register dst, Register src, XMMRegister xtmp1,
                 XMMRegister xtmp2, Register rtmp);
   void reverseL(Register dst, Register src, XMMRegister xtmp1,
                 XMMRegister xtmp2, Register rtmp1, Register rtmp2);
+  void udivL(Register rax, Register divisor, Register rdx);
+  void umodL(Register rax, Register divisor, Register rdx);
+  void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
 #endif
 
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,

@@ -1127,7 +1127,7 @@ Node* UDivINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return nullptr;             // Skip it
   }
 
-  const TypeInt *ti = t->isa_int();
+  const TypeInt* ti = t->isa_int();
   if(ti == nullptr) {
     return nullptr;
   }
@@ -1658,7 +1658,7 @@ const Type* UModINode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
-Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* UModLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Check for dead control input
   if(in(0) && remove_dead_region(phase, can_reshape)) {
     return this;
@@ -1669,11 +1669,11 @@ Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Get the modulus
-  const Type *t = phase->type(in(2));
+  const Type* t = phase->type(in(2));
   if(t == Type::TOP) {
     return nullptr;
   }
-  const TypeLong *ti = t->is_long();
+  const TypeLong* ti = t->is_long();
 
   // Check for useless control input
   // Check for excluding mod-zero case

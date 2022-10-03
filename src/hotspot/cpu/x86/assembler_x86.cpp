@@ -2282,19 +2282,12 @@ void Assembler::hlt() {
 
 void Assembler::idivl(Register src) {
   int encode = prefix_and_encode(src->encoding());
-  emit_int16(0xF7, (0xF8 | encode));
-}
-
-void Assembler::divl(Address src) { // Unsigned
-  InstructionMark im(this);
-  prefix(src);
-  emit_int8(0xF7);
-  emit_operand(as_Register(6), src, 0);
+  emit_int16((unsigned char)0xF7, (0xF8 | encode));
 }
 
 void Assembler::divl(Register src) { // Unsigned
   int encode = prefix_and_encode(src->encoding());
-  emit_int16(0xF7, (0xF0 | encode));
+  emit_int16((unsigned char)0xF7, (0xF0 | encode));
 }
 
 void Assembler::imull(Register src) {
@@ -12910,19 +12903,12 @@ void Assembler::xsave(Address dst) {
 
 void Assembler::idivq(Register src) {
   int encode = prefixq_and_encode(src->encoding());
-  emit_int16(0xF7, (0xF8 | encode));
-}
-
-void Assembler::divq(Address src) { // Unsigned
-  InstructionMark im(this);
-  prefixq(src);
-  emit_int8(0xF7);
-  emit_operand(as_Register(6), src, 0);
+  emit_int16((unsigned char)0xF7, (0xF8 | encode));
 }
 
 void Assembler::divq(Register src) {
   int encode = prefixq_and_encode(src->encoding());
-  emit_int16(0xF7, (0xF0 | encode));
+  emit_int16((unsigned char)0xF7, (0xF0 | encode));
 }
 
 void Assembler::imulq(Register dst, Register src) {

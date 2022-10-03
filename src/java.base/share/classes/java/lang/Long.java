@@ -1665,18 +1665,8 @@ public final class Long extends Number
      * @see #remainderUnsigned
      * @since 1.8
      */
-    public static long divideUnsigned(long dividend, long divisor) {
-        if (divisor > 0) {
-            return divideUnsigned0(dividend, divisor);
-        } else if (divisor < 0) {
-            return compareUnsigned(dividend, divisor) >= 0 ? 1 : 0;
-        } else {
-            throw new ArithmeticException("/ by zero");
-        }
-    }
-
     @IntrinsicCandidate
-    private static long divideUnsigned0(long dividend, long divisor) {
+    public static long divideUnsigned(long dividend, long divisor) {
         /* See Hacker's Delight (2nd ed), section 9.3 */
         if (divisor >= 0) {
             final long q = (dividend >>> 1) / divisor << 1;
@@ -1698,20 +1688,8 @@ public final class Long extends Number
      * @see #divideUnsigned
      * @since 1.8
      */
-    public static long remainderUnsigned(long dividend, long divisor) {
-        if (divisor > 0) {
-            return remainderUnsigned0(dividend, divisor);
-        } else if (divisor < 0) {
-            return compareUnsigned(dividend, divisor) >= 0
-                    ? (dividend - divisor)
-                    : dividend;
-        } else {
-            throw new ArithmeticException("/ by zero");
-        }
-    }
-
     @IntrinsicCandidate
-    private static long remainderUnsigned0(long dividend, long divisor) {
+    public static long remainderUnsigned(long dividend, long divisor) {
         /* See Hacker's Delight (2nd ed), section 9.3 */
         if (divisor >= 0) {
             final long q = (dividend >>> 1) / divisor << 1;

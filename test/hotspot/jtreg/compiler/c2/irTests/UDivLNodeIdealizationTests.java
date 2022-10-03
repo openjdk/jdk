@@ -116,7 +116,7 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_L})
-    @IR(counts = {IRNode.ALLOC_OF, "java/lang/ArithmeticException", "1"})
+    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / x => 1
     public long constantDiv(long x) {
         return Long.divideUnsigned(x, x);
@@ -138,7 +138,7 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_L})
-    @IR(counts = {IRNode.ALLOC_OF, "java/lang/ArithmeticException", "1"})
+    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / (y / y) => x
     public long identityThird(long x, long y) {
         return Long.divideUnsigned(x, Long.divideUnsigned(y, y));
@@ -147,7 +147,7 @@ public class UDivLNodeIdealizationTests {
     @Test
     @IR(counts = {IRNode.MUL_L, "1",
                   IRNode.UDIV_L, "1",
-                  IRNode.ALLOC_OF, "java/lang/ArithmeticException", "1"
+                  IRNode.DIV_BY_ZERO_TRAP, "1"
                  })
     // Hotspot should keep the division because it may cause a division by zero trap
     public long retainDenominator(long x, long y) {
@@ -199,7 +199,7 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UMOD_L})
-    @IR(counts = {IRNode.ALLOC_OF, "java/lang/ArithmeticException", "1"})
+    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x % x => 0
     public long constantMod(long x) {
         return Long.remainderUnsigned(x, x);

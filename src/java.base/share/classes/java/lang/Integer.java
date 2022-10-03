@@ -1544,18 +1544,8 @@ public final class Integer extends Number
      * @see #remainderUnsigned
      * @since 1.8
      */
-    public static int divideUnsigned(int dividend, int divisor) {
-        if (divisor > 0) {
-            return divideUnsigned0(dividend, divisor);
-        } else if (divisor < 0) {
-            return compareUnsigned(dividend, divisor) >= 0 ? 1 : 0;
-        } else {
-            throw new ArithmeticException("/ by zero");
-        }
-    }
-
     @IntrinsicCandidate
-    private static int divideUnsigned0(int dividend, int divisor) {
+    public static int divideUnsigned(int dividend, int divisor) {
         // In lieu of tricky code, for now just use long arithmetic.
         return (int)(toUnsignedLong(dividend) / toUnsignedLong(divisor));
     }
@@ -1572,23 +1562,12 @@ public final class Integer extends Number
      * @see #divideUnsigned
      * @since 1.8
      */
-    public static int remainderUnsigned(int dividend, int divisor) {
-        if (divisor > 0) {
-            return remainderUnsigned0(dividend, divisor);
-        } else if (divisor < 0) {
-            return compareUnsigned(dividend, divisor) >= 0
-                    ? (dividend - divisor)
-                    : dividend;
-        } else {
-            throw new ArithmeticException("/ by zero");
-        }
-    }
-
     @IntrinsicCandidate
-    private static int remainderUnsigned0(int dividend, int divisor) {
+    public static int remainderUnsigned(int dividend, int divisor) {
         // In lieu of tricky code, for now just use long arithmetic.
         return (int)(toUnsignedLong(dividend) % toUnsignedLong(divisor));
     }
+
 
     // Bit twiddling
 
