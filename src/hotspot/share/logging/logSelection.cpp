@@ -202,36 +202,18 @@ size_t LogSelection::tag_sets_selected() const {
   return _tag_sets_selected;
 }
 
-int LogSelection::describe_tags(char* buf, size_t bufsize) const {
-  int tot_written = 0;
+void LogSelection::describe_tags_on(outputStream* out) const {
   for (size_t i = 0; i < _ntags; i++) {
-    int written = jio_snprintf(buf + tot_written, bufsize - tot_written,
-                               "%s%s", (i == 0 ? "" : "+"), LogTag::name(_tags[i]));
-    if (written == -1) {
-      return written;
-    }
-    tot_written += written;
+    out->print("%s%s", (i == 0 ? "" : "+"), LogTag::name(_tags[i]));
   }
-
   if (_wildcard) {
-    int written = jio_snprintf(buf + tot_written, bufsize - tot_written, "*");
-    if (written == -1) {
-      return written;
-    }
-    tot_written += written;
+    out->print("*");
   }
-  return tot_written;
 }
 
-int LogSelection::describe(char* buf, size_t bufsize) const {
-  int tot_written = describe_tags(buf, bufsize);
-
-  int written = jio_snprintf(buf + tot_written, bufsize - tot_written, "=%s", LogLevel::name(_level));
-  if (written == -1) {
-    return -1;
-  }
-  tot_written += written;
-  return tot_written;
+void LogSelection::describe_on(outputStream* out) const {
+  describe_tags_on(out);
+  out->print("=%s", LogLevel::name(_level));
 }
 
 double LogSelection::similarity(const LogSelection& other) const {
@@ -345,8 +327,7 @@ void LogSelection::suggest_similar_matching(outputStream* out) const {
 
   out->print("Did you mean any of the following?");
   for (size_t i = 0; i < nsuggestions; i++) {
-    char buf[128];
-    suggestions[i].describe_tags(buf, sizeof(buf));
-    out->print(" %s", buf);
+    out->print(" ");
+    suggestions[i].describe_tags_on(out);
   }
 }
