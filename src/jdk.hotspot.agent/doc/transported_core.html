@@ -10,7 +10,7 @@ Debugging transported core dumps
 <p>
 When a core dump is moved to a machine different from the one where it was
 produced ("transported core dump"), debuggers (dbx, gdb, windbg or SA) do not
-always successfully open the core dump. This is due to  library (shared
+always successfully open the core dump. This is due to library (shared
 objects or DLLs) mismatches between the core dump machine and the debugger machine.
 For this reason you should first consider using one of the following approaches to
 debugging the core dump rather than transporting it to a different machine:
@@ -18,9 +18,9 @@ debugging the core dump rather than transporting it to a different machine:
   <li>Remote login to the machine that the core dump was produced on,
     and use <a href="clhsdb.html">CLHSDB - SA command line HSDB interface</a>.
   <li>Use SA remote debugging support to remotely debug the core directly on the machine
-   it was produced on. This is done by first running <b>jhsdb debugd</b> on the machine with the core dump,
-    and then attaching to it from another machine by using the jhsdb <b>--connect</b> argument. See
-    the <b>jhsdb</b> man page for details.
+    it was produced on. This is done by first running <b>jhsdb debugd</b> on the machine with
+    the core dump, and then attaching to it from another machine by using the jhsdb
+    <b>--connect</b> argument. See the <b>jhsdb</b> man page for details.
 </ul>
 </p>
 
@@ -35,14 +35,14 @@ messages in standard error which can be useful for further debugging. Note that
 
 <p>
 On  most platforms, core dumps do not contain text (code) pages.
-Their pages are instead  read from the executable and shared objects (or DLLs).
+Their pages are instead read from the executable and shared objects (or DLLs).
 Therefore it is important to have a matching java executable and shared object
-files on the debugger machine. The best  way to guarantee this match is to match the
+files on the debugger machine. The best way to guarantee this match is to match the
 debugger machine to that of core dump machine. This means having the same
 OS version and libraries, and also having the same version of the JDK. It also means having
-the OS libraries and JDK installed in the same locations on both machines. However, often this isn't an option,
-and instead you need to include copies of the core dump machine's libraries
-and java installation on the debugger machine, and you need
+the OS libraries and JDK installed in the same locations on both machines. However, often
+this isn't an option, and instead you need to copy the libraries and java installation from
+the machine where the core dump was produced to the debugger machine, and you need
 to tell SA where these are all located. That is done differently for each
 OS type, and is described in the following sections.
 </p>
@@ -69,15 +69,24 @@ installed on the debugger machine.
 <h3>Using  transported core dumps on Windows</h3>
 <p>
  If the debugger machine and core dump machine have identical Windows libraries, then you only
- need to point SA to the location of the JDK bin directory. This is done by making sure
- the bin directory is included in the <b>PATH</b> environment variable. If the windows
- libraries are not identical, then they may also need to be copied to the debugger machine
- and included in <b>PATH</b>.
+ need to point SA to the location of the JDK <b>java.exe</b> and libraries. This is done by making
+ sure the <b>bin</b> and <b>bin/server</b> directories are included in the <b>PATH</b>
+ environment variable. Something like the following should work if <b>JAVA_HOME</b>
+ is setup:
+ </p>
+
+<p>
+ set PATH=%JAVA_HOME%\bin;%JAVA_HOME%\bin\server;%PATH%
+</p>
+
+<p>
+ If the windows libraries are not identical, then they may also need to be copied
+ to the debugger machine and included in <b>PATH</b>.
 </p>
 
 <h3>Using  transported core dumps on macOS</h3>
 <p>
-SA normally uses the path to the specified java executable to locate the JDK libraries. It will look in the following subdirectories for them (relative to the path to the specified java executable):  <b>../lib</b>, <b>../lib/server</b>, <b>../jre/lib</b>, and <b>../jre/lib/server</b>. If not found in any of those locations, it will look in the same subdirectories relative to the <b>JAVA_HOME</b> environment variable, but using <b>JAVA_HOME</b> normally should not be necessary.
+SA normally uses the path to the specified java executable to locate the JDK libraries. It will look in the following subdirectories for them (relative to the path to the specified java executable): <b>../lib</b>, <b>../lib/server</b>, <b>../jre/lib</b>, and <b>../jre/lib/server</b>. If not found in any of those locations, it will look in the same subdirectories relative to the <b>JAVA_HOME</b> environment variable, but using <b>JAVA_HOME</b> normally should not be necessary.
 </p>
 
 <p>
