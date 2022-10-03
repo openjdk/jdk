@@ -35,7 +35,7 @@
  * Converted from MineField.sh, originally written by Martin Buchholz.
  *
  * For the last version of the original, MineField.sh, see
- * https://github.com/openjdk/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/MineField.sh
+ * https://git.openjdk.org/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/MineField.sh
  *
  * This class primarily tests that javac and the java launcher provide
  * equivalent handling of all path-related options, like {@code -classpath}.

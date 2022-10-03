@@ -32,7 +32,7 @@
  * Converted from Help.sh, originally written by Martin Buchholz
  *
  * For the last version of the original, Help.sh, see
- * https://github.com/openjdk/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/Help.sh
+ * https://git.openjdk.org/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/Help.sh
  *
  * This class provides rudimentary tests of the javac command-line help.
  */
