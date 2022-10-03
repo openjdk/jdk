@@ -35,7 +35,7 @@ import java.util.List;
  * the {@link Test @Test}/{@link IR @IR} annotated methods).
  *
  * @see Test
- * @see TestClassResult
+ * @see TestClassMatchResult
  */
 public class TestClass implements Matchable {
     /**
@@ -57,7 +57,7 @@ public class TestClass implements Matchable {
 
     @Override
     public MatchResult match() {
-        TestClassResult result = new TestClassResult();
+        TestClassMatchResult result = new TestClassMatchResult();
         for (Matchable irMethod : irMethods) {
             MatchResult IRMethodMatchResult = irMethod.match();
             if (IRMethodMatchResult.fail()) {

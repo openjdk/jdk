@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @see TestClass
  */
-public class TestClassResult implements MatchResult {
+public class TestClassMatchResult implements MatchResult {
     /**
      * List of all IR method results, sorted by method names.
      */

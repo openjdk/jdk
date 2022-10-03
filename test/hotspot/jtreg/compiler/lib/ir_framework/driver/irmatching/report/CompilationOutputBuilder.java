@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
+import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
@@ -53,8 +53,9 @@ public class CompilationOutputBuilder extends ReportBuilder implements MatchResu
     }
 
     @Override
-    public void visit(TestClassResult testClassResult) {
-        testClassResult.acceptChildren(this);
+    public void visit(TestClassMatchResult testClassMatchResult) {
+        SortedIRMethodResultCollector sortedIRMethodResultCollector = new SortedIRMethodResultCollector();
+        testClassMatchResult.acceptChildren(this, sortedIRMethodResultCollector.collect(testClassMatchResult));
         StringBuilder builder = new StringBuilder();
         builder.append("Compilation");
         if (compilePhaseCount > 1) {

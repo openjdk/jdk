@@ -40,12 +40,12 @@ public abstract class IRNodeMapEntry {
         this.defaultCompilePhase = defaultCompilePhase;
     }
 
+    public CompilePhase getDefaultCompilePhase() {
+        return defaultCompilePhase;
+    }
+
     /**
      * Get the regex string which shall be used by the IR framework when matching on {@code compilePhase}.
      */
     abstract public String getRegexForPhase(CompilePhase compilePhase);
-
-    public CompilePhase getDefaultCompilePhase() {
-        return defaultCompilePhase;
-    }
 }

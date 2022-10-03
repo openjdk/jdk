@@ -1,7 +1,7 @@
 package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
+import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
@@ -26,9 +26,9 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultV
     }
 
     @Override
-    public void visit(TestClassResult testClassResult) {
+    public void visit(TestClassMatchResult testClassMatchResult) {
         FailCountVisitor failCountVisitor = new FailCountVisitor();
-        testClassResult.acceptChildren(failCountVisitor);
+        testClassMatchResult.acceptChildren(failCountVisitor);
         int failedMethodCount = failCountVisitor.getIrMethodCount();
         int failedIRRulesCount = failCountVisitor.getIrRuleCount();
         msg.append("One or more @IR rules failed:")
@@ -38,7 +38,8 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultV
            .append(")").append(System.lineSeparator())
            .append(getTitleSeparator(failedMethodCount, failedIRRulesCount))
            .append(System.lineSeparator());
-        testClassResult.acceptChildren(this);
+        SortedIRMethodResultCollector sortedIRMethodResultCollector = new SortedIRMethodResultCollector();
+        testClassMatchResult.acceptChildren(this, sortedIRMethodResultCollector.collect(testClassMatchResult));
     }
 
     private static String getTitleSeparator(int failedMethodCount, int failedIRRulesCount) {
@@ -73,8 +74,8 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultV
     public void visit(IRRuleMatchResult irRuleMatchResult) {
         msg.append(getIndentation(irRuleIndentation)).append("* @IR rule ").append(irRuleMatchResult.getRuleId()).append(": \"")
            .append(irRuleMatchResult.getIRAnno()).append("\"").append(System.lineSeparator());
-        CompilePhaseResultCollector compilePhaseResultCollector = new CompilePhaseResultCollector();
-        irRuleMatchResult.acceptChildren(this, compilePhaseResultCollector.collectSorted(irRuleMatchResult));
+        SortedCompilePhaseResultCollector sortedCompilePhaseResultCollector = new SortedCompilePhaseResultCollector();
+        irRuleMatchResult.acceptChildren(this, sortedCompilePhaseResultCollector.collect(irRuleMatchResult));
     }
 
     @Override

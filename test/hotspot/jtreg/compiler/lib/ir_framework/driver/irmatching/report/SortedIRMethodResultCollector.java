@@ -23,36 +23,33 @@
 
 package compiler.lib.ir_framework.driver.irmatching.report;
 
-import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
+import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.Comparator;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
- * Sort {@link CompilePhaseIRRuleMatchResult} of an IR rule by the {@link CompilePhase} enum definition order.
+ * Sort {@link IRMethodMatchResult} of an IR alphabetically by the method name.
  */
-class CompilePhaseResultCollector implements MatchResultVisitor {
-    private final Set<CompilePhaseIRRuleMatchResult> compilePhaseIRRuleMatchResults
-            = new TreeSet<>(Comparator.comparingInt(r -> r.getCompilePhase().ordinal()));
+class SortedIRMethodResultCollector implements MatchResultVisitor {
+    private final SortedSet<IRMethodMatchResult> irMethodMatchResults = new TreeSet<>();
 
     @Override
-    public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
-        compilePhaseIRRuleMatchResults.add(compilePhaseIRRuleMatchResult);
+    public void visit(IRMethodMatchResult irMethodMatchResult) {
+        irMethodMatchResults.add(irMethodMatchResult);
     }
 
     @Override
-    public void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
-        compilePhaseIRRuleMatchResults.add(noCompilePhaseCompilationResult);
+    public void visit(NotCompiledResult notCompiledResult) {
+        irMethodMatchResults.add(notCompiledResult);
     }
 
 
-    public Set<CompilePhaseIRRuleMatchResult> collectSorted(IRRuleMatchResult irRuleMatchResult) {
-        irRuleMatchResult.acceptChildren(this);
-        return compilePhaseIRRuleMatchResults;
+    public SortedSet<IRMethodMatchResult> collect(TestClassMatchResult testClassMatchResult) {
+        testClassMatchResult.acceptChildren(this);
+        return irMethodMatchResults;
     }
 }
