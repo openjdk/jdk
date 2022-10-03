@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,18 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.awt.image.MultiPixelPackedSampleModel;
+import java.awt.image.PixelInterleavedSampleModel;
+import java.awt.image.SampleModel;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import javax.imageio.IIOException;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageReadParam;
@@ -43,12 +49,8 @@ import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
+
 import com.sun.imageio.plugins.common.ReaderUtil;
-import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.MultiPixelPackedSampleModel;
-import java.awt.image.PixelInterleavedSampleModel;
-import java.awt.image.SampleModel;
 
 public class GIFImageReader extends ImageReader {
 
@@ -658,9 +660,12 @@ public class GIFImageReader extends ImageReader {
                 stream.skipBytes(length);
                 continue;
             }
+            byte[] subBlockData =
+                ReaderUtil.staggeredReadByteStream(stream, length);
             byte[] newData = new byte[data.length + length];
             System.arraycopy(data, 0, newData, 0, data.length);
-            stream.readFully(newData, data.length, length);
+            System.arraycopy(subBlockData, 0, newData,
+                             data.length, length);
             data = newData;
         }
         return data;
@@ -697,8 +702,9 @@ public class GIFImageReader extends ImageReader {
                     if (localColorTableFlag) {
                         // Read color table if any
                         imageMetadata.localColorTable =
-                            new byte[3*numLCTEntries];
-                        stream.readFully(imageMetadata.localColorTable);
+                            ReaderUtil.
+                                staggeredReadByteStream(stream,
+                                                       (3 * numLCTEntries));
                     } else {
                         imageMetadata.localColorTable = null;
                     }
@@ -762,12 +768,14 @@ public class GIFImageReader extends ImageReader {
                     } else if (label == 0xff) { // Application extension
                         int blockSize = stream.readUnsignedByte();
                         int offset = 0;
-                        byte[] blockData = new byte[blockSize];
+                        byte[] blockData = new byte[0];
                         byte[] applicationID = new byte[8];
                         byte[] authCode = new byte[3];
                         if (!ignoreMetadata) {
                             // read available data
-                            stream.readFully(blockData);
+                            blockData =
+                                ReaderUtil.staggeredReadByteStream(stream,
+                                                                   blockSize);
 
                             offset =
                                 copyData(blockData, 0, applicationID);
