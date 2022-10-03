@@ -58,6 +58,14 @@ copy all the needed JDK libraries. You should also copy any referenced linux
 libraries from the core dump machine, unless they are identical to what are
 installed on the debugger machine.
 </p>
+<p>
+ You can also use <b>SA_ALTROOT</b> to specify a path mapping. For example, if you
+ set <b>SA_ALTROOT=/altroot</b>, then <b>/altroot</b> will be prepended to any path found
+ in the core file, and also prepended to any subdir with the root part stripped off. For example,
+ when looking up <b>/usr/lib/libfoo.so</b>, SA will try to find <b>/altroot/usr/lib/libfoo.so</b>,
+ <b>/altroot/lib/libfoo.so</b>, and <b>/altroot/libfoo.so</b>.
+</p>
+
 <h3>Using  transported core dumps on Windows</h3>
 <p>
  If the debugger machine and core dump machine have identical Windows libraries, then you only
@@ -73,7 +81,11 @@ SA normally uses the path to the specified java executable to locate the JDK lib
 </p>
 
 <p>
-For locating the macOS libraries, SA uses <b>DYLD_LIBRARY_PATH</b>. If not specified they will be found in their default locations. However, if the core dump machine libraries and the debugger machine's libraries are not the same, then you should copy the core dump  machine libraries to the debugger machine, and point <b>DYLD_LIBRARY_PATH</b> to them.
+For locating the user JNI libraries, SA uses <b>DYLD_LIBRARY_PATH</b>. It can contain more than one directory separated by a colon. <b>DYLD_LIBRARY_PATH</b> can also be used for locating the JDK libraries, but it needs to specify the full path to the libraries. SA will not automatically search subdirs such as <b>lib/server</b> as it does for <b>JAVA_HOME</b>.
+</p>
+
+<p>
+For locating the macOS libraries, SA uses <b>SA_ALTROOT</b> similar to the linux support, except it does not use it to map all the subdirs. It just appends <b>SA_ALTROOT</b> to the full path of each macOS library. So if you specify <b>SA_ALTROOT=/altroot</b>, SA will prepend <b>/altroot</b> to the full path of each macOS library. Note however, due to <a href="https://bugs.openjdk.org/browse/JDK-8249779">JDK-8249779</a> , SA will not even try to open macOS libraries, so at the moment there is no need to try to match up the macOS libraries by pointing to them with <b>SA_ALTROOT</b>.
 </p>
 
 <p>
