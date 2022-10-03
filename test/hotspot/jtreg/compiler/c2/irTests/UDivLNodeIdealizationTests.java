@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of UDivLNode and UModLNode are
  * being performed as expected.
  *
- * @requires vm.bits == 64
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivLNodeIdealizationTests
  */

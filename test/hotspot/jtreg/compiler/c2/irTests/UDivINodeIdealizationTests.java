@@ -31,6 +31,7 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of UDivINode and UModINode are
  * being performed as expected.
  *
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivINodeIdealizationTests
  */
