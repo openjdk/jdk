@@ -706,6 +706,11 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   NMT_TrackingLevel level = MemTracker::tracking_level();
   size_t            nmt_header_size = MemTracker::malloc_header_size(level);
 
+  // Check for overflow.
+  if (size + nmt_header_size < size) {
+    return NULL;
+  }
+
 #ifndef ASSERT
   const size_t alloc_size = size + nmt_header_size;
 #else
