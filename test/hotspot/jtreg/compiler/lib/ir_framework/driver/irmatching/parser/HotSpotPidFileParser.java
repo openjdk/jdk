@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.TestClass;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.shared.TestFormat;
@@ -68,7 +69,7 @@ class HotSpotPidFileParser {
     public TestClass parse(String hotspotPidFileName) {
         try {
             parseHotSpotFile(hotspotPidFileName);
-            List<IRMethod> irMethods = testMethodMap.values().stream().map(TestMethod::createIRMethod).toList();
+            List<Matchable> irMethods = testMethodMap.values().stream().map(TestMethod::createIRMethod).toList();
             TestFormat.throwIfAnyFailures();
             return new TestClass(irMethods);
         } catch (IOException e) {

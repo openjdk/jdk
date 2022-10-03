@@ -44,9 +44,9 @@ public class IRRuleMatchResult implements MatchResult {
     private final IR irAnno;
     private final List<MatchResult> compilePhaseIRRuleMatchResults = new ArrayList<>();
 
-    public IRRuleMatchResult(IRRule irRule) {
-        this.irRuleId = irRule.getRuleId();
-        this.irAnno = irRule.getIRAnno();
+    public IRRuleMatchResult(int irRuleId, IR irAnno) {
+        this.irRuleId = irRuleId;
+        this.irAnno = irAnno;
     }
 
     public int getRuleId() {

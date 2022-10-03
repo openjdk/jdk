@@ -27,12 +27,11 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 /**
  * This class represents an IR rule of an IR method for a specific compile phase. It contains fully parsed (i.e.
@@ -42,31 +41,24 @@ import java.util.function.Consumer;
  * @see CompilePhaseNoCompilationIRRule
  */
 public class CompilePhaseIRRule implements Matchable {
-    protected final CompilePhase compilePhase;
-    protected final FailOn failOn;
-    protected final Counts counts;
+    private final CompilePhase compilePhase;
+    private final List<Matchable> checkAttributes;
 
-    public CompilePhaseIRRule(CompilePhase compilePhase, FailOn failOn, Counts counts) {
+    public CompilePhaseIRRule(CompilePhase compilePhase, List<Matchable> checkAttributes) {
         this.compilePhase = compilePhase;
-        this.failOn = failOn;
-        this.counts = counts;
+        this.checkAttributes = checkAttributes;
     }
 
     @Override
-    public CompilePhaseIRRuleMatchResult match() {
+    public MatchResult match() {
         CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult = new CompilePhaseIRRuleMatchResult(compilePhase);
-        matchCheckAttribute(failOn, compilePhaseIRRuleMatchResult::setFailOnMatchResult);
-        matchCheckAttribute(counts, compilePhaseIRRuleMatchResult::setCountsMatchResult);
-        return compilePhaseIRRuleMatchResult;
-    }
-
-    private void matchCheckAttribute(CheckAttribute checkAttribute, Consumer<MatchResult> consumer) {
-        if (checkAttribute != null) {
+        for (Matchable checkAttribute : checkAttributes) {
             MatchResult matchResult = checkAttribute.match();
             if (matchResult.fail()) {
-                consumer.accept(matchResult);
+                compilePhaseIRRuleMatchResult.addFailedMatchResult(matchResult);
             }
         }
+        return compilePhaseIRRuleMatchResult;
     }
 
     /**
@@ -80,7 +72,7 @@ public class CompilePhaseIRRule implements Matchable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompilePhaseIRRule that = (CompilePhaseIRRule) o;
+        CompilePhaseIRRule that = (CompilePhaseIRRule)o;
         return compilePhase == that.compilePhase;
     }
 

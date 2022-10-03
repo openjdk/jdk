@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
 import java.util.List;
@@ -34,20 +35,21 @@ import java.util.List;
  * to be IR matched on.
  *
  * @see IR#counts()
- * @see CheckAttribute
  */
-public class Counts extends CheckAttribute {
+public class Counts implements Matchable {
+    private final List<Constraint> constraints;
+    private final String compilationOutput;
 
-    public Counts(List<Constraint> constraints) {
-        super(constraints);
+    public Counts(List<Constraint> constraints, String compilationOutput) {
+        this.constraints = constraints;
+        this.compilationOutput = compilationOutput;
     }
-
 
     @Override
     public MatchResult match() {
         CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeType.COUNTS);
         for (Constraint constraint : constraints) {
-            MatchResult constraintMatchResult = constraint.match();
+            MatchResult constraintMatchResult = constraint.match(compilationOutput);
             if (constraintMatchResult.fail()) {
                 checkAttributeMatchResult.addFailure(constraintMatchResult);
             }

@@ -21,30 +21,25 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.Matchable;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
 import java.util.List;
 
 /**
- * Base class representing a parsed check attribute ({@link IR#failOn()} or {@link IR#counts()}) of an IR rule for a
- * compile phase. This means that all {@link IRNode} placeholder strings are replaced by compile phase specific regexes
- * and all composite IR nodes are merged to a single regex. The constraints are ready to be IR matched against.
+ * This class provides a check on a single {@link IR#failOn()} constraint.
  *
- * @see IR
+ * @see Constraint
  */
-abstract public class CheckAttribute implements Matchable {
-    protected final List<Constraint> constraints;
-
-    public CheckAttribute(List<Constraint> constraints) {
-        this.constraints = constraints;
-    }
+class FailOnConstraintCheck implements ConstraintCheck {
 
     @Override
-    abstract public MatchResult match();
+    public MatchResult check(Constraint constraint, List<String> matchedNodes) {
+        if (!matchedNodes.isEmpty()) {
+            return new FailOnConstraintFailure(constraint, matchedNodes);
+        }
+        return ConstraintSuccess.getInstance();
+    }
 }

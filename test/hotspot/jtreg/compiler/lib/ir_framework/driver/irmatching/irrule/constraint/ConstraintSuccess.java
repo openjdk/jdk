@@ -21,16 +21,30 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
- * Interface describing actions that can performed when reading a constraint in a check attribute.
+ * This class represents a successful matching result of any {@link Constraint} on a compile phase output.
  */
-interface RawConstraintAction {
-    RawConstraint createRawConstraint(CheckAttributeStringIterator attributeIterator, int constraintIndex);
-    CompilePhase defaultPhase(CheckAttributeStringIterator checkAttributeStringIterator);
-}
+public class ConstraintSuccess implements MatchResult {
+    private static final ConstraintSuccess INSTANCE = new ConstraintSuccess();
 
+    private ConstraintSuccess() {}
+
+    public static ConstraintSuccess getInstance() {
+        return INSTANCE;
+    }
+
+    @Override
+    public boolean fail() {
+        return false;
+    }
+
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        // Must not be visited.
+    }
+}

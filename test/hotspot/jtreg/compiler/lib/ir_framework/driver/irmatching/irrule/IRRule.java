@@ -30,7 +30,6 @@ import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleBuilder;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 
 import java.util.List;
 
@@ -47,7 +46,7 @@ public class IRRule implements Matchable {
     /**
      * List of compile phase IR rules, sorted by
      */
-    private final List<CompilePhaseIRRule> compilePhaseIRRules;
+    private final List<Matchable> compilePhaseIRRules;
 
     public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
         this.ruleId = ruleId;
@@ -55,22 +54,14 @@ public class IRRule implements Matchable {
         this.compilePhaseIRRules = CompilePhaseIRRuleBuilder.build(irMethod, irAnno);
     }
 
-    public int getRuleId() {
-        return ruleId;
-    }
-
-    public IR getIRAnno() {
-        return irAnno;
-    }
-
     /**
      * Apply this IR rule by checking any failOn and counts attributes.
      */
     @Override
     public MatchResult match() {
-        IRRuleMatchResult irRuleMatchResult = new IRRuleMatchResult(this);
-        for (CompilePhaseIRRule compilePhaseIRRule : compilePhaseIRRules) {
-            CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult = compilePhaseIRRule.match();
+        IRRuleMatchResult irRuleMatchResult = new IRRuleMatchResult(ruleId, irAnno);
+        for (Matchable compilePhaseIRRule : compilePhaseIRRules) {
+            MatchResult compilePhaseIRRuleMatchResult = compilePhaseIRRule.match();
             if (compilePhaseIRRuleMatchResult.fail()) {
                 irRuleMatchResult.addCompilePhaseIRMatchResult(compilePhaseIRRuleMatchResult);
             }

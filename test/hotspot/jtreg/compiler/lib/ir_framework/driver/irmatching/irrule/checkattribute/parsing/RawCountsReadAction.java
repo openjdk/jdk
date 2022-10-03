@@ -36,7 +36,7 @@ import compiler.lib.ir_framework.shared.TestFormatException;
 /**
  * Action that is performed when reading a constraint of a {@link IR#counts}.
  */
-class RawCountsAction implements RawConstraintAction {
+class RawCountsReadAction implements RawConstraintReadAction {
     @Override
     public RawConstraint createRawConstraint(CheckAttributeStringIterator checkAttributeStringIterator, int constraintIndex) {
         RawIRNode rawIRNode = new RawIRNode(checkAttributeStringIterator);
@@ -47,7 +47,7 @@ class RawCountsAction implements RawConstraintAction {
     private static Comparison<Integer> parseCountString(CheckAttributeStringIterator checkAttributeStringIterator, RawIRNode rawIRNode) {
         String countsString = readCountsString(checkAttributeStringIterator, rawIRNode);
         try {
-            return ComparisonConstraintParser.parse(countsString, RawCountsAction::parsePositiveInt);
+            return ComparisonConstraintParser.parse(countsString, RawCountsReadAction::parsePositiveInt);
         } catch (TestFormatException e) {
             String irNodeString = IRNode.getIRNodeAccessString(rawIRNode.irNodePlaceholder());
             throw new TestFormatException(e.getMessage() + ", node " + irNodeString + ", in count string \"" +
@@ -74,6 +74,6 @@ class RawCountsAction implements RawConstraintAction {
     public CompilePhase defaultPhase(CheckAttributeStringIterator checkAttributeStringIterator) {
         RawIRNode rawIRNode = new RawIRNode(checkAttributeStringIterator);
         readCountsString(checkAttributeStringIterator, rawIRNode);
-        return rawIRNode.defaultPhase();
+        return rawIRNode.defaultCompilePhase();
     }
 }

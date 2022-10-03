@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledIRMethod;
 
@@ -59,7 +60,7 @@ public class TestMethod {
         this.compiled = true;
     }
 
-    public IRMethod createIRMethod() {
+    public Matchable createIRMethod() {
         IR[] irAnnos = method.getAnnotationsByType(IR.class);
         TestFramework.check(irAnnos.length > 0, "must have at least one IR rule");
         TestFramework.check(irRuleIds.length > 0, "must have at least one IR rule");

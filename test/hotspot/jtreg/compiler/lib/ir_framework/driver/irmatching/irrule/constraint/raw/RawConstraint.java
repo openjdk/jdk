@@ -26,17 +26,17 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
 /**
  * Interface to represent a single raw constraint as found in the {@link IR @IR} annotation(i.e. {@link IRNode}
  * placeholder strings are not replaced by default regexes, yet). A raw constraint can be parsed into a
- * {@link Constraint} by calling {@link #parse(CompilePhase, IRMethod)}. This replaces the IR node placeholder strings
+ * {@link Constraint} by calling {@link #parse(CompilePhase)}. This replaces the IR node placeholder strings
  * by actual regexes and merge composite nodes together.
  *
  * @see Constraint
  */
 public interface RawConstraint {
-    Constraint parse(CompilePhase compilePhase, IRMethod irMethod);
+    CompilePhase defaultCompilePhase();
+    Constraint parse(CompilePhase compilePhase);
 }

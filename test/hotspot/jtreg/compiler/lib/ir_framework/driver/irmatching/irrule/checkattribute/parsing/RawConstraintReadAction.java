@@ -21,40 +21,16 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
 
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-
-import java.util.ArrayList;
-import java.util.List;
+import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 
 /**
- * This class represents a test class matching result of a {@link TestClass}.
- *
- * @see TestClass
+ * Interface describing actions that can performed when reading a constraint in a check attribute.
  */
-public class TestClassResult implements MatchResult {
-    /**
-     * List of all IR method results, sorted by method names.
-     */
-    private final List<MatchResult> results = new ArrayList<>();
-
-    @Override
-    public boolean fail() {
-        return !results.isEmpty();
-    }
-
-    public void addResult(MatchResult IRMethodMatchResult) {
-        results.add(IRMethodMatchResult);
-    }
-
-    @Override
-    public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
-    }
-
-    @Override
-    public void acceptChildren(MatchResultVisitor visitor) {
-        acceptChildren(visitor, results);
-    }
+interface RawConstraintReadAction {
+    RawConstraint createRawConstraint(CheckAttributeStringIterator attributeIterator, int constraintIndex);
+    CompilePhase defaultPhase(CheckAttributeStringIterator checkAttributeStringIterator);
 }
+

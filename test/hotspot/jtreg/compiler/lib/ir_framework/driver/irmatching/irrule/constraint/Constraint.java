@@ -26,8 +26,6 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.Matchable;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttribute;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 import compiler.lib.ir_framework.shared.Comparison;
@@ -38,39 +36,35 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * This class represents a single constraint of a {@link CheckAttribute} of an IR rule for a compile phase. It stores a
+ * This class represents a single constraint of a check attribute of an IR rule for a compile phase. It stores a
  * ready to be used regex for a compile phase (i.e. all {@link IRNode} placeholder strings are updated and composite nodes
  * merged) to apply matching on.
  * <p>
  *
  * {@link FailOn} can directly use this class while {@link Counts} need some more information stored with the subclass
  *
- * @see CheckAttribute
  * @see FailOn
  */
-public class Constraint implements Matchable {
+public class Constraint {
     private final String regex;
     private final int index; // constraint indices start at 1.
     private final CompilePhase compilePhase;
-    protected final String compilationOutput;
     private final ConstraintCheck constraintCheck;
 
-    private Constraint(ConstraintCheck constraintCheck, String regex, int index, CompilePhase compilePhase,
-                       String compilationOutput) {
+    private Constraint(ConstraintCheck constraintCheck, String regex, int index, CompilePhase compilePhase) {
         this.constraintCheck = constraintCheck;
         this.regex = regex;
         this.index = index;
         this.compilePhase = compilePhase;
-        this.compilationOutput = compilationOutput;
     }
 
-    public static Constraint createFailOn(String regex, int index, CompilePhase compilePhase, String compilationOutput) {
-        return new Constraint(new FailOnConstraintCheck(), regex, index, compilePhase, compilationOutput);
+    public static Constraint createFailOn(String regex, int index, CompilePhase compilePhase) {
+        return new Constraint(new FailOnConstraintCheck(), regex, index, compilePhase);
     }
 
     public static Constraint createCounts(String regex, int index, Comparison<Integer> comparison,
-                                          CompilePhase compilePhase, String compilationOutput) {
-        return new Constraint(new CountsConstraintCheck(comparison), regex, index, compilePhase, compilationOutput);
+                                          CompilePhase compilePhase) {
+        return new Constraint(new CountsConstraintCheck(comparison), regex, index, compilePhase);
     }
 
     public String regex() {
@@ -85,45 +79,14 @@ public class Constraint implements Matchable {
         return compilePhase;
     }
 
-    protected List<String> matchNodes(String compilationOutput) {
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(compilationOutput);
-        return matcher.results().map(java.util.regex.MatchResult::group).collect(Collectors.toList());
-    }
-
-    @Override
-    public MatchResult match() {
+    public MatchResult match(String compilationOutput) {
         List<String> matchedNodes = matchNodes(compilationOutput);
         return constraintCheck.check(this, matchedNodes);
     }
-}
 
-interface ConstraintCheck {
-    MatchResult check(Constraint constraint, List<String> matchedNodes);
-}
-
-class FailOnConstraintCheck implements ConstraintCheck {
-    @Override
-    public MatchResult check(Constraint constraint, List<String> matchedNodes) {
-        if (!matchedNodes.isEmpty()) {
-            return new FailOnConstraintFailure(constraint, matchedNodes);
-        }
-        return ConstraintSuccess.getInstance();
-    }
-}
-
-class CountsConstraintCheck implements ConstraintCheck {
-    private final Comparison<Integer> comparison;
-
-    CountsConstraintCheck(Comparison<Integer> comparison) {
-        this.comparison = comparison;
-    }
-
-    @Override
-    public MatchResult check(Constraint constraint, List<String> matchedNodes) {
-        if (!comparison.compare(matchedNodes.size())) {
-            return new CountsConstraintFailure(constraint, matchedNodes, comparison);
-        }
-        return ConstraintSuccess.getInstance();
+    private List<String> matchNodes(String compilationOutput) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(compilationOutput);
+        return matcher.results().map(java.util.regex.MatchResult::group).collect(Collectors.toList());
     }
 }

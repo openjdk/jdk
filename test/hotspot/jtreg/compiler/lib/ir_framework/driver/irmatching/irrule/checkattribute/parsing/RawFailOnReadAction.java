@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawFail
 /**
  * Action that is performed when reading a constraint of a {@link IR#failOn}.
  */
-class RawFailOnAction implements RawConstraintAction {
+class RawFailOnReadAction implements RawConstraintReadAction {
     @Override
     public RawConstraint createRawConstraint(CheckAttributeStringIterator checkAttributeStringIterator, int constraintIndex) {
         RawIRNode rawIRNode = new RawIRNode(checkAttributeStringIterator);
@@ -41,6 +41,6 @@ class RawFailOnAction implements RawConstraintAction {
     @Override
     public CompilePhase defaultPhase(CheckAttributeStringIterator checkAttributeStringIterator) {
         RawIRNode rawIRNode = new RawIRNode(checkAttributeStringIterator);
-        return rawIRNode.defaultPhase();
+        return rawIRNode.defaultCompilePhase();
     }
 }

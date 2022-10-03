@@ -51,7 +51,7 @@ public class IRMethod implements Matchable {
      * Mapping from compile phase to compilation output found in hotspot_pid* file for that phase (if exist)
      */
     private final Map<CompilePhase, String> compilationOutputMap;
-    private final List<IRRule> irRules;
+    private final List<Matchable> irRules;
 
     protected IRMethod(Method method) {
         this.method = method;
@@ -98,7 +98,7 @@ public class IRMethod implements Matchable {
     public IRMethodMatchResult match() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<MatchResult> results = new ArrayList<>();
-        for (IRRule irRule : irRules) {
+        for (Matchable irRule : irRules) {
             MatchResult result = irRule.match();
             if (result.fail()) {
                 results.add(result);

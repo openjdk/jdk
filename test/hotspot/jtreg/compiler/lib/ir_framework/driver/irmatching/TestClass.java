@@ -26,8 +26,6 @@ package compiler.lib.ir_framework.driver.irmatching;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +41,7 @@ public class TestClass implements Matchable {
     /**
      * List of all test methods which contain at least one applicable @IR annotation.
      */
-    private final List<IRMethod> irMethods;
+    private final List<Matchable> irMethods;
 
     /**
      * Constructor for classes without @IR annotations.
@@ -52,7 +50,7 @@ public class TestClass implements Matchable {
         this.irMethods = new ArrayList<>();
     }
 
-    public TestClass(List<IRMethod> irMethods) {
+    public TestClass(List<Matchable> irMethods) {
         TestFramework.check(!irMethods.isEmpty(), "must not be empty");
         this.irMethods = irMethods;
     }
@@ -60,8 +58,8 @@ public class TestClass implements Matchable {
     @Override
     public MatchResult match() {
         TestClassResult result = new TestClassResult();
-        for (IRMethod irMethod : irMethods) {
-            IRMethodMatchResult IRMethodMatchResult = irMethod.match();
+        for (Matchable irMethod : irMethods) {
+            MatchResult IRMethodMatchResult = irMethod.match();
             if (IRMethodMatchResult.fail()) {
                 result.addResult(IRMethodMatchResult);
             }

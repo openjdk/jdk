@@ -35,35 +35,35 @@ import java.util.Set;
 /**
  * Class to parse a check attribute ({@link IR#failOn()} or {@link IR#counts()}) as found in a {@link IR @IR}
  * annotation without replacing placeholder IR strings, yet. For each raw constraint (i.e. all consecutive strings in
- * the check attribute that eventually form a constraint) we apply a {@link RawConstraintAction} which defines how
+ * the check attribute that eventually form a constraint) we apply a {@link RawConstraintReadAction} which defines how
  * a constraint must be parsed.
  *
  * @see IR#failOn()
  * @see IR#counts()
- * @see RawConstraintAction
+ * @see RawConstraintReadAction
  */
  public class RawCheckAttribute {
     private final CheckAttributeStringIterator checkAttributeStringIterator;
-    private final RawConstraintAction rawConstraintAction;
+    private final RawConstraintReadAction rawConstraintReadAction;
 
-    private RawCheckAttribute(String[] checkAttribute, RawConstraintAction rawConstraintAction) {
+    public RawCheckAttribute(String[] checkAttribute, RawConstraintReadAction rawConstraintReadAction) {
         this.checkAttributeStringIterator = new CheckAttributeStringIterator(checkAttribute);
-        this.rawConstraintAction = rawConstraintAction;
+        this.rawConstraintReadAction = rawConstraintReadAction;
     }
 
     public static RawCheckAttribute createFailOn(IR irAnno) {
-        return new RawCheckAttribute(irAnno.failOn(), new RawFailOnAction());
+        return new RawCheckAttribute(irAnno.failOn(), new RawFailOnReadAction());
     }
 
     public static RawCheckAttribute createCounts(IR irAnno) {
-        return new RawCheckAttribute(irAnno.counts(), new RawCountsAction());
+        return new RawCheckAttribute(irAnno.counts(), new RawCountsReadAction());
     }
 
     public final List<RawConstraint> parse() {
         int index = 1;
         List<RawConstraint> rawConstraints = new ArrayList<>();
         while (checkAttributeStringIterator.hasNext()) {
-            rawConstraints.add(rawConstraintAction.createRawConstraint(checkAttributeStringIterator, index++));
+            rawConstraints.add(rawConstraintReadAction.createRawConstraint(checkAttributeStringIterator, index++));
         }
         return rawConstraints;
     }
@@ -71,7 +71,7 @@ import java.util.Set;
     public final Set<CompilePhase> parseDefaultCompilePhases() {
         Set<CompilePhase> compilePhases = new HashSet<>();
         while (checkAttributeStringIterator.hasNext()) {
-            compilePhases.add(rawConstraintAction.defaultPhase(checkAttributeStringIterator));
+            compilePhases.add(rawConstraintReadAction.defaultPhase(checkAttributeStringIterator));
         }
         return compilePhases;
     }

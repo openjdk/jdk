@@ -21,40 +21,15 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class represents a test class matching result of a {@link TestClass}.
- *
- * @see TestClass
+ * Interface to represent a check on a single {@link Constraint}.
  */
-public class TestClassResult implements MatchResult {
-    /**
-     * List of all IR method results, sorted by method names.
-     */
-    private final List<MatchResult> results = new ArrayList<>();
-
-    @Override
-    public boolean fail() {
-        return !results.isEmpty();
-    }
-
-    public void addResult(MatchResult IRMethodMatchResult) {
-        results.add(IRMethodMatchResult);
-    }
-
-    @Override
-    public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
-    }
-
-    @Override
-    public void acceptChildren(MatchResultVisitor visitor) {
-        acceptChildren(visitor, results);
-    }
+interface ConstraintCheck {
+    MatchResult check(Constraint constraint, List<String> matchedNodes);
 }

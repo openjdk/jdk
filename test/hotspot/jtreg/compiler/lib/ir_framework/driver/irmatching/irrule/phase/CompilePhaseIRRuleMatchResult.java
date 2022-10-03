@@ -27,6 +27,9 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This class represents an IR matching result of a {@link CompilePhaseIRRule} (i.e. an IR rule applied on a compile phase).
  *
@@ -34,8 +37,8 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
  */
 public class CompilePhaseIRRuleMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
-    private MatchResult failOnFailures = null;
-    private MatchResult countsFailures = null;
+
+    private final List<MatchResult> checkAttributeFailures = new ArrayList<>();
 
     public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase) {
         this.compilePhase = compilePhase;
@@ -43,19 +46,15 @@ public class CompilePhaseIRRuleMatchResult implements MatchResult {
 
     @Override
     public boolean fail() {
-        return failOnFailures != null || countsFailures != null;
+        return !checkAttributeFailures.isEmpty();
     }
 
     public CompilePhase getCompilePhase() {
         return compilePhase;
     }
 
-    public void setFailOnMatchResult(MatchResult failOnFailures) {
-        this.failOnFailures = failOnFailures;
-    }
-
-    public void setCountsMatchResult(MatchResult countsFailures) {
-        this.countsFailures = countsFailures;
+    public void addFailedMatchResult(MatchResult failedMatchResult) {
+        checkAttributeFailures.add(failedMatchResult);
     }
 
     @Override
@@ -65,11 +64,6 @@ public class CompilePhaseIRRuleMatchResult implements MatchResult {
 
     @Override
     public void acceptChildren(MatchResultVisitor visitor) {
-        if (failOnFailures != null) {
-            failOnFailures.accept(visitor);
-        }
-        if (countsFailures != null) {
-            countsFailures.accept(visitor);
-        }
+        checkAttributeFailures.forEach(f -> f.accept(visitor));
     }
 }

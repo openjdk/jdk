@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
 import java.util.List;
@@ -42,26 +43,20 @@ import java.util.stream.Collectors;
  * fails, we need to check each constraint individually to report which one failed.
  *
  * @see IR#failOn()
- * @see CheckAttribute
  */
-public class FailOn extends CheckAttribute {
-    /**
-     * Quick check: Look for any occurrence of any regex by creating the following pattern to match against:
-     * "regex_1|regex_2|...|regex_n"
-     */
-    private final Matcher quickMatcher;
+public class FailOn implements Matchable {
+    private final List<Constraint> constraints;
+    private final String compilationOutput;
 
     public FailOn(List<Constraint> constraints, String compilationOutput) {
-        super(constraints);
-        String patternString = constraints.stream().map(Constraint::regex).collect(Collectors.joining("|"));
-        Pattern pattern = Pattern.compile(String.join("|", patternString));
-        this.quickMatcher = pattern.matcher(compilationOutput);
+        this.constraints = constraints;
+        this.compilationOutput = compilationOutput;
     }
 
     @Override
     public MatchResult match() {
         CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeType.FAIL_ON);
-        if (hasNoMatch()) {
+        if (hasNoMatchQuick()) {
             return checkAttributeMatchResult;
         }
         match(checkAttributeMatchResult);
@@ -69,13 +64,20 @@ public class FailOn extends CheckAttribute {
         return checkAttributeMatchResult;
     }
 
-    private boolean hasNoMatch() {
-        return !quickMatcher.find();
+    /**
+     * Quick check: Look for any occurrence of any regex by creating the following pattern to match against:
+     * "regex_1|regex_2|...|regex_n"
+     */
+    private boolean hasNoMatchQuick() {
+        String patternString = constraints.stream().map(Constraint::regex).collect(Collectors.joining("|"));
+        Pattern pattern = Pattern.compile(String.join("|", patternString));
+        Matcher matcher = pattern.matcher(compilationOutput);
+        return !matcher.find();
     }
 
     public void match(CheckAttributeMatchResult checkAttributeMatchResult) {
         for (Constraint constraint : constraints) {
-            MatchResult constraintMatchResult = constraint.match();
+            MatchResult constraintMatchResult = constraint.match(compilationOutput);
             if (constraintMatchResult.fail()) {
                 checkAttributeMatchResult.addFailure(constraintMatchResult);
             }

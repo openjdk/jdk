@@ -63,18 +63,11 @@ public class RawIRNode {
         return node;
     }
 
-    public CompilePhase defaultPhase() {
+    public CompilePhase defaultCompilePhase() {
         return IRNode.getDefaultPhaseForIRNode(node);
     }
 
     public String regex(CompilePhase compilePhase) {
-        if (compilePhase == CompilePhase.DEFAULT) {
-            compilePhase = defaultPhase();
-        }
-        return regexForNode(compilePhase);
-    }
-
-    private String regexForNode(CompilePhase compilePhase) {
         String nodeRegex = node;
         if (IRNode.isIRNode(node)) {
             nodeRegex = IRNode.getRegexForPhaseOfIRNode(node, compilePhase);
