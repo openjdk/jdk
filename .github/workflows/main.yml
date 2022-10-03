@@ -29,6 +29,9 @@ on:
   pull_request:
     branches:
       - rivos/main
+  push:
+    branches:
+      - rivos/main
   workflow_dispatch:
     inputs:
       platforms:
