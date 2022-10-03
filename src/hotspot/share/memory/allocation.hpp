@@ -260,7 +260,8 @@ class CHeapObj {
 
 };
 
-class CHeapObjDyn {
+// Dynamically pick the memory flags at allocation
+class CHeapObjDynamic {
  public:
   ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f) throw() {
     return CHeapObjImpl::operator new(size, f);
