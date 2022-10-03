@@ -572,10 +572,8 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 
 cleanup:
     if (success != JNI_TRUE) {
-        for (int i = 0; i < ind-1; i++) {
-            if (graphicsConfigs[i] != 0) {
-                free(graphicsConfigs[i]);
-            }
+        for (int i = 0; i < nConfig; i++) {
+            free(graphicsConfigs[i]);
         }
         free(graphicsConfigs);
     }
