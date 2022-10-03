@@ -2453,11 +2453,6 @@ bool SuperWord::output() {
     return false;
   }
 
-  // Check that the loop to be vectorized does not have inconsistent reduction
-  // information, which would likely lead to a miscompilation.
-  assert(!lpt()->has_reduction_nodes() || cl->is_reduction_loop(),
-         "non-reduction loop contains reduction nodes");
-
 #ifndef PRODUCT
   if (TraceLoopOpts) {
     tty->print("SuperWord::output    ");
