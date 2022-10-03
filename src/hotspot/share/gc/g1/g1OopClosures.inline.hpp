@@ -122,10 +122,7 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
   HeapRegion* from = g1h->heap_region_containing(p);
 
-  assert(from->is_in_reserved(p) ||
-         (from->is_humongous() &&
-          g1h->heap_region_containing(p)->is_humongous() &&
-          from->humongous_start_region() == g1h->heap_region_containing(p)->humongous_start_region()),
+  assert(from->is_in_reserved(p) || from->is_humongous(),
          "p " PTR_FORMAT " is not in the same region %u or part of the correct humongous object starting at region %u.",
          p2i(p), from->hrm_index(), from->humongous_start_region()->hrm_index());
 #endif // ASSERT
