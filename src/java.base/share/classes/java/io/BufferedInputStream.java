@@ -604,7 +604,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private long implTransferTo(OutputStream out) throws IOException {
-        if (getClass() == BufferedInputStream.class && markpos < 0) {
+        if (getClass() == BufferedInputStream.class && markpos == -1) {
             int avail = count - pos;
             if (avail > 0) {
                 out.write(getBufIfOpen(), pos, avail);
