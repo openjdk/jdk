@@ -793,10 +793,10 @@ public class GIFImageReader extends ImageReader {
                                 new byte[len + applicationData.length];
 
                             System.arraycopy(blockData, offset,
-                                data, 0, len);
+                                             data, 0, len);
                             System.arraycopy(applicationData, 0,
-                                data, len,
-                                applicationData.length);
+                                             data, len,
+                                             applicationData.length);
 
                             applicationData = data;
                         }
