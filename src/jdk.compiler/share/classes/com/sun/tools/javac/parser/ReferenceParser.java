@@ -140,10 +140,9 @@ public class ReferenceParser {
             } else {
                 qualExpr = (hash == afterSlash) ? null : parseType(sig, afterSlash, hash, dh);
                 int afterHash = hash + 1;
-                int dash = sig.indexOf("-", afterHash);
-                if (dash > -1 || sig.indexOf("#", afterHash) == afterHash) {
-                    // A hash symbol followed by another hash or text containing a dash represents
-                    // a verbatim URL fragment or static file path and is not not parsed as a member.
+                if (sig.indexOf("#", afterHash) == afterHash) {
+                    // A hash symbol followed by another hash represents a verbatim URL fragment
+                    // or static file path and is not not parsed as a member.
                     member = null;
                 } else if (lparen == -1) {
                     member = parseMember(sig, afterHash, sig.length(), dh);

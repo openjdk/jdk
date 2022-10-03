@@ -164,14 +164,14 @@ public class TestSeeLinkAnchor extends JavadocTester {
                 .setComments("""
                     @see p2.Class2##class2main See main heading in p2.Class2
                     @see p2.Class2##class2main
-                    @see p2#package-p2-heading See heading in p2
-                    @see p2#package-p2-heading
+                    @see p2##package-p2-heading See heading in p2
+                    @see p2##package-p2-heading
                     """);
         new ClassBuilder(tb, "p1.Class1")
                 .setModifiers("public", "class")
                 .setComments("""
                     <h2 id="main">Class1 Main</h2>
-                    Link to {@link p2#package-p2-heading heading in package p2}
+                    Link to {@link p2##package-p2-heading heading in package p2}
                     <h3>Class1 Sub</h3>
                     Plain link to {@linkplain p2.Class2##class2-sub-heading sub heading above}
                     """)
@@ -192,7 +192,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
                      * <h2>Package p2</h2>
                      *
                      * @see p2.Class2##class2-sub-heading See sub heading in p2.Class2
-                     * @see p2.Class2#doc-files/file.html#package-p2-html-file-heading Heading in doc-files
+                     * @see p2.Class2##doc-files/file.html#package-p2-html-file-heading Heading in doc-files
                      */
                     package p2;
                     """);
@@ -217,19 +217,19 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     /**
                      * Link to the {@link m2/com.m2.Class2##sub sub heading in Class2}.
                      *
-                     * @see m2/com.m2.Class2#main-heading See main heading in Class2
-                     * @see m2/com.m2.Class2#main-heading
-                     * @see m1/#module-m1-heading See heading in module m1
-                     * @see m1/#module-m1-heading
-                     * @see m2/#doc-files/file.html#module-m2-html-file-heading See heading in module m2 HTML file
-                     * @see m2/#doc-files/file.html#module-m2-html-file-heading
+                     * @see m2/com.m2.Class2##main-heading See main heading in Class2
+                     * @see m2/com.m2.Class2##main-heading
+                     * @see m1/##module-m1-heading See heading in module m1
+                     * @see m1/##module-m1-heading
+                     * @see m2/##doc-files/file.html#module-m2-html-file-heading See heading in module m2 HTML file
+                     * @see m2/##doc-files/file.html#module-m2-html-file-heading
                      */
                     public class Class1 {}
                     """)
                 .comment("""
                     <h2>Module m1</h2>
-                    Link to {@link m2/#doc-files/file.html doc file in module m2}.
-                    @see m2/com.m2.Class2#main-heading See main heading in Class2
+                    Link to {@link m2/##doc-files/file.html doc file in module m2}.
+                    @see m2/com.m2.Class2##main-heading See main heading in Class2
                     """)
                 .write(src);
         new ModuleBuilder(tb, "m2")
@@ -238,7 +238,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     package com.m2;
                     /**
                      * <h2>Main</h2>
-                     * Link to {@link m1/#module-m1-heading heading in module m1}
+                     * Link to {@link m1/##module-m1-heading heading in module m1}
                      *
                      * <h3 id="sub">Sub</h3>
                      * Plain link to {@linkplain Class2##sub sub heading above}.
@@ -253,7 +253,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     <head><title>Module m2 HTML File</title></head>
                     <body><h1>Module m2 HTML File</h1>
                     Link to {@link com.m2.Class2##main-heading heading in Class2}.
-                    @see m1/#module-m1-heading Heading in module m1
+                    @see m1/##module-m1-heading Heading in module m1
                     </body>
                     </html>
                     """);
