@@ -122,7 +122,7 @@
 <p>If you are eager to try out building the JDK, these simple steps works most of the time. They assume that you have installed Git (and Cygwin if running on Windows) and cloned the top-level JDK repository that you want to build.</p>
 <ol type="1">
 <li><p><a href="#getting-the-source-code">Get the complete source code</a>:<br />
-<code>git clone https://git.openjdk.java.net/jdk/</code></p></li>
+<code>git clone https://git.openjdk.org/jdk/</code></p></li>
 <li><p><a href="#running-configure">Run configure</a>:<br />
 <code>bash configure</code></p>
 <p>If <code>configure</code> fails due to missing dependencies (to either the <a href="#native-compiler-toolchain-requirements">toolchain</a>, <a href="#build-tools-requirements">build tools</a>, <a href="#external-library-requirements">external libraries</a> or the <a href="#boot-jdk-requirements">boot JDK</a>), most of the time it prints a suggestion on how to resolve the situation on your platform. Follow the instructions, and try running <code>bash configure</code> again.</p></li>
@@ -136,9 +136,9 @@
 <p>If any of these steps failed, or if you want to know more about build requirements or build functionality, please continue reading this document.</p>
 <h2 id="introduction">Introduction</h2>
 <p>The JDK is a complex software project. Building it requires a certain amount of technical expertise, a fair number of dependencies on external software, and reasonably powerful hardware.</p>
-<p>If you just want to use the JDK and not build it yourself, this document is not for you. See for instance <a href="http://openjdk.java.net/install">OpenJDK installation</a> for some methods of installing a prebuilt JDK.</p>
+<p>If you just want to use the JDK and not build it yourself, this document is not for you. See for instance <a href="http://openjdk.org/install">OpenJDK installation</a> for some methods of installing a prebuilt JDK.</p>
 <h2 id="getting-the-source-code">Getting the Source Code</h2>
-<p>Make sure you are getting the correct version. As of JDK 10, the source is no longer split into separate repositories so you only need to clone one single repository. At the <a href="https://git.openjdk.java.net/">OpenJDK Git site</a> you can see a list of all available repositories. If you want to build an older version, e.g. JDK 11, it is recommended that you get the <code>jdk11u</code> repo, which contains incremental updates, instead of the <code>jdk11</code> repo, which was frozen at JDK 11 GA.</p>
+<p>Make sure you are getting the correct version. As of JDK 10, the source is no longer split into separate repositories so you only need to clone one single repository. At the <a href="https://git.openjdk.org/">OpenJDK Git site</a> you can see a list of all available repositories. If you want to build an older version, e.g. JDK 11, it is recommended that you get the <code>jdk11u</code> repo, which contains incremental updates, instead of the <code>jdk11</code> repo, which was frozen at JDK 11 GA.</p>
 <p>If you are new to Git, a good place to start is the book <a href="https://git-scm.com/book/en/v2">Pro Git</a>. The rest of this document assumes a working knowledge of Git.</p>
 <h3 id="special-considerations">Special Considerations</h3>
 <p>For a smooth building experience, it is recommended that you follow these rules on where and how to check out the source code.</p>
@@ -152,7 +152,7 @@
 <li><p>Do not put the JDK clone in a path under your Cygwin home directory. This is especially important if your user name contains spaces and/or mixed upper and lower case letters.</p></li>
 <li><p>You need to install a git client. You have two choices, Cygwin git or Git for Windows. Unfortunately there are pros and cons with each choice.</p>
 <ul>
-<li><p>The Cygwin <code>git</code> client has no line ending issues and understands Cygwin paths (which are used throughout the JDK build system). However, it does not currently work well with the Skara CLI tooling. Please see the <a href="https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git">Skara wiki on Git clients</a> for up-to-date information about the Skara git client support.</p></li>
+<li><p>The Cygwin <code>git</code> client has no line ending issues and understands Cygwin paths (which are used throughout the JDK build system). However, it does not currently work well with the Skara CLI tooling. Please see the <a href="https://wiki.openjdk.org/display/SKARA/Skara#Skara-Git">Skara wiki on Git clients</a> for up-to-date information about the Skara git client support.</p></li>
 <li><p>The <a href="https://gitforwindows.org">Git for Windows</a> client has issues with line endings, and do not understand Cygwin paths. It does work well with the Skara CLI tooling, however. To alleviate the line ending problems, make sure you set <code>core.autocrlf</code> to <code>false</code> (this is asked during installation).</p></li>
 </ul></li>
 </ul>
@@ -198,7 +198,7 @@
 </tbody>
 </table>
 <p>The double version numbers for Linux are due to the hybrid model used at Oracle, where header files and external libraries from an older version are used when building on a more modern version of the OS.</p>
-<p>The Build Group has a wiki page with <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a>. From time to time, this is updated by contributors to list successes or failures of building on different platforms.</p>
+<p>The Build Group has a wiki page with <a href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported Build Platforms</a>. From time to time, this is updated by contributors to list successes or failures of building on different platforms.</p>
 <h3 id="windows">Windows</h3>
 <p>Windows XP is not a supported platform, but all newer Windows should be able to build the JDK.</p>
 <p>On Windows, it is important that you pay attention to the instructions in the <a href="#special-considerations">Special Considerations</a>.</p>
@@ -237,7 +237,7 @@
 <p>For Alpine Linux, aside from basic tooling, install the GNU versions of some programs:</p>
 <pre><code>sudo apk add build-base bash grep zip</code></pre>
 <h3 id="aix">AIX</h3>
-<p>Please consult the AIX section of the <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of AIX are supported.</p>
+<p>Please consult the AIX section of the <a href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of AIX are supported.</p>
 <h2 id="native-compiler-toolchain-requirements">Native Compiler (Toolchain) Requirements</h2>
 <p>Large portions of the JDK consists of native code, that needs to be compiled to be able to run on the target platform. In theory, toolchain and operating system should be independent factors, but in practice there's more or less a one-to-one correlation between target operating system and toolchain.</p>
 <table>
@@ -308,7 +308,7 @@
 <p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2022</code>.</p>
 <p>If you have Visual Studio installed but <code>configure</code> fails to detect it, it may be because of <a href="#spaces-in-path">spaces in path</a>.</p>
 <h3 id="ibm-xl-cc">IBM XL C/C++</h3>
-<p>Please consult the AIX section of the <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of XLC are supported.</p>
+<p>Please consult the AIX section of the <a href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of XLC are supported.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building the JDK requires a pre-existing JDK. This is called the &quot;boot JDK&quot;. The boot JDK does not, however, have to be a JDK built directly from the source code available in the OpenJDK Community. If you are porting the JDK to a new platform, chances are that there already exists another JDK for that platform that is usable as boot JDK.</p>
 <p>The rule of thumb is that the boot JDK for building JDK major version <em>N</em> should be a JDK of major version <em>N-1</em>, so for building JDK 9 a JDK 8 would be suitable as boot JDK. However, the JDK should be able to &quot;build itself&quot;, so an up-to-date build of the current JDK source is an acceptable alternative. If you are following the <em>N-1</em> rule, make sure you've got the latest update version, since JDK 8 GA might not be able to build JDK 9 on all platforms.</p>
@@ -512,8 +512,8 @@
 <li><code>SPEC_FILTER</code></li>
 </ul>
 <h2 id="running-tests">Running Tests</h2>
-<p>Most of the JDK tests are using the <a href="http://openjdk.java.net/jtreg">JTReg</a> test framework. Make sure that your configuration knows where to find your installation of JTReg. If this is not picked up automatically, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc.</p>
-<p>The <a href="https://wiki.openjdk.java.net/display/Adoption">Adoption Group</a> provides recent builds of jtreg <a href="https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/">here</a>. Download the latest <code>.tar.gz</code> file, unpack it, and point <code>--with-jtreg</code> to the <code>jtreg</code> directory that you just unpacked.</p>
+<p>Most of the JDK tests are using the <a href="http://openjdk.org/jtreg">JTReg</a> test framework. Make sure that your configuration knows where to find your installation of JTReg. If this is not picked up automatically, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc.</p>
+<p>The <a href="https://wiki.openjdk.org/display/Adoption">Adoption Group</a> provides recent builds of jtreg <a href="https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/">here</a>. Download the latest <code>.tar.gz</code> file, unpack it, and point <code>--with-jtreg</code> to the <code>jtreg</code> directory that you just unpacked.</p>
 <p>Building of Hotspot Gtest suite requires the source code of Google Test framework. The top directory, which contains both <code>googletest</code> and <code>googlemock</code> directories, should be specified via <code>--with-gtest</code>. The supported version of Google Test is 1.8.1, whose source code can be obtained:</p>
 <ul>
 <li>by downloading and unpacking the source bundle from <a href="https://github.com/google/googletest/releases/tag/release-1.8.1">here</a></li>
@@ -896,7 +896,7 @@ spawn failed</code></pre>
 <h4 id="spaces-in-path">Spaces in Path</h4>
 <p>On Windows, when configuring, <code>fixpath.sh</code> may report that some directory names have spaces. Usually, it assumes those directories have <a href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name">short paths</a>. You can run <code>fsutil file setshortname</code> in <code>cmd</code> on certain directories, such as <code>Microsoft Visual Studio</code> or <code>Windows Kits</code>, to assign arbitrary short paths so <code>configure</code> can access them.</p>
 <h3 id="getting-help">Getting Help</h3>
-<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
+<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.org">build-dev@openjdk.org</a>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
 <h2 id="reproducible-builds">Reproducible Builds</h2>
 <p>Build reproducibility is the property of getting exactly the same bits out when building, every time, independent on who builds the product, or where. This is for many reasons a harder goal than it initially appears, but it is an important goal, for security reasons and others. Please see <a href="https://reproducible-builds.org">Reproducible Builds</a> for more information about the background and reasons for reproducible builds.</p>
@@ -1037,12 +1037,12 @@ test-support/</code></pre>
 <pre><code>make COMPARE_BUILD=CONF=--enable-new-hotspot-feature:MAKE=hotspot</code></pre>
 <p>See <code>make/InitSupport.gmk</code> for details on how to use <code>COMPARE_BUILD</code>.</p>
 <p>To analyze build performance, run with <code>LOG=trace</code> and check <code>$BUILD/build-trace-time.log</code>. Use <code>JOBS=1</code> to avoid parallelism.</p>
-<p>Please check that you adhere to the <a href="http://openjdk.java.net/groups/build/doc/code-conventions.html">Code Conventions for the Build System</a> before submitting patches.</p>
+<p>Please check that you adhere to the <a href="http://openjdk.org/groups/build/doc/code-conventions.html">Code Conventions for the Build System</a> before submitting patches.</p>
 <h2 id="contributing-to-the-jdk">Contributing to the JDK</h2>
 <p>So, now you've built your JDK, and made your first patch, and want to contribute it back to the OpenJDK Community.</p>
 <p>First of all: Thank you! We gladly welcome your contribution. However, please bear in mind that the JDK is a massive project, and we must ask you to follow our rules and guidelines to be able to accept your contribution.</p>
-<p>The official place to start is the <a href="http://openjdk.java.net/contribute/">'How to contribute' page</a>. There is also an official (but somewhat outdated and skimpy on details) <a href="http://openjdk.java.net/guide/">Developer's Guide</a>.</p>
-<p>If this seems overwhelming to you, the Adoption Group is there to help you! A good place to start is their <a href="https://wiki.openjdk.java.net/display/Adoption/New+Contributor">'New Contributor' page</a>, or start reading the comprehensive <a href="https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/">Getting Started Kit</a>. The Adoption Group will also happily answer any questions you have about contributing. Contact them by <a href="http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss">mail</a> or <a href="http://openjdk.java.net/irc/">IRC</a>.</p>
+<p>The official place to start is the <a href="http://openjdk.org/contribute/">'How to contribute' page</a>. There is also an official (but somewhat outdated and skimpy on details) <a href="http://openjdk.org/guide/">Developer's Guide</a>.</p>
+<p>If this seems overwhelming to you, the Adoption Group is there to help you! A good place to start is their <a href="https://wiki.openjdk.org/display/Adoption/New+Contributor">'New Contributor' page</a>, or start reading the comprehensive <a href="https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/">Getting Started Kit</a>. The Adoption Group will also happily answer any questions you have about contributing. Contact them by <a href="http://mail.openjdk.org/mailman/listinfo/adoption-discuss">mail</a> or <a href="http://openjdk.org/irc/">IRC</a>.</p>
 <h2 id="editing-this-document">Editing this document</h2>
 <p>If you want to contribute changes to this document, edit <code>doc/building.md</code> and then run <code>make update-build-docs</code> to generate the same changes in <code>doc/building.html</code>.</p>
 </body>
