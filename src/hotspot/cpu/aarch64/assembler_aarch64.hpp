@@ -3255,6 +3255,7 @@ public:
   static bool operand_valid_for_logical_immediate(bool is32, uint64_t imm);
   static bool operand_valid_for_add_sub_immediate(int64_t imm);
   static bool operand_valid_for_float_immediate(double imm);
+  static int  operand_valid_for_movi_immediate(uint64_t imm64, SIMD_Arrangement T);
 
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
