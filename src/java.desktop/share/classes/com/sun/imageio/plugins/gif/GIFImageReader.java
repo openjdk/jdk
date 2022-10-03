@@ -651,13 +651,12 @@ public class GIFImageReader extends ImageReader {
         byte[] data = new byte[0];
         while (true) {
             int length = stream.readUnsignedByte();
+            if (length == 0) {
+                break;
+            }
             if (ignoreMetadata) {
                 stream.skipBytes(length);
-                if (length > 0) {
-                    continue;
-                } else {
-                    break;
-                }
+                continue;
             }
             byte[] newData = new byte[data.length + length];
             System.arraycopy(data, 0, newData, 0, data.length);
