@@ -51,23 +51,25 @@ public class TestInitialSecurityPropertyEvent {
         try (Recording recording = new Recording()) {
             recording.enable(EventNames.InitialSecurityProperty)
                     .with("period", "beginChunk");
+            recording.start();
             // this property edit should not be recorded
             Security.setProperty(SEC_KEY, "false");
-            recording.start();
             recording.stop();
 
             Properties p = SharedSecrets.getJavaSecurityAccess().getInitialProperties();
             List<RecordedEvent> events = Events.fromRecording(recording);
-            System.out.println(events);
+            if (events.size() == 0) {
+                throw new Exception("No security properties - Security class may not have loaded ?");
+            }
             Asserts.assertEquals(events.size(), p.size(), "Incorrect number of events");
             assertEvent(events, SEC_KEY, "true");
         }
     }
 
-    private static void assertEvent(List<RecordedEvent> events, String key, String value) throws Exception {
+    private static void assertEvent(List<RecordedEvent> events, String key, String origValue) throws Exception {
         for (RecordedEvent e : events) {
             if (e.getString("key").equals(key)) {
-                Events.assertField(e, "value").equal("true");
+                Events.assertField(e, "value").equal(origValue);
                 return;
             }
         }
