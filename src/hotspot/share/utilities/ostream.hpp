@@ -42,7 +42,7 @@ DEBUG_ONLY(class ResourceMark;)
 //     jio_fprintf(defaultStream::output_stream(), "Message");
 // This allows for redirection via -XX:+DisplayVMOutputToStdout and
 // -XX:+DisplayVMOutputToStderr
-class outputStream : public CHeapObj<mtInternal> {
+class outputStream : public CHeapObjDyn {
  private:
    NONCOPYABLE(outputStream);
 
