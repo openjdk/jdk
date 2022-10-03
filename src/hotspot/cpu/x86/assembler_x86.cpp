@@ -1947,7 +1947,7 @@ void Assembler::evcvtps2ph(Address dst, KRegister mask, XMMRegister src, int imm
   attributes.set_is_evex_instruction();
   vex_prefix(dst, 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int8(0x1D);
-  emit_operand(src, dst);
+  emit_operand(src, dst, 1);
   emit_int8(imm8);
 }
 
