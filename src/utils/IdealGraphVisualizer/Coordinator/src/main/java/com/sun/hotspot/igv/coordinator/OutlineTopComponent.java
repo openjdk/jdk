@@ -228,62 +228,52 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     @Override
     public void changed(InputGraphProvider lastProvider) {
-        // Wait for LookupHistory to be updated with the last active graph
-        // before selecting it.
-        SwingUtilities.invokeLater(() -> {
+        for (GraphNode graphNode : selectedGraphs) {
+            graphNode.setSelected(false);
+        }
+        for (FolderNode folderNode : selectedFolders) {
+            folderNode.setSelected(false);
+        }
+        selectedGraphs = new GraphNode[0];
+        selectedFolders.clear();
+        if (lastProvider != null) {
+            // Try to fetch and select the latest active graph.
+            InputGraph graph = lastProvider.getGraph();
+            if (graph != null) {
+                if (graph.isDiffGraph()) {
+                    EditorTopComponent editor = EditorTopComponent.getActive();
+                    if (editor != null) {
+                        InputGraph firstGraph = editor.getModel().getFirstGraph();
+                        GraphNode firstNode = FolderNode.getGraphNode(firstGraph);
+                        assert firstNode != null;
+                        InputGraph secondGraph = editor.getModel().getSecondGraph();
+                        GraphNode secondNode = FolderNode.getGraphNode(secondGraph);
+                        assert secondNode != null;
+                        selectedGraphs = new GraphNode[]{firstNode, secondNode};
+                    }
+                } else {
+
+                    GraphNode graphNode = FolderNode.getGraphNode(graph);
+                    assert graphNode != null;
+
+                    selectedGraphs = new GraphNode[]{graphNode};
+                }
+            }
+        }
+        try {
             for (GraphNode graphNode : selectedGraphs) {
-                graphNode.setSelected(false);
-            }
-            for (FolderNode folderNode : selectedFolders) {
-                folderNode.setSelected(false);
-            }
-            selectedGraphs = new GraphNode[0];
-            selectedFolders.clear();
-            if (lastProvider != null) {
-                // Try to fetch and select the latest active graph.
-                InputGraph graph = lastProvider.getGraph();
-                if (graph != null) {
-                    if (graph.isDiffGraph()) {
-                        EditorTopComponent editor = EditorTopComponent.getActive();
-                        if (editor != null) {
-                            InputGraph firstGraph = editor.getModel().getFirstGraph();
-                            assert firstGraph != null;
-                            InputGraph secondGraph = editor.getModel().getSecondGraph();
-                            assert secondGraph != null;
-
-
-                            GraphNode firstNode = FolderNode.getGraphNode(firstGraph);
-                            assert firstNode != null;
-
-                            GraphNode secondNode = FolderNode.getGraphNode(firstGraph);
-                            assert secondNode != null;
-
-                            selection = new GraphNode[]{firstNode, secondNode};
-                        }
-                    } else {
-
-                        GraphNode graphNode = FolderNode.getGraphNode(graph);
-                        assert graphNode != null;
-
-                        selection = new GraphNode[]{graphNode};
-                    }
+                Node parentNode = graphNode.getParentNode();
+                if (parentNode instanceof FolderNode) {
+                    FolderNode folderNode = (FolderNode) graphNode.getParentNode();
+                    folderNode.setSelected(true);
+                    selectedFolders.add(folderNode);
                 }
+                graphNode.setSelected(true);
             }
-            try {
-                for (GraphNode graphNode : selectedGraphs) {
-                    Node parentNode = graphNode.getParentNode();
-                    if (parentNode instanceof FolderNode) {
-                        FolderNode folderNode = (FolderNode) graphNode.getParentNode();
-                        folderNode.setSelected(true);
-                        selectedFolders.add(folderNode);
-                    }
-                    graphNode.setSelected(true);
-                }
-                manager.setSelectedNodes(selectedGraphs);
-            } catch (Exception e) {
-                Exceptions.printStackTrace(e);
-            }
-        });
+            manager.setSelectedNodes(selectedGraphs);
+        } catch (Exception e) {
+            Exceptions.printStackTrace(e);
+        }
     }
 
     @Override

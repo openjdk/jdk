@@ -405,17 +405,30 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public InputGraph getFirstGraph() {
+        InputGraph firstGraph;
         if (getFirstPosition() < graphs.size()) {
-            return graphs.get(getFirstPosition());
+            firstGraph = graphs.get(getFirstPosition());
+        } else {
+            firstGraph = graphs.get(graphs.size() - 1);
         }
-        return graphs.get(graphs.size() - 1);
+        if (firstGraph.isDiffGraph()) {
+            firstGraph = firstGraph.getFirstGraph();
+        }
+        return firstGraph;
+
     }
 
     public InputGraph getSecondGraph() {
+        InputGraph secondGraph;
         if (getSecondPosition() < graphs.size()) {
-            return graphs.get(getSecondPosition());
+            secondGraph = graphs.get(getSecondPosition());
+        } else {
+            secondGraph = getFirstGraph();
         }
-        return getFirstGraph();
+        if (secondGraph.isDiffGraph()) {
+            secondGraph = secondGraph.getSecondGraph();
+        }
+        return secondGraph;
     }
 
     public void selectGraph(InputGraph graph) {
