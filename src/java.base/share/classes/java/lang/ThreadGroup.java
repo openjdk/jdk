@@ -375,7 +375,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     public int activeCount() {
         int n = 0;
         for (Thread thread : Thread.getAllThreads()) {
-            @SuppressWarnings("deprecation")
             ThreadGroup g = thread.getThreadGroup();
             if (parentOf(g)) {
                 n++;
@@ -446,7 +445,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
         int n = 0;
         if (list.length > 0) {
             for (Thread thread : Thread.getAllThreads()) {
-                @SuppressWarnings("deprecation")
                 ThreadGroup g = thread.getThreadGroup();
                 if (g == this || (recurse && parentOf(g))) {
                     list[n++] = thread;
@@ -582,7 +580,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     public final void interrupt() {
         checkAccess();
         for (Thread thread : Thread.getAllThreads()) {
-            @SuppressWarnings("deprecation")
             ThreadGroup g = thread.getThreadGroup();
             if (parentOf(g)) {
                 thread.interrupt();
