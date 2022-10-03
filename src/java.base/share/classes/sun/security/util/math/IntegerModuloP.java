@@ -25,6 +25,8 @@
 
 package sun.security.util.math;
 
+import sun.security.util.math.intpoly.IntegerPolynomialP256;
+
 import java.math.BigInteger;
 
 /**
@@ -163,7 +165,7 @@ public interface IntegerModuloP {
         //    might be zero (infinity). However, since the infinity
         //    is represented as (0, 0) in 2D, it's OK returning 0 as
         //    the inverse of 0, i.e. (1, 1, 0) == (1/0, 1/0) == (0, 0).
-        return pow(getField().getSize().subtract(BigInteger.valueOf(2)));
+        return MultiplicativeInverser.of(getField().getSize()).inverse(this);
     }
 
     /**
@@ -208,5 +210,73 @@ public interface IntegerModuloP {
         return y.fixed();
     }
 
-}
+    sealed interface MultiplicativeInverser {
+        static MultiplicativeInverser of(BigInteger m) {
+            if (m.equals(IntegerPolynomialP256.MODULUS)) {
+                return Secp256R1.instance;
+            } else {
+                return new Default(m);
+            }
+        }
 
+        /**
+         * Compute the multiplicative inverse of {@code imp}.
+         *
+         * @return the multiplicative inverse (1 / imp)
+         */
+        ImmutableIntegerModuloP inverse(IntegerModuloP imp);
+
+        final class Default implements MultiplicativeInverser {
+            private final BigInteger b;
+
+            Default(BigInteger b) {
+                this.b = b.subtract(BigInteger.TWO);
+            }
+
+            @Override
+            public ImmutableIntegerModuloP inverse(IntegerModuloP imp) {
+                MutableIntegerModuloP y = imp.getField().get1().mutable();
+                MutableIntegerModuloP x = imp.mutable();
+                int bitLength = b.bitLength();
+                for (int bit = 0; bit < bitLength; bit++) {
+                    if (b.testBit(bit)) {
+                        // odd
+                        y.setProduct(x);
+                    }
+                    x.setSquare();
+                }
+
+                return y.fixed();
+            }
+        }
+
+        final class Secp256R1 implements MultiplicativeInverser {
+            private static final Secp256R1 instance = new Secp256R1();
+            @Override
+            public ImmutableIntegerModuloP inverse(IntegerModuloP imp) {
+                // imp ^ (2^31 01)
+                MutableIntegerModuloP t = imp.mutable();
+                for (int i = 30; i != 0; i--) {
+                    t.setSquare();
+                    t.setProduct(imp);
+                }
+
+                // 1 / z
+                MutableIntegerModuloP d = t.mutable();
+                for (int i = 31; i < 256; i++) {
+                    d.setSquare();
+                    switch (i) {
+                        case 190, 221, 252 -> {
+                            d.setProduct(t);
+                        }
+                        case 31, 63, 253, 255 -> {
+                            d.setProduct(imp);
+                        }
+                    }
+                }
+
+                return d.fixed();
+            }
+        }
+    }
+}
