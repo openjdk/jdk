@@ -44,10 +44,7 @@ import jdk.test.lib.Platform;
  * @run main/manual FileViewNPETest
  */
 public class FileViewNPETest {
-    static JFrame frame;
-    static JFileChooser jfc;
     static PassFailJFrame passFailJFrame;
-
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -62,29 +59,26 @@ public class FileViewNPETest {
     }
 
     static void initialize() throws InterruptedException, InvocationTargetException {
+        JFrame frame;
+        JFileChooser jfc;
+
         //Initialize the components
         final String INSTRUCTIONS = """
                 Instructions to Test:
-                1. The traversable folder set is "C:\\temp" (In windows)
-                & "/tmp" (In linux), other than these folder all other
-                folders are considered as non-traversable.
+                1. The traversable folder set is to "user/home" Directory,
+                 other than these folder all other
+                 folders are considered as non-traversable.
                 2. When file chooser appears on screen, select any
-                non-traversable folder (ex-C:/ in windows, / folder in linux)
-                from "Look-In" ComboBox by mouse click/key press. (The folder
-                will not be opened since its non-traversable). Select the same
-                folder again.
+                 non-traversable folder from "Look-In" ComboBox by mouse
+                 click/key press. (The folder will not be opened since its
+                 non-traversable). Select the same folder again.
                 3. If NPE occurs on second selection then test FAILS, else test
-                is PASS.
+                 is PASS.
                 """;
         frame = new JFrame("JFileChooser File View NPE test");
-        passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 5, 40);
+        passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 13, 40);
         jfc = new JFileChooser();
-        String path = "";
-        if (Platform.isWindows()) {
-            path = "C:" + File.separator + "temp";
-        } else {
-            path = File.separator + "tmp";
-        }
+        String path = System.getProperty("user.home")
 
         jfc.setCurrentDirectory(new File(path));
         jfc.setFileView(new CustomFileView(path));
@@ -107,10 +101,7 @@ class CustomFileView extends FileView {
     }
 
     public Boolean isTraversable(File filePath) {
-        if ((filePath != null) && (filePath.isDirectory())) {
-            return filePath.getAbsolutePath().startsWith(basePath);
-        } else {
-            return false;
-        }
+        return ((filePath != null) && (filePath.isDirectory())) &&
+                filePath.getAbsolutePath().startsWith(basePath);
     }
 }
