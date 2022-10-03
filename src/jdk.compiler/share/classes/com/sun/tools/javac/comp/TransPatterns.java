@@ -477,7 +477,7 @@ public class TransPatterns extends TreeTranslator {
             statements.append(make.at(tree.pos).VarDef(temp, needsNullCheck ? attr.makeNullCheck(selector)
                                                                             : selector));
             VarSymbol index = new VarSymbol(Flags.SYNTHETIC,
-                    names.fromString("index" + target.syntheticNameChar()  + variableIndex++),
+                    names.fromString("index" + target.syntheticNameChar() + variableIndex++),
                     syms.intType,
                     currentMethodSym);
             statements.append(make.at(tree.pos).VarDef(index, makeLit(syms.intType, 0)));
