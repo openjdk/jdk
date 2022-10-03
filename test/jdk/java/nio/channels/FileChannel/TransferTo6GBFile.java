@@ -66,7 +66,7 @@ public class TransferTo6GBFile {
             out.printf("  Wrote large file in %d ns (%d ms) %n",
             t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
 
-            // Setup looback connection and echo server
+            // Setup loopback connection and echo server
 
             ServerSocketChannel ssc = ServerSocketChannel.open();
             ssc.socket().bind(new InetSocketAddress(0));
