@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 5037004
- * @summary Frivolous ClassCastExceptions thrown by SubjectCodeSource.implies
+ * @summary Frivolous ClassCastExceptions thrown by CodeSource.implies
  * @modules java.base/sun.security.provider
  * @run main/othervm Comparator
  *
