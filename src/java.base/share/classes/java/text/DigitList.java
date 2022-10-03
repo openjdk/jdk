@@ -161,12 +161,12 @@ final class DigitList implements Cloneable {
             return 0.0;
         }
 
-        StringBuilder temp = getStringBuilder();
-        temp.append('.');
-        temp.append(digits, 0, count);
-        temp.append('E');
-        temp.append(decimalAt);
-        return Double.parseDouble(temp.toString());
+        return Double.parseDouble(getStringBuilder()
+                .append('.')
+                .append(digits, 0, count)
+                .append('E')
+                .append(decimalAt)
+                .toString());
     }
 
     /**
@@ -788,12 +788,13 @@ final class DigitList implements Cloneable {
         if (isZero()) {
             return "0";
         }
-        StringBuilder temp = getStringBuilder();
-        temp.append("0.");
-        temp.append(digits, 0, count);
-        temp.append("x10^");
-        temp.append(decimalAt);
-        return temp.toString();
+
+        return getStringBuilder()
+                .append("0.")
+                .append(digits, 0, count)
+                .append("x10^")
+                .append(decimalAt)
+                .toString();
     }
 
     private StringBuilder tempBuilder;
