@@ -234,7 +234,6 @@
   declare_constant(BOTConstants::N_powers)                                  \
                                                                             \
   declare_constant(CardTable::clean_card)                                   \
-  declare_constant(CardTable::last_card)                                    \
   declare_constant(CardTable::dirty_card)                                   \
   declare_constant(CardTable::Precise)                                      \
   declare_constant(CardTable::ObjHeadPreciseArray)                          \
