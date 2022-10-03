@@ -155,11 +155,6 @@ public class ToolBasicTest extends ReplToolTesting {
             out = new PrintWriter(writer);
             setCommandInput(cmd + "\n");
             t = new Thread(() -> {
-                try {
-                    // no chance to know whether cmd is being evaluated
-                    Thread.sleep(5000);
-                } catch (InterruptedException ignored) {
-                }
                 int i = 1;
                 int n = 30;
                 synchronized (lock) {

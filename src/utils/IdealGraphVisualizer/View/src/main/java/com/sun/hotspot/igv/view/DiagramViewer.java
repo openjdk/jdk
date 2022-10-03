@@ -24,9 +24,11 @@
 
 package com.sun.hotspot.igv.view;
 
+import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.graph.Figure;
 import java.awt.Component;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Collection;
 import java.util.List;
@@ -38,7 +40,7 @@ import org.openide.util.Lookup;
  *
  * @author Thomas Wuerthinger
  */
-interface DiagramViewer {
+public interface DiagramViewer {
 
     enum InteractionMode {
         SELECTION,
@@ -46,8 +48,6 @@ interface DiagramViewer {
     }
 
     DiagramViewModel getModel();
-
-    public void paint(Graphics2D generator);
 
     void paint(Graphics2D generator);
 
@@ -57,9 +57,17 @@ interface DiagramViewer {
 
     Component getComponent();
 
-    void zoomOut();
+    double getZoomMinFactor();
 
-    void zoomIn();
+    double getZoomMaxFactor();
+
+    void zoomOut(Point zoomCenter, double speed);
+
+    void zoomIn(Point zoomCenter, double speed);
+
+    void setZoomPercentage(int percentage);
+    int getZoomPercentage();
+    ChangedEvent<DiagramViewer> getZoomChangedEvent();
 
     UndoRedo getUndoRedo();
 
@@ -75,4 +83,5 @@ interface DiagramViewer {
 
     Rectangle getBounds();
 
+    JComponent getView();
 }

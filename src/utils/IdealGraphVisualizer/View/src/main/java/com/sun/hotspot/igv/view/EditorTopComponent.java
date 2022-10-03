@@ -35,6 +35,8 @@ import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.util.List;
 import java.util.*;
 import javax.swing.*;
@@ -154,6 +156,16 @@ public final class EditorTopComponent extends TopComponent {
         centerPanel.setBackground(Color.WHITE);
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
+        // needed to update when the satellite component is moved
+        satelliteComponent.addMouseMotionListener(new MouseMotionListener() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                centerPanel.repaint();
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {}
+        });
         centerPanel.add(SCENE_STRING, scene.getComponent());
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
         add(centerPanel, BorderLayout.CENTER);
@@ -172,9 +184,6 @@ public final class EditorTopComponent extends TopComponent {
         toolBar.add(ExtractAction.get(ExtractAction.class));
         toolBar.add(HideAction.get(HideAction.class));
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
-        toolBar.addSeparator();
-        toolBar.add(ZoomOutAction.get(ZoomOutAction.class));
-        toolBar.add(ZoomInAction.get(ZoomInAction.class));
 
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
@@ -211,6 +220,8 @@ public final class EditorTopComponent extends TopComponent {
 
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new SelectionModeAction()));
+        toolBar.addSeparator();
+        toolBar.add(new ZoomLevelAction(scene));
         toolBar.add(Box.createHorizontalGlue());
 
         quickSearchToolbar = new Toolbar();
@@ -260,11 +271,15 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     public void zoomOut() {
-        scene.zoomOut();
+        scene.zoomOut(null, DiagramScene.ZOOM_INCREMENT);
     }
 
     public void zoomIn() {
-        scene.zoomIn();
+        scene.zoomIn(null, DiagramScene.ZOOM_INCREMENT);
+    }
+
+    public void setZoomLevel(int percentage) {
+        scene.setZoomPercentage(percentage);
     }
 
     public static EditorTopComponent getActive() {

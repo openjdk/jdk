@@ -163,11 +163,9 @@ Europe/Simferopol MSK
 Europe/Sofia EET EEST
 Europe/Tallinn EET EEST
 Europe/Tirane CET CEST
-Europe/Uzhgorod EET EEST
 Europe/Vienna CET CEST
 Europe/Vilnius EET EEST
 Europe/Warsaw CET CEST
-Europe/Zaporozhye EET EEST
 Europe/Zurich CET CEST
 HST HST
 MET MET MEST

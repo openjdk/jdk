@@ -101,6 +101,7 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -1265,7 +1266,7 @@ public class Utils {
      * @return true if the given Element is deprecated for removal.
      */
     public boolean isDeprecatedForRemoval(Element e) {
-        Object forRemoval = getDeprecatedElement(e, "forRemoval");
+        Object forRemoval = getAnnotationElement(e, getDeprecatedType(), "forRemoval");
         return forRemoval != null && (boolean) forRemoval;
     }
 
@@ -1276,21 +1277,31 @@ public class Utils {
      * @return the Deprecated.since value for e, or null.
      */
     public String getDeprecatedSince(Element e) {
-        return (String) getDeprecatedElement(e, "since");
+        return (String) getAnnotationElement(e, getDeprecatedType(), "since");
+    }
+
+    /**
+     * Returns the value of the internal {@code PreviewFeature.feature} element.
+     *
+     * @param e the Element to check
+     * @return the PreviewFeature.feature for e, or null
+     */
+    public Object getPreviewFeature(Element e) {
+        return getAnnotationElement(e, getSymbol("jdk.internal.javac.PreviewFeature"), "feature");
     }
 
     /**
      * Returns the Deprecated annotation element value of the given element, or null.
      */
-    private Object getDeprecatedElement(Element e, String elementName) {
+    private Object getAnnotationElement(Element e, TypeMirror annotationType, String annotationElementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
         JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
-            if (jctypes.isSameType(anno.getAnnotationType().asElement().asType(), getDeprecatedType())) {
+            if (jctypes.isSameType(anno.getAnnotationType(), annotationType)) {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {
-                        if (element.getSimpleName().contentEquals(elementName)) {
+                        if (element.getSimpleName().contentEquals(annotationElementName)) {
                             return (pairs.get(element)).getValue();
                         }
                     }
@@ -2400,6 +2411,10 @@ public class Utils {
 
     public List<? extends SerialFieldTree> getSerialFieldTrees(VariableElement field) {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
+    }
+
+    public List<? extends SpecTree> getSpecTrees(Element element) {
+        return getBlockTags(element, SPEC, SpecTree.class);
     }
 
     public List<ThrowsTree> getThrowsTrees(Element element) {
