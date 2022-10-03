@@ -62,18 +62,7 @@ public class DiffGraphCookie implements Node.Cookie {
         InputGraph other = getCurrentGraph();
         final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
         if (viewer != null && other != null) {
-            if (other.getGroup() != graph.getGroup()) {
-                InputGraph diffGraph = Difference.createDiffGraph(other, graph);
-                viewer.view(diffGraph, true);
-            } else {
-                EditorTopComponent etc = GraphViewerImplementation.findEditorForGraph(graph);
-                if (etc != null) {
-                    // TODO: continue here
-                    //etc.getModel().selectGraph(graph);
-                    etc.requestActive();
-                }
-            }
-
+            viewer.view_difference(other, graph);
         }
     }
 }

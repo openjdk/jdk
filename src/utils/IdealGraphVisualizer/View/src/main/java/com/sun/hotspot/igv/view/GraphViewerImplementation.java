@@ -25,6 +25,7 @@ package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GraphViewer;
+import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.settings.Settings;
 import java.util.ArrayList;
@@ -58,6 +59,21 @@ public class GraphViewerImplementation implements GraphViewer {
             }
         }
         return null;
+    }
+
+    @Override
+    public void view_difference(InputGraph firstGraph, InputGraph secondGraph) {
+        if (firstGraph.getGroup() != secondGraph.getGroup()) {
+            InputGraph diffGraph = Difference.createDiffGraph(firstGraph, secondGraph);
+            view(diffGraph, true);
+        } else {
+            view(firstGraph, true);
+            EditorTopComponent etc = findEditorForGraph(firstGraph);
+            if (etc != null) {
+                etc.getModel().selectDiffGraph(secondGraph);
+                etc.requestActive();
+            }
+        }
     }
 
     @Override

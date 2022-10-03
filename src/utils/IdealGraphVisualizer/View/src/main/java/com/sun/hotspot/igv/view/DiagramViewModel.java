@@ -418,15 +418,32 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return getFirstGraph();
     }
 
-    public void selectGraph(InputGraph g) {
-        int index = graphs.indexOf(g);
+    public void selectGraph(InputGraph graph) {
+        int index = graphs.indexOf(graph);
         if (index == -1 && hideDuplicates) {
             // A graph was selected that's currently hidden, so unhide and select it.
             setHideDuplicates(false);
-            index = graphs.indexOf(g);
+            index = graphs.indexOf(graph);
         }
         assert index != -1;
         setPositions(index, index);
+    }
+
+    public void selectDiffGraph(InputGraph graph) {
+        int index = graphs.indexOf(graph);
+        if (index == -1 && hideDuplicates) {
+            // A graph was selected that's currently hidden, so unhide and select it.
+            setHideDuplicates(false);
+            index = graphs.indexOf(graph);
+        }
+        assert index != -1;
+        int firstIndex = getFirstPosition();
+        int secondIndex = getSecondPosition();
+        if (firstIndex <= index) {
+            setPositions(firstIndex, index);
+        } else {
+            setPositions(index, secondIndex);
+        }
     }
 
     private static ColorFilter.ColorRule stateColorRule(String state, Color color) {
