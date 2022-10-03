@@ -247,11 +247,25 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                         EditorTopComponent editor = EditorTopComponent.getActive();
                         if (editor != null) {
                             InputGraph firstGraph = editor.getModel().getFirstGraph();
+                            assert firstGraph != null;
                             InputGraph secondGraph = editor.getModel().getSecondGraph();
-                            selectedGraphs = new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)};
+                            assert secondGraph != null;
+
+
+                            GraphNode firstNode = FolderNode.getGraphNode(firstGraph);
+                            assert firstNode != null;
+
+                            GraphNode secondNode = FolderNode.getGraphNode(firstGraph);
+                            assert secondNode != null;
+
+                            selection = new GraphNode[]{firstNode, secondNode};
                         }
                     } else {
-                        selectedGraphs = new GraphNode[]{FolderNode.getGraphNode(graph)};
+
+                        GraphNode graphNode = FolderNode.getGraphNode(graph);
+                        assert graphNode != null;
+
+                        selection = new GraphNode[]{graphNode};
                     }
                 }
             }

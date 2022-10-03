@@ -42,25 +42,32 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=GraphViewer.class)
 public class GraphViewerImplementation implements GraphViewer {
 
-    @Override
-    public void view(InputGraph graph, boolean clone) {
-
-        if (!clone) {
-            WindowManager manager = WindowManager.getDefault();
-            for (Mode m : manager.getModes()) {
-                List<TopComponent> l = new ArrayList<>();
-                l.add(m.getSelectedTopComponent());
-                l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
-                for (TopComponent t : l) {
-                    if (t instanceof EditorTopComponent) {
-                        EditorTopComponent etc = (EditorTopComponent) t;
-                        if (etc.getModel().getGroup().getGraphs().contains(graph)) {
-                            etc.getModel().selectGraph(graph);
-                            t.requestActive();
-                            return;
-                        }
+    public static EditorTopComponent findEditorForGraph(InputGraph graph) {
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            List<TopComponent> l = new ArrayList<>();
+            l.add(m.getSelectedTopComponent());
+            l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
+            for (TopComponent t : l) {
+                if (t instanceof EditorTopComponent) {
+                    EditorTopComponent etc = (EditorTopComponent) t;
+                    if (etc.getModel().getGroup().getGraphs().contains(graph)) {
+                        return etc;
                     }
                 }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void view(InputGraph graph, boolean clone) {
+        if (!clone) {
+            EditorTopComponent etc = findEditorForGraph(graph);
+            if (etc != null) {
+                etc.getModel().selectGraph(graph);
+                etc.requestActive();
+                return;
             }
         }
 
