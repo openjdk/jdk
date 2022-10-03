@@ -415,7 +415,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             firstGraph = firstGraph.getFirstGraph();
         }
         return firstGraph;
-
     }
 
     public InputGraph getSecondGraph() {
