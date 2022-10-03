@@ -40,7 +40,6 @@ import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import org.openide.ErrorManager;

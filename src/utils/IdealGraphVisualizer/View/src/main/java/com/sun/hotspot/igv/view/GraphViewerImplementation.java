@@ -28,12 +28,6 @@ import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.settings.Settings;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.openide.windows.Mode;
-import org.openide.windows.TopComponent;
-import org.openide.windows.WindowManager;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -43,24 +37,6 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=GraphViewer.class)
 public class GraphViewerImplementation implements GraphViewer {
 
-    public static EditorTopComponent findEditorForGraph(InputGraph graph) {
-        WindowManager manager = WindowManager.getDefault();
-        for (Mode m : manager.getModes()) {
-            List<TopComponent> l = new ArrayList<>();
-            l.add(m.getSelectedTopComponent());
-            l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
-            for (TopComponent t : l) {
-                if (t instanceof EditorTopComponent) {
-                    EditorTopComponent etc = (EditorTopComponent) t;
-                    if (etc.getModel().getGroup().getGraphs().contains(graph)) {
-                        return etc;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public void view_difference(InputGraph firstGraph, InputGraph secondGraph) {
         if (firstGraph.getGroup() != secondGraph.getGroup()) {
@@ -68,7 +44,7 @@ public class GraphViewerImplementation implements GraphViewer {
             view(diffGraph, true);
         } else {
             view(firstGraph, true);
-            EditorTopComponent etc = findEditorForGraph(firstGraph);
+            EditorTopComponent etc = EditorTopComponent.findEditorForGraph(firstGraph);
             if (etc != null) {
                 etc.getModel().selectDiffGraph(secondGraph);
                 etc.requestActive();
@@ -79,7 +55,7 @@ public class GraphViewerImplementation implements GraphViewer {
     @Override
     public void view(InputGraph graph, boolean clone) {
         if (!clone) {
-            EditorTopComponent etc = findEditorForGraph(graph);
+            EditorTopComponent etc = EditorTopComponent.findEditorForGraph(graph);
             if (etc != null) {
                 etc.getModel().selectGraph(graph);
                 etc.requestActive();

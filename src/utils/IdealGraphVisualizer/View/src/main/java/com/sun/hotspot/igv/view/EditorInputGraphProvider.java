@@ -51,10 +51,6 @@ public class EditorInputGraphProvider implements InputGraphProvider {
         }
     }
 
-    public void close() {
-        editor = null;
-    }
-
     public EditorInputGraphProvider(EditorTopComponent editor) {
         this.editor = editor;
     }
