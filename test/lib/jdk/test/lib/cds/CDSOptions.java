@@ -109,7 +109,7 @@ public class CDSOptions {
         return this;
     }
 
-    // NEW
+    // AppCDS methods
     public CDSOptions setAppJar(String appJar) {
         this.appJar = appJar;
         return this;
