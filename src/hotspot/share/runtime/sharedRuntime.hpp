@@ -277,14 +277,14 @@ class SharedRuntime: AllStatic {
 
   // dtrace notifications
   static int dtrace_object_alloc(oopDesc* o);
-  static int dtrace_object_alloc(Thread* thread, oopDesc* o);
-  static int dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size);
+  static int dtrace_object_alloc(JavaThread* thread, oopDesc* o);
+  static int dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t size);
   static int dtrace_method_entry(JavaThread* thread, Method* m);
   static int dtrace_method_exit(JavaThread* thread, Method* m);
 
   // Utility method for retrieving the Java thread id, returns 0 if the
   // thread is not a well formed Java thread.
-  static jlong get_java_tid(Thread* thread);
+  static jlong get_java_tid(JavaThread* thread);
 
 
   // used by native wrappers to re-enable yellow if overflow happened in native code

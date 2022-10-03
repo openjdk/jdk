@@ -56,11 +56,11 @@ class MemAllocator::Allocation: StackObj {
   bool check_out_of_memory();
   void verify_before();
   void verify_after();
-  void notify_allocation();
+  void notify_allocation(JavaThread* thread);
   void notify_allocation_jvmti_sampler();
   void notify_allocation_low_memory_detector();
   void notify_allocation_jfr_sampler();
-  void notify_allocation_dtrace_sampler();
+  void notify_allocation_dtrace_sampler(JavaThread* thread);
   void check_for_bad_heap_word_value() const;
 #ifdef ASSERT
   void check_for_valid_allocation_state() const;
@@ -84,7 +84,7 @@ public:
   ~Allocation() {
     if (!check_out_of_memory()) {
       verify_after();
-      notify_allocation();
+      notify_allocation(_thread);
     }
   }
 
@@ -235,21 +235,21 @@ void MemAllocator::Allocation::notify_allocation_jfr_sampler() {
   }
 }
 
-void MemAllocator::Allocation::notify_allocation_dtrace_sampler() {
+void MemAllocator::Allocation::notify_allocation_dtrace_sampler(JavaThread* thread) {
   if (DTraceAllocProbes) {
     // support for Dtrace object alloc event (no-op most of the time)
     Klass* klass = obj()->klass();
     size_t word_size = _allocator._word_size;
     if (klass != NULL && klass->name() != NULL) {
-      SharedRuntime::dtrace_object_alloc(Thread::current(), obj(), word_size);
+      SharedRuntime::dtrace_object_alloc(thread, obj(), word_size);
     }
   }
 }
 
-void MemAllocator::Allocation::notify_allocation() {
+void MemAllocator::Allocation::notify_allocation(JavaThread* thread) {
   notify_allocation_low_memory_detector();
   notify_allocation_jfr_sampler();
-  notify_allocation_dtrace_sampler();
+  notify_allocation_dtrace_sampler(thread);
   notify_allocation_jvmti_sampler();
 }
 
