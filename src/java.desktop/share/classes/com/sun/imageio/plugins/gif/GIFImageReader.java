@@ -774,27 +774,23 @@ public class GIFImageReader extends ImageReader {
                             offset = copyData(blockData, offset, authCode);
                         } else {
                             stream.skipBytes(blockSize);
-                            offset = blockSize;
                         }
 
                         byte[] applicationData = concatenateBlocks();
 
-                        if (offset < blockSize) {
+                        if (!ignoreMetadata &&
+                            offset < blockSize) {
                             int len = blockSize - offset;
-                            if (!ignoreMetadata) {
-                                byte[] data =
-                                    new byte[len + applicationData.length];
+                            byte[] data =
+                                new byte[len + applicationData.length];
 
-                                System.arraycopy(blockData, offset,
-                                    data, 0, len);
-                                System.arraycopy(applicationData, 0,
-                                    data, len,
-                                    applicationData.length);
+                            System.arraycopy(blockData, offset,
+                                data, 0, len);
+                            System.arraycopy(applicationData, 0,
+                                data, len,
+                                applicationData.length);
 
-                                applicationData = data;
-                            } else {
-                                stream.skipBytes(len);
-                            }
+                            applicationData = data;
                         }
 
                         if (!ignoreMetadata) {
