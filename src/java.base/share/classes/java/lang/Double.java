@@ -190,6 +190,14 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * </dd>
  * </dl>
  *
+ * For two binary floating-point values {@code a} and {@code b}, if
+ * neither of {@code a} and {@code b} is zero or NaN, then the three
+ * relations numerical equality, bit-wise equivalence, and
+ * representation equivalence of {@code a} and {@code b} have the same
+ * {@code true}/{@code false} value. In other words, for binary
+ * floating-point values, the three relations only differ if at least
+ * one argument is zero or NaN.
+ *
  * @jls 4.2.3 Floating-Point Types, Formats, and Values
  * @jls 4.2.4. Floating-Point Operations
  * @jls 15.21.1 Numerical Equality Operators == and !=
