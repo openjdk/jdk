@@ -258,7 +258,7 @@ public interface IntegerModuloP {
 
             @Override
             public ImmutableIntegerModuloP inverse(IntegerModuloP imp) {
-         	// Invert imp with a modular exponentiation: the modulus is
+                // Invert imp with a modular exponentiation: the modulus is
                 //     p = FFFFFFFF 00000001 00000000 00000000
                 //         00000000 FFFFFFFF FFFFFFFF FFFFFFFF
                 // and the exponent is (p -2).
