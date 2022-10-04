@@ -131,10 +131,10 @@ public class TestSeeLinkAnchor extends JavadocTester {
         checkOrder("m2/com/m2/Class2.html",
             """
                     Link to <a href="../../../m1/module-summary.html#module-m1-heading"><code>heading in module m1</code></a>""",
-            """                                
+            """
                     Plain link to <a href="#sub">sub heading above</a>.""");
         checkOrder("m2/doc-files/file.html",
-            """ 
+            """
                     Link to <a href="../com/m2/Class2.html#main-heading"><code>heading in Class2</code></a>.""",
             """
                     <li><a href="../../m1/module-summary.html#module-m1-heading"><code>Heading in module m1</code></a></li>""");
