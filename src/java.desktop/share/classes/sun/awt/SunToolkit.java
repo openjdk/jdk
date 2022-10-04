@@ -1442,21 +1442,21 @@ public abstract class SunToolkit extends Toolkit
      * sub-system, flushing all pending work and waiting for all the
      * events to be processed.  This method guarantees that after
      * return no additional Java events will be generated, unless
-     * cause by user. Obviously, the method cannot be used on the
-     * event dispatch thread (EDT). In case it nevertheless gets
+     * caused by user. Obviously, the method cannot be used on the
+     * event dispatch thread (EDT). In case it gets
      * invoked on this thread, the method throws the
-     * IllegalThreadException runtime exception.
+     * {@code IllegalThreadException} runtime exception.
      *
-     * <p> This method allows to write tests without explicit timeouts
-     * or wait for some event.  Example:
+     * <p> This method allows writing tests without explicit timeouts
+     * or waiting for some event.  Example:
      * <pre>{@code
      * Frame f = ...;
      * f.setVisible(true);
      * ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
      * }</pre>
      *
-     * <p> After realSync, {@code f} will be completely visible
-     * on the screen, its getLocationOnScreen will be returning the
+     * <p> After {@code realSync}, {@code f} will be completely visible
+     * on the screen, its {@code getLocationOnScreen} will be returning the
      * right result and it will be the focus owner.
      *
      * <p> Another example:
@@ -1465,19 +1465,20 @@ public abstract class SunToolkit extends Toolkit
      * ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
      * }</pre>
      *
-     * <p> After realSync, {@code b} will be focus owner.
+     * <p> After {@code realSync}, {@code b} will be focus owner.
      *
-     * <p> Notice that realSync isn't guaranteed to work if recurring
-     * actions occur, such as if during processing of some event
+     * <p> Notice that {@code realSync} isn't guaranteed to work if recurring
+     * actions occur, such as if during processing of an event
      * another request which may generate some events occurs.  By
-     * default, sync tries to perform as much as {@value #MAX_ITERS}
+     * default, sync tries to perform as many as {@value #MAX_ITERS}
      * cycles of event processing, allowing for roughly {@value
      * #MAX_ITERS} additional requests.
      *
-     * <p> For example, requestFocus() generates native request, which
-     * generates one or two Java focus events, which then generate a
-     * serie of paint events, a serie of Java focus events, which then
-     * generate a serie of paint events which then are processed -
+     * <p> For example, {@link Component#requestFocus() requestFocus()}
+     * generates a native request, which generates one or two Java
+     * focus events, which then generate a series of paint events,
+     * a series of Java focus events, which then generate
+     * a series of paint events which then are processed &mdash;
      * three cycles, minimum.
      *
      * @param timeout the maximum time to wait in milliseconds, negative means "forever".
