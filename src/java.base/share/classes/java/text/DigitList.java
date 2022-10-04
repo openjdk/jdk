@@ -153,8 +153,7 @@ final class DigitList implements Cloneable {
 
     /**
      * Utility routine to get the value of the digit list
-     * If (count == 0) this throws a NumberFormatException, which
-     * mimics Long.parseLong().
+     * If (count == 0) this returns 0.0, unlike Double.parseDouble().
      */
     public final double getDouble() {
         if (count == 0) {
