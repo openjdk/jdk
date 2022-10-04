@@ -1730,20 +1730,6 @@ bool Method::load_signature_classes(const methodHandle& m, TRAPS) {
   return sig_is_loaded;
 }
 
-bool Method::has_unloaded_classes_in_signature(const methodHandle& m, TRAPS) {
-  ResourceMark rm(THREAD);
-  for(ResolvingSignatureStream ss(m()); !ss.is_done(); ss.next()) {
-    if (ss.type() == T_OBJECT) {
-      // Do not use ss.is_reference() here, since we don't care about
-      // unloaded array component types.
-      Klass* klass = ss.as_klass_if_loaded(THREAD);
-      assert(!HAS_PENDING_EXCEPTION, "as_klass_if_loaded contract");
-      if (klass == NULL) return true;
-    }
-  }
-  return false;
-}
-
 // Exposed so field engineers can debug VM
 void Method::print_short_name(outputStream* st) const {
   ResourceMark rm;
@@ -2322,6 +2308,8 @@ bool Method::is_valid_method(const Method* m) {
     return false;
   } else if ((intptr_t(m) & (wordSize-1)) != 0) {
     // Quick sanity check on pointer.
+    return false;
+  } else if (!os::is_readable_range(m, m + 1)) {
     return false;
   } else if (m->is_shared()) {
     return CppVtables::is_valid_shared_method(m);

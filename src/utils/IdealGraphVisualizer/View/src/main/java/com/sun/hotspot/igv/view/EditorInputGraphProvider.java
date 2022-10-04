@@ -49,7 +49,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public InputGraph getGraph() {
-        if (editor != null && editor.isOpened()) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
             return editor.getModel().getGraphToView();
         } else {
             return null;
@@ -58,14 +58,14 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public void setSelectedNodes(Set<InputNode> nodes) {
-        if (editor != null && editor.isOpened()) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
             editor.setSelectedNodes(nodes);
         }
     }
 
     @Override
     public Iterable<InputGraph> searchBackward() {
-        if (editor != null && editor.isOpened()) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
             return editor.getModel().getGraphsBackward();
         } else {
             return null;
@@ -74,7 +74,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public Iterable<InputGraph> searchForward() {
-        if (editor != null && editor.isOpened()) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
             return editor.getModel().getGraphsForward();
         } else {
             return null;

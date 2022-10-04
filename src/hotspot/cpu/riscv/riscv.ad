@@ -7261,6 +7261,32 @@ instruct isInfiniteD_reg_reg(iRegINoSp dst, fRegD src)
   ins_pipe(fp_dop_reg_reg_d);
 %}
 
+// Float.isFinite
+instruct isFiniteF_reg_reg(iRegINoSp dst, fRegF src)
+%{
+  match(Set dst (IsFiniteF src));
+  format %{ "isFinite $dst, $src" %}
+  ins_encode %{
+    __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0001111110);
+    __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
+// Double.isFinite
+instruct isFiniteD_reg_reg(iRegINoSp dst, fRegD src)
+%{
+  match(Set dst (IsFiniteD src));
+  format %{ "isFinite $dst, $src" %}
+  ins_encode %{
+    __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0001111110);
+    __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
+  %}
+  ins_pipe(fp_dop_reg_reg_d);
+%}
+
 instruct divF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
   match(Set dst (DivF src1  src2));
 
