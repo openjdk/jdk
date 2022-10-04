@@ -34,12 +34,12 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.imageio.ImageIO;
 
 /*
  * @test
@@ -180,12 +180,13 @@ public class InternalFrameBorderTest {
         robot.mouseMove(x, y);
         for (int i = start; i < stop; i++) {
             if (Color.RED.equals(robot.getPixelColor(
-            isVertical ? i : (iFrameLoc.x + MIDPOINT),
-            isHorizontal ? i : (iFrameLoc.y + MIDPOINT)))) {
-                saveMRImage(borderDirection + "_uiScale" + uiScale + ".png");
-                errorLog.append("At uiScale: "+ uiScale +
-                ", Red background color detected at "
-                + borderDirection + " border\n");
+                    isVertical ? i : (iFrameLoc.x + MIDPOINT),
+                    isHorizontal ? i : (iFrameLoc.y + MIDPOINT)))) {
+                createMRIScreenCapture(borderDirection + "_uiScale"
+                        + uiScale + ".png");
+                errorLog.append("At uiScale: " + uiScale
+                        + ", Red background color detected at "
+                        + borderDirection + " border\n");
             }
         }
         robot.delay(300);
@@ -216,9 +217,10 @@ public class InternalFrameBorderTest {
         }
         robot.mouseMove(x, y);
         if (Color.RED.equals(robot.getPixelColor(x, y))) {
-            saveMRImage(cornerLocation + "_uiScale" + uiScale + ".png");
-            errorLog.append("At uiScale: "+ uiScale + ", Red background color" +
-                    " detected at " + cornerLocation +  " corner\n");
+            createMRIScreenCapture(cornerLocation + "_uiScale"
+                    + uiScale + ".png");
+            errorLog.append("At uiScale: "+ uiScale + ", Red background color"
+                    + " detected at " + cornerLocation +  " corner\n");
         }
         robot.delay(300);
     }
@@ -243,20 +245,13 @@ public class InternalFrameBorderTest {
         jFrame.setVisible(true);
     }
 
-
-    private static void saveMRImage(String filename) {
-        Image nativeResImage;
+    private static void createMRIScreenCapture(String filename) {
         MultiResolutionImage mrImage = robot.createMultiResolutionScreenCapture(jFrameBounds);
         List<Image> resolutionVariants = mrImage.getResolutionVariants();
-
-        if (resolutionVariants.size() > 1) {
-            nativeResImage = resolutionVariants.get(1);
-        } else {
-            nativeResImage = resolutionVariants.get(0);
-        }
-
+        RenderedImage image = (RenderedImage) resolutionVariants.get(
+                resolutionVariants.size() > 1 ? 1 : 0);
         try {
-            ImageIO.write((RenderedImage) nativeResImage,
+            ImageIO.write(image,
                     "png", new File(filename));
         } catch (Exception e) {
             e.printStackTrace();

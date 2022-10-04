@@ -36,8 +36,6 @@ import java.awt.Insets;
 import java.awt.Stroke;
 import java.awt.Window;
 import java.awt.geom.AffineTransform;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
@@ -312,15 +310,6 @@ public class MetalBorders {
             }
             g2d.translate(xtranslation, ytranslation);
 
-            // border and corner scaling
-            int corner = (int) Math.round(CORNER * at.getScaleX());
-            // loop constraint for bulk of the border
-            int loopCount = (int) Math.round(5 * at.getScaleX());
-
-            // midpoint at which highlight & shadow lines
-            // are positioned on the border
-            int midPoint = loopCount / 2;
-
             g.setColor(background);
             // Draw outermost lines
             g.drawLine(0, 0, width - 1, 0);
@@ -328,12 +317,21 @@ public class MetalBorders {
             g.drawLine(width - 1, 1, width - 1, height - 1);
             g.drawLine(1, height - 1, width - 1, height - 1);
 
+            // loop constraint for bulk of the border
+            int loopCount = (int) Math.round(5 * at.getScaleX());
             // Draw the bulk of the border
             for (int i = 1; i <= loopCount; i++) {
-                g.drawRect(x+i,y+i,width-(i*2)-1, height-(i*2)-1);
+                g.drawRect(x + i,y + i,width - (i * 2) - 1,
+                        height - (i * 2) - 1);
             }
 
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
+                // border and corner scaling
+                int corner = (int) Math.round(CORNER * at.getScaleX());
+                // midpoint at which highlight & shadow lines
+                // are positioned on the border
+                int midPoint = loopCount / 2;
+
                 // Draw the Long highlight lines
                 g.setColor(highlight);
                 g.drawLine(corner + 1, midPoint + stkWidth,
