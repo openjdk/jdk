@@ -72,7 +72,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     __ la(t2, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
-    __ add_memory_int64(Address(t2), 1);
+    __ increment(Address(t2));
   }
 #endif
 
@@ -163,7 +163,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     __ la(x18, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
-    __ add_memory_int64(Address(x18), 1);
+    __ increment(Address(x18));
   }
 #endif
 
@@ -171,7 +171,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // Entry arguments:
-  //  t2: CompiledICHolder
+  //  t1: CompiledICHolder
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,

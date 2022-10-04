@@ -41,6 +41,7 @@
  *     Fixed according to the 4480280 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.jvmti & vm.continuations
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jvmti.GetThreadInfo.thrinfo001

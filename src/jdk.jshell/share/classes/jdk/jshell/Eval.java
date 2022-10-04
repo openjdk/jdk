@@ -523,8 +523,9 @@ class Eval {
                 if (member.getKind() == Tree.Kind.VARIABLE) {
                     VariableTree vt = (VariableTree) member;
 
-                    if (vt.getInitializer() != null) {
-                        //for variables with initializer, explicitly move the initializer
+                    if (vt.getInitializer() != null &&
+                        !vt.getModifiers().getFlags().contains(Modifier.STATIC)) {
+                        //for instance variables with initializer, explicitly move the initializer
                         //to the constructor after the captured variables as assigned
                         //(the initializers would otherwise run too early):
                         Range wholeVar = dis.treeToRange(vt);
@@ -1008,8 +1009,8 @@ class Eval {
         while (true) {
             state.debug(DBG_GEN, "compileAndLoad  %s\n", ins);
 
-            ins.stream().forEach(Unit::initialize);
-            ins.stream().forEach(u -> u.setWrap(ins, ins));
+            ins.forEach(Unit::initialize);
+            ins.forEach(u -> u.setWrap(ins, ins));
 
             if (ins.stream().anyMatch(u -> u.snippet().kind() == Kind.METHOD)) {
                 //if there is any method declaration, check the body of the method for
@@ -1052,24 +1053,24 @@ class Eval {
                 });
 
                 if (ins.addAll(overloads)) {
-                    ins.stream().forEach(Unit::initialize);
-                    ins.stream().forEach(u -> u.setWrap(ins, ins));
+                    ins.forEach(Unit::initialize);
+                    ins.forEach(u -> u.setWrap(ins, ins));
                 }
             }
 
             state.taskFactory.analyze(outerWrapSet(ins), at -> {
-                ins.stream().forEach(u -> u.setDiagnostics(at));
+                ins.forEach(u -> u.setDiagnostics(at));
 
                 // corral any Snippets that need it
                 if (ins.stream().filter(u -> u.corralIfNeeded(ins)).count() > 0) {
                     // if any were corralled, re-analyze everything
                     state.taskFactory.analyze(outerWrapSet(ins), cat -> {
-                        ins.stream().forEach(u -> u.setCorralledDiagnostics(cat));
-                        ins.stream().forEach(u -> u.setStatus(cat));
+                        ins.forEach(u -> u.setCorralledDiagnostics(cat));
+                        ins.forEach(u -> u.setStatus(cat));
                         return null;
                     });
                 } else {
-                    ins.stream().forEach(u -> u.setStatus(at));
+                    ins.forEach(u -> u.setStatus(at));
                 }
                 return null;
             });
@@ -1086,7 +1087,7 @@ class Eval {
                     success = true;
                 } else {
                     // re-wrap with legit imports
-                    legit.stream().forEach(u -> u.setWrap(ins, legit));
+                    legit.forEach(u -> u.setWrap(ins, legit));
 
                     // generate class files for those capable
                     Result res = state.taskFactory.compile(outerWrapSet(legit), ct -> {
@@ -1116,9 +1117,9 @@ class Eval {
                         // loop by replacing all that have been replaced
                         if (!toReplace.isEmpty()) {
                             replaced.addAll(toReplace);
-                            replaced.stream().forEach(Unit::markForReplacement);
+                            replaced.forEach(Unit::markForReplacement);
                             //ensure correct classnames are set in the snippets:
-                            replaced.stream().forEach(u -> u.setWrap(ins, legit));
+                            replaced.forEach(u -> u.setWrap(ins, legit));
                         }
 
                         return toReplace.isEmpty() ? Result.SUCESS : Result.FAILURE;
@@ -1144,7 +1145,7 @@ class Eval {
                 // all classes that could not be directly loaded (because they
                 // are new) have been redefined, and no new dependnencies were
                 // identified
-                ins.stream().forEach(Unit::finish);
+                ins.forEach(Unit::finish);
                 return ins;
             }
         }

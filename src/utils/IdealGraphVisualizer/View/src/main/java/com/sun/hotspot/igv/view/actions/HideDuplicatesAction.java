@@ -27,6 +27,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
 /**
@@ -35,23 +37,19 @@ import org.openide.util.ImageUtilities;
  */
 public class HideDuplicatesAction extends AbstractAction {
 
-    private boolean state;
-    public static final String STATE = "state";
-
     public HideDuplicatesAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(Action.SELECTED_KEY, false);
         putValue(Action.SHORT_DESCRIPTION, "Hide graphs which are the same as the previous graph");
-        setState(false);
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
-        setState(!state);
-    }
-
-    public void setState(boolean b) {
-        this.putValue(STATE, b);
-        this.state = b;
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            boolean selected = (boolean)getValue(SELECTED_KEY);
+            editor.getModel().setHideDuplicates(selected);
+        }
     }
 
     protected String iconResource() {

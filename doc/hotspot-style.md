@@ -1120,8 +1120,6 @@ normal expected behavior of the operation.
 conversion operators.  (Note that conversion to `bool` isn't needed
 in HotSpot code because of the "no implicit boolean" guideline.)
 
-* Avoid covariant return types.
-
 * Avoid `goto` statements.
 
 ### Undecided Features

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -221,10 +222,8 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   assert(count < LIST_CAPACITY-1, "LIST_CAPACITY too small");
   speculative_load_pclist[count++] = __ pc();
   __ movptr(rax, Address(rdx, rsi, Address::times_1));
-#ifndef _LP64
   speculative_load_pclist[count] = __ pc();
   __ movl(rdx, Address(rdx, rsi, Address::times_1, 4));
-#endif // _LP64
 
   __ lea(rsi, counter);
   __ xorptr(rsi, rdx);
@@ -313,13 +312,8 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();
   switch (type) {
-#ifndef _LP64
     case T_FLOAT:  __ fld_s (Address(rdx, rax, Address::times_1)); break;
     case T_DOUBLE: __ fld_d (Address(rdx, rax, Address::times_1)); break;
-#else
-    case T_FLOAT:  __ movflt (xmm0, Address(robj, roffset, Address::times_1)); break;
-    case T_DOUBLE: __ movdbl (xmm0, Address(robj, roffset, Address::times_1)); break;
-#endif // _LP64
     default:       ShouldNotReachHere();
   }
 

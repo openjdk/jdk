@@ -67,6 +67,8 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
@@ -2554,12 +2556,20 @@ public final class System {
                 }
             }
 
-            public <T> T getCarrierThreadLocal(ThreadLocal<T> local) {
-                return local.getCarrierThreadLocal();
+            public <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local) {
+                return ((ThreadLocal<T>)local).getCarrierThreadLocal();
             }
 
-            public <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value) {
-                local.setCarrierThreadLocal(value);
+            public <T> void setCarrierThreadLocal(CarrierThreadLocal<T> local, T value) {
+                ((ThreadLocal<T>)local).setCarrierThreadLocal(value);
+            }
+
+            public void removeCarrierThreadLocal(CarrierThreadLocal<?> local) {
+                ((ThreadLocal<?>)local).removeCarrierThreadLocal();
+            }
+
+            public boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local) {
+                return ((ThreadLocal<?>)local).isCarrierThreadLocalPresent();
             }
 
             public Object[] extentLocalCache() {

@@ -102,14 +102,7 @@ class MallocSiteTable : AllStatic {
   // be tuned if malloc activities changed significantly.
   // The statistics data can be obtained via Jcmd
   // jcmd <pid> VM.native_memory statistics.
-
-  // Currently, (number of buckets / number of entries) ratio is
-  // about 1 / 6
-  enum {
-    table_base_size = 128,   // The base size is calculated from statistics to give
-                             // table ratio around 1:6
-    table_size = (table_base_size * NMT_TrackingStackDepth - 1)
-  };
+  static const int table_size = 4099;
 
   // Table cannot be wider than a 16bit bucket idx can hold
 #define MAX_MALLOCSITE_TABLE_SIZE (USHRT_MAX - 1)
@@ -196,7 +189,7 @@ class MallocSiteTable : AllStatic {
  private:
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static MallocSiteHashtableEntry*        _table[table_size];
+  static MallocSiteHashtableEntry**       _table;
   static const NativeCallStack*           _hash_entry_allocation_stack;
   static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
 };

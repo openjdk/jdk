@@ -160,6 +160,17 @@ public class TestSegmentAllocators {
         allocator.allocate(1, 3);
     }
 
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
+        allocator.allocateArray(ValueLayout.JAVA_BYTE, -1);
+    }
+
+    @Test(expectedExceptions = OutOfMemoryError.class)
+    public void testBadArenaNullReturn() {
+        SegmentAllocator segmentAllocator = SegmentAllocator.newNativeArena(MemorySession.openImplicit());
+        segmentAllocator.allocate(Long.MAX_VALUE, 2);
+    }
+
     @Test
     public void testArrayAllocateDelegation() {
         AtomicInteger calls = new AtomicInteger();

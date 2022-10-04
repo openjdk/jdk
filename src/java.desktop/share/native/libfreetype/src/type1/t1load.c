@@ -2057,9 +2057,9 @@
         name_table->elements[n][len] = '\0';
 
         /* record index of /.notdef */
-        if ( *cur == '.'                                              &&
+        if ( *cur == '.'                                                &&
              ft_strcmp( ".notdef",
-                        (const char*)(name_table->elements[n]) ) == 0 )
+                        (const char*)( name_table->elements[n] ) ) == 0 )
         {
           notdef_index = n;
           notdef_found = 1;
@@ -2331,8 +2331,8 @@
       /* in valid Type 1 fonts we don't see `RD' or `-|' directly */
       /* since those tokens are handled by parse_subrs and        */
       /* parse_charstrings                                        */
-      else if ( *cur == 'R' && cur + 6 < limit && *(cur + 1) == 'D' &&
-                have_integer )
+      else if ( *cur == 'R' && cur + 6 < limit && *( cur + 1 ) == 'D' &&
+                have_integer                                          )
       {
         FT_ULong  s;
         FT_Byte*  b;
@@ -2344,8 +2344,8 @@
         have_integer = 0;
       }
 
-      else if ( *cur == '-' && cur + 6 < limit && *(cur + 1) == '|' &&
-                have_integer )
+      else if ( *cur == '-' && cur + 6 < limit && *( cur + 1 ) == '|' &&
+                have_integer                                          )
       {
         FT_ULong  s;
         FT_Byte*  b;

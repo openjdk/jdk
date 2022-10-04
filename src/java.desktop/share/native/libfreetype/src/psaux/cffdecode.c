@@ -248,7 +248,7 @@
     else
 #endif /* FT_CONFIG_OPTION_INCREMENTAL */
     {
-      CFF_Font cff = (CFF_Font)(face->extra.data);
+      CFF_Font cff = (CFF_Font)( face->extra.data );
 
 
       bchar_index = cff_lookup_glyph_by_stdcharcode( cff, bchar );

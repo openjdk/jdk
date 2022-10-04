@@ -91,7 +91,7 @@ int AbstractInterpreter::size_activation(int max_stack,
   // for the callee's params we only need to account for the extra
   // locals.
   int size = overhead +
-             (callee_locals - callee_params) +
+             (callee_locals - callee_params) * Interpreter::stackElementWords +
              monitors * frame::interpreter_frame_monitor_size() +
              // On the top frame, at all times SP <= ESP, and SP is
              // 16-aligned.  We ensure this by adjusting SP on method
@@ -159,6 +159,19 @@ void AbstractInterpreter::layout_activation(Method* method,
     tempcount*Interpreter::stackElementWords -
     popframe_extra_args;
   interpreter_frame->interpreter_frame_set_last_sp(last_sp);
+
+  // We have to add extra reserved slots to max_stack. There are 3 users of the extra slots,
+  // none of which are at the same time, so we just need to make sure there is enough room
+  // for the biggest user:
+  //   -reserved slot for excepton handler
+  //   -reserved slot for JSR292. Method::extra_stack_entries() is the size.
+  //   -reserved slot for TraceBytecodes
+  int max_stack = method->constMethod()->max_stack() + MAX2(3, Method::extra_stack_entries());
+  intptr_t* extended_sp = (intptr_t*) monbot -
+                          (max_stack * Interpreter::stackElementWords) -
+                          popframe_extra_args;
+  extended_sp = align_down(extended_sp, StackAlignmentInBytes);
+  interpreter_frame->interpreter_frame_set_extended_sp(extended_sp);
 
   // All frames but the initial (oldest) interpreter frame we fill in have
   // a value for sender_sp that allows walking the stack but isn't

@@ -29,6 +29,7 @@
 #include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
 #include "logging/log.hpp"
+#include "os_posix.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -341,7 +342,7 @@ static const struct {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// sun.misc.Signal support
+// sun.misc.Signal and BREAK_SIGNAL support
 
 void jdk_misc_signal_init() {
   // Initialize signal structures
@@ -562,11 +563,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 {
   assert(info != NULL && ucVoid != NULL, "sanity");
 
-  if (sig == BREAK_SIGNAL) {
-    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
-    return true; // ignore it
-  }
-
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
@@ -628,13 +624,12 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     signal_was_handled = true; // unconditionally.
   }
 
+#ifndef ZERO
   // Check for UD trap caused by NOP patching.
   // If it is, patch return address to be deopt handler.
-  if (!signal_was_handled) {
-    address pc = os::Posix::ucontext_get_pc(uc);
-    assert(pc != NULL, "");
+  if (!signal_was_handled && pc != NULL && os::is_readable_pointer(pc)) {
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
-      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      CodeBlob* cb = CodeCache::find_blob(pc);
       if (cb != NULL && cb->is_compiled()) {
         MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
         CompiledMethod* cm = cb->as_compiled_method();
@@ -652,6 +647,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       }
     }
   }
+#endif // !ZERO
 
   // Call platform dependent signal handler.
   if (!signal_was_handled) {
@@ -803,8 +799,8 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
 
 // Semantically compare two sigaction structures. Return true if they are referring to
 // the same handler, using the same flags.
-static bool are_handlers_equal(const struct sigaction* sa,
-                               const struct sigaction* expected_sa) {
+static bool are_actions_equal(const struct sigaction* sa,
+                              const struct sigaction* expected_sa) {
   address this_handler = get_signal_handler(sa);
   address expected_handler = get_signal_handler(expected_sa);
   const int this_flags = get_sanitized_sa_flags(sa);
@@ -814,13 +810,14 @@ static bool are_handlers_equal(const struct sigaction* sa,
 }
 
 // If we installed one of our signal handlers for sig, check that the current
-//  setup matches what we originally installed.
-static void check_signal_handler(int sig) {
+// setup matches what we originally installed.  Return true if signal handler
+// is different.  Otherwise, return false;
+static bool check_signal_handler(int sig) {
   char buf[O_BUFLEN];
   bool mismatch = false;
 
   if (!do_check_signal_periodically[sig]) {
-    return;
+    return false;
   }
 
   const struct sigaction* expected_act = vm_handlers.get(sig);
@@ -832,28 +829,28 @@ static void check_signal_handler(int sig) {
   if (os_sigaction == NULL) {
     // only trust the default sigaction, in case it has been interposed
     os_sigaction = (os_sigaction_t)dlsym(RTLD_DEFAULT, "sigaction");
-    if (os_sigaction == NULL) return;
+    if (os_sigaction == NULL) return false;
   }
 
   os_sigaction(sig, (struct sigaction*)NULL, &act);
 
   // Compare both sigaction structures (intelligently; only the members we care about).
-  if (!are_handlers_equal(&act, expected_act)) {
+  // Ignore if the handler is our own crash handler.
+  if (!are_actions_equal(&act, expected_act) &&
+      !(HANDLER_IS(get_signal_handler(&act), VMError::crash_handler_address))) {
     tty->print_cr("Warning: %s handler modified!", os::exception_name(sig, buf, sizeof(buf)));
     // If we had a mismatch:
-    // - print all signal handlers. As part of that printout, details will be printed
-    //   about any modified handlers.
     // - Disable any further checks for this signal - we do not want to flood stdout. Though
     //   depending on which signal had been overwritten, we may die very soon anyway.
-    os::print_signal_handlers(tty, buf, O_BUFLEN);
     do_check_signal_periodically[sig] = false;
-    tty->print_cr("Consider using jsig library.");
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
     if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
       tty->print_cr("Note: Running in non-interactive shell, %s handler is replaced by shell",
                     os::exception_name(sig, buf, O_BUFLEN));
     }
+    return true;
   }
+  return false;
 }
 
 void* os::user_handler() {
@@ -888,7 +885,7 @@ int os::sigexitnum_pd() {
 
 // This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
 
   if (check_signals == false) return;
 
@@ -896,24 +893,35 @@ void os::run_periodic_checks() {
   // generation of hs*.log in the event of a crash, debugging
   // such a case can be very challenging, so we absolutely
   // check the following for a good measure:
-  check_signal_handler(SIGSEGV);
-  check_signal_handler(SIGILL);
-  check_signal_handler(SIGFPE);
-  check_signal_handler(SIGBUS);
-  check_signal_handler(SIGPIPE);
-  check_signal_handler(SIGXFSZ);
-  PPC64_ONLY(check_signal_handler(SIGTRAP);)
+  bool print_handlers = false;
+
+  print_handlers |= check_signal_handler(SIGSEGV);
+  print_handlers |= check_signal_handler(SIGILL);
+  print_handlers |= check_signal_handler(SIGFPE);
+  print_handlers |= check_signal_handler(SIGBUS);
+  print_handlers |= check_signal_handler(SIGPIPE);
+  print_handlers |= check_signal_handler(SIGXFSZ);
+  PPC64_ONLY(print_handlers |= check_signal_handler(SIGTRAP);)
 
   // ReduceSignalUsage allows the user to override these handlers
   // see comments at the very top and jvm_md.h
   if (!ReduceSignalUsage) {
-    check_signal_handler(SHUTDOWN1_SIGNAL);
-    check_signal_handler(SHUTDOWN2_SIGNAL);
-    check_signal_handler(SHUTDOWN3_SIGNAL);
-    check_signal_handler(BREAK_SIGNAL);
+    print_handlers |= check_signal_handler(SHUTDOWN1_SIGNAL);
+    print_handlers |= check_signal_handler(SHUTDOWN2_SIGNAL);
+    print_handlers |= check_signal_handler(SHUTDOWN3_SIGNAL);
+    print_handlers |= check_signal_handler(BREAK_SIGNAL);
   }
 
-  check_signal_handler(PosixSignals::SR_signum);
+  print_handlers |= check_signal_handler(PosixSignals::SR_signum);
+
+  if (print_handlers) {
+    // If we had a mismatch:
+    // - print all signal handlers. As part of that printout, details will be printed
+    //   about any modified handlers.
+    char buf[O_BUFLEN];
+    os::print_signal_handlers(st, buf, O_BUFLEN);
+    st->print_cr("Consider using jsig library.");
+  }
 }
 
 // Helper function for PosixSignals::print_siginfo_...():
@@ -1212,7 +1220,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig, bool do_check = true) {
+void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
@@ -1255,10 +1263,9 @@ void set_signal_handler(int sig, bool do_check = true) {
 #endif
 
   // Save handler setup for possible later checking
-  if (do_check) {
-    vm_handlers.set(sig, &sigAct);
-  }
-  do_check_signal_periodically[sig] = do_check;
+  vm_handlers.set(sig, &sigAct);
+
+  do_check_signal_periodically[sig] = true;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
@@ -1297,11 +1304,24 @@ void install_signal_handlers() {
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
   if (!ReduceSignalUsage) {
-    // This is just for early initialization phase. Intercepting the signal here reduces the risk
-    // that an attach client accidentally forces HotSpot to quit prematurely. We skip the periodic
-    // check because late initialization will overwrite it to UserHandler.
-    set_signal_handler(BREAK_SIGNAL, false);
+    // Install BREAK_SIGNAL's handler in early initialization phase, in
+    // order to reduce the risk that an attach client accidentally forces
+    // HotSpot to quit prematurely.
+    // The actual work for handling BREAK_SIGNAL is performed by the Signal
+    // Dispatcher thread, which is created and started at a much later point,
+    // see os::initialize_jdk_signal_support(). Any BREAK_SIGNAL received
+    // before the Signal Dispatcher thread is started is queued up via the
+    // pending_signals[BREAK_SIGNAL] counter, and will be processed by the
+    // Signal Dispatcher thread in a delayed fashion.
+    //
+    // Also note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
+    // Applications that require a custom BREAK_SIGNAL handler should run with
+    // -XX:+ReduceSignalUsage. Otherwise if libjsig is used together with
+    // -XX:+ReduceSignalUsage, libjsig will prevent changing BREAK_SIGNAL's
+    // handler to a custom handler.
+    os::signal(BREAK_SIGNAL, os::user_handler());
   }
+
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
   // handlers. By replacing the existing task exception handler, we disable lldb's mach
@@ -1384,7 +1404,6 @@ static void print_single_signal_handler(outputStream* st,
   st->print(", flags=");
   int flags = get_sanitized_sa_flags(act);
   print_sa_flags(st, flags);
-
 }
 
 // Print established signal handler for this signal.
@@ -1401,6 +1420,11 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   sigaction(sig, NULL, &current_act);
 
   print_single_signal_handler(st, &current_act, buf, buflen);
+
+  sigset_t thread_sig_mask;
+  if (::pthread_sigmask(/* ignored */ SIG_BLOCK, NULL, &thread_sig_mask) == 0) {
+    st->print(", %s", sigismember(&thread_sig_mask, sig) ? "blocked" : "unblocked");
+  }
   st->cr();
 
   // If we expected to see our own hotspot signal handler but found a different one,
@@ -1410,7 +1434,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   if (expected_act != NULL) {
     const address current_handler = get_signal_handler(&current_act);
     if (!(HANDLER_IS(current_handler, VMError::crash_handler_address))) {
-      if (!are_handlers_equal(&current_act, expected_act)) {
+      if (!are_actions_equal(&current_act, expected_act)) {
         st->print_cr("  *** Handler was modified!");
         st->print   ("  *** Expected: ");
         print_single_signal_handler(st, expected_act, buf, buflen);
@@ -1806,12 +1830,12 @@ int PosixSignals::init() {
 
   signal_sets_init();
 
-  install_signal_handlers();
-
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal and BREAK_SIGNAL's handler.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
+
+  install_signal_handlers();
 
   return JNI_OK;
 }

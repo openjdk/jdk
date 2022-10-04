@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,36 @@ import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
 
 /**
- * This class implements an input stream filter for reading files in the
- * ZIP file format. Includes support for both compressed and uncompressed
- * entries.
+ * An input stream for reading compressed and uncompressed
+ * {@linkplain ZipEntry ZIP file entries} from a stream of bytes in the ZIP file
+ * format.
+ *
+ * <H2>Reading Zip File Entries</H2>
+ *
+ * The {@link #getNextEntry()} method is used to read the next ZIP file entry
+ * (Local file (LOC) header record in the ZIP format) and position the stream at
+ * the entry's file data. The file data may read using one of the
+ * {@code ZipInputStream} read methods such
+ * as {@link #read(byte[], int, int) read} or {@link #readAllBytes() readAllBytes()}.
+ * For example:
+ *    {@snippet :
+ *      Path jar = Path.of("foo.jar");
+ *      try (InputStream is = Files.newInputStream(jar);
+ *           ZipInputStream zis = new ZipInputStream(is)) {
+ *          ZipEntry ze;
+ *          while((ze= zis.getNextEntry()) != null) {
+ *             var bytes = zis.readAllBytes();
+ *             System.out.printf("Entry: %s, bytes read: %s%n", ze.getName(),
+ *                     bytes.length);
+ *          }
+ *      }
+ *    }
+ * @apiNote
+ * The LOC header contains metadata about the Zip file entry. {@code ZipInputStream}
+ * does not read the Central directory (CEN) header for the entry and therefore
+ * will not have access to its metadata such as the external file attributes.
+ * {@linkplain ZipFile} may be used when the information stored within
+ * the CEN header is required.
  *
  * @author      David Connelly
  * @since 1.1
@@ -165,10 +192,21 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
-     * Reads from the current ZIP entry into an array of bytes.
-     * If {@code len} is not zero, the method
-     * blocks until some input is available; otherwise, no
-     * bytes are read and {@code 0} is returned.
+     * Reads from the current ZIP entry into an array of bytes, returning the number of
+     * inflated bytes. If {@code len} is not zero, the method blocks until some input is
+     * available; otherwise, no bytes are read and {@code 0} is returned.
+     * <p>
+     * If the current entry is compressed and this method returns a nonzero
+     * integer <i>n</i> then {@code buf[off]}
+     * through {@code buf[off+}<i>n</i>{@code -1]} contain the uncompressed
+     * data.  The content of elements {@code buf[off+}<i>n</i>{@code ]} through
+     * {@code buf[off+}<i>len</i>{@code -1]} is undefined, contrary to the
+     * specification of the {@link java.io.InputStream InputStream} superclass,
+     * so an implementation is free to modify these elements during the inflate
+     * operation. If this method returns {@code -1} or throws an exception then
+     * the content of {@code buf[off]} through {@code buf[off+}<i>len</i>{@code
+     * -1]} is undefined.
+     *
      * @param b the buffer into which the data is read
      * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read

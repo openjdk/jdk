@@ -376,41 +376,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
     UTIL_REQUIRE_PROGS(MIG, mig)
     UTIL_REQUIRE_PROGS(XATTR, xattr)
     UTIL_LOOKUP_PROGS(CODESIGN, codesign)
-
-    # Check for user provided code signing identity.
-    UTIL_ARG_WITH(NAME: macosx-codesign-identity, TYPE: string,
-        DEFAULT: openjdk_codesign, CHECK_VALUE: UTIL_CHECK_STRING_NON_EMPTY,
-        DESC: [specify the macosx code signing identity],
-        CHECKING_MSG: [for macosx code signing identity]
-    )
-    AC_SUBST(MACOSX_CODESIGN_IDENTITY)
-
-    if test "x$CODESIGN" != "x"; then
-      # Verify that the codesign certificate is present
-      AC_MSG_CHECKING([if codesign certificate is present])
-      $RM codesign-testfile
-      $TOUCH codesign-testfile
-      $CODESIGN -s "$MACOSX_CODESIGN_IDENTITY" codesign-testfile 2>&AS_MESSAGE_LOG_FD \
-          >&AS_MESSAGE_LOG_FD || CODESIGN=
-      $RM codesign-testfile
-      if test "x$CODESIGN" = x; then
-        AC_MSG_RESULT([no])
-      else
-        AC_MSG_RESULT([yes])
-        # Verify that the codesign has --option runtime
-        AC_MSG_CHECKING([if codesign has --option runtime])
-        $RM codesign-testfile
-        $TOUCH codesign-testfile
-        $CODESIGN --option runtime -s "$MACOSX_CODESIGN_IDENTITY" codesign-testfile \
-            2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD || CODESIGN=
-        $RM codesign-testfile
-        if test "x$CODESIGN" = x; then
-          AC_MSG_ERROR([codesign does not have --option runtime. macOS 10.13.6 and above is required.])
-        else
-          AC_MSG_RESULT([yes])
-        fi
-      fi
-    fi
     UTIL_REQUIRE_PROGS(SETFILE, SetFile)
   fi
   if ! test "x$OPENJDK_TARGET_OS" = "xwindows"; then

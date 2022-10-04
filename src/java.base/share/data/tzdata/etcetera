@@ -40,12 +40,16 @@
 # behind GMT but uses the completely misleading abbreviation "GMT".
 
 Zone	Etc/GMT		0	-	GMT
+
+# The following zone is used by tzcode functions like gmtime,
+# which load the "UTC" file to handle seconds properly.
 Zone	Etc/UTC		0	-	UTC
 
 # The following link uses older naming conventions,
 # but it belongs here, not in the file 'backward',
-# as functions like gmtime load the "GMT" file to handle leap seconds properly.
-# We want this to work even on installations that omit the other older names.
+# as it is needed for tzcode releases through 2022a,
+# where functions like gmtime load "GMT" instead of the "Etc/UTC".
+# We want this to work even on installations that omit 'backward'.
 Link	Etc/GMT				GMT
 
 Link	Etc/UTC				Etc/Universal

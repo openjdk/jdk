@@ -319,6 +319,9 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
         Objects.requireNonNull(elementLayout);
+        if (count < 0) {
+            throw new IllegalArgumentException("Negative array size");
+        }
         return allocate(MemoryLayout.sequenceLayout(count, elementLayout));
     }
 

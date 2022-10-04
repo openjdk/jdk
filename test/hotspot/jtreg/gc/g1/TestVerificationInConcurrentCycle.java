@@ -26,6 +26,7 @@ package gc.g1;
 /*
  * @test TestVerificationInConcurrentCycle
  * @requires vm.gc.G1
+ * @requires vm.debug
  * @summary Basic testing of various GC pause verification during the G1 concurrent cycle.
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -36,7 +37,25 @@ package gc.g1;
  *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
  *   -XX:+G1VerifyRSetsDuringFullGC -XX:+G1VerifyHeapRegionCodeRoots
  *   -XX:+VerifyRememberedSets -XX:+VerifyObjectStartArray
- *   -XX:+IgnoreUnrecognizedVMOptions -XX:+G1VerifyBitmaps
+ *   -XX:+G1VerifyBitmaps
+ *   gc.g1.TestVerificationInConcurrentCycle
+ */
+
+/*
+ * @test TestVerificationInConcurrentCycle
+ * @requires vm.gc.G1
+ * @requires !vm.debug
+ * @summary Basic testing of various GC pause verification during the G1 concurrent cycle. It leaves
+ *          out G1VerifyBitmaps as this is a debug-only option.
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *   -Xbootclasspath/a:.
+ *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
+ *   -XX:+G1VerifyRSetsDuringFullGC -XX:+G1VerifyHeapRegionCodeRoots
+ *   -XX:+VerifyRememberedSets -XX:+VerifyObjectStartArray
  *   gc.g1.TestVerificationInConcurrentCycle
  */
 

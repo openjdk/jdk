@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
 
 #include "gc/shared/space.hpp"
 
-#include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
 #if INCLUDE_SERIALGC
+#include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/markSweep.inline.hpp"
 #endif
 
@@ -43,6 +43,7 @@ inline HeapWord* Space::block_start(const void* p) {
   return block_start_const(p);
 }
 
+#if INCLUDE_SERIALGC
 inline HeapWord* OffsetTableContigSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
   if (res != NULL) {
@@ -75,8 +76,6 @@ inline HeapWord*
 OffsetTableContigSpace::block_start_const(const void* p) const {
   return _offsets.block_start(p);
 }
-
-#if INCLUDE_SERIALGC
 
 class DeadSpacer : StackObj {
   size_t _allowed_deadspace_words;

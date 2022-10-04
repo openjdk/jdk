@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import jdk.internal.jimage.ImageReader.Node;
 
@@ -254,19 +255,21 @@ class ExplodedImage extends SystemImage {
                     String moduleName = module.getFileName().toString();
                     // make sure "/modules/<moduleName>" is created
                     findModulesNode(MODULES + moduleName);
-                    Files.walk(module).filter(Files::isDirectory).forEach((p) -> {
-                        p = module.relativize(p);
-                        String pkgName = slashesToDots(p.toString());
-                        // skip META-INFO and empty strings
-                        if (!pkgName.isEmpty() && !pkgName.startsWith("META-INF")) {
-                            List<String> moduleNames = packageToModules.get(pkgName);
-                            if (moduleNames == null) {
-                                moduleNames = new ArrayList<>();
-                                packageToModules.put(pkgName, moduleNames);
+                    try (Stream<Path> contentsStream = Files.walk(module)) {
+                        contentsStream.filter(Files::isDirectory).forEach((p) -> {
+                            p = module.relativize(p);
+                            String pkgName = slashesToDots(p.toString());
+                            // skip META-INF and empty strings
+                            if (!pkgName.isEmpty() && !pkgName.startsWith("META-INF")) {
+                                List<String> moduleNames = packageToModules.get(pkgName);
+                                if (moduleNames == null) {
+                                    moduleNames = new ArrayList<>();
+                                    packageToModules.put(pkgName, moduleNames);
+                                }
+                                moduleNames.add(moduleName);
                             }
-                            moduleNames.add(moduleName);
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }

@@ -368,7 +368,7 @@ void PSOldGen::print_on(outputStream* st) const {
   st->print(" %-15s", name());
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
               capacity_in_bytes()/K, used_in_bytes()/K);
-  st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                 p2i(virtual_space()->low_boundary()),
                 p2i(virtual_space()->high()),
                 p2i(virtual_space()->high_boundary()));

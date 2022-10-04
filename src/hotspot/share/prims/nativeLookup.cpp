@@ -416,12 +416,12 @@ address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
   address entry = NULL;
   ResourceMark rm(THREAD);
 
-  entry = lookup_entry(method, THREAD);
+  entry = lookup_entry(method, CHECK_NULL);
   if (entry != NULL) return entry;
 
   // standard native method resolution has failed.  Check if there are any
   // JVM TI prefixes which have been applied to the native method name.
-  entry = lookup_entry_prefixed(method, THREAD);
+  entry = lookup_entry_prefixed(method, CHECK_NULL);
   if (entry != NULL) return entry;
 
   // Native function not found, throw UnsatisfiedLinkError

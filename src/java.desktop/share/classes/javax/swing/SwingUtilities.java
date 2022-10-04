@@ -2073,6 +2073,10 @@ public class SwingUtilities implements SwingConstants
             return -1;
         }
 
+        if (mnemonic >= 'a' && mnemonic <= 'z') {
+            return -1;
+        }
+
         char uc = Character.toUpperCase((char)mnemonic);
         char lc = Character.toLowerCase((char)mnemonic);
 

@@ -765,7 +765,7 @@ public final class Double extends Number
      */
     @IntrinsicCandidate
     public static boolean isInfinite(double v) {
-        return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
+        return Math.abs(v) > MAX_VALUE;
     }
 
     /**
@@ -782,6 +782,7 @@ public final class Double extends Number
      * floating-point value, {@code false} otherwise.
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static boolean isFinite(double d) {
         return Math.abs(d) <= Double.MAX_VALUE;
     }

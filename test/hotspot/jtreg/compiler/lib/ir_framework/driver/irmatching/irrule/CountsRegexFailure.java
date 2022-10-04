@@ -35,7 +35,8 @@ import java.util.List;
 class CountsRegexFailure extends RegexFailure {
     String failedComparison;
 
-    public CountsRegexFailure(String nodeRegex, int nodeId, long foundValue, Comparison<Long> comparison, List<String> matches) {
+    public CountsRegexFailure(String nodeRegex, int nodeId, int foundValue, Comparison<Integer> comparison,
+                              List<String> matches) {
         super(nodeRegex, nodeId, matches);
         this.failedComparison = "[found] " + foundValue + " " + comparison.getComparator() + " "
                                 + comparison.getGivenValue() + " [given]";

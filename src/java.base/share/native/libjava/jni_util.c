@@ -393,7 +393,7 @@ JNU_NewObjectByName(JNIEnv *env, const char *class_name,
 static jstring
 newSizedString8859_1(JNIEnv *env, const char *str, const int len)
 {
-    jchar buf[512];
+    jchar buf[512] = {0};
     jchar *str1;
     jstring result;
     int i;
@@ -412,6 +412,7 @@ newSizedString8859_1(JNIEnv *env, const char *str, const int len)
 
     for (i=0;i<len;i++)
         str1[i] = (unsigned char)str[i];
+
     result = (*env)->NewString(env, str1, len);
     if (str1 != buf)
         free(str1);
@@ -466,6 +467,9 @@ newString646_US(JNIEnv *env, const char *str)
     jchar *str1;
     jstring result;
     int i;
+
+    if ((*env)->EnsureLocalCapacity(env, 1) < 0)
+        return NULL;
 
     if (len > 512) {
         str1 = (jchar *)malloc(len * sizeof(jchar));
@@ -534,7 +538,7 @@ static jstring
 newStringCp1252(JNIEnv *env, const char *str)
 {
     int len = (int) strlen(str);
-    jchar buf[512];
+    jchar buf[512] = {0};
     jchar *str1;
     jstring result;
     int i;

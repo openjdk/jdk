@@ -320,27 +320,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
     return _lab_alignment_reserve;
   }
 
-  // Some heaps may offer a contiguous region for shared non-blocking
-  // allocation, via inlined code (by exporting the address of the top and
-  // end fields defining the extent of the contiguous allocation region.)
-
-  // This function returns "true" iff the heap supports this kind of
-  // allocation.  (Default is "no".)
-  virtual bool supports_inline_contig_alloc() const {
-    return false;
-  }
-  // These functions return the addresses of the fields that define the
-  // boundaries of the contiguous allocation area.  (These fields should be
-  // physically near to one another.)
-  virtual HeapWord* volatile* top_addr() const {
-    guarantee(false, "inline contiguous allocation not supported");
-    return NULL;
-  }
-  virtual HeapWord** end_addr() const {
-    guarantee(false, "inline contiguous allocation not supported");
-    return NULL;
-  }
-
   // Some heaps may be in an unparseable state at certain times between
   // collections. This may be necessary for efficient implementation of
   // certain allocation-related activities. Calling this function before
@@ -500,8 +479,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Registering and unregistering an nmethod (compiled code) with the heap.
   virtual void register_nmethod(nmethod* nm) = 0;
   virtual void unregister_nmethod(nmethod* nm) = 0;
-  // Callback for when nmethod is about to be deleted.
-  virtual void flush_nmethod(nmethod* nm) = 0;
   virtual void verify_nmethod(nmethod* nm) = 0;
 
   void trace_heap_before_gc(const GCTracer* gc_tracer);

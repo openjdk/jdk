@@ -1503,10 +1503,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return null;
         }
 
-        /* creates a record component if non is related to the given variable and recreates a brand new one
-         * in other case
-         */
-        public RecordComponent createRecordComponent(JCVariableDecl var, List<JCAnnotation> annotations) {
+        public RecordComponent findRecordComponentToRemove(JCVariableDecl var) {
             RecordComponent toRemove = null;
             for (RecordComponent rc : recordComponents) {
                 /* it could be that a record erroneously declares two record components with the same name, in that
@@ -1516,11 +1513,17 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                     toRemove = rc;
                 }
             }
+            return toRemove;
+        }
+
+        /* creates a record component if non is related to the given variable and recreates a brand new one
+         * in other case
+         */
+        public RecordComponent createRecordComponent(RecordComponent existing, JCVariableDecl var, List<JCAnnotation> annotations) {
             RecordComponent rc = null;
-            if (toRemove != null) {
-                // Found a record component with an erroneous type: remove it and create a new one
-                recordComponents = List.filter(recordComponents, toRemove);
-                recordComponents = recordComponents.append(rc = new RecordComponent(var.sym, toRemove.originalAnnos, toRemove.isVarargs));
+            if (existing != null) {
+                recordComponents = List.filter(recordComponents, existing);
+                recordComponents = recordComponents.append(rc = new RecordComponent(var.sym, existing.originalAnnos, existing.isVarargs));
             } else {
                 // Didn't find the record component: create one.
                 recordComponents = recordComponents.append(rc = new RecordComponent(var.sym, annotations));

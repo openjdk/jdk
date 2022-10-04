@@ -34,13 +34,27 @@ import gc.testlibrary.PerfCounters;
  * @bug 8023476
  * @library /test/lib /
  * @requires vm.gc.Serial
+ * @requires vm.bits == "64"
  * @summary Tests that a MemoryPoolMXBeans and PerfCounters for metaspace
  *          report the same data.
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xlog:class+load,class+unload=trace -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xlog:class+load,class+unload=trace -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
+ * @run main/othervm -Xlog:class+load,class+unload=trace -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
+ * @run main/othervm -Xlog:class+load,class+unload=trace -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
+ */
+
+/* @test TestPerfCountersAndMemoryPools
+ * @bug 8023476
+ * @library /test/lib /
+ * @requires vm.gc.Serial
+ * @requires vm.bits == "32"
+ * @summary Tests that a MemoryPoolMXBeans and PerfCounters for metaspace
+ *          report the same data.
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run main/othervm -Xlog:class+load,class+unload=trace -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
  */
 public class TestPerfCountersAndMemoryPools {
     public static void main(String[] args) throws Exception {

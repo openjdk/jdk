@@ -120,11 +120,7 @@ public class ValueTaglet extends BaseTaglet {
             }
             return writer.valueTagOutput(field,
                 text,
-                // TODO: investigate and cleanup
-                // in the j.l.m world, equals will not be accurate
-                // !field.equals(tag.holder())
-                !utils.elementsEqual(field, holder)
-            );
+                !field.equals(holder));
         } else {
             //Referenced field is not a constant.
             messages.warning(holder,

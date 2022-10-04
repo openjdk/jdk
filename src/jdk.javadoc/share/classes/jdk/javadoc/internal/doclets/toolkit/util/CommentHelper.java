@@ -25,28 +25,12 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
-
-import com.sun.source.doctree.AttributeTree;
-import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.AuthorTree;
 import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.CommentTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.EndElementTree;
-import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
@@ -60,7 +44,7 @@ import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.SinceTree;
-import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -73,7 +57,18 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import java.util.List;
+
+import static com.sun.source.doctree.DocTree.Kind.SEE;
+import static com.sun.source.doctree.DocTree.Kind.SERIAL_FIELD;
 
 /**
  * A utility class.
@@ -156,8 +151,8 @@ public class CommentHelper {
     public TypeMirror getType(ReferenceTree rtree) {
         DocTreePath docTreePath = getDocTreePath(rtree);
         if (docTreePath != null) {
-            DocTrees doctrees = configuration.docEnv.getDocTrees();
-            return doctrees.getType(docTreePath);
+            DocTrees docTrees = configuration.docEnv.getDocTrees();
+            return docTrees.getType(docTreePath);
         }
         return null;
     }
@@ -168,162 +163,6 @@ public class CommentHelper {
 
     public List<? extends DocTree> getDescription(DocTree dtree) {
         return getTags(dtree);
-    }
-
-    public String getText(List<? extends DocTree> list) {
-        StringBuilder sb = new StringBuilder();
-        for (DocTree dt : list) {
-            sb.append(getText0(dt));
-        }
-        return sb.toString();
-    }
-
-    public String getText(DocTree dt) {
-        return getText0(dt).toString();
-    }
-
-    private StringBuilder getText0(DocTree dt) {
-        final StringBuilder sb = new StringBuilder();
-        new SimpleDocTreeVisitor<Void, Void>() {
-            @Override
-            public Void visitAttribute(AttributeTree node, Void p) {
-                sb.append(SPACER).append(node.getName().toString());
-                if (node.getValueKind() == ValueKind.EMPTY) {
-                    return null;
-                }
-
-                sb.append("=");
-                String quote;
-                switch (node.getValueKind()) {
-                    case DOUBLE:
-                        quote = "\"";
-                        break;
-                    case SINGLE:
-                        quote = "'";
-                        break;
-                    default:
-                        quote = "";
-                        break;
-                }
-                sb.append(quote);
-                node.getValue().forEach(dt -> dt.accept(this, null));
-                sb.append(quote);
-                return null;
-            }
-
-            @Override
-            public Void visitEndElement(EndElementTree node, Void p) {
-                sb.append("</")
-                        .append(node.getName().toString())
-                        .append(">");
-                return null;
-            }
-
-            @Override
-            public Void visitEntity(EntityTree node, Void p) {
-                sb.append(node.toString());
-                return null;
-            }
-
-            @Override
-            public Void visitLink(LinkTree node, Void p) {
-                if (node.getReference() == null) {
-                    return null;
-                }
-
-                node.getReference().accept(this, null);
-                node.getLabel().forEach(dt -> dt.accept(this, null));
-                return null;
-            }
-
-            @Override
-            public Void visitLiteral(LiteralTree node, Void p) {
-                if (node.getKind() == CODE) {
-                    sb.append("<").append(node.getKind().tagName).append(">");
-                }
-                sb.append(node.getBody().toString());
-                if (node.getKind() == CODE) {
-                    sb.append("</").append(node.getKind().tagName).append(">");
-                }
-                return null;
-            }
-
-            @Override
-            public Void visitReference(ReferenceTree node, Void p) {
-                sb.append(node.getSignature());
-                return null;
-            }
-
-            @Override
-            public Void visitSee(SeeTree node, Void p) {
-                node.getReference().forEach(dt -> dt.accept(this, null));
-                return null;
-            }
-
-            @Override
-            public Void visitSerial(SerialTree node, Void p) {
-                node.getDescription().forEach(dt -> dt.accept(this, null));
-                return null;
-            }
-
-            @Override
-            public Void visitStartElement(StartElementTree node, Void p) {
-                sb.append("<");
-                sb.append(node.getName().toString());
-                node.getAttributes().forEach(dt -> dt.accept(this, null));
-                sb.append(node.isSelfClosing() ? "/>" : ">");
-                return null;
-            }
-
-            @Override
-            public Void visitText(TextTree node, Void p) {
-                sb.append(node.getBody());
-                return null;
-            }
-
-            @Override
-            public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void p) {
-                node.getContent().forEach(dt -> dt.accept(this, null));
-                return null;
-            }
-
-            @Override
-            public Void visitValue(ValueTree node, Void p) {
-                return node.getReference().accept(this, null);
-            }
-
-            @Override
-            protected Void defaultAction(DocTree node, Void p) {
-                sb.append(node.toString());
-                return null;
-            }
-        }.visit(dt, null);
-        return sb;
-    }
-
-    public String getLabel(DocTree dtree) {
-        return new SimpleDocTreeVisitor<String, Void>() {
-            @Override
-            public String visitLink(LinkTree node, Void p) {
-                return node.getLabel().stream()
-                        .map(dt -> getText(dt))
-                        .collect(Collectors.joining());
-            }
-
-            @Override
-            public String visitSee(SeeTree node, Void p) {
-                Utils utils = configuration.utils;
-                return node.getReference().stream()
-                        .filter(dt -> dt.getKind() == DocTree.Kind.TEXT)
-                        .map(dt -> ((TextTree) dt).getBody())
-                        .collect(Collectors.joining());
-            }
-
-            @Override
-            protected String defaultAction(DocTree node, Void p) {
-                return "";
-            }
-        }.visit(dtree, null);
     }
 
     public TypeElement getReferencedClass(DocTree dtree) {
@@ -369,11 +208,6 @@ public class CommentHelper {
         return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }
 
-    public String getReferencedMemberName(DocTree dtree) {
-        String s = getReferencedSignature(dtree);
-        return getReferencedMemberName(s);
-    }
-
     public String getReferencedMemberName(String signature) {
         if (signature == null) {
             return null;
@@ -415,7 +249,7 @@ public class CommentHelper {
         return getFirstSentenceTrees(getBody(dtree));
     }
 
-    private Element getReferencedElement(DocTree dtree) {
+    public Element getReferencedElement(DocTree dtree) {
         return new ReferenceDocTreeVisitor<Element>() {
             @Override
             public Element visitReference(ReferenceTree node, Void p) {
@@ -442,7 +276,10 @@ public class CommentHelper {
         return null;
     }
 
-    public  String getReferencedSignature(DocTree dtree) {
+    /**
+     * {@return the normalized signature from a {@code ReferenceTree}}
+     */
+    public String getReferencedSignature(DocTree dtree) {
         return new ReferenceDocTreeVisitor<String>() {
             @Override
             public String visitReference(ReferenceTree node, Void p) {
@@ -638,6 +475,11 @@ public class CommentHelper {
             @Override
             public List<? extends DocTree> visitSerialField(SerialFieldTree node, Void p) {
                 return node.getDescription();
+            }
+
+            @Override
+            public List<? extends DocTree> visitSpec(SpecTree node, Void p) {
+                return node.getTitle();
             }
 
             @Override

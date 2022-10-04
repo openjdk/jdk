@@ -26,13 +26,15 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/assembler.inline.hpp"
+#include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
-#include "os_share_linux.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -234,7 +236,7 @@ static void current_stack_region(address *bottom, size_t *size) {
 
   // The block of memory returned by pthread_attr_getstack() includes
   // guard pages where present.  We need to trim these off.
-  size_t page_bytes = os::Linux::page_size();
+  size_t page_bytes = os::vm_page_size();
   assert(((intptr_t) stack_bottom & (page_bytes - 1)) == 0, "unaligned stack");
 
   size_t guard_bytes;
@@ -340,14 +342,14 @@ extern "C" {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        os::atomic_copy64(from++, to++);
+        atomic_copy64(from++, to++);
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        os::atomic_copy64(from--, to--);
+        atomic_copy64(from--, to--);
     }
   }
 
@@ -398,3 +400,5 @@ int os::extra_bang_size_in_bytes() {
   // Zero does not require an additional stack banging.
   return 0;
 }
+
+void os::setup_fpu() {}

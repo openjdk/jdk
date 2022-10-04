@@ -50,7 +50,7 @@ void Assembler::add(Register Rd, Register Rn, int64_t increment, Register temp) 
   }
 }
 
-void Assembler::addw(Register Rd, Register Rn, int64_t increment, Register temp) {
+void Assembler::addw(Register Rd, Register Rn, int32_t increment, Register temp) {
   if (is_imm_in_range(increment, 12, 0)) {
     addiw(Rd, Rn, increment);
   } else {
@@ -70,7 +70,7 @@ void Assembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) 
   }
 }
 
-void Assembler::subw(Register Rd, Register Rn, int64_t decrement, Register temp) {
+void Assembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
   if (is_imm_in_range(-decrement, 12, 0)) {
     addiw(Rd, Rn, -decrement);
   } else {
@@ -117,30 +117,30 @@ void Assembler::_li(Register Rd, int64_t imm) {
 }
 
 void Assembler::li64(Register Rd, int64_t imm) {
-   // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
-   // (imm[31:20] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
-   int64_t lower = imm & 0xffffffff;
-   lower -= ((lower << 44) >> 44);
-   int64_t tmp_imm = ((uint64_t)(imm & 0xffffffff00000000)) + (uint64_t)lower;
-   int32_t upper = (tmp_imm - (int32_t)lower) >> 32;
+  // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
+  // (imm[31:20] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
+  int64_t lower = imm & 0xffffffff;
+  lower -= ((lower << 44) >> 44);
+  int64_t tmp_imm = ((uint64_t)(imm & 0xffffffff00000000)) + (uint64_t)lower;
+  int32_t upper = (tmp_imm - (int32_t)lower) >> 32;
 
-   // Load upper 32 bits
-   int64_t up = upper, lo = upper;
-   lo = (lo << 52) >> 52;
-   up -= lo;
-   up = (int32_t)up;
-   lui(Rd, up);
-   addi(Rd, Rd, lo);
+  // Load upper 32 bits
+  int64_t up = upper, lo = upper;
+  lo = (lo << 52) >> 52;
+  up -= lo;
+  up = (int32_t)up;
+  lui(Rd, up);
+  addi(Rd, Rd, lo);
 
-   // Load the rest 32 bits.
-   slli(Rd, Rd, 12);
-   addi(Rd, Rd, (int32_t)lower >> 20);
-   slli(Rd, Rd, 12);
-   lower = ((int32_t)imm << 12) >> 20;
-   addi(Rd, Rd, lower);
-   slli(Rd, Rd, 8);
-   lower = imm & 0xff;
-   addi(Rd, Rd, lower);
+  // Load the rest 32 bits.
+  slli(Rd, Rd, 12);
+  addi(Rd, Rd, (int32_t)lower >> 20);
+  slli(Rd, Rd, 12);
+  lower = ((int32_t)imm << 12) >> 20;
+  addi(Rd, Rd, lower);
+  slli(Rd, Rd, 8);
+  lower = imm & 0xff;
+  addi(Rd, Rd, lower);
 }
 
 void Assembler::li32(Register Rd, int32_t imm) {
@@ -164,7 +164,7 @@ void Assembler::li32(Register Rd, int32_t imm) {
     } else {                                                       \
       assert(temp != noreg, "temp must not be empty register!");   \
       int32_t offset = 0;                                          \
-      movptr_with_offset(temp, dest, offset);                      \
+      movptr(temp, dest, offset);                                  \
       jalr(REGISTER, temp, offset);                                \
     }                                                              \
   }                                                                \
@@ -187,35 +187,11 @@ void Assembler::li32(Register Rd, int32_t imm) {
 
 #undef INSN
 
-void Assembler::ret() {
-  jalr(x0, x1, 0);
-}
-
-#define INSN(NAME, REGISTER)                                      \
-  void Assembler::NAME(const address &dest, Register temp) {      \
-    assert_cond(dest != NULL);                                    \
-    assert(temp != noreg, "temp must not be empty register!");    \
-    int64_t distance = dest - pc();                               \
-    if (is_offset_in_range(distance, 32)) {                       \
-      auipc(temp, distance + 0x800);                              \
-      jalr(REGISTER, temp, ((int32_t)distance << 20) >> 20);      \
-    } else {                                                      \
-      int32_t offset = 0;                                         \
-      movptr_with_offset(temp, dest, offset);                     \
-      jalr(REGISTER, temp, offset);                               \
-    }                                                             \
-  }
-
-  INSN(call, x1);
-  INSN(tail, x0);
-
-#undef INSN
-
 #define INSN(NAME, REGISTER)                                   \
   void Assembler::NAME(const Address &adr, Register temp) {    \
     switch (adr.getMode()) {                                   \
       case Address::literal: {                                 \
-        code_section()->relocate(pc(), adr.rspec());           \
+        relocate(adr.rspec());                                 \
         NAME(adr.target(), temp);                              \
         break;                                                 \
       }                                                        \
@@ -232,8 +208,6 @@ void Assembler::ret() {
 
   INSN(j,    x0);
   INSN(jal,  x1);
-  INSN(call, x1);
-  INSN(tail, x0);
 
 #undef INSN
 
@@ -272,7 +246,7 @@ void Assembler::wrap_label(Register Rt, Label &L, jal_jalr_insn insn) {
   }
 }
 
-void Assembler::movptr_with_offset(Register Rd, address addr, int32_t &offset) {
+void Assembler::movptr(Register Rd, address addr, int32_t &offset) {
   int64_t imm64 = (int64_t)addr;
 #ifndef PRODUCT
   {
@@ -307,15 +281,8 @@ void Assembler::movptr(Register Rd, uintptr_t imm64) {
 
 void Assembler::movptr(Register Rd, address addr) {
   int offset = 0;
-  movptr_with_offset(Rd, addr, offset);
+  movptr(Rd, addr, offset);
   addi(Rd, Rd, offset);
-}
-
-void Assembler::ifence() {
-  fence_i();
-  if (UseConservativeFence) {
-    fence(ir, ir);
-  }
 }
 
 #define INSN(NAME, NEG_INSN)                                                         \

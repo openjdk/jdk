@@ -120,10 +120,9 @@ public class OverflowCodeCacheTest {
                 WHITE_BOX.freeCodeBlob(blob);
             }
 
-            // Convert some nmethods to zombie and then free them to re-enable compilation
+            // Let the GC free nmethods and re-enable compilation
             WHITE_BOX.unlockCompilation();
-            WHITE_BOX.forceNMethodSweep();
-            WHITE_BOX.forceNMethodSweep();
+            WHITE_BOX.fullGC();
 
             // Trigger compilation of Helper::method which will hit an assert because
             // adapter creation failed above due to a lack of code cache space.

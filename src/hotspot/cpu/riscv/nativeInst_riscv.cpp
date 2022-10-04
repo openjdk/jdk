@@ -124,7 +124,7 @@ address NativeCall::destination() const {
   address destination = MacroAssembler::target_addr_for_insn(instruction_address());
 
   // Do we use a trampoline stub for this call?
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // Else we get assertion if nmethod is zombie.
+  CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
   if (nm != NULL && nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
@@ -265,6 +265,13 @@ void NativeJump::verify() { }
 
 
 void NativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
+  // Patching to not_entrant can happen while activations of the method are
+  // in use. The patching in that instance must happen only when certain
+  // alignment restrictions are true. These guarantees check those
+  // conditions.
+
+  // Must be 4 bytes aligned
+  MacroAssembler::assert_alignment(verified_entry);
 }
 
 
@@ -273,7 +280,7 @@ address NativeJump::jump_destination() const {
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
-  // As a special case we also use sequence movptr_with_offset(r,0), jalr(r,0)
+  // As a special case we also use sequence movptr(r,0), jalr(r,0)
   // i.e. jump to 0 when we need leave space for a wide immediate
   // load
 
@@ -328,7 +335,7 @@ bool NativeInstruction::is_lwu_to_zr(address instr) {
 }
 
 // A 16-bit instruction with all bits ones is permanently reserved as an illegal instruction.
-bool NativeInstruction::is_sigill_zombie_not_entrant() {
+bool NativeInstruction::is_sigill_not_entrant() {
   // jvmci
   return uint_at(0) == 0xffffffff;
 }
@@ -345,15 +352,17 @@ bool NativeInstruction::is_stop() {
 //-------------------------------------------------------------------
 
 // MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant_or_zombie)
+// nmethod::make_not_entrant)
 
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
 
   assert(nativeInstruction_at(verified_entry)->is_jump_or_nop() ||
-         nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
+         nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
          "riscv cannot replace non-jump with jump");
+
+  check_verified_entry_alignment(entry, verified_entry);
 
   // Patch this nmethod atomically.
   if (Assembler::reachable_from_branch_at(verified_entry, dest)) {
@@ -371,7 +380,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
     *(unsigned int*)verified_entry = insn;
   } else {
     // We use an illegal instruction for marking a method as
-    // not_entrant or zombie.
+    // not_entrant.
     NativeIllegalInstruction::insert(verified_entry);
   }
 
@@ -383,7 +392,7 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   MacroAssembler a(&cb);
 
   int32_t offset = 0;
-  a.movptr_with_offset(t0, entry, offset); // lui, addi, slli, addi, slli
+  a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
   a.jalr(x0, t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);

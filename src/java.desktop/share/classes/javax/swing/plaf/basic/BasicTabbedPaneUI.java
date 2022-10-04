@@ -4099,7 +4099,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
             setFocusIndex(tabPane.getSelectedIndex(), false);
 
-            if (scrollableTabLayoutEnabled()) {
+            if (tabPane.getLayout() instanceof TabbedPaneScrollLayout) {
                 ensureCurrentLayout();
                 int index = tabPane.getSelectedIndex();
                 if (index < rects.length && index != -1) {

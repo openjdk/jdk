@@ -48,7 +48,6 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg) {
-  assert_cond(_masm != NULL);
   if (VerifyMethodHandles) {
     verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  "MH argument is a Class");
@@ -70,7 +69,6 @@ static int check_nonzero(const char* xname, int x) {
 void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj, vmClassID klass_id,
                                  const char* error_message) {
-  assert_cond(_masm != NULL);
   InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
   Klass* klass = vmClasses::klass_at(klass_id);
   Register temp = t1;
@@ -99,7 +97,6 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
 
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
                                             bool for_compiler_entry) {
-  assert_cond(_masm != NULL);
   assert(method == xmethod, "interpreter calling convention");
   Label L_no_such_method;
   __ beqz(xmethod, L_no_such_method);
@@ -130,7 +127,6 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
                                         Register recv, Register method_temp,
                                         Register temp2,
                                         bool for_compiler_entry) {
-  assert_cond(_masm != NULL);
   BLOCK_COMMENT("jump_to_lambda_form {");
   // This is the initial entry point of a lazy method handle.
   // After type checking, it picks up the invoker from the LambdaForm.
@@ -169,7 +165,6 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 // Code generation
 address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* _masm,
                                                                 vmIntrinsics::ID iid) {
-  assert_cond(_masm != NULL);
   const bool not_for_compiler_entry = false;  // this is the interpreter entry
   assert(is_signature_polymorphic(iid), "expected invoke iid");
   if (iid == vmIntrinsics::_invokeGeneric ||
@@ -188,7 +183,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  // x30: sender SP (must preserve; see prepare_to_jump_from_interpreted)
+  // x19_sender_sp: sender SP (must preserve; see prepare_to_jump_from_interpreted)
   // xmethod: Method*
   // x13: argument locator (parameter slot count, added to sp)
   // x11: used as temp to hold mh or receiver
@@ -269,12 +264,11 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     Register receiver_reg,
                                                     Register member_reg,
                                                     bool for_compiler_entry) {
-  assert_cond(_masm != NULL);
   assert(is_signature_polymorphic(iid), "expected invoke iid");
   // temps used in this code are not used in *either* compiled or interpreted calling sequences
   Register temp1 = x7;
   Register temp2 = x28;
-  Register temp3 = x29;  // x30 is live by this point: it contains the sender SP
+  Register temp3 = x29;
   if (for_compiler_entry) {
     assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : j_rarg0), "only valid assignment");
     assert_different_registers(temp1, j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
@@ -345,7 +339,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // Live registers at this point:
     //  member_reg - MemberName that was the trailing argument
     //  temp1_recv_klass - klass of stacked receiver, if needed
-    //  x30 - interpreter linkage (if interpreted)
+    //  x19 - interpreter linkage (if interpreted)
     //  x11 ... x10 - compiler arguments (if compiled)
 
     Label L_incompatible_class_change_error;
@@ -430,7 +424,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         break;
     }
 
-    // live at this point:  xmethod, x30 (if interpreted)
+    // live at this point:  xmethod, x19_sender_sp (if interpreted)
 
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.

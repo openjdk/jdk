@@ -379,9 +379,6 @@ class java_lang_Thread : AllStatic {
   static void set_priority(oop java_thread, ThreadPriority priority);
   // Thread group
   static oop  threadGroup(oop java_thread);
-  // Stillborn
-  static bool is_stillborn(oop java_thread);
-  static void set_stillborn(oop java_thread);
   // Alive (NOTE: this is not really a field, but provides the correct
   // definition without doing a Java call)
   static bool is_alive(oop java_thread);
@@ -434,7 +431,6 @@ class java_lang_Thread_FieldHolder : AllStatic {
   static int _group_offset;
   static int _priority_offset;
   static int _stackSize_offset;
-  static int _stillborn_offset;
   static int _daemon_offset;
   static int _thread_status_offset;
 
@@ -449,9 +445,6 @@ class java_lang_Thread_FieldHolder : AllStatic {
   static void set_priority(oop holder, ThreadPriority priority);
 
   static jlong stackSize(oop holder);
-
-  static bool is_stillborn(oop holder);
-  static void set_stillborn(oop holder);
 
   static bool is_daemon(oop holder);
   static void set_daemon(oop holder);
@@ -988,6 +981,8 @@ class java_lang_ref_Reference: AllStatic {
   static bool is_referent_field(oop obj, ptrdiff_t offset);
   static inline bool is_final(oop ref);
   static inline bool is_phantom(oop ref);
+  static inline bool is_weak(oop ref);
+  static inline bool is_soft(oop ref);
 
   static int referent_offset()    { CHECK_INIT(_referent_offset); }
   static int queue_offset()       { CHECK_INIT(_queue_offset); }

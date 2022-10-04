@@ -30,7 +30,6 @@
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 class FileMapInfo;
 class outputStream;

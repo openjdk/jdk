@@ -108,12 +108,14 @@ public class SharedSecrets {
     }
 
     public static JavaUtilConcurrentTLRAccess getJavaUtilConcurrentTLRAccess() {
-        if (javaUtilConcurrentTLRAccess == null) {
+        var access = javaUtilConcurrentTLRAccess;
+        if (access == null) {
             try {
                 Class.forName("java.util.concurrent.ThreadLocalRandom$Access", true, null);
+                access = javaUtilConcurrentTLRAccess;
             } catch (ClassNotFoundException e) {}
         }
-        return javaUtilConcurrentTLRAccess;
+        return access;
     }
 
     public static void setJavaUtilConcurrentFJPAccess(JavaUtilConcurrentFJPAccess access) {
@@ -121,10 +123,12 @@ public class SharedSecrets {
     }
 
     public static JavaUtilConcurrentFJPAccess getJavaUtilConcurrentFJPAccess() {
-        if (javaUtilConcurrentFJPAccess == null) {
+        var access = javaUtilConcurrentFJPAccess;
+        if (access == null) {
             ensureClassInitialized(ForkJoinPool.class);
+            access = javaUtilConcurrentFJPAccess;
         }
-        return javaUtilConcurrentFJPAccess;
+        return access;
     }
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
@@ -463,10 +467,12 @@ public class SharedSecrets {
     }
 
     public static JavaSecuritySpecAccess getJavaSecuritySpecAccess() {
-        if (javaSecuritySpecAccess == null) {
+        var access = javaSecuritySpecAccess;
+        if (access == null) {
             ensureClassInitialized(EncodedKeySpec.class);
+            access = javaSecuritySpecAccess;
         }
-        return javaSecuritySpecAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSpecAccess(JavaxCryptoSpecAccess jcsa) {
@@ -474,10 +480,12 @@ public class SharedSecrets {
     }
 
     public static JavaxCryptoSpecAccess getJavaxCryptoSpecAccess() {
-        if (javaxCryptoSpecAccess == null) {
+        var access = javaxCryptoSpecAccess;
+        if (access == null) {
             ensureClassInitialized(SecretKeySpec.class);
+            access = javaxCryptoSpecAccess;
         }
-        return javaxCryptoSpecAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {

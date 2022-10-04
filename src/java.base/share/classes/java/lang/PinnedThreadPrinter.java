@@ -86,7 +86,7 @@ class PinnedThreadPrinter {
     }
 
     /**
-     * Prints the stack trace of the current mounted vthread continuation.
+     * Prints the continuation stack trace.
      *
      * @param printAll true to print all stack frames, false to only print the
      *        frames that are native or holding a monitor
@@ -103,7 +103,7 @@ class PinnedThreadPrinter {
             .filter(f -> (f.isNativeMethod() || f.getMonitors().length > 0))
             .map(LiveStackFrame::getDeclaringClass)
             .findFirst()
-            .ifPresent(klass -> {
+            .ifPresentOrElse(klass -> {
                 int hash = hash(stack);
                 Hashes hashes = HASHES.get(klass);
                 synchronized (hashes) {
@@ -112,7 +112,7 @@ class PinnedThreadPrinter {
                         printStackTrace(stack, out, printAll);
                     }
                 }
-            });
+            }, () -> printStackTrace(stack, out, true));  // not found
     }
 
     private static void printStackTrace(List<LiveStackFrame> stack,
@@ -122,9 +122,9 @@ class PinnedThreadPrinter {
         for (LiveStackFrame frame : stack) {
             var ste = frame.toStackTraceElement();
             int monitorCount = frame.getMonitors().length;
-            if (monitorCount > 0 || frame.isNativeMethod()) {
+            if (monitorCount > 0) {
                 out.format("    %s <== monitors:%d%n", ste, monitorCount);
-            } else if (printAll) {
+            } else if (frame.isNativeMethod() || printAll) {
                 out.format("    %s%n", ste);
             }
         }

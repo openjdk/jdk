@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,15 +74,14 @@ public class stack002 {
         Timer timer = new Timer(tester);
         timer.start();
         tester.start();
-        while (timer.isAlive())
+        while (timer.isAlive()) {
             try {
                 timer.join();
             } catch (InterruptedException e) {
                 e.printStackTrace(out);
                 return 2;
             }
-        //      if (tester.isAlive())
-//          return 2;
+        }
         out.println("Maximal depth: " + tester.maxdepth);
         return 0;
     }
@@ -90,10 +89,12 @@ public class stack002 {
     private static class Tester extends Thread {
         int maxdepth;
         PrintStream out;
+        public volatile boolean stop;
 
         public Tester(PrintStream out) {
             this.out = out;
             maxdepth = 0;
+            stop = false;
         }
 
         public void run() {
@@ -103,24 +104,14 @@ public class stack002 {
         void recurse(int depth) {
             maxdepth = depth;
             try {
+                if (stop) {
+                    return;
+                }
                 recurse(depth + 1);
-//          } catch (StackOverflowError e) {
-//
-// OutOfMemoryError is also eligible to indicate stack overflow:
-//
             } catch (Error error) {
                 if (!(error instanceof StackOverflowError) &&
                         !(error instanceof OutOfMemoryError))
                     throw error;
-
-/***
- *** Originally, I supposed that VM crashes because of unexpected
- *** native stack overflow (println() invokes native method).
- *** However, I found that HS 1.3 and HS 2.0 crash even on
- *** invocation of Java (not native) method.
- ***
- out.println("StackOverflowError, depth=" + depth);
- ***/
                 recurse(depth + 1);
             }
         }
@@ -136,18 +127,15 @@ public class stack002 {
         public void run() {
             long started;
             started = System.currentTimeMillis();
-            while (System.currentTimeMillis() - started < timeout)
-                ; /***
-             *** The test hangs on JDK 1.2.2 Classic VM if sleep() is invoked.
-             ***
-             try {
-             this.sleep(1000);
-             } catch (InterruptedException e) {
-             e.printStackTrace(tester.out);
-             return;
-             };
-             ***/
-            tester.stop();
+            while (System.currentTimeMillis() - started < timeout) {
+                try {
+                    this.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace(tester.out);
+                    return;
+                };
+            }
+            tester.stop = true;
         }
     }
 }

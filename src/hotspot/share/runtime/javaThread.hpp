@@ -222,7 +222,7 @@ class JavaThread: public Thread {
   void install_async_exception(AsyncExceptionHandshake* aec = NULL);
   void handle_async_exception(oop java_throwable);
  public:
-  bool has_async_exception_condition(bool ThreadDeath_only = false);
+  bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
 
@@ -310,6 +310,7 @@ class JavaThread: public Thread {
 #if INCLUDE_JVMTI
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
+  bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
@@ -567,12 +568,10 @@ private:
   bool is_exiting() const;
   // thread's GC barrier is NOT detached and thread is NOT terminated
   bool is_oop_safe() const;
-  // thread is terminated (no longer on the threads list); we compare
-  // against the three non-terminated values so that a freed JavaThread
-  // will also be considered terminated.
+  // thread is terminated (no longer on the threads list); the thread must
+  // be protected by a ThreadsListHandle to avoid potential crashes.
   bool check_is_terminated(TerminatedTypes l_terminated) const {
-    return l_terminated != _not_terminated && l_terminated != _thread_exiting &&
-           l_terminated != _thread_gc_barrier_detached;
+    return l_terminated == _thread_terminated || l_terminated == _vm_exited;
   }
   bool is_terminated() const;
   void set_terminated(TerminatedTypes t);
@@ -645,7 +644,12 @@ private:
   }
 
   bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }
+  bool is_in_tmp_VTMS_transition() const         { return _is_in_tmp_VTMS_transition; }
+  bool is_in_any_VTMS_transition() const         { return _is_in_VTMS_transition || _is_in_tmp_VTMS_transition; }
+
   void set_is_in_VTMS_transition(bool val);
+  void toggle_is_in_tmp_VTMS_transition()        { _is_in_tmp_VTMS_transition = !_is_in_tmp_VTMS_transition; };
+
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
   void set_is_VTMS_transition_disabler(bool val);
@@ -895,7 +899,7 @@ private:
   void oops_do_frames(OopClosure* f, CodeBlobClosure* cf);
   void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
 
-  // Sweeper operations
+  // GC operations
   virtual void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses Support

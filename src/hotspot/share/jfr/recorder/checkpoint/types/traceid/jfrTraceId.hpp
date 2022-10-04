@@ -102,9 +102,11 @@ class JfrTraceId : public AllStatic {
   static traceid load_raw(const PackageEntry* package);
   static traceid load_raw(const ClassLoaderData* cld);
 
+#if INCLUDE_CDS
   static void remove(const Klass* klass);
   static void remove(const Method* method);
   static void restore(const Klass* klass);
+#endif
 
   // set of event classes made visible to java
   static bool in_visible_set(const Klass* k);

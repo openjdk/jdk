@@ -59,11 +59,10 @@ public final class PSSParameters extends AlgorithmParametersSpi {
     @Override
     protected void engineInit(AlgorithmParameterSpec paramSpec)
             throws InvalidParameterSpecException {
-        if (!(paramSpec instanceof PSSParameterSpec)) {
+        if (!(paramSpec instanceof PSSParameterSpec spec)) {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");
         }
-        PSSParameterSpec spec = (PSSParameterSpec) paramSpec;
 
         String mgfName = spec.getMGFAlgorithm();
         if (!spec.getMGFAlgorithm().equalsIgnoreCase("MGF1")) {
@@ -223,11 +222,9 @@ public final class PSSParameters extends AlgorithmParametersSpi {
     public static byte[] getEncoded(PSSParameterSpec spec) throws IOException {
 
         AlgorithmParameterSpec mgfSpec = spec.getMGFParameters();
-        if (!(mgfSpec instanceof MGF1ParameterSpec)) {
+        if (!(mgfSpec instanceof MGF1ParameterSpec mgf1Spec)) {
             throw new IOException("Cannot encode " + mgfSpec);
         }
-
-        MGF1ParameterSpec mgf1Spec = (MGF1ParameterSpec)mgfSpec;
 
         DerOutputStream tmp = new DerOutputStream();
         DerOutputStream tmp2, tmp3;

@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.event.SecurityProviderServiceEvent;
+
 import java.io.*;
 import java.util.*;
 import static java.util.Locale.ENGLISH;
@@ -1281,18 +1283,22 @@ public abstract class Provider extends Properties {
         }
 
         Service s = serviceMap.get(key);
-        if (s != null) {
-            return s;
+        if (s == null) {
+            s = legacyMap.get(key);
+            if (s != null && !s.isValid()) {
+                legacyMap.remove(key, s);
+            }
         }
 
-        s = legacyMap.get(key);
-        if (s != null && !s.isValid()) {
-            legacyMap.remove(key, s);
-        } else {
-            return s;
+        if (s != null && SecurityProviderServiceEvent.isTurnedOn()) {
+            var e  = new SecurityProviderServiceEvent();
+            e.provider = getName();
+            e.type = type;
+            e.algorithm = algorithm;
+            e.commit();
         }
 
-        return null;
+        return s;
     }
 
     // ServiceKey from previous getService() call
@@ -1321,7 +1327,13 @@ public abstract class Provider extends Properties {
                 set.addAll(serviceMap.values());
             }
             if (!legacyMap.isEmpty()) {
-                set.addAll(legacyMap.values());
+                legacyMap.entrySet().forEach(entry -> {
+                    if (!entry.getValue().isValid()) {
+                        legacyMap.remove(entry.getKey(), entry.getValue());
+                    } else {
+                        set.add(entry.getValue());
+                    }
+                });
             }
             serviceSet = Collections.unmodifiableSet(set);
             servicesChanged = false;

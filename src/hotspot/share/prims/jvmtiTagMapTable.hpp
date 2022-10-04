@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,8 @@ public:
 
   bool is_empty() const { return number_of_entries() == 0; }
 
-  // Cleanup cleared entries and post
-  void remove_dead_entries(JvmtiEnv* env, bool post_object_free);
+  // Cleanup cleared entries and store dead object tags in objects array
+  void remove_dead_entries(GrowableArray<jlong>* objects);
   void rehash();
   void clear();
 };

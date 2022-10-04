@@ -133,6 +133,9 @@ public class TestFramework {
                     "CompileThreshold",
                     "Xmixed",
                     "server",
+                    "UseAVX",
+                    "UseSSE",
+                    "UseSVE",
                     "Xlog",
                     "LogCompilation"
             )
