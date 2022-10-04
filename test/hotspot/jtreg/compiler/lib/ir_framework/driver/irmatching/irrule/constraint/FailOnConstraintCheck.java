@@ -40,6 +40,6 @@ class FailOnConstraintCheck implements ConstraintCheck {
         if (!matchedNodes.isEmpty()) {
             return new FailOnConstraintFailure(constraint, matchedNodes);
         }
-        return ConstraintSuccess.getInstance();
+        return SuccessResult.getInstance();
     }
 }

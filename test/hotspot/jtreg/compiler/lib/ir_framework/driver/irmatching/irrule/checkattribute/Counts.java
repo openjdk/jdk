@@ -37,23 +37,14 @@ import java.util.List;
  * @see IR#counts()
  */
 public class Counts implements Matchable {
-    private final List<Constraint> constraints;
-    private final String compilationOutput;
+    private final CheckAttribute checkAttribute;
 
     public Counts(List<Constraint> constraints, String compilationOutput) {
-        this.constraints = constraints;
-        this.compilationOutput = compilationOutput;
+        this.checkAttribute = new CheckAttribute(CheckAttributeType.COUNTS, constraints, compilationOutput);
     }
 
     @Override
     public MatchResult match() {
-        CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeType.COUNTS);
-        for (Constraint constraint : constraints) {
-            MatchResult constraintMatchResult = constraint.match(compilationOutput);
-            if (constraintMatchResult.fail()) {
-                checkAttributeMatchResult.addFailure(constraintMatchResult);
-            }
-        }
-        return checkAttributeMatchResult;
+        return checkAttribute.match();
     }
 }

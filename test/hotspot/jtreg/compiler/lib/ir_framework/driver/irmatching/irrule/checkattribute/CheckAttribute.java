@@ -21,45 +21,36 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
+import java.util.ArrayList;
 import java.util.List;
 
-/**
- * This class represents an IR matching result of a {@link CompilePhaseIRRule} (i.e. an IR rule applied on a compile phase).
- *
- * @see CompilePhaseIRRule
- */
-public class CompilePhaseIRRuleMatchResult implements MatchResult {
-    private final CompilePhase compilePhase;
+class CheckAttribute implements Matchable {
+    private final List<Constraint> constraints;
+    private final String compilationOutput;
+    private final CheckAttributeType checkAttributeType;
 
-    private final List<MatchResult> checkAttributeFailures;
-
-    public CompilePhaseIRRuleMatchResult(List<MatchResult> checkAttributeFailures, CompilePhase compilePhase) {
-        this.checkAttributeFailures = checkAttributeFailures;
-        this.compilePhase = compilePhase;
+    public CheckAttribute(CheckAttributeType checkAttributeType, List<Constraint> constraints,
+                          String compilationOutput) {
+        this.constraints = constraints;
+        this.compilationOutput = compilationOutput;
+        this.checkAttributeType = checkAttributeType;
     }
 
     @Override
-    public boolean fail() {
-        return !checkAttributeFailures.isEmpty();
-    }
-
-    public CompilePhase getCompilePhase() {
-        return compilePhase;
-    }
-
-    @Override
-    public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
-    }
-
-    @Override
-    public void acceptChildren(MatchResultVisitor visitor) {
-        checkAttributeFailures.forEach(f -> f.accept(visitor));
+    public MatchResult match() {
+        List<MatchResult> results = new ArrayList<>();
+        for (Constraint constraint : constraints) {
+            MatchResult constraintMatchResult = constraint.match(compilationOutput);
+            if (constraintMatchResult.fail()) {
+                results.add(constraintMatchResult);
+            }
+        }
+        return new CheckAttributeMatchResult(checkAttributeType, results);
     }
 }

@@ -29,7 +29,6 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,11 +41,12 @@ import java.util.List;
 public class IRRuleMatchResult implements MatchResult {
     private final int irRuleId;
     private final IR irAnno;
-    private final List<MatchResult> compilePhaseIRRuleMatchResults = new ArrayList<>();
+    private final List<MatchResult> compilePhaseIRRuleMatchResults;
 
-    public IRRuleMatchResult(int irRuleId, IR irAnno) {
+    public IRRuleMatchResult(int irRuleId, IR irAnno, List<MatchResult> compilePhaseIRRuleMatchResults) {
         this.irRuleId = irRuleId;
         this.irAnno = irAnno;
+        this.compilePhaseIRRuleMatchResults = compilePhaseIRRuleMatchResults;
     }
 
     public int getRuleId() {
@@ -55,10 +55,6 @@ public class IRRuleMatchResult implements MatchResult {
 
     public IR getIRAnno() {
         return irAnno;
-    }
-
-    public void addCompilePhaseIRMatchResult(MatchResult result) {
-        compilePhaseIRRuleMatchResults.add(result);
     }
 
     @Override

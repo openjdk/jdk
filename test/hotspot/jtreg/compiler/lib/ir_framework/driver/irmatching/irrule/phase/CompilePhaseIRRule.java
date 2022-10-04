@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -51,14 +52,14 @@ public class CompilePhaseIRRule implements Matchable {
 
     @Override
     public MatchResult match() {
-        CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult = new CompilePhaseIRRuleMatchResult(compilePhase);
+        List<MatchResult> results = new ArrayList<>();
         for (Matchable checkAttribute : checkAttributes) {
             MatchResult matchResult = checkAttribute.match();
             if (matchResult.fail()) {
-                compilePhaseIRRuleMatchResult.addFailedMatchResult(matchResult);
+                results.add(matchResult);
             }
         }
-        return compilePhaseIRRuleMatchResult;
+        return new CompilePhaseIRRuleMatchResult(results, compilePhase);
     }
 
     /**

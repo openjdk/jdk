@@ -46,6 +46,6 @@ class CountsConstraintCheck implements ConstraintCheck {
         if (!comparison.compare(matchedNodes.size())) {
             return new CountsConstraintFailure(constraint, matchedNodes, comparison);
         }
-        return ConstraintSuccess.getInstance();
+        return SuccessResult.getInstance();
     }
 }

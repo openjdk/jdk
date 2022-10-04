@@ -57,13 +57,13 @@ public class TestClass implements Matchable {
 
     @Override
     public MatchResult match() {
-        TestClassMatchResult result = new TestClassMatchResult();
+        List<MatchResult> results = new ArrayList<>();
         for (Matchable irMethod : irMethods) {
             MatchResult IRMethodMatchResult = irMethod.match();
             if (IRMethodMatchResult.fail()) {
-                result.addResult(IRMethodMatchResult);
+                results.add(IRMethodMatchResult);
             }
         }
-        return result;
+        return new TestClassMatchResult(results);
     }
 }

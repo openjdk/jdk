@@ -27,7 +27,6 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,11 +36,12 @@ import java.util.List;
  * @see CheckAttributeType
  */
 public class CheckAttributeMatchResult implements MatchResult {
-    private final List<MatchResult> constraintFailures = new ArrayList<>();
+    private final List<MatchResult> constraintFailures;
     private final CheckAttributeType checkAttributeType;
 
-    CheckAttributeMatchResult(CheckAttributeType checkAttributeType) {
+    CheckAttributeMatchResult(CheckAttributeType checkAttributeType, List<MatchResult> constraintFailures) {
         this.checkAttributeType = checkAttributeType;
+        this.constraintFailures = constraintFailures;
     }
 
     public CheckAttributeType getCheckAttributeKind() {
@@ -51,10 +51,6 @@ public class CheckAttributeMatchResult implements MatchResult {
     @Override
     public boolean fail() {
         return !constraintFailures.isEmpty();
-    }
-
-    public void addFailure(MatchResult constraintFailure) {
-        constraintFailures.add(constraintFailure);
     }
 
     public void accept(MatchResultVisitor visitor) {

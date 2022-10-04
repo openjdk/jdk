@@ -31,6 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -59,13 +60,13 @@ public class IRRule implements Matchable {
      */
     @Override
     public MatchResult match() {
-        IRRuleMatchResult irRuleMatchResult = new IRRuleMatchResult(ruleId, irAnno);
+        List<MatchResult> results = new ArrayList<>();
         for (Matchable compilePhaseIRRule : compilePhaseIRRules) {
             MatchResult compilePhaseIRRuleMatchResult = compilePhaseIRRule.match();
             if (compilePhaseIRRuleMatchResult.fail()) {
-                irRuleMatchResult.addCompilePhaseIRMatchResult(compilePhaseIRRuleMatchResult);
+                results.add(compilePhaseIRRuleMatchResult);
             }
         }
-        return irRuleMatchResult;
+        return new IRRuleMatchResult(ruleId, irAnno, results);
     }
 }

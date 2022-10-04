@@ -27,8 +27,7 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.*;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawCheckAttribute;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
@@ -83,8 +82,9 @@ public class CompilePhaseIRRuleBuilder {
 
     private void createCompilePhaseIRRulesForDefault() {
         DefaultPhaseRawConstraintParser parser = new DefaultPhaseRawConstraintParser(irMethod);
-        Map<CompilePhase, List<Matchable>> matchablesForCompilePhase = parser.parse(rawFailOnConstraints, rawCountsConstraints);
-        matchablesForCompilePhase.forEach((compilePhase, constraints) -> {
+        Map<CompilePhase, List<Matchable>> checkAttributesForCompilePhase =
+                parser.parse(rawFailOnConstraints, rawCountsConstraints);
+        checkAttributesForCompilePhase.forEach((compilePhase, constraints) -> {
             if (irMethod.getOutput(compilePhase).isEmpty()) {
                 compilePhaseIRRules.add(new CompilePhaseNoCompilationIRRule(compilePhase));
             } else {

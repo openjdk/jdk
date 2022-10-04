@@ -24,17 +24,18 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
- * This class represents a successful matching result of any {@link Constraint} on a compile phase output.
+ * This class represents a successful matching result of any {@link Matchable} object.
  */
-public class ConstraintSuccess implements MatchResult {
-    private static final ConstraintSuccess INSTANCE = new ConstraintSuccess();
+public class SuccessResult implements MatchResult {
+    private static final SuccessResult INSTANCE = new SuccessResult();
 
-    private ConstraintSuccess() {}
+    private SuccessResult() {}
 
-    public static ConstraintSuccess getInstance() {
+    public static SuccessResult getInstance() {
         return INSTANCE;
     }
 

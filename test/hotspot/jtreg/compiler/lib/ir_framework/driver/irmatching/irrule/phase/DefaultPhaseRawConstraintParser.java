@@ -31,7 +31,10 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -48,7 +51,7 @@ class DefaultPhaseRawConstraintParser {
     }
 
     public Map<CompilePhase, List<Matchable>> parse(List<RawConstraint> rawFailOnConstraints,
-                                                    List<RawConstraint> rawCountsConstraints) {
+                                                         List<RawConstraint> rawCountsConstraints) {
         Map<CompilePhase, Matchable> failOnForCompilePhase = parseRawConstraints(rawFailOnConstraints, FailOn::new);
         Map<CompilePhase, Matchable> countsForCompilePhase = parseRawConstraints(rawCountsConstraints, Counts::new);
         return mergeCheckAttributesForCompilePhase(failOnForCompilePhase, countsForCompilePhase);
@@ -56,35 +59,40 @@ class DefaultPhaseRawConstraintParser {
 
     private Map<CompilePhase, Matchable> parseRawConstraints(List<RawConstraint> rawConstraints,
                                                              BiFunction<List<Constraint>, String, Matchable> constructor) {
-        Map<CompilePhase, List<Constraint>> constraintsForCompilePhase = new HashMap<>();
+        Map<CompilePhase, List<Constraint>> matchableForCompilePhase = new HashMap<>();
         for (RawConstraint rawConstraint : rawConstraints) {
             CompilePhase compilePhase = rawConstraint.defaultCompilePhase();
-            List<Constraint> list = constraintsForCompilePhase.computeIfAbsent(compilePhase, k -> new ArrayList<>());
-            list.add(rawConstraint.parse(compilePhase));
+            List<Constraint> checkAttribute =
+                    matchableForCompilePhase.computeIfAbsent(compilePhase, k -> new ArrayList<>());
+            checkAttribute.add(rawConstraint.parse(compilePhase));
         }
-        return replaceConstraintsByCheckAttribute(constructor, constraintsForCompilePhase);
+        return replaceConstraintsWithCheckAttribute(matchableForCompilePhase, constructor);
     }
 
-    private Map<CompilePhase, Matchable> replaceConstraintsByCheckAttribute(BiFunction<List<Constraint>, String, Matchable> constructor, Map<CompilePhase, List<Constraint>> constraintMap) {
-        return constraintMap
+    private Map<CompilePhase, Matchable>
+    replaceConstraintsWithCheckAttribute(Map<CompilePhase, List<Constraint>> matchableForCompilePhase,
+                                         BiFunction<List<Constraint>, String, Matchable> constructor) {
+        return matchableForCompilePhase
                 .entrySet()
                 .stream()
-                .map(e -> Map.entry(e.getKey(), constructor.apply(e.getValue(), irMethod.getOutput(e.getKey()))))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                                          entry -> constructor.apply(entry.getValue(), irMethod.getOutput(entry.getKey()))));
     }
 
-    private static Map<CompilePhase, List<Matchable>> mergeCheckAttributesForCompilePhase(Map<CompilePhase, Matchable> failOnForCompilePhase,
-                                                                                          Map<CompilePhase, Matchable> countsForCompilePhase) {
+    private static Map<CompilePhase, List<Matchable>>
+    mergeCheckAttributesForCompilePhase(Map<CompilePhase, Matchable> failOnForCompilePhase,
+                                        Map<CompilePhase, Matchable> countsForCompilePhase) {
         Map<CompilePhase, List<Matchable>> result = new HashMap<>();
+        addCheckAttribute(failOnForCompilePhase, result);
+        addCheckAttribute(countsForCompilePhase, result);
+        return result;
+    }
+
+    private static void addCheckAttribute(Map<CompilePhase, Matchable> failOnForCompilePhase,
+                                          Map<CompilePhase, List<Matchable>> result) {
         failOnForCompilePhase.forEach((compilePhase, matchable) -> {
-            List<Matchable> list = new ArrayList<>();
-            list.add(matchable);
-            result.put(compilePhase, list);
-        });
-        countsForCompilePhase.forEach((compilePhase, matchable) -> {
             List<Matchable> list = result.computeIfAbsent(compilePhase, k -> new ArrayList<>());
             list.add(matchable);
         });
-        return result;
     }
 }

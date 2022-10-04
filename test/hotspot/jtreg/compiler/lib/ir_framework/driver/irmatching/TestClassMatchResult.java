@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,15 +36,15 @@ public class TestClassMatchResult implements MatchResult {
     /**
      * List of all IR method results, sorted by method names.
      */
-    private final List<MatchResult> results = new ArrayList<>();
+    private final List<MatchResult> results;
+
+    public TestClassMatchResult(List<MatchResult> results) {
+        this.results = results;
+    }
 
     @Override
     public boolean fail() {
         return !results.isEmpty();
-    }
-
-    public void addResult(MatchResult IRMethodMatchResult) {
-        results.add(IRMethodMatchResult);
     }
 
     @Override

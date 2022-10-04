@@ -24,10 +24,10 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.SuccessResult;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -45,23 +45,23 @@ import java.util.stream.Collectors;
  * @see IR#failOn()
  */
 public class FailOn implements Matchable {
+    private final Matchable checkAttribute;
+
     private final List<Constraint> constraints;
     private final String compilationOutput;
 
     public FailOn(List<Constraint> constraints, String compilationOutput) {
+        this.checkAttribute = new CheckAttribute(CheckAttributeType.FAIL_ON, constraints, compilationOutput);
         this.constraints = constraints;
         this.compilationOutput = compilationOutput;
     }
 
     @Override
     public MatchResult match() {
-        CheckAttributeMatchResult checkAttributeMatchResult = new CheckAttributeMatchResult(CheckAttributeType.FAIL_ON);
         if (hasNoMatchQuick()) {
-            return checkAttributeMatchResult;
+            return SuccessResult.getInstance();
         }
-        match(checkAttributeMatchResult);
-        TestFramework.check(checkAttributeMatchResult.fail(), "at that point, we must find at least one match");
-        return checkAttributeMatchResult;
+        return checkAttribute.match();
     }
 
     /**
@@ -73,14 +73,5 @@ public class FailOn implements Matchable {
         Pattern pattern = Pattern.compile(String.join("|", patternString));
         Matcher matcher = pattern.matcher(compilationOutput);
         return !matcher.find();
-    }
-
-    public void match(CheckAttributeMatchResult checkAttributeMatchResult) {
-        for (Constraint constraint : constraints) {
-            MatchResult constraintMatchResult = constraint.match(compilationOutput);
-            if (constraintMatchResult.fail()) {
-                checkAttributeMatchResult.addFailure(constraintMatchResult);
-            }
-        }
     }
 }
