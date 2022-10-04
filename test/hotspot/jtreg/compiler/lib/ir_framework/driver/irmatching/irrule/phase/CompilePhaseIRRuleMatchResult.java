@@ -59,6 +59,6 @@ public class CompilePhaseIRRuleMatchResult implements MatchResult {
 
     @Override
     public void acceptChildren(MatchResultVisitor visitor) {
-        checkAttributeFailures.forEach(f -> f.accept(visitor));
+        acceptChildren(visitor, checkAttributeFailures);
     }
 }

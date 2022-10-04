@@ -25,17 +25,18 @@ package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.MethodNotCompiledResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -43,16 +44,20 @@ import java.util.stream.Collectors;
  * each match result element. Multiple compile phase compilation outputs for a single method are collected in the same
  * order as specified in {@link CompilePhase}.
  */
-public class CompilationOutputBuilder extends ReportBuilder implements MatchResultVisitor {
+public class CompilationOutputBuilder implements MatchResultVisitor {
+    private final StringBuilder msg;
+    private final MatchResult testClassMatchResult;
     private final SortedMap<CompilePhase, String> failedCompilePhases = new TreeMap<>();
+    private int methodIndex;
     /**
      * Number of collected distinct compile phases.
      */
     private int compilePhaseCount = 0;
     private IRMethod irMethod;
 
-    public CompilationOutputBuilder(MatchResult testClassResult) {
-        super(testClassResult);
+    public CompilationOutputBuilder(MatchResult testClassMatchResult) {
+        this.msg = new StringBuilder();
+        this.testClassMatchResult = testClassMatchResult;
     }
 
     @Override
@@ -65,7 +70,7 @@ public class CompilationOutputBuilder extends ReportBuilder implements MatchResu
             builder.append("s (").append(compilePhaseCount).append(")");
         }
         builder.append(" of Failed Method");
-        int failedIRMethods = getMethodNumber();
+        int failedIRMethods = methodIndex;
         if (failedIRMethods > 1) {
             builder.append("s (").append(failedIRMethods).append(")");
         }
@@ -90,8 +95,16 @@ public class CompilationOutputBuilder extends ReportBuilder implements MatchResu
         failedCompilePhases.clear();
     }
 
+    private void appendMethodIndex() {
+        methodIndex++;
+        if (methodIndex > 1) {
+            msg.append(System.lineSeparator());
+        }
+        msg.append(methodIndex).append(") ");
+    }
+
     private void appendIRMethodHeader(Method method) {
-        appendIRMethodPrefix();
+        appendMethodIndex();
         msg.append("Compilation");
         if (failedCompilePhases.size() > 1) {
             msg.append("s (").append(failedCompilePhases.size()).append(")");
@@ -103,8 +116,7 @@ public class CompilationOutputBuilder extends ReportBuilder implements MatchResu
     private void appendMatchedCompilationOutputOfPhases() {
         msg.append(failedCompilePhases.values()
                                       .stream()
-                                      .collect(Collectors.joining(System.lineSeparator()
-                                                                  + System.lineSeparator())));
+                                      .collect(Collectors.joining(System.lineSeparator())));
     }
 
     @Override
@@ -133,14 +145,18 @@ public class CompilationOutputBuilder extends ReportBuilder implements MatchResu
         CompilePhase compilePhase = noCompilePhaseCompilationResult.compilePhase();
         if (!failedCompilePhases.containsKey(compilePhase)) {
             failedCompilePhases.put(compilePhase,
-                                    "> Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator() + "<empty>");
+                                    "> Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator() + "<empty>" +
+                                    System.lineSeparator());
             compilePhaseCount++;
         }
     }
 
-    @Override
     public String build() {
-        visitResults(this);
+        testClassMatchResult.accept(this);
         return msg.toString();
+    }
+
+    private static int digitCount(int digit) {
+        return String.valueOf(digit).length();
     }
 }

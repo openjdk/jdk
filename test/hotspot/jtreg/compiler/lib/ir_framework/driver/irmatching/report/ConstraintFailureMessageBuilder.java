@@ -26,7 +26,6 @@ package compiler.lib.ir_framework.driver.irmatching.report;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintFailure;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Base class to create a failure message for a failed constraint.
@@ -35,9 +34,9 @@ public class ConstraintFailureMessageBuilder {
     private final String nodeRegex;
     private final int constraintIndex;
     private final List<String> matchedNodes;
-    private final int indentation;
+    private final Indentation indentation;
 
-    public ConstraintFailureMessageBuilder(ConstraintFailure constraintFailure, int indentation) {
+    public ConstraintFailureMessageBuilder(ConstraintFailure constraintFailure, Indentation indentation) {
         this.nodeRegex = constraintFailure.constraint().regex();
         this.constraintIndex = constraintFailure.constraint().index();
         this.matchedNodes = constraintFailure.matchedNodes();
@@ -45,34 +44,39 @@ public class ConstraintFailureMessageBuilder {
     }
 
     public String buildConstraintHeader() {
-        return ReportBuilder.getIndentation(indentation) + "* Constraint "
+        return indentation + "* Constraint "
                + constraintIndex + ": \"" + nodeRegex + "\""
                + System.lineSeparator();
     }
 
     public String buildMatchedNodesMessage(String matchedPrefix) {
-        return buildMatchedNodesHeader(matchedPrefix) + buildMatchedNodesBody();
+        indentation.add();
+        String header = buildMatchedNodesHeader(matchedPrefix);
+        String body = buildMatchedNodesBody();
+        indentation.sub();
+        return header + body;
     }
 
     private String buildMatchedNodesHeader(String matchedPrefix) {
         int matchCount = matchedNodes.size();
-        return ReportBuilder.getIndentation(indentation + 2) + "- " + matchedPrefix
-               + " node" + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
+        return indentation + "- " + matchedPrefix + " node" + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":"
+               + System.lineSeparator();
     }
 
     private String buildMatchedNodesBody() {
+        indentation.add();
         StringBuilder builder = new StringBuilder();
         List<String> matches = addWhiteSpacePrefixForEachLine(matchedNodes);
-        matches.forEach(match -> builder.append(ReportBuilder.getIndentation(indentation + 4))
+        matches.forEach(match -> builder.append(indentation)
                                         .append("* ").append(match).append(System.lineSeparator()));
+        indentation.sub();
         return builder.toString();
     }
 
-
     private List<String> addWhiteSpacePrefixForEachLine(List<String> matches) {
-        String indentationString = ReportBuilder.getIndentation(indentation + 6);
-        return matches.stream()
-                      .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator() + indentationString))
-                      .collect(Collectors.toList());
+        indentation.add();
+        List<String> lines = indentation.prependForLines(matches);
+        indentation.sub();
+        return lines;
     }
 }

@@ -34,9 +34,9 @@ public class CountsConstraintFailureMessageBuilder {
     private final ConstraintFailureMessageBuilder constrainFailureMessageBuilder;
     private final Comparison<Integer> comparison;
     private final int matchedNodesSize;
-    private final int indentation;
+    private final Indentation indentation;
 
-    public CountsConstraintFailureMessageBuilder(CountsConstraintFailure countsConstraintMatchResult, int indentation) {
+    public CountsConstraintFailureMessageBuilder(CountsConstraintFailure countsConstraintMatchResult, Indentation indentation) {
         this.constrainFailureMessageBuilder = new ConstraintFailureMessageBuilder(countsConstraintMatchResult, indentation);
         this.comparison = countsConstraintMatchResult.comparison();
         this.matchedNodesSize = countsConstraintMatchResult.matchedNodes().size();
@@ -44,15 +44,17 @@ public class CountsConstraintFailureMessageBuilder {
     }
 
     public String build() {
-        return constrainFailureMessageBuilder.buildConstraintHeader() + buildFailedComparisonMessage() +
-               buildMatchedCountsNodesMessage();
+        String header = constrainFailureMessageBuilder.buildConstraintHeader();
+        indentation.add();
+        String body = buildFailedComparisonMessage() + buildMatchedCountsNodesMessage();
+        indentation.sub();
+        return header + body;
     }
 
     private String buildFailedComparisonMessage() {
         String failedComparison = "[found] " + matchedNodesSize + " "
                                   + comparison.getComparator() + " " + comparison.getGivenValue() + " [given]";
-        return ReportBuilder.getIndentation(indentation + 2) + "- Failed comparison: " + failedComparison
-               + System.lineSeparator();
+        return indentation + "- Failed comparison: " + failedComparison + System.lineSeparator();
     }
 
     private String buildMatchedCountsNodesMessage() {
@@ -64,6 +66,6 @@ public class CountsConstraintFailureMessageBuilder {
     }
 
     private String buildEmptyNodeMatchesMessage() {
-        return ReportBuilder.getIndentation(indentation + 2) + "- No nodes matched!" + System.lineSeparator();
+        return indentation + "- No nodes matched!" + System.lineSeparator();
     }
 }
