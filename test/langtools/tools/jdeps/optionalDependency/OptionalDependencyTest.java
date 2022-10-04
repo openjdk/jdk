@@ -67,10 +67,10 @@ public class OptionalDependencyTest {
     }
 
     /*
-     * Test if a requires static dependence is resolved in the configuration.
+     * Test if a requires static dependence is not resolved in the configuration.
      */
     @Test
-    public void optionalDependenceResolved() {
+    public void optionalDependenceNotResolved() {
         JdepsRunner jdepsRunner = new JdepsRunner("--module-path", "m2.jar:m3.jar",
                                                   "--inverse",
                                                   "--package", "p2", "m1.jar");
@@ -78,6 +78,17 @@ public class OptionalDependencyTest {
         assertTrue(rc == 0);
     }
 
+    /*
+     * Test if a requires static dependence is resolved in the configuration.
+     */
+    @Test
+    public void optionalDependenceResolved() {
+        JdepsRunner jdepsRunner = new JdepsRunner("--module-path", "m2.jar:m3.jar",
+                                                  "--inverse", "--add-modules", "m3",
+                                                  "--package", "p2", "m1.jar");
+        int rc = jdepsRunner.run(true);
+        assertTrue(rc == 0);
+    }
 
     private static void jar(String... options) {
         int rc = JAR_TOOL.run(System.out, System.err, options);
