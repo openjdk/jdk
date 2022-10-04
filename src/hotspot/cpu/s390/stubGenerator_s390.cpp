@@ -2866,11 +2866,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // VM-call prelude
     __ save_return_pc();
-    __ push_frame_abi160(0);
+    __ push_frame_abi160(10*BytesPerWord);
+    __ z_stmg(Z_R6, Z_R15, frame::z_abi_160_size, Z_SP);
 
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
 
     // VM-call epilogue
+    __ z_lmg(Z_R0, Z_R15, frame::z_abi_160_size, Z_SP);
     __ pop_frame();
     __ restore_return_pc();
 
