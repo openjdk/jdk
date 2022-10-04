@@ -627,7 +627,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
             FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
             NULL, errval, 0, (LPTSTR)&errtext, 0, NULL);
         if (errtext == NULL || n == 0) {                /* Paranoia check */
-            errtext = "Could not properly determine underlying error";
+            errtext = "";
             n = 0;
         } else {
             freeit = JNI_TRUE;
@@ -646,13 +646,17 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         int mlen;
         /* get the length of the string we need */
         int len = mlen =  _vscprintf(fmt, vl) + 1;
-        mlen += (int)JLI_StrLen(errtext);
+        if (freeit) {
+           mlen += (int)JLI_StrLen(errtext);
+        }
 
         message = (char *)JLI_MemAlloc(mlen);
         _vsnprintf(message, len, fmt, vl);
         message[len]='\0';
 
-        JLI_StrCat(message, errtext);
+        if (freeit) {
+           JLI_StrCat(message, errtext);
+        }
 
         MessageBox(NULL, message, "Java Virtual Machine Launcher",
             (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
@@ -660,7 +664,9 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         JLI_MemFree(message);
     } else {
         vfprintf(stderr, fmt, vl);
-        fprintf(stderr, "%s", errtext);
+        if (freeit) {
+           fprintf(stderr, "%s", errtext);
+        }
     }
     if (freeit) {
         (void)LocalFree((HLOCAL)errtext);
