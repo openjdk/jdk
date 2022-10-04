@@ -377,6 +377,8 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     protected void uninstallDefaults() {
+        LookAndFeel.uninstallColorsAndFont(tabPane);
+
         highlight = null;
         lightHighlight = null;
         shadow = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,12 @@ public class MetalDesktopIconUI extends BasicDesktopIconUI
         super.installDefaults();
         LookAndFeel.installColorsAndFont(desktopIcon, "DesktopIcon.background", "DesktopIcon.foreground", "DesktopIcon.font");
         width = UIManager.getInt("DesktopIcon.width");
+    }
+
+    @Override
+    protected void uninstallDefaults() {
+        super.uninstallDefaults();
+        LookAndFeel.uninstallColors(desktopIcon);
     }
 
     protected void installComponents() {

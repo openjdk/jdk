@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +167,7 @@ public abstract class LookAndFeel
      * @param defaultFgName key for the foreground
      *
      * @see #installColorsAndFont
+     * @see #uninstallColors
      * @see UIManager#getColor
      * @throws NullPointerException as described in
      *         <a href="#exceptions">exceptions</a>
@@ -188,6 +189,24 @@ public abstract class LookAndFeel
 
 
     /**
+     * Convenience method for removing a component's foreground
+     * and background color properties by setting them to null.
+     *
+     * @see #uninstallColorsAndFont
+     * @see #installColors
+     * @param c component to remove the colors from
+     */
+    public static void uninstallColors(JComponent c) {
+        if (c.getForeground() instanceof UIResource) {
+            c.setForeground(null);
+        }
+        if (c.getBackground() instanceof UIResource) {
+            c.setBackground(null);
+        }
+    }
+
+
+    /**
      * Convenience method for setting a component's foreground,
      * background and font properties with values from the
      * defaults.  The properties are only set if the current
@@ -201,6 +220,7 @@ public abstract class LookAndFeel
      *         <a href="#exceptions">exceptions</a>
      *
      * @see #installColors
+     * @see #uninstallColorsAndFont
      * @see UIManager#getColor
      * @see UIManager#getFont
      */
@@ -214,6 +234,23 @@ public abstract class LookAndFeel
         }
 
         installColors(c, defaultBgName, defaultFgName);
+    }
+
+
+    /**
+     * Convenience method for removing a component's foreground,
+     * background and font properties by setting them to null.
+     *
+     * @see #uninstallColors
+     * @see #installColorsAndFont
+     * @param c component to remove the colors and font from
+     */
+    public static void uninstallColorsAndFont(JComponent c) {
+        if (c.getFont() instanceof UIResource) {
+            c.setFont(null);
+        }
+
+        uninstallColors(c);
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SeparatorUI;
+import javax.swing.plaf.UIResource;
 
 
 /**
@@ -101,6 +102,7 @@ public class BasicSeparatorUI extends SeparatorUI
      */
     protected void uninstallDefaults( JSeparator s )
     {
+        LookAndFeel.uninstallColors(s);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,7 @@ public class BasicToolTipUI extends ToolTipUI
      */
     protected void uninstallDefaults(JComponent c){
         LookAndFeel.uninstallBorder(c);
+        LookAndFeel.uninstallColorsAndFont(c);
     }
 
     /* Unfortunately this has to remain private until we can make API additions.

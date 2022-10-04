@@ -465,6 +465,8 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
      * Uninstalls the defaults.
      */
     protected void uninstallDefaults() {
+        LookAndFeel.uninstallColorsAndFont(tabPane);
+
         highlight = null;
         lightHighlight = null;
         shadow = null;

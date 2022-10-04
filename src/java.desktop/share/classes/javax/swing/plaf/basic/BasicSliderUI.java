@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ import javax.swing.event.MouseInputAdapter;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.InsetsUIResource;
 import javax.swing.plaf.SliderUI;
+import javax.swing.plaf.UIResource;
 
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
@@ -306,6 +307,7 @@ public class BasicSliderUI extends SliderUI{
      */
     protected void uninstallDefaults(JSlider slider) {
         LookAndFeel.uninstallBorder(slider);
+        LookAndFeel.uninstallColorsAndFont(slider);
 
         focusInsets = null;
     }
