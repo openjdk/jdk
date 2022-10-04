@@ -668,7 +668,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   } else {
     // We report NULL instead of DEFLATER_MARKER here because is_busy()
     // ignores DEFLATER_MARKER values.
-    ss->print("owner=" INTPTR_FORMAT, NULL);
+    ss->print("owner=" INTPTR_FORMAT, NULL_WORD);
   }
   ss->print(", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, p2i(_cxq),
             p2i(_EntryList));
