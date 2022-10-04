@@ -1393,11 +1393,6 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return false;
 }
 
-// Loads .dll/.so and
-// in case of error it checks if .dll/.so was built for the
-// same architecture as Hotspot is running on
-
-
 // Remember the stack's state. The Linux dynamic linker will change
 // the stack to 'executable' at most once, so we must safepoint only once.
 bool os::Linux::_stack_is_executable = false;
