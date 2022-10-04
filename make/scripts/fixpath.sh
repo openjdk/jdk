@@ -353,7 +353,8 @@ function convert_path() {
 }
 
 # Treat $1 as name of a file containing paths. Convert those paths to Windows style,
-# in the file specified by $2
+# and output them to the file specified by $2.
+# If the output file already exists, it is overwritten.
 function convert_file() {
   infile="$1"
   outfile="$2"
