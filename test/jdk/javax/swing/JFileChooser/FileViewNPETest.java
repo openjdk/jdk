@@ -78,7 +78,7 @@ public class FileViewNPETest {
         frame = new JFrame("JFileChooser File View NPE test");
         passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 13, 40);
         jfc = new JFileChooser();
-        String path = System.getProperty("user.home")
+        String path = System.getProperty("user.home");
 
         jfc.setCurrentDirectory(new File(path));
         jfc.setFileView(new CustomFileView(path));
