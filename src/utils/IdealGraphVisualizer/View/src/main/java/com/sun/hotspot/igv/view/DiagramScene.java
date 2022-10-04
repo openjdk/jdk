@@ -82,8 +82,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private final LayerWidget connectionLayer;
     private final JScrollPane scrollPane;
     private UndoRedo.Manager undoRedoManager;
-    private LayerWidget mainLayer;
-    private LayerWidget blockLayer;
+    private final LayerWidget mainLayer;
+    private final LayerWidget blockLayer;
     private DiagramViewModel model;
     private DiagramViewModel modelCopy;
     private boolean rebuilding;
@@ -116,15 +116,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     public <T> T getWidget(Object o, Class<T> klass) {
         Widget w = findWidget(o);
         return (T) w;
-    }
-
-    private static boolean intersects(Set<? extends Object> s1, Set<? extends Object> s2) {
-        for (Object o : s1) {
-            if (s2.contains(o)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public double getZoomMinFactor() {
