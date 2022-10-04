@@ -758,7 +758,7 @@ public sealed class RecordedObject
      * <p>
      * If the committed event value was {@code Long.MAX_VALUE},
      * regardless of the unit set by {@code @Timespan}, this method returns
-     * {@link ChronoUnit.FOREVER.getDuration()}.
+     * {@link ChronoUnit#FOREVER}.
      * <p>
      * It's possible to index into a nested object using {@code "."} (for example,
      * {@code "aaa.bbb"}).

@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
 /**
  * Event field annotation, specifies that the value is a duration.
  * <p>
- * If the annotated value equals {@code Long.MAX_VALUE), it represents forever.
+ * If the annotated value equals {@code Long.MAX_VALUE}, it represents forever.
  *
  * @since 9
  */
