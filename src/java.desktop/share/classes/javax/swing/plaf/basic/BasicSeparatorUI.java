@@ -33,7 +33,6 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SeparatorUI;
-import javax.swing.plaf.UIResource;
 
 
 /**

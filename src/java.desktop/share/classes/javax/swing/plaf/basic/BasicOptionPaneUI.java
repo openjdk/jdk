@@ -34,7 +34,6 @@ import javax.swing.event.*;
 import javax.swing.plaf.ActionMapUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.OptionPaneUI;
-import javax.swing.plaf.UIResource;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;

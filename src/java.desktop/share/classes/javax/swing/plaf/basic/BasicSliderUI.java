@@ -66,7 +66,6 @@ import javax.swing.event.MouseInputAdapter;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.InsetsUIResource;
 import javax.swing.plaf.SliderUI;
-import javax.swing.plaf.UIResource;
 
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
