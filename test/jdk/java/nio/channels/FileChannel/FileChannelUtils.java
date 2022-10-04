@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-package com.sun.hotspot.igv.data.services;
 
-import com.sun.hotspot.igv.data.InputGraph;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static java.nio.file.StandardOpenOption.*;
 
 /**
- *
- * @author Thomas Wuerthinger
+ * Common library for various test file utility functions.
  */
-public interface GraphViewer {
+public final class FileChannelUtils {
 
-    void view(InputGraph graph, boolean clone);
+    public static Path createSparseTempFile(String prefix, String suffix) throws IOException {
+        Path file = Files.createTempFile(prefix, suffix);
+        Files.delete(file); // need CREATE_NEW to make the file sparse
 
-    void viewDifference(InputGraph firstGraph, InputGraph secondGraph);
+        FileChannel fc = FileChannel.open(file, CREATE_NEW, SPARSE, WRITE);
+        fc.close();
+        return file;
+    }
 }

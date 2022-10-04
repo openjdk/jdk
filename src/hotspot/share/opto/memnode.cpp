@@ -820,7 +820,7 @@ const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_c
 //=============================================================================
 // Should LoadNode::Ideal() attempt to remove control edges?
 bool LoadNode::can_remove_control() const {
-  return true;
+  return !has_pinned_control_dependency();
 }
 uint LoadNode::size_of() const { return sizeof(*this); }
 bool LoadNode::cmp( const Node &n ) const
@@ -838,7 +838,17 @@ void LoadNode::dump_spec(outputStream *st) const {
     st->print(" #"); _type->dump_on(st);
   }
   if (!depends_only_on_test()) {
-    st->print(" (does not depend only on test)");
+    st->print(" (does not depend only on test, ");
+    if (control_dependency() == UnknownControl) {
+      st->print("unknown control");
+    } else if (control_dependency() == Pinned) {
+      st->print("pinned");
+    } else if (adr_type() == TypeRawPtr::BOTTOM) {
+      st->print("raw access");
+    } else {
+      st->print("unknown reason");
+    }
+    st->print(")");
   }
 }
 #endif
@@ -1199,6 +1209,9 @@ bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
 //------------------------------Identity---------------------------------------
 // Loads are identity if previous store is to same address
 Node* LoadNode::Identity(PhaseGVN* phase) {
+  if (has_pinned_control_dependency()) {
+    return this;
+  }
   // If the previous store-maker is the right kind of Store, and the store is
   // to the same address, then we are equal to the value stored.
   Node* mem = in(Memory);
@@ -1485,7 +1498,12 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
 }
 //------------------------------split_through_phi------------------------------
 // Split instance or boxed field load through Phi.
-Node *LoadNode::split_through_phi(PhaseGVN *phase) {
+Node* LoadNode::split_through_phi(PhaseGVN* phase) {
+  if (req() > 3) {
+    assert(is_LoadVector() && Opcode() != Op_LoadVector, "load has too many inputs");
+    // LoadVector subclasses such as LoadVectorMasked have extra inputs that the logic below doesn't take into account
+    return NULL;
+  }
   Node* mem     = in(Memory);
   Node* address = in(Address);
   const TypeOopPtr *t_oop = phase->type(address)->isa_oopptr();
@@ -1696,6 +1714,9 @@ AllocateNode* LoadNode::is_new_object_mark_load(PhaseGVN *phase) const {
 // If the offset is constant and the base is an object allocation,
 // try to hook me up to the exact initializing store.
 Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (has_pinned_control_dependency()) {
+    return NULL;
+  }
   Node* p = MemNode::Ideal_common(phase, can_reshape);
   if (p)  return (p == NodeSentinel) ? NULL : p;
 

@@ -39,10 +39,16 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private final List<InputBlockEdge> blockEdges;
     private final Map<Integer, InputBlock> nodeToBlock;
     private boolean isDiffGraph;
+    private InputGraph firstGraph;
+    private InputGraph secondGraph;
 
-    public InputGraph(String name, boolean isDiffGraph) {
-        this(name);
-        this.isDiffGraph = isDiffGraph;
+
+    public InputGraph(InputGraph firstGraph, InputGraph secondGraph) {
+        this(firstGraph.getName() + " Δ " + secondGraph.getName());
+        assert !firstGraph.isDiffGraph() && !secondGraph.isDiffGraph();
+        this.firstGraph = firstGraph;
+        this.secondGraph = secondGraph;
+        isDiffGraph = true;
     }
 
     public InputGraph(String name) {
@@ -52,11 +58,21 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         blocks = new LinkedHashMap<>();
         blockEdges = new ArrayList<>();
         nodeToBlock = new LinkedHashMap<>();
+        firstGraph = null;
+        secondGraph = null;
         isDiffGraph = false;
     }
 
     public boolean isDiffGraph() {
         return isDiffGraph;
+    }
+
+    public InputGraph getFirstGraph() {
+        return firstGraph;
+    }
+
+    public InputGraph getSecondGraph() {
+        return secondGraph;
     }
 
     @Override

@@ -28,6 +28,8 @@ import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.util.LookupHistory;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import com.sun.hotspot.igv.view.GraphViewerImplementation;
 import org.openide.nodes.Node;
 import org.openide.util.Lookup;
 
@@ -52,16 +54,15 @@ public class DiffGraphCookie implements Node.Cookie {
     }
 
     public boolean isPossible() {
-        return getCurrentGraph() != null;
+        InputGraph currentGraph = getCurrentGraph();
+        return currentGraph != null && !currentGraph.isDiffGraph() && currentGraph != graph;
     }
 
     public void openDiff() {
         InputGraph other = getCurrentGraph();
         final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
-        if (viewer != null) {
-            assert other != null;
-            InputGraph diffGraph = Difference.createDiffGraph(other, graph);
-            viewer.view(diffGraph, true);
+        if (viewer != null && other != null) {
+            viewer.viewDifference(other, graph);
         }
     }
 }
