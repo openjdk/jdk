@@ -116,9 +116,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <p>To provide the appropriate semantics for {@code equals} and
  * {@code compareTo} methods, those methods cannot simply be wrappers
  * around {@code ==} or ordered comparison operations. Instead, {@link
- * Double#equals equals} defines NaN arguments to be equal to each
- * other and defines {@code +0.0} to <em>not</em> be equal to {@code
- * -0.0}, restoring reflexivity. For comparisons, {@link
+ * Double#equals equals} uses <a href=#repEquivalence> representation equivalence</a>, defining NaN arguments to be equal to each
+ * other, restoring reflexivity, and defining {@code +0.0} to <em>not</em> be equal to {@code
+ * -0.0}. For comparisons, {@link
  * Double#compareTo compareTo} defines a total order where {@code
  * -0.0} is less than {@code +0.0} and where a NaN is equal to itself
  * and considered greater than positive infinity.
@@ -143,13 +143,11 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * elements of a {@link java.util.SortedSet SortedSet} or as keys of a
  * {@link java.util.SortedMap SortedMap}.
  *
- * <p>While {@code ==} is not an equivalence relation, several useful
- * equivalence relations can be defined over floating-point
- * values. Comparing numerical equality to various kinds of
- * equivalence:
+ * <p>Comparing numerical equality to various useful equivalence
+ * relations that can be defined over floating-point values:
  *
  * <dl>
- * <dt><i>numerical equality</i> ({@code ==} operator): (<em>Not</em>
+ * <dt><a id=fpNumericalEq><i>numerical equality</i></a> ({@code ==} operator): (<em>Not</em>
  * an equivalence relation)</dt>
  * <dd>Two floating-point values represent the same extended real
  * number. The extended real numbers are the real numbers augmented
@@ -169,7 +167,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * from every other bit pattern encoding a NaN.
  * </dd>
  *
- * <dt><i>representation equivalence</i>:</dt>
+ * <dt><i><a id=repEquivalence>representation equivalence</a></i>:</dt>
  * <dd>The two floating-point values represent the the same IEEE 754
  * <i>datum</i>. In particular, for {@linkplain #isFinite(double)
  * finite} values, the sign, {@linkplain Math#getExponent(double)
@@ -178,7 +176,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <ul>
  * <li> {@code +0.0} and {@code -0.0} are distinguished from each other.
  * <li> every bit pattern encoding a NaN is considered equivalent to each other
- * <li> an infinite value is equivalent to an infinite value of the same sign
+ * <li> positive infinity is equivalent to positive infinity; negative infinity is equivalent to negative infinity; 
  * </ul>
  * Expressions implementing this equivalence relation include:
  * <ul>

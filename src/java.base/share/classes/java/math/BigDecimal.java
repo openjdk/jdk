@@ -3087,6 +3087,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
      * @apiNote
      * Note: this class has a natural ordering that is inconsistent with equals.
+     * The behavior of comparing the result of this method for
+     * equality to 0 is analogous to checking the <a
+     * href="{@docRoot}/java.base/java/lang/Double.html#fpNumericalEq">numerical
+     * equality</a> of {@code double} values.
      *
      * @param  val {@code BigDecimal} to which this {@code BigDecimal} is
      *         to be compared.
@@ -3179,6 +3183,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * HALF_UP)} which evaluates to 0.7 and <br>
      * {@code new BigDecimal("2.00").divide(BigDecimal.valueOf(3),
      * HALF_UP)} which evaluates to 0.67.
+     * The behavior of this method is analogous to checking the <a
+     * href="{@docRoot}/java.base/java/lang/Double.html#repEquivalence">representation
+     * equivalence</a> of {@code double} values.
      *
      * @param  x {@code Object} to which this {@code BigDecimal} is
      *         to be compared.
