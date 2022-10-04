@@ -42,9 +42,10 @@
 #define JLONG_FORMAT_SPECIFIER "%I64d"
 
 /*
- * Function prototypes.
+ * Windows specific declarations.
  */
 
+void reportWithLastWindowsError(const char* message, ...);
 int UnsetEnv(char *name);
 
 #endif /* JAVA_MD_H */
