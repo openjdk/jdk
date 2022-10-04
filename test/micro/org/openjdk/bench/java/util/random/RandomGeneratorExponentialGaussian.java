@@ -46,6 +46,9 @@ public class RandomGeneratorExponentialGaussian {
     @Param({"L64X128MixRandom", "L64X1024MixRandom"})
     String randomGeneratorName;
 
+    @Param({"false","true"})
+    boolean fixedSeed;
+
     double[] buffer;
 
     @Param("1024")
@@ -54,7 +57,8 @@ public class RandomGeneratorExponentialGaussian {
     @Setup
     public void setup() {
         buffer = new double[size];
-        randomGenerator = RandomGeneratorFactory.of(randomGeneratorName).create(randomGeneratorName.hashCode());
+        RandomGeneratorFactory factory = RandomGeneratorFactory.of(randomGeneratorName);
+        randomGenerator = fixedSeed ? factory.create(randomGeneratorName.hashCode()) : factory.create();
     }
 
     @Benchmark
