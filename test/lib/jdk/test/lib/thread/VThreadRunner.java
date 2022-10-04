@@ -23,11 +23,13 @@
 
 package jdk.test.lib.thread;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Helper class for running tasks in a virtual thread.
+ * Helper class for running tests tasks in a virtual thread.
  */
 public class VThreadRunner {
     private VThreadRunner() { }
@@ -139,5 +141,30 @@ public class VThreadRunner {
      */
     public static void run(ThrowingRunnable task) throws Exception {
         run(null, 0, task);
+    }
+
+    /**
+     * Ensures that virtual thread scheduler's target parallelism is at least the given
+     * size. If the current parallelism is less than size then it is changed to size.
+     * This method returns an AutoCloseable, its close method restores the parallelism.
+     *
+     * @return an object to restore the parallelism
+     */
+    public static AutoCloseable ensureParallelism(int size) {
+        try {
+            var virtualThreadClass = Class.forName("java.lang.VirtualThread");
+            Field f = virtualThreadClass.getDeclaredField("DEFAULT_SCHEDULER");
+            f.setAccessible(true);
+            ForkJoinPool pool = (ForkJoinPool) f.get(null);
+            int parallelism = pool.getParallelism();
+            if (parallelism >= size) {
+                return () -> { };
+            } else {
+                pool.setParallelism(size);
+                return () -> pool.setParallelism(parallelism);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
