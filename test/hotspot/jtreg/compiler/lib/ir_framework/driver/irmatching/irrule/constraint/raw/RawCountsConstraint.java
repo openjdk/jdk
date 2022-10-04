@@ -53,8 +53,8 @@ public class RawCountsConstraint implements RawConstraint {
     }
 
     @Override
-    public Constraint parse(CompilePhase compilePhase) {
+    public Constraint parse(CompilePhase compilePhase, String compilationOutput) {
         TestFramework.check(compilePhase != CompilePhase.DEFAULT, "must not be default");
-        return Constraint.createCounts(rawIRNode.regex(compilePhase), constraintIndex, comparison, compilePhase);
+        return Constraint.createCounts(rawIRNode.regex(compilePhase), constraintIndex, comparison, compilationOutput);
     }
 }

@@ -27,12 +27,10 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleBuilder;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class represents a generic {@link IR @IR} rule of an IR method. It contains a list of compile phase specific
@@ -47,12 +45,12 @@ public class IRRule implements Matchable {
     /**
      * List of compile phase IR rules, sorted by
      */
-    private final List<Matchable> compilePhaseIRRules;
+    private final MatchableMatcher matcher;
 
     public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        this.compilePhaseIRRules = CompilePhaseIRRuleBuilder.build(irMethod, irAnno);
+        this.matcher = new MatchableMatcher(CompilePhaseIRRuleBuilder.build(irMethod, irAnno));
     }
 
     /**
@@ -60,13 +58,6 @@ public class IRRule implements Matchable {
      */
     @Override
     public MatchResult match() {
-        List<MatchResult> results = new ArrayList<>();
-        for (Matchable compilePhaseIRRule : compilePhaseIRRules) {
-            MatchResult compilePhaseIRRuleMatchResult = compilePhaseIRRule.match();
-            if (compilePhaseIRRuleMatchResult.fail()) {
-                results.add(compilePhaseIRRuleMatchResult);
-            }
-        }
-        return new IRRuleMatchResult(ruleId, irAnno, results);
+        return new IRRuleMatchResult(ruleId, irAnno, matcher.match());
     }
 }

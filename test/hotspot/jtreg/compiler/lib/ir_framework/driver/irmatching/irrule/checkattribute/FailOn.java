@@ -51,7 +51,7 @@ public class FailOn implements Matchable {
     private final String compilationOutput;
 
     public FailOn(List<Constraint> constraints, String compilationOutput) {
-        this.checkAttribute = new CheckAttribute(CheckAttributeType.FAIL_ON, constraints, compilationOutput);
+        this.checkAttribute = new CheckAttribute(CheckAttributeType.FAIL_ON, constraints);
         this.constraints = constraints;
         this.compilationOutput = compilationOutput;
     }

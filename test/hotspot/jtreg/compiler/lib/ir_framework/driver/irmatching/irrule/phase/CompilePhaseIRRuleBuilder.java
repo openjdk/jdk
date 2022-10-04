@@ -112,7 +112,7 @@ public class CompilePhaseIRRuleBuilder {
         }
 
         if (!countsConstraints.isEmpty()) {
-            checkAttributes.add(new Counts(countsConstraints, compilationOutput));
+            checkAttributes.add(new Counts(countsConstraints));
         }
         compilePhaseIRRules.add(new CompilePhaseIRRule(compilePhase, checkAttributes));
     }
@@ -121,7 +121,7 @@ public class CompilePhaseIRRuleBuilder {
                                                  CompilePhase compilePhase) {
         List<Constraint> constraintResultList = new ArrayList<>();
         for (RawConstraint rawConstraint : rawConstraints) {
-            constraintResultList.add(rawConstraint.parse(compilePhase));
+            constraintResultList.add(rawConstraint.parse(compilePhase, irMethod.getOutput(compilePhase)));
         }
         return constraintResultList;
     }

@@ -39,8 +39,8 @@ import java.util.List;
 public class Counts implements Matchable {
     private final CheckAttribute checkAttribute;
 
-    public Counts(List<Constraint> constraints, String compilationOutput) {
-        this.checkAttribute = new CheckAttribute(CheckAttributeType.COUNTS, constraints, compilationOutput);
+    public Counts(List<Constraint> constraints) {
+        this.checkAttribute = new CheckAttribute(CheckAttributeType.COUNTS, constraints);
     }
 
     @Override

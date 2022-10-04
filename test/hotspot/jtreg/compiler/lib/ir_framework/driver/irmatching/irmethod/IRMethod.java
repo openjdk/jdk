@@ -27,8 +27,8 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -51,22 +51,22 @@ public class IRMethod implements Matchable {
      * Mapping from compile phase to compilation output found in hotspot_pid* file for that phase (if exist)
      */
     private final Map<CompilePhase, String> compilationOutputMap;
-    private final List<Matchable> irRules;
+    private final MatchableMatcher matcher;
 
     protected IRMethod(Method method) {
         this.method = method;
-        this.irRules = new ArrayList<>();
+        this.matcher = null; // TODO: Not nice
         this.compilationOutputMap = null;
     }
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Map<CompilePhase, String> compilationOutputMap) {
         this.method = method;
-        this.irRules = new ArrayList<>();
         this.compilationOutputMap = compilationOutputMap;
-        createIRRules(method, ruleIds, irAnnos);
+        this.matcher = new MatchableMatcher(createIRRules(method, ruleIds, irAnnos));
     }
 
-    private void createIRRules(Method method, int[] ruleIds, IR[] irAnnos) {
+    private List<Matchable> createIRRules(Method method, int[] ruleIds, IR[] irAnnos) {
+        List<Matchable> irRules = new ArrayList<>();
         for (int ruleId : ruleIds) {
             try {
                 irRules.add(new IRRule(this, ruleId, irAnnos[ruleId - 1]));
@@ -75,6 +75,7 @@ public class IRMethod implements Matchable {
                 TestFormat.failNoThrow(e.getMessage() + postfixErrorMsg);
             }
         }
+        return irRules;
     }
 
     public Method getMethod() {
@@ -96,14 +97,6 @@ public class IRMethod implements Matchable {
      */
     @Override
     public IRMethodMatchResult match() {
-        TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
-        List<MatchResult> results = new ArrayList<>();
-        for (Matchable irRule : irRules) {
-            MatchResult result = irRule.match();
-            if (result.fail()) {
-                results.add(result);
-            }
-        }
-        return new IRMethodMatchResult(this, results);
+        return new IRMethodMatchResult(this, matcher.match());
     }
 }

@@ -25,32 +25,22 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
-import java.util.ArrayList;
 import java.util.List;
 
 class CheckAttribute implements Matchable {
-    private final List<Constraint> constraints;
-    private final String compilationOutput;
+    private final MatchableMatcher matcher;
     private final CheckAttributeType checkAttributeType;
 
-    public CheckAttribute(CheckAttributeType checkAttributeType, List<Constraint> constraints,
-                          String compilationOutput) {
-        this.constraints = constraints;
-        this.compilationOutput = compilationOutput;
+    public CheckAttribute(CheckAttributeType checkAttributeType, List<Constraint> constraints) {
+        this.matcher = new MatchableMatcher(constraints);
         this.checkAttributeType = checkAttributeType;
     }
 
     @Override
     public MatchResult match() {
-        List<MatchResult> results = new ArrayList<>();
-        for (Constraint constraint : constraints) {
-            MatchResult constraintMatchResult = constraint.match(compilationOutput);
-            if (constraintMatchResult.fail()) {
-                results.add(constraintMatchResult);
-            }
-        }
-        return new CheckAttributeMatchResult(checkAttributeType, results);
+        return new CheckAttributeMatchResult(checkAttributeType, matcher.match());
     }
 }

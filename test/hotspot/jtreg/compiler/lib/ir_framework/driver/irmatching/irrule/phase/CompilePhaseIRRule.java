@@ -27,10 +27,10 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,23 +43,16 @@ import java.util.Objects;
  */
 public class CompilePhaseIRRule implements Matchable {
     private final CompilePhase compilePhase;
-    private final List<Matchable> checkAttributes;
+    private final MatchableMatcher matcher;
 
     public CompilePhaseIRRule(CompilePhase compilePhase, List<Matchable> checkAttributes) {
         this.compilePhase = compilePhase;
-        this.checkAttributes = checkAttributes;
+        this.matcher = new MatchableMatcher(checkAttributes);
     }
 
     @Override
     public MatchResult match() {
-        List<MatchResult> results = new ArrayList<>();
-        for (Matchable checkAttribute : checkAttributes) {
-            MatchResult matchResult = checkAttribute.match();
-            if (matchResult.fail()) {
-                results.add(matchResult);
-            }
-        }
-        return new CompilePhaseIRRuleMatchResult(results, compilePhase);
+        return new CompilePhaseIRRuleMatchResult(compilePhase, matcher.match());
     }
 
     /**

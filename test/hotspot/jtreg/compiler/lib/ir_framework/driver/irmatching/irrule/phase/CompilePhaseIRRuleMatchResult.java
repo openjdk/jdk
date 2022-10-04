@@ -39,7 +39,7 @@ public class CompilePhaseIRRuleMatchResult implements MatchResult {
 
     private final List<MatchResult> checkAttributeFailures;
 
-    public CompilePhaseIRRuleMatchResult(List<MatchResult> checkAttributeFailures, CompilePhase compilePhase) {
+    public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase, List<MatchResult> checkAttributeFailures) {
         this.checkAttributeFailures = checkAttributeFailures;
         this.compilePhase = compilePhase;
     }

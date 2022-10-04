@@ -49,9 +49,9 @@ public class RawFailOnConstraint implements RawConstraint {
     }
 
     @Override
-    public Constraint parse(CompilePhase compilePhase) {
+    public Constraint parse(CompilePhase compilePhase, String compilationOutput) {
         TestFramework.check(compilePhase != CompilePhase.DEFAULT, "must not be default");
-        return Constraint.createFailOn(rawIRNode.regex(compilePhase), constraintIndex, compilePhase);
+        return Constraint.createFailOn(rawIRNode.regex(compilePhase), constraintIndex, compilationOutput);
     }
 }
 

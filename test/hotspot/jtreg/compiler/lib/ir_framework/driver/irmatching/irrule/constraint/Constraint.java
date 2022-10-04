@@ -23,9 +23,9 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 import compiler.lib.ir_framework.shared.Comparison;
@@ -45,26 +45,26 @@ import java.util.stream.Collectors;
  *
  * @see FailOn
  */
-public class Constraint {
+public class Constraint implements Matchable {
+    private final ConstraintCheck constraintCheck;
     private final String regex;
     private final int index; // constraint indices start at 1.
-    private final CompilePhase compilePhase;
-    private final ConstraintCheck constraintCheck;
+    private final String compilationOutput;
 
-    private Constraint(ConstraintCheck constraintCheck, String regex, int index, CompilePhase compilePhase) {
+    private Constraint(ConstraintCheck constraintCheck, String regex, int index, String compilationOutput) {
         this.constraintCheck = constraintCheck;
         this.regex = regex;
         this.index = index;
-        this.compilePhase = compilePhase;
+        this.compilationOutput = compilationOutput;
     }
 
-    public static Constraint createFailOn(String regex, int index, CompilePhase compilePhase) {
-        return new Constraint(new FailOnConstraintCheck(), regex, index, compilePhase);
+    public static Constraint createFailOn(String regex, int index, String compilationOutput) {
+        return new Constraint(new FailOnConstraintCheck(), regex, index, compilationOutput);
     }
 
     public static Constraint createCounts(String regex, int index, Comparison<Integer> comparison,
-                                          CompilePhase compilePhase) {
-        return new Constraint(new CountsConstraintCheck(comparison), regex, index, compilePhase);
+                                          String compilationOutput) {
+        return new Constraint(new CountsConstraintCheck(comparison), regex, index, compilationOutput);
     }
 
     public String regex() {
@@ -75,11 +75,7 @@ public class Constraint {
         return index;
     }
 
-    public CompilePhase compilePhase() {
-        return compilePhase;
-    }
-
-    public MatchResult match(String compilationOutput) {
+    public MatchResult match() {
         List<String> matchedNodes = matchNodes(compilationOutput);
         return constraintCheck.check(this, matchedNodes);
     }

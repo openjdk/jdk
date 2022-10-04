@@ -26,16 +26,17 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -51,32 +52,48 @@ class DefaultPhaseRawConstraintParser {
     }
 
     public Map<CompilePhase, List<Matchable>> parse(List<RawConstraint> rawFailOnConstraints,
-                                                         List<RawConstraint> rawCountsConstraints) {
-        Map<CompilePhase, Matchable> failOnForCompilePhase = parseRawConstraints(rawFailOnConstraints, FailOn::new);
-        Map<CompilePhase, Matchable> countsForCompilePhase = parseRawConstraints(rawCountsConstraints, Counts::new);
+                                                    List<RawConstraint> rawCountsConstraints) {
+        Map<CompilePhase, Matchable> failOnForCompilePhase = parseRawConstraints(rawFailOnConstraints,
+                                                                                 CheckAttributeType.FAIL_ON);
+        Map<CompilePhase, Matchable> countsForCompilePhase = parseRawConstraints(rawCountsConstraints,
+                                                                                 CheckAttributeType.COUNTS);
         return mergeCheckAttributesForCompilePhase(failOnForCompilePhase, countsForCompilePhase);
     }
 
     private Map<CompilePhase, Matchable> parseRawConstraints(List<RawConstraint> rawConstraints,
-                                                             BiFunction<List<Constraint>, String, Matchable> constructor) {
+                                                             CheckAttributeType checkAttributeType) {
         Map<CompilePhase, List<Constraint>> matchableForCompilePhase = new HashMap<>();
         for (RawConstraint rawConstraint : rawConstraints) {
             CompilePhase compilePhase = rawConstraint.defaultCompilePhase();
             List<Constraint> checkAttribute =
                     matchableForCompilePhase.computeIfAbsent(compilePhase, k -> new ArrayList<>());
-            checkAttribute.add(rawConstraint.parse(compilePhase));
+            checkAttribute.add(rawConstraint.parse(compilePhase, irMethod.getOutput(compilePhase)));
         }
-        return replaceConstraintsWithCheckAttribute(matchableForCompilePhase, constructor);
+        return replaceConstraintsWithCheckAttribute(matchableForCompilePhase, checkAttributeType);
     }
 
     private Map<CompilePhase, Matchable>
     replaceConstraintsWithCheckAttribute(Map<CompilePhase, List<Constraint>> matchableForCompilePhase,
-                                         BiFunction<List<Constraint>, String, Matchable> constructor) {
+                                         CheckAttributeType checkAttributeType) {
         return matchableForCompilePhase
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                                          entry -> constructor.apply(entry.getValue(), irMethod.getOutput(entry.getKey()))));
+                                          entry -> createCheckAttribute(checkAttributeType,
+                                                                        entry.getKey(), entry.getValue())));
+    }
+
+    private Matchable createCheckAttribute(CheckAttributeType checkAttributeType, CompilePhase compilePhase,
+                                           List<Constraint> constraints) {
+        switch (checkAttributeType) {
+            case FAIL_ON -> {
+                return new FailOn(constraints, irMethod.getOutput(compilePhase));
+            }
+            case COUNTS -> {
+                return new Counts(constraints);
+            }
+            default -> throw new TestFrameworkException("unsupported: " + checkAttributeType);
+        }
     }
 
     private static Map<CompilePhase, List<Matchable>>
