@@ -584,38 +584,6 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register oop, const c
 }
 
 
-void ZBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
-                                           Register tmp1, Register tmp2,
-                                           MacroAssembler::PreservationLevel preservation_level) {
-  Label done, tagged, weak_tagged, verify;
-  __ cmpdi(CCR0, value, 0);
-  __ beq(CCR0, done);         // Use NULL as-is.
-
-  __ andi_(tmp1, value, JNIHandles::tag_mask);
-  __ bne(CCR0, tagged);       // Test for tag.
-
-  __ access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, // no uncoloring
-                    value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
-  __ b(verify);
-
-  __ bind(tagged);
-  __ andi_(tmp1, value, JNIHandles::weak_tag_mask);
-  __ clrrdi(value, value, JNIHandles::tag_size); // Untag.
-  __ bne(CCR0, weak_tagged);   // Test for jweak tag.
-
-  __ access_load_at(T_OBJECT, IN_NATIVE,
-                    value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
-  __ b(verify);
-
-  __ bind(weak_tagged);
-  __ access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                    value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
-
-  __ bind(verify);
-  __ verify_oop(value, FILE_AND_LINE);
-  __ bind(done);
-}
-
 void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                                          Register obj, Register tmp, Label& slowpath) {
   __ block_comment("try_resolve_jobject_in_native (zgc) {");
