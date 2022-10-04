@@ -405,28 +405,57 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public InputGraph getFirstGraph() {
+        InputGraph firstGraph;
         if (getFirstPosition() < graphs.size()) {
-            return graphs.get(getFirstPosition());
+            firstGraph = graphs.get(getFirstPosition());
+        } else {
+            firstGraph = graphs.get(graphs.size() - 1);
         }
-        return graphs.get(graphs.size() - 1);
+        if (firstGraph.isDiffGraph()) {
+            firstGraph = firstGraph.getFirstGraph();
+        }
+        return firstGraph;
     }
 
     public InputGraph getSecondGraph() {
+        InputGraph secondGraph;
         if (getSecondPosition() < graphs.size()) {
-            return graphs.get(getSecondPosition());
+            secondGraph = graphs.get(getSecondPosition());
+        } else {
+            secondGraph = getFirstGraph();
         }
-        return getFirstGraph();
+        if (secondGraph.isDiffGraph()) {
+            secondGraph = secondGraph.getSecondGraph();
+        }
+        return secondGraph;
     }
 
-    public void selectGraph(InputGraph g) {
-        int index = graphs.indexOf(g);
+    public void selectGraph(InputGraph graph) {
+        int index = graphs.indexOf(graph);
         if (index == -1 && hideDuplicates) {
             // A graph was selected that's currently hidden, so unhide and select it.
             setHideDuplicates(false);
-            index = graphs.indexOf(g);
+            index = graphs.indexOf(graph);
         }
         assert index != -1;
         setPositions(index, index);
+    }
+
+    public void selectDiffGraph(InputGraph graph) {
+        int index = graphs.indexOf(graph);
+        if (index == -1 && hideDuplicates) {
+            // A graph was selected that's currently hidden, so unhide and select it.
+            setHideDuplicates(false);
+            index = graphs.indexOf(graph);
+        }
+        assert index != -1;
+        int firstIndex = getFirstPosition();
+        int secondIndex = getSecondPosition();
+        if (firstIndex <= index) {
+            setPositions(firstIndex, index);
+        } else {
+            setPositions(index, secondIndex);
+        }
     }
 
     private static ColorFilter.ColorRule stateColorRule(String state, Color color) {
