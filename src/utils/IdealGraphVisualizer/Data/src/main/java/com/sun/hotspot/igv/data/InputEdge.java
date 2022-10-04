@@ -23,9 +23,8 @@
  */
 package com.sun.hotspot.igv.data;
 
-import java.lang.ref.WeakReference;
+import java.util.Comparator;
 import java.util.Objects;
-import java.util.WeakHashMap;
 
 /**
  *
@@ -39,6 +38,20 @@ public class InputEdge {
         NEW,
         DELETED
     }
+
+    public static final Comparator<InputEdge> OUTGOING_COMPARATOR = (o1, o2) -> {
+            if(o1.getFromIndex() == o2.getFromIndex()) {
+                return o1.getTo() - o2.getTo();
+            }
+            return o1.getFromIndex() - o2.getFromIndex();
+        };
+
+    public static final Comparator<InputEdge> INGOING_COMPARATOR = (o1, o2) -> {
+            if(o1.getToIndex() == o2.getToIndex()) {
+                return o1.getFrom() - o2.getFrom();
+            }
+            return o1.getToIndex() - o2.getToIndex();
+        };
 
     private final char toIndex;
     private final char fromIndex;
@@ -56,31 +69,6 @@ public class InputEdge {
         this.state = State.SAME;
         this.label = label;
         this.type = type.intern();
-    }
-
-    static WeakHashMap<InputEdge, WeakReference<InputEdge>> immutableCache = new WeakHashMap<>();
-
-    public static synchronized InputEdge createImmutable(char fromIndex, char toIndex, int from, int to, String label, String type) {
-        InputEdge edge = new InputEdge(fromIndex, toIndex, from, to, label, type, State.IMMUTABLE);
-        WeakReference<InputEdge> result = immutableCache.get(edge);
-        if (result != null) {
-            InputEdge edge2 = result.get();
-            if (edge2 != null) {
-                return edge2;
-            }
-        }
-        immutableCache.put(edge, new WeakReference<>(edge));
-        return edge;
-    }
-
-    public InputEdge(char fromIndex, char toIndex, int from, int to, String label, String type, State state) {
-        this.toIndex = toIndex;
-        this.fromIndex = fromIndex;
-        this.from = from;
-        this.to = to;
-        this.state = state;
-        this.label = label;
-        this.type = type;
     }
 
     public State getState() {

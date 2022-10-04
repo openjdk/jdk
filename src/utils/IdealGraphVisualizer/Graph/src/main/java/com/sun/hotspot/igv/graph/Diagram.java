@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.graph;
 
 import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.Properties;
 import java.awt.Font;
 import java.util.*;
 
@@ -233,4 +234,38 @@ public class Diagram {
         return connections;
     }
 
+    public void printStatistics() {
+        System.out.println("=============================================================");
+        System.out.println("Diagram statistics");
+
+        List<Figure> tmpFigures = getFigures();
+        Set<FigureConnection> connections = getConnections();
+
+        System.out.println("Number of figures: " + tmpFigures.size());
+        System.out.println("Number of connections: " + connections.size());
+
+        List<Figure> figuresSorted = new ArrayList<>(tmpFigures);
+        figuresSorted.sort(new Comparator<Figure>() {
+
+            @Override
+            public int compare(Figure a, Figure b) {
+                return b.getPredecessors().size() + b.getSuccessors().size() - a.getPredecessors().size() - a.getSuccessors().size();
+            }
+        });
+
+        final int COUNT = 10;
+        int z = 0;
+        for (Figure f : figuresSorted) {
+
+            z++;
+            int sum = f.getPredecessors().size() + f.getSuccessors().size();
+            System.out.println("#" + z + ": " + f + ", predCount=" + f.getPredecessors().size() + " succCount=" + f.getSuccessors().size());
+            if (sum < COUNT) {
+                break;
+            }
+
+        }
+
+        System.out.println("=============================================================");
+    }
 }

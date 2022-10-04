@@ -95,6 +95,80 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return edge;
     }
 
+    public List<InputNode> findRootNodes() {
+        List<InputNode> result = new ArrayList<>();
+        Set<Integer> nonRoot = new HashSet<>();
+        for(InputEdge curEdges : getEdges()) {
+            nonRoot.add(curEdges.getTo());
+        }
+
+        for(InputNode node : getNodes()) {
+            if(!nonRoot.contains(node.getId())) {
+                result.add(node);
+            }
+        }
+
+        return result;
+    }
+
+    public Map<InputNode, List<InputEdge>> findAllOutgoingEdges() {
+        Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
+        for(InputNode n : this.getNodes()) {
+            result.put(n, new ArrayList<>());
+        }
+
+        for(InputEdge e : this.edges) {
+            int from = e.getFrom();
+            InputNode fromNode = this.getNode(from);
+            List<InputEdge> fromList = result.get(fromNode);
+            assert fromList != null;
+            fromList.add(e);
+        }
+
+        for(InputNode n : this.getNodes()) {
+            List<InputEdge> list = result.get(n);
+            list.sort(InputEdge.OUTGOING_COMPARATOR);
+        }
+
+        return result;
+    }
+
+    public Map<InputNode, List<InputEdge>> findAllIngoingEdges() {
+        Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
+        for(InputNode n : this.getNodes()) {
+            result.put(n, new ArrayList<InputEdge>());
+        }
+
+        for(InputEdge e : this.edges) {
+            int to = e.getTo();
+            InputNode toNode = this.getNode(to);
+            List<InputEdge> toList = result.get(toNode);
+            assert toList != null;
+            toList.add(e);
+        }
+
+        for(InputNode n : this.getNodes()) {
+            List<InputEdge> list = result.get(n);
+            list.sort(InputEdge.INGOING_COMPARATOR);
+        }
+
+        return result;
+    }
+
+    public List<InputEdge> findOutgoingEdges(InputNode n) {
+        List<InputEdge> result = new ArrayList<>();
+
+        for(InputEdge e : this.edges) {
+            if(e.getFrom() == n.getId()) {
+                result.add(e);
+            }
+        }
+
+        result.sort(InputEdge.OUTGOING_COMPARATOR);
+
+        return result;
+    }
+
     public void clearBlocks() {
         blocks.clear();
         blockEdges.clear();
@@ -136,6 +210,14 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         assert nodes.containsKey(node.getId());
         assert nodes.get(node.getId()).equals(node);
         return getBlock(node.getId());
+    }
+
+    public InputGraph getNext() {
+        return parentGroup.getNext(this);
+    }
+
+    public InputGraph getPrev() {
+        return parentGroup.getPrev(this);
     }
 
     private void setName(String name) {

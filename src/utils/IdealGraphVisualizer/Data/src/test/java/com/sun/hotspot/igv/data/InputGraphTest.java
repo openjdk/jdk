@@ -24,6 +24,11 @@
 
 package com.sun.hotspot.igv.data;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.*;
 
 /**
@@ -117,5 +122,90 @@ public class InputGraphTest {
 
         b.addNode(new InputNode(1));
         Util.assertGraphEquals(a, b);
+    }
+
+    /**
+     * Test of findRootNodes method, of class InputGraph.
+     */
+    @Test
+    public void testFindRootNodes() {
+        assertTrue(emptyGraph.findRootNodes().isEmpty());
+
+        List<InputNode> result = referenceGraph.findRootNodes();
+        assertTrue(result.size() == 2);
+        assertTrue(result.contains(N1));
+        assertTrue(result.contains(N5));
+    }
+
+    /**
+     * Test of findAllOutgoingEdges method, of class InputGraph.
+     */
+    @Test
+    public void testFindAllOutgoingEdges() {
+        assertTrue(emptyGraph.findAllOutgoingEdges().isEmpty());
+
+        Map<InputNode, List<InputEdge>> result = referenceGraph.findAllOutgoingEdges();
+        assertTrue(result.size() == 5);
+        assertEquals(result.get(N1), Arrays.asList(E12, E13));
+        assertEquals(result.get(N2), Arrays.asList(E24));
+        assertEquals(result.get(N3), Arrays.asList(E34));
+        assertEquals(result.get(N4), Arrays.asList());
+        assertEquals(result.get(N5), Arrays.asList(E54));
+    }
+
+    /**
+     * Test of findAllIngoingEdges method, of class InputGraph.
+     */
+    @Test
+    public void testFindAllIngoingEdges() {
+        assertTrue(emptyGraph.findAllIngoingEdges().isEmpty());
+
+        Map<InputNode, List<InputEdge>> result = referenceGraph.findAllIngoingEdges();
+        assertTrue(result.size() == 5);
+        assertEquals(result.get(N1), Arrays.asList());
+        assertEquals(result.get(N2), Arrays.asList(E12));
+        assertEquals(result.get(N3), Arrays.asList(E13));
+        assertEquals(result.get(N4), Arrays.asList(E24, E34, E54));
+        assertEquals(result.get(N5), Arrays.asList());
+    }
+
+    /**
+     * Test of findOutgoingEdges method, of class InputGraph.
+     */
+    @Test
+    public void testFindOutgoingEdges() {
+        assertTrue(emptyGraph.findOutgoingEdges(new InputNode(1)).isEmpty());
+
+        assertEquals(referenceGraph.findOutgoingEdges(N1), Arrays.asList(E12, E13));
+        assertEquals(referenceGraph.findOutgoingEdges(N2), Arrays.asList(E24));
+        assertEquals(referenceGraph.findOutgoingEdges(N3), Arrays.asList(E34));
+        assertEquals(referenceGraph.findOutgoingEdges(N4), Arrays.asList());
+        assertEquals(referenceGraph.findOutgoingEdges(N5), Arrays.asList(E54));
+    }
+
+    /**
+     * Test of getNext method, of class InputGraph.
+     */
+    @Test
+    public void testGetNextPrev() {
+        final Group group = new Group(null);
+
+        final InputGraph a = new InputGraph("a");
+
+        final InputGraph b = new InputGraph("b");
+
+        final InputGraph c = new InputGraph("c");
+        group.addElement(a);
+        group.addElement(b);
+        group.addElement(c);
+
+        assertEquals(null, a.getPrev());
+        assertEquals(b, a.getNext());
+
+        assertEquals(a, b.getPrev());
+        assertEquals(c, b.getNext());
+
+        assertEquals(b, c.getPrev());
+        assertEquals(null, c.getNext());
     }
 }

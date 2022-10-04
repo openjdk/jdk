@@ -237,7 +237,6 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         boolean changed = false;
         for (InputBlock b : getNodes()) {
             BlockWidget w = (BlockWidget) findWidget(b);
-            assert w.getBounds() != null;
             Rectangle r = new Rectangle(w.getBounds());
             r.setLocation(w.getLocation());
             if (r.intersects(rectangle)) {

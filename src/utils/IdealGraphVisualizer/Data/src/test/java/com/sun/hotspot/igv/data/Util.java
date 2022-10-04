@@ -25,8 +25,7 @@
 
 package com.sun.hotspot.igv.data;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -54,7 +53,7 @@ public class Util {
 
     public static void assertGroupEquals(Group a, Group b) {
 
-        if (a.getGraphs().size() != b.getGraphs().size()) {
+        if (a.getElements().size() != b.getElements().size()) {
             fail();
         }
 

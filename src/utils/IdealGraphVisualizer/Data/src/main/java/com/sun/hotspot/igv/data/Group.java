@@ -107,6 +107,36 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         return getProperties().get("name");
     }
 
+    public String getType() {
+        return getProperties().get("type");
+
+    }
+
+    InputGraph getPrev(InputGraph graph) {
+        InputGraph lastGraph = null;
+        for (FolderElement e : getElements()) {
+            if (e == graph) {
+                return lastGraph;
+            }
+            if (e instanceof InputGraph) {
+                lastGraph = (InputGraph) e;
+            }
+        }
+        return null;
+    }
+
+    InputGraph getNext(InputGraph graph) {
+        boolean found = false;
+        for (FolderElement e : getElements()) {
+            if (e == graph) {
+                found = true;
+            } else if (found && e instanceof InputGraph) {
+                return (InputGraph) e;
+            }
+        }
+        return null;
+    }
+
     @Override
     public Folder getParent() {
          return parent;
