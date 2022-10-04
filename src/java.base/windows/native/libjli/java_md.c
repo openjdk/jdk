@@ -245,7 +245,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("CRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == NULL) {
-                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath, " - ");
+                    reportWithLastWindowsError(DLL_ERROR4, crtpath);
                     return JNI_FALSE;
                 }
             }
@@ -262,7 +262,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("CRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == NULL) {
-                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath, " - ");
+                    reportWithLastWindowsError(DLL_ERROR4, crtpath);
                     return JNI_FALSE;
                 }
             }
@@ -279,7 +279,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("PRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == NULL) {
-                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath, " - ");
+                    reportWithLastWindowsError(DLL_ERROR4, crtpath);
                     return JNI_FALSE;
                 }
             }
@@ -386,7 +386,7 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     /* Load the Java Virtual Machine */
     if ((handle = LoadLibrary(jvmpath)) == NULL) {
-        JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", (char *)jvmpath, " - ");
+        reportWithLastWindowsError(DLL_ERROR4, (char *) jvmpath);
         return JNI_FALSE;
     }
 
@@ -680,6 +680,76 @@ JLI_ReportExceptionDescription(JNIEnv * env) {
     } else {
         (*env)->ExceptionDescribe(env);
     }
+}
+
+void reportWithLastWindowsError(const char *format, ...) {
+    va_list vl;
+
+    DWORD errval;
+    jboolean localFree = JNI_FALSE;
+    char *error = NULL;
+
+    va_start(vl, format);
+
+    if ((errval = GetLastError()) != 0) {               /* Platform SDK / DOS Error */
+        int n = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+            NULL, errval, 0, (LPTSTR) &error, 0, NULL);
+        if (error == NULL || n == 0) {                  /* Paranoia check */
+            char* buffer = "Java detected but could not determine the underlying Windows error";
+            error = (char*) JLI_MemAlloc(JLI_StrLen(buffer) + 1);
+            JLI_StrCpy(error, buffer);
+            n = 0;
+        } else {
+            localFree = JNI_TRUE;
+            if (n > 3) {                                /* Drop final CR, LF */
+                if (error[n - 1] == '\n') n--;
+                if (error[n - 1] == '\r') n--;
+                if (error[n - 1] == '.') n--;           /* Drop '.' to match HotSpot */
+                error[n] = '\0';
+            }
+        }
+    }
+
+    if (IsJavaw()) {
+        char *message;
+        int mlen;
+        /* Get the length of the string we need */
+        int len = mlen =  _vscprintf(format, vl) + 1;
+        if (error != NULL) {
+            mlen += 2 + (int) JLI_StrLen(error);
+        }
+
+        message = (char *) JLI_MemAlloc(mlen);
+        _vsnprintf(message, len, format, vl);
+
+        if (error != NULL) {
+            message[len] = ':';
+            message[len + 1] = ' ';
+            JLI_StrCat(message, error);
+        } else {
+            message[len] = '\0';
+        }
+
+        MessageBox(NULL, message, "Java Virtual Machine Launcher",
+            (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
+
+        JLI_MemFree(message);
+    } else {
+        vfprintf(stderr, format, vl);
+        if (error != NULL) {
+            fprintf(stderr, ": %s", error);
+        }
+        fprintf(stderr, "\n");
+    }
+    if (error != NULL) {
+        if (localFree) {
+            (void) LocalFree((HLOCAL) error);
+        } else {
+            free(error);
+        }
+    }
+    va_end(vl);
 }
 
 /*
