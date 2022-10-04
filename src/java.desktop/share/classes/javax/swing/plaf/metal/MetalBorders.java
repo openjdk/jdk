@@ -36,6 +36,8 @@ import java.awt.Insets;
 import java.awt.Stroke;
 import java.awt.Window;
 import java.awt.geom.AffineTransform;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
@@ -253,7 +255,7 @@ public class MetalBorders {
          * @param d number to be rounded
          * @return a {@code int} which is the rounded value of provided number
          */
-        private static int roundDown(double d)
+        private static int roundHalfDown(double d)
         {
             double decP = (Math.ceil(d) - d);
             return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
@@ -288,7 +290,7 @@ public class MetalBorders {
 
             if (resetTransform) {
                 g2d.setTransform(new AffineTransform());
-                stkWidth = roundDown(Math.min(at.getScaleX(), at.getScaleY()));
+                stkWidth = roundHalfDown(Math.min(at.getScaleX(), at.getScaleY()));
                 g2d.setStroke(new BasicStroke((float) stkWidth));
             }
 
@@ -298,10 +300,10 @@ public class MetalBorders {
             int height = 0;
 
             if (resetTransform) {
-                width = roundDown(at.getScaleX() * w);
-                height = roundDown(at.getScaleY() * h);
-                xtranslation = roundDown(at.getScaleX() * x + at.getTranslateX());
-                ytranslation = roundDown(at.getScaleY() * y + at.getTranslateY());
+                width = roundHalfDown(at.getScaleX() * w);
+                height = roundHalfDown(at.getScaleY() * h);
+                xtranslation = roundHalfDown(at.getScaleX() * x + at.getTranslateX());
+                ytranslation = roundHalfDown(at.getScaleY() * y + at.getTranslateY());
             } else {
                 width = w;
                 height = h;

@@ -21,22 +21,25 @@
  * questions.
  */
 
+import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.GridBagLayout;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.image.MultiResolutionImage;
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import java.awt.AWTException;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.GridBagLayout;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 
 /*
  * @test
@@ -85,7 +88,7 @@ public class InternalFrameBorderTest {
     private static Point iFrameLoc;
     private static int iFrameMaxX;
     private static int iFrameMaxY;
-    private static float uiScale;
+    private static String uiScale;
 
     public static void main(String[] args) throws AWTException,
             InterruptedException, InvocationTargetException {
@@ -99,7 +102,7 @@ public class InternalFrameBorderTest {
         try {
             robot = new Robot();
             robot.setAutoDelay(200);
-            uiScale = Float.parseFloat(System.getProperty("sun.java2d.uiScale"));
+            uiScale =System.getProperty("sun.java2d.uiScale");
 
             SwingUtilities.invokeAndWait(InternalFrameBorderTest::createAndShowGUI);
             robot.waitForIdle();
@@ -179,7 +182,7 @@ public class InternalFrameBorderTest {
             if (Color.RED.equals(robot.getPixelColor(
             isVertical ? i : (iFrameLoc.x + MIDPOINT),
             isHorizontal ? i : (iFrameLoc.y + MIDPOINT)))) {
-                saveScreenCapture(borderDirection + "_" + uiScale + ".png", uiScale);
+                saveMRImage(borderDirection + "_uiScale" + uiScale + ".png");
                 errorLog.append("At uiScale: "+ uiScale +
                 ", Red background color detected at "
                 + borderDirection + " border\n");
@@ -213,7 +216,7 @@ public class InternalFrameBorderTest {
         }
         robot.mouseMove(x, y);
         if (Color.RED.equals(robot.getPixelColor(x, y))) {
-            saveScreenCapture(cornerLocation + "_" + uiScale + ".png", uiScale);
+            saveMRImage(cornerLocation + "_uiScale" + uiScale + ".png");
             errorLog.append("At uiScale: "+ uiScale + ", Red background color" +
                     " detected at " + cornerLocation +  " corner\n");
         }
@@ -241,18 +244,20 @@ public class InternalFrameBorderTest {
     }
 
 
-    private static void saveScreenCapture(String filename, float scale) {
-        BufferedImage image = robot.createScreenCapture(jFrameBounds);
-        BufferedImage scaledImage = new BufferedImage((int) (scale * image.getWidth(null)),
-            (int) (scale * image.getHeight(null)), BufferedImage.TYPE_INT_ARGB);
+    private static void saveMRImage(String filename) {
+        Image nativeResImage;
+        MultiResolutionImage mrImage = robot.createMultiResolutionScreenCapture(jFrameBounds);
+        List<Image> resolutionVariants = mrImage.getResolutionVariants();
 
-        Graphics2D g2d = (Graphics2D) scaledImage.getGraphics();
-        g2d.scale(scale, scale);
-        g2d.drawImage(image, 0, 0, null);
-        g2d.dispose();
+        if (resolutionVariants.size() > 1) {
+            nativeResImage = resolutionVariants.get(1);
+        } else {
+            nativeResImage = resolutionVariants.get(0);
+        }
 
         try {
-            ImageIO.write(scaledImage, "png", new File(filename));
+            ImageIO.write((RenderedImage) nativeResImage,
+                    "png", new File(filename));
         } catch (Exception e) {
             e.printStackTrace();
         }
