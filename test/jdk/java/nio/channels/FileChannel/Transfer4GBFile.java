@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,23 @@
 /* @test
  * @bug 4638365
  * @summary Test FileChannel.transferFrom and transferTo for 4GB files
+ * @build FileChannelUtils
  * @run testng/timeout=300 Transfer4GBFile
  */
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.FileAlreadyExistsException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import org.testng.annotations.Test;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class Transfer4GBFile {
 
@@ -51,72 +50,50 @@ public class Transfer4GBFile {
     // Test transferTo with large file
     @Test
     public void xferTest04() throws Exception { // for bug 4638365
-        File source = File.createTempFile("blah", null);
-        source.deleteOnExit();
+        Path source = FileChannelUtils.createSparseTempFile("blah", null);
+        source.toFile().deleteOnExit();
         long testSize = ((long)Integer.MAX_VALUE) * 2;
-        initTestFile(source, 10);
-        RandomAccessFile raf = new RandomAccessFile(source, "rw");
-        FileChannel fc = raf.getChannel();
+
         out.println("  Writing large file...");
         long t0 = System.nanoTime();
-        fc.write(ByteBuffer.wrap("Use the source!".getBytes()), testSize - 40);
-        long t1 = System.nanoTime();
-        out.printf("  Wrote large file in %d ns (%d ms) %n",
-            t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
-
-        fc.close();
-        raf.close();
-
-        File sink = File.createTempFile("sink", null);
-        sink.deleteOnExit();
-
-        FileInputStream fis = new FileInputStream(source);
-        FileChannel sourceChannel = fis.getChannel();
-
-        raf = new RandomAccessFile(sink, "rw");
-        FileChannel sinkChannel = raf.getChannel();
-
-        long bytesWritten = sourceChannel.transferTo(testSize -40, 10,
-                                                     sinkChannel);
-        if (bytesWritten != 10) {
-            throw new RuntimeException("Transfer test 4 failed " +
-                                       bytesWritten);
+        try (FileChannel fc = FileChannel.open(source, READ, WRITE)) {
+            fc.write(ByteBuffer.wrap("Use the source!".getBytes()), testSize - 40);
+            long t1 = System.nanoTime();
+            out.printf("  Wrote large file in %d ns (%d ms) %n",
+                    t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
         }
-        sourceChannel.close();
-        sinkChannel.close();
 
-        source.delete();
-        sink.delete();
+        Path sink = Files.createTempFile("sink", null);
+        sink.toFile().deleteOnExit();
+
+        try (FileChannel sourceChannel = FileChannel.open(source, READ);
+             FileChannel sinkChannel = FileChannel.open(sink, WRITE)) {
+
+            long bytesWritten = sourceChannel.transferTo(testSize - 40, 10,
+                    sinkChannel);
+            if (bytesWritten != 10) {
+                throw new RuntimeException("Transfer test 4 failed " +
+                        bytesWritten);
+            }
+        }
+
+        Files.delete(source);
+        Files.delete(sink);
     }
 
     // Test transferFrom with large file
     @Test
     public void xferTest05() throws Exception { // for bug 4638365
         // Create a source file & large sink file for the test
-        File source = File.createTempFile("blech", null);
-        source.deleteOnExit();
+        Path source = Files.createTempFile("blech", null);
+        source.toFile().deleteOnExit();
         initTestFile(source, 100);
 
         // Create the sink file as a sparse file if possible
-        File sink = null;
-        FileChannel fc = null;
-        while (fc == null) {
-            sink = File.createTempFile("sink", null);
-            // re-create as a sparse file
-            sink.delete();
-            try {
-                fc = FileChannel.open(sink.toPath(),
-                                      StandardOpenOption.CREATE_NEW,
-                                      StandardOpenOption.WRITE,
-                                      StandardOpenOption.SPARSE);
-            } catch (FileAlreadyExistsException ignore) {
-                // someone else got it
-            }
-        }
-        sink.deleteOnExit();
-
+        Path sink = FileChannelUtils.createSparseTempFile("sink", null);
+        sink.toFile().deleteOnExit();
         long testSize = ((long)Integer.MAX_VALUE) * 2;
-        try {
+        try (FileChannel fc = FileChannel.open(sink, WRITE)){
             out.println("  Writing large file...");
             long t0 = System.nanoTime();
             fc.write(ByteBuffer.wrap("Use the source!".getBytes()),
@@ -128,46 +105,33 @@ public class Transfer4GBFile {
             // Can't set up the test, abort it
             err.println("xferTest05 was aborted.");
             return;
-        } finally {
-            fc.close();
         }
 
         // Get new channels for the source and sink and attempt transfer
-        FileChannel sourceChannel = new FileInputStream(source).getChannel();
-        try {
-            FileChannel sinkChannel = new RandomAccessFile(sink, "rw").getChannel();
-            try {
-                long bytesWritten = sinkChannel.transferFrom(sourceChannel,
-                                                             testSize - 40, 10);
-                if (bytesWritten != 10) {
-                    throw new RuntimeException("Transfer test 5 failed " +
-                                               bytesWritten);
-                }
-            } finally {
-                sinkChannel.close();
+        try (FileChannel sourceChannel = FileChannel.open(source, READ);
+             FileChannel sinkChannel = FileChannel.open(sink, WRITE)) {
+            long bytesWritten = sinkChannel.transferFrom(sourceChannel,
+                    testSize - 40, 10);
+            if (bytesWritten != 10) {
+                throw new RuntimeException("Transfer test 5 failed " +
+                        bytesWritten);
             }
-        } finally {
-            sourceChannel.close();
         }
 
-        source.delete();
-        sink.delete();
+        Files.delete(source);
+        Files.delete(sink);
     }
 
     /**
      * Creates file blah of specified size in bytes.
      */
-    private static void initTestFile(File blah, long size) throws Exception {
-        if (blah.exists())
-            blah.delete();
-        FileOutputStream fos = new FileOutputStream(blah);
-        BufferedWriter awriter
-            = new BufferedWriter(new OutputStreamWriter(fos, "8859_1"));
+    private static void initTestFile(Path blah, long size) throws Exception {
+        try (BufferedWriter awriter = Files.newBufferedWriter(blah,
+                StandardCharsets.ISO_8859_1)) {
 
-        for(int i=0; i<size; i++) {
-            awriter.write("e");
+            for (int i = 0; i < size; i++) {
+                awriter.write("e");
+            }
         }
-        awriter.flush();
-        awriter.close();
     }
 }
