@@ -26,6 +26,7 @@
 package sun.security.util.math;
 
 import sun.security.util.math.intpoly.IntegerPolynomialP256;
+import sun.security.util.math.intpoly.P256OrderField;
 
 import java.math.BigInteger;
 
@@ -214,6 +215,8 @@ public interface IntegerModuloP {
         static MultiplicativeInverser of(BigInteger m) {
             if (m.equals(IntegerPolynomialP256.MODULUS)) {
                 return Secp256R1.instance;
+            } else if (m.equals(P256OrderField.MODULUS)) {
+                return Secp256R1Field.instance;
             } else {
                 return new Default(m);
             }
@@ -252,26 +255,85 @@ public interface IntegerModuloP {
 
         final class Secp256R1 implements MultiplicativeInverser {
             private static final Secp256R1 instance = new Secp256R1();
+
             @Override
             public ImmutableIntegerModuloP inverse(IntegerModuloP imp) {
-                // imp ^ (2^31 01)
+         	// Invert imp with a modular exponentiation: the modulus is
+                //     p = FFFFFFFF 00000001 00000000 00000000
+                //         00000000 FFFFFFFF FFFFFFFF FFFFFFFF
+                // and the exponent is (p -2).
+                //  p -2 = FFFFFFFF 00000001 00000000 00000000
+                //         00000000 FFFFFFFF FFFFFFFF FFFFFFFD
+                //
+                // There are 4 contiguous 31-bit set, and thus imp^(2^31 - 1)
+                // is pre-computed to speed up the computation.
+
+                // calculate imp ^ (2^31 - 1)
                 MutableIntegerModuloP t = imp.mutable();
                 for (int i = 30; i != 0; i--) {
                     t.setSquare();
                     t.setProduct(imp);
                 }
 
-                // 1 / z
+                // calculate (1 / imp)
                 MutableIntegerModuloP d = t.mutable();
                 for (int i = 31; i < 256; i++) {
                     d.setSquare();
                     switch (i) {
+                        // For contiguous 31-bit set.
                         case 190, 221, 252 -> {
                             d.setProduct(t);
                         }
+                        // For individual 1-bit set.
                         case 31, 63, 253, 255 -> {
                             d.setProduct(imp);
                         }
+                    }
+                }
+
+                return d.fixed();
+            }
+        }
+
+        final class Secp256R1Field implements MultiplicativeInverser {
+            private static final Secp256R1Field instance = new Secp256R1Field();
+            private static final BigInteger b =
+                    P256OrderField.MODULUS.subtract(BigInteger.TWO);
+            @Override
+            public ImmutableIntegerModuloP inverse(IntegerModuloP imp) {
+                // Invert imp with a modular exponentiation: the modulus is
+                //     n = FFFFFFFF 00000000 FFFFFFFF FFFFFFFF
+                //         BCE6FAAD A7179E84 F3B9CAC2 FC632551
+                // and the exponent is (n -2).
+                //  n - 2 = FFFFFFFF 00000000 FFFFFFFF FFFFFFFF
+                //          BCE6FAAD A7179E84 F3B9CAC2 FC63254F
+                //
+                // There are 3 contiguous 32-bit set, and thus imp^(2^32 - 1)
+                // is pre-computed to speed up the computation.
+
+                // calculate imp ^ (2^32 - 1)
+                MutableIntegerModuloP t = imp.mutable();
+                for (int i = 31; i != 0; i--) {
+                    t.setSquare();
+                    t.setProduct(imp);
+                }
+
+                // calculate (1 / imp)
+                //
+                // calculate for bit 32-128, for contiguous 32-bit set.
+                MutableIntegerModuloP d = t.mutable();
+                for (int i = 32; i < 128; i++) {
+                    d.setSquare();
+                    if (i == 95 || i == 127) {
+                            d.setProduct(t);
+                    }
+                }
+
+                // Calculate for bit 128-255, for individual 1-bit set.
+                for (int i = 127; i >= 0; i--) {
+                    d.setSquare();
+                    if (b.testBit(i)) {
+                        d.setProduct(imp);
                     }
                 }
 
