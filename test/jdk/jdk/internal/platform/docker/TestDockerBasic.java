@@ -25,6 +25,7 @@
  * @test
  * @bug 8293540
  * @summary Verify that -XshowSettings:system works
+ * @key cgroups
  * @requires docker.support
  * @library /test/lib
  * @run main/timeout=360 TestDockerBasic
