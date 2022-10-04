@@ -25,8 +25,17 @@
 
 package javax.swing.plaf.metal;
 
-import sun.swing.StringUIClientPropertyKey;
-import sun.swing.SwingUtilities2;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Stroke;
+import java.awt.Window;
+import java.awt.geom.AffineTransform;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
@@ -52,18 +61,9 @@ import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Insets;
-import java.awt.Stroke;
-import java.awt.Window;
-import java.awt.geom.AffineTransform;
 
+import sun.swing.StringUIClientPropertyKey;
+import sun.swing.SwingUtilities2;
 
 /**
  * Factory object that can vend Borders appropriate for the metal L &amp; F.
@@ -239,12 +239,13 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameBorder extends AbstractBorder implements UIResource {
-        private static final int corner = 14;
+        private static final int CORNER = 14;
 
         /**
          * Constructs a {@code InternalFrameBorder}.
          */
         public InternalFrameBorder() {}
+
         /**
          * Round the double to nearest integer, make sure we round
          * to lower integer value for 0.5
@@ -310,20 +311,20 @@ public class MetalBorders {
             g2d.translate(xtranslation, ytranslation);
 
             // border and corner scaling
-            int scaledCorner = (int) Math.round(corner * at.getScaleX());
+            int corner = (int) Math.round(CORNER * at.getScaleX());
             // loop constraint for bulk of the border
             int loopCount = (int) Math.round(5 * at.getScaleX());
 
             // midpoint at which highlight & shadow lines
             // are positioned on the border
-            int midPoint = loopCount/2;
+            int midPoint = loopCount / 2;
 
             g.setColor(background);
             // Draw outermost lines
-            g.drawLine( 0, 0, width-1, 0);
-            g.drawLine( 0, 1, 0, height-1);
-            g.drawLine( width-1, 1, width-1, height-1);
-            g.drawLine( 1, height-1, width-1, height-1);
+            g.drawLine(0, 0, width - 1, 0);
+            g.drawLine(0, 1, 0, height - 1);
+            g.drawLine(width - 1, 1, width - 1, height - 1);
+            g.drawLine(1, height - 1, width - 1, height - 1);
 
             // Draw the bulk of the border
             for (int i = 1; i <= loopCount; i++) {
@@ -333,23 +334,23 @@ public class MetalBorders {
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
                 // Draw the Long highlight lines
                 g.setColor(highlight);
-                g.drawLine(scaledCorner + 1, midPoint+stkWidth,
-                        width- scaledCorner, midPoint+stkWidth); //top
-                g.drawLine(midPoint+stkWidth, scaledCorner + 1,
-                        midPoint+stkWidth, height- scaledCorner); //left
-                g.drawLine(width-midPoint, scaledCorner + 1,
-                        width-midPoint, height- scaledCorner); //right
-                g.drawLine(scaledCorner + 1, height-midPoint,
-                        width- scaledCorner, height-midPoint); //bottom
+                g.drawLine(corner + 1, midPoint + stkWidth,
+                        width - corner, midPoint + stkWidth); //top
+                g.drawLine(midPoint + stkWidth, corner + 1,
+                        midPoint + stkWidth, height - corner); //left
+                g.drawLine(width - midPoint, corner + 1,
+                        width - midPoint, height - corner); //right
+                g.drawLine(corner + 1, height - midPoint,
+                        width - corner, height - midPoint); //bottom
 
                 // Draw the Long shadow lines
                 g.setColor(shadow);
-                g.drawLine(scaledCorner, midPoint, width- scaledCorner -1, midPoint);
-                g.drawLine(midPoint, scaledCorner, midPoint, height- scaledCorner -1);
-                g.drawLine(width-(midPoint+stkWidth), scaledCorner,
-                        width-(midPoint+stkWidth), height- scaledCorner -1);
-                g.drawLine(scaledCorner, height-(midPoint+stkWidth),
-                        width- scaledCorner -1, height-(midPoint+stkWidth));
+                g.drawLine(corner, midPoint, width - corner - 1, midPoint);
+                g.drawLine(midPoint, corner, midPoint, height - corner - 1);
+                g.drawLine(width - (midPoint + stkWidth), corner,
+                        width - (midPoint + stkWidth), height - corner - 1);
+                g.drawLine(corner, height - (midPoint + stkWidth),
+                        width - corner - 1, height - (midPoint + stkWidth));
             }
 
             // Undo the resetTransform setting from before

@@ -21,21 +21,22 @@
  * questions.
  */
 
-import java.awt.AWTException;
-import java.awt.Color;
-import java.awt.GridBagLayout;
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.GridBagLayout;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 
 /*
  * @test
@@ -71,9 +72,11 @@ import javax.swing.UIManager;
 public class InternalFrameBorderTest {
     private static final int FRAME_SIZE = 300;
     private static final int INTFRAME_SIZE = 200;
-    private static final int MIDPOINT = INTFRAME_SIZE/2;
+    private static final int MIDPOINT = INTFRAME_SIZE / 2;
     private static final int BORDER_THICKNESS = 5;
+
     private static StringBuffer errorLog = new StringBuffer();
+    private static Rectangle jFrameBounds;
 
     private static JFrame jFrame;
     private static JInternalFrame iFrame;
@@ -82,7 +85,7 @@ public class InternalFrameBorderTest {
     private static Point iFrameLoc;
     private static int iFrameMaxX;
     private static int iFrameMaxY;
-    private static String uiScale;
+    private static float uiScale;
 
     public static void main(String[] args) throws AWTException,
             InterruptedException, InvocationTargetException {
@@ -96,7 +99,7 @@ public class InternalFrameBorderTest {
         try {
             robot = new Robot();
             robot.setAutoDelay(200);
-            uiScale = System.getProperty("sun.java2d.uiScale");
+            uiScale = Float.parseFloat(System.getProperty("sun.java2d.uiScale"));
 
             SwingUtilities.invokeAndWait(InternalFrameBorderTest::createAndShowGUI);
             robot.waitForIdle();
@@ -106,23 +109,21 @@ public class InternalFrameBorderTest {
                 iFrameLoc = iFrame.getLocationOnScreen();
                 iFrameMaxX = iFrameLoc.x + INTFRAME_SIZE;
                 iFrameMaxY = iFrameLoc.y + INTFRAME_SIZE;
+                jFrameBounds = jFrame.getBounds();
             });
 
             // Check Borders
-            SwingUtilities.invokeAndWait(() -> {
-                checkBorderMidPoints("TOP");
-                checkBorderMidPoints("RIGHT");
-                checkBorderMidPoints("BOTTOM");
-                checkBorderMidPoints("LEFT");
-            });
+            checkBorderMidPoints("TOP");
+            checkBorderMidPoints("RIGHT");
+            checkBorderMidPoints("BOTTOM");
+            checkBorderMidPoints("LEFT");
 
             // Check Corners
-            SwingUtilities.invokeAndWait(() -> {
-                checkCorners("TOP_LEFT");
-                checkCorners("TOP_RIGHT");
-                checkCorners("BOTTOM_RIGHT");
-                checkCorners("BOTTOM_LEFT");
-            });
+            checkCorners("TOP_LEFT");
+            checkCorners("TOP_RIGHT");
+            checkCorners("BOTTOM_RIGHT");
+            checkCorners("BOTTOM_LEFT");
+
             if (!errorLog.isEmpty()) {
                 throw new RuntimeException("Following error(s) occurred: \n"
                         + errorLog);
@@ -136,7 +137,9 @@ public class InternalFrameBorderTest {
     }
 
     private static void checkBorderMidPoints(String borderDirection) {
-        int x = 0, y = 0, start = 0, stop = 0;
+        int x, y;
+        int start, stop;
+
         switch (borderDirection) {
             case "TOP" -> {
                 x = iFrameLoc.x + MIDPOINT;
@@ -174,19 +177,19 @@ public class InternalFrameBorderTest {
         robot.mouseMove(x, y);
         for (int i = start; i < stop; i++) {
             if (Color.RED.equals(robot.getPixelColor(
-                    isVertical ? i : (iFrameLoc.x + MIDPOINT),
-                    isHorizontal ? i : (iFrameLoc.y + MIDPOINT)))) {
-                        saveScreenCapture(borderDirection + "_" + uiScale + ".png");
-                        errorLog.append("uiScale: "+ uiScale +
-                                " Red background color" + " detected at "
-                                + borderDirection + " border\n");
+            isVertical ? i : (iFrameLoc.x + MIDPOINT),
+            isHorizontal ? i : (iFrameLoc.y + MIDPOINT)))) {
+                saveScreenCapture(borderDirection + "_" + uiScale + ".png", uiScale);
+                errorLog.append("At uiScale: "+ uiScale +
+                ", Red background color detected at "
+                + borderDirection + " border\n");
             }
         }
         robot.delay(300);
     }
 
     private static void checkCorners(String cornerLocation) {
-        int x, y = 0;
+        int x, y;
 
         switch (cornerLocation) {
             case "TOP_LEFT" -> {
@@ -210,8 +213,8 @@ public class InternalFrameBorderTest {
         }
         robot.mouseMove(x, y);
         if (Color.RED.equals(robot.getPixelColor(x, y))) {
-            saveScreenCapture(cornerLocation + "_" + uiScale + ".png");
-            errorLog.append("uiScale: "+ uiScale + " Red background color" +
+            saveScreenCapture(cornerLocation + "_" + uiScale + ".png", uiScale);
+            errorLog.append("At uiScale: "+ uiScale + ", Red background color" +
                     " detected at " + cornerLocation +  " corner\n");
         }
         robot.delay(300);
@@ -222,8 +225,8 @@ public class InternalFrameBorderTest {
         jFrame.setSize(FRAME_SIZE, FRAME_SIZE);
         jFrame.setLayout(null);
         jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        JLabel scale = new JLabel("UI Scale: "+ uiScale);
 
+        JLabel scale = new JLabel("UI Scale: "+ uiScale);
         iFrame = new JInternalFrame("iframe", true);
         iFrame.setLayout(new GridBagLayout());
         iFrame.setBackground(Color.RED);
@@ -236,12 +239,21 @@ public class InternalFrameBorderTest {
         jFrame.setLocation(150, 150);
         jFrame.setVisible(true);
     }
-    // for debugging purpose, saves screen capture when test fails.
-    private static void saveScreenCapture(String filename) {
-        BufferedImage image = robot.createScreenCapture(jFrame.getBounds());
+
+
+    private static void saveScreenCapture(String filename, float scale) {
+        BufferedImage image = robot.createScreenCapture(jFrameBounds);
+        BufferedImage scaledImage = new BufferedImage((int) (scale * image.getWidth(null)),
+            (int) (scale * image.getHeight(null)), BufferedImage.TYPE_INT_ARGB);
+
+        Graphics2D g2d = (Graphics2D) scaledImage.getGraphics();
+        g2d.scale(scale, scale);
+        g2d.drawImage(image, 0, 0, null);
+        g2d.dispose();
+
         try {
-            ImageIO.write(image,"png", new File(filename));
-        } catch (IOException e) {
+            ImageIO.write(scaledImage, "png", new File(filename));
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
