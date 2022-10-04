@@ -54,7 +54,9 @@ import org.openide.util.actions.Presenter;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 import org.openide.util.lookup.ProxyLookup;
+import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 
 
 /**
@@ -283,10 +285,32 @@ public final class EditorTopComponent extends TopComponent {
         scene.setZoomPercentage(percentage);
     }
 
+    public static boolean isOpen(EditorTopComponent editor) {
+        return WindowManager.getDefault().isOpenedEditorTopComponent(editor);
+    }
+
     public static EditorTopComponent getActive() {
         TopComponent topComponent = getRegistry().getActivated();
         if (topComponent instanceof EditorTopComponent) {
             return (EditorTopComponent) topComponent;
+        }
+        return null;
+    }
+
+    public static EditorTopComponent findEditorForGraph(InputGraph graph) {
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            List<TopComponent> l = new ArrayList<>();
+            l.add(m.getSelectedTopComponent());
+            l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
+            for (TopComponent t : l) {
+                if (t instanceof EditorTopComponent) {
+                    EditorTopComponent etc = (EditorTopComponent) t;
+                    if (etc.getModel().getGroup().getGraphs().contains(graph)) {
+                        return etc;
+                    }
+                }
+            }
         }
         return null;
     }
