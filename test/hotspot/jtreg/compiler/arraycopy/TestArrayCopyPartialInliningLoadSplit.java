@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-package com.sun.hotspot.igv.data.services;
 
-import com.sun.hotspot.igv.data.InputGraph;
-
-/**
+/*
+ * @test
+ * @bug JDK-8292780
+ * @summary misc tests failed "assert(false) failed: graph should be schedulable"
  *
- * @author Thomas Wuerthinger
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayCopyPartialInliningLoadSplit
  */
-public interface GraphViewer {
 
-    void view(InputGraph graph, boolean clone);
+public class TestArrayCopyPartialInliningLoadSplit {
+    public static void main(String[] args) {
+        byte[] array = new byte[16];
+        for (int i = 0; i < 20_0000; i++) {
+            test(array, 16, 0, 0);
+        }
+    }
 
-    void viewDifference(InputGraph firstGraph, InputGraph secondGraph);
+    private static void test(byte[] array, int length, int srcPos, int dstPos) {
+        byte[] nonEscaping = new byte[16];
+        nonEscaping[0] = 0x42;
+        System.arraycopy(array, srcPos, nonEscaping, 1, 8);
+        System.arraycopy(nonEscaping, 0, array, 0, length);
+    }
 }
