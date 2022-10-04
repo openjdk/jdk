@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
@@ -33,10 +34,15 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
  * @see CompilePhaseIRRule
  * @see CompilePhaseIRRuleMatchResult
  */
-public class NoCompilePhaseCompilationResult extends CompilePhaseIRRuleMatchResult {
+public class NoCompilePhaseCompilationResult implements MatchResult {
+    private final CompilePhase compilePhase;
 
     public NoCompilePhaseCompilationResult(CompilePhase compilePhase) {
-        super(compilePhase);
+        this.compilePhase = compilePhase;
+    }
+
+    public CompilePhase compilePhase() {
+        return compilePhase;
     }
 
     @Override

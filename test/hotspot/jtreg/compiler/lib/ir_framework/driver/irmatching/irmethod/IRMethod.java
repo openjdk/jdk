@@ -53,12 +53,6 @@ public class IRMethod implements Matchable {
     private final Map<CompilePhase, String> compilationOutputMap;
     private final MatchableMatcher matcher;
 
-    protected IRMethod(Method method) {
-        this.method = method;
-        this.matcher = null; // TODO: Not nice
-        this.compilationOutputMap = null;
-    }
-
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Map<CompilePhase, String> compilationOutputMap) {
         this.method = method;
         this.compilationOutputMap = compilationOutputMap;

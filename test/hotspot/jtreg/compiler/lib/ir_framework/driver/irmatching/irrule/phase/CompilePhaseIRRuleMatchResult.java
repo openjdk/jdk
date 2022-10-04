@@ -36,7 +36,6 @@ import java.util.List;
  */
 public class CompilePhaseIRRuleMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
-
     private final List<MatchResult> checkAttributeFailures;
 
     public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase, List<MatchResult> checkAttributeFailures) {
@@ -49,7 +48,7 @@ public class CompilePhaseIRRuleMatchResult implements MatchResult {
         return !checkAttributeFailures.isEmpty();
     }
 
-    public CompilePhase getCompilePhase() {
+    public CompilePhase compilePhase() {
         return compilePhase;
     }
 

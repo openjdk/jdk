@@ -1,9 +1,10 @@
 package compiler.lib.ir_framework.driver.irmatching.report;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.MethodNotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
@@ -11,6 +12,8 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConst
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+
+import java.lang.reflect.Method;
 
 /**
  * This class creates the complete failure message of each IR matching failure by visiting each match result element.
@@ -48,22 +51,22 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultV
 
     @Override
     public void visit(IRMethodMatchResult irMethodMatchResult) {
-        appendIRMethodHeader(irMethodMatchResult);
+        appendIRMethodHeader(irMethodMatchResult.getIRMethod().getMethod(), irMethodMatchResult.getFailedIRRuleCount());
         irMethodMatchResult.acceptChildren(this);
     }
 
-    private void appendIRMethodHeader(IRMethodMatchResult irMethodMatchResult) {
+    private void appendIRMethodHeader(Method method, int failedIRRules) {
         appendIRMethodPrefix();
         int reportedMethodCountDigitCount = digitCount(getMethodNumber());
         irRuleIndentation = reportedMethodCountDigitCount + 2;
-        msg.append("Method \"").append(irMethodMatchResult.getIRMethod().getMethod())
-           .append("\" - [Failed IR rules: ").append(irMethodMatchResult.getFailedIRRuleCount()).append("]:")
+        msg.append("Method \"").append(method)
+           .append("\" - [Failed IR rules: ").append(failedIRRules).append("]:")
            .append(System.lineSeparator());
     }
 
     @Override
-    public void visit(NotCompiledResult notCompiledResult) {
-        appendIRMethodHeader(notCompiledResult);
+    public void visit(MethodNotCompiledResult methodNotCompiledResult) {
+        appendIRMethodHeader(methodNotCompiledResult.getMethod(), methodNotCompiledResult.getFailedIRRuleCount());
         msg.append(getIndentation(irRuleIndentation))
            .append("* Method was not compiled. Did you specify a @Run method in STANDALONE mode? In this case, make " +
                    "sure to always trigger a C2 compilation by invoking the test enough times.")
@@ -80,19 +83,19 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultV
 
     @Override
     public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
-        appendCompilePhaseIRRule(compilePhaseIRRuleMatchResult);
+        appendCompilePhaseIRRule(compilePhaseIRRuleMatchResult.compilePhase());
         compilePhaseIRRuleMatchResult.acceptChildren(this);
     }
 
-    private void appendCompilePhaseIRRule(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+    private void appendCompilePhaseIRRule(CompilePhase compilePhase) {
         msg.append(getIndentation(irRuleIndentation + 2))
-           .append("> Phase \"").append(compilePhaseIRRuleMatchResult.getCompilePhase().getName()).append("\":")
+           .append("> Phase \"").append(compilePhase.getName()).append("\":")
            .append(System.lineSeparator());
     }
 
     @Override
     public void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
-        appendCompilePhaseIRRule(noCompilePhaseCompilationResult);
+        appendCompilePhaseIRRule(noCompilePhaseCompilationResult.compilePhase());
         msg.append(getIndentation(irRuleIndentation + 4))
            .append("- NO compilation output found for this phase! Make sure this phase is emitted or remove it from ")
            .append("the list of compile phases in the @IR rule to match on.")
@@ -136,4 +139,3 @@ public class FailureMessageBuilder extends ReportBuilder implements MatchResultV
         return msg.toString();
     }
 }
-

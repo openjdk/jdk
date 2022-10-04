@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.MethodNotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
@@ -47,9 +47,9 @@ class FailCountVisitor implements MatchResultVisitor {
     }
 
     @Override
-    public void visit(NotCompiledResult notCompiledResult) {
+    public void visit(MethodNotCompiledResult methodNotCompiledResult) {
         irMethodCount++;
-        irRuleCount += notCompiledResult.getFailedIRRuleCount();
+        irRuleCount += methodNotCompiledResult.getFailedIRRuleCount();
     }
 
     public int getIrRuleCount() {

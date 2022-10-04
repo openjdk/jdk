@@ -23,9 +23,10 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.ArrayList;
+import java.lang.reflect.Method;
 
 /**
  * This class represents a special IR matching result of an {@link IRMethod} where the compilation output of a the
@@ -34,11 +35,12 @@ import java.util.ArrayList;
  * @see IRMethod
  * @see IRMethodMatchResult
  */
-public class NotCompiledResult extends IRMethodMatchResult {
+public class MethodNotCompiledResult implements MatchResult {
     private final int failedIRRules;
+    private final Method method;
 
-    NotCompiledResult(IRMethod irMethod, int failedIRRules) {
-        super(irMethod, new ArrayList<>());
+    MethodNotCompiledResult(Method method, int failedIRRules) {
+        this.method = method;
         this.failedIRRules = failedIRRules;
     }
 
@@ -47,7 +49,10 @@ public class NotCompiledResult extends IRMethodMatchResult {
         return true;
     }
 
-    @Override
+    public Method getMethod() {
+        return method;
+    }
+
     public int getFailedIRRuleCount() {
         return failedIRRules;
     }

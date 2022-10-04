@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @see IRMethod
  */
-public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
+public class IRMethodMatchResult implements MatchResult {
     protected final IRMethod irMethod;
     /**
      * List of all IR rule match results which could have been applied on different compile phases.
@@ -56,14 +56,6 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
     @Override
     public boolean fail() {
         return !irRulesMatchResults.isEmpty();
-    }
-
-    /**
-     * Comparator method to sort the failed IR methods alphabetically.
-     */
-    @Override
-    public int compareTo(IRMethodMatchResult other) {
-        return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());
     }
 
     @Override

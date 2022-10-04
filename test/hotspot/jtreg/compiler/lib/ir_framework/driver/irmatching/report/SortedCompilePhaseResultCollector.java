@@ -24,35 +24,33 @@
 package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.Comparator;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Sort {@link CompilePhaseIRRuleMatchResult} of an IR rule by the {@link CompilePhase} enum definition order.
  */
 class SortedCompilePhaseResultCollector implements MatchResultVisitor {
-    private final SortedSet<CompilePhaseIRRuleMatchResult> compilePhaseIRRuleMatchResults
-            = new TreeSet<>(Comparator.comparingInt(r -> r.getCompilePhase().ordinal()));
+    private final SortedMap<CompilePhase, MatchResult> matchResultMap = new TreeMap<>();
 
     @Override
     public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
-        compilePhaseIRRuleMatchResults.add(compilePhaseIRRuleMatchResult);
+        matchResultMap.put(compilePhaseIRRuleMatchResult.compilePhase(), compilePhaseIRRuleMatchResult);
     }
 
     @Override
     public void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
-        compilePhaseIRRuleMatchResults.add(noCompilePhaseCompilationResult);
+        matchResultMap.put(noCompilePhaseCompilationResult.compilePhase(), noCompilePhaseCompilationResult);
     }
 
 
-    public SortedSet<CompilePhaseIRRuleMatchResult> collect(IRRuleMatchResult irRuleMatchResult) {
+    public Collection<MatchResult> collect(IRRuleMatchResult irRuleMatchResult) {
         irRuleMatchResult.acceptChildren(this);
-        return compilePhaseIRRuleMatchResults;
+        return matchResultMap.values();
     }
 }

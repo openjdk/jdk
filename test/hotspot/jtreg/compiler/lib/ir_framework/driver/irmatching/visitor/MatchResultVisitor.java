@@ -26,7 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.visitor;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.MethodNotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
@@ -46,7 +46,7 @@ public interface MatchResultVisitor {
         irMethodMatchResult.acceptChildren(this);
     }
 
-    default void visit(NotCompiledResult notCompiledResult) {}
+    default void visit(MethodNotCompiledResult methodNotCompiledResult) {}
 
     default void visit(IRRuleMatchResult irRuleMatchResult) {
         irRuleMatchResult.acceptChildren(this);

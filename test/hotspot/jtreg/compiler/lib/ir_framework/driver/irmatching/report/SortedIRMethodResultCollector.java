@@ -23,33 +23,32 @@
 
 package compiler.lib.ir_framework.driver.irmatching.report;
 
-import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.MethodNotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Sort {@link IRMethodMatchResult} of an IR alphabetically by the method name.
  */
 class SortedIRMethodResultCollector implements MatchResultVisitor {
-    private final SortedSet<IRMethodMatchResult> irMethodMatchResults = new TreeSet<>();
+    private final SortedMap<String, MatchResult> matchResultMap = new TreeMap<>();
 
     @Override
     public void visit(IRMethodMatchResult irMethodMatchResult) {
-        irMethodMatchResults.add(irMethodMatchResult);
+        matchResultMap.put(irMethodMatchResult.getIRMethod().getMethod().getName(), irMethodMatchResult);
     }
 
     @Override
-    public void visit(NotCompiledResult notCompiledResult) {
-        irMethodMatchResults.add(notCompiledResult);
+    public void visit(MethodNotCompiledResult methodNotCompiledResult) {
+        matchResultMap.put(methodNotCompiledResult.getMethod().getName(), methodNotCompiledResult);
     }
 
 
-    public SortedSet<IRMethodMatchResult> collect(TestClassMatchResult testClassMatchResult) {
-        testClassMatchResult.acceptChildren(this);
-        return irMethodMatchResults;
+    public Collection<MatchResult> collect(MatchResult matchResult) {
+        matchResult.acceptChildren(this);
+        return matchResultMap.values();
     }
 }

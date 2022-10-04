@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.driver.TestVMProcess;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.MethodNotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
@@ -377,8 +377,8 @@ class FailureBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visit(NotCompiledResult notCompiledResult) {
-        methodName = notCompiledResult.getIRMethod().getMethod().getName();
+    public void visit(MethodNotCompiledResult methodNotCompiledResult) {
+        methodName = methodNotCompiledResult.getMethod().getName();
         failures.add(new Failure(methodName, -1, CompilePhase.DEFAULT, CheckAttributeType.FAIL_ON, -1));
     }
 
@@ -390,13 +390,13 @@ class FailureBuilder implements MatchResultVisitor {
 
     @Override
     public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
-        compilePhase = compilePhaseIRRuleMatchResult.getCompilePhase();
+        compilePhase = compilePhaseIRRuleMatchResult.compilePhase();
         compilePhaseIRRuleMatchResult.acceptChildren(this);
     }
 
     @Override
     public void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
-        CompilePhase compilePhase = noCompilePhaseCompilationResult.getCompilePhase();
+        CompilePhase compilePhase = noCompilePhaseCompilationResult.compilePhase();
         failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.FAIL_ON, -1));
     }
 
