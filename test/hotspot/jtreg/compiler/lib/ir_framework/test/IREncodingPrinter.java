@@ -95,75 +95,40 @@ public class IREncodingPrinter {
         }
     }
 
+    private void printDisableReason(String method, String reason) {
+        TestFrameworkSocket.write("Disabling IR matching for " + method + ": " + reason + ".",
+                                  "[IREncodingPrinter]", true);
+    }
+
     private boolean shouldApplyIrRule(IR irAnno, String m) {
         checkIRAnnotations(irAnno);
         if (isDefaultRegexUnsupported(irAnno)) {
             return false;
+        } else if (irAnno.applyIf().length != 0 && !hasAllRequiredFlags(irAnno.applyIf(), "applyIf")) {
+            printDisableReason(m, "Flag constraint not met");
+            return false;
+        } else if (irAnno.applyIfNot().length != 0 && !hasNoRequiredFlags(irAnno.applyIfNot(), "applyIfNot")) {
+            printDisableReason(m, "Flag constraint not met");
+            return false;
+        } else if (irAnno.applyIfAnd().length != 0 && !hasAllRequiredFlags(irAnno.applyIfAnd(), "applyIfAnd")) {
+            printDisableReason(m, "All flag constraints not met");
+            return false;
+        } else if (irAnno.applyIfOr().length != 0 && hasNoRequiredFlags(irAnno.applyIfOr(), "applyIfOr")) {
+            printDisableReason(m, "None of the flag constraints met");
+            return false;
+        } else if (irAnno.applyIfCPUFeature().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature())) {
+            printDisableReason(m, "Feature constraint not met");
+            return false;
+        } else if (irAnno.applyIfCPUFeatureAnd().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeatureAnd())) {
+            printDisableReason(m, "All feature constraints not met");
+            return false;
+        } else if (irAnno.applyIfCPUFeatureOr().length != 0 && !hasAnyRequiredCPUFeature(irAnno.applyIfCPUFeatureOr())) {
+            printDisableReason(m, "None of the feature constraints met");
+            return false;
+        } else {
+            // All preconditions satisfied: apply rule.
+            return true;
         }
-        if (irAnno.applyIf().length != 0) {
-            boolean check = hasAllRequiredFlags(irAnno.applyIf(), "applyIf");
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": Flag constraint not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfNot().length != 0) {
-            boolean check = hasNoRequiredFlags(irAnno.applyIfNot(), "applyIfNot");
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": Flag constraint not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfAnd().length != 0) {
-            boolean check = hasAllRequiredFlags(irAnno.applyIfAnd(), "applyIfAnd");
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": All flag constraints not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfOr().length != 0) {
-            boolean check = hasNoRequiredFlags(irAnno.applyIfOr(), "applyIfOr");
-            if (check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": None of the flag constraint met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return !check;
-        }
-
-        if (irAnno.applyIfCPUFeature().length != 0) {
-            boolean check = hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature());
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": Feature constraint not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfCPUFeatureAnd().length != 0) {
-            boolean check = hasAllRequiredCPUFeature(irAnno.applyIfCPUFeatureAnd());
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": All feature constraints not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfCPUFeatureOr().length != 0) {
-            boolean check = hasAnyRequiredCPUFeature(irAnno.applyIfCPUFeatureOr());
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": None of the feature constraint met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-        // No conditions, always apply.
-        return true;
     }
 
     private void checkIRAnnotations(IR irAnno) {

@@ -220,7 +220,9 @@ class IdealKit: public StackObj {
              const Type* t,
              BasicType bt,
              int adr_idx,
-             bool require_atomic_access = false, MemNode::MemOrd mo = MemNode::unordered);
+             bool require_atomic_access = false,
+             MemNode::MemOrd mo = MemNode::unordered,
+             LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
 
   // Return the new StoreXNode
   Node* store(Node* ctl,
