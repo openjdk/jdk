@@ -97,7 +97,7 @@ static NativeMethodBarrier* get_nmethod_barrier(nmethod* nm) {
 }
 
 void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
-  // TODO: Implement
+  // TODO: Implement?
   ShouldNotReachHere();
 }
 
