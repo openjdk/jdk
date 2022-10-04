@@ -603,7 +603,6 @@ class VerifyStrings : StackObj {
 
 // This verification is part of Universe::verify() and needs to be quick.
 void StringTable::verify() {
-  Thread* thr = Thread::current();
   VerifyStrings vs;
   _local_table->do_safepoint_scan(vs);
 }
