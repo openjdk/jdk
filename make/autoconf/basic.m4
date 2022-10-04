@@ -453,7 +453,7 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
     # in the source tree when configure runs
     file_to_test="$TOPDIR/Makefile"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
-      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])
+      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with non cygwin tools in a directory not created in cygwin.])
     fi
   fi
 ])
