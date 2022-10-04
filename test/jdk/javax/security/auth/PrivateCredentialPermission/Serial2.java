@@ -39,7 +39,12 @@ public class Serial2 implements java.io.Serializable {
      * Base64 encoding of Serialized PrivateCredentialPermission object
      * before bug fix for JDK-8291974.
      */
-    static String before = "rO0ABXNyAC9qYXZheC5zZWN1cml0eS5hdXRoLlByaXZhdGVDcmVkZW50aWFsUGVybWlzc2lvbklV3Hd7UH9MAgADWgAHdGVzdGluZ0wAD2NyZWRlbnRpYWxDbGFzc3QAEkxqYXZhL2xhbmcvU3RyaW5nO0wACnByaW5jaXBhbHN0AA9MamF2YS91dGlsL1NldDt4cgAYamF2YS5zZWN1cml0eS5QZXJtaXNzaW9uscbhPyhXUX4CAAFMAARuYW1lcQB+AAF4cHQAGWNyZWQxIHBjMSAicG4xIiBwYzIgInBuMiIAdAAFY3JlZDFw";
+    static String before = "rO0ABXNyAC9qYXZheC5zZWN1cml0eS5hdXRoLlByaXZhdGVDcmV"
+            + "kZW50aWFsUGVybWlzc2lvbklV3Hd7UH9MAgADWgAHdGVzdGluZ0wAD2NyZWRlbnR"
+            + "pYWxDbGFzc3QAEkxqYXZhL2xhbmcvU3RyaW5nO0wACnByaW5jaXBhbHN0AA9MamF"
+            + "2YS91dGlsL1NldDt4cgAYamF2YS5zZWN1cml0eS5QZXJtaXNzaW9uscbhPyhXUX4"
+            + "CAAFMAARuYW1lcQB+AAF4cHQAGWNyZWQxIHBjMSAicG4xIiBwYzIgInBuMiIAdAA"
+            + "FY3JlZDFw";
 
     public static void main(String[] args) {
 
