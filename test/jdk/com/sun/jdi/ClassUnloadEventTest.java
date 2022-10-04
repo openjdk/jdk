@@ -118,7 +118,7 @@ public class ClassUnloadEventTest {
         ClassUnloadCommon.triggerUnloading();
 
         // Do a short delay to make sure all ClassUnloadEvents have been sent
-        // before VMDeathEvent is genareated.
+        // before VMDeathEvent is generated.
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
