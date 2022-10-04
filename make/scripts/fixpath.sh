@@ -359,11 +359,11 @@ function convert_file() {
   infile="$1"
   outfile="$2"
   if [[ -e $outfile ]] ; then
-	rm $outfile
+    rm $outfile
   fi
   while read line; do
-	convert_path "$line"
-	echo "$result" >> $outfile
+    convert_path "$line"
+    echo "$result" >> $outfile
   done < $infile
 }
 

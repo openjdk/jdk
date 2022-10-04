@@ -470,6 +470,9 @@ define SetupJavaCompilationBody
 		$$(eval $1_MODFILES := $$?)
 		$$(eval $$(call ListPathsSafely, $1_MODFILES, $$($1_MODFILELIST)))
 
+    # Convert the paths in the MODFILELIST file to Windows-style paths
+    # on Windows. This is needed because javac operates on Windows-style paths
+    # when running on Windows. On other platforms this just copies the MODFILELIST file.
     $$($1_MODFILELIST_FIXED): $$($1_MODFILELIST)
 		$$(call FixPathFile, $$($1_MODFILELIST), $$($1_MODFILELIST_FIXED))
 

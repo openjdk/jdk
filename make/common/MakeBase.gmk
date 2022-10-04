@@ -443,6 +443,13 @@ endif
 # list.
 # This is normally not needed since we use the FIXPATH prefix for command lines,
 # but might be needed in certain circumstances.
+#
+# FixPathFile is the file version of FixPath. It instead takes a file with paths in $1
+# and outputs the 'fixed' paths into the file in $2. If the file in $2 already exists
+# it is overwritten.
+# On non-Windows platforms this instead does a copy, so that $2 can still be used
+# as a depenendency of a make rule, instead of having to conditionally depend on
+# $1 instead, based on the target platform.
 ifeq ($(call isTargetOs, windows), true)
   FixPath = \
     $(strip $(subst \,\\, $(shell $(FIXPATH_BASE) print $(patsubst $(FIXPATH), , $1))))
