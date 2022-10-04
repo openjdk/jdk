@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "utilities/unsigned5.hpp"
+#include "utilities/moveBits.hpp"
 
 // Simple interface for filing out and filing in basic types
 // Used for writing out and reading in debugging information.
@@ -43,11 +44,11 @@ class CompressedStream : public ResourceObj {
     _position = position;
   }
 
-  u_char* buffer() const { return _buffer; }
+  u_char* buffer() const               { return _buffer; }
 
   // Positioning
-  virtual int position()                  { return _position; }
-  virtual void set_position(int position) { _position = position; }
+  int position() const                 { return _position; }
+  void set_position(int position)      { _position = position; }
 };
 
 
@@ -59,8 +60,8 @@ class CompressedReadStream : public CompressedStream {
   CompressedReadStream(u_char* buffer, int position = 0)
   : CompressedStream(buffer, position) {}
 
-  virtual jboolean read_bool()         { return (jboolean) read();      }
-  virtual jbyte    read_byte()         { return (jbyte   ) read();      }
+  jboolean read_bool()                 { return (jboolean) read();      }
+  jbyte    read_byte()                 { return (jbyte   ) read();      }
   jchar    read_char()                 { return (jchar   ) read_int();  }
   jshort   read_short()                { return (jshort  ) read_signed_int(); }
   jint     read_signed_int();
@@ -68,7 +69,7 @@ class CompressedReadStream : public CompressedStream {
   jdouble  read_double();              // jdouble_cast(2*reverse_bits(read_int))
   jlong    read_long();                // jlong_from(2*read_signed_int())
 
-  virtual jint     read_int() {
+  jint     read_int() {
     return UNSIGNED5::read_uint(_buffer, _position, 0);
   }
 };
@@ -82,21 +83,22 @@ class CompressedWriteStream : public CompressedStream {
   void store(u_char b) {
     _buffer[_position++] = b;
   }
-  void grow();
-
- protected:
-  int _size;
-
   void write(u_char b) {
     if (full()) grow();
     store(b);
   }
+  void grow();
+
+ protected:
+  int _size;
 
  public:
   CompressedWriteStream(int initial_size);
   CompressedWriteStream(u_char* buffer, int initial_size, int position = 0)
   : CompressedStream(buffer, position) { _size = initial_size; }
 
+  void write_bool(jboolean value)      { write(value);      }
+  void write_byte(jbyte value)         { write(value);      }
   void write_char(jchar value)         { write_int(value); }
   void write_short(jshort value)       { write_signed_int(value);  }
   void write_signed_int(jint value)    { write_int(UNSIGNED5::encode_sign(value)); }
@@ -104,51 +106,96 @@ class CompressedWriteStream : public CompressedStream {
   void write_double(jdouble value);    // write_int(reverse_bits(<low,high>))
   void write_long(jlong value);        // write_signed_int(<low,high>)
 
-  virtual void write_bool(jboolean value) { write(value); }
-  virtual void write_byte(jbyte value)    { write(value); }
-  virtual void write_int(juint value) {
+  void write_int(juint value) {
     UNSIGNED5::write_uint_grow(value, _buffer, _position, _size,
                                [&](int){ grow(); });
   }
 };
 
-// Modified compression algorithm for a data set in which a significant part of the data is null
-class CompressedSparseDataReadStream : public CompressedReadStream {
+class CompressedBitStream : public ResourceObj {
+protected:
+  u_char* _buffer;
+  int     _position; // current byte offset
+  size_t  byte_pos_ {0}; // current bit offset
+
 public:
-  CompressedSparseDataReadStream(u_char* buffer, int position = 0)
-  : CompressedReadStream(buffer, position) {}
+  CompressedBitStream(u_char* buffer = NULL, int position = 0) {
+    _buffer   = buffer;
+    _position = position;
+  }
 
-  jboolean read_bool() override { return read_int(); }
-  jbyte    read_byte() override { return read_int(); }
-  jint     read_int()  override;
+  u_char* buffer() const { return _buffer; }
+};
 
-  void set_position(int pos) override {
+// Modified compression algorithm for a data set in which a significant part of the data is null
+class CompressedSparseDataReadStream : public CompressedBitStream {
+public:
+  CompressedSparseDataReadStream(u_char* buffer, int position) : CompressedBitStream(buffer, position) {}
+
+  void set_position(int pos) {
     byte_pos_ = 0;
     _position = pos;
   }
-private:
-  size_t byte_pos_ {0};
 
+  jboolean read_bool()       { return read_int(); }
+  jbyte    read_byte()       { return read_int(); }
+  jint     read_signed_int() { return UNSIGNED5::decode_sign(read_int()); }
+  jint     read_int();
+  jdouble  read_double() {
+    jint h = reverse_bits(read_int());
+    jint l = reverse_bits(read_int());
+    return jdouble_cast(jlong_from(h, l));
+  }
+  jlong    read_long() {
+    jint low  = read_signed_int();
+    jint high = read_signed_int();
+    return jlong_from(high, low);
+  }
+
+protected:
   bool read_zero();
   uint8_t read_byte_impl();
+  inline u_char read()       { return _buffer[_position++]; }
 };
 
-class CompressedSparseDataWriteStream : public CompressedWriteStream {
+class CompressedSparseDataWriteStream : public CompressedBitStream {
 public:
-  CompressedSparseDataWriteStream(int initial_size) : CompressedWriteStream(initial_size) {}
+  CompressedSparseDataWriteStream(int initial_size) : CompressedBitStream() {
+    _buffer   = NEW_RESOURCE_ARRAY(u_char, initial_size);
+    _size     = initial_size;
+  }
 
-  void write_bool(jboolean value) override { write_int(value ? 1 : 0); }
-  void write_byte(jbyte value)    override { write_int(value); }
-  void write_int(juint value) override;
+  void write_bool(jboolean value)   { write_int(value ? 1 : 0); }
+  void write_byte(jbyte value)      { write_int(value); }
+  void write_signed_int(jint value) { write_int(UNSIGNED5::encode_sign(value)); }
+  void write_int(juint value);
+  void write_double(jdouble value)  {
+    juint rh = reverse_bits(high(jlong_cast(value)));
+    juint rl = reverse_bits(low( jlong_cast(value)));
+    write_int(rh);
+    write_int(rl);
+  }
+  void write_long(jlong value)      {
+    write_signed_int(low(value));
+    write_signed_int(high(value));
+  }
 
-  int position() override;
-  void set_position(int pos) override {
+  int position(); // method have a side effect: the current byte becomes aligned
+  void set_position(int pos) {
     position();
     _position = pos;
   }
-private:
+protected:
+  int    _size;
   u_char curr_byte_ {0};
-  size_t byte_pos_ {0};
+
+  void grow();
+  void write(u_char b) {
+    if (_position >= _size) {
+      grow();
+    }
+    _buffer[_position++] = b;
+  }
 
   void write_zero();  // The zero word is encoded with a single zero bit
   void write_byte_impl(uint8_t b);
