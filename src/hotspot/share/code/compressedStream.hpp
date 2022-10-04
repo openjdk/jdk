@@ -116,7 +116,7 @@ class CompressedBitStream : public ResourceObj {
 protected:
   u_char* _buffer;
   int     _position; // current byte offset
-  size_t  byte_pos_ {0}; // current bit offset
+  size_t  _byte_pos {0}; // current bit offset
 
 public:
   CompressedBitStream(u_char* buffer = NULL, int position = 0) {
@@ -133,7 +133,7 @@ public:
   CompressedSparseDataReadStream(u_char* buffer, int position) : CompressedBitStream(buffer, position) {}
 
   void set_position(int pos) {
-    byte_pos_ = 0;
+    _byte_pos = 0;
     _position = pos;
   }
 
@@ -187,7 +187,7 @@ public:
   }
 protected:
   int    _size;
-  u_char curr_byte_ {0};
+  u_char _curr_byte {0};
 
   void grow();
   void write(u_char b) {

@@ -115,19 +115,19 @@ void CompressedWriteStream::write_long(jlong value) {
 
 
 bool CompressedSparseDataReadStream::read_zero() {
-  if (_buffer[_position] & (1 << (7 - byte_pos_))) {
+  if (_buffer[_position] & (1 << (7 - _byte_pos))) {
     return 0; // not a zero data
   }
-  if (++byte_pos_ == 8) {
+  if (++_byte_pos == 8) {
     _position++;
-    byte_pos_ = 0;
+    _byte_pos = 0;
   }
   return 1;
 }
 
 uint8_t CompressedSparseDataReadStream::read_byte_impl() {
-  uint8_t b1 = _buffer[_position] << byte_pos_;
-  uint8_t b2 = _buffer[++_position] >> (8 - byte_pos_);
+  uint8_t b1 = _buffer[_position] << _byte_pos;
+  uint8_t b2 = _buffer[++_position] >> (8 - _byte_pos);
   return b1 | b2;
 }
 
@@ -150,28 +150,28 @@ jint CompressedSparseDataReadStream::read_int() {
 }
 
 int CompressedSparseDataWriteStream::position() {
-  if (byte_pos_ == 0) {
+  if (_byte_pos == 0) {
     return _position;
   }
   // flush current data and start a new byte
-  write(curr_byte_ << (8 - byte_pos_));
-  curr_byte_ = 0;
-  byte_pos_ = 0;
+  write(_curr_byte << (8 - _byte_pos));
+  _curr_byte = 0;
+  _byte_pos = 0;
   return _position;
 }
 
 void CompressedSparseDataWriteStream::write_zero() {
-  curr_byte_ <<= 1; // zero bit represents a zero word
-  if (++byte_pos_ == 8) {
-    write(curr_byte_);
-    curr_byte_ = 0;
-    byte_pos_ = 0;
+  _curr_byte <<= 1; // zero bit represents a zero word
+  if (++_byte_pos == 8) {
+    write(_curr_byte);
+    _curr_byte = 0;
+    _byte_pos = 0;
   }
 }
 
 void CompressedSparseDataWriteStream::write_byte_impl(uint8_t b) {
-  write((curr_byte_ << (8 - byte_pos_)) | (b >> byte_pos_));
-  curr_byte_ = (0xff >> (8 - byte_pos_)) & b;
+  write((_curr_byte << (8 - _byte_pos)) | (b >> _byte_pos));
+  _curr_byte = (0xff >> (8 - _byte_pos)) & b;
 }
 
 void CompressedSparseDataWriteStream::write_int(juint val) {
