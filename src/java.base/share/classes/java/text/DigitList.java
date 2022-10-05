@@ -196,6 +196,7 @@ final class DigitList implements Cloneable {
 
     /**
      * Utility routine to get the value of the digit list.
+     * If (count == 0) this does not throw a NumberFormatException, unlike BigDecimal("").
      */
     public final BigDecimal getBigDecimal() {
         if (count == 0) {
