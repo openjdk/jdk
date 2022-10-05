@@ -5608,8 +5608,25 @@ instruct vsubD_mem(vec dst, vec src, memory mem) %{
 // --------------------------------- MUL --------------------------------------
 
 // Byte vector mul
+instruct vmul8B(vec dst, vec src1, vec src2, vec xtmp) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 8);
+  match(Set dst (MulVB src1 src2));
+  effect(TEMP dst, TEMP xtmp);
+  format %{ "mulVB   $dst, $src1, $src2\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    assert(UseSSE > 3, "required");
+    __ pmovsxbw($dst$$XMMRegister, $src1$$XMMRegister);
+    __ pmovsxbw($xtmp$$XMMRegister, $src2$$XMMRegister);
+    __ pmullw($dst$$XMMRegister, $xtmp$$XMMRegister);
+    __ psllw($dst$$XMMRegister, 8);
+    __ psrlw($dst$$XMMRegister, 8);
+    __ packuswb($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vmulB(vec dst, vec src1, vec src2, vec xtmp) %{
-  predicate(UseAVX == 0);
+  predicate(UseAVX == 0 && Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (MulVB src1 src2));
   effect(TEMP dst, TEMP xtmp);
   format %{ "mulVB   $dst, $src1, $src2\t! using $xtmp as TEMP" %}
@@ -5634,7 +5651,7 @@ instruct vmulB(vec dst, vec src1, vec src2, vec xtmp) %{
 %}
 
 instruct vmulB_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
-  predicate(UseAVX > 0);
+  predicate(UseAVX > 0 && Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (MulVB src1 src2));
   effect(TEMP xtmp1, TEMP xtmp2);
   format %{ "vmulVB  $dst, $src1, $src2\t! using $xtmp1, $xtmp2 as TEMP" %}
@@ -5726,7 +5743,9 @@ instruct vmulI_mem(vec dst, vec src, memory mem) %{
 
 // Longs vector mul
 instruct evmulL_reg(vec dst, vec src1, vec src2) %{
-  predicate(VM_Version::supports_avx512dq());
+  predicate(VM_Version::supports_avx512dq() &&
+            (Matcher::vector_length_in_bytes(n) == 64 ||
+             VM_Version::supports_avx512vl()));
   match(Set dst (MulVL src1 src2));
   format %{ "evpmullq $dst,$src1,$src2\t! mul packedL" %}
   ins_encode %{
@@ -5739,7 +5758,9 @@ instruct evmulL_reg(vec dst, vec src1, vec src2) %{
 
 instruct evmulL_mem(vec dst, vec src, memory mem) %{
   predicate(VM_Version::supports_avx512dq() &&
-              (Matcher::vector_length_in_bytes(n->in(1)) > 8));
+            (Matcher::vector_length_in_bytes(n) == 64 ||
+             (Matcher::vector_length_in_bytes(n) > 8 &&
+              VM_Version::supports_avx512vl())));
   match(Set dst (MulVL src (LoadVector mem)));
   format %{ "evpmullq $dst,$src,$mem\t! mul packedL" %}
   ins_encode %{

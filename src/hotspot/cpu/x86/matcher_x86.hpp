@@ -188,6 +188,10 @@
     switch(vopc) {
       default:
         return 0;
+      case Op_MulVB:
+        return 7;
+      case Op_MulVL:
+        return VM_Version::supports_avx512vldq() ? 0 : 6;
       case Op_CountTrailingZerosV:
       case Op_CountLeadingZerosV:
         return VM_Version::supports_avx512cd() && (ety == T_INT || ety == T_LONG) ? 0 : 40;
