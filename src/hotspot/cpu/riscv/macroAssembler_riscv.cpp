@@ -2801,6 +2801,8 @@ address MacroAssembler::trampoline_call(Address entry) {
          entry.rspec().type() == relocInfo::static_call_type ||
          entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
+  address target = entry.target();
+
   // We need a trampoline if branches are far.
   if (far_branches()) {
     bool in_scratch_emit_size = false;
@@ -2813,12 +2815,18 @@ address MacroAssembler::trampoline_call(Address entry) {
        Compile::current()->output()->in_scratch_emit_size());
 #endif
     if (!in_scratch_emit_size) {
-      address stub = emit_trampoline_stub(offset(), entry.target());
-      if (stub == NULL) {
-        postcond(pc() == badAddress);
-        return NULL; // CodeCache is full
+      if (entry.rspec().type() == relocInfo::runtime_call_type) {
+        assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
+        code()->share_trampoline_for(entry.target(), offset());
+      } else {
+        address stub = emit_trampoline_stub(offset(), target);
+        if (stub == NULL) {
+          postcond(pc() == badAddress);
+          return NULL; // CodeCache is full
+        }
       }
     }
+    target = pc();
   }
 
   address call_pc = pc();
@@ -2828,11 +2836,7 @@ address MacroAssembler::trampoline_call(Address entry) {
   }
 #endif
   relocate(entry.rspec());
-  if (!far_branches()) {
-    jal(entry.target());
-  } else {
-    jal(pc());
-  }
+  jal(target);
 
   postcond(pc() != badAddress);
   return call_pc;

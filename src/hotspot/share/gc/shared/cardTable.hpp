@@ -44,7 +44,6 @@ protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.
   const MemRegion _whole_heap;       // the region covered by the card table
-  size_t          _last_valid_index; // index of the last valid element
   const size_t    _page_size;        // page size used when mapping _byte_map
   size_t          _byte_map_size;    // in bytes
   CardValue*      _byte_map;         // the card marking array
@@ -95,8 +94,7 @@ protected:
     clean_card                  = (CardValue)-1,
 
     dirty_card                  =  0,
-    last_card                   =  1,
-    CT_MR_BS_last_reserved      =  2
+    CT_MR_BS_last_reserved      =  1
   };
 
   // a word's worth (row) of clean card values
@@ -107,6 +105,9 @@ protected:
   static uint _card_size;
   static uint _card_size_in_words;
 
+  size_t last_valid_index() const {
+    return cards_required(_whole_heap.word_size()) - 1;
+  }
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable();
@@ -127,7 +128,7 @@ public:
 
   // Initialization utilities; covered_words is the size of the covered region
   // in, um, words.
-  inline size_t cards_required(size_t covered_words) {
+  inline size_t cards_required(size_t covered_words) const {
     assert(is_aligned(covered_words, _card_size_in_words), "precondition");
     return covered_words / _card_size_in_words;
   }

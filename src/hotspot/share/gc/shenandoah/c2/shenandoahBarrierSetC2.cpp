@@ -1080,7 +1080,8 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
   } else if (can_reshape &&
              n->Opcode() == Op_If &&
              ShenandoahBarrierC2Support::is_heap_stable_test(n) &&
-             n->in(0) != NULL) {
+             n->in(0) != NULL &&
+             n->outcnt() == 2) {
     Node* dom = n->in(0);
     Node* prev_dom = n;
     int op = n->Opcode();

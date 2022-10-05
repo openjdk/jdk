@@ -1934,11 +1934,12 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
     GrowableArray<int>*     _bcis;
 
     GetStackTraceClosure(Handle java_thread) :
-        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false) {
-      // Pick some initial length
-      int init_length = MaxJavaStackTraceDepth / 2;
-      _methods = new GrowableArray<Method*>(init_length);
-      _bcis = new GrowableArray<int>(init_length);
+        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
+        _methods(nullptr), _bcis(nullptr) {
+    }
+    ~GetStackTraceClosure() {
+      delete _methods;
+      delete _bcis;
     }
 
     bool read_reset_retry() {
@@ -1974,6 +1975,11 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
+
+      // Pick minimum length that will cover most cases
+      int init_length = 64;
+      _methods = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<Method*>(init_length, mtInternal);
+      _bcis = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
       for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops
