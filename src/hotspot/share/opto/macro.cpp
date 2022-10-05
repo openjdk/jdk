@@ -1226,8 +1226,7 @@ bool PhaseMacroExpand::eliminate_ram_addp_use(ReducedAllocationMergeNode *ram, A
         assert(removed > 0, "should be at least 1.");
         k -= removed;
       }
-    }
-    else {
+    } else {
       assert(false, "Unexpected use of AddP.");
       return false;
     }
@@ -1249,8 +1248,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       if (eliminate_ram_addp_use(ram, use->as_AddP()) == false) {
         return false;
       }
-    }
-    else if (use->Opcode() == Op_SafePoint || use->is_CallStaticJava()) {
+    } else if (use->Opcode() == Op_SafePoint || use->is_CallStaticJava()) {
       Node* sfpt = use;
       assert(sfpt->jvms() != NULL, "missed JVMS");
 
@@ -1324,15 +1322,13 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       assert(replaced > 0, "should be at least 1.");
       --i;
       imax -= replaced;
-    }
-    else if (use->is_DecodeN()) {
+    } else if (use->is_DecodeN()) {
       for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
         if (eliminate_ram_addp_use(ram, use->fast_out(j)->as_AddP()) == false) {
           return false;
         }
       }
-    }
-    else {
+    } else {
       assert(false, "Unknown use of RAM. %d:%s", use->_idx, use->Name());
       return false;
     }

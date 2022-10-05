@@ -1018,7 +1018,7 @@ public:
 // allocations and match certain criteria (see escape.cpp::can_reduce_this_phi)
 // are replaced by a ReducedAllocationMergeNode (aka RAM). The users of the
 // merged allocation are registered_in the RAM node. During macro node expansion
-// / scalar replacement, if an allocation is used by a RAM node, the nodes
+// scalar replacement, if an allocation is used by a RAM node, the nodes
 // producing value for fields registered in the RAM are also registered in the
 // RAM node (in association with corresponding allocation base).
 //

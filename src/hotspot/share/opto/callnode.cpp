@@ -1717,13 +1717,11 @@ void ReducedAllocationMergeNode::initialize_memory_edges(Compile* C, PhaseIterGV
   register_offset_of_all_fields(NULL);
 
   // Search for a memory edge matching base+field alias_index
-  for (uint i = 1, matches = 0; i <= _number_of_bases; i++) {
+  for (uint i = 1; i <= _number_of_bases; i++) {
     Node* base = this->in(i);
     const TypeOopPtr *base_t = igvn->type(base)->isa_oopptr();
 
     if (base_t != NULL) {
-      int base_offset = base_idx(base, 0);
-
       for (int j = 0; j < nfields; j++) {
         ciField* field          = iklass->nonstatic_field_at(j);
         int offset              = field->offset();
@@ -1734,7 +1732,15 @@ void ReducedAllocationMergeNode::initialize_memory_edges(Compile* C, PhaseIterGV
         for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
           Node* memory = region->fast_out(i);
           if (memory->is_Phi() && C->get_alias_index(memory->adr_type()) == alias_idx) {
-            set_req(fields_offset + base_offset, memory);
+            int base_matches = 0;
+            int base_offset = base_idx(base, base_matches);
+
+            // We need to check if the same base is used multiple times in the Phi
+            do {
+              set_req(fields_offset + base_offset, memory);
+              base_matches++;
+              base_offset = base_idx(base, base_matches);
+            } while (base_offset != -1);
           }
         }
       }
@@ -1776,8 +1782,7 @@ void ReducedAllocationMergeNode::register_offset(int offset, Node* memory) {
                     memory->in(b_idx) :
                     memory);
     }
-  }
-  else {
+  } else {
     int fidx = field_idx(offset);
 
     for (uint b_idx = 1; b_idx <= _number_of_bases; ++b_idx) {
@@ -1803,18 +1808,15 @@ void ReducedAllocationMergeNode::register_addp(AddPNode* addp) {
 bool ReducedAllocationMergeNode::register_use(Node* n) {
   if (n->is_AddP()) {
     register_addp(n->as_AddP());
-  }
-  else if (n->Opcode() == Op_SafePoint || (n->is_CallStaticJava() && n->as_CallStaticJava()->is_uncommon_trap())) {
+  } else if (n->Opcode() == Op_SafePoint || (n->is_CallStaticJava() && n->as_CallStaticJava()->is_uncommon_trap())) {
     Node* memory = n->in(TypeFunc::Memory);
     register_offset_of_all_fields(memory);
-  }
-  else if (n->is_DecodeN()) {
+  } else if (n->is_DecodeN()) {
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* addp = n->fast_out(i);
       register_addp(addp->as_AddP());
     }
-  }
-  else {
+  } else {
     assert(false, "Trying to register unsupported use in RAM -> %d : %s", n->_idx, n->Name());
     return false;
   }
@@ -1866,21 +1868,25 @@ Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, i
   if (is_reference_type(basic_elem_type)) {
     if (!elem_type->is_loaded()) {
       field_type = TypeInstPtr::BOTTOM;
-    }
-    else {
+    } else {
       field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
     }
+
     if (UseCompressedOops) {
       field_type = field_type->make_narrowoop();
       basic_elem_type = T_OBJECT;
     }
-  }
-  else {
+  } else {
     field_type = Type::get_const_basic_type(basic_elem_type);
   }
 
+  // 'decode_narrow' is set to false because consumers of the return of this
+  // method expect a Load to be returned.  The returned Load from this method
+  // uses an specific base and it will be used to replace a Load where the
+  // [AddP] base is a Phi. If the returned Load is a 'LoadN' then so was the
+  // original Load.
   Node* load = LoadNode::make(*igvn, ctrl, mem, addp, adr_type, field_type, basic_elem_type, MemNode::unordered,
-                                LoadNode::DependsOnlyOnTest, false, false, false, false, (uint8_t)0U, false);
+                                LoadNode::DependsOnlyOnTest, false, false, false, false, (uint8_t)0U, /*decode_narrow*/false);
   return igvn->register_new_node_with_optimizer(load);
 }
 
@@ -1888,8 +1894,6 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(int field, PhaseIterGVN* i
   PhiNode* phi     = new PhiNode(this->in(0), Type::BOTTOM);
   int field_index  = field_idx(field);
   const Type *t    = Type::TOP;
-
-  ttyLocker ttyl;
 
   for (uint i = 1; i <= _number_of_bases; i++) {
     Node* input = in(field_index);
@@ -1902,9 +1906,8 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(int field, PhaseIterGVN* i
       memory = (memory->is_Phi() && memory->in(0) == in(0)) ? memory->in(i) : memory;
       input = make_load(this->in(0)->in(i), in(i), memory, field, igvn);
       if (input == NULL) return NULL;
-    }
-    // Somehow the base was eliminated and we still have a memory reference left
-    else if (input->bottom_type()->base() == Type::Memory) {
+    } else if (input->bottom_type()->base() == Type::Memory) {
+      // Somehow the base was eliminated and we still have a memory reference left
       return NULL;
     }
 

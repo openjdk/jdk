@@ -856,8 +856,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == NULL) {
-      ciKlass* cik = t->isa_instptr() != NULL ? t->isa_instptr()->instance_klass()
-                                              : t->is_oopptr()->exact_klass();
+      ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,

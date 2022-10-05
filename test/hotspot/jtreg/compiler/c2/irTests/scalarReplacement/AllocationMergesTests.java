@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8281429
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
+ * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesTests
  */
 public class AllocationMergesTests {
@@ -340,6 +341,47 @@ public class AllocationMergesTests {
         return s.a;
     }
 
+    @Test
+    @Warmup(10)
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "2" })
+    // Not reduced because there is CmpP using the merge
+    int testCmpMergeWithNull(boolean cond, int x, int y) {
+        Point p = null;
+
+        if (cond)
+            p = new Point(x*x, y*y);
+        else if (x == y)
+            p = new Point(x+y, x*y);
+
+        if (p != null)
+            return p.x * p.y;
+        else
+            return 1984;
+    }
+
+    @Test
+    @Warmup(10)
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "1" })
+    // Not reduced because not all inputs are SR
+    int testMultiwayMerge(int x, int y) {
+        Point p = new Point(0, 0);
+
+        if (x == y) {
+            p = dummy(x, x);
+        }
+        else if (dummy(x) == 1) {
+            p = dummy(x, y);
+        }
+        else if (dummy(y) == 1) {
+            p = dummy(y, x);
+        }
+
+        return p.x;
+    }
+
+
     // ------------------ Some Objects Will be Scalar Replaced in These Tests ------------------- //
 
 
@@ -369,6 +411,7 @@ public class AllocationMergesTests {
     }
 
     @Test
+    @Warmup(10)
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(counts = { IRNode.ALLOC, "2" })
     Point testNestedObjectsObject(boolean cond, int x, int y) {
@@ -378,6 +421,19 @@ public class AllocationMergesTests {
             p = new Picture(y, y, x);
 
         return p.position;
+    }
+
+    @Test
+    @Warmup(10)
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "0" })
+    int testNestedObjectsNoEscapeObject(boolean cond, int x, int y) {
+        Picture p = new Picture(x, x, y);
+
+        if (cond)
+            p = new Picture(y, y, x);
+
+        return p.position.x;
     }
 
     @Test
@@ -470,27 +526,6 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-    @IR(failOn = { IRNode.ALLOC })
-    // Object p is scalar replaced because the "p = dummy(...)" calls
-    // are actually converted to traps and therefore there is no merge phi
-    int testMultiwayMerge(int x, int y) {
-        Point p = new Point(0, 0);
-
-        if (x == y) {
-            p = dummy(x, x);
-        }
-        else if (dummy(x) == 1) {
-            p = dummy(x, y);
-        }
-        else if (dummy(y) == 1) {
-            p = dummy(y, x);
-        }
-
-        return p.x;
-    }
-
-    @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
     int testConsecutiveSimpleMerge(boolean cond1, boolean cond2, int x, int y) {
@@ -567,22 +602,6 @@ public class AllocationMergesTests {
         return cond2 ? c.x : c.y;
     }
 
-    @Test
-    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-    @IR(failOn = { IRNode.ALLOC })
-    int testCmpMergeWithNull(boolean cond, int x, int y) {
-        Point p = null;
-
-        if (cond)
-            p = new Point(x*x, y*y);
-        else if (x == y)
-            p = new Point(x+y, x*y);
-
-        if (p != null)
-            return p.x * p.y;
-        else
-            return 1984;
-    }
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })

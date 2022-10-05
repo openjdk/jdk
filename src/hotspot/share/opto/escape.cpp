@@ -429,8 +429,7 @@ int ConnectionGraph::reduce_allocation_merges() {
         if (reduce_this_phi(target_phi->as_Phi())) {
           remove_phi_node(target_phi_ptn);
           number_of_reductions++;
-        }
-        else {
+        } else {
           assert(false, "Failed to create ReducedAllocationMerge");
           _compile->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
           return -1;
@@ -537,13 +536,10 @@ bool ConnectionGraph::is_read_only(Node* merge_phi_region, Node* base) const {
 //    current Phi by Phi's of individual fields.
 //    Conditions checked:
 //       - The only consumers of the Phi are:
-//           - AddP (with constant offset)
-//           -   - Load
+//           - AddP (with constant offset) -> Load
 //           - Safepoint
 //           - uncommon_trap
-//           - DecodeN
-//
-// TODO: add support for other kind of users.
+//           - DecodeN -> AddP (with constant offset) -> Load
 bool ConnectionGraph::can_reduce_this_phi_users(const Node* phi, bool& has_call_as_user) const {
   for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
     Node* use = phi->fast_out(i);
@@ -555,8 +551,7 @@ bool ConnectionGraph::can_reduce_this_phi_users(const Node* phi, bool& has_call_
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. CallStaticJava is not a trap.", phi->_idx);)
         return false;
       }
-    }
-    else if (use->is_AddP()) {
+    } else if (use->is_AddP()) {
       if (use->in(AddPNode::Offset)->find_intptr_t_con(-1) == -1) {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Did not find constant input for %d : AddP.", phi->_idx, use->_idx);)
         return false;
@@ -570,8 +565,7 @@ bool ConnectionGraph::can_reduce_this_phi_users(const Node* phi, bool& has_call_
           return false;
         }
       }
-    }
-    else if (use->is_DecodeN()) {
+    } else if (use->is_DecodeN()) {
       for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
         Node* use_use = use->fast_out(j);
 
@@ -589,8 +583,7 @@ bool ConnectionGraph::can_reduce_this_phi_users(const Node* phi, bool& has_call_
           }
         }
       }
-    }
-    else {
+    } else {
       NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. One of the uses is: %d %s", phi->_idx, use->_idx, use->Name());)
       return false;
     }
@@ -1411,6 +1404,22 @@ void ConnectionGraph::add_call_node(CallNode* call) {
   }
 }
 
+// Remove a Phi node (LocalVar) from the graph and update the edges accordingly.
+// Note that users of the Phi node that are - due the Phi - fields of multiple
+// Java objects will be disconnected from the JavaObject. Given a graph like this:
+//
+// JavaObject(3) NoEscape(NoEscape) Edges: [ 91F 206F       ] Uses: [ 40 45 183   ]   28  Allocate ...
+// JavaObject(4) NoEscape(NoEscape) Edges: [ 172F 206F      ] Uses: [ 119 124 183 ]  107  Allocate ...
+// LocalVar(11)  NoEscape(NoEscape) Edges: [ 40 28P         ] Uses: [ 183         ]   45  CheckCastPP ...
+// LocalVar(12)  NoEscape(NoEscape) Edges: [ 119 107P       ] Uses: [ 183         ]  124  CheckCastPP ...
+// LocalVar(14)  NoEscape(NoEscape) Edges: [ 124 45 28P 107P] Uses: [ 206b        ]  183  Phi ...
+//
+// It will become this:
+//
+// JavaObject(3) NoEscape(NoEscape) Edges: [ 91F ----       ] Uses: [ 40 45 ---   ]   28  Allocate ...
+// JavaObject(4) NoEscape(NoEscape) Edges: [ 172F ----      ] Uses: [ 119 124 --- ]  107  Allocate ...
+// LocalVar(12)  NoEscape(NoEscape) Edges: [ 119 107P       ] Uses: [ ---         ]  124  CheckCastPP ...
+// LocalVar(11)  NoEscape(NoEscape) Edges: [ 40 28P         ] Uses: [ ---         ]   45  CheckCastPP ...
 void ConnectionGraph::remove_phi_node(PointsToNode* phi_ptn) {
   // First, disconnect all users of Phi (e.g., Fields) from their
   // parents (e.g., Phi, JavaObject/Allocate)
@@ -1430,13 +1439,14 @@ void ConnectionGraph::remove_phi_node(PointsToNode* phi_ptn) {
 
       phi_ptn->remove_base_use(field); // Remove Phi---b--->Field
     }
+    else if (phi_use->ideal_node()->is_DecodeN()) {
+      phi_ptn->remove_use(phi_use);
 #ifdef ASSERT
-    else {
-      ttyLocker ttyl;
-      tty->print("Trying to remove Phi from ConnectionGraph that has unsupported user:");
+    } else {
       phi_use->ideal_node()->dump();
-    }
+      assert(false, "Trying to remove Phi from ConnectionGraph that has unsupported user (see dump above).");
 #endif
+    }
   }
 
   // Second, disconnect Phi from all its parents

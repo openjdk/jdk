@@ -592,17 +592,6 @@ private:
 
   const Node* come_from_allocate(const Node* n) const;
 
-  // Performs several checks to see if the Phi pointed by 'n'
-  // can be reduced into a ReducedAllocationMergeNode. The
-  // checks curently implemented are:
-  //  - The phi node should be NoEscape
-  //  - The Phi region must not dominate any store to any of the Phi inputs
-  //  - All inputs to the Phi node should come from an allocate node
-  //  - All inputs should be NoEscape
-  //  - The only uses of the Phi should be:
-  //    - AddP->Load
-  //    - SafePointNode or uncommon traps
-  //    - DecodeN->AddP->Loads
   bool can_reduce_this_phi(const Node* n) const;
   bool can_reduce_this_phi_users(const Node* phi, bool& has_call_as_user) const;
 
@@ -667,22 +656,6 @@ public:
     add_edge(ptnode_adr(n->_idx), ptn);
   }
 
-  // Remove a Phi node (LocalVar) from the graph and update the edges accordingly.
-  // Note that users of the Phi node that are - due the Phi - fields of multiple
-  // Java objects will be disconnected from the JavaObject. Given a graph like this:
-  //
-  // JavaObject(3) NoEscape(NoEscape) Edges: [ 91F 206F       ] Uses: [ 40 45 183   ]   28  Allocate ...
-  // JavaObject(4) NoEscape(NoEscape) Edges: [ 172F 206F      ] Uses: [ 119 124 183 ]  107  Allocate ...
-  // LocalVar(11)  NoEscape(NoEscape) Edges: [ 40 28P         ] Uses: [ 183         ]   45  CheckCastPP ...
-  // LocalVar(12)  NoEscape(NoEscape) Edges: [ 119 107P       ] Uses: [ 183         ]  124  CheckCastPP ...
-  // LocalVar(14)  NoEscape(NoEscape) Edges: [ 124 45 28P 107P] Uses: [ 206b        ]  183  Phi ...
-  //
-  // It will become this:
-  //
-  // JavaObject(3) NoEscape(NoEscape) Edges: [ 91F ----       ] Uses: [ 40 45 ---   ]   28  Allocate ...
-  // JavaObject(4) NoEscape(NoEscape) Edges: [ 172F ----      ] Uses: [ 119 124 --- ]  107  Allocate ...
-  // LocalVar(12)  NoEscape(NoEscape) Edges: [ 119 107P       ] Uses: [ ---         ]  124  CheckCastPP ...
-  // LocalVar(11)  NoEscape(NoEscape) Edges: [ 40 28P         ] Uses: [ ---         ]   45  CheckCastPP ...
   void remove_phi_node(PointsToNode* ptn);
 
   // Map ideal node to existing PointsTo node (usually phantom_object).
