@@ -35,7 +35,7 @@
  * Converted from Diagnostics.sh, originally written by Martin Buchholz.
  *
  * For the last version of the original, Diagnostics.sh, see
- * https://github.com/openjdk/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/Diagnostics.sh
+ * https://git.openjdk.org/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/Diagnostics.sh
  *
  * This class primarily tests that javac generates warnings or errors
  * as appropriate for various input conditions.

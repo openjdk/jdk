@@ -34,7 +34,7 @@
  * Converted from wcMineField.sh, originally written by Martin Buchholz.
  *
  * For the last version of the original, wcMineField.sh, see
- * https://github.com/openjdk/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/wcMineField.sh
+ * https://git.openjdk.org/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/wcMineField.sh
  *
  * This class primarily tests support for "classpath wildcards", which is a feature
  * by which elements of a classpath option ending in {@code *} are expanded into

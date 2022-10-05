@@ -36,7 +36,7 @@
  * Converted from Class-Path.sh, originally written by Martin Buchholz.
  *
  * For the last version of the original, Class-Path.sh, see
- * https://github.com/openjdk/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/Class-Path.sh
+ * https://git.openjdk.org/jdk/blob/jdk-19%2B36/test/langtools/tools/javac/Paths/Class-Path.sh
  *
  * This class primarily tests that the Class-Path attribute in jar files
  * is handled the same way by javac and java. It also has various tests
