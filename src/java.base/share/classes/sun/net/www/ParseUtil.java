@@ -197,7 +197,7 @@ public final class ParseUtil {
             bb.clear();
             int ui = i;
             for (;;) {
-                if (n - i >= 2) {
+                if (n - i < 2) {
                     throw new IllegalArgumentException("Malformed escape pair: " + s);
                 }
 
