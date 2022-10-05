@@ -46,19 +46,18 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 1)
 public class AllocationsMerge {
     private int SIZE = 10 * 1024;
-    private Random r = new Random(1024);
     private int opaque_value1 = 3342;
     private int opaque_value2 = 4342;
 
-    private Point[] points = new Point[SIZE];
     private boolean[] conds = new boolean[SIZE];
     private int[] xs = new int[SIZE];
     private int[] ys = new int[SIZE];
 
     @Setup
     public void init() {
+        Random r = new Random(1024);
+
         for (int i=0; i<SIZE; i++) {
-            points[i] = new Point(r.nextInt(), r.nextInt());
             conds[i] = i % 2 == 0;
             xs[i] = r.nextInt();
             ys[i] = r.nextInt();
@@ -88,15 +87,16 @@ public class AllocationsMerge {
     @Benchmark
     public void SimpleMerge(Blackhole bh) {
         for (int i=0; i<SIZE; i++) {
-            bh.consume( run_SimpleMerge(conds[i], xs[i], ys[i]) );
+            bh.consume(run_SimpleMerge(conds[i], xs[i], ys[i]));
         }
     }
 
     private int run_SimpleMerge(boolean cond, int x, int y) {
         Point p = new Point(x, y);
 
-        if (cond)
+        if (cond) {
             p = new Point(y, x);
+        }
 
         return p.x * p.y;
     }
@@ -104,15 +104,16 @@ public class AllocationsMerge {
     @Benchmark
     public void NestedObjectsObject(Blackhole bh) {
         for (int i=0; i<SIZE; i++) {
-            bh.consume( run_NestedObjectsObject(conds[i], xs[i], ys[i]) );
+            bh.consume(run_NestedObjectsObject(conds[i], xs[i], ys[i]));
         }
     }
 
     private Point run_NestedObjectsObject(boolean cond, int x, int y) {
         Picture p = new Picture(x, x, y);
 
-        if (cond)
+        if (cond) {
             p = new Picture(y, y, x);
+        }
 
         return p.position;
     }
@@ -120,15 +121,16 @@ public class AllocationsMerge {
     @Benchmark
     public void MergeAndIterative(Blackhole bh) {
         for (int i=0; i<SIZE; i++) {
-            bh.consume( run_MergeAndIterative(conds[i], xs[i], ys[i]) );
+            bh.consume(run_MergeAndIterative(conds[i], xs[i], ys[i]));
         }
     }
 
     private int run_MergeAndIterative(boolean cond, int x, int y) {
         Point p = new Point(x, y);
 
-        if (cond)
+        if (cond) {
             p = new Point(y, x);
+        }
 
         Picture pic = new Picture(2022, p);
 
@@ -138,20 +140,21 @@ public class AllocationsMerge {
     @Benchmark
     public void IfElseInLoop(Blackhole bh) {
         for (int i=0; i<SIZE; i++) {
-            bh.consume( run_IfElseInLoop() );
+            bh.consume(run_IfElseInLoop());
         }
     }
 
     private int run_IfElseInLoop() {
         int res = 0;
 
-        for (int i = this.opaque_value1; i < this.opaque_value2; i++) {
+        for (int i=this.opaque_value1; i<this.opaque_value2; i++) {
             Point obj = new Point(i, i);
 
-            if (i % 2 == 1)
+            if (i % 2 == 1) {
                 obj = new Point(i, i+1);
-            else
+            } else {
                 obj = new Point(i-1, i);
+            }
 
             res += obj.x;
         }
@@ -162,15 +165,16 @@ public class AllocationsMerge {
     @Benchmark
     public void TrapAfterMerge(Blackhole bh) {
         for (int i=0; i<SIZE; i++) {
-            bh.consume( run_TrapAfterMerge(conds[i], xs[i], ys[i]) );
+            bh.consume(run_TrapAfterMerge(conds[i], xs[i], ys[i]));
         }
     }
 
     private int run_TrapAfterMerge(boolean cond, int x, int y) {
         Point p = new Point(x, x);
 
-        if (cond)
+        if (cond) {
             p = new Point(y, y);
+        }
 
         for (int i=this.opaque_value1; i<this.opaque_value2; i+=x) {
             x++;

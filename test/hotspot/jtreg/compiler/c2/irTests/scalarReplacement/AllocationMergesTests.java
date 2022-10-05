@@ -33,8 +33,7 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesTests
  */
 public class AllocationMergesTests {
-
-    private static Point global = new Point(2022, 2023);
+    private static Point global_escape = new Point(2022, 2023);
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+ReduceAllocationMerges",
@@ -71,8 +70,9 @@ public class AllocationMergesTests {
     int testEscapeInCallAfterMerge(boolean cond, boolean cond2, int x, int y) {
         Point p = new Point(x, x);
 
-        if (cond)
+        if (cond) {
             p = new Point(y, y);
+        }
 
         if (cond2) {
             dummy(p);
@@ -89,8 +89,9 @@ public class AllocationMergesTests {
         Point p = new Point(x, y);
         int res = 0;
 
-        if (cond)
+        if (cond) {
             p = new Point(y, x);
+        }
 
         for (int i=0; i<100; i++) {
             p.x += p.y + i;
@@ -109,12 +110,13 @@ public class AllocationMergesTests {
         Shape obj2 = new Square(l);
         Shape obj = null;
 
-        if (cond)
+        if (cond) {
             obj = obj1;
-        else
+        } else {
             obj = obj2;
+        }
 
-        for (int i = 1; i < 132; i++) {
+        for (int i=1; i<132; i++) {
             obj.x++;
         }
 
@@ -131,7 +133,7 @@ public class AllocationMergesTests {
         Shape obj = (cond ? obj1 : obj2);
         int res = 0;
 
-        for (int i = 1; i < 232; i++) {
+        for (int i=1; i<232; i++) {
             res += obj.x;
         }
 
@@ -147,10 +149,11 @@ public class AllocationMergesTests {
         Point p1 = new Point(y, y);
         Point p = null;
 
-        if (cond)
+        if (cond) {
             p = p0;
-        else
+        } else {
             p = p1;
+        }
 
         p0.x = x * y;
 
@@ -168,13 +171,15 @@ public class AllocationMergesTests {
 
         p.x = p.x * y;
 
-        if (cond)
+        if (cond) {
             p = new Point(x, x);
+        }
 
         dummy(p2);
 
-        for (int i=3; i<324; i++)
+        for (int i=3; i<324; i++) {
             p.x += i * x;
+        }
 
         return p.x;
     }
@@ -186,10 +191,11 @@ public class AllocationMergesTests {
     int testLoadAfterTrap(boolean cond, int x, int y) {
         Point p = null;
 
-        if (cond)
+        if (cond) {
             p = new Point(x, x);
-        else
+        } else {
             p = new Point(y, y);
+        }
 
         dummy(x+y);
 
@@ -203,13 +209,13 @@ public class AllocationMergesTests {
     int testCondAfterMergeWithNull(boolean cond1, boolean cond2, int x, int y) {
         Point p = null;
 
-        if (cond1)
+        if (cond1) {
             p = new Point(y, x);
+        }
 
         if (cond2 && cond1) {
             return p.x;
-        }
-        else {
+        } else {
             return 321;
         }
     }
@@ -239,8 +245,9 @@ public class AllocationMergesTests {
     int testCallOneSide(boolean cond1, int x, int y) {
         Point p = dummy(x, y);
 
-        if (cond1)
+        if (cond1) {
             p = new Point(y, x);
+        }
 
         return p.x;
     }
@@ -254,8 +261,9 @@ public class AllocationMergesTests {
     int testCallTwoSide(boolean cond1, int x, int y) {
         Point p = dummy(x, y);
 
-        if (cond1)
+        if (cond1) {
             p = dummy(y, x);
+        }
 
         return p.x;
     }
@@ -271,13 +279,15 @@ public class AllocationMergesTests {
 
         p.x = p.x * y;
 
-        if (cond)
+        if (cond) {
             p = new Point(y, y);
+        }
 
         dummy(p2);
 
-        for (int i=3; i<324; i++)
+        for (int i=3; i<324; i++) {
             res += p.x + i * x;
+        }
 
         return res;
     }
@@ -288,15 +298,17 @@ public class AllocationMergesTests {
     int testCmpMergeWithNull_Second(boolean cond, int x, int y) {
         Point p = null;
 
-        if (cond)
+        if (cond) {
             p = new Point(x*x, y*y);
+        }
 
         dummy(x);
 
-        if (p != null)
+        if (p != null) {
             return p.x * p.y;
-        else
+        } else {
             return 1984;
+        }
     }
 
     @Test
@@ -306,13 +318,13 @@ public class AllocationMergesTests {
         Point o = new Point(x, y);
 
         if (cond) {
-            o = global;
+            o = global_escape;
             dummy();
         }
 
         dummy();
 
-        return o == global ? o.x + o.y : 0;
+        return o == global_escape ? o.x + o.y : 0;
     }
 
 
@@ -329,8 +341,7 @@ public class AllocationMergesTests {
             new C();
             s = new Etc("Hello");
             new D();
-        }
-        else {
+        } else {
             new E();
             s = new Usr(y, x, z);
             new F();
@@ -349,15 +360,17 @@ public class AllocationMergesTests {
     int testCmpMergeWithNull(boolean cond, int x, int y) {
         Point p = null;
 
-        if (cond)
+        if (cond) {
             p = new Point(x*x, y*y);
-        else if (x == y)
+        } else if (x == y) {
             p = new Point(x+y, x*y);
+        }
 
-        if (p != null)
+        if (p != null) {
             return p.x * p.y;
-        else
+        } else {
             return 1984;
+        }
     }
 
     @Test
@@ -370,11 +383,9 @@ public class AllocationMergesTests {
 
         if (x == y) {
             p = dummy(x, x);
-        }
-        else if (dummy(x) == 1) {
+        } else if (dummy(x) == 1) {
             p = dummy(x, y);
-        }
-        else if (dummy(y) == 1) {
+        } else if (dummy(y) == 1) {
             p = dummy(y, x);
         }
 
@@ -398,8 +409,7 @@ public class AllocationMergesTests {
             new C();
             s = new Etc("Hello");
             new D();
-        }
-        else {
+        } else {
             new E();
             s = new Usr(y, x, z);
             new F();
@@ -417,8 +427,9 @@ public class AllocationMergesTests {
     Point testNestedObjectsObject(boolean cond, int x, int y) {
         Picture p = new Picture(x, x, y);
 
-        if (cond)
+        if (cond) {
             p = new Picture(y, y, x);
+        }
 
         return p.position;
     }
@@ -430,8 +441,9 @@ public class AllocationMergesTests {
     int testNestedObjectsNoEscapeObject(boolean cond, int x, int y) {
         Picture p = new Picture(x, x, y);
 
-        if (cond)
+        if (cond) {
             p = new Picture(y, y, x);
+        }
 
         return p.position.x;
     }
@@ -442,8 +454,9 @@ public class AllocationMergesTests {
     Point[] testNestedObjectsArray(boolean cond, int x, int y) {
         PicturePositions p = new PicturePositions(x, y, x+y);
 
-        if (cond)
+        if (cond) {
             p = new PicturePositions(x+1, y+1, x+y+1);
+        }
 
         return p.positions;
     }
@@ -457,8 +470,9 @@ public class AllocationMergesTests {
         Point p = new Point(x, y);
         int res = 0;
 
-        if (cond)
+        if (cond) {
             p = new Point(y, y);
+        }
 
         for (int i=832; i<932; i++) {
             res += p.x;
@@ -477,8 +491,9 @@ public class AllocationMergesTests {
     int simpleMerge(boolean cond, int x, int y) {
         Point p = new Point(x, y);
 
-        if (cond)
+        if (cond) {
             p = new Point(y, x);
+        }
 
         return p.x * p.y;
     }
@@ -491,8 +506,9 @@ public class AllocationMergesTests {
         Point p2 = new Point(y, x);
         Point p = p1;
 
-        if (cond)
+        if (cond) {
             p = p2;
+        }
 
         return p.x * p.y;
     }
@@ -537,15 +553,17 @@ public class AllocationMergesTests {
         Point p3 = new Point(y, y);
         Point pB = null;
 
-        if (cond1)
+        if (cond1) {
             pA = p0;
-        else
+        } else {
             pA = p1;
+        }
 
-        if (cond2)
+        if (cond2) {
             pB = p2;
-        else
+        } else {
             pB = p3;
+        }
 
         return pA.x * pA.y + pB.x * pB.y;
     }
@@ -560,8 +578,7 @@ public class AllocationMergesTests {
         if (cond) {
             p1 = new Point(y, x);
             p2 = new Point(y, x);
-        }
-        else {
+        } else {
             p1 = new Point(x, y);
             p2 = new Point(x+1, y+1);
         }
@@ -576,8 +593,9 @@ public class AllocationMergesTests {
         Point p = new Point(x, y);
         int res = 0;
 
-        if (cond)
+        if (cond) {
             p = new Point(y, x);
+        }
 
         for (int i=3342; i<4234; i++) {
             res += p.x + p.y + i;
@@ -594,10 +612,11 @@ public class AllocationMergesTests {
         Point b = new Point(y, x);
         Point c = null;
 
-        if (x+2 >= y-5)
+        if (x+2 >= y-5) {
             c = a;
-        else
+        } else {
             c = b;
+        }
 
         return cond2 ? c.x : c.y;
     }
@@ -609,13 +628,13 @@ public class AllocationMergesTests {
     int testCondAfterMergeWithAllocate(boolean cond1, boolean cond2, int x, int y) {
         Point p = new Point(x, y);
 
-        if (cond1)
+        if (cond1) {
             p = new Point(y, x);
+        }
 
         if (cond2 && cond1) {
             return p.x;
-        }
-        else {
+        } else {
             return 321;
         }
     }
@@ -626,19 +645,21 @@ public class AllocationMergesTests {
     int testCondLoadAfterMerge(boolean cond1, boolean cond2, int x, int y) {
         Point p = new Point(x, y);
 
-        if (cond1)
+        if (cond1) {
             p = new Point(y, x);
+        }
 
-        if (cond1 == false && cond2 == false)
+        if (cond1 == false && cond2 == false) {
             return p.x + 1;
-        else if (cond1 == false && cond2 == true)
+        } else if (cond1 == false && cond2 == true) {
             return p.x + 30;
-        else if (cond1 == true && cond2 == false)
+        } else if (cond1 == true && cond2 == false) {
             return p.x + 40;
-        else if (cond1 == true && cond2 == true)
+        } else if (cond1 == true && cond2 == true) {
             return p.x + 50;
-        else
+        } else {
             return -1;
+        }
     }
 
     @Test
@@ -646,13 +667,14 @@ public class AllocationMergesTests {
     int testIfElseInLoop() {
         int res = 0;
 
-        for (int i = 1; i < 1000; i++) {
+        for (int i=1; i<1000; i++) {
             Point obj = new Point(i, i);
 
-            if (i % 2 == 1)
+            if (i % 2 == 1) {
                 obj = new Point(i, i+1);
-            else
+            } else {
                 obj = new Point(i-1, i);
+            }
 
             res += obj.x;
         }
@@ -666,22 +688,20 @@ public class AllocationMergesTests {
     int testLoadInCondAfterMerge(boolean cond, int x, int y) {
         Point p = new Point(x, y);
 
-        if (cond)
+        if (cond) {
             p = new Point(y, x);
+        }
 
         if (p.x == 10) {
             if (p.y == 10) {
                 return dummy(10);
-            }
-            else {
+            } else {
                 return dummy(20);
             }
-        }
-        else if (p.x == 20) {
+        } else if (p.x == 20) {
             if (p.y == 20) {
                 return dummy(30);
-            }
-            else {
+            } else {
                 return dummy(40);
             }
         }
@@ -698,10 +718,11 @@ public class AllocationMergesTests {
         Point obj = null;
         int res = 0;
 
-        if (cond)
+        if (cond) {
             obj = obj1;
-        else
+        } else {
             obj = obj2;
+        }
 
         for (int i = 0; i < 532; i++) {
             res += obj.x;
@@ -736,14 +757,11 @@ public class AllocationMergesTests {
 
         if (l == 0) {
             k = l + 1;
-        }
-        else if (l == 2) {
+        } else if (l == 2) {
             k = l + 2;
-        }
-        else if (l == 3) {
+        } else if (l == 3) {
             new Point(x, y);
-        }
-        else if (l == 4) {
+        } else if (l == 4) {
             new Point(y, x);
         }
 
@@ -759,12 +777,13 @@ public class AllocationMergesTests {
         Shape obj = null;
         int res = 0;
 
-        if (cond)
+        if (cond) {
             obj = obj1;
-        else
+        } else {
             obj = obj2;
+        }
 
-        for (int i = 1; i < 132; i++) {
+        for (int i=1; i<132; i++) {
             res += obj.x;
         }
 
@@ -779,10 +798,11 @@ public class AllocationMergesTests {
         Point p2 = new Point(x+1, y+1);
         Point p3 = new Point(x+2, y+2);
 
-        if (cond)
+        if (cond) {
             p3 = p1;
-        else
+        } else {
             p3 = p2;
+        }
 
         return p3.x + p3.y;
     }
@@ -793,8 +813,9 @@ public class AllocationMergesTests {
     int TestTrapAfterMerge(boolean cond, int x, int y) {
         Point p = new Point(x, x);
 
-        if (cond)
+        if (cond) {
             p = new Point(y, y);
+        }
 
         for (int i=402; i<432; i+=x) {
             x++;
@@ -841,16 +862,20 @@ public class AllocationMergesTests {
         return new ADefaults();
     }
 
-    private static Point global_escape;
-
     static class Point {
         int x, y;
-        Point(int x, int y) { this.x = x; this.y = y; }
+        Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
     }
 
     class Shape {
         int x, y, l;
-        Shape(int x, int y) { this.x = x; this.y = y; }
+        Shape(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
     }
 
     class Square extends Shape {
@@ -955,4 +980,3 @@ public class AllocationMergesTests {
     class F { }
     class G { }
 }
-
