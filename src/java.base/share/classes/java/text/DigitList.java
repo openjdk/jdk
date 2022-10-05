@@ -153,7 +153,7 @@ final class DigitList implements Cloneable {
 
     /**
      * Utility routine to get the value of the digit list
-     * If (count == 0) this returns 0.0, unlike Double.parseDouble().
+     * If (count == 0) this returns 0.0, unlike Double.parseDouble("") which throws NumberFormatException.
      */
     public final double getDouble() {
         if (count == 0) {
@@ -170,7 +170,7 @@ final class DigitList implements Cloneable {
 
     /**
      * Utility routine to get the value of the digit list.
-     * If (count == 0) this returns 0, unlike Long.parseLong().
+     * If (count == 0) this returns 0, unlike Long.parseLong("") which throws NumberFormatException.
      */
     public final long getLong() {
         // for now, simple implementation; later, do proper IEEE native stuff
@@ -194,6 +194,9 @@ final class DigitList implements Cloneable {
         return Long.parseLong(temp.toString());
     }
 
+    /**
+     * Utility routine to get the value of the digit list.
+     */
     public final BigDecimal getBigDecimal() {
         if (count == 0) {
             if (decimalAt == 0) {
