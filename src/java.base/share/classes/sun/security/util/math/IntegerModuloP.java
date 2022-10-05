@@ -308,23 +308,23 @@ public interface IntegerModuloP {
                 //  n - 2 = FFFFFFFF 00000000 FFFFFFFF FFFFFFFF
                 //          BCE6FAAD A7179E84 F3B9CAC2 FC63254F
                 //
-                // There are 3 contiguous 32-bit set, and thus imp^(2^32 - 1)
+                // There are 3 contiguous 32-bit set, and imp^(2^16 - 1)
                 // is pre-computed to speed up the computation.
 
-                // calculate imp ^ (2^32 - 1)
+                // calculate imp ^ (2^16 - 1)
                 MutableIntegerModuloP t = imp.mutable();
-                for (int i = 31; i != 0; i--) {
+                for (int i = 15; i != 0; i--) {
                     t.setSquare();
                     t.setProduct(imp);
                 }
 
                 // calculate (1 / imp)
                 //
-                // calculate for bit 32-128, for contiguous 32-bit set.
+                // calculate for bit 16-128, for contiguous 16-bit set.
                 MutableIntegerModuloP d = t.mutable();
                 for (int i = 32; i < 128; i++) {
                     d.setSquare();
-                    if (i == 95 || i == 127) {
+                    if (i == 31 || i == 79 || i == 95 || i == 111 || i == 127) {
                             d.setProduct(t);
                     }
                 }
