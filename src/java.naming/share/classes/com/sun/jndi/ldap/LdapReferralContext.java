@@ -117,8 +117,8 @@ final class LdapReferralContext implements DirContext, LdapContext {
 
             Object obj;
             try {
-                obj = NamingManagerHelper.getObjectInstance(ref, null, null, env,
-                                                            ObjectFactoriesFilter::checkLdapFilter);
+                obj = NamingManagerHelper.getObjectInstance(ref, null, null,
+                        env, ObjectFactoriesFilter::checkLdapFilter);
             } catch (NamingException e) {
 
                 if (handleReferrals == LdapClient.LDAP_REF_THROW) {

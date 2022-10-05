@@ -1399,7 +1399,7 @@ jdk.tls.alpnCharset=ISO_8859_1
 #jdk.jndi.object.factoriesFilter=*
 
 #
-# Specific JNDI/LDAP Object Factories Filter
+# Protocol Specific JNDI/LDAP Object Factories Filter
 #
 # This filter is used by the JNDI/LDAP provider implementation in the JDK to further control the
 # set of object factory classes which will be allowed to instantiate objects from object
@@ -1424,7 +1424,7 @@ jdk.tls.alpnCharset=ISO_8859_1
 #jdk.jndi.ldap.object.factoriesFilter=java.naming/com.sun.jndi.ldap.**;!*
 
 #
-# Specific JNDI/RMI Object Factories Filter
+# Protocol Specific JNDI/RMI Object Factories Filter
 #
 # This filter is used by the JNDI/RMI provider implementation in the JDK to further control the
 # set of object factory classes which will be allowed to instantiate objects from object

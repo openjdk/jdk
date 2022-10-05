@@ -105,11 +105,11 @@
  *     </li>
  *     <li>{@systemProperty jdk.jndi.ldap.object.factoriesFilter}:
  *          <br>The value of this system property defines a filter used by
- *          the JDK LDAP provider implementation to control the set of object factory classes which will
+ *          the JDK LDAP provider implementation to further restrict the set of object factory classes which will
  *          be allowed to instantiate objects from object references returned by LDAP systems.
- *          The factory class named by the reference instance first will be matched against this specific filter
- *          and then against the global filter. The factory class is rejected if any of these two filters reject
- *          it, or if none of them allow it.
+ *          The factory class named by the {@linkplain javax.naming.Reference reference instance} first will be
+ *          matched against this specific filter and then against the global filter. The factory class is rejected
+ *          if any of these two filters reject it, or if none of them allow it.
  *          The filter property supports pattern-based filter syntax with the same format as
  *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}.
  *          <br>The default value allows any object factory class provided by the JDK LDAP provider

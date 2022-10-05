@@ -77,8 +77,8 @@ final class LdapBindingEnumeration
         cn.add(atom);
 
         try {
-            obj = NamingManagerHelper.getDirObjectInstance(obj, cn, homeCtx, homeCtx.envprops,
-                                                           attrs, ObjectFactoriesFilter::checkLdapFilter);
+            obj = NamingManagerHelper.getDirObjectInstance(obj, cn, homeCtx,
+                    homeCtx.envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
 
         } catch (NamingException e) {
             throw e;

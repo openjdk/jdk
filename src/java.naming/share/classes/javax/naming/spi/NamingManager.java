@@ -210,8 +210,8 @@ public class NamingManager {
         getObjectInstance(Object refInfo, Name name, Context nameCtx,
                           Hashtable<?,?> environment)
         throws Exception {
-        return NamingManagerHelper.getObjectInstance(refInfo, name, nameCtx, environment,
-                                                     ObjectFactoriesFilter::checkGlobalFilter);
+        return NamingManagerHelper.getObjectInstance(refInfo, name, nameCtx,
+                environment, ObjectFactoriesFilter::checkGlobalFilter);
     }
 
     /**

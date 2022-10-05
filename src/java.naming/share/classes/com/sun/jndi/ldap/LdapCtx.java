@@ -1112,8 +1112,8 @@ public final class LdapCtx extends ComponentDirContext
         }
 
         try {
-            return NamingManagerHelper.getDirObjectInstance(obj, name, this, envprops,
-                                                            attrs, ObjectFactoriesFilter::checkLdapFilter);
+            return NamingManagerHelper.getDirObjectInstance(obj, name, this,
+                    envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
 
         } catch (NamingException e) {
             throw cont.fillInException(e);

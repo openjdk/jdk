@@ -154,8 +154,8 @@ public class DirectoryManager extends NamingManager {
         getObjectInstance(Object refInfo, Name name, Context nameCtx,
                           Hashtable<?,?> environment, Attributes attrs)
         throws Exception {
-            return NamingManagerHelper.getDirObjectInstance(refInfo, name, nameCtx, environment, attrs,
-                                                            ObjectFactoriesFilter::checkGlobalFilter);
+            return NamingManagerHelper.getDirObjectInstance(refInfo, name, nameCtx,
+                    environment, attrs, ObjectFactoriesFilter::checkGlobalFilter);
     }
 
     /**

@@ -136,42 +136,57 @@ public final class ObjectFactoriesFilter {
      }
 
     // System property name that contains the patterns to filter object factory names
-    private static final String FACTORIES_FILTER_PROPNAME = "jdk.jndi.object.factoriesFilter";
+    private static final String FACTORIES_FILTER_PROPNAME =
+            "jdk.jndi.object.factoriesFilter";
 
-    // System property name that contains the patterns to filter LDAP object factory names
-    private static final String LDAP_FACTORIES_FILTER_PROPNAME = "jdk.jndi.ldap.object.factoriesFilter";
+    // System property name that contains the patterns to filter LDAP object factory
+    // names
+    private static final String LDAP_FACTORIES_FILTER_PROPNAME =
+            "jdk.jndi.ldap.object.factoriesFilter";
 
-    // System property name that contains the patterns to filter RMI object factory names
-    private static final String RMI_FACTORIES_FILTER_PROPNAME = "jdk.jndi.rmi.object.factoriesFilter";
+    // System property name that contains the patterns to filter RMI object factory
+    // names
+    private static final String RMI_FACTORIES_FILTER_PROPNAME =
+            "jdk.jndi.rmi.object.factoriesFilter";
 
-    // Default system property value that allows the load of any object factory classes
+    // Default system property value that allows the load of any object factory
+    // classes
     private static final String DEFAULT_GLOBAL_SP_VALUE = "*";
 
-    // Default system property value that allows the load of any object factory class provided
-    // by the JDK LDAP provider implementation
-    private static final String DEFAULT_LDAP_SP_VALUE = "java.naming/com.sun.jndi.ldap.**;!*";
+    // Default system property value that allows the load of any object factory
+    // class provided by the JDK LDAP provider implementation
+    private static final String DEFAULT_LDAP_SP_VALUE =
+            "java.naming/com.sun.jndi.ldap.**;!*";
 
-    // Default system property value that allows the load of any object factory class provided
-    // by the JDK RMI provider implementation
-    private static final String DEFAULT_RMI_SP_VALUE = "jdk.naming.rmi/com.sun.jndi.rmi.**;!*";
+    // Default system property value that allows the load of any object factory
+    // class provided by the JDK RMI provider implementation
+    private static final String DEFAULT_RMI_SP_VALUE =
+            "jdk.naming.rmi/com.sun.jndi.rmi.**;!*";
 
-    // A system-wide global object factories filter constructed from the system property
+    // A system-wide global object factories filter constructed from the system
+    // property
     private static final ObjectInputFilter GLOBAL_FILTER =
             ObjectInputFilter.Config.createFilter(
-                    getFilterPropertyValue(FACTORIES_FILTER_PROPNAME, DEFAULT_GLOBAL_SP_VALUE));
+                    getFilterPropertyValue(FACTORIES_FILTER_PROPNAME,
+                                           DEFAULT_GLOBAL_SP_VALUE));
 
-    // A system-wide LDAP specific object factories filter constructed from the system property
+    // A system-wide LDAP specific object factories filter constructed from the system
+    // property
     private static final ObjectInputFilter LDAP_FILTER =
             ObjectInputFilter.Config.createFilter(
-                    getFilterPropertyValue(LDAP_FACTORIES_FILTER_PROPNAME, DEFAULT_LDAP_SP_VALUE));
+                    getFilterPropertyValue(LDAP_FACTORIES_FILTER_PROPNAME,
+                                           DEFAULT_LDAP_SP_VALUE));
 
-    // A system-wide RMI specific object factories filter constructed from the system property
+    // A system-wide RMI specific object factories filter constructed from the system
+    // property
     private static final ObjectInputFilter RMI_FILTER =
             ObjectInputFilter.Config.createFilter(
-                    getFilterPropertyValue(RMI_FACTORIES_FILTER_PROPNAME, DEFAULT_RMI_SP_VALUE));
+                    getFilterPropertyValue(RMI_FACTORIES_FILTER_PROPNAME,
+                                           DEFAULT_RMI_SP_VALUE));
 
     // Get security or system property value
-    private static String getFilterPropertyValue(String propertyName, String defaultValue) {
+    private static String getFilterPropertyValue(String propertyName,
+                                                 String defaultValue) {
         String propVal = SecurityProperties.privilegedGetOverridable(propertyName);
         return propVal != null ? propVal : defaultValue;
     }
