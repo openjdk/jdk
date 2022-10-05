@@ -34,12 +34,12 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.imageio.ImageIO;
 
 /*
  * @test
@@ -78,16 +78,16 @@ public class InternalFrameBorderTest {
     private static final int MIDPOINT = INTFRAME_SIZE / 2;
     private static final int BORDER_THICKNESS = 5;
 
-    private static StringBuffer errorLog = new StringBuffer();
-    private static Rectangle jFrameBounds;
+    private static final StringBuffer errorLog = new StringBuffer();
 
     private static JFrame jFrame;
+    private static Rectangle jFrameBounds;
     private static JInternalFrame iFrame;
-    private static Robot robot;
-
     private static Point iFrameLoc;
     private static int iFrameMaxX;
     private static int iFrameMaxY;
+
+    private static Robot robot;
     private static String uiScale;
 
     public static void main(String[] args) throws AWTException,
@@ -102,7 +102,7 @@ public class InternalFrameBorderTest {
         try {
             robot = new Robot();
             robot.setAutoDelay(200);
-            uiScale =System.getProperty("sun.java2d.uiScale");
+            uiScale = System.getProperty("sun.java2d.uiScale");
 
             SwingUtilities.invokeAndWait(InternalFrameBorderTest::createAndShowGUI);
             robot.waitForIdle();
@@ -121,13 +121,14 @@ public class InternalFrameBorderTest {
             checkBorderMidPoints("BOTTOM");
             checkBorderMidPoints("LEFT");
 
-            // Check Corners
+            // Check Corner Diagonals
             checkCorners("TOP_LEFT");
             checkCorners("TOP_RIGHT");
             checkCorners("BOTTOM_RIGHT");
             checkCorners("BOTTOM_LEFT");
 
             if (!errorLog.isEmpty()) {
+                saveScreenCapture("JIF_uiScale_" + uiScale + ".png");
                 throw new RuntimeException("Following error(s) occurred: \n"
                         + errorLog);
             }
@@ -159,8 +160,8 @@ public class InternalFrameBorderTest {
             case "BOTTOM" -> {
                 x = iFrameLoc.x + MIDPOINT;
                 y = iFrameMaxY - BORDER_THICKNESS;
-                start = iFrameMaxY;
-                stop = iFrameMaxY - BORDER_THICKNESS;
+                start = iFrameMaxY - BORDER_THICKNESS;
+                stop = iFrameMaxY;
             }
             case "LEFT" -> {
                 x = iFrameLoc.x;
@@ -172,21 +173,20 @@ public class InternalFrameBorderTest {
                     + borderDirection);
         }
 
-        boolean isVertical =  borderDirection.equals("RIGHT")
+        boolean isVertical = borderDirection.equals("RIGHT")
                 || borderDirection.equals("LEFT");
-        boolean isHorizontal =  borderDirection.equals("TOP")
+        boolean isHorizontal = borderDirection.equals("TOP")
                 || borderDirection.equals("BOTTOM");
 
         robot.mouseMove(x, y);
         for (int i = start; i < stop; i++) {
-            if (Color.RED.equals(robot.getPixelColor(
-                    isVertical ? i : (iFrameLoc.x + MIDPOINT),
-                    isHorizontal ? i : (iFrameLoc.y + MIDPOINT)))) {
-                createMRIScreenCapture(borderDirection + "_uiScale"
-                        + uiScale + ".png");
+            int locX = isVertical ? i : (iFrameLoc.x + MIDPOINT);
+            int locY = isHorizontal ? i : (iFrameLoc.y + MIDPOINT);
+            if (Color.RED.equals(robot.getPixelColor(locX, locY))) {
                 errorLog.append("At uiScale: " + uiScale
                         + ", Red background color detected at "
-                        + borderDirection + " border\n");
+                        + borderDirection + " border.\n");
+                break;
             }
         }
         robot.delay(300);
@@ -215,12 +215,22 @@ public class InternalFrameBorderTest {
             default -> throw new IllegalStateException("Unexpected value: "
                     + cornerLocation);
         }
+
+        boolean isTop = cornerLocation.equals("TOP_LEFT")
+                || cornerLocation.equals("TOP_RIGHT");
+        boolean isLeft = cornerLocation.equals("TOP_LEFT")
+                || cornerLocation.equals("BOTTOM_LEFT");
+
         robot.mouseMove(x, y);
-        if (Color.RED.equals(robot.getPixelColor(x, y))) {
-            createMRIScreenCapture(cornerLocation + "_uiScale"
-                    + uiScale + ".png");
-            errorLog.append("At uiScale: "+ uiScale + ", Red background color"
-                    + " detected at " + cornerLocation +  " corner\n");
+
+        for (int i = 0; i < 5; i++) {
+            int locX = isLeft ? (x + i) : (x - i);
+            int locY = isTop ? (y + i) : (y - i);
+            if (Color.RED.equals(robot.getPixelColor(locX, locY))) {
+                errorLog.append("At uiScale: " + uiScale + ", Red background color"
+                        + " detected at " + cornerLocation + " corner.\n");
+                break;
+            }
         }
         robot.delay(300);
     }
@@ -245,14 +255,12 @@ public class InternalFrameBorderTest {
         jFrame.setVisible(true);
     }
 
-    private static void createMRIScreenCapture(String filename) {
+    private static void saveScreenCapture(String filename) {
         MultiResolutionImage mrImage = robot.createMultiResolutionScreenCapture(jFrameBounds);
-        List<Image> resolutionVariants = mrImage.getResolutionVariants();
-        RenderedImage image = (RenderedImage) resolutionVariants.get(
-                resolutionVariants.size() > 1 ? 1 : 0);
+        List<Image> variants = mrImage.getResolutionVariants();
+        RenderedImage image = (RenderedImage) variants.get(variants.size() - 1);
         try {
-            ImageIO.write(image,
-                    "png", new File(filename));
+            ImageIO.write(image, "png", new File(filename));
         } catch (Exception e) {
             e.printStackTrace();
         }

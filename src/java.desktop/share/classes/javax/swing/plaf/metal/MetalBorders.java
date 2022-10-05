@@ -247,14 +247,13 @@ public class MetalBorders {
         public InternalFrameBorder() {}
 
         /**
-         * Round the double to nearest integer, make sure we round
-         * to lower integer value for 0.5
+         * Rounds a double to the nearest integer. It rounds 0.5 down,
+         * for example 1.5 is rounded to 1.0.
          *
          * @param d number to be rounded
-         * @return a {@code int} which is the rounded value of provided number
+         * @return the rounded value
          */
-        private static int roundHalfDown(double d)
-        {
+        private static int roundHalfDown(double d) {
             double decP = (Math.ceil(d) - d);
             return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
         }
