@@ -29,6 +29,7 @@ import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_CONSTANT_POOL;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_DEFAULT_VALUE;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_DIMENSION;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_GMT_OFFSET;
+import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_DST;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_ID;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_LOCALE;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_NAME;
@@ -72,6 +73,7 @@ final class MetadataWriter {
         Element region = new Element("region");
         region.addAttribute(ATTRIBUTE_LOCALE, descriptor.locale);
         region.addAttribute(ATTRIBUTE_GMT_OFFSET, descriptor.gmtOffset);
+        region.addAttribute(ATTRIBUTE_DST, descriptor.dst);
         root.add(region);
     }
 

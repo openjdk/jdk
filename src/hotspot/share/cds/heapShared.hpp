@@ -294,9 +294,8 @@ private:
   static void check_module_oop(oop orig_module_obj);
   static void copy_roots();
 
-  static void resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                            JavaThread* THREAD);
-  static void resolve_classes_for_subgraph_of(Klass* k, JavaThread* THREAD);
+  static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
+  static void resolve_classes_for_subgraph_of(JavaThread* current, Klass* k);
   static void clear_archived_roots_of(Klass* k);
   static const ArchivedKlassSubGraphInfoRecord*
                resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS);
@@ -402,8 +401,8 @@ private:
 
   static bool is_archived_object_during_dumptime(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  static void resolve_classes(JavaThread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
-  static void initialize_from_archived_subgraph(Klass* k, JavaThread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  static void resolve_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
+  static void initialize_from_archived_subgraph(JavaThread* current, Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;

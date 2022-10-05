@@ -1036,11 +1036,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo002/TestDescription.java \
   vmTestbase/nsk/jvmti/GetThreadLocalStorage/getthrdstor001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat003/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat004/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat005/TestDescription.java \
   vmTestbase/nsk/jvmti/GetTime/gettime001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetTimerInfo/timerinfo001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetTopThreadGroups/topthrgrp001/TestDescription.java \
