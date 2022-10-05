@@ -2864,20 +2864,28 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
-    // VM-call prelude
-    __ save_return_pc();
-    __ push_frame_abi160(10*BytesPerWord);
-    __ z_stmg(Z_R6, Z_R15, frame::z_abi_160_size, Z_SP);
+    // Save caller's sp & return_pc
+    __ push_frame(frame::z_abi_16_size);
+    __ z_stmg(Z_R14, Z_R15, _z_abi16(callers_sp), Z_SP);
 
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
+    // Prep arg for VM call
+    // Since we call address* -> int and not address -> int, we must provide an extra level of indirection.
+    // We construct a pointer to the location of R14 stored above.
+    __ z_xgr(Z_R2, Z_R2);
+    __ z_ag(Z_R2, _z_abi(return_pc), 0, Z_SP);
 
-    // VM-call epilogue
-    __ z_lmg(Z_R0, Z_R15, frame::z_abi_160_size, Z_SP);
+    // Call BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
+    __ push_frame_abi160(0);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier), Z_R2);
     __ pop_frame();
-    __ restore_return_pc();
 
-    // Check return val and
-    // return to caller if return val == 0
+    // Restore caller's sp & return_pc
+    __ z_lmg(Z_R14, Z_R15, _z_abi(callers_sp), Z_SP);
+    __ pop_frame();
+
+    // Check return val of vm call
+    // if (return val != 0)
+    // return to caller
     __ z_cfi(Z_R2, 0);
     __ z_bcr(Assembler::bcondNotEqual, Z_R14);
 
@@ -2885,10 +2893,6 @@ class StubGenerator: public StubCodeGenerator {
     // Get handle to wrong-method-stub for s390
     __ load_const_optimized(Z_R1_scratch, SharedRuntime::get_handle_wrong_method_stub());
     __ z_br(Z_R1_scratch);
-
-    // TODO: PPC has an extra pop_frame, and restore LR_CR here. Is this required on s390?
-    // __ pop_frame();
-    // __ restore_return_pc();
 
     // Call wrong-method-stub
     __ z_br(Z_R2);

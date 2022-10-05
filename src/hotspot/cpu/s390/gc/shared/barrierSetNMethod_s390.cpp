@@ -50,32 +50,18 @@ class NativeMethodBarrier: public NativeInstruction {
     int get_guard_value() const {
       NativeMovRegMem* guard_addr = get_patchable_instruction_handle();
 
-      // TODO: This returns the value at the start of the instruction
-      // NOT the constant (to be patched value)
-
-      // Access memory at guard address
+      // Return guard instruction and value
       return guard_addr->offset();
     }
 
     void set_guard_value(int value) {
       NativeMovRegMem* guard_addr = get_patchable_instruction_handle();
 
-      // TODO: This returns the value at the start of the instruction
-      // NOT the constant (to be patched value)
-
-      // Set memory at guard address
+      // Set guard instruction and value
       guard_addr->set_offset(value);
     }
 
     void verify() const {
-      /* Expect the following instruction sequence:
-       * iihf + 0
-       * iilf + 6
-       * lg   +12
-       * cfi  +18 (patchable)
-       * bcr  +22
-       * ---  +24
-       */
       const address start = get_barrier_start_address();
 
       assert(Assembler::is_equal(start[0],  IIHF_ZOPC, RIL_MASK), "check load_const (1/2)");
@@ -97,8 +83,8 @@ static NativeMethodBarrier* get_nmethod_barrier(nmethod* nm) {
 }
 
 void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
-  // TODO: Implement?
-  ShouldNotReachHere();
+  // Not required on s390 as a valid backchain is present
+  return;
 }
 
 void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
