@@ -723,15 +723,16 @@ void reportWithLastWindowsError(const char *format, ...) {
         /* Get the length of the string we need */
         int len = mlen =  _vscprintf(format, vl) + 1;
         if (error != NULL) {
-            mlen += 2 + (int) JLI_StrLen(error);
+            mlen += 3 + (int) JLI_StrLen(error);
         }
 
         message = (char *) JLI_MemAlloc(mlen);
         _vsnprintf(message, len, format, vl);
 
         if (error != NULL) {
-            message[len] = ':';
-            message[len + 1] = ' ';
+            message[len] = ' ';
+            message[len + 1] = '-';
+            message[len + 2] = ' ';
             JLI_StrCat(message, error);
         } else {
             message[len] = '\0';
@@ -744,7 +745,7 @@ void reportWithLastWindowsError(const char *format, ...) {
     } else {
         vfprintf(stderr, format, vl);
         if (error != NULL) {
-            fprintf(stderr, ": %s", error);
+            fprintf(stderr, " - %s", error);
         }
         fprintf(stderr, "\n");
     }
