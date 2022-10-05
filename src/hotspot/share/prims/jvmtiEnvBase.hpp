@@ -171,6 +171,29 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // Otherwise return JNIHandles::resolve_external_guard(thread).
   static oop current_thread_obj_or_resolve_external_guard(jthread thread);
 
+  static bool is_JavaThread_current(JavaThread* jt) {
+    if (jt == NULL) {
+      return false; // jt can be NULL in case of a virtual thread
+    }
+    JavaThread* current = JavaThread::current();
+    oop cur_obj = current->jvmti_vthread();
+    oop thr_obj = jt->threadObj();
+    bool is_current = jt == current && (cur_obj == NULL || cur_obj == thr_obj);
+
+    return is_current;
+  }
+
+  static bool is_JavaThread_current(JavaThread* jt, oop thr_obj) {
+    if (jt == NULL) {
+      return false; // jt can be NULL in case of a virtual thread
+    }
+    JavaThread* current = JavaThread::current();
+    oop cur_obj = current->jvmti_vthread();
+    bool is_current = jt == current && (cur_obj == NULL || cur_obj == thr_obj);
+
+    return is_current;
+  }
+ 
   static jvmtiError get_JavaThread(ThreadsList* tlist, jthread thread, JavaThread** jt_pp) {
     jvmtiError err = JVMTI_ERROR_NONE;
     if (thread == NULL) {
