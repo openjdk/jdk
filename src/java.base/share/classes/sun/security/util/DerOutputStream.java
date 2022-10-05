@@ -344,7 +344,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * Marshals the contents of a set on the output stream.  Sets
      * are semantically unordered, but DER requires that encodings of
      * set elements be sorted into ascending lexicographical order
-     * before being output.  Hence sets with the same tags and
+     * before being output.  Hence, sets with the same tags and
      * elements have the same DER encoding.
      *
      * This method supports the ASN.1 "SET OF" construct, but not
@@ -358,7 +358,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * Marshals the contents of a set on the output stream.  Sets
      * are semantically unordered, but DER requires that encodings of
      * set elements be sorted into ascending tag order
-     * before being output.  Hence sets with the same tags and
+     * before being output.  Hence, sets with the same tags and
      * elements have the same DER encoding.
      *
      * This method supports the ASN.1 "SET" construct, but not
@@ -372,17 +372,17 @@ extends ByteArrayOutputStream implements DerEncoder {
      *  Lexicographical order comparison on byte arrays, for ordering
      *  elements of a SET OF objects in DER encoding.
      */
-    private static ByteArrayLexOrder lexOrder = new ByteArrayLexOrder();
+    private static final ByteArrayLexOrder lexOrder = new ByteArrayLexOrder();
 
     /**
      *  Tag order comparison on byte arrays, for ordering elements of
      *  SET objects in DER encoding.
      */
-    private static ByteArrayTagOrder tagOrder = new ByteArrayTagOrder();
+    private static final ByteArrayTagOrder tagOrder = new ByteArrayTagOrder();
 
     /**
      * Marshals the contents of a set on the output stream with the
-     * encodings of its sorted in increasing order.
+     * encoding of elements sorted in increasing order.
      *
      * @param order the order to use when sorting encodings of components.
      */
@@ -400,7 +400,7 @@ extends ByteArrayOutputStream implements DerEncoder {
         for (int i = 0; i < streams.length; i++) {
             bufs[i] = streams[i].toByteArray();
         }
-        Arrays.<byte[]>sort(bufs, order);
+        Arrays.sort(bufs, order);
 
         DerOutputStream bytes = new DerOutputStream();
         for (int i = 0; i < streams.length; i++) {
@@ -507,7 +507,7 @@ extends ByteArrayOutputStream implements DerEncoder {
          */
 
         TimeZone tz = TimeZone.getTimeZone("GMT");
-        String pattern = null;
+        String pattern;
 
         if (tag == DerValue.tag_UtcTime) {
             pattern = "yyMMddHHmmss'Z'";

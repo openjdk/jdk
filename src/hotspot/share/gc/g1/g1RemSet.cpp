@@ -103,21 +103,6 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   // to (>=) HeapRegion::CardsPerRegion (completely scanned).
   uint volatile* _card_table_scan_state;
 
-  // Return "optimal" number of chunks per region we want to use for claiming areas
-  // within a region to claim. Dependent on the region size as proxy for the heap
-  // size, we limit the total number of chunks to limit memory usage and maintenance
-  // effort of that table vs. granularity of distributing scanning work.
-  // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
-  // and so on seems to be such a good trade-off.
-  static uint get_chunks_per_region(uint log_region_size) {
-    // Limit the expected input values to current known possible values of the
-    // (log) region size. Adjust as necessary after testing if changing the permissible
-    // values for region size.
-    assert(log_region_size >= 20 && log_region_size <= 29,
-           "expected value in [20,29], but got %u", log_region_size);
-    return 1u << (log_region_size / 2 - 4);
-  }
-
   uint _scan_chunks_per_region;         // Number of chunks per region.
   uint8_t _log_scan_chunks_per_region;  // Log of number of chunks per region.
   bool* _region_scan_chunks;
@@ -284,7 +269,7 @@ public:
     _max_reserved_regions(0),
     _collection_set_iter_state(NULL),
     _card_table_scan_state(NULL),
-    _scan_chunks_per_region(get_chunks_per_region(HeapRegion::LogOfHRGrainBytes)),
+    _scan_chunks_per_region(G1CollectedHeap::get_chunks_per_region()),
     _log_scan_chunks_per_region(log2i(_scan_chunks_per_region)),
     _region_scan_chunks(NULL),
     _num_total_scan_chunks(0),
@@ -1268,7 +1253,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
     void assert_bitmap_clear(HeapRegion* hr, const G1CMBitMap* bitmap) {
       assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
-             "Bitmap should have no mark for region %u", hr->hrm_index());
+             "Bitmap should have no mark for region %u (%s)", hr->hrm_index(), hr->get_short_type_str());
     }
 
     bool should_clear_region(HeapRegion* hr) const {
@@ -1297,6 +1282,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // so the bitmap for the regions in the collection set must be cleared if not already.
       if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
+        hr->reset_top_at_mark_start();
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
@@ -1322,18 +1308,22 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   // Visitor for the remembered sets of humongous candidate regions to merge their
   // remembered set into the card table.
-  class G1FlushHumongousCandidateRemSets : public HeapRegionClosure {
+  class G1FlushHumongousCandidateRemSets : public HeapRegionIndexClosure {
     G1RemSetScanState* _scan_state;
     G1MergeCardSetStats _merge_stats;
 
   public:
     G1FlushHumongousCandidateRemSets(G1RemSetScanState* scan_state) : _scan_state(scan_state), _merge_stats() { }
 
-    virtual bool do_heap_region(HeapRegion* r) {
+    bool do_heap_region_index(uint region_index) override {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate() ||
-          r->rem_set()->is_empty()) {
+      if (!g1h->region_attr(region_index).is_humongous_candidate()) {
+        return false;
+      }
+
+      HeapRegion* r = g1h->region_at(region_index);
+      if (r->rem_set()->is_empty()) {
         return false;
       }
 
@@ -1357,7 +1347,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // reclaimed.
       r->rem_set()->set_state_complete();
 #ifdef ASSERT
-      G1HeapRegionAttr region_attr = g1h->region_attr(r->hrm_index());
+      G1HeapRegionAttr region_attr = g1h->region_attr(region_index);
       assert(region_attr.remset_is_tracked(), "must be");
 #endif
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");

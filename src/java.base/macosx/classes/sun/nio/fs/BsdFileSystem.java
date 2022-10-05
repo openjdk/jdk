@@ -33,7 +33,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
+
+import static sun.nio.fs.UnixConstants.*;
+import static sun.nio.fs.UnixNativeDispatcher.chown;
+import static sun.nio.fs.UnixNativeDispatcher.unlink;
 
 /**
  * Bsd implementation of FileSystem
@@ -71,11 +76,82 @@ class BsdFileSystem extends UnixFileSystem {
         return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
     }
 
+    /**
+     * Clones the file whose path name is {@code src} to that whose path
+     * name is {@code dst} using the {@code clonefile} system call.
+     *
+     * @param src the path of the source file
+     * @param dst the path of the destination file (clone)
+     * @param followLinks whether to follow links
+     *
+     * @return 0 on success, or IOStatus.UNSUPPORTED_CASE if the call
+     *         does not work with the given parameters
+     */
+    private int clone(UnixPath src, UnixPath dst, boolean followLinks)
+        throws IOException
+    {
+        int flags = followLinks ? 0 : CLONE_NOFOLLOW;
+        try {
+            BsdNativeDispatcher.clonefile(src, dst, flags);
+        } catch (UnixException x) {
+            switch (x.errno()) {
+                case ENOTSUP: // cloning not supported by filesystem
+                case EXDEV:   // src and dst on different filesystems
+                case ENOTDIR: // problematic path parameter(s)
+                    return IOStatus.UNSUPPORTED_CASE;
+                default:
+                    x.rethrowAsIOException(src, dst);
+                    return IOStatus.THROWN;
+            }
+        }
+
+        return 0;
+    }
+
     @Override
     protected int directCopy(int dst, int src, long addressToPollForCancel)
         throws UnixException
     {
         return directCopy0(dst, src, addressToPollForCancel);
+    }
+
+    @Override
+    protected void copyFile(UnixPath source,
+                            UnixFileAttributes attrs,
+                            UnixPath target,
+                            Flags flags,
+                            long addressToPollForCancel)
+        throws IOException
+    {
+        // Attempt to clone the source unless cancellation is not possible,
+        // or attributes are not to be copied
+        if (addressToPollForCancel == 0 && flags.copyPosixAttributes) {
+            try {
+                int res = clone(source, target, flags.followLinks);
+
+                if (res == 0) {
+                    // copy owner (not done by clonefile)
+                    try {
+                        chown(target, attrs.uid(), attrs.gid());
+                    } catch (UnixException x) {
+                        if (flags.failIfUnableToCopyPosix)
+                            x.rethrowAsIOException(target);
+                    }
+                    return;
+                }
+            } catch (IOException e) {
+                // clone or chown failed so roll back
+                try {
+                    unlink(target);
+                } catch (UnixException ignore) { }
+
+                throw e;
+            }
+
+            // fall through to superclass method
+       }
+
+        super.copyFile(source, attrs, target, flags, addressToPollForCancel);
     }
 
     @Override

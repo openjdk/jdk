@@ -247,12 +247,20 @@ public enum ClassFileFormatVersion {
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 19.
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se19/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 19 Edition</cite></a>
      */
     RELEASE_19(63),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 20.
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jvms/se20/html/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 20 Edition</cite></a>
      */
     RELEASE_20(64);
 

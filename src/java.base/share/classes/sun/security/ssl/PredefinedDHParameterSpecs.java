@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,11 +216,11 @@ final class PredefinedDHParameterSpecs {
     private static final Pattern spacesPattern = Pattern.compile("\\s+");
 
     private static final Pattern syntaxPattern = Pattern.compile(
-            "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})" +
-            "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})*");
+            "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})" +
+            "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})*");
 
     private static final Pattern paramsPattern = Pattern.compile(
-            "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)\\}");
+            "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)}");
 
     // cache of predefined default DH ephemeral parameters
     static final Map<Integer, DHParameterSpec> definedParams;
@@ -307,8 +307,8 @@ final class PredefinedDHParameterSpecs {
         }
 
         ffdheParams =
-            Collections.<Integer,DHParameterSpec>unmodifiableMap(tempFFDHEs);
+            Collections.unmodifiableMap(tempFFDHEs);
         definedParams =
-            Collections.<Integer,DHParameterSpec>unmodifiableMap(defaultParams);
+            Collections.unmodifiableMap(defaultParams);
     }
 }

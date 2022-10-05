@@ -140,7 +140,7 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
     stringStream title;
     title.print("BlockListBuilder ");
     scope->method()->print_name(&title);
-    CFGPrinter::print_cfg(_bci2block, title.as_string(), false, false);
+    CFGPrinter::print_cfg(_bci2block, title.freeze(), false, false);
   }
 #endif
 }

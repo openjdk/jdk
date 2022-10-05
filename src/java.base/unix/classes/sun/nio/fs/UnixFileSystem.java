@@ -428,7 +428,7 @@ abstract class UnixFileSystem
     }
 
     // The flags that control how a file is copied or moved
-    private static class Flags {
+    protected static class Flags {
         boolean replaceExisting;
         boolean atomicMove;
         boolean followLinks;

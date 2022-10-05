@@ -33,6 +33,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
@@ -525,6 +526,30 @@ public class WorkArounds {
     public boolean accessInternalAPI() {
         Options compilerOptions = Options.instance(toolEnv.context);
         return compilerOptions.isSet("accessInternalAPI");
+    }
+
+    /**
+     * Returns a map containing {@code jdk.internal.javac.PreviewFeature.JEP} element values associated with the
+     * {@code jdk.internal.javac.PreviewFeature.Feature} enum constant identified by {@code feature}.
+     *
+     * This method uses internal javac features (although only reflectively).
+     *
+     * @param feature the name of the PreviewFeature.Feature enum value
+     * @return the map of PreviewFeature.JEP annotation element values, or an empty map
+     */
+    public Map<? extends ExecutableElement, ? extends AnnotationValue> getJepInfo(String feature) {
+        TypeElement featureType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.Feature");
+        TypeElement jepType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.JEP");
+        var featureVar = featureType.getEnclosedElements().stream()
+                .filter(e -> feature.equals(e.getSimpleName().toString())).findFirst();
+        if (featureVar.isPresent()) {
+            for (AnnotationMirror anno : featureVar.get().getAnnotationMirrors()) {
+                if (anno.getAnnotationType().asElement().equals(jepType)) {
+                    return anno.getElementValues();
+                }
+            }
+        }
+        return Map.of();
     }
 
 }

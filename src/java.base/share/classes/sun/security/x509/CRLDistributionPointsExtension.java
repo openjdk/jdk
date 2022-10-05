@@ -57,7 +57,7 @@ import sun.security.util.ObjectIdentifier;
  * the scheme-specific-part may be case-sensitive. When comparing
  * URIs, conforming implementations MUST compare the scheme and host
  * without regard to case, but assume the remainder of the
- * scheme-specific-part is case sensitive.  Processing rules for other
+ * scheme-specific-part is case-sensitive.  Processing rules for other
  * values are not defined by this specification.  If the
  * distributionPoint omits reasons, the CRL MUST include revocations
  * for all reasons. If the distributionPoint omits cRLIssuer, the CRL
@@ -101,7 +101,7 @@ public class CRLDistributionPointsExtension extends Extension
      */
     private List<DistributionPoint> distributionPoints;
 
-    private String extensionName;
+    private final String extensionName;
 
     /**
      * Create a CRLDistributionPointsExtension from a List of
@@ -177,7 +177,7 @@ public class CRLDistributionPointsExtension extends Extension
             throw new IOException("Invalid encoding for " + extensionName +
                                   " extension.");
         }
-        distributionPoints = new ArrayList<DistributionPoint>();
+        distributionPoints = new ArrayList<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             DistributionPoint point = new DistributionPoint(seq);
@@ -257,7 +257,7 @@ public class CRLDistributionPointsExtension extends Extension
     public void delete(String name) throws IOException {
         if (name.equalsIgnoreCase(POINTS)) {
             distributionPoints =
-                    Collections.<DistributionPoint>emptyList();
+                    Collections.emptyList();
         } else {
             throw new IOException("Attribute name [" + name +
                                   "] not recognized by " +

@@ -359,7 +359,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   // in C2 code but it will have been pushed onto the stack. so we
   // have to find it relative to the unextended sp
 
-  assert(_cb->frame_size() >= 0, "must have non-zero frame size");
+  assert(_cb->frame_size() > 0, "must have non-zero frame size");
   intptr_t* l_sender_sp = unextended_sp() + _cb->frame_size();
   intptr_t* unextended_sp = l_sender_sp;
 
@@ -392,15 +392,11 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 // frame::update_map_with_saved_link
 template <typename RegisterMapT>
 void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) {
-  // The interpreter and compiler(s) always save fp in a known
-  // location on entry. We must record where that location is
-  // so that if fp was live on callout from c2 we can find
-  // the saved copy no matter what it called.
-
-  // Since the interpreter always saves fp if we record where it is then
-  // we don't have to always save fp on entry and exit to c2 compiled
-  // code, on entry will be enough.
   assert(map != NULL, "map must be set");
+  // The interpreter and compiler(s) always save FP in a known
+  // location on entry. C2-compiled code uses FP as an allocatable
+  // callee-saved register. We must record where that location is so
+  // that if FP was live on callout from C2 we can find the saved copy.
   map->set_location(::fp->as_VMReg(), (address) link_addr);
   // this is weird "H" ought to be at a higher address however the
   // oopMaps seems to have the "H" regs at the same address and the

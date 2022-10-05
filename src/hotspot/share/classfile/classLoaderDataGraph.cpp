@@ -439,10 +439,10 @@ void ClassLoaderDataGraph::print_dictionary(outputStream* st) {
 
 void ClassLoaderDataGraph::print_table_statistics(outputStream* st) {
   FOR_ALL_DICTIONARY(cld) {
-    ResourceMark rm;
+    ResourceMark rm; // loader_name_and_id
     stringStream tempst;
     tempst.print("System Dictionary for %s class loader", cld->loader_name_and_id());
-    cld->dictionary()->print_table_statistics(st, tempst.as_string());
+    cld->dictionary()->print_table_statistics(st, tempst.freeze());
   }
 }
 

@@ -285,7 +285,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   // byte aligned, which means that the immediate will not cross a cache line
   __ align(4);
   uintptr_t before_cmp = (uintptr_t)__ pc();
-  __ cmpl(disarmed_addr, 0);
+  __ cmpl_imm32(disarmed_addr, 0);
   uintptr_t after_cmp = (uintptr_t)__ pc();
   guarantee(after_cmp - before_cmp == 8, "Wrong assumed instruction length");
 
@@ -313,7 +313,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, La
   __ movptr(tmp, (intptr_t)bs_nm->disarmed_value_address());
   Address disarmed_addr(tmp, 0);
   __ align(4);
-  __ cmpl(disarmed_addr, 0);
+  __ cmpl_imm32(disarmed_addr, 0);
   __ pop(tmp);
   __ jcc(Assembler::equal, continuation);
   __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));

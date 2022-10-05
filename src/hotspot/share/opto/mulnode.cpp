@@ -73,13 +73,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (real_mul && in1->is_Sub() && in2->is_Sub()) {
     if (phase->type(in1->in(1))->is_zero_type() &&
         phase->type(in2->in(1))->is_zero_type()) {
-      set_req(1, in1->in(2));
-      set_req(2, in2->in(2));
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn) {
-        igvn->_worklist.push(in1);
-        igvn->_worklist.push(in2);
-      }
+      set_req_X(1, in1->in(2), phase);
+      set_req_X(2, in2->in(2), phase);
       in1 = in(1);
       in2 = in(2);
       progress = this;
@@ -97,13 +92,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     if ((in11 == in21 && in12 == in22) ||
         (in11 == in22 && in12 == in21)) {
-      set_req(1, in11);
-      set_req(2, in12);
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn) {
-        igvn->_worklist.push(in1);
-        igvn->_worklist.push(in2);
-      }
+      set_req_X(1, in11, phase);
+      set_req_X(2, in12, phase);
       in1 = in(1);
       in2 = in(2);
       progress = this;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,7 @@ public class CtrDrbg extends AbstractDrbg {
                 }
                 this.securityStrength = tryStrength;
             } else {
-                this.securityStrength = (DEFAULT_STRENGTH > supportedStrength) ?
-                        supportedStrength : DEFAULT_STRENGTH;
+                this.securityStrength = Math.min(DEFAULT_STRENGTH, supportedStrength);
             }
         } else {
             int tryStrength = (requestedInstantiationSecurityStrength < 0) ?
@@ -244,7 +243,7 @@ public class CtrDrbg extends AbstractDrbg {
                 more = nonce;
             } else {
                 if (nonce.length + personalizationString.length < 0) {
-                    // Length must be represented as a 32 bit integer in df()
+                    // Length must be represented as a 32-bit integer in df()
                     throw new IllegalArgumentException(
                             "nonce plus personalization string is too long");
                 }
@@ -328,7 +327,7 @@ public class CtrDrbg extends AbstractDrbg {
             try {
                 cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(k, keyAlg));
                 int tailLen = temp.length - blockLen*i;
-                // 14. requested_bits = leftmost(temp, nuumber_of_bits_to_return)
+                // 14. requested_bits = leftmost(temp, number_of_bits_to_return)
                 if (tailLen > blockLen) {
                     tailLen = blockLen;
                 }
@@ -395,7 +394,7 @@ public class CtrDrbg extends AbstractDrbg {
             // Step 1: cat bytes
             if (additionalInput != null) {
                 if (ei.length + additionalInput.length < 0) {
-                    // Length must be represented as a 32 bit integer in df()
+                    // Length must be represented as a 32-bit integer in df()
                     throw new IllegalArgumentException(
                             "entropy plus additional input is too long");
                 }

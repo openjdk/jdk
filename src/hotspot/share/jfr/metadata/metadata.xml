@@ -120,7 +120,6 @@
     <Field type="Thread" name="carrierThread" label="Carrier Thread" description="Thread enlisted as a carrier" />
     <Field type="Class" name="continuationClass" label="Continuation Class" />
     <Field type="ushort" name="interpretedFrames" label="Interpreted Frames" />
-    <Field type="ushort" name="references" label="References" />
     <Field type="ushort" contentType="bytes" name="size" label="Stack Size" />
   </Event>
 
@@ -129,27 +128,26 @@
     <Field type="Thread" name="carrierThread" label="Carrier Thread" description="Thread enlisted as a carrier" />
     <Field type="Class" name="continuationClass" label="Continuation Class" />
     <Field type="ushort" name="interpretedFrames" label="Interpreted Frames" />
-    <Field type="ushort" name="references" label="References" />
     <Field type="ushort" contentType="bytes" name="size" label="Stack Size" />
   </Event>
 
-  <Event name="ContinuationFreezeYoung" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Freeze Young" thread="true" stackTrace="false" startTime="false">
+  <Event name="ContinuationFreezeFast" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Freeze Fast" thread="true" stackTrace="false" startTime="false">
     <Field type="ulong" name="id" label="Continuation ID" />
     <Field type="uint" name="size" label="Size" />
     <Field type="boolean" name="allocate" label="Allocated New" />
   </Event>
 
-  <Event name="ContinuationFreezeOld" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Freeze Old" thread="true" stackTrace="false" startTime="false">
+  <Event name="ContinuationFreezeSlow" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Freeze Slow" thread="true" stackTrace="false" startTime="false">
     <Field type="ulong" name="id" label="Continuation ID" />
   </Event>
 
-  <Event name="ContinuationThawYoung" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Young" thread="true" stackTrace="false" startTime="false">
+  <Event name="ContinuationThawFast" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Fast" thread="true" stackTrace="false" startTime="false">
     <Field type="ulong" name="id" label="Continuation ID" />
     <Field type="boolean" name="full" label="Full" />
     <Field type="uint" name="size" label="Size" />
   </Event>
 
-  <Event name="ContinuationThawOld" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Old" thread="true" stackTrace="false" startTime="false">
+  <Event name="ContinuationThawSlow" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Slow" thread="true" stackTrace="false" startTime="false">
     <Field type="ulong" name="id" label="Continuation ID" />
   </Event>
 

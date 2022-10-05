@@ -3622,7 +3622,7 @@ encode %{
     address call;
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
+      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type));
       if (call == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -3631,7 +3631,7 @@ encode %{
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      call = __ trampoline_call(Address(addr, rspec), &cbuf);
+      call = __ trampoline_call(Address(addr, rspec));
       if (call == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -3639,10 +3639,10 @@ encode %{
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
         // a stub to the interpreter.
-        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+        cbuf.shared_stub_to_interp_for(_method, call - cbuf.insts_begin());
       } else {
         // Emit stub for static call
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
         if (stub == NULL) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -3650,7 +3650,6 @@ encode %{
       }
     }
 
-    _masm.clear_inst_mark();
     __ post_call_nop();
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
@@ -3697,7 +3696,6 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      _masm.clear_inst_mark();
       __ post_call_nop();
     } else {
       Label retaddr;
