@@ -58,8 +58,6 @@ private:
                            ciMethodData *md, ciProfileData *data,
                            Register recv, Label* update_done);
 
-  void add_debug_info_for_branch(address adr, CodeEmitInfo* info);
-
   void casw(Register addr, Register newval, Register cmpval);
   void caswu(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);

@@ -133,6 +133,7 @@ BASIC_SETUP_DEFAULT_LOG
 ###############################################################################
 
 # We need build & target for this.
+JDKOPT_SETUP_JMOD_OPTIONS
 JDKOPT_SETUP_JLINK_OPTIONS
 JDKVER_SETUP_JDK_VERSION_NUMBERS
 

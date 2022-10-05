@@ -1005,7 +1005,6 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
         if (failtype->_lo > failtype->_hi) {
           // previous if determines the result of this if so
           // replace Bool with constant
-          igvn->_worklist.push(in(1));
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
           return true;
         }
@@ -1055,7 +1054,6 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
 
     igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
-    igvn->_worklist.push(in(1));
     igvn->replace_input_of(this, 1, newbool);
 
     return true;
