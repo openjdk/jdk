@@ -120,12 +120,9 @@ public class UITesting {
             waitOutput(out, PROMPT);
             test.test(inputSink, out);
         } finally {
-            inputSink.write(INTERRUPT + INTERRUPT + "/exit");
+            inputSink.write(INTERRUPT + INTERRUPT + "/exit\n");
 
-            runner.join(1000);
-            if (runner.isAlive()) {
-                runner.stop();
-            }
+            runner.join();
         }
     }
 

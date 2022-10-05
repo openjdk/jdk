@@ -423,7 +423,7 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist
   worklist->remove_useless_nodes(_useful.member_set());
 
   // Disconnect 'useless' nodes that are adjacent to useful nodes
-  C->remove_useless_nodes(_useful);
+  C->disconnect_useless_nodes(_useful, worklist);
 }
 
 //=============================================================================
@@ -1768,13 +1768,17 @@ void PhaseCCP::analyze() {
   Unique_Node_List worklist;
   worklist.push(C->root());
 
+  assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
+  _root_and_safepoints.push(C->root());
+
   // Pull from worklist; compute new value; push changes out.
   // This loop is the meat of CCP.
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
     if (n->is_SafePoint()) {
-      // Keep track of SafePoint nodes for PhaseCCP::transform()
-      _safepoints.push(n);
+      // Make sure safepoints are processed by PhaseCCP::transform even if they are
+      // not reachable from the bottom. Otherwise, infinite loops would be removed.
+      _root_and_safepoints.push(n);
     }
     const Type* new_type = n->Value(this);
     if (new_type != type(n)) {
@@ -1952,14 +1956,15 @@ Node *PhaseCCP::transform( Node *n ) {
   Node *new_node = _nodes[n->_idx]; // Check for transformed node
   if( new_node != NULL )
     return new_node;                // Been there, done that, return old answer
-  new_node = transform_once(n);     // Check for constant
-  _nodes.map( n->_idx, new_node );  // Flag as having been cloned
+
+  assert(n->is_Root(), "traversal must start at root");
+  assert(_root_and_safepoints.member(n), "root (n) must be in list");
 
   // Allocate stack of size _nodes.Size()/2 to avoid frequent realloc
-  GrowableArray <Node *> trstack(C->live_nodes() >> 1);
+  GrowableArray <Node *> transform_stack(C->live_nodes() >> 1);
+  Unique_Node_List useful; // track all visited nodes, so that we can remove the complement
 
-  trstack.push(new_node);           // Process children of cloned node
-
+  // Initialize the traversal.
   // This CCP pass may prove that no exit test for a loop ever succeeds (i.e. the loop is infinite). In that case,
   // the logic below doesn't follow any path from Root to the loop body: there's at least one such path but it's proven
   // never taken (its type is TOP). As a consequence the node on the exit path that's input to Root (let's call it n) is
@@ -1967,17 +1972,18 @@ Node *PhaseCCP::transform( Node *n ) {
   // through the graph from Root, this causes the loop body to never be processed here even when it's not dead (that
   // is reachable from Root following its uses). To prevent that issue, transform() starts walking the graph from Root
   // and all safepoints.
-  for (uint i = 0; i < _safepoints.size(); ++i) {
-    Node* nn = _safepoints.at(i);
+  for (uint i = 0; i < _root_and_safepoints.size(); ++i) {
+    Node* nn = _root_and_safepoints.at(i);
     Node* new_node = _nodes[nn->_idx];
     assert(new_node == NULL, "");
-    new_node = transform_once(nn);
-    _nodes.map(nn->_idx, new_node);
-    trstack.push(new_node);
+    new_node = transform_once(nn);  // Check for constant
+    _nodes.map(nn->_idx, new_node); // Flag as having been cloned
+    transform_stack.push(new_node); // Process children of cloned node
+    useful.push(new_node);
   }
 
-  while ( trstack.is_nonempty() ) {
-    Node *clone = trstack.pop();
+  while (transform_stack.is_nonempty()) {
+    Node* clone = transform_stack.pop();
     uint cnt = clone->req();
     for( uint i = 0; i < cnt; i++ ) {          // For all inputs do
       Node *input = clone->in(i);
@@ -1986,13 +1992,33 @@ Node *PhaseCCP::transform( Node *n ) {
         if( new_input == NULL ) {
           new_input = transform_once(input);   // Check for constant
           _nodes.map( input->_idx, new_input );// Flag as having been cloned
-          trstack.push(new_input);
+          transform_stack.push(new_input);     // Process children of cloned node
+          useful.push(new_input);
         }
         assert( new_input == clone->in(i), "insanity check");
       }
     }
   }
-  return new_node;
+
+  // The above transformation might lead to subgraphs becoming unreachable from the
+  // bottom while still being reachable from the top. As a result, nodes in that
+  // subgraph are not transformed and their bottom types are not updated, leading to
+  // an inconsistency between bottom_type() and type(). In rare cases, LoadNodes in
+  // such a subgraph, might be re-enqueued for IGVN indefinitely by MemNode::Ideal_common
+  // because their address type is inconsistent. Therefore, we aggressively remove
+  // all useless nodes here even before PhaseIdealLoop::build_loop_late gets a chance
+  // to remove them anyway.
+  if (C->cached_top_node()) {
+    useful.push(C->cached_top_node());
+  }
+  C->update_dead_node_list(useful);
+  remove_useless_nodes(useful.member_set());
+  _worklist.remove_useless_nodes(useful.member_set());
+  C->disconnect_useless_nodes(useful, &_worklist);
+
+  Node* new_root = _nodes[n->_idx];
+  assert(new_root->is_Root(), "transformed root node must be a root node");
+  return new_root;
 }
 
 

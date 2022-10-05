@@ -37,9 +37,11 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=InputGraphProvider.class)
 public class EditorInputGraphProvider implements InputGraphProvider {
 
-    private EditorTopComponent editor;
+    private final EditorTopComponent editor;
 
-    public EditorInputGraphProvider() {}
+    public EditorInputGraphProvider() {
+        editor = null;
+    }
 
     public EditorInputGraphProvider(EditorTopComponent editor) {
         this.editor = editor;
@@ -47,21 +49,35 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public InputGraph getGraph() {
-        return editor.getDiagramModel().getGraphToView();
+        if (editor != null && editor.isOpened()) {
+            return editor.getModel().getGraphToView();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public void setSelectedNodes(Set<InputNode> nodes) {
-        editor.setSelectedNodes(nodes);
+        if (editor != null && editor.isOpened()) {
+            editor.setSelectedNodes(nodes);
+        }
     }
 
     @Override
     public Iterable<InputGraph> searchBackward() {
-        return editor.getDiagramModel().getGraphsBackward();
+        if (editor != null && editor.isOpened()) {
+            return editor.getModel().getGraphsBackward();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Iterable<InputGraph> searchForward() {
-        return editor.getDiagramModel().getGraphsForward();
+        if (editor != null && editor.isOpened()) {
+            return editor.getModel().getGraphsForward();
+        } else {
+            return null;
+        }
     }
 }

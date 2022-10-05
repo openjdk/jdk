@@ -572,6 +572,7 @@ Node *Node::clone() const {
     n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
+  Compile::current()->record_modified_node(n);
   return n;                     // Return the clone
 }
 
@@ -781,6 +782,7 @@ void Node::add_req( Node *n ) {
   }
   _in[_cnt++] = n;            // Stuff over old prec edge
   if (n != NULL) n->add_out((Node *)this);
+  Compile::current()->record_modified_node(this);
 }
 
 //---------------------------add_req_batch-------------------------------------
@@ -819,6 +821,7 @@ void Node::add_req_batch( Node *n, uint m ) {
       n->add_out((Node *)this);
     }
   }
+  Compile::current()->record_modified_node(this);
 }
 
 //------------------------------del_req----------------------------------------
@@ -865,6 +868,7 @@ void Node::ins_req( uint idx, Node *n ) {
   }
   _in[idx] = n;                            // Stuff over old required edge
   if (n != NULL) n->add_out((Node *)this); // Add reciprocal def-use edge
+  Compile::current()->record_modified_node(this);
 }
 
 //-----------------------------find_edge---------------------------------------
@@ -1042,6 +1046,7 @@ void Node::add_prec( Node *n ) {
 #ifdef ASSERT
   while ((++i)<_max) { assert(_in[i] == NULL, "spec violation: Gap in prec edges (node %d)", _idx); }
 #endif
+  Compile::current()->record_modified_node(this);
 }
 
 //------------------------------rm_prec----------------------------------------
@@ -1053,6 +1058,7 @@ void Node::rm_prec( uint j ) {
   if (_in[j] == NULL) return;   // Avoid spec violation: Gap in prec edges.
   _in[j]->del_out((Node *)this);
   close_prec_gap_at(j);
+  Compile::current()->record_modified_node(this);
 }
 
 //------------------------------size_of----------------------------------------

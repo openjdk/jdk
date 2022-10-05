@@ -115,6 +115,7 @@ public final class HotSpotObjectConstantScope implements AutoCloseable {
                 obj.clear(localScopeDescription);
             }
             foreignObjects = null;
+            CompilerToVM.compilerToVM().releaseClearedOopHandles();
         }
         CURRENT.set(parent);
     }

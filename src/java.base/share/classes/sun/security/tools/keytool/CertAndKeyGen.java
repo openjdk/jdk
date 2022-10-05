@@ -230,7 +230,7 @@ public final class CertAndKeyGen {
      *
      * XXX Note: This behaviour is needed for backwards compatibility.
      * What this method really should return is the public key of the
-     * generated key pair, regardless of whether or not it is an instance of
+     * generated key pair, regardless of whether it is an instance of
      * <code>X509Key</code>. Accordingly, the return type of this method
      * should be <code>PublicKey</code>.
      */
@@ -362,7 +362,7 @@ public final class CertAndKeyGen {
     }
 
     private SecureRandom        prng;
-    private String              keyType;
+    private final String        keyType;
     private String              sigAlg;
     private KeyPairGenerator    keyGen;
     private PublicKey           publicKey;

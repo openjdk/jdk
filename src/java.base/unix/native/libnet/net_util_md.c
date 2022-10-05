@@ -70,11 +70,6 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 }
 
 void
-NET_ThrowCurrent(JNIEnv *env, char *msg) {
-    NET_ThrowNew(env, errno, msg);
-}
-
-void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
     if (!msg) {
@@ -93,15 +88,6 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", msg);
         break;
     }
-}
-
-
-jfieldID
-NET_GetFileDescriptorID(JNIEnv *env)
-{
-    jclass cls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    CHECK_NULL_RETURN(cls, NULL);
-    return (*env)->GetFieldID(env, cls, "fd", "I");
 }
 
 jint  IPv4_supported()
@@ -187,12 +173,16 @@ jint  IPv6_supported()
 }
 #endif /* DONT_ENABLE_IPV6 */
 
-jint reuseport_supported()
+jint reuseport_supported(int ipv6_available)
 {
     /* Do a simple dummy call, and try to figure out from that */
     int one = 1;
     int rv, s;
-    s = socket(PF_INET, SOCK_STREAM, 0);
+    if (ipv6_available) {
+        s = socket(PF_INET6, SOCK_STREAM, 0);
+    } else {
+        s = socket(PF_INET, SOCK_STREAM, 0);
+    }
     if (s < 0) {
         return JNI_FALSE;
     }
@@ -322,13 +312,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
         }
     }
     return 0;
-}
-
-void
-NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass) {
-    if (sa->sa.sa_family == AF_INET6) {
-        sa->sa6.sin6_flowinfo = htonl((trafficClass & 0xff) << 20);
-    }
 }
 
 int

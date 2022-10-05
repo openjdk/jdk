@@ -2064,12 +2064,7 @@ bool SuperWord::implemented(Node_List* p) {
         opc = Op_RShiftI;
       }
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
-    }
-    if (!retValue) {
-      if (is_cmov_pack(p)) {
-        NOT_PRODUCT(if(is_trace_cmov()) {tty->print_cr("SWPointer::implemented: found cmpd pack"); print_pack(p);})
-        return true;
-      }
+      NOT_PRODUCT(if(retValue && is_trace_cmov() && is_cmov_pack(p)) {tty->print_cr("SWPointer::implemented: found cmpd pack"); print_pack(p);})
     }
   }
   return retValue;
@@ -2363,7 +2358,8 @@ void SuperWord::co_locate_pack(Node_List* pk) {
 // pick the memory state of the last load.
 Node* SuperWord::pick_mem_state(Node_List* pk) {
   Node* first_mem = find_first_mem_state(pk);
-  Node* last_mem  = find_last_mem_state(pk, first_mem);
+  bool is_dependent = false;
+  Node* last_mem  = find_last_mem_state(pk, first_mem, is_dependent);
 
   for (uint i = 0; i < pk->size(); i++) {
     Node* ld = pk->at(i);
@@ -2371,12 +2367,18 @@ Node* SuperWord::pick_mem_state(Node_List* pk) {
       assert(current->is_Mem() && in_bb(current), "unexpected memory");
       assert(current != first_mem, "corrupted memory graph");
       if (!independent(current, ld)) {
-        // A later store depends on this load, pick the memory state of the first load. This can happen, for example,
-        // if a load pack has interleaving stores that are part of a store pack which, however, is removed at the pack
-        // filtering stage. This leaves us with only a load pack for which we cannot take the memory state of the
-        // last load as the remaining unvectorized stores could interfere since they have a dependency to the loads.
+        // A later unvectorized store depends on this load, pick the memory state of the first load. This can happen,
+        // for example, if a load pack has interleaving stores that are part of a store pack which, however, is removed
+        // at the pack filtering stage. This leaves us with only a load pack for which we cannot take the memory state
+        // of the last load as the remaining unvectorized stores could interfere since they have a dependency to the loads.
         // Some stores could be executed before the load vector resulting in a wrong result. We need to take the
         // memory state of the first load to prevent this.
+        if (my_pack(current) != NULL && is_dependent) {
+          // For vectorized store pack, when the load pack depends on
+          // some memory operations locating after first_mem, we still
+          // take the memory state of the last load.
+          continue;
+        }
         return first_mem;
       }
     }
@@ -2407,13 +2409,17 @@ Node* SuperWord::find_first_mem_state(Node_List* pk) {
 // the memory graph from the loads of the pack to the memory of
 // the first load. If we encounter the memory of the current last
 // load, then we started from further down in the memory graph and
-// the load we started from is the last load.
-Node* SuperWord::find_last_mem_state(Node_List* pk, Node* first_mem) {
+// the load we started from is the last load. At the same time, the
+// function also helps determine if some loads in the pack depend on
+// early memory operations which locate after first_mem.
+Node* SuperWord::find_last_mem_state(Node_List* pk, Node* first_mem, bool &is_dependent) {
   Node* last_mem = pk->at(0)->in(MemNode::Memory);
   for (uint i = 0; i < pk->size(); i++) {
     Node* ld = pk->at(i);
     for (Node* current = ld->in(MemNode::Memory); current != first_mem; current = current->in(MemNode::Memory)) {
       assert(current->is_Mem() && in_bb(current), "unexpected memory");
+      // Determine if the load pack is dependent on some memory operations locating after first_mem.
+      is_dependent |= !independent(current, ld);
       if (current->in(MemNode::Memory) == last_mem) {
         last_mem = ld->in(MemNode::Memory);
       }
@@ -2684,12 +2690,33 @@ bool SuperWord::output() {
           ShouldNotReachHere();
         }
 
-        int cond = (int)bol->as_Bool()->_test._test;
-        Node* in_cc  = _igvn.intcon(cond);
-        NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created intcon in_cc node %d", in_cc->_idx); in_cc->dump();})
-        Node* cc = bol->clone();
-        cc->set_req(1, in_cc);
-        NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created bool cc node %d", cc->_idx); cc->dump();})
+        BoolTest boltest = bol->as_Bool()->_test;
+        BoolTest::mask cond = boltest._test;
+        Node* cmp = bol->in(1);
+        // When the src order of cmp node and cmove node are the same:
+        //   cmp: CmpD src1 src2
+        //   bool: Bool cmp mask
+        //   cmove: CMoveD bool scr1 src2
+        // =====> vectorized, equivalent to
+        //   cmovev: CMoveVD mask src_vector1 src_vector2
+        //
+        // When the src order of cmp node and cmove node are different:
+        //   cmp: CmpD src2 src1
+        //   bool: Bool cmp mask
+        //   cmove: CMoveD bool scr1 src2
+        // =====> equivalent to
+        //   cmp: CmpD src1 src2
+        //   bool: Bool cmp negate(mask)
+        //   cmove: CMoveD bool scr1 src2
+        // (Note: when mask is ne or eq, we don't need to negate it even after swapping.)
+        // =====> vectorized, equivalent to
+        //   cmovev: CMoveVD negate(mask) src_vector1 src_vector2
+        if (cmp->in(2) == n->in(CMoveNode::IfFalse) && cond != BoolTest::ne && cond != BoolTest::eq) {
+          assert(cmp->in(1) == n->in(CMoveNode::IfTrue), "cmpnode and cmovenode don't share the same inputs.");
+          cond = boltest.negate();
+        }
+        Node* cc  = _igvn.intcon((int)cond);
+        NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created intcon in_cc node %d", cc->_idx); cc->dump();})
 
         Node* src1 = vector_opd(p, 2); //2=CMoveNode::IfFalse
         if (src1 == NULL) {

@@ -3662,15 +3662,14 @@ public class JavacParser implements Parser {
      *           | Expression
      */
     protected JCTree resource() {
-        int startPos = token.pos;
         if (token.kind == FINAL || token.kind == MONKEYS_AT) {
-            JCModifiers mods = optFinal(Flags.FINAL);
+            JCModifiers mods = optFinal(0);
             JCExpression t = parseType(true);
             return variableDeclaratorRest(token.pos, mods, t, ident(), true, null, true, false);
         }
         JCExpression t = term(EXPR | TYPE);
         if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.test(token.kind)) {
-            JCModifiers mods = toP(F.at(startPos).Modifiers(Flags.FINAL));
+            JCModifiers mods = F.Modifiers(0);
             return variableDeclaratorRest(token.pos, mods, t, ident(), true, null, true, false);
         } else {
             checkSourceLevel(Feature.EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES);

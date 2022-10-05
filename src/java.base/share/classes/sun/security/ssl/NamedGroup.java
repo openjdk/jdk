@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,18 @@
  */
 package sun.security.ssl;
 
-import javax.crypto.spec.DHParameterSpec;
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.security.*;
-import java.security.spec.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.NamedParameterSpec;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
-import sun.security.ssl.DHKeyExchange.DHEPossession;
+import javax.crypto.spec.DHParameterSpec;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
 
@@ -239,10 +240,10 @@ enum NamedGroup {
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     // Constructor used for all NamedGroup types
-    private NamedGroup(int id, String name,
-            NamedGroupSpec namedGroupSpec,
-            ProtocolVersion[] supportedProtocols,
-            AlgorithmParameterSpec keAlgParamSpec) {
+    NamedGroup(int id, String name,
+               NamedGroupSpec namedGroupSpec,
+               ProtocolVersion[] supportedProtocols,
+               AlgorithmParameterSpec keAlgParamSpec) {
         this.id = id;
         this.name = name;
         this.spec = namedGroupSpec;
@@ -466,7 +467,7 @@ enum NamedGroup {
         private final String algorithm;     // key exchange name
         private final NamedGroupScheme scheme;  // named group operations
 
-        private NamedGroupSpec(String algorithm, NamedGroupScheme scheme) {
+        NamedGroupSpec(String algorithm, NamedGroupScheme scheme) {
             this.algorithm = algorithm;
             this.scheme = scheme;
         }
@@ -540,7 +541,7 @@ enum NamedGroup {
         @Override
         public byte[] encodePossessionPublicKey(
                 NamedGroupPossession namedGroupPossession) {
-            return ((DHEPossession)namedGroupPossession).encode();
+            return namedGroupPossession.encode();
         }
 
         @Override

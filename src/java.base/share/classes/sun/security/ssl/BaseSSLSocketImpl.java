@@ -389,7 +389,7 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
      * @see java.net.Socket#sendUrgentData
      * At this point, there seems to be no specific requirement to support
      * this for an SSLSocket. An implementation can be provided if a need
-     * arises in future.
+     * arises in the future.
      */
     @Override
     public final void sendUrgentData(int data) throws SocketException {

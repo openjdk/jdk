@@ -77,11 +77,10 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
-  ResourceMark rm;
   stringStream ss;
   ss.print("Illegal region state transition from \"%s\", at %s\n  ", region_state_to_string(_state), method);
   print_on(&ss);
-  fatal("%s", ss.as_string());
+  fatal("%s", ss.freeze());
 }
 
 void ShenandoahHeapRegion::make_regular_allocation() {

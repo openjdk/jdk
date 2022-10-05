@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  */
 public class CertificatePolicyMap {
-    private CertificatePolicyId issuerDomain;
-    private CertificatePolicyId subjectDomain;
+    private final CertificatePolicyId issuerDomain;
+    private final CertificatePolicyId subjectDomain;
 
     /**
      * Create a CertificatePolicyMap with the passed CertificatePolicyId's.
@@ -82,12 +82,11 @@ public class CertificatePolicyMap {
      * Returns a printable representation of the CertificatePolicyId.
      */
     public String toString() {
-        String s = "CertificatePolicyMap: [\n"
+
+        return ("CertificatePolicyMap: [\n"
                  + "IssuerDomain:" + issuerDomain.toString()
                  + "SubjectDomain:" + subjectDomain.toString()
-                 + "]\n";
-
-        return (s);
+                 + "]\n");
     }
 
     /**

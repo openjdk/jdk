@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import java.util.Properties;
  */
 
 public class GetPropertyAction implements PrivilegedAction<String> {
-    private String theProp;
-    private String defaultVal;
+    private final String theProp;
+    private final String defaultVal;
 
     /**
      * Constructor that takes the name of the system property whose
@@ -62,6 +62,7 @@ public class GetPropertyAction implements PrivilegedAction<String> {
      */
     public GetPropertyAction(String theProp) {
         this.theProp = theProp;
+        this.defaultVal = null;
     }
 
     /**

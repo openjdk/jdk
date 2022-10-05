@@ -406,7 +406,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::remove_useless_nodes(Unique_Node_List &useful) {
+void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -429,7 +429,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       }
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
-      record_for_igvn(n->unique_out());
+      worklist->push(n->unique_out());
     }
   }
 
@@ -440,6 +440,11 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
+#ifdef ASSERT
+  if (_modified_nodes != NULL) {
+    _modified_nodes->remove_useless_nodes(useful.member_set());
+  }
+#endif
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_useless_gc_barriers(useful, this);
@@ -556,7 +561,9 @@ void Compile::print_ideal_ir(const char* phase_name) {
                phase_name);
   }
   if (_output == nullptr) {
-    root()->dump(9999);
+    tty->print_cr("AFTER: %s", phase_name);
+    // Print out all nodes in ascending order of index.
+    root()->dump_bfs(MaxNodeLimit, nullptr, "+S$");
   } else {
     // Dump the node blockwise if we have a scheduling
     _output->print_scheduling();
@@ -630,7 +637,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
-                  _print_inlining_stream(NULL),
+                  _print_inlining_stream(new stringStream()),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
@@ -903,7 +910,7 @@ Compile::Compile( ciEnv* ci_env,
     _initial_gvn(NULL),
     _for_igvn(NULL),
     _number_of_mh_late_inlines(0),
-    _print_inlining_stream(NULL),
+    _print_inlining_stream(new stringStream()),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
     _print_inlining_output(NULL),
@@ -2970,6 +2977,7 @@ void Compile::Code_Gen() {
     }
     cfg.fixup_flow();
     cfg.remove_unreachable_blocks();
+    cfg.verify_dominator_tree();
   }
 
   // Apply peephole optimizations
@@ -4390,13 +4398,6 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
   return phase->transform(new ConvI2LNode(value, ltype));
 }
 
-void Compile::print_inlining_stream_free() {
-  if (_print_inlining_stream != NULL) {
-    _print_inlining_stream->~stringStream();
-    _print_inlining_stream = NULL;
-  }
-}
-
 // The message about the current inlining is accumulated in
 // _print_inlining_stream and transferred into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
@@ -4408,17 +4409,14 @@ void Compile::print_inlining_stream_free() {
 void Compile::print_inlining_init() {
   if (print_inlining() || print_intrinsics()) {
     // print_inlining_init is actually called several times.
-    print_inlining_stream_free();
-    _print_inlining_stream = new stringStream();
+    print_inlining_reset();
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer*>(comp_arena(), 1, 1, new PrintInliningBuffer());
   }
 }
 
 void Compile::print_inlining_reinit() {
   if (print_inlining() || print_intrinsics()) {
-    print_inlining_stream_free();
-    // Re allocate buffer when we change ResourceMark
-    _print_inlining_stream = new stringStream();
+    print_inlining_reset();
   }
 }
 
@@ -4500,7 +4498,7 @@ void Compile::process_print_inlining() {
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       PrintInliningBuffer* pib = _print_inlining_list->at(i);
-      ss.print("%s", pib->ss()->as_string());
+      ss.print("%s", pib->ss()->freeze());
       delete pib;
       DEBUG_ONLY(_print_inlining_list->at_put(i, NULL));
     }
@@ -4508,10 +4506,10 @@ void Compile::process_print_inlining() {
     // It is on the arena, so it will be freed when the arena is reset.
     _print_inlining_list = NULL;
     // _print_inlining_stream won't be used anymore, either.
-    print_inlining_stream_free();
+    print_inlining_reset();
     size_t end = ss.size();
     _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
-    strncpy(_print_inlining_output, ss.base(), end+1);
+    strncpy(_print_inlining_output, ss.freeze(), end+1);
     _print_inlining_output[end] = 0;
   }
 }

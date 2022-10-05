@@ -830,7 +830,7 @@ void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
   }
 
   if (entry->is_jar_file()) {
-    ClassLoaderExt::process_jar_manifest(current, entry, check_for_duplicates);
+    ClassLoaderExt::process_jar_manifest(current, entry);
   }
 #endif
 }

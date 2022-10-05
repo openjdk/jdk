@@ -219,15 +219,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-#ifndef AMD64
-    // Halt if SI_KERNEL before more crashes get misdiagnosed as Java bugs
-    // This can happen in any running code (currently more frequently in
-    // interpreter code but has been seen in compiled code)
     if (sig == SIGSEGV && info->si_addr == 0 && info->si_code == SI_KERNEL) {
-      fatal("An irrecoverable SI_KERNEL SIGSEGV has occurred due "
-            "to unstable signal handling in this distribution.");
+      // An irrecoverable SI_KERNEL SIGSEGV has occurred.
+      // It's likely caused by dereferencing an address larger than TASK_SIZE.
+      return false;
     }
-#endif // AMD64
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
@@ -579,9 +575,8 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
-  intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
-  print_hex_dump(st, (address)sp, (address)(sp + 8), sizeof(intptr_t));
+  address sp = (address)os::Linux::ucontext_get_sp(uc);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ public class CompiledVFrame extends JavaVFrame {
         ? getRegisterMap().getLocation(new VMReg(loc.getRegisterNumber()))
         // Else value was directly saved on the stack. The frame's original stack pointer,
         // before any extension by its callee (due to Compiler1 linkage on SPARC), must be used.
-        : ((Address)fr.getUnextendedSP()).addOffsetTo(loc.getStackOffset());
+        : fr.getUnextendedSP().addOffsetTo(loc.getStackOffset());
 
       // Then package it right depending on type
       if (loc.holdsFloat()) {    // Holds a float in a double register?

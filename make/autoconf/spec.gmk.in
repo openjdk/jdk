@@ -459,7 +459,8 @@ MACOSX_VERSION_MIN=@MACOSX_VERSION_MIN@
 # The highest allowed version of macosx
 MACOSX_VERSION_MAX=@MACOSX_VERSION_MAX@
 
-# The macosx code signing identity to use
+# The macosx code signing configuration
+MACOSX_CODESIGN_MODE:=@MACOSX_CODESIGN_MODE@
 MACOSX_CODESIGN_IDENTITY=@MACOSX_CODESIGN_IDENTITY@
 
 # Toolchain type: gcc, clang, xlc, microsoft...
@@ -701,6 +702,7 @@ JAVADOC_MAIN_CLASS = -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
 NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) $(JAVAC_MAIN_CLASS)
 NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
 
+JMOD_COMPRESS:=@JMOD_COMPRESS@
 JLINK_KEEP_PACKAGED_MODULES:=@JLINK_KEEP_PACKAGED_MODULES@
 
 RCFLAGS := @RCFLAGS@

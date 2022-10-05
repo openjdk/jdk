@@ -611,7 +611,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
     register_control(ctrl, _ltree_root, unc);
     Node* halt = new HaltNode(ctrl, frame, "uncommon trap returned which should never happen" PRODUCT_ONLY(COMMA /*reachable*/false));
     register_control(halt, _ltree_root, ctrl);
-    C->root()->add_req(halt);
+    _igvn.add_input_to(C->root(), halt);
 
     _igvn.replace_input_of(inner_head, LoopNode::EntryControl, iftrue);
     set_idom(inner_head, iftrue, dom_depth(inner_head));
@@ -621,7 +621,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
 // Find a safepoint node that dominates the back edge. We need a
 // SafePointNode so we can use its jvm state to create empty
 // predicates.
-static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, MergeMemNode* mm) {
+static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, MergeMemNode* mm, PhaseIdealLoop* phase) {
   SafePointNode* safepoint = NULL;
   for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
     Node* u = x->fast_out(i);
@@ -630,6 +630,11 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
       if (u->adr_type() == TypePtr::BOTTOM) {
         if (m->is_MergeMem() && mem->is_MergeMem()) {
           if (m != mem DEBUG_ONLY(|| true)) {
+            // MergeMemStream can modify m, for example to adjust the length to mem.
+            // This is unfortunate, and probably unnecessary. But as it is, we need
+            // to add m to the igvn worklist, else we may have a modified node that
+            // is not on the igvn worklist.
+            phase->igvn()._worklist.push(m);
             for (MergeMemStream mms(m->as_MergeMem(), mem->as_MergeMem()); mms.next_non_empty2(); ) {
               if (!mms.is_empty()) {
                 if (mms.memory() != mms.memory2()) {
@@ -705,7 +710,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
       }
     }
 #endif
-    if (!no_side_effect_since_safepoint(C, x, mem, mm)) {
+    if (!no_side_effect_since_safepoint(C, x, mem, mm, this)) {
       safepoint = NULL;
     } else {
       assert(mm == NULL|| _igvn.transform(mm) == mem->as_MergeMem()->base_memory(), "all memory state should have been processed");
@@ -4171,17 +4176,11 @@ bool PhaseIdealLoop::process_expensive_nodes() {
         }
         // Do the actual moves
         if (n1->in(0) != c1) {
-          _igvn.hash_delete(n1);
-          n1->set_req(0, c1);
-          _igvn.hash_insert(n1);
-          _igvn._worklist.push(n1);
+          _igvn.replace_input_of(n1, 0, c1);
           progress = true;
         }
         if (n2->in(0) != c2) {
-          _igvn.hash_delete(n2);
-          n2->set_req(0, c2);
-          _igvn.hash_insert(n2);
-          _igvn._worklist.push(n2);
+          _igvn.replace_input_of(n2, 0, c2);
           progress = true;
         }
       }
@@ -5109,8 +5108,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           assert(cfg != NULL, "must find the control user of m");
           uint k = 0;             // Probably cfg->in(0)
           while( cfg->in(k) != m ) k++; // But check in case cfg is a Region
-          cfg->set_req( k, if_t ); // Now point to NeverBranch
-          _igvn._worklist.push(cfg);
+          _igvn.replace_input_of(cfg, k, if_t); // Now point to NeverBranch
 
           // Now create the never-taken loop exit
           Node *if_f = new CProjNode( iff, 1 );
@@ -5125,7 +5123,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           Node* halt = new HaltNode(if_f, frame, "never-taken loop exit reached");
           _igvn.register_new_node_with_optimizer(halt);
           set_loop(halt, l);
-          C->root()->add_req(halt);
+          _igvn.add_input_to(C->root(), halt);
         }
         set_loop(C->root(), _ltree_root);
       }

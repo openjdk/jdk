@@ -164,7 +164,7 @@ void Assembler::li32(Register Rd, int32_t imm) {
     } else {                                                       \
       assert(temp != noreg, "temp must not be empty register!");   \
       int32_t offset = 0;                                          \
-      movptr_with_offset(temp, dest, offset);                      \
+      movptr(temp, dest, offset);                                  \
       jalr(REGISTER, temp, offset);                                \
     }                                                              \
   }                                                                \
@@ -201,7 +201,7 @@ void Assembler::ret() {
       jalr(REGISTER, temp, ((int32_t)distance << 20) >> 20);      \
     } else {                                                      \
       int32_t offset = 0;                                         \
-      movptr_with_offset(temp, dest, offset);                     \
+      movptr(temp, dest, offset);                                 \
       jalr(REGISTER, temp, offset);                               \
     }                                                             \
   }
@@ -215,7 +215,7 @@ void Assembler::ret() {
   void Assembler::NAME(const Address &adr, Register temp) {    \
     switch (adr.getMode()) {                                   \
       case Address::literal: {                                 \
-        code_section()->relocate(pc(), adr.rspec());           \
+        relocate(adr.rspec());                                 \
         NAME(adr.target(), temp);                              \
         break;                                                 \
       }                                                        \
@@ -272,7 +272,7 @@ void Assembler::wrap_label(Register Rt, Label &L, jal_jalr_insn insn) {
   }
 }
 
-void Assembler::movptr_with_offset(Register Rd, address addr, int32_t &offset) {
+void Assembler::movptr(Register Rd, address addr, int32_t &offset) {
   int64_t imm64 = (int64_t)addr;
 #ifndef PRODUCT
   {
@@ -307,7 +307,7 @@ void Assembler::movptr(Register Rd, uintptr_t imm64) {
 
 void Assembler::movptr(Register Rd, address addr) {
   int offset = 0;
-  movptr_with_offset(Rd, addr, offset);
+  movptr(Rd, addr, offset);
   addi(Rd, Rd, offset);
 }
 
