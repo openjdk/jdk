@@ -427,7 +427,9 @@ void print_lock_ranks(outputStream* st) {
   st->print_cr("VM Mutex/Monitor ranks: ");
 
 #ifdef ASSERT
-  // Defensively figure out the lower/higher bounds on ranks.
+  // Be extra defensive and figure out the bounds on
+  // ranks right here. This also saves a bit of time
+  // in the #ranks*#mutexes loop below.
   int min_rank = INT_MAX;
   int max_rank = INT_MIN;
   for (int i = 0; i < _num_mutex; i++) {
@@ -437,7 +439,7 @@ void print_lock_ranks(outputStream* st) {
     if (max_rank < r) max_rank = r;
   }
 
-  // Print the listings rank-by-rank
+  // Print the listings rank by rank
   for (int r = min_rank; r <= max_rank; r++) {
     bool first = true;
     for (int i = 0; i < _num_mutex; i++) {
