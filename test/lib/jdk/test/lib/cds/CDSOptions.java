@@ -32,8 +32,6 @@ public class CDSOptions {
     public ArrayList<String> prefix = new ArrayList<String>();
     public ArrayList<String> suffix = new ArrayList<String>();
     public boolean useSystemArchive = false;
-    
-    // From AppCDS
     public String appJar;
     public String appJarDir;
 
