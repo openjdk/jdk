@@ -144,27 +144,39 @@ public class VThreadRunner {
     }
 
     /**
-     * Ensures that virtual thread scheduler's target parallelism is at least the given
-     * size. If the current parallelism is less than size then it is changed to size.
-     * This method returns an AutoCloseable, its close method restores the parallelism.
+     * Ensures that the virtual thread scheduler's target parallelism is at least the
+     * given size. If the current parallelism is less than size then it is changed to
+     * size. This method returns an AutoCloseable, its close method restores the
+     * parallelism.
      *
      * @return an object to restore the parallelism
      */
     public static AutoCloseable ensureParallelism(int size) {
+        ForkJoinPool pool;
         try {
-            var virtualThreadClass = Class.forName("java.lang.VirtualThread");
-            Field f = virtualThreadClass.getDeclaredField("DEFAULT_SCHEDULER");
-            f.setAccessible(true);
-            ForkJoinPool pool = (ForkJoinPool) f.get(null);
-            int parallelism = pool.getParallelism();
-            if (parallelism >= size) {
-                return () -> { };
-            } else {
-                pool.setParallelism(size);
-                return () -> pool.setParallelism(parallelism);
-            }
+            var clazz = Class.forName("java.lang.VirtualThread");
+            var field = clazz.getDeclaredField("DEFAULT_SCHEDULER");
+            field.setAccessible(true);
+            pool = (ForkJoinPool) field.get(null);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+
+        int parallelism = pool.getParallelism();
+        if (parallelism >= size) {
+            return () -> { };
+        } else {
+            pool.setParallelism(size);
+            return new AutoCloseable() {
+                boolean closed;
+                @Override
+                public void close() {
+                    if (!closed) {
+                        closed = true;
+                        pool.setParallelism(parallelism);
+                    }
+                }
+            };
         }
     }
 }
