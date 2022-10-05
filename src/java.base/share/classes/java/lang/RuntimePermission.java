@@ -171,9 +171,8 @@ import java.lang.module.ModuleFinder;
  * <tr>
  *   <th scope="row">modifyThread</th>
  *   <td>Modification of threads, e.g., via calls to Thread
- * {@code interrupt, stop, suspend, resume, setDaemon, setPriority,
- * setName} and {@code setUncaughtExceptionHandler}
- * methods</td>
+ * {@code interrupt, setDaemon, setPriority, setName} and
+ * {@code setUncaughtExceptionHandler} methods</td>
  * <td>This allows an attacker to modify the behaviour of
  * any thread in the system.</td>
  * </tr>
@@ -181,9 +180,7 @@ import java.lang.module.ModuleFinder;
  * <tr>
  *   <th scope="row">modifyThreadGroup</th>
  *   <td>modification of thread groups, e.g., via calls to ThreadGroup
- * {@code destroy}, {@code getParent}, {@code resume},
- * {@code setDaemon}, {@code setMaxPriority}, {@code stop},
- * and {@code suspend} methods</td>
+ * {@code getParent}, {@code setDaemon}, and {@code setMaxPriority} methods</td>
  *   <td>This allows an attacker to create thread groups and
  * set their run priority.</td>
  * </tr>

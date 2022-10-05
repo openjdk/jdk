@@ -463,7 +463,6 @@ class Compile : public Phase {
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
-  void print_inlining_stream_free();
   void print_inlining_init();
   void print_inlining_reinit();
   void print_inlining_commit();
@@ -477,7 +476,7 @@ class Compile : public Phase {
 
   void* barrier_set_state() const { return _barrier_set_state; }
 
-  outputStream* print_inlining_stream() const {
+  stringStream* print_inlining_stream() {
     assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
     return _print_inlining_stream;
   }
@@ -1126,9 +1125,9 @@ class Compile : public Phase {
 #endif
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.
-  void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc);
-  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop);
-  void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc );
+  void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void eliminate_redundant_card_marks(Node* n);
 
   // Logic cone optimization.

@@ -247,7 +247,6 @@ public class Thread implements Runnable {
         volatile int priority;
         volatile boolean daemon;
         volatile int threadStatus;
-        boolean stillborn;
 
         FieldHolder(ThreadGroup group,
                     Runnable task,
@@ -1798,65 +1797,41 @@ public class Thread implements Runnable {
     private native boolean isAlive0();
 
     /**
-     * Suspends this thread.
-     * <p>
-     * First, the {@code checkAccess} method of this thread is called
-     * with no arguments. This may result in throwing a
-     * {@code SecurityException} (in the current thread).
-     * <p>
-     * If the thread is alive, it is suspended and makes no further
-     * progress unless and until it is resumed.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * @throws     SecurityException  if the current thread cannot modify
-     *             this thread.
-     * @throws     UnsupportedOperationException if invoked on a virtual thread
-     * @see #checkAccess
-     * @deprecated   This method has been deprecated, as it is
-     *   inherently deadlock-prone.  If the target thread holds a lock on the
-     *   monitor protecting a critical system resource when it is suspended, no
-     *   thread can access this resource until the target thread is resumed. If
-     *   the thread that would resume the target thread attempts to lock this
-     *   monitor prior to calling {@code resume}, deadlock results.  Such
-     *   deadlocks typically manifest themselves as "frozen" processes.
-     *   For more information, see
-     *   <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
-     *   are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
+     * @throws  UnsupportedOperationException always
+     *
+     * @deprecated This method was originally specified to suspend a thread.
+     *     It was inherently deadlock-prone. If the target thread held a lock on
+     *     a monitor protecting a critical system resource when it was suspended,
+     *     no thread could access the resource until the target thread was resumed.
+     *     If the thread intending to resume the target thread attempted to lock
+     *     the monitor prior to calling {@code resume}, deadlock would result.
+     *     Such deadlocks typically manifested themselves as "frozen" processes.
+     *     For more information, see
+     *     <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
+     *     are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated(since="1.2", forRemoval=true)
     public final void suspend() {
-        checkAccess();
-        if (isVirtual())
-            throw new UnsupportedOperationException();
-        suspend0();
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Resumes a suspended thread.
-     * <p>
-     * First, the {@code checkAccess} method of this thread is called
-     * with no arguments. This may result in throwing a
-     * {@code SecurityException} (in the current thread).
-     * <p>
-     * If the thread is alive but suspended, it is resumed and is
-     * permitted to make progress in its execution.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * @throws     SecurityException  if the current thread cannot modify this
-     *             thread.
-     * @throws     UnsupportedOperationException if invoked on a virtual thread
-     * @see        #checkAccess
-     * @see        #suspend()
-     * @deprecated This method exists solely for use with {@link #suspend},
-     *     which has been deprecated because it is deadlock-prone.
+     * @throws  UnsupportedOperationException always
+     *
+     * @deprecated This method was originally specified to resume a thread
+     *     suspended with {@link #suspend()}. Suspending a thread was
+     *     inherently deadlock-prone.
      *     For more information, see
      *     <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
      *     are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated(since="1.2", forRemoval=true)
     public final void resume() {
-        checkAccess();
-        if (isVirtual())
-            throw new UnsupportedOperationException();
-        resume0();
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -3035,8 +3010,6 @@ public class Thread implements Runnable {
 
     /* Some private helper methods */
     private native void setPriority0(int newPriority);
-    private native void suspend0();
-    private native void resume0();
     private native void interrupt0();
     private static native void clearInterruptEvent();
     private native void setNativeName(String name);

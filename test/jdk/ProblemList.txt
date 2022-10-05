@@ -507,6 +507,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/BufferedInputStream/TransferTo.java                     8294541 generic-all
 java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
 java/io/File/GetXSpace.java                                     8291911 windows-all
 
@@ -663,13 +664,14 @@ javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
+javax/swing/plaf/aqua/CustomComboBoxFocusTest.java 8294254 macosx-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
-sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
+sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
 ############################################################################

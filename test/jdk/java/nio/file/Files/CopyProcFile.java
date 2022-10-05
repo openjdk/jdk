@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
  * @run testng/othervm CopyProcFile
  */
 public class CopyProcFile {
-    static final String SOURCE = "/proc/cpuinfo";
+    static final String SOURCE = "/proc/version";
     static final String BUFFERED_COPY = "bufferedCopy";
     static final String TARGET = "target";
 
@@ -58,7 +58,7 @@ public class CopyProcFile {
     static long theSize;
 
     // copy src to dst via Java buffers
-    static long bufferedCopy(String src, String dst) {
+    static long bufferedCopy(String src, String dst) throws IOException {
         try (InputStream in = new FileInputStream(src);
              OutputStream out = new FileOutputStream(dst)) {
             byte[] b = new byte[BUF_SIZE];
@@ -69,8 +69,6 @@ public class CopyProcFile {
                 total += n;
             }
             return total;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
@@ -115,17 +113,19 @@ public class CopyProcFile {
     }
 
     @BeforeTest(alwaysRun=true)
-    public void createBufferedCopy() {
+    public void createBufferedCopy() throws IOException {
         System.out.printf("Using source file \"%s\"%n", SOURCE);
         try {
             theSize = bufferedCopy(SOURCE, BUFFERED_COPY);
             System.out.printf("Copied %d bytes from %s%n", theSize, SOURCE);
-            if (Files.mismatch(Path.of(BUFFERED_COPY), Path.of(SOURCE)) != -1)
-                throw new RuntimeException("Copy does not match source");
-        } catch (Exception e) {
+        } catch (IOException e) {
             try {
                 Files.delete(Path.of(BUFFERED_COPY));
             } catch (IOException ignore) {}
+            throw e;
+        }
+        if (Files.mismatch(Path.of(BUFFERED_COPY), Path.of(SOURCE)) != -1) {
+            throw new RuntimeException("Copy does not match source");
         }
     }
 
@@ -162,13 +162,15 @@ public class CopyProcFile {
     public static void testCopyAndTransfer(FHolder f) throws IOException {
         try {
             long size = f.apply(SOURCE, TARGET);
-            if (size != theSize)
+            if (size != theSize) {
                 throw new RuntimeException("Size: expected " + theSize +
                                            "; actual: " + size);
+            }
             long mismatch = Files.mismatch(Path.of(BUFFERED_COPY),
                                            Path.of(TARGET));
-            if (mismatch != -1)
+            if (mismatch != -1) {
                 throw new RuntimeException("Target does not match copy");
+            }
         } finally {
             try {
                 Files.delete(Path.of(TARGET));
