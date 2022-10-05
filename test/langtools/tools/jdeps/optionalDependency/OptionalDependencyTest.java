@@ -30,6 +30,7 @@
  * @summary Tests optional dependency handling
  */
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
@@ -71,7 +72,7 @@ public class OptionalDependencyTest {
      */
     @Test
     public void optionalDependenceNotResolved() {
-        JdepsRunner jdepsRunner = new JdepsRunner("--module-path", "m2.jar:m3.jar",
+        JdepsRunner jdepsRunner = new JdepsRunner("--module-path", "m2.jar" + File.pathSeparator + "m3.jar",
                                                   "--inverse",
                                                   "--package", "p2", "m1.jar");
         int rc = jdepsRunner.run(true);
@@ -83,7 +84,7 @@ public class OptionalDependencyTest {
      */
     @Test
     public void optionalDependenceResolved() {
-        JdepsRunner jdepsRunner = new JdepsRunner("--module-path", "m2.jar:m3.jar",
+        JdepsRunner jdepsRunner = new JdepsRunner("--module-path", "m2.jar" + File.pathSeparator + "m3.jar",
                                                   "--inverse", "--add-modules", "m3",
                                                   "--package", "p2", "m1.jar");
         int rc = jdepsRunner.run(true);
