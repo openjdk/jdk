@@ -32,7 +32,6 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * This class represents an IR rule of an IR method for a specific compile phase. It contains fully parsed (i.e.
@@ -41,7 +40,7 @@ import java.util.Objects;
  *
  * @see CompilePhaseNoCompilationIRRule
  */
-public class CompilePhaseIRRule implements Matchable {
+public class CompilePhaseIRRule implements CompilePhaseIRRuleMatchable {
     private final CompilePhase compilePhase;
     private final MatchableMatcher matcher;
 
@@ -55,26 +54,8 @@ public class CompilePhaseIRRule implements Matchable {
         return new CompilePhaseIRRuleMatchResult(compilePhase, matcher.match());
     }
 
-    /**
-     * To remove duplicated phases created by CompilePhaseIRRuleBuilder.
-     */
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        CompilePhaseIRRule that = (CompilePhaseIRRule)o;
-        return compilePhase == that.compilePhase;
-    }
-
-    /**
-     * To remove duplicated phases created by CompilePhaseIRRuleBuilder
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(compilePhase);
+    public CompilePhase compilePhase() {
+        return compilePhase;
     }
 }

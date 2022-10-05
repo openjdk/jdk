@@ -23,8 +23,9 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.RunMode;
 
 import java.lang.reflect.Method;
 
@@ -36,13 +37,18 @@ import java.lang.reflect.Method;
  * @see IRMethod
  * @see Run
  */
-public class NotCompiledIRMethod implements Matchable {
+public class NotCompiledIRMethod implements IRMethodMatchable {
     private final Method method;
     private final int ruleCount;
 
     public NotCompiledIRMethod(Method method, int ruleCount) {
         this.method = method;
         this.ruleCount = ruleCount;
+    }
+
+    @Override
+    public String name() {
+        return method.getName();
     }
 
     /**

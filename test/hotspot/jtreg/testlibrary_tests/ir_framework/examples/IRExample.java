@@ -201,11 +201,11 @@ class FailingExamples {
     // Rules with counts constraint which all fail.
     @Test
     @IR(counts = {IRNode.STORE, "1"}) // There are 2 stores
-    @IR(counts = {IRNode.LOAD, "0"}) // equivalent to failOn = IRNode.LOAD, there is 1 load
+    @IR(counts = {IRNode.LOAD, "0"}) // Equivalent to failOn = IRNode.LOAD, there is 1 load
     @IR(counts = {IRNode.STORE, "1",
-                  IRNode.LOAD, "1"}) // first constraint holds (there is 1 load) but 2 stores, letting this rule fail
+                  IRNode.LOAD, "1"}) // First constraint holds (there is 1 load) but 2 stores, letting this rule fail
     @IR(counts = {IRNode.LOAD, "1",
-                  IRNode.STORE, "1"}) // order does not matter
+                  IRNode.STORE, "1"}) // Order does not matter
     @IR(counts = {"some regex that does not occur", "1"},
         phase = CompilePhase.PRINT_IDEAL) // user-defined regex does not occur once in PrintIdeal output
     // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
@@ -222,12 +222,17 @@ class FailingExamples {
     @Test
     // The compile phase BEFORE_STRINGOPTS will not be emitted for this method, resulting in an IR matching failure.
     @IR(failOn = IRNode.LOAD_I, phase = CompilePhase.BEFORE_STRINGOPTS)
+    // The compile phase BEFORE_STRINGOPTS and AFTER_PARSING will not be emitted for this method. The other phases will
+    // match on STORE_I. This results in a failure for each compile phase. The compile phase input will be sorted by
+    // the order in which the compile phases are sorted in the enum class CompilePhase.
+    @IR(failOn = IRNode.STORE_I, phase = {CompilePhase.BEFORE_MATCHING, CompilePhase.CCP1, CompilePhase.BEFORE_STRINGOPTS,
+                                         CompilePhase.AFTER_CLOOPS, CompilePhase.AFTER_PARSING})
     // Apply IR matching on compile phase AFTER_PARSING and ITER_GVN1. After parsing, we have 2 stores and we fail
     // for compile phase AFTER_PARSING. However, once IGVN is over, we were able to optimize one store away, leaving
     // us with only 1 store and we do not fail with compile phase ITER_GVN1.
     @IR(counts = {IRNode.STORE_I, "1"},
-        phase = {CompilePhase.AFTER_PARSING, // Fail
-                 CompilePhase.ITER_GVN1}) // works
+        phase = {CompilePhase.AFTER_PARSING, // Fails
+                 CompilePhase.ITER_GVN1}) // Works
     public void badCompilePhases() {
         iFld2 = 42;
         iFld2 = 42 + iFld2; // Removed in first IGVN iteration and replaced by iFld2 = 84

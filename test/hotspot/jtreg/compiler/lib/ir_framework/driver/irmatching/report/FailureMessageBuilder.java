@@ -65,8 +65,7 @@ public class FailureMessageBuilder implements MatchResultVisitor {
            .append(")").append(System.lineSeparator())
            .append(getTitleSeparator(failedMethodCount, failedIRRulesCount))
            .append(System.lineSeparator());
-        SortedIRMethodResultCollector sortedIRMethodResultCollector = new SortedIRMethodResultCollector();
-        testClassMatchResult.acceptChildren(this, sortedIRMethodResultCollector.collect(testClassMatchResult));
+        testClassMatchResult.acceptChildren(this);
     }
 
     private static String getTitleSeparator(int failedMethodCount, int failedIRRulesCount) {
@@ -107,8 +106,7 @@ public class FailureMessageBuilder implements MatchResultVisitor {
         indentation.add();
         msg.append(indentation).append("* @IR rule ").append(irRuleMatchResult.getRuleId()).append(": \"")
            .append(irRuleMatchResult.getIRAnno()).append("\"").append(System.lineSeparator());
-        SortedCompilePhaseResultCollector sortedCompilePhaseResultCollector = new SortedCompilePhaseResultCollector();
-        irRuleMatchResult.acceptChildren(this, sortedCompilePhaseResultCollector.collect(irRuleMatchResult));
+        irRuleMatchResult.acceptChildren(this);
         indentation.sub();
     }
 

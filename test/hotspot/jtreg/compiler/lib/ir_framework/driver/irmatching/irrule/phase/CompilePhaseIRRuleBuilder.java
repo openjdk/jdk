@@ -33,10 +33,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 import compiler.lib.ir_framework.shared.TestFormat;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class creates a list of {@link CompilePhaseIRRule} for each specified compile phase in {@link IR#phase()} of an
@@ -49,8 +46,7 @@ public class CompilePhaseIRRuleBuilder {
     private final List<RawConstraint> rawCountsConstraints;
     private final IRMethod irMethod;
     private final IR irAnno;
-
-    private final List<Matchable> compilePhaseIRRules = new ArrayList<>();
+    private final SortedSet<CompilePhaseIRRuleMatchable> compilePhaseIRRules = new TreeSet<>();
 
     private CompilePhaseIRRuleBuilder(IRMethod irMethod, IR irAnno) {
         this.irMethod = irMethod;
@@ -62,11 +58,11 @@ public class CompilePhaseIRRuleBuilder {
     /**
      * Creates a list of {@link CompilePhaseIRRule} instances.
      */
-    public static List<Matchable> build(IRMethod irMethod, IR irAnno) {
+    public static SortedSet<CompilePhaseIRRuleMatchable> build(IRMethod irMethod, IR irAnno) {
         return new CompilePhaseIRRuleBuilder(irMethod, irAnno).build();
     }
 
-    private List<Matchable> build() {
+    private SortedSet<CompilePhaseIRRuleMatchable> build() {
         CompilePhase[] compilePhases = irAnno.phase();
         TestFormat.checkNoReport(new HashSet<>(List.of(compilePhases)).size() == compilePhases.length,
                                  "Cannot specify a compile phase twice");

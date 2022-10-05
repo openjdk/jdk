@@ -21,39 +21,21 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.Test;
-import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
-
-import java.util.SortedSet;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 
 /**
- * This class represents the user defined test class with which the IR framework was started (the class containing all
- * the {@link Test @Test}/{@link IR @IR} annotated methods).
+ * Interface for all matchable objects related to IR methods.
  *
- * @see Test
- * @see TestClassMatchResult
+ * @see IRMethod
+ * @see NotCompiledIRMethod
  */
-public class TestClass implements Matchable {
-    private final MatchableMatcher matcher;
-
-    /**
-     * Constructor for classes without @IR annotations.
-     */
-    public TestClass() {
-        this.matcher = new MatchableMatcher();
-    }
-
-    public TestClass(SortedSet<IRMethodMatchable> irMethods) {
-        TestFramework.check(!irMethods.isEmpty(), "must not be empty");
-        this.matcher = new MatchableMatcher(irMethods);
-    }
+public interface IRMethodMatchable extends Matchable, Comparable<IRMethodMatchable> {
+    String name();
 
     @Override
-    public MatchResult match() {
-        return new TestClassMatchResult(matcher.match());
+    default int compareTo(IRMethodMatchable other) {
+        return this.name().compareTo(other.name());
     }
 }

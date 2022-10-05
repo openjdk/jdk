@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.Matchable;
 
 /**
  * This class represents a special {@link CompilePhaseIRRule} where no compilation output was found for the associated
@@ -35,7 +34,7 @@ import compiler.lib.ir_framework.driver.irmatching.Matchable;
  * @see CompilePhaseIRRule
  * @see NoCompilePhaseCompilationResult
  */
-public class CompilePhaseNoCompilationIRRule implements Matchable {
+public class CompilePhaseNoCompilationIRRule implements CompilePhaseIRRuleMatchable {
     private final CompilePhase compilePhase;
 
     public CompilePhaseNoCompilationIRRule(CompilePhase compilePhase) {
@@ -43,7 +42,13 @@ public class CompilePhaseNoCompilationIRRule implements Matchable {
     }
 
     @Override
+    public CompilePhase compilePhase() {
+        return compilePhase;
+    }
+
+    @Override
     public MatchResult match() {
         return new NoCompilePhaseCompilationResult(compilePhase);
     }
 }
+

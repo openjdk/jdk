@@ -62,8 +62,7 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
 
     @Override
     public void visit(TestClassMatchResult testClassMatchResult) {
-        SortedIRMethodResultCollector sortedIRMethodResultCollector = new SortedIRMethodResultCollector();
-        testClassMatchResult.acceptChildren(this, sortedIRMethodResultCollector.collect(testClassMatchResult));
+        testClassMatchResult.acceptChildren(this);
         StringBuilder builder = new StringBuilder();
         builder.append("Compilation");
         if (compilePhaseCount > 1) {

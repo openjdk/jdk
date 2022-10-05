@@ -372,7 +372,7 @@ class FailureBuilder implements MatchResultVisitor {
 
     @Override
     public void visit(IRMethodMatchResult irMethodMatchResult) {
-        methodName = irMethodMatchResult.getIRMethod().getMethod().getName();
+        methodName = irMethodMatchResult.getIRMethod().name();
         irMethodMatchResult.acceptChildren(this);
     }
 
@@ -493,7 +493,8 @@ record Failure(String methodName, int irRuleId, CompilePhase compilePhase, Check
     }
 
     public static List<Failure> sort(Set<Failure> failures) {
-        return failures.stream().sorted(Comparator.comparing(Failure::irRuleId)
+        return failures.stream().sorted(Comparator.comparing(Failure::methodName)
+                                                  .thenComparing(Failure::irRuleId)
                                                   .thenComparing(Failure::compilePhase)
                                                   .thenComparing(Failure::checkAttributeType)
                                                   .thenComparing(Failure::constraintId)).collect(Collectors.toList());

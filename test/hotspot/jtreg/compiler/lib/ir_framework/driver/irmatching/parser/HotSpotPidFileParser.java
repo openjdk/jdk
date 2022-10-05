@@ -24,9 +24,9 @@
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.TestClass;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
@@ -34,10 +34,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Class to parse the ideal compile phases and PrintOptoAssembly outputs of the test class from the hotspot_pid* file
@@ -69,7 +71,9 @@ class HotSpotPidFileParser {
     public TestClass parse(String hotspotPidFileName) {
         try {
             parseHotSpotFile(hotspotPidFileName);
-            List<Matchable> irMethods = testMethodMap.values().stream().map(TestMethod::createIRMethod).toList();
+            SortedSet<IRMethodMatchable> irMethods = testMethodMap.values().stream()
+                                                                  .map(TestMethod::createIRMethod)
+                                                                  .collect(Collectors.toCollection(TreeSet::new));
             TestFormat.throwIfAnyFailures();
             return new TestClass(irMethods);
         } catch (IOException e) {

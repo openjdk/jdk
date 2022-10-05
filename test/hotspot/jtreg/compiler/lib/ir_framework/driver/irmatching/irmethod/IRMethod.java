@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
@@ -45,7 +46,7 @@ import java.util.Map;
  * @see IR
  * @see IRMethodMatchResult
  */
-public class IRMethod implements Matchable {
+public class IRMethod implements IRMethodMatchable {
     private final Method method;
     /**
      * Mapping from compile phase to compilation output found in hotspot_pid* file for that phase (if exist)
@@ -76,6 +77,11 @@ public class IRMethod implements Matchable {
         return method;
     }
 
+    @Override
+    public String name() {
+        return method.getName();
+    }
+
     /**
      * Get the compilation output for non-default compile phase {@code phase} or an empty string if no output was found
      * in the hotspot_pid* file for this compile phase.
@@ -90,7 +96,7 @@ public class IRMethod implements Matchable {
      * {@link CompilePhase#DEFAULT}) compile phases.
      */
     @Override
-    public IRMethodMatchResult match() {
+    public MatchResult match() {
         return new IRMethodMatchResult(this, matcher.match());
     }
 }

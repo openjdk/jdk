@@ -21,39 +21,22 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching;
+package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.Test;
-import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
-
-import java.util.SortedSet;
+import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 
 /**
- * This class represents the user defined test class with which the IR framework was started (the class containing all
- * the {@link Test @Test}/{@link IR @IR} annotated methods).
+ * Interface for all matchable objects related to compile phase IR rules.
  *
- * @see Test
- * @see TestClassMatchResult
+ * @see CompilePhaseIRRule
+ * @see CompilePhaseNoCompilationIRRule
  */
-public class TestClass implements Matchable {
-    private final MatchableMatcher matcher;
-
-    /**
-     * Constructor for classes without @IR annotations.
-     */
-    public TestClass() {
-        this.matcher = new MatchableMatcher();
-    }
-
-    public TestClass(SortedSet<IRMethodMatchable> irMethods) {
-        TestFramework.check(!irMethods.isEmpty(), "must not be empty");
-        this.matcher = new MatchableMatcher(irMethods);
-    }
+public interface CompilePhaseIRRuleMatchable extends Matchable, Comparable<CompilePhaseIRRuleMatchable> {
+    CompilePhase compilePhase();
 
     @Override
-    public MatchResult match() {
-        return new TestClassMatchResult(matcher.match());
+    default int compareTo(CompilePhaseIRRuleMatchable other) {
+        return this.compilePhase().compareTo(other.compilePhase());
     }
 }
