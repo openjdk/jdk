@@ -222,8 +222,8 @@ class CHeapObjBase {
     return (void*)AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
 
-  void  operator delete(void* p)     { FreeHeap(p); }
-  void  operator delete [] (void* p) { FreeHeap(p); }
+  void operator delete(void* p)     { FreeHeap(p); }
+  void operator delete [] (void* p) { FreeHeap(p); }
 };
 
 // Uses the implicitly static new and delete operators of CHeapObjBase
@@ -266,10 +266,11 @@ class CHeapObj {
     return CHeapObjBase::operator new[](size, F, nt);
   }
 
-  void  operator delete(void* p)     {
+  void operator delete(void* p)     {
     CHeapObjBase::operator delete(p);
   }
-  void  operator delete [] (void* p) {
+
+  void operator delete [] (void* p) {
     CHeapObjBase::operator delete[](p);
   }
 };
