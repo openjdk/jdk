@@ -28,12 +28,12 @@ import java.util.Map;
 
 /**
  * This enum represents all available compile phases on which an IR matching can be done. There is a 1:1 mapping
- * between IGV phases as specified in
+ * between IGV phases as specified in phasetype.hpp.  Compile phases which are normally not emitted by C2 like FAILURE
+ * or DEBUG are not listed. This enum should be kept in sync with phasetye.hpp.
  */
 public enum CompilePhase {
-    DEFAULT("For default IR Nodes as defined in class IRNode only"),
+    DEFAULT("For IR node placeholder strings as defined in class IRNode only"),
 
-    // All available phases found in phasetype.hpp with the corresponding levels found throughout the C2 code
     BEFORE_STRINGOPTS("Before StringOpts"),
     AFTER_STRINGOPTS("After StringOpts"),
     BEFORE_REMOVEUSELESS("Before RemoveUseless"),
