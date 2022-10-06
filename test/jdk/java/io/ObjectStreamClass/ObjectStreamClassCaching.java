@@ -54,7 +54,7 @@ import static org.testng.Assert.assertTrue;
  * @bug 8277072
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (Z GC)
- * @run testng/othervm -Xmx64m -XX:+UseZGC ObjectStreamClassCaching
+ * @run testng/othervm -Xmx128m -XX:+UseZGC ObjectStreamClassCaching
  */
 
 /*
