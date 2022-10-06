@@ -481,20 +481,21 @@ public class TagletWriterImpl extends TagletWriter {
         CommentHelper ch = utils.getCommentHelper(holder);
         TypeElement refClass = ch.getReferencedClass(ref);
         Element refMem =       ch.getReferencedMember(ref);
-        String refFragment =    ch.getReferencedFragment(refSignature);
+        String refFragment =   ch.getReferencedFragment(refSignature);
 
         if (refFragment == null && refMem != null) {
             refFragment = refMem.toString();
         } else if (refFragment != null && refFragment.startsWith("#")) {
+            if (labelContent.isEmpty()) {
+                reportWarning.accept("doclet.link.see.no_label", null);
+                return invalidTagOutput(resources.getText("doclet.link.see.no_label"),
+                        Optional.of(refSignature));
+            }
             refFragment = refFragment.substring(1);
         }
         if (refClass == null) {
             ModuleElement refModule = ch.getReferencedModule(ref);
             if (refModule != null && utils.isIncluded(refModule)) {
-                if (labelContent.isEmpty() && refFragment != null) {
-                    // Use fragment as default label instead of module name if it is not null
-                    labelContent = plainOrCode(isLinkPlain, Text.of(refFragment));
-                }
                 return htmlWriter.getModuleLink(refModule, labelContent.isEmpty() ? text : labelContent, refFragment);
             }
             //@see is not referencing an included class
@@ -502,11 +503,10 @@ public class TagletWriterImpl extends TagletWriter {
             if (refPackage != null && utils.isIncluded(refPackage)) {
                 //@see is referencing an included package
                 if (labelContent.isEmpty()) {
-                    // Use fragment as default label instead of package name if it is not null
                     labelContent = plainOrCode(isLinkPlain,
-                            Text.of(refFragment == null ? refPackage.getQualifiedName() : refFragment));
+                            Text.of(refPackage.getQualifiedName()));
                 }
-                return htmlWriter.getPackageLink(refPackage, labelContent.isEmpty() ? text : labelContent, refFragment);
+                return htmlWriter.getPackageLink(refPackage, labelContent, refFragment);
             } else {
                 // @see is not referencing an included class, module or package. Check for cross links.
                 String refModuleName =  ch.getReferencedModuleName(refSignature);
@@ -544,15 +544,12 @@ public class TagletWriterImpl extends TagletWriter {
                     .label(labelContent));
         } else if (refMem == null) {
             // This is a fragment reference since refClass and refFragment are not null but refMem is null.
-            Content lc = labelContent.isEmpty()
-                    ? plainOrCode(isLinkPlain, Text.of(refFragment))
-                    : labelContent;
             if (refFragment.contains("/")) {
                 // Link to static file, use package URL as basis
-                return htmlWriter.getPackageLink(utils.elementUtils.getPackageOf(refClass), lc, refFragment);
+                return htmlWriter.getPackageLink(utils.elementUtils.getPackageOf(refClass), labelContent, refFragment);
             }
             return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SEE_TAG, refClass)
-                    .label(lc)
+                    .label(labelContent)
                     .where(refFragment)
                     .style(null));
         } else {

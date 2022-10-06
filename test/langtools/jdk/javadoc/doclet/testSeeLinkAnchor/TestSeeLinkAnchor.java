@@ -60,6 +60,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
         generateModuleSources();
         generatePackageSources();
         generateInvalidLinkSource();
+        generateMissingLabelSource();
     }
 
     @Test
@@ -79,15 +80,13 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     Plain link to <a href="../p2/Class2.html#class2-sub-heading">sub heading above</a></div>""",
             """
                     <li><a href="../p2/Class2.html#class2main"><code>See main heading in p2.Class2</code></a></li>
-                    <li><a href="../p2/Class2.html#class2main"><code>class2main</code></a></li>
                     <li><a href="../p2/package-summary.html#package-p2-heading"><code>See heading in p2</code></a></li>
-                    <li><a href="../p2/package-summary.html#package-p2-heading"><code>package-p2-heading</code></a></li>
                     """);
         checkOrder("p2/Class2.html",
             """
                     Link to <a href="#class2main"><code>local anchor</code></a>""",
             """
-                    Plain link without label: <a href="../p1/Class1.html#main">main</a>""");
+                    Plain link <a href="../p1/Class1.html#main">to Class1</a>.""");
         checkOrder("p2/package-summary.html",
             """
                     <a href="Class2.html#class2-sub-heading"><code>See sub heading in p2.Class2</code></a>""",
@@ -122,11 +121,8 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     <a href="../../../m2/com/m2/Class2.html#sub"><code>sub heading in Class2</code></a>.""",
             """
                     <li><a href="../../../m2/com/m2/Class2.html#main-heading"><code>See main heading in Class2</code></a></li>
-                    <li><a href="../../../m2/com/m2/Class2.html#main-heading"><code>main-heading</code></a></li>
                     <li><a href="../../module-summary.html#module-m1-heading"><code>See heading in module m1</code></a></li>
-                    <li><a href="../../module-summary.html#module-m1-heading"><code>module-m1-heading</code></a></li>
                     <li><a href="../../../m2/doc-files/file.html#module-m2-html-file-heading"><code>See heading in module m2 HTML file</code></a></li>
-                    <li><a href="../../../m2/doc-files/file.html#module-m2-html-file-heading"><code>doc-files/file.html#module-m2-html-file-heading</code></a></li>
                     """);
         checkOrder("m2/com/m2/Class2.html",
             """
@@ -138,6 +134,41 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     Link to <a href="../com/m2/Class2.html#main-heading"><code>heading in Class2</code></a>.""",
             """
                     <li><a href="../../m1/module-summary.html#module-m1-heading"><code>Heading in module m1</code></a></li>""");
+    }
+
+    @Test
+    public void testMissingLabel(Path base) throws Exception {
+        Path out = base.resolve("out");
+
+        javadoc("-d", out.toString(),
+                "-sourcepath", src.toString(),
+                "--no-platform-links",
+                "nolabel");
+
+        checkExit(Exit.OK);
+        checkOutput(Output.OUT, true, """
+                    warning: missing reference label
+                    Link with missing label: {@link ##main}.
+                                             ^
+                    """,
+            """
+                    src/nolabel/Class1.java:5: warning: missing reference label
+                    @see ##main
+                    ^
+                    """);
+        checkOutput("nolabel/Class1.html", true, """
+                    Link with missing label:\s
+                    <details class="invalid-tag">
+                    <summary>missing reference label</summary>
+                    <pre>##main</pre>
+                    </details>
+                    .</div>
+                    """,
+           """
+                    <details class="invalid-tag">
+                    <summary>missing reference label</summary>
+                    <pre>##main</pre>
+                    """);
     }
 
     @Test
@@ -163,9 +194,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
         MethodBuilder mb = MethodBuilder.parse("public String method(String s) { return s; }")
                 .setComments("""
                     @see p2.Class2##class2main See main heading in p2.Class2
-                    @see p2.Class2##class2main
                     @see p2##package-p2-heading See heading in p2
-                    @see p2##package-p2-heading
                     """);
         new ClassBuilder(tb, "p1.Class1")
                 .setModifiers("public", "class")
@@ -183,7 +212,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     <h2 id="class2main">Class2 Main</h2>
                     Link to {@link ##class2main local anchor}
                     <h3>Class2 Sub</h3>
-                    Plain link without label: {@linkplain p1.Class1##main}
+                    Plain link {@linkplain p1.Class1##main to Class1}.
                     """)
                 .write(src);
         tb.writeFile(src.resolve("p2").resolve("package-info.java"),
@@ -218,11 +247,8 @@ public class TestSeeLinkAnchor extends JavadocTester {
                      * Link to the {@link m2/com.m2.Class2##sub sub heading in Class2}.
                      *
                      * @see m2/com.m2.Class2##main-heading See main heading in Class2
-                     * @see m2/com.m2.Class2##main-heading
                      * @see m1/##module-m1-heading See heading in module m1
-                     * @see m1/##module-m1-heading
                      * @see m2/##doc-files/file.html#module-m2-html-file-heading See heading in module m2 HTML file
-                     * @see m2/##doc-files/file.html#module-m2-html-file-heading
                      */
                     public class Class1 {}
                     """)
@@ -265,6 +291,17 @@ public class TestSeeLinkAnchor extends JavadocTester {
                 .setComments("""
                     <h2 id="main">Class1 Main</h2>
                     Invalid link to {@link #main main heading}.
+                    """)
+                .write(src);
+    }
+
+    void generateMissingLabelSource() throws Exception {
+        new ClassBuilder(tb, "nolabel.Class1")
+                .setModifiers("public", "class")
+                .setComments("""
+                    <h2 id="main">Class1 Main</h2>
+                    Link with missing label: {@link ##main}.
+                    @see ##main
                     """)
                 .write(src);
     }
