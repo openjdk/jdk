@@ -228,8 +228,8 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                 serverCipherKey = P11Key.secretKey(session, out.hServerKey,
                         cipherAlgorithm, expandedKeyBits, attributes);
             } else {
-                token.p11.C_DestroyObject(session.id(), out.hClientKey);
-                token.p11.C_DestroyObject(session.id(), out.hServerKey);
+                assert out.hClientKey == 0;
+                assert out.hServerKey == 0;
                 clientCipherKey = null;
                 serverCipherKey = null;
             }

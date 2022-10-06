@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6316539 8136355
+ * @bug 6316539 8136355 8294906
  * @summary Known-answer-test for TlsKeyMaterial generator
  * @author Andreas Sterbenz
  * @library /test/lib ..
@@ -77,6 +77,7 @@ public class TestKeyMaterial extends PKCS11Test {
             byte[] clientRandom = null;
             byte[] serverRandom = null;
             String cipherAlgorithm = null;
+            String hashAlgorithm = null; // TLS1.2+ only
             int keyLength = 0;
             int expandedKeyLength = 0;
             int ivLength = 0;
@@ -110,6 +111,8 @@ public class TestKeyMaterial extends PKCS11Test {
                     serverRandom = parse(data);
                 } else if (line.startsWith("km-cipalg:")) {
                     cipherAlgorithm = data;
+                } else if (line.startsWith("km-hashalg:")) {
+                    hashAlgorithm = data;
                 } else if (line.startsWith("km-keylen:")) {
                     keyLength = Integer.parseInt(data);
                 } else if (line.startsWith("km-explen:")) {
@@ -135,14 +138,16 @@ public class TestKeyMaterial extends PKCS11Test {
                     n++;
 
                     KeyGenerator kg =
-                        KeyGenerator.getInstance("SunTlsKeyMaterial", provider);
+                        KeyGenerator.getInstance(minor == 3 ?
+                                "SunTls12KeyMaterial" :
+                                "SunTlsKeyMaterial", provider);
                     SecretKey masterKey =
                         new SecretKeySpec(master, "TlsMasterSecret");
                     TlsKeyMaterialParameterSpec spec =
                         new TlsKeyMaterialParameterSpec(masterKey, major, minor,
                         clientRandom, serverRandom, cipherAlgorithm,
                         keyLength, expandedKeyLength, ivLength, macLength,
-                        null, -1, -1);
+                        hashAlgorithm, -1, -1);
 
                     try {
                         kg.init(spec);
