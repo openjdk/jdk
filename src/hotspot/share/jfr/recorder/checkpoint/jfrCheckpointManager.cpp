@@ -155,23 +155,19 @@ void JfrCheckpointManager::register_full(BufferPtr buffer, Thread* thread) {
   // nothing here at the moment
 }
 
-const constexpr u1 global_context = 0;
-const constexpr u1 thread_local_context = 1;
-const constexpr u1 virtual_thread_local_context = 2;
-
 static inline bool is_global(ConstBufferPtr buffer) {
   assert(buffer != NULL, "invariant");
-  return buffer->context() == global_context;
+  return buffer->context() == JFR_GLOBAL;
 }
 
 static inline bool is_thread_local(ConstBufferPtr buffer) {
   assert(buffer != NULL, "invariant");
-  return buffer->context() == thread_local_context;
+  return buffer->context() == JFR_THREADLOCAL;
 }
 
 static inline bool is_virtual_thread_local(ConstBufferPtr buffer) {
   assert(buffer != NULL, "invariant");
-  return buffer->context() == virtual_thread_local_context;
+  return buffer->context() == JFR_VIRTUAL_THREADLOCAL;
 }
 
 BufferPtr JfrCheckpointManager::lease_global(Thread* thread, bool previous_epoch /* false */, size_t size /* 0 */) {
@@ -198,7 +194,7 @@ BufferPtr JfrCheckpointManager::lease_thread_local(Thread* thread, size_t size) 
   assert(buffer->free_size() >= size, "invariant");
   buffer->set_lease();
   DEBUG_ONLY(assert_lease(buffer);)
-  buffer->set_context(thread_local_context);
+  buffer->set_context(JFR_THREADLOCAL);
   assert(is_thread_local(buffer), "invariant");
   return buffer;
 }
@@ -222,7 +218,7 @@ BufferPtr JfrCheckpointManager::new_virtual_thread_local(Thread* thread, size_t 
   BufferPtr buffer = instance()._virtual_thread_local_mspace->acquire(size, thread);
   assert(buffer != nullptr, "invariant");
   assert(buffer->free_size() >= size, "invariant");
-  buffer->set_context(virtual_thread_local_context);
+  buffer->set_context(JFR_VIRTUAL_THREADLOCAL);
   assert(is_virtual_thread_local(buffer), "invariant");
   set_virtual_thread_local(thread, buffer);
   return buffer;
@@ -260,18 +256,6 @@ BufferPtr JfrCheckpointManager::acquire(Thread* thread, JfrCheckpointBufferKind 
   return acquire_virtual_thread_local(thread, size);
 }
 
-static inline JfrCheckpointBufferKind kind(ConstBufferPtr old) {
-  assert(old != nullptr, "invariant");
-  if (is_virtual_thread_local(old)) {
-    return JFR_VIRTUAL_THREADLOCAL;
-  }
-  if (is_thread_local(old)) {
-    return JFR_THREADLOCAL;
-  }
-  assert(is_global(old), "invariant");
-  return JFR_GLOBAL;
-}
-
 static inline void retire(BufferPtr buffer) {
   assert(buffer != nullptr, "invariant");
   assert(buffer->acquired_by_self(), "invariant");
@@ -291,6 +275,11 @@ static inline void release(BufferPtr buffer) {
   }
   assert(is_thread_local(buffer), "invariant");
   retire(buffer);
+}
+
+static inline JfrCheckpointBufferKind kind(ConstBufferPtr buffer) {
+  assert(buffer != nullptr, "invariant");
+  return static_cast<JfrCheckpointBufferKind>(buffer->context());
 }
 
 BufferPtr JfrCheckpointManager::flush(BufferPtr old, size_t used, size_t requested, Thread* thread) {
