@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 8288717
- * @summary Tests that when the idleConnectionTimeout property is specified,
- *          an HTTP/2 connection will close within the specified interval if
- *          there are no active streams on the connection.
+ * @summary Tests that when the idleConnectionTimeoutEvent is configured in HTTP/2,
+ *          an HTTP/2 connection will close within the specified interval if there
+ *          are no active streams on the connection.
  * @library /test/lib server
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
