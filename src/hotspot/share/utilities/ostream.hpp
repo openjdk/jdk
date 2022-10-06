@@ -48,15 +48,14 @@ class outputStream : public ResourceObj {
 
  protected:
    int _indentation; // current indentation
-   int _width;       // width of the page
-   int _position;    // position on the current line
-   int _newlines;    // number of '\n' output so far
-   julong _precount; // number of chars output, less _position
+   int _position;    // visual position on the current line
+   uint64_t _precount; // number of chars output, less than _position
    TimeStamp _stamp; // for time stamps
    char* _scratch;   // internal scratch buffer for printf
    size_t _scratch_len; // size of internal scratch buffer
 
-   void update_position(const char* s, size_t len);
+  // Returns whether a newline was seen or not
+   bool update_position(const char* s, size_t len);
    static const char* do_vsnprintf(char* buffer, size_t buflen,
                                    const char* format, va_list ap,
                                    bool add_cr,
@@ -71,8 +70,8 @@ class outputStream : public ResourceObj {
 
  public:
    // creation
-   outputStream(int width = 80);
-   outputStream(int width, bool has_time_stamps);
+   outputStream();
+   outputStream(bool has_time_stamps);
 
    // indentation
    outputStream& indent();
@@ -86,7 +85,6 @@ class outputStream : public ResourceObj {
    void move_to(int col, int slop = 6, int min_space = 2);
 
    // sizing
-   int width()    const { return _width;    }
    int position() const { return _position; }
    julong count() const { return _precount + _position; }
    void set_count(julong count) { _precount = count - _position; }
