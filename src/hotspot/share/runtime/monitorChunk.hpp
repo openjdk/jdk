@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 #ifndef SHARE_RUNTIME_MONITORCHUNK_HPP
 #define SHARE_RUNTIME_MONITORCHUNK_HPP
 
-#include "runtime/synchronizer.hpp"
+#include "memory/allocation.hpp"
+
+class BasicObjectLock;
+class OopClosure;
 
 // Data structure for holding monitors for one activation during
 // deoptimization.

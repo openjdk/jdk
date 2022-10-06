@@ -29,11 +29,12 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 
 /**
- * A thread-local variable that is notified when a thread terminates and
- * it has been initialized in the terminating thread (even if it was
+ * A per-carrier-thread-local variable that is notified when a thread terminates and
+ * it has been initialized in the terminating carrier thread or a virtual thread
+ * that had the terminating carrier thread as its carrier thread (even if it was
  * initialized with a null value).
  */
-public class TerminatingThreadLocal<T> extends ThreadLocal<T> {
+public class TerminatingThreadLocal<T> extends CarrierThreadLocal<T> {
 
     @Override
     public void set(T value) {
@@ -79,8 +80,7 @@ public class TerminatingThreadLocal<T> extends ThreadLocal<T> {
      * @param tl the ThreadLocal to register
      */
     public static void register(TerminatingThreadLocal<?> tl) {
-        if (!Thread.currentThread().isVirtual())
-            REGISTRY.get().add(tl);
+        REGISTRY.get().add(tl);
     }
 
     /**
@@ -89,16 +89,15 @@ public class TerminatingThreadLocal<T> extends ThreadLocal<T> {
      * @param tl the ThreadLocal to unregister
      */
     private static void unregister(TerminatingThreadLocal<?> tl) {
-        if (!Thread.currentThread().isVirtual())
-            REGISTRY.get().remove(tl);
+        REGISTRY.get().remove(tl);
     }
 
     /**
-     * a per-thread registry of TerminatingThreadLocal(s) that have been registered
-     * but later not unregistered in a particular thread.
+     * a per-carrier-thread registry of TerminatingThreadLocal(s) that have been registered
+     * but later not unregistered in a particular carrier-thread.
      */
-    public static final ThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =
-        new ThreadLocal<>() {
+    public static final CarrierThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =
+        new CarrierThreadLocal<>() {
             @Override
             protected Collection<TerminatingThreadLocal<?>> initialValue() {
                 return Collections.newSetFromMap(new IdentityHashMap<>(4));

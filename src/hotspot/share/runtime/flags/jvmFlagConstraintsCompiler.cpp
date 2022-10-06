@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/relocInfo.hpp"
-#include "compiler/compilerDefinitions.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/os.hpp"

@@ -350,7 +350,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread,
   const char* virt = jni->IsVirtualThread(vthread) ? "virtual" : "carrier";
   const jint depth = 0; // the depth is always 0 in case of breakpoint
 
-  LOG("Breakpoint: %s on %s thread: %s - Started\n", mname, virt, tname);
+  LOG("\nBreakpoint: %s on %s thread: %s - Started\n", mname, virt, tname);
 
   // disable BREAKPOINT events
   jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_BREAKPOINT, vthread);
@@ -360,7 +360,12 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread,
 
   {
     int frame_count = get_frame_count(jvmti, jni, vthread);
+
     test_GetSetLocal(jvmti, jni, vthread, depth, frame_count, true /* at_event */);
+
+    // vthread passed to callback has to refer to current thread,
+    // so we can also test with NULL in place of vthread.
+    test_GetSetLocal(jvmti, jni, NULL, depth, frame_count, true /* at_event */);
   }
   deallocate(jvmti, jni, (void*)mname);
   deallocate(jvmti, jni, (void*)tname);

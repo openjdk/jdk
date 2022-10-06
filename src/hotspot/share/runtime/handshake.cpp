@@ -30,6 +30,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -43,6 +44,7 @@
 #include "utilities/filterQueue.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 
 class HandshakeOperation : public CHeapObj<mtThread> {
   friend class HandshakeState;
@@ -81,7 +83,6 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   bool is_async()                  { return _handshake_cl->is_async(); }
   bool is_suspend()                { return _handshake_cl->is_suspend(); }
   bool is_async_exception()        { return _handshake_cl->is_async_exception(); }
-  bool is_ThreadDeath()            { return _handshake_cl->is_ThreadDeath(); }
 };
 
 class AsyncHandshakeOperation : public HandshakeOperation {
@@ -248,6 +249,9 @@ class VM_HandshakeAllThreads: public VM_Operation {
       thr->handshake_state()->add_operation(_op);
       number_of_threads_issued++;
     }
+    if (UseSystemMemoryBarrier) {
+      SystemMemoryBarrier::emit();
+    }
 
     if (number_of_threads_issued < 1) {
       log_handshake_info(start_time_ns, _op->name(), 0, 0, "no threads alive");
@@ -370,6 +374,12 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
     return;
   }
 
+  // Separate the arming of the poll in add_operation() above from
+  // the read of JavaThread state in the try_process() call below.
+  if (UseSystemMemoryBarrier) {
+    SystemMemoryBarrier::emit();
+  }
+
   // Keeps count on how many of own emitted handshakes
   // this thread execute.
   int emitted_handshakes_executed = 0;
@@ -434,9 +444,6 @@ static bool no_async_exception_filter(HandshakeOperation* op) {
 static bool async_exception_filter(HandshakeOperation* op) {
   return op->is_async_exception();
 }
-static bool is_ThreadDeath_filter(HandshakeOperation* op) {
-  return op->is_ThreadDeath();
-}
 static bool no_suspend_no_async_exception_filter(HandshakeOperation* op) {
   return !op->is_suspend() && !op->is_async_exception();
 }
@@ -492,18 +499,14 @@ bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exceptio
   return get_op_for_self(allow_suspend, check_async_exception) != NULL;
 }
 
-bool HandshakeState::has_async_exception_operation(bool ThreadDeath_only) {
+bool HandshakeState::has_async_exception_operation() {
   if (!has_operation()) return false;
   MutexLocker ml(_lock.owned_by_self() ? NULL :  &_lock, Mutex::_no_safepoint_check_flag);
-  if (!ThreadDeath_only) {
-    return _queue.peek(async_exception_filter) != NULL;
-  } else {
-    return _queue.peek(is_ThreadDeath_filter) != NULL;
-  }
+  return _queue.peek(async_exception_filter) != NULL;
 }
 
 void HandshakeState::clean_async_exception_operation() {
-  while (has_async_exception_operation(/* ThreadDeath_only */ false)) {
+  while (has_async_exception_operation()) {
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     HandshakeOperation* op;
     op = _queue.peek(async_exception_filter);

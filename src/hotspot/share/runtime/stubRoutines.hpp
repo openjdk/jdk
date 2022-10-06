@@ -251,8 +251,6 @@ class StubRoutines: AllStatic {
   static address _dlibm_tan_cot_huge;
   static address _dtan;
 
-  static RuntimeStub* _cont_doYield_stub;
-  static address _cont_doYield;
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -430,8 +428,6 @@ class StubRoutines: AllStatic {
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
 
-  static RuntimeStub* cont_doYield_stub() { return _cont_doYield_stub; }
-  static address cont_doYield()        { return _cont_doYield; }
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }

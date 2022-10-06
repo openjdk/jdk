@@ -149,7 +149,11 @@ class JfrVframeStream : public vframeStreamCommon {
 };
 
 JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode) :
-  vframeStreamCommon(RegisterMap(jt, false, false, true)), _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
+  vframeStreamCommon(RegisterMap(jt,
+                                 RegisterMap::UpdateMap::skip,
+                                 RegisterMap::ProcessFrames::skip,
+                                 RegisterMap::WalkContinuation::include)),
+    _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
     _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
   _reg_map.set_async(async_mode);
@@ -222,7 +226,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
   // regular tag mechanism. If the free list is empty, a malloc could result, and the problem with that is that the thread
   // we have suspended could be the holder of the malloc lock. If there is no more available space, the attempt is aborted.
-  const JfrBuffer* const enqueue_buffer = JfrTraceIdLoadBarrier::get_enqueue_buffer(current_thread);
+  const JfrBuffer* const enqueue_buffer = JfrTraceIdLoadBarrier::get_sampler_enqueue_buffer(current_thread);
   HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.
   JfrVframeStream vfs(jt, frame, false, true);
   u4 count = 0;

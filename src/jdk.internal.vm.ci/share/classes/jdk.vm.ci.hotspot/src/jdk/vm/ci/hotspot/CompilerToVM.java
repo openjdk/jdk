@@ -344,13 +344,21 @@ final class CompilerToVM {
      *            {@code -1}. If non-negative, then resolution checks specific to the bytecode it
      *            denotes are performed if the method is already resolved. Should any of these
      *            checks fail, 0 is returned.
+     * @param caller if non-null, do access checks in the context of {@code caller} calling the
+     *            looked up method
      * @return the resolved method entry, 0 otherwise
      */
-    HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, int cpi, byte opcode) {
-        return lookupMethodInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, opcode);
+    HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, int cpi, byte opcode, HotSpotResolvedJavaMethodImpl caller) {
+        long callerMethodPointer = caller == null ? 0L : caller.getMethodPointer();
+        return lookupMethodInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, opcode, caller, callerMethodPointer);
     }
 
-    private native HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, byte opcode);
+    private native HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool,
+                    long constantPoolPointer,
+                    int cpi,
+                    byte opcode,
+                    HotSpotResolvedJavaMethodImpl caller,
+                    long callerMethodPointer);
 
     /**
      * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
@@ -513,7 +521,7 @@ final class CompilerToVM {
         try (HotSpotCompiledCodeStream stream = new HotSpotCompiledCodeStream(compiledCode, withTypeInfo, withComments, withMethods)) {
             return installCode0(stream.headChunk, stream.timeNS, withTypeInfo, compiledCode, stream.objectPool, code, failedSpeculationsAddress, speculations);
         }
-     }
+    }
 
     native int installCode0(long compiledCodeBuffer,
                     long serializationNS,
@@ -707,12 +715,12 @@ final class CompilerToVM {
     private native void reprofile(HotSpotResolvedJavaMethodImpl method, long methodPointer);
 
     /**
-     * Invalidates {@code nmethodMirror} such that {@link InvalidInstalledCodeException} will be
-     * raised the next time {@code nmethodMirror} is {@linkplain #executeHotSpotNmethod executed}.
-     * The {@code nmethod} associated with {@code nmethodMirror} is also made non-entrant and any
-     * current activations of the {@code nmethod} are deoptimized.
+     * Updates {@code nmethodMirror} such that {@link InvalidInstalledCodeException} will be raised
+     * the next time {@code nmethodMirror} is {@linkplain #executeHotSpotNmethod executed}. The
+     * {@code nmethod} associated with {@code nmethodMirror} is also made non-entrant and if
+     * {@code deoptimize == true} any current activations of the {@code nmethod} are deoptimized.
      */
-    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror);
+    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize);
 
     /**
      * Collects the current values of all JVMCI benchmark counters, summed up over all threads.
@@ -1167,10 +1175,9 @@ final class CompilerToVM {
     native boolean isTrustedForIntrinsics(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
-     * Releases the resources backing the global JNI {@code handle}. This is equivalent to the
-     * {@code DeleteGlobalRef} JNI function.
+     * Releases all oop handles whose referent is null.
      */
-    native void deleteGlobalHandle(long handle);
+    native void releaseClearedOopHandles();
 
     /**
      * Gets the failed speculations pointed to by {@code *failedSpeculationsAddress}.

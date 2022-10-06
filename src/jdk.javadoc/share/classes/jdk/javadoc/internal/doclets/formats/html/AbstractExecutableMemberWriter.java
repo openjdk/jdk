@@ -42,8 +42,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.EXECUTABLE_MEMBER_PARAM;
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.MEMBER;
@@ -211,7 +211,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         TypeMirror rcvrType = member.getReceiverType();
         if (includeAnnotations && rcvrType != null && isAnnotatedReceiver(rcvrType)) {
             addReceiver(member, rcvrType, result);
-            sep = "," + DocletConstants.NL + " ";
+            sep = "," + Text.NL + " ";
         }
         int paramstart;
         ExecutableType instMeth = utils.asInstantiatedMethodType(typeElement, member);
@@ -225,7 +225,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                     Content annotationInfo = writer.getAnnotationInfo(param, false);
                     if (!annotationInfo.isEmpty()) {
                         result.add(annotationInfo)
-                                .add(DocletConstants.NL)
+                                .add(Text.NL)
                                 .add(" ");
                     }
                 }
@@ -237,14 +237,14 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
         for (int i = paramstart + 1; i < parameters.size(); i++) {
             result.add(",");
-            result.add(DocletConstants.NL);
+            result.add(Text.NL);
             result.add(" ");
 
             if (includeAnnotations) {
                 Content annotationInfo = writer.getAnnotationInfo(parameters.get(i), false);
                 if (!annotationInfo.isEmpty()) {
                     result.add(annotationInfo)
-                            .add(DocletConstants.NL)
+                            .add(Text.NL)
                             .add(" ");
                 }
             }
@@ -268,7 +268,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         for (TypeMirror t : exceptions) {
             if (!result.isEmpty()) {
                 result.add(",");
-                result.add(DocletConstants.NL);
+                result.add(Text.NL);
             }
             Content link = writer.getLink(new HtmlLinkInfo(configuration, THROWS_TYPE, t));
             result.add(link);

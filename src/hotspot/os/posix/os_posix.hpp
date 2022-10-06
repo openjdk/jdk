@@ -25,6 +25,10 @@
 #ifndef OS_POSIX_OS_POSIX_HPP
 #define OS_POSIX_OS_POSIX_HPP
 
+#include "runtime/os.hpp"
+
+#include <errno.h>
+
 // Note: the Posix API aims to capture functionality available on all Posix
 // compliant platforms, but in practice the implementations may depend on
 // non-Posix functionality. For example, the use of lseek64 and ftruncate64.
@@ -34,12 +38,19 @@
 // behaviour in API's that are defined by Posix. For example, that SIGSTKSZ
 // is not defined as a constant as of Glibc 2.34.
 
-// File conventions
-static const char* file_separator() { return "/"; }
-static const char* line_separator() { return "\n"; }
-static const char* path_separator() { return ":"; }
+// macros for restartable system calls
 
-class Posix {
+#define RESTARTABLE(_cmd, _result) do { \
+    _result = _cmd; \
+  } while(((int)_result == OS_ERR) && (errno == EINTR))
+
+#define RESTARTABLE_RETURN_INT(_cmd) do { \
+  int _result; \
+  RESTARTABLE(_cmd, _result); \
+  return _result; \
+} while(false)
+
+class os::Posix {
   friend class os;
 
 protected:
@@ -81,8 +92,6 @@ public:
 
   static void print_umask(outputStream* st, mode_t umsk);
 
-  static void print_user_info(outputStream* st);
-
   // Set PC into context. Needed for continuation after signal.
   static address ucontext_get_pc(const ucontext_t* ctx);
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
@@ -92,8 +101,6 @@ public:
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
                                     const void* ucVoid,
                                     address* stub);
-
-  static void print_active_locale(outputStream* st);
 };
 
 #endif // OS_POSIX_OS_POSIX_HPP

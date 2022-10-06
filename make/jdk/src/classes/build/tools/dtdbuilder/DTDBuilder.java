@@ -30,18 +30,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.BufferedInputStream;
-import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.BitSet;
-import java.util.StringTokenizer;
 import java.util.Enumeration;
-import java.util.Properties;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Deflater;
-import java.net.URL;
 
 /**
  * The representation of an SGML DTD. This is produced by the DTDParser.
@@ -58,8 +49,7 @@ import java.net.URL;
  * @author Arthur van Hoff
  * @author Guy Abossolo Foh
  */
-public
-class DTDBuilder extends DTD {
+public class DTDBuilder extends DTD {
 
     static PublicMapping mapping = null;
 

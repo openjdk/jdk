@@ -33,6 +33,8 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -234,7 +236,7 @@ static void current_stack_region(address *bottom, size_t *size) {
 
   // The block of memory returned by pthread_attr_getstack() includes
   // guard pages where present.  We need to trim these off.
-  size_t page_bytes = os::Linux::page_size();
+  size_t page_bytes = os::vm_page_size();
   assert(((intptr_t) stack_bottom & (page_bytes - 1)) == 0, "unaligned stack");
 
   size_t guard_bytes;
@@ -398,3 +400,5 @@ int os::extra_bang_size_in_bytes() {
   // Zero does not require an additional stack banging.
   return 0;
 }
+
+void os::setup_fpu() {}

@@ -232,7 +232,7 @@ public final class JmxMBeanServer
 
         final MBeanInstantiator fInstantiator = instantiator;
         this.secureClr = new
-            SecureClassLoaderRepository(AccessController.doPrivileged(new PrivilegedAction<ClassLoaderRepository>() {
+            SecureClassLoaderRepository(AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public ClassLoaderRepository run() {
                     return fInstantiator.getClassLoaderRepository();
@@ -1222,7 +1222,7 @@ public final class JmxMBeanServer
 
         // Registers the MBeanServer identification MBean
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 public Object run() throws Exception {
                     mbsInterceptor.registerMBean(
                             mBeanServerDelegateObject,
@@ -1251,7 +1251,7 @@ public final class JmxMBeanServer
            class loader.  The ClassLoaderRepository knows how
            to handle that case.  */
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
-        final ModifiableClassLoaderRepository loaders = AccessController.doPrivileged(new PrivilegedAction<ModifiableClassLoaderRepository>() {
+        final ModifiableClassLoaderRepository loaders = AccessController.doPrivileged(new PrivilegedAction<>() {
 
             @Override
             public ModifiableClassLoaderRepository run() {

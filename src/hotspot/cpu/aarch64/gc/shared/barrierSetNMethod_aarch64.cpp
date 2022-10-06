@@ -131,7 +131,10 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   frame_pointers_t *new_frame = (frame_pointers_t *)(return_address_ptr - 5);
 
   JavaThread *thread = JavaThread::current();
-  RegisterMap reg_map(thread, false);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame frame = thread->last_frame();
 
   assert(frame.is_compiled_frame() || frame.is_native_frame(), "must be");

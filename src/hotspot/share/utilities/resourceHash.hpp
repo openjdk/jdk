@@ -26,6 +26,9 @@
 #define SHARE_UTILITIES_RESOURCEHASH_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/numberSeq.hpp"
+#include "utilities/tableStatistics.hpp"
 
 template<typename K, typename V>
 class ResourceHashtableNode : public ResourceObj {
@@ -259,6 +262,26 @@ class ResourceHashtableBase : public STORAGE {
     }
   }
 
+  template<typename Function>
+  TableStatistics statistics_calculate(Function size_function) const {
+    NumberSeq summary;
+    size_t literal_bytes = 0;
+    Node* const* bucket = table();
+    const unsigned sz = table_size();
+    while (bucket < bucket_at(sz)) {
+      Node* node = *bucket;
+      int count = 0;
+      while (node != NULL) {
+        literal_bytes += size_function(node->_key, node->_value);
+        count++;
+        node = node->_next;
+      }
+      summary.add((double)count);
+      ++bucket;
+    }
+    return TableStatistics(summary, literal_bytes, sizeof(Node*), sizeof(Node));
+  }
+
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>
@@ -267,7 +290,7 @@ class FixedResourceHashtableStorage : public ResourceObj {
 
   Node* _table[TABLE_SIZE];
 protected:
-  FixedResourceHashtableStorage() : _table() {}
+  FixedResourceHashtableStorage() { memset(_table, 0, sizeof(_table)); }
   ~FixedResourceHashtableStorage() = default;
 
   constexpr unsigned table_size() const {

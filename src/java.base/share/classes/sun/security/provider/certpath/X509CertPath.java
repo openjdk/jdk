@@ -69,7 +69,7 @@ public class X509CertPath extends CertPath {
      * List of certificates in this chain
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private List<X509Certificate> certs;
+    private final List<X509Certificate> certs;
 
     /**
      * The names of our encodings.  PkiPath is the default.
@@ -113,7 +113,7 @@ public class X509CertPath extends CertPath {
         // don't use
         //     for (Certificate obj : certs)
         for (Object obj : certs) {
-            if (obj instanceof X509Certificate == false) {
+            if (!(obj instanceof X509Certificate)) {
                 throw new CertificateException
                     ("List is not all X509Certificates: "
                     + obj.getClass().getName());
@@ -125,7 +125,7 @@ public class X509CertPath extends CertPath {
         // and the methods in the Sun JDK 1.4 implementation of ArrayList that
         // allow read-only access are thread-safe.
         this.certs = Collections.unmodifiableList(
-                new ArrayList<X509Certificate>((List<X509Certificate>)certs));
+                new ArrayList<>((List<X509Certificate>) certs));
     }
 
     /**
@@ -176,8 +176,8 @@ public class X509CertPath extends CertPath {
      */
     private static List<X509Certificate> parsePKIPATH(InputStream is)
             throws CertificateException {
-        List<X509Certificate> certList = null;
-        CertificateFactory certFac = null;
+        List<X509Certificate> certList;
+        CertificateFactory certFac;
 
         if (is == null) {
             throw new CertificateException("input stream is null");
@@ -187,11 +187,11 @@ public class X509CertPath extends CertPath {
             DerInputStream dis = new DerInputStream(is.readAllBytes());
             DerValue[] seq = dis.getSequence(3);
             if (seq.length == 0) {
-                return Collections.<X509Certificate>emptyList();
+                return Collections.emptyList();
             }
 
             certFac = CertificateFactory.getInstance("X.509");
-            certList = new ArrayList<X509Certificate>(seq.length);
+            certList = new ArrayList<>(seq.length);
 
             // append certs in reverse order (target to trust anchor)
             for (int i = seq.length-1; i >= 0; i--) {
@@ -224,7 +224,7 @@ public class X509CertPath extends CertPath {
         }
 
         try {
-            if (is.markSupported() == false) {
+            if (!is.markSupported()) {
                 // Copy the entire input stream into an InputStream that does
                 // support mark
                 is = new ByteArrayInputStream(is.readAllBytes());
@@ -237,7 +237,7 @@ public class X509CertPath extends CertPath {
                 certList = Arrays.asList(certArray);
             } else {
                 // no certs provided
-                certList = new ArrayList<X509Certificate>(0);
+                certList = new ArrayList<>(0);
             }
         } catch (IOException ioe) {
             throw new CertificateException("IOException parsing PKCS7 data: " +
@@ -308,7 +308,7 @@ public class X509CertPath extends CertPath {
     private byte[] encodePKCS7() throws CertificateEncodingException {
         PKCS7 p7 = new PKCS7(new AlgorithmId[0],
                              new ContentInfo(ContentInfo.DATA_OID, null),
-                             certs.toArray(new X509Certificate[certs.size()]),
+                             certs.toArray(new X509Certificate[0]),
                              new SignerInfo[0]);
         DerOutputStream derout = new DerOutputStream();
         try {

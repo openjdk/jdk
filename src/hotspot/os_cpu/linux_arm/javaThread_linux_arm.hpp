@@ -28,7 +28,6 @@
  private:
   // The following thread-local variables replicate corresponding global variables.
   // They are used for a quick access from compiled code via Rthread register.
-  address _heap_top_addr;
   address _heap_lock_addr;
   address _card_table_base;
 
@@ -44,7 +43,6 @@
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_fp_offset();
   }
 
-  static ByteSize heap_top_addr_offset()         { return byte_offset_of(JavaThread, _heap_top_addr); }
   static ByteSize card_table_base_offset()       { return byte_offset_of(JavaThread, _card_table_base); }
 
 private:

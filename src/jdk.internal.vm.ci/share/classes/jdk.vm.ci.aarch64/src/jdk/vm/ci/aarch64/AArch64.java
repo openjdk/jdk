@@ -180,7 +180,6 @@ public class AArch64 extends Architecture {
         PACA,
         SVEBITPERM,
         SVE2,
-        STXR_PREFETCH,
         A53MAC,
     }
 

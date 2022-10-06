@@ -340,8 +340,6 @@ public:
   inline void null_check(Register reg) { null_check(reg, noreg, -1); } // for C1 lir_null_check
 
   // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
-  void eden_allocate(Register obj, Register obj_end, Register tmp1, Register tmp2,
-                     RegisterOrConstant size_expression, Label& slow_case);
   void tlab_allocate(Register obj, Register obj_end, Register tmp1,
                      RegisterOrConstant size_expression, Label& slow_case);
 

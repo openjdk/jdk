@@ -37,6 +37,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -706,17 +707,19 @@ public class BasicFileChooserUI extends FileChooserUI {
                         if (objects.length == 1
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
-                            && (useSetDirectory || !fsv.isFileSystem(((File)objects[0])))) {
+                            && (useSetDirectory
+                                || (!fsv.isFileSystem(((File)objects[0]))
+                                    && !Files.isSymbolicLink(((File)objects[0]).toPath())))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
                         } else {
                             ArrayList<File> fList = new ArrayList<File>(objects.length);
                             for (Object object : objects) {
-                                File f = (File) object;
+                                File f = (File)object;
                                 boolean isDir = f.isDirectory();
                                 if ((chooser.isFileSelectionEnabled() && !isDir)
                                     || (chooser.isDirectorySelectionEnabled()
-                                        && fsv.isFileSystem(f)
+                                        && (fsv.isFileSystem(f) || Files.isSymbolicLink(f.toPath()))
                                         && isDir)) {
                                     fList.add(f);
                                 }
@@ -738,7 +741,11 @@ public class BasicFileChooserUI extends FileChooserUI {
                         setDirectorySelected(true);
                         setDirectory(file);
                         if (usesSingleFilePane) {
-                            chooser.setSelectedFile(null);
+                            if (Files.isSymbolicLink(file.toPath())) {
+                                chooser.setSelectedFile(file);
+                            } else {
+                                chooser.setSelectedFile(null);
+                            }
                         }
                     } else {
                         setDirectorySelected(false);

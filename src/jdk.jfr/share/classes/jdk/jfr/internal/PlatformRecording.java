@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,12 @@ public final class PlatformRecording implements AutoCloseable {
         if (state == RecordingState.DELAYED || state == RecordingState.NEW) {
             throw new IOException("Recording \"" + name + "\" (id=" + id + ") has not started, no content to write");
         }
+
         if (state == RecordingState.STOPPED) {
+            if (!isToDisk()) {
+                throw new IOException("Recording \"" + name + "\" (id=" + id + ")"
+                    + " is an in memory recording. No data to copy after it has been stopped.");
+            }
             PlatformRecording clone = recorder.newTemporaryRecording();
             for (RepositoryChunk r : chunks) {
                 clone.add(r);

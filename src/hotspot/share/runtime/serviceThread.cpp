@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (finalizerservice_work = FinalizerService::has_work()) |
               (resolved_method_table_work = ResolvedMethodTable::has_work()) |
               (thread_id_table_work = ThreadIdTable::has_work()) |
-              (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
+              (protection_domain_table_work = ProtectionDomainCacheTable::has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
               (oop_handles_to_release = (_oop_handle_list != NULL)) |
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
@@ -207,7 +207,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (protection_domain_table_work) {
-      SystemDictionary::pd_cache_table()->unlink();
+      ProtectionDomainCacheTable::unlink();
     }
 
     if (oopstorage_work) {
@@ -230,7 +230,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
 void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  // If you enqueue events before the service thread runs, gc and the sweeper
+  // If you enqueue events before the service thread runs, gc
   // cannot keep the nmethod alive.  This could be restricted to compiled method
   // load and unload events, if we wanted to be picky.
   assert(_instance != NULL, "cannot enqueue events before the service thread runs");

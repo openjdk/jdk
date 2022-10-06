@@ -51,6 +51,16 @@ import java.io.InputStream;
  * retain a handle onto the digest object, and clone it for each
  * digest to be computed, leaving the original digest untouched.
  *
+ * @implNote This implementation only updates the message digest
+ *      with data actually read from the input stream when it is
+ *      {@linkplain #on(boolean) turned on}. This includes the various
+ *      {@code read} methods, {@code transferTo}, {@code readAllBytes},
+ *      and {@code readNBytes}. Please note that data bypassed by the
+ *      {@code skip} method are ignored. On the other hand,
+ *      if the underlying stream supports the {@code mark} and
+ *      {@code reset} methods, and the same data is read again after
+ *      {@code reset}, then the message digest is updated again.
+ *
  * @see MessageDigest
  *
  * @see DigestOutputStream

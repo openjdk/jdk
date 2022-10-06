@@ -85,7 +85,7 @@ void Annotations::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void Annotations::print_value_on(outputStream* st) const {
-  st->print("Annotations(" INTPTR_FORMAT ")", p2i(this));
+  st->print("Annotations(" PTR_FORMAT ")", p2i(this));
 }
 
 #define BULLET  " - "

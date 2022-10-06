@@ -24,12 +24,12 @@
 #
 
 #
-# Rules to create $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/util/regex/EmojiData.java
+# Rules to create $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/EmojiData.java
 #
 
-GENSRC_EMOJIDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/util/regex/EmojiData.java
+GENSRC_EMOJIDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/EmojiData.java
 
-EMOJIDATATEMP = $(MODULE_SRC)/share/classes/java/util/regex/EmojiData.java.template
+EMOJIDATATEMP = $(MODULE_SRC)/share/classes/jdk/internal/util/regex/EmojiData.java.template
 UNICODEDATA = $(MODULE_SRC)/share/data/unicodedata
 
 $(GENSRC_EMOJIDATA): $(BUILD_TOOLS_JDK) $(EMOJIDATATEMP) $(UNICODEDATA)/emoji/emoji-data.txt

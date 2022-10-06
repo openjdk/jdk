@@ -1579,7 +1579,7 @@ void LIR_Const::print_value_on(outputStream* out) const {
     case T_DOUBLE: out->print("dbl:%f",   as_jdouble());        break;
     case T_OBJECT: out->print("obj:" INTPTR_FORMAT, p2i(as_jobject()));        break;
     case T_METADATA: out->print("metadata:" INTPTR_FORMAT, p2i(as_metadata()));break;
-    default:       out->print("%3d:0x" UINT64_FORMAT_X, type(), (uint64_t)as_jlong()); break;
+    default:       out->print("%3d:" UINT64_FORMAT_X, type(), (uint64_t)as_jlong()); break;
   }
 }
 

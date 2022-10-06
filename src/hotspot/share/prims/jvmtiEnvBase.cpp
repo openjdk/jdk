@@ -566,7 +566,10 @@ JvmtiEnvBase::jvf_for_thread_and_depth(JavaThread* java_thread, jint depth) {
   if (!java_thread->has_last_Java_frame()) {
     return NULL;
   }
-  RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, true /* walk_cont */);
+  RegisterMap reg_map(java_thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::include);
   javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
 
   jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
@@ -700,10 +703,14 @@ JvmtiEnvBase::get_vthread_jvf(oop vthread) {
 javaVFrame*
 JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_p) {
   // Strip vthread frames in case of carrier thread with mounted continuation.
-  javaVFrame *jvf = JvmtiEnvBase::is_cthread_with_continuation(jt) ?
-                        jt->carrier_last_java_vframe(reg_map_p) :
-                        jt->last_java_vframe(reg_map_p);
-  jvf = check_and_skip_hidden_frames(jt, jvf);
+  bool cthread_with_cont = JvmtiEnvBase::is_cthread_with_continuation(jt);
+  javaVFrame *jvf = cthread_with_cont ? jt->carrier_last_java_vframe(reg_map_p)
+                                      : jt->last_java_vframe(reg_map_p);
+  // Skip hidden frames only for carrier threads
+  // which are in non-temporary VTMS transition.
+  if (jt->is_in_VTMS_transition()) {
+    jvf = check_and_skip_hidden_frames(jt, jvf);
+  }
   return jvf;
 }
 
@@ -845,7 +852,10 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
   HandleMark   hm(current_thread);
-  RegisterMap  reg_map(java_thread, /* update_map */ true, /* process_frames */ true);
+  RegisterMap  reg_map(java_thread,
+                       RegisterMap::UpdateMap::include,
+                       RegisterMap::ProcessFrames::include,
+                       RegisterMap::WalkContinuation::skip);
 
   for (javaVFrame *jvf = java_thread->last_java_vframe(&reg_map); jvf != NULL;
        jvf = jvf->java_sender()) {
@@ -928,7 +938,10 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
   if (java_thread->has_last_Java_frame()) {
     ResourceMark rm(current_thread);
     HandleMark   hm(current_thread);
-    RegisterMap  reg_map(java_thread);
+    RegisterMap  reg_map(java_thread,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::include,
+                         RegisterMap::WalkContinuation::skip);
 
     int depth = 0;
     for (javaVFrame *jvf = get_cthread_last_java_vframe(java_thread, &reg_map);
@@ -1144,7 +1157,10 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
   jvmtiError err = JVMTI_ERROR_NONE;
 
   if (java_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(java_thread, /* update_map */ true, /* process_frames */ false);
+    RegisterMap reg_map(java_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::skip,
+                        RegisterMap::WalkContinuation::skip);
     ResourceMark rm(current_thread);
     javaVFrame *jvf = get_cthread_last_java_vframe(java_thread, &reg_map);
 
@@ -1182,7 +1198,10 @@ JvmtiEnvBase::get_frame_count(JavaThread* jt, jint *count_ptr) {
     *count_ptr = 0;
   } else {
     ResourceMark rm(current_thread);
-    RegisterMap reg_map(jt, true, true);
+    RegisterMap reg_map(jt,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = get_cthread_last_java_vframe(jt, &reg_map);
 
     *count_ptr = get_frame_count(jvf);
@@ -1237,7 +1256,10 @@ JvmtiEnvBase::get_frame_location(JavaThread *java_thread, jint depth,
   }
   ResourceMark rm(current);
   HandleMark hm(current);
-  RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, true /* walk_cont */);
+  RegisterMap reg_map(java_thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
 
   return get_frame_location(jvf, depth, method_ptr, location_ptr);
@@ -1290,6 +1312,17 @@ JvmtiEnvBase::is_cthread_with_continuation(JavaThread* jt) {
     cont_entry = jt->vthread_continuation();
   }
   return cont_entry != NULL && is_cthread_with_mounted_vthread(jt);
+}
+
+// If (thread == NULL) then return current thread object.
+// Otherwise return JNIHandles::resolve_external_guard(thread).
+oop
+JvmtiEnvBase::current_thread_obj_or_resolve_external_guard(jthread thread) {
+  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  if (thread == NULL) {
+    thread_obj = get_vthread_or_thread_oop(JavaThread::current());
+  }
+  return thread_obj;
 }
 
 jvmtiError
@@ -1637,7 +1670,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
     assert(single_resume || is_virtual, "ResumeAllVirtualThreads should never resume non-virtual threads");
     if (java_thread->is_suspended()) {
       if (!JvmtiSuspendControl::resume(java_thread)) {
-        return JVMTI_ERROR_INTERNAL;
+        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       }
     }
   }
@@ -2185,7 +2218,10 @@ SetFramePopClosure::doit(Thread *target, bool self) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
     return;
   }
-  RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, true /* walk_cont */);
+  RegisterMap reg_map(java_thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
   _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
 }
@@ -2254,7 +2290,10 @@ PrintStackTraceClosure::do_thread_impl(Thread *target) {
                    java_thread->is_VTMS_transition_disabler(), java_thread->is_in_VTMS_transition());
 
   if (java_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(java_thread, /* update_map */ true, /* process_frames */ true);
+    RegisterMap reg_map(java_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
     javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);

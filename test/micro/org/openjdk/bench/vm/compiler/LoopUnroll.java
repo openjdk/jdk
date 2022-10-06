@@ -27,14 +27,14 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.*;
 import java.util.concurrent.TimeUnit;
 
-@Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 4, time = 5, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
-@Fork(value=1)
+@Fork(value=3)
 public class LoopUnroll {
-    @Param({"16", "32", "64", "128", "256", "512", "1024"})
+    @Param({"16", "32", /* "64", "128", "256", "512", */ "1024"})
     private int VECLEN;
 
     private byte[][] a;

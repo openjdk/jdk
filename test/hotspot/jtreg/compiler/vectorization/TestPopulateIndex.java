@@ -27,7 +27,7 @@
 * @summary Test vectorization of loop induction variable usage in the loop
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
-*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*")
+*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*" & (vm.opt.UseSVE == "null" | vm.opt.UseSVE > 0))
 * @library /test/lib /
 * @run driver compiler.vectorization.TestPopulateIndex
 */
@@ -60,7 +60,7 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {"PopulateIndex", ">= 1"})
+    @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
     public void indexArrayFill() {
         for (int i = 0; i < count; i++) {
             idx[i] = i;
@@ -78,7 +78,7 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {"PopulateIndex", ">= 1"})
+    @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
     public void exprWithIndex1() {
         for (int i = 0; i < count; i++) {
             dst[i] = src[i] * (i & 7);
@@ -96,7 +96,7 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {"PopulateIndex", ">= 1"})
+    @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
     public void exprWithIndex2() {
         for (int i = 0; i < count; i++) {
             f[i] = i * i + 100;

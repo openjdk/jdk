@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class ZeroInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_Reference_get_entry();
 
  public:
-  ZeroInterpreterGenerator(StubQueue* _code);
+  ZeroInterpreterGenerator();
 
  protected:
   MacroAssembler* assembler() const {

@@ -41,7 +41,7 @@ class G1CardTableChangedListener : public G1MappingChangedListener {
 
   void set_card_table(G1CardTable* card_table) { _card_table = card_table; }
 
-  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
+  void on_commit(uint start_idx, size_t num_regions, bool zero_filled) override;
 };
 
 class G1CardTable : public CardTable {
@@ -117,12 +117,12 @@ public:
   // Returns how many bytes of the heap a single byte of the Card Table corresponds to.
   static size_t heap_map_factor() { return _card_size; }
 
-  void initialize() {}
+  void initialize() override {}
   void initialize(G1RegionToSpaceMapper* mapper);
 
-  virtual void resize_covered_region(MemRegion new_region) { ShouldNotReachHere(); }
+  void resize_covered_region(MemRegion new_region) override { ShouldNotReachHere(); }
 
-  virtual bool is_in_young(oop obj) const;
+  bool is_in_young(const void* p) const override;
 };
 
 #endif // SHARE_GC_G1_G1CARDTABLE_HPP

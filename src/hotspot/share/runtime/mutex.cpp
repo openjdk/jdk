@@ -452,15 +452,6 @@ void Mutex::check_rank(Thread* thread) {
   }
 }
 
-bool Mutex::contains(Mutex* locks, Mutex* lock) {
-  for (; locks != NULL; locks = locks->next()) {
-    if (locks == lock) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // Called immediately after lock acquisition or release as a diagnostic
 // to track the lock-set of the thread.
 // Rather like an EventListener for _owner (:>).

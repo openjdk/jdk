@@ -29,6 +29,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -76,11 +77,11 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   int call_offset = -1;
   if (!align_stack) {
-    set_last_Java_frame(thread, noreg, rbp, NULL);
+    set_last_Java_frame(thread, noreg, rbp, NULL, rscratch1);
   } else {
     address the_pc = pc();
     call_offset = offset();
-    set_last_Java_frame(thread, noreg, rbp, the_pc);
+    set_last_Java_frame(thread, noreg, rbp, the_pc, rscratch1);
     andptr(rsp, -(StackAlignmentInBytes));    // Align stack
   }
 
@@ -110,7 +111,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   // check for pending exceptions
   { Label L;
-    cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     jcc(Assembler::equal, L);
     // exception pending => remove activation and forward to exception handler
     movptr(rax, Address(thread, Thread::pending_exception_offset()));
@@ -320,10 +321,6 @@ enum reg_save_layout {
 // describe FPU registers.  In all other cases it should be sufficient
 // to simply save their current value.
 //
-// Register is a class, but it would be assigned numerical value.
-// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
-PRAGMA_DIAG_PUSH
-PRAGMA_NONNULL_IGNORED
 static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
                                 bool save_fpu_registers = true) {
 
@@ -418,7 +415,6 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 
   return map;
 }
-PRAGMA_DIAG_POP
 
 #define __ this->
 
@@ -734,7 +730,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   // check that fields in JavaThread for exception oop and issuing pc are
   // empty before writing to them
   Label oop_empty;
-  __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), (int32_t) NULL_WORD);
+  __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), NULL_WORD);
   __ jcc(Assembler::equal, oop_empty);
   __ stop("exception oop already set");
   __ bind(oop_empty);
@@ -890,7 +886,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   __ get_thread(thread);
   __ push(thread);
 #endif // _LP64
-  __ set_last_Java_frame(thread, noreg, rbp, NULL);
+  __ set_last_Java_frame(thread, noreg, rbp, NULL, rscratch1);
   // do the call
   __ call(RuntimeAddress(target));
   OopMapSet* oop_maps = new OopMapSet();
@@ -916,7 +912,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 
   // check for pending exceptions
   { Label L;
-    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::equal, L);
     // exception pending => remove activation and forward to exception handler
 
@@ -940,13 +936,13 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 #ifdef ASSERT
     // check that fields in JavaThread for exception oop and issuing pc are empty
     Label oop_empty;
-    __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), NULL_WORD);
     __ jcc(Assembler::equal, oop_empty);
     __ stop("exception oop must be empty");
     __ bind(oop_empty);
 
     Label pc_empty;
-    __ cmpptr(Address(thread, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, JavaThread::exception_pc_offset()), NULL_WORD);
     __ jcc(Assembler::equal, pc_empty);
     __ stop("exception pc must be empty");
     __ bind(pc_empty);
@@ -1030,61 +1026,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) && !UseTLAB
-            && Universe::heap()->supports_inline_contig_alloc()) {
-          Label slow_path;
-          Register obj_size = rcx;
-          Register t1       = rbx;
-          Register t2       = rsi;
-          assert_different_registers(klass, obj, obj_size, t1, t2);
-
-          __ push(rdi);
-          __ push(rbx);
-
-          if (id == fast_new_instance_init_check_id) {
-            // make sure the klass is initialized
-            __ cmpb(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
-            __ jcc(Assembler::notEqual, slow_path);
-          }
-
-#ifdef ASSERT
-          // assert object can be fast path allocated
-          {
-            Label ok, not_ok;
-            __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
-            __ cmpl(obj_size, 0);  // make sure it's an instance (LH > 0)
-            __ jcc(Assembler::lessEqual, not_ok);
-            __ testl(obj_size, Klass::_lh_instance_slow_path_bit);
-            __ jcc(Assembler::zero, ok);
-            __ bind(not_ok);
-            __ stop("assert(can be fast path allocated)");
-            __ should_not_reach_here();
-            __ bind(ok);
-          }
-#endif // ASSERT
-
-          const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread);
-          NOT_LP64(__ get_thread(thread));
-
-          // get the instance size (size is positive so movl is fine for 64bit)
-          __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
-
-          __ eden_allocate(thread, obj, obj_size, 0, t1, slow_path);
-
-          __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ false);
-          __ verify_oop(obj);
-          __ pop(rbx);
-          __ pop(rdi);
-          __ ret(0);
-
-          __ bind(slow_path);
-          __ pop(rbx);
-          __ pop(rdi);
-        }
-
         __ enter();
         OopMap* map = save_live_registers(sasm, 2);
         int call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_instance), klass);
@@ -1149,47 +1090,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         }
 #endif // ASSERT
 
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          Register arr_size = rsi;
-          Register t1       = rcx;  // must be rcx for use as shift count
-          Register t2       = rdi;
-          Label slow_path;
-
-          // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
-          // since size is positive movl does right thing on 64bit
-          __ movl(t1, Address(klass, Klass::layout_helper_offset()));
-          // since size is positive movl does right thing on 64bit
-          __ movl(arr_size, length);
-          assert(t1 == rcx, "fixed register usage");
-          __ shlptr(arr_size /* by t1=rcx, mod 32 */);
-          __ shrptr(t1, Klass::_lh_header_size_shift);
-          __ andptr(t1, Klass::_lh_header_size_mask);
-          __ addptr(arr_size, t1);
-          __ addptr(arr_size, MinObjAlignmentInBytesMask); // align up
-          __ andptr(arr_size, ~MinObjAlignmentInBytesMask);
-
-          // Using t2 for non 64-bit.
-          const Register thread = NOT_LP64(t2) LP64_ONLY(r15_thread);
-          NOT_LP64(__ get_thread(thread));
-          __ eden_allocate(thread, obj, arr_size, 0, t1, slow_path);  // preserves arr_size
-
-          __ initialize_header(obj, klass, length, t1, t2);
-          __ movb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
-          assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
-          assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
-          __ andptr(t1, Klass::_lh_header_size_mask);
-          __ subptr(arr_size, t1);  // body length
-          __ addptr(t1, obj);       // body start
-          __ initialize_body(t1, arr_size, 0, t2);
-          __ verify_oop(obj);
-          __ ret(0);
-
-          __ bind(slow_path);
-        }
-
         __ enter();
         OopMap* map = save_live_registers(sasm, 3);
         int call_offset;
@@ -1247,9 +1147,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         // load the klass and check the has finalizer flag
         Label register_finalizer;
-        Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
         Register t = rsi;
-        __ load_klass(t, rax, tmp_load_klass);
+        __ load_klass(t, rax, rscratch1);
         __ movl(t, Address(t, Klass::access_flags_offset()));
         __ testl(t, JVM_ACC_HAS_FINALIZER);
         __ jcc(Assembler::notZero, register_finalizer);

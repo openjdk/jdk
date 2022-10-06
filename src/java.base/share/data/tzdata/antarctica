@@ -180,9 +180,7 @@ Zone Antarctica/Mawson	0	-	-00	1954 Feb 13
 # St Paul Island - near Amsterdam, uninhabited
 #	fishing stations operated variously 1819/1931
 #
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Indian/Kerguelen	0	-	-00	1950 # Port-aux-Français
-			5:00	-	+05
+# Kerguelen - see Indian/Maldives.
 #
 # year-round base in the main continent
 # Dumont d'Urville - see Pacific/Port_Moresby.
@@ -265,31 +263,7 @@ Zone Antarctica/Troll	0	-	-00	2005 Feb 12
 #	year-round from 1960/61 to 1992
 
 # Vostok, since 1957-12-16, temporarily closed 1994-02/1994-11
-# From Craig Mundell (1994-12-15):
-# http://quest.arc.nasa.gov/antarctica/QA/computers/Directions,Time,ZIP
-# Vostok, which is one of the Russian stations, is set on the same
-# time as Moscow, Russia.
-#
-# From Lee Hotz (2001-03-08):
-# I queried the folks at Columbia who spent the summer at Vostok and this is
-# what they had to say about time there:
-# "in the US Camp (East Camp) we have been on New Zealand (McMurdo)
-# time, which is 12 hours ahead of GMT. The Russian Station Vostok was
-# 6 hours behind that (although only 2 miles away, i.e. 6 hours ahead
-# of GMT). This is a time zone I think two hours east of Moscow. The
-# natural time zone is in between the two: 8 hours ahead of GMT."
-#
-# From Paul Eggert (2001-05-04):
-# This seems to be hopelessly confusing, so I asked Lee Hotz about it
-# in person.  He said that some Antarctic locations set their local
-# time so that noon is the warmest part of the day, and that this
-# changes during the year and does not necessarily correspond to mean
-# solar noon.  So the Vostok time might have been whatever the clocks
-# happened to be during their visit.  So we still don't really know what time
-# it is at Vostok.  But we'll guess +06.
-#
-Zone Antarctica/Vostok	0	-	-00	1957 Dec 16
-			6:00	-	+06
+# See Asia/Urumqi.
 
 # S Africa - year-round bases
 # Marion Island, -4653+03752

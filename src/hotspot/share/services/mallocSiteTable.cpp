@@ -189,6 +189,10 @@ bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {
   return walk(walker);
 }
 
+static int qsort_helper(const void* a, const void* b) {
+  return *((uint16_t*)a) - *((uint16_t*)b);
+}
+
 void MallocSiteTable::print_tuning_statistics(outputStream* st) {
   // Total number of allocation sites, include empty sites
   int total_entries = 0;
@@ -197,11 +201,16 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
   // Number of captured call stack distribution
   int stack_depth_distribution[NMT_TrackingStackDepth + 1] = { 0 };
   // Chain lengths
-  int lengths[table_size] = { 0 };
+  uint16_t lengths[table_size] = { 0 };
+  // Unused buckets
+  int unused_buckets = 0;
 
   for (int i = 0; i < table_size; i ++) {
     int this_chain_length = 0;
     const MallocSiteHashtableEntry* head = _table[i];
+    if (head == NULL) {
+      unused_buckets ++;
+    }
     while (head != NULL) {
       total_entries ++;
       this_chain_length ++;
@@ -214,43 +223,21 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
       stack_depth_distribution[callstack_depth] ++;
       head = head->next();
     }
-    lengths[i] = this_chain_length;
+    lengths[i] = (uint16_t)MIN2(this_chain_length, USHRT_MAX);
   }
 
   st->print_cr("Malloc allocation site table:");
   st->print_cr("\tTotal entries: %d", total_entries);
-  st->print_cr("\tEmpty entries: %d (%2.2f%%)", empty_entries, ((float)empty_entries * 100) / total_entries);
+  st->print_cr("\tEmpty entries (no outstanding mallocs): %d (%2.2f%%)",
+                  empty_entries, ((float)empty_entries * 100) / total_entries);
   st->cr();
 
-  // We report the hash distribution (chain length distribution) of the n shortest chains
-  //  - under the assumption that this usually contains all lengths. Reporting threshold
-  //  is 20, and the expected avg chain length is 5..6 (see table size).
-  static const int chain_length_threshold = 20;
-  int chain_length_distribution[chain_length_threshold] = { 0 };
-  int over_threshold = 0;
-  int longest_chain_length = 0;
-  for (int i = 0; i < table_size; i ++) {
-    if (lengths[i] >= chain_length_threshold) {
-      over_threshold ++;
-    } else {
-      chain_length_distribution[lengths[i]] ++;
-    }
-    longest_chain_length = MAX2(longest_chain_length, lengths[i]);
-  }
+  qsort(lengths, table_size, sizeof(uint16_t), qsort_helper);
 
-  st->print_cr("Hash distribution:");
-  if (chain_length_distribution[0] == 0) {
-    st->print_cr("no empty buckets.");
-  } else {
-    st->print_cr("%d buckets are empty.", chain_length_distribution[0]);
-  }
-  for (int len = 1; len < MIN2(longest_chain_length + 1, chain_length_threshold); len ++) {
-    st->print_cr("%2d %s: %d.", len, (len == 1 ? "  entry" : "entries"), chain_length_distribution[len]);
-  }
-  if (longest_chain_length >= chain_length_threshold) {
-    st->print_cr(">=%2d entries: %d.", chain_length_threshold, over_threshold);
-  }
-  st->print_cr("most entries: %d.", longest_chain_length);
+  st->print_cr("Bucket chain length distribution:");
+  st->print_cr("unused:  %d", unused_buckets);
+  st->print_cr("longest: %d", lengths[table_size - 1]);
+  st->print_cr("median:  %d", lengths[table_size / 2]);
   st->cr();
 
   st->print_cr("Call stack depth distribution:");

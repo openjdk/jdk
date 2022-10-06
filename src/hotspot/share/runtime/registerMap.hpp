@@ -60,7 +60,7 @@ class JavaThread;
 //      values of the callee-saved registers does not matter, e.g., if you
 //      only need the static properties such as frame type, pc, and such.
 //      Updating of the RegisterMap can be turned off by instantiating the
-//      register map as: RegisterMap map(thread, false);
+//      register map with RegisterMap::UpdateMap::skip
 
 class RegisterMap : public StackObj {
  public:
@@ -70,6 +70,9 @@ class RegisterMap : public StackObj {
     location_valid_type_size = sizeof(LocationValidType)*8,
     location_valid_size = (reg_count+location_valid_type_size-1)/location_valid_type_size
   };
+  enum class UpdateMap { skip, include };
+  enum class ProcessFrames { skip, include };
+  enum class WalkContinuation { skip, include };
  private:
   intptr_t*         _location[reg_count];     // Location of registers (intptr_t* looks better than address in the debugger)
   LocationValidType _location_valid[location_valid_size];
@@ -94,8 +97,8 @@ class RegisterMap : public StackObj {
 
  public:
   DEBUG_ONLY(intptr_t* _update_for_id;) // Assert that RegisterMap is not updated twice for same frame
-  RegisterMap(JavaThread *thread, bool update_map = true, bool process_frames = true, bool walk_cont = false);
-  RegisterMap(oop continuation, bool update_map = true);
+  RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames process_frames, WalkContinuation walk_cont);
+  RegisterMap(oop continuation, UpdateMap update_map);
   RegisterMap(const RegisterMap* map);
 
   address location(VMReg reg, intptr_t* sp) const {

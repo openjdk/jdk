@@ -1449,6 +1449,7 @@ class VectorBlendNode : public VectorNode {
   }
 
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
   Node* vec_mask() const { return in(3); }

@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.coordinator;
 import com.sun.hotspot.igv.coordinator.actions.RemoveCookie;
 import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.util.PropertiesSheet;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import java.util.List;
 import java.util.HashMap;
@@ -49,6 +50,7 @@ public class FolderNode extends AbstractNode {
     // NetBeans node corresponding to each opened graph. Used to highlight the
     // focused graph in the Outline window.
     private static Map<InputGraph, GraphNode> graphNode = new HashMap<>();
+    private boolean selected = false;
 
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
 
@@ -57,6 +59,10 @@ public class FolderNode extends AbstractNode {
         public FolderChildren(Folder folder) {
             this.folder = folder;
             folder.getChangedEvent().addListener(this);
+        }
+
+        public Folder getFolder() {
+            return folder;
         }
 
         @Override
@@ -104,7 +110,11 @@ public class FolderNode extends AbstractNode {
 
     @Override
     public Image getIcon(int i) {
-        return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder.png");
+        if (selected) {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder_selected.png");
+        } else {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder.png");
+        }
     }
 
     protected FolderNode(Folder folder) {
@@ -128,6 +138,20 @@ public class FolderNode extends AbstractNode {
         }
     }
 
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+        fireDisplayNameChange(null, null);
+        fireIconChange();
+    }
+
+    public String getHtmlDisplayName() {
+        String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
+        if (selected) {
+            htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
+        }
+        return htmlDisplayName;
+    }
+
     public void init(String name, List<Group> groups) {
         this.setDisplayName(name);
         children.addNotify();
@@ -135,6 +159,11 @@ public class FolderNode extends AbstractNode {
         for (Group g : groups) {
             content.add(g);
         }
+    }
+
+    public boolean isRootNode() {
+        Folder folder = getFolder();
+        return (folder != null && folder instanceof GraphDocument);
     }
 
     @Override
@@ -148,5 +177,9 @@ public class FolderNode extends AbstractNode {
 
     public static GraphNode getGraphNode(InputGraph graph) {
         return graphNode.get(graph);
+    }
+
+    public Folder getFolder() {
+        return children.getFolder();
     }
 }

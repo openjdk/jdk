@@ -24,11 +24,14 @@ package org.openjdk.bench.java.util.stream.ops.ref;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +41,9 @@ import java.util.stream.IntStream;
  * Benchmark for limit()/skip() operation in sized streams.
  */
 @BenchmarkMode(Mode.Throughput)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class SliceToList {

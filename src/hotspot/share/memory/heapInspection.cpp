@@ -443,7 +443,7 @@ static void print_classname(outputStream* st, Klass* klass) {
   if (loader_oop == NULL) {
     st->print("null");
   } else {
-    st->print(INTPTR_FORMAT, p2i(klass->class_loader_data()));
+    st->print(PTR_FORMAT, p2i(klass->class_loader_data()));
   }
 }
 
