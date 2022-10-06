@@ -1862,47 +1862,17 @@ public class ThreadAPI {
     }
 
     /**
-     * Test Thread::getStackTrace on thread that has been started but
-     * has not run.
+     * Test Thread::getStackTrace on thread that has been started but has not run.
      */
     @Test
     public void testGetStackTrace2() throws Exception {
         if (!ThreadBuilders.supportsCustomScheduler())
             throw new SkipException("Requires continuations support");
-        List<Thread> threads = new ArrayList<>();
-        AtomicBoolean done = new AtomicBoolean();
-        try {
-            Thread target = null;
-
-            // start virtual threads that are CPU bound until we find a thread
-            // that does not run. This is done while holding a monitor to
-            // allow this test run in the context of a virtual thread.
-            synchronized (this) {
-                while (target == null) {
-                    CountDownLatch latch = new CountDownLatch(1);
-                    Thread vthread = Thread.ofVirtual().start(() -> {
-                        latch.countDown();
-                        while (!done.get()) { }
-                    });
-                    threads.add(vthread);
-                    if (!latch.await(3, TimeUnit.SECONDS)) {
-                        // thread did not run
-                        target = vthread;
-                    }
-                }
-            }
-
-            // stack trace should be empty
-            StackTraceElement[] stack = target.getStackTrace();
-            assertTrue(stack.length == 0);
-        } finally {
-            done.set(true);
-
-            // wait for threads to terminate
-            for (Thread thread : threads) {
-                thread.join();
-            }
-        }
+        Executor scheduler = task -> { };
+        Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
+        Thread thread = builder.start(() -> { });
+        StackTraceElement[] stack = thread.getStackTrace();
+        assertTrue(stack.length == 0);
     }
 
     /**
