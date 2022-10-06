@@ -25,9 +25,9 @@
  * @test
  * @summary Verifies JVMTI GetLocalXXX/SetLocalXXX return errors for unsuspended vthreads
  * @requires vm.continuations
+ * @enablePreview
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} GetSetLocalUnsuspended.java
- * @run main/othervm/native --enable-preview -agentlib:GetSetLocalUnsuspended GetSetLocalUnsuspended
+ * @run main/othervm/native -agentlib:GetSetLocalUnsuspended GetSetLocalUnsuspended
  */
 
 
