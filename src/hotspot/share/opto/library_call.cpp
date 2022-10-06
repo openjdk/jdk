@@ -516,7 +516,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:         return inline_fp_conversions(intrinsic_id());
 
+  case vmIntrinsics::_floatIsFinite:
   case vmIntrinsics::_floatIsInfinite:
+  case vmIntrinsics::_doubleIsFinite:
   case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(intrinsic_id());
 
   case vmIntrinsics::_numberOfLeadingZeros_i:
@@ -4537,8 +4539,14 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
   case vmIntrinsics::_floatIsInfinite:
     result = new IsInfiniteFNode(arg);
     break;
+  case vmIntrinsics::_floatIsFinite:
+    result = new IsFiniteFNode(arg);
+    break;
   case vmIntrinsics::_doubleIsInfinite:
     result = new IsInfiniteDNode(arg);
+    break;
+  case vmIntrinsics::_doubleIsFinite:
+    result = new IsFiniteDNode(arg);
     break;
   default:
     fatal_unexpected_iid(id);

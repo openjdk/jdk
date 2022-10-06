@@ -2406,14 +2406,12 @@ static void compaction_with_stealing_work(TaskTerminator* terminator, uint worke
 class UpdateDensePrefixAndCompactionTask: public WorkerTask {
   TaskQueue& _tq;
   TaskTerminator _terminator;
-  uint _active_workers;
 
 public:
   UpdateDensePrefixAndCompactionTask(TaskQueue& tq, uint active_workers) :
       WorkerTask("UpdateDensePrefixAndCompactionTask"),
       _tq(tq),
-      _terminator(active_workers, ParCompactionManager::region_task_queues()),
-      _active_workers(active_workers) {
+      _terminator(active_workers, ParCompactionManager::region_task_queues()) {
   }
   virtual void work(uint worker_id) {
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
