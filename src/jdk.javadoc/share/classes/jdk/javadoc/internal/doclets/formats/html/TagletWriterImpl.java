@@ -487,6 +487,8 @@ public class TagletWriterImpl extends TagletWriter {
             refFragment = refMem.toString();
         } else if (refFragment != null && refFragment.startsWith("#")) {
             if (labelContent.isEmpty()) {
+                // A non-empty label is required for fragment and auxiliary file links
+                // as the reference target does not provide a useful default label.
                 reportWarning.accept("doclet.link.see.no_label", null);
                 return invalidTagOutput(resources.getText("doclet.link.see.no_label"),
                         Optional.of(refSignature));
