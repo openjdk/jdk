@@ -146,6 +146,7 @@ class Direct$Type$Buffer$RW$$BO$
         } catch (Throwable t) {
             // Prevent leak if the Deallocator or Cleaner fail for any reason
             UNSAFE.freeMemory(base);
+            Bits.unreserveMemory(size, cap);
             throw t;
         }
         att = null;
