@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.shared.Comparison;
 import java.util.List;
 
 /**
- * This class provides a check on a single {@link IR#counts()} constraint.
+ * This class provides a check on a single {@link IR#counts()} {@link Constraint}.
  *
  * @see Constraint
  */

@@ -29,7 +29,8 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing
 import java.util.ListIterator;
 
 /**
- * Interface describing actions that can performed when reading a constraint of an {@link IR} check attribute.
+ * Interface describing an action that can performed when reading a constraint of an {@link IR} check attribute. The
+ * action creates a new object and returns it.
  */
 public interface ConstraintAction<R> {
     R apply(ListIterator<String> iterator, RawIRNode rawIRNode, int constraintId);

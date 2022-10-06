@@ -27,28 +27,17 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
 /**
- * This class represents a special {@link CompilePhaseIRRule} where no compilation output was found for the associated
- * compile phase. This could happen, if the user defined test code does not exercise the code path that emits this
+ * This class represents a special compile phase IR rule where no compilation output was found for the associated
+ * compile phase. This could happen, if the user-defined test code does not exercise the code path that emits this
  * compile phase.
  *
- * @see CompilePhaseIRRule
- * @see NoCompilePhaseCompilationResult
+ * @see CompilePhaseNoCompilationIRRuleMatchResult
  */
-public class CompilePhaseNoCompilationIRRule implements CompilePhaseIRRuleMatchable {
-    private final CompilePhase compilePhase;
-
-    public CompilePhaseNoCompilationIRRule(CompilePhase compilePhase) {
-        this.compilePhase = compilePhase;
-    }
-
-    @Override
-    public CompilePhase compilePhase() {
-        return compilePhase;
-    }
+public record CompilePhaseNoCompilationIRRule(CompilePhase compilePhase) implements CompilePhaseIRRuleMatchable {
 
     @Override
     public MatchResult match() {
-        return new NoCompilePhaseCompilationResult(compilePhase);
+        return new CompilePhaseNoCompilationIRRuleMatchResult(compilePhase);
     }
 }
 

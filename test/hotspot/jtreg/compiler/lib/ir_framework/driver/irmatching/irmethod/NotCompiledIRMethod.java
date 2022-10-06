@@ -30,11 +30,10 @@ import compiler.lib.ir_framework.RunMode;
 import java.lang.reflect.Method;
 
 /**
- * This class represents a special {@link IRMethod} which was not compiled by the IR framework. This could happen when a
+ * This class represents a special IR method which was not compiled by the IR framework. This could happen when a
  * method is not invoked enough times by a {@link Run @Run} method in {@link RunMode#STANDALONE} mode to be C2 compiled.
  *
  * @see IR
- * @see IRMethod
  * @see Run
  */
 public class NotCompiledIRMethod implements IRMethodMatchable {

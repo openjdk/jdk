@@ -28,19 +28,17 @@ import compiler.lib.ir_framework.driver.irmatching.report.CompilationOutputBuild
 import compiler.lib.ir_framework.driver.irmatching.report.FailureMessageBuilder;
 
 /**
- * This class parses the hotspot_pid* file of the test VM to match all applicable @IR rules afterwards.
+ * This class performs IR matching on the prepared {@link TestClass} object parsed by {@link MethodCompilationParser}.
+ * All applicable @IR rules are matched with all their defined compilation phases. If there are any IR matching failures,
+ * an {@link IRViolationException} is reported which provides a formatted failure message and the compilation outputs
+ * of the failed compilation phases.
  */
 public class IRMatcher {
     public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
     private final Matchable testClass;
 
-    public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
-        MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
-        this.testClass = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
-    }
-
-    public Matchable getTestClass() {
-        return testClass;
+    public IRMatcher(Matchable testClass) {
+        this.testClass = testClass;
     }
 
     /**

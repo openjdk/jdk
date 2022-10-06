@@ -27,9 +27,11 @@ import compiler.lib.ir_framework.CompilePhase;
 
 /**
  * This class represents a mapping entry for an IR node that maps to a single regexes to multiple continuous compile
- * phases (i.e. follow each other immediately). This is done by providing a start and an end compile phase which is
- * put into a {@link PhaseInterval}. An IR node mapping to different regexes should use {@link MultiPhaseRangeEntry}.
+ * phases (i.e. follow each other immediately in the order defined in {@link CompilePhase}). This is done by providing
+ * a start and an end compile phase which is put into a {@link PhaseInterval}. An IR node mapping to different regexes
+ * should use {@link MultiPhaseRangeEntry}.
  *
+ * @see CompilePhase
  * @see PhaseInterval
  */
 public class SinglePhaseRangeEntry extends IRNodeMapEntry {

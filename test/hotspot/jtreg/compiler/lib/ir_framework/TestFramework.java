@@ -28,6 +28,8 @@ import compiler.lib.ir_framework.driver.TestVMException;
 import compiler.lib.ir_framework.driver.TestVMProcess;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
 import compiler.lib.ir_framework.shared.*;
 import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Platform;
@@ -743,8 +745,10 @@ public class TestFramework {
         TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup);
         if (shouldVerifyIR) {
             try {
-                IRMatcher matcher = new IRMatcher(testVMProcess.getHotspotPidFileName(), testVMProcess.getIrEncoding(),
-                                                  testClass);
+                MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
+                Matchable testClassMatchable = methodCompilationParser.parse(testVMProcess.getHotspotPidFileName(),
+                                                                             testVMProcess.getIrEncoding());
+                IRMatcher matcher = new IRMatcher(testClassMatchable);
                 matcher.match();
             } catch (IRViolationException e) {
                 e.addCommandLine(testVMProcess.getCommandLine());

@@ -35,6 +35,9 @@ import compiler.lib.ir_framework.driver.irmatching.Matchable;
 public interface CompilePhaseIRRuleMatchable extends Matchable, Comparable<CompilePhaseIRRuleMatchable> {
     CompilePhase compilePhase();
 
+    /**
+     * Sort by compile phase enum definition order.
+     */
     @Override
     default int compareTo(CompilePhaseIRRuleMatchable other) {
         return this.compilePhase().compareTo(other.compilePhase());

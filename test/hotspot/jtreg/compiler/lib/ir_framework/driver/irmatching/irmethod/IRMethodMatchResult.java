@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 /**
- * This class represents an IR matching result of an {@link IRMethod}. It contains a list of all IR rule match results
+ * This class represents a matching result of an {@link IRMethod}. It contains a list of all IR rule match results
  * which could have been applied on different compile phases.
  *
  * @see IRMethod

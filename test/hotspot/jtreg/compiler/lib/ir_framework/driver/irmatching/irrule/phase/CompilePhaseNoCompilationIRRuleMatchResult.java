@@ -23,34 +23,25 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-
-import java.util.ArrayList;
-import java.util.List;
+import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
- * Utility class to hold the parsed failOn and counts constraint lists.
+ * This class represents a special match result of {@link CompilePhaseNoCompilationIRRule} where the compilation output
+ * for the compile phase was empty.
  *
- * @see Constraint
+ * @see CompilePhaseNoCompilationIRRule
  */
-class ConstraintLists {
-    private static final List<Constraint> EMPTY_LIST = new ArrayList<>();
-    private List<Constraint> failOnConstraints;
-    private List<Constraint> countsConstraints;
+public record CompilePhaseNoCompilationIRRuleMatchResult(CompilePhase compilePhase) implements MatchResult {
 
-    public List<Constraint> getFailOnConstraints() {
-        return failOnConstraints == null ? EMPTY_LIST : failOnConstraints;
+    @Override
+    public boolean fail() {
+        return true;
     }
 
-    public void setFailOnConstraints(List<Constraint> failOnConstraints) {
-        this.failOnConstraints = failOnConstraints;
-    }
-
-    public List<Constraint> getCountsConstraints() {
-        return countsConstraints == null ? EMPTY_LIST : countsConstraints;
-    }
-
-    public void setCountsConstraints(List<Constraint> countsConstraints) {
-        this.countsConstraints = countsConstraints;
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visitNoCompilePhaseCompilation(compilePhase);
     }
 }

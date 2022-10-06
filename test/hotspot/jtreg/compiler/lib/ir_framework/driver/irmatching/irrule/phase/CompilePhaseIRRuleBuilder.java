@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
@@ -39,7 +40,9 @@ import java.util.*;
 
 /**
  * This class creates a list of {@link CompilePhaseIRRule} for each specified compile phase in {@link IR#phase()} of an
- * IR rule.
+ * IR rule. Default compile phases of {@link IRNode} placeholder strings as found in {@link RawConstraint} objects are
+ * replaced by the actual default phases. The resulting parsed {@link Constraint} objects which now belong to a
+ * non-default compile phase are moved to the check attribute matchables which represent these compile phase.
  *
  * @see CompilePhaseIRRule
  */
@@ -118,4 +121,3 @@ public class CompilePhaseIRRuleBuilder {
         return constraintResultList;
     }
 }
-

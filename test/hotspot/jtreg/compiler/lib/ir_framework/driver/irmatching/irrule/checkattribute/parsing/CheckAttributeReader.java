@@ -31,24 +31,24 @@ import compiler.lib.ir_framework.shared.TestFormat;
 import java.util.*;
 
 /**
- * This class represents an iterator on check attribute strings found in ({@link IR#failOn()} or {@link IR#counts()}).
- * The iterator returns a {@link CheckAttributeString} that wraps the check attribute string. If there are no elements
- * left, a special invalid {@link CheckAttributeString} is returned.
+ * This class reads the check attribute strings as found in ({@link IR#failOn()} or {@link IR#counts()}) and groups them
+ * into constraints. For each constraint, a {@link ConstraintAction} is performed which creates an object. These objects
+ * are then returned to the caller.
  *
  * @see IR#failOn()
  * @see IR#counts()
- * @see CheckAttributeString
+ * @see ConstraintAction
  */
-public class CheckAttributeReader<E> {
+public class CheckAttributeReader<R> {
     private final ListIterator<String> iterator;
-    private final ConstraintAction<E> constraintAction;
+    private final ConstraintAction<R> constraintAction;
 
-    public CheckAttributeReader(String[] checkAttributeStrings, ConstraintAction<E> constraintAction) {
+    public CheckAttributeReader(String[] checkAttributeStrings, ConstraintAction<R> constraintAction) {
         this.iterator = Arrays.stream(checkAttributeStrings).toList().listIterator();
         this.constraintAction = constraintAction;
     }
 
-    public void read(Collection<E> result) {
+    public void read(Collection<R> result) {
         int index = 1;
         while (iterator.hasNext()) {
             String node = iterator.next();

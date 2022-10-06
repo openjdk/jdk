@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import java.util.List;
 
 /**
- * Interface representing a when applying a {@link Constraint} on a compile phase output.
+ * Interface representing a match result of a {@link Constraint} on a compile phase output which failed.
  *
  * @see Constraint
  */

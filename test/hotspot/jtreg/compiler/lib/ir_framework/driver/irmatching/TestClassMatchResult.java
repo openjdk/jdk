@@ -29,8 +29,8 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import java.util.List;
 
 /**
- * This class represents a test class matching result of a {@link TestClass}. It contains all IR method results,
- * sorted by method names.
+ * This class represents a matching result of a {@link TestClass}. It contains all IR method results, sorted by
+ * method names.
  *
  * @see TestClass
  */

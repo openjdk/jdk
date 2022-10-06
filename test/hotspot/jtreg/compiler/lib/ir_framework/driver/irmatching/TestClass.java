@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
 
 import java.util.SortedSet;
@@ -35,6 +36,7 @@ import java.util.SortedSet;
  * the {@link Test @Test}/{@link IR @IR} annotated methods).
  *
  * @see Test
+ * @see IRMethod
  * @see TestClassMatchResult
  */
 public class TestClass implements Matchable {

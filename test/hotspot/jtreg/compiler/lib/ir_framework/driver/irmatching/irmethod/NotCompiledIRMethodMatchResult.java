@@ -31,11 +31,11 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import java.lang.reflect.Method;
 
 /**
- * This class represents a special IR matching result of an {@link IRMethod} where the compilation output of a
- * method was empty. This could happen when using {@link RunMode#STANDALONE} in a {@link Run @Run} method.
+ * This class represents a special matching result of an IR method where the compilation output was completely empty.
+ * This could happen when using {@link RunMode#STANDALONE} in a {@link Run @Run} method.
  *
- * @see IRMethod
- * @see IRMethodMatchResult
+ * @see NotCompiledIRMethod
+ * @see Run
  */
 public class NotCompiledIRMethodMatchResult implements MatchResult {
     private final Method method;

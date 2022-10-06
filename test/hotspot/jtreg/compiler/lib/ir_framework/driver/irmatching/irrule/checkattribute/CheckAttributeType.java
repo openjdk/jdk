@@ -24,8 +24,9 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 /**
- * This enum denotes the check attribute type of {@link CheckAttributeMatchResult}.
+ * This enum denotes the check attribute type of a check attribute.
  *
+ * @see CheckAttribute
  * @see CheckAttributeMatchResult
  */
 public enum CheckAttributeType {

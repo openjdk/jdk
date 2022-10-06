@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import java.util.List;
 
 /**
- * This class represents an IR matching result of a {@link CheckAttribute} (i.e. either from {@link IR#failOn} or
+ * This class represents a match result of a {@link CheckAttribute} (i.e. either from {@link IR#failOn} or
  * {@link IR#counts}). The type of check attribute is defined by {@link CheckAttributeType}.
  *
  * @see CheckAttribute

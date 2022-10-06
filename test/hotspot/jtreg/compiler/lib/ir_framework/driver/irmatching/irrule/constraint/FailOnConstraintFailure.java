@@ -24,16 +24,16 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.List;
 
 /**
- * This class represents a failure when applying a {@link Constraint} on a compile phase output.
+ * This class represents a failed match result of a failOn {@link Constraint} on a compile phase output.
  *
  * @see Constraint
- * @see FailOn
+ * @see Counts
  */
 public record FailOnConstraintFailure(String nodeRegex, int constraintId, List<String> matchedNodes)
         implements ConstraintFailure {

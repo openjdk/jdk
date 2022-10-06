@@ -26,7 +26,6 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 import compiler.lib.ir_framework.shared.Comparison;
 
@@ -38,10 +37,7 @@ import java.util.stream.Collectors;
 /**
  * This class represents a single constraint of a check attribute of an IR rule for a compile phase. It stores a
  * ready to be used regex for a compile phase (i.e. all {@link IRNode} placeholder strings are updated and composite nodes
- * merged) to apply matching on.
- * <p>
- *
- * {@link FailOn} can directly use this class while {@link Counts} need some more information stored with the subclass
+ * merged) which can be used for matching. A {@link ConstraintCheck} decides if the matching on the constraint fails.
  *
  * @see FailOn
  */

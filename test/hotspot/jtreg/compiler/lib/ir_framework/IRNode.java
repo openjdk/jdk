@@ -41,11 +41,11 @@ import java.util.Map;
  *
  * <p>
  * IR node placeholder strings can be used in {@link IR#failOn()} and/or {@link IR#counts()} attributes to define IR
- * constraint. They usually represent a single or a group of C2 IR nodes.
+ * constraints. They usually represent a single C2 IR node or a group of them.
  *
  * <p>
  * Each IR node placeholder string is accompanied by a static block that defines an IR node placeholder to regex(es)
- * mapping. The IR framework will automatically replace each IR node placeholder string in user defined test with a
+ * mapping. The IR framework will automatically replace each IR node placeholder string in a user defined test with a
  * regex depending on the selected compile phases in {@link IR#phase} and the provided mapping.
  *
  * <p>
@@ -67,7 +67,7 @@ import java.util.Map;
  *     <li><p>Normal IR nodes: The IR node placeholder string is directly replaced by a default regex.</li>
  *     <li><p>Composite IR nodes:  The IR node placeholder string contains an additional {@link #COMPOSITE_PREFIX}.
  *                                 Using this IR node expects another user provided string in the constraint list of
- *                                 {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone IR nodes.
+ *                                 {@link IR#failOn()} and {@link IR#counts()}. They cannot be used as normal IR nodes.
  *                                 Trying to do so will result in a format violation error.</li>
  * </ul>
  */
@@ -1121,7 +1121,8 @@ public class IRNode {
     }
 
     /**
-     * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#AFTER_CLOOPS}.
+     * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#PHASEIDEALLOOP1} which is the
+     * first phase that could contain vector nodes from super word.
      */
     private static void superWordNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + END;
@@ -1130,16 +1131,23 @@ public class IRNode {
                                                                           CompilePhase.BEFORE_MATCHING));
     }
 
+
     /*
      * Methods used internally by the IR framework.
      */
 
-    public static boolean isCompositeIRNode(String irNodeString) {
-        return irNodeString.startsWith(COMPOSITE_PREFIX);
-    }
-
+    /**
+     * Is {@code irNodeString} an IR node placeholder string?
+     */
     public static boolean isIRNode(String irNodeString) {
         return irNodeString.startsWith(PREFIX);
+    }
+
+    /**
+     * Is {@code irCompositeNodeString} an IR composite node placeholder string?
+     */
+    public static boolean isCompositeIRNode(String irCompositeNodeString) {
+        return irCompositeNodeString.startsWith(COMPOSITE_PREFIX);
     }
 
     /**
@@ -1178,7 +1186,11 @@ public class IRNode {
         }
     }
 
-    public static String getRegexForPhaseOfIRNode(String irNode, CompilePhase compilePhase) {
+    /**
+     * Get the regex of an IR node for a specific compile phase. If {@code irNode} is not an IR node placeholder string
+     * or if there is no regex specified for {@code compilePhase}, a {@link TestFormatException} is reported.
+     */
+    public static String getRegexForCompilePhase(String irNode, CompilePhase compilePhase) {
         IRNodeMapEntry entry = IR_NODE_MAPPINGS.get(irNode);
         String failMsg = "IR Node \"" + irNode + "\" defined in class IRNode has no regex/compiler phase mapping " +
                          "(i.e. no static initializer block that adds a mapping entry to IRNode.IR_NODE_MAPPINGS)." +
@@ -1198,7 +1210,11 @@ public class IRNode {
         return regex;
     }
 
-    public static CompilePhase getDefaultPhaseForIRNode(String irNode) {
+    /**
+     * Get the default phase of an IR node. If {@code irNode} is not an IR node placeholder string, a
+     * {@link TestFormatException} is reported.
+     */
+    public static CompilePhase getDefaultPhase(String irNode) {
         IRNodeMapEntry entry = IR_NODE_MAPPINGS.get(irNode);
         String failMsg = "\"" + irNode + "\" is not an IR node defined in class IRNode and " +
                          "has therefore no default compile phase specified." + System.lineSeparator() +

@@ -30,21 +30,8 @@ import compiler.lib.ir_framework.IR;
  *
  * @see IR
  */
-class CheckAttributeString {
-    private static final CheckAttributeString INVALID = new CheckAttributeString();
-    private final String value;
-
-    private CheckAttributeString() {
-        this.value = "";
-    }
-
-    public CheckAttributeString(String value) {
-        this.value = value;
-    }
-
-    public String value() {
-        return value;
-    }
+record CheckAttributeString(String value) {
+    private static final CheckAttributeString INVALID = new CheckAttributeString("");
 
     public boolean isValid() {
         return this != INVALID;

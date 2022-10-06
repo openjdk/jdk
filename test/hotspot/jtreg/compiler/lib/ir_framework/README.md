@@ -60,6 +60,19 @@ To perform a matching on a C2 IR node, the user can directly use the `public sta
 
 The exact mapping from an IR node placeholder string to regexes for different compile phases together with a default phase (see next section) is defined in a static block directly below the corresponding IR node placeholder string in [IRNode](./IRNode.java).
 
+#### Composite IR Nodes
+There are also special composite IR node placeholder strings which expect an additional user defined string which are then inserted in the final regex. For example, `IRNode.STORE_OF_FIELD` matches any store to the user defined field name. In the following `@IR` rule, we fail because we have a store to `iFld`:
+
+```
+@Test
+@IR(failOn = {IRNode.STORE_OF_FIELD, "iFld"})
+public void test() {
+    iFld = 34;
+}
+```
+
+#### User-defined Regexes
+
 The user can also directly specify user-defined regexes in combination with a required compile phase (there is no default compile phase known by the framework for custom regexes). If such a user-defined regex represents a not yet supported C2 IR node, it is highly encouraged to directly add a new IR node placeholder string definition to [IRNode](./IRNode.java) for it instead together with a static regex mapping block.
 
 #### Default Compile Phase

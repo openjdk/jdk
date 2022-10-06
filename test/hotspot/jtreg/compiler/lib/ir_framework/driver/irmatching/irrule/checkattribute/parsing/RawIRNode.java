@@ -29,8 +29,8 @@ import compiler.lib.ir_framework.IRNode;
 /**
  * This class represents a "raw IR node" as read from a check attribute. It has a node part that either represents an
  * {@link IRNode} placeholder string or a user defined regex. In the former case, we could additionally have a user
- * postfix string. This raw IR node is not specific to any compile phases (i.e. the placeholder is not replaced by an
- * actual regex, yet, and thus is named "raw").
+ * postfix string. This raw IR node is not specific to any compile phase (i.e. the IR node placeholder is not replaced
+ * by an actual regex, yet, and thus is named "raw").
  *
  * @see IRNode
  */
@@ -48,13 +48,13 @@ public class RawIRNode {
     }
 
     public CompilePhase defaultCompilePhase() {
-        return IRNode.getDefaultPhaseForIRNode(node);
+        return IRNode.getDefaultPhase(node);
     }
 
     public String regex(CompilePhase compilePhase) {
         String nodeRegex = node;
         if (IRNode.isIRNode(node)) {
-            nodeRegex = IRNode.getRegexForPhaseOfIRNode(node, compilePhase);
+            nodeRegex = IRNode.getRegexForCompilePhase(node, compilePhase);
             if (userPostfix.isValid()) {
                 nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, userPostfix.value());
             }

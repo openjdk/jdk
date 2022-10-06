@@ -43,13 +43,11 @@ import java.util.List;
  * {@link IR @IR} rules.
  *
  * @see IR
+ * @see IRRule
  * @see IRMethodMatchResult
  */
 public class IRMethod implements IRMethodMatchable {
     private final Method method;
-    /**
-     * Mapping from compile phase to compilation output found in hotspot_pid* file for that phase (if exist)
-     */
     private final MatchableMatcher matcher;
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Compilation compilation) {

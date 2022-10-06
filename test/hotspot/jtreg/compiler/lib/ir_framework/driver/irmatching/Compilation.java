@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import java.util.Map;
 
 /**
- * This class can be queried about the compilation output of a compile phase for an {@link IRMethod}.
+ * This class provides information about the compilation output of a compile phase for an {@link IRMethod}.
  */
 public class Compilation {
     private final Map<CompilePhase, String> compilationOutputMap;
@@ -39,6 +39,9 @@ public class Compilation {
         this.compilationOutputMap = compilationOutputMap;
     }
 
+    /**
+     * Is there a compilation output for {@code compilePhase}?
+     */
     public boolean hasOutput(CompilePhase compilePhase) {
         return compilationOutputMap.containsKey(compilePhase);
     }

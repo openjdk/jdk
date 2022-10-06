@@ -35,10 +35,12 @@ import java.util.List;
 
 /**
  * This class represents an IR rule of an IR method for a specific compile phase. It contains fully parsed (i.e.
- * all placeholder strings of {@link IRNode} replaced and composite nodes merged) {@link FailOn} and {@link Counts}
- * attributes which are ready to be IR matched against.
+ * all placeholder strings of {@link IRNode} replaced and composite nodes merged) {@link FailOn} and/or {@link Counts}
+ * check attributes which are ready to be matched on.
  *
- * @see CompilePhaseNoCompilationIRRule
+ * @see FailOn
+ * @see Counts
+ * @see CompilePhaseIRRuleMatchResult
  */
 public class CompilePhaseIRRule implements CompilePhaseIRRuleMatchable {
     private final CompilePhase compilePhase;

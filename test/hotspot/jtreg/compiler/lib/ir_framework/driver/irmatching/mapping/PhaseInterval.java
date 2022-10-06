@@ -25,6 +25,12 @@ package compiler.lib.ir_framework.driver.irmatching.mapping;
 
 import compiler.lib.ir_framework.CompilePhase;
 
+/**
+ * This class represents a compile phase interval/range on the ordering found in {@link CompilePhase}. The interval is
+ * defined as [start, end] (including start and end).
+ *
+ * @see CompilePhase
+ */
 public class PhaseInterval {
     private final CompilePhase start;
     private final CompilePhase end;
@@ -34,19 +40,19 @@ public class PhaseInterval {
         this.end = end;
     }
 
-    public int getStartIndex() {
+    public int startIndex() {
         return start.ordinal();
     }
 
-    public int getEndIndex() {
+    public int endIndex() {
         return end.ordinal();
     }
 
-    public CompilePhase getStart() {
+    public CompilePhase start() {
         return start;
     }
 
-    public CompilePhase getEnd() {
+    public CompilePhase end() {
         return end;
     }
 

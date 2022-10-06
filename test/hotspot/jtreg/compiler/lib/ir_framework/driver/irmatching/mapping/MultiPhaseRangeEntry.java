@@ -50,9 +50,9 @@ public class MultiPhaseRangeEntry extends IRNodeMapEntry {
      */
     private void checkOverlap(List<PhaseInterval> phaseRanges) {
         // Sort ascending by start field of phase range.
-        phaseRanges.sort((i1, i2) -> i1.getStart().ordinal() - i2.getEnd().ordinal());
+        phaseRanges.sort((i1, i2) -> i1.start().ordinal() - i2.end().ordinal());
         for (int i = 1; i < phaseRanges.size(); i++) {
-            if (phaseRanges.get(i - 1).getStartIndex() > phaseRanges.get(i).getEndIndex()) {
+            if (phaseRanges.get(i - 1).startIndex() > phaseRanges.get(i).endIndex()) {
                 // Previous phase range ends after start of current phase range -> overlap
                 throw new OverlappingPhaseRangesException(phaseRanges.get(i - 1), phaseRanges.get(i));
             }

@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
- * This interface is implemented by all classes that represent an IR match result of a {@link Matchable} class.
+ * This interface is implemented by all classes which represent an IR match result of a {@link Matchable} class.
  * A match result class accepts a {@link MatchResultVisitor} to visit the result (i.e. for reporting etc.).
  * The visitor is responsible to call {@link #accept(MatchResultVisitor)} of the children match results by using
  * {@link AcceptChildren#accept(MatchResultVisitor)}.

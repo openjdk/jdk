@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
- * This class represents a successful matching result of any {@link Matchable} object.
+ * This class represents a successful match result of any {@link Matchable} object.
  */
 public class SuccessResult implements MatchResult {
     private static final SuccessResult INSTANCE = new SuccessResult();

@@ -38,7 +38,7 @@ import java.util.Set;
 
 /**
  * This class parses the check attribute strings of ({@link IR#failOn()} or {@link IR#counts()}) as found in a
- * {@link IR @IR} annotation without replacing placeholder IR strings, yet. For each constraints (i.e. all consecutive
+ * {@link IR @IR} annotation without replacing placeholder IR strings, yet. For each constraint (i.e. all consecutive
  * strings in the check attribute that eventually form a constraint) we apply a {@link ConstraintAction} which defines
  * the action that is performed for the constraint.
  *

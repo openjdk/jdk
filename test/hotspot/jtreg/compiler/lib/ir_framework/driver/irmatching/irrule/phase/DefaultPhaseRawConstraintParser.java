@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * This class creates {@link FailOn} and {@link Counts} objects for the default compile phase by parsing the raw
  * constraints. Each {@link RawConstraint} has a well-defined default phase. This class collects all parsed
- * {@link Constraint} objects for a compile phase in order to create {@link FailOn} and {@link Counts} objects for it.
+ * {@link Constraint} objects for a compile phase in order to create {@link FailOn} and {@link Counts} objects with them.
  */
 class DefaultPhaseRawConstraintParser {
     private final Compilation compilation;

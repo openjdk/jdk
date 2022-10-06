@@ -36,8 +36,8 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRu
  * This class represents a generic {@link IR @IR} rule of an IR method. It contains a list of compile phase specific
  * IR rule versions where {@link IRNode} placeholder strings of are replaced by regexes associated with the compile phase.
  *
- * @see IRRuleMatchResult
  * @see CompilePhaseIRRule
+ * @see IRRuleMatchResult
  */
 public class IRRule implements Matchable {
     private final int ruleId;

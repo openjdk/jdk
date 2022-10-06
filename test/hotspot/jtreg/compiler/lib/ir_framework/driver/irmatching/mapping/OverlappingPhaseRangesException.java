@@ -23,8 +23,11 @@
 
 package compiler.lib.ir_framework.driver.irmatching.mapping;
 
+/**
+ * Exception that is thrown if two {@link PhaseInterval} ranges overlap in {@link MultiPhaseRangeEntry}.
+ */
 class OverlappingPhaseRangesException extends RuntimeException {
-    OverlappingPhaseRangesException(PhaseInterval entry, PhaseInterval entry2) {
+    public OverlappingPhaseRangesException(PhaseInterval entry, PhaseInterval entry2) {
         super("The following two PhaseRangeEntry objects overlap which is forbidden:" + System.lineSeparator() + "- "
               + entry + System.lineSeparator() + "- " + entry2);
     }

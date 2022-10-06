@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import java.util.List;
 
 /**
- * This class provides a check on a single {@link IR#failOn()} constraint.
+ * This class provides a check on a single {@link IR#failOn()} {@link Constraint}.
  *
  * @see Constraint
  */

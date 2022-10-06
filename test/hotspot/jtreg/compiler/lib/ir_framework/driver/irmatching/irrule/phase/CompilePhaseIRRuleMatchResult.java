@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import java.util.List;
 
 /**
- * This class represents an IR matching result of a {@link CompilePhaseIRRule} (i.e. an IR rule applied on a compile phase).
+ * This class represents a match result of a {@link CompilePhaseIRRule} (i.e. an IR rule applied on a compile phase).
  *
  * @see CompilePhaseIRRule
  */
