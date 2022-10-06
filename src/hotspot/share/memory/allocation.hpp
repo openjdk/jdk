@@ -181,7 +181,7 @@ class CHeapObjBase {
   }
 
   ALWAYSINLINE void* operator new(size_t size,
-                                  MEMFLAGS f
+                                  MEMFLAGS f,
                                   const NativeCallStack& stack) throw() {
     return (void*)AllocateHeap(size, f, stack);
   }
