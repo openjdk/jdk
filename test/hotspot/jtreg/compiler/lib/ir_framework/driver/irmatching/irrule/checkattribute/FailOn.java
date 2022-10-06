@@ -36,11 +36,8 @@ import java.util.stream.Collectors;
 
 /**
  * This class represents a fully parsed {@link IR#failOn()} attribute of an IR rule for a compile phase that is ready
- * to be IR matched on.
- *
- * <p>
- * This class provides a quick check regex by simply looking for any occurrence of any constraint regex. Only if that
- * fails, we need to check each constraint individually to report which one failed.
+ * to be IR matched on.This class provides a quick check regex by simply looking for any occurrence of any constraint
+ * regex. Only if that fails, we need to check each constraint individually to report which one failed.
  *
  * @see IR#failOn()
  */

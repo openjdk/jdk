@@ -21,24 +21,17 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.action;
 
-import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
+
+import java.util.ListIterator;
 
 /**
- * Interface for all matchable objects related to IR methods. These objects are sorted by the method name.
- *
- * @see IRMethod
- * @see NotCompiledIRMethod
+ * Interface describing actions that can performed when reading a constraint of an {@link IR} check attribute.
  */
-public interface IRMethodMatchable extends Matchable, Comparable<IRMethodMatchable> {
-    String name();
-
-    /**
-     * Sort by method name.
-     */
-    @Override
-    default int compareTo(IRMethodMatchable other) {
-        return this.name().compareTo(other.name());
-    }
+public interface ConstraintAction<R> {
+    R apply(ListIterator<String> iterator, RawIRNode rawIRNode, int constraintId);
 }
+

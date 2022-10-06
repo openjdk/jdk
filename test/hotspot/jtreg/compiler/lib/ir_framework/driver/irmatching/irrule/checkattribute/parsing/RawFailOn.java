@@ -23,38 +23,34 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.action.CreateRawFailOnConstraintAction;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.action.DefaultPhaseFailOnConstraintAction;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+
+import java.util.List;
+import java.util.Set;
 
 /**
- * This class represents a single string found in a check attribute of an {@link IR} annotation.
+ * This class offers different parsing operations on the raw strings as found in a {@link IR#failOn()} check attribute.
  *
- * @see IR
+ * @see IR#failOn()
  */
-class CheckAttributeString {
-    private static final CheckAttributeString INVALID = new CheckAttributeString();
-    private final String value;
+public class RawFailOn implements RawCheckAttribute {
+    private final CheckAttributeStrings checkAttributeStrings;
 
-    private CheckAttributeString() {
-        this.value = "";
+    public RawFailOn(String[] checkAttributeStrings) {
+        this.checkAttributeStrings = new CheckAttributeStrings(checkAttributeStrings);
     }
 
-    public CheckAttributeString(String value) {
-        this.value = value;
+    @Override
+    public List<RawConstraint> createRawConstraints() {
+        return checkAttributeStrings.createRawConstraints(new CreateRawFailOnConstraintAction());
     }
 
-    public String value() {
-        return value;
-    }
-
-    public boolean isValid() {
-        return this != INVALID;
-    }
-
-    public boolean isValidUserPostfix() {
-        return !value.isEmpty();
-    }
-
-    public static CheckAttributeString invalid() {
-        return INVALID;
+    @Override
+    public Set<CompilePhase> parseDefaultCompilePhases() {
+        return checkAttributeStrings.parseDefaultCompilePhases(new DefaultPhaseFailOnConstraintAction());
     }
 }

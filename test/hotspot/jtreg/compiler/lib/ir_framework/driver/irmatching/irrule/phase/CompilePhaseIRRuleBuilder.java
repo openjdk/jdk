@@ -29,7 +29,8 @@ import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawCheckAttribute;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawCounts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawFailOn;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 import compiler.lib.ir_framework.shared.TestFormat;
@@ -52,8 +53,8 @@ public class CompilePhaseIRRuleBuilder {
     public CompilePhaseIRRuleBuilder(IR irAnno, Compilation compilation) {
         this.irAnno = irAnno;
         this.compilation = compilation;
-        this.rawFailOnConstraints = RawCheckAttribute.createFailOn(irAnno).parse();
-        this.rawCountsConstraints = RawCheckAttribute.createCounts(irAnno).parse();
+        this.rawFailOnConstraints = new RawFailOn(irAnno.failOn()).createRawConstraints();
+        this.rawCountsConstraints = new RawCounts(irAnno.counts()).createRawConstraints();
     }
 
     public SortedSet<CompilePhaseIRRuleMatchable> build() {

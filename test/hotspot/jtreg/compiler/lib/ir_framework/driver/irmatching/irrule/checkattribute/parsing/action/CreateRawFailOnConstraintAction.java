@@ -21,24 +21,20 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.action;
 
-import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawFailOnConstraint;
+
+import java.util.ListIterator;
 
 /**
- * Interface for all matchable objects related to IR methods. These objects are sorted by the method name.
- *
- * @see IRMethod
- * @see NotCompiledIRMethod
+ * This action class creates a {@link RawConstraint}.
  */
-public interface IRMethodMatchable extends Matchable, Comparable<IRMethodMatchable> {
-    String name();
-
-    /**
-     * Sort by method name.
-     */
+public class CreateRawFailOnConstraintAction implements CreateRawConstraintAction {
     @Override
-    default int compareTo(IRMethodMatchable other) {
-        return this.name().compareTo(other.name());
+    public RawConstraint apply(ListIterator<String> iterator, RawIRNode rawIRNode, int constraintIndex) {
+        return new RawFailOnConstraint(rawIRNode, constraintIndex);
     }
 }

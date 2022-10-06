@@ -21,26 +21,18 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.action;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawFailOnConstraint;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
+
+import java.util.ListIterator;
 
 /**
- * Action that is performed when reading a constraint of a {@link IR#failOn}.
+ * Interface describing an action which fetches the default {@link CompilePhase} of an {@link IRNode}.
  */
-class RawFailOnReadAction implements RawConstraintReadAction {
+public interface DefaultPhaseConstraintAction extends ConstraintAction<CompilePhase> {
     @Override
-    public RawConstraint createRawConstraint(CheckAttributeStringIterator checkAttributeStringIterator, int constraintIndex) {
-        RawIRNode rawIRNode = new RawIRNode(checkAttributeStringIterator);
-        return new RawFailOnConstraint(rawIRNode, constraintIndex);
-    }
-
-    @Override
-    public CompilePhase defaultPhase(CheckAttributeStringIterator checkAttributeStringIterator) {
-        RawIRNode rawIRNode = new RawIRNode(checkAttributeStringIterator);
-        return rawIRNode.defaultCompilePhase();
-    }
+    CompilePhase apply(ListIterator<String> iterator, RawIRNode rawIRNode, int constraintId);
 }

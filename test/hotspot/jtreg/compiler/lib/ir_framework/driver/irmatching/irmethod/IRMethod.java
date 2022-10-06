@@ -71,7 +71,7 @@ public class IRMethod implements IRMethodMatchable {
     }
 
     /**
-     * Used only for comparison
+     * Used only for sorting.
      */
     @Override
     public String name() {

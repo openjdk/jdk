@@ -42,9 +42,6 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRu
 public class IRRule implements Matchable {
     private final int ruleId;
     private final IR irAnno;
-    /**
-     * List of compile phase IR rules, sorted by
-     */
     private final MatchableMatcher matcher;
 
     public IRRule(int ruleId, IR irAnno, Compilation compilation) {
@@ -53,9 +50,6 @@ public class IRRule implements Matchable {
         this.matcher = new MatchableMatcher(new CompilePhaseIRRuleBuilder(irAnno, compilation).build());
     }
 
-    /**
-     * Apply this IR rule by checking any failOn and counts attributes.
-     */
     @Override
     public MatchResult match() {
         return new IRRuleMatchResult(ruleId, irAnno, matcher.match());

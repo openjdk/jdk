@@ -52,10 +52,10 @@ public class NotCompiledIRMethod implements IRMethodMatchable {
     }
 
     /**
-     * Directly return a {@link MethodNotCompiledMatchResult} as we do not need to match IR rules individually.
+     * Directly return a {@link NotCompiledIRMethodMatchResult} as we do not need to match IR rules individually.
      */
     @Override
-    public MethodNotCompiledMatchResult match() {
-        return new MethodNotCompiledMatchResult(method, ruleCount);
+    public NotCompiledIRMethodMatchResult match() {
+        return new NotCompiledIRMethodMatchResult(method, ruleCount);
     }
 }

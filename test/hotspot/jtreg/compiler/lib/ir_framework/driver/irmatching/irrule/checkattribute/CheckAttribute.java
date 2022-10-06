@@ -30,6 +30,13 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
 import java.util.List;
 
+/**
+ * This class represents a fully parsed check attribute of an IR rule for a compile phase that is ready
+ * to be IR matched on. This class is part of {@link FailOn} and/or {@link Counts}.
+ *
+ * @see FailOn
+ * @see Counts
+ */
 class CheckAttribute implements Matchable {
     private final MatchableMatcher matcher;
     private final CheckAttributeType checkAttributeType;

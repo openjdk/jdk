@@ -27,6 +27,8 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawCheckAttribute;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawCounts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawFailOn;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.lang.reflect.Method;
@@ -61,8 +63,8 @@ class MethodCompilePhaseCollector {
     public void collectCompilePhases(IR irAnno) {
         for (CompilePhase compilePhase : irAnno.phase()) {
             if (compilePhase == CompilePhase.DEFAULT) {
-                addDefaultPhasesForConstraint(RawCheckAttribute.createFailOn(irAnno));
-                addDefaultPhasesForConstraint(RawCheckAttribute.createCounts(irAnno));
+                addDefaultPhasesForConstraint(new RawFailOn(irAnno.failOn()));
+                addDefaultPhasesForConstraint(new RawCounts(irAnno.counts()));
             } else {
                 compilePhases.add(compilePhase);
             }

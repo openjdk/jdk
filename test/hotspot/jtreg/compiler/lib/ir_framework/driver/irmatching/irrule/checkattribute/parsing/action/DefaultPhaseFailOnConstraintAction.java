@@ -21,42 +21,21 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.action;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
 
-import java.util.Arrays;
 import java.util.ListIterator;
 
 /**
- * This class represents an iterator on check attribute strings found in ({@link IR#failOn()} or {@link IR#counts()})
- * or an {@link IR @IR} annotation. The iterator returns a {@link CheckAttributeString} that wraps the check attribute
- * string. If there are no elements left, a special invalid {@link CheckAttributeString} is returned.
- *
- * @see IR
- * @see CheckAttributeString
+ * This class fetches the default {@link CompilePhase} of an {@link IRNode} of a {@link IR#counts} check attribute.
  */
-public class CheckAttributeStringIterator {
-    private final ListIterator<String> iterator;
-
-    public CheckAttributeStringIterator(String[] checkAttribute) {
-        this.iterator = Arrays.stream(checkAttribute).toList().listIterator();
+public class DefaultPhaseFailOnConstraintAction implements DefaultPhaseConstraintAction {
+    @Override
+    public CompilePhase apply(ListIterator<String> iterator, RawIRNode rawIRNode, int constraintId) {
+        return rawIRNode.defaultCompilePhase();
     }
-
-    public final CheckAttributeString next() {
-        if (iterator.hasNext()) {
-            return CheckAttributeString.create(iterator.next());
-        } else {
-            return CheckAttributeString.getInvalid();
-        }
-    }
-
-    public boolean hasNext() {
-        return iterator.hasNext();
-    }
-
-    public int nextIndex() {
-        return iterator.nextIndex();
-    }
-
 }

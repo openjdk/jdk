@@ -21,16 +21,22 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.action;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
+
+import java.util.ListIterator;
 
 /**
- * Interface describing actions that can performed when reading a constraint in a check attribute.
+ * This class fetches the default {@link CompilePhase} of an {@link IRNode} of a {@link IR#failOn} check attribute.
  */
-interface RawConstraintReadAction {
-    RawConstraint createRawConstraint(CheckAttributeStringIterator attributeIterator, int constraintIndex);
-    CompilePhase defaultPhase(CheckAttributeStringIterator checkAttributeStringIterator);
+public class DefaultPhaseCountsConstraintAction implements DefaultPhaseConstraintAction {
+    @Override
+    public CompilePhase apply(ListIterator<String> iterator, RawIRNode rawIRNode, int constraintId) {
+        new CountString(iterator, rawIRNode).parse();
+        return rawIRNode.defaultCompilePhase();
+    }
 }
-

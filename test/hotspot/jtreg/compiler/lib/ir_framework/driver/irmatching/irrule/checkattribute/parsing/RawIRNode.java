@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsin
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.shared.TestFormat;
 
 /**
  * This class represents a "raw IR node" as read from a check attribute. It has a node part that either represents an
@@ -38,29 +37,14 @@ import compiler.lib.ir_framework.shared.TestFormat;
 public class RawIRNode {
     private final String node;
     private final CheckAttributeString userPostfix;
-    private final int nodeIndex;
 
-    public RawIRNode(CheckAttributeStringIterator it) {
-        nodeIndex = it.nextIndex();
-        node = it.next().value();
-        if (IRNode.isCompositeIRNode(node)) {
-            this.userPostfix = it.next();
-            checkValidUserPostfix();
-        } else {
-            this.userPostfix = CheckAttributeString.getInvalid();
-        }
-    }
-
-    private void checkValidUserPostfix() {
-        String irNode = IRNode.getIRNodeAccessString(node);
-        TestFormat.checkNoReport(userPostfix.isValid(), "Must provide additional value at index " +
-                                                        nodeIndex + " right after " + irNode);
-        TestFormat.checkNoReport(!userPostfix.value().isEmpty(), "Provided empty string for composite node " +
-                                                                 irNode + " at index " + nodeIndex);
+    public RawIRNode(String node, CheckAttributeString userPostfix) {
+        this.node = node;
+        this.userPostfix = userPostfix;
     }
 
     public String irNodePlaceholder() {
-        return node;
+        return IRNode.getIRNodeAccessString(node);
     }
 
     public CompilePhase defaultCompilePhase() {

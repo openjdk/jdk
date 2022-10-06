@@ -23,22 +23,37 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.RunMode;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+
+import java.lang.reflect.Method;
 
 /**
- * Interface for all matchable objects related to IR methods. These objects are sorted by the method name.
+ * This class represents a special IR matching result of an {@link IRMethod} where the compilation output of a
+ * method was empty. This could happen when using {@link RunMode#STANDALONE} in a {@link Run @Run} method.
  *
  * @see IRMethod
- * @see NotCompiledIRMethod
+ * @see IRMethodMatchResult
  */
-public interface IRMethodMatchable extends Matchable, Comparable<IRMethodMatchable> {
-    String name();
+public class NotCompiledIRMethodMatchResult implements MatchResult {
+    private final Method method;
+    private final int failedIRRules;
 
-    /**
-     * Sort by method name.
-     */
+    public NotCompiledIRMethodMatchResult(Method method, int failedIRRules) {
+        this.method = method;
+        this.failedIRRules = failedIRRules;
+    }
+
     @Override
-    default int compareTo(IRMethodMatchable other) {
-        return this.name().compareTo(other.name());
+    public boolean fail() {
+        return true;
+    }
+
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visitMethodNotCompiled(method, failedIRRules);
     }
 }
+

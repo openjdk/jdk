@@ -21,37 +21,17 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
+package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.action;
 
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
 
-import java.lang.reflect.Method;
+import java.util.ListIterator;
 
 /**
- * This class represents a special IR matching result of an {@link IRMethod} where the compilation output of a the
- * method was empty.
- *
- * @see IRMethod
- * @see IRMethodMatchResult
+ * Interface describing an action which creates a {@link RawConstraint}.
  */
-public class MethodNotCompiledMatchResult implements MatchResult {
-    private final Method method;
-    private final int failedIRRules;
-
-    MethodNotCompiledMatchResult(Method method, int failedIRRules) {
-        this.method = method;
-        this.failedIRRules = failedIRRules;
-    }
-
+public interface CreateRawConstraintAction extends ConstraintAction<RawConstraint> {
     @Override
-    public boolean fail() {
-        return true;
-    }
-
-    @Override
-    public void accept(MatchResultVisitor visitor) {
-        visitor.visitMethodNotCompiled(method, failedIRRules);
-    }
+    RawConstraint apply(ListIterator<String> iterator, RawIRNode rawIRNode, int constraintId);
 }
-
