@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.jvmci.errors;
+package compiler.jvmci.common;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -30,6 +30,7 @@ import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Site;
+import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotCompiledNmethod;
@@ -39,6 +40,7 @@ import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import org.junit.Assert;
@@ -74,11 +76,44 @@ public class CodeInstallerTest {
         dummyMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
     }
 
-    protected void installEmptyCode(Site[] sites, Assumption[] assumptions, Comment[] comments, int dataSectionAlignment, DataPatch[] dataSectionPatches, StackSlot deoptRescueSlot) {
-        HotSpotCompiledCode code = new HotSpotCompiledNmethod("dummyMethod", new byte[0], 0, sites, assumptions, new ResolvedJavaMethod[]{dummyMethod}, comments, new byte[8], dataSectionAlignment,
-                        dataSectionPatches, false, 0, deoptRescueSlot,
-                        dummyMethod, 0, 1, 0L, false);
-        codeCache.addCode(dummyMethod, code, null, null);
+    protected InstalledCode installEmptyCode(Site[] sites,
+                                    Assumption[] assumptions,
+                                    Comment[] comments,
+                                    int dataSectionAlignment,
+                                    DataPatch[] dataSectionPatches,
+                                    StackSlot deoptRescueSlot) {
+        ResolvedJavaMethod[] methods = {dummyMethod};
+        byte[] targetCode = {0};
+        int targetCodeSize = targetCode.length;
+        boolean isImmutablePIC = false;
+        int totalFrameSize = 0;
+        int entryBCI = 0;
+        int id = 1;
+        long compileState = 0L;
+        boolean hasUnsafeAccess = false;
+
+        HotSpotCompiledCode code =
+            new HotSpotCompiledNmethod("dummyMethod",
+                                    targetCode,
+                                    targetCodeSize,
+                                    sites,
+                                    assumptions,
+                                    methods,
+                                    comments,
+                                    new byte[8],
+                                    dataSectionAlignment,
+                                    dataSectionPatches,
+                                    isImmutablePIC,
+                                    totalFrameSize,
+                                    deoptRescueSlot,
+                                    dummyMethod,
+                                    entryBCI,
+                                    id,
+                                    compileState,
+                                    hasUnsafeAccess);
+        SpeculationLog log = null;
+        InstalledCode installedCode = null;
+        return codeCache.addCode(dummyMethod, code, log, installedCode);
     }
 
     protected Register getRegister(PlatformKind kind, int index) {
