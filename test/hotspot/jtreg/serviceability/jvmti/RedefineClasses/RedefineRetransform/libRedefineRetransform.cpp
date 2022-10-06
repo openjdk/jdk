@@ -31,8 +31,6 @@ static jvmtiEnv* jvmti = nullptr;
 
 static const char testClassName[] = "RedefineRetransform$TestClass";
 
-extern "C" {
-
 static void _log(const char* format, ...) {
     va_list args;
     va_start(args, format);
@@ -177,6 +175,8 @@ public:
 
 ClassFileLoadHookHelper* ClassFileLoadHookHelper::instance = nullptr;
 
+
+extern "C" {
 
 JNIEXPORT void JNICALL
 callbackClassFileLoadHook(jvmtiEnv *jvmti_env,
