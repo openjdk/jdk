@@ -23,17 +23,18 @@
 
 /*
  * @test
- * @bug 8263031
- * @summary Tests that the HttpClient can correctly receive a Push Promise
- *          Frame with the END_HEADERS flag unset followed by one or more
- *          Continuation Frames.
+ * @bug 8288717
+ * @summary Tests that when the idleConnectionTimeout property is specified,
+ *          an HTTP/2 connection will close within the specified interval if
+ *          there are no active streams on the connection.
  * @library /test/lib server
- * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @run testng/othervm IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.keepalive.timeout=800 IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.keepalive.timeout=100 IdleConnectionTimeoutTest
+ * @run testng/othervm  IdleConnectionTimeoutTest
  */
 
 import org.testng.annotations.BeforeTest;
@@ -57,10 +58,9 @@ public class IdleConnectionTimeoutTest {
     Http2TestServer http2TestServer;
     URI timeoutUri;
     URI noTimeoutUri;
-    final String IDLE_CONN_PROPERTY = "jdk.httpclient.idleConnectionTimeout";
+    final String IDLE_CONN_PROPERTY = "jdk.httpclient.keepalive.timeout";
     final String TIMEOUT_PATH = "/serverTimeoutHandler";
     final String NO_TIMEOUT_PATH = "/noServerTimeoutHandler";
-    static boolean expectTimeout;
     static final PrintStream testLog = System.err;
 
     @BeforeTest
@@ -78,46 +78,48 @@ public class IdleConnectionTimeoutTest {
     /*
        If the InetSocketAddress of the first remote connection is not equal to the address of the
        second remote connection, then the idleConnectionTimeoutEvent has occurred and a new connection
-       was made to carry out the second request by the client. Otherwise, the old connection was reused.
+       was made to carry out the second request by the client.
     */
     @Test
-    public void testTimeoutFires() throws InterruptedException {
-        expectTimeout = true;
-        System.setProperty(IDLE_CONN_PROPERTY, "100");
+    public void test() throws InterruptedException {
+        String timeoutVal = System.getProperty(IDLE_CONN_PROPERTY);
+        testLog.println("Test run for jdk.httpclient.keepalive.timeout=" + timeoutVal);
+
+        int sleepTime = 0;
         HttpClient hc = HttpClient.newBuilder().version(HTTP_2).build();
-        HttpRequest hreq = HttpRequest.newBuilder(timeoutUri).version(HTTP_2).GET().build();
-
-        CompletableFuture<HttpResponse<String>> request = hc.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8));
-        HttpResponse<String> hresp = request.join();
-        assertEquals(hresp.statusCode(), 200);
-        // Sleep for 4x the timeout value to ensure that it occurs
-        Thread.sleep(800);
-
-        request = hc.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8));
-        hresp = request.join();
-        assertEquals(hresp.statusCode(), 200);
+        HttpRequest hreq;
+        HttpResponse<String> hresp;
+        if (timeoutVal != null) {
+            if (timeoutVal.equals("100")) {
+                testLog.println("This one");
+                hreq = HttpRequest.newBuilder(timeoutUri).version(HTTP_2).GET().build();
+                sleepTime = 800;
+                hresp = runRequest(hc, hreq, sleepTime);
+                assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was expected but did not occur");
+            } else if (timeoutVal.equals("800")) {
+                testLog.println("This two");
+                hreq = HttpRequest.newBuilder(noTimeoutUri).version(HTTP_2).GET().build();
+                sleepTime = 100;
+                hresp = runRequest(hc, hreq, sleepTime);
+                assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was not expected but occurred");
+            }
+        } else {
+            // When a poorly formatted property value is given or no value is specified
+            // then no timeout should occur
+            hreq = HttpRequest.newBuilder(noTimeoutUri).version(HTTP_2).GET().build();
+            hresp = runRequest(hc, hreq, sleepTime);
+            assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent should not occur, no value was specified for this property");
+        }
     }
 
-    /*
-        The opposite of testTimeoutFires(), if the same connection is used for both requests then the
-        idleConnectionTimeoutEvent did not occur.
-     */
-    @Test
-    public void testTimeoutDoesNotFire() throws InterruptedException {
-        expectTimeout = false;
-        System.setProperty(IDLE_CONN_PROPERTY, "800");
-        HttpClient hc = HttpClient.newBuilder().version(HTTP_2).build();
-        HttpRequest hreq = HttpRequest.newBuilder(noTimeoutUri).version(HTTP_2).GET().build();
-
-        CompletableFuture<HttpResponse<String>> request = hc.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8));
+    private HttpResponse<String> runRequest(HttpClient hc, HttpRequest req, int sleepTime) throws InterruptedException {
+        CompletableFuture<HttpResponse<String>> request = hc.sendAsync(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         HttpResponse<String> hresp = request.join();
         assertEquals(hresp.statusCode(), 200);
-        // Sleep for 1/8th of the timeout value to ensure it does not occur
-        Thread.sleep(100);
 
-        request = hc.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8));
-        hresp = request.join();
-        assertEquals(hresp.statusCode(), 200);
+        Thread.sleep(sleepTime);
+        request = hc.sendAsync(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        return request.join();
     }
 
     static class ServerTimeoutHandler implements Http2Handler {
@@ -150,7 +152,7 @@ public class IdleConnectionTimeoutTest {
                 oldRemote = newRemote;
                 exchange.sendResponseHeaders(200, 0);
             } else if (oldRemote.equals(newRemote)) {
-                testLog.println("ServerTimeoutHandler: Same Connection was used, idleConnectionTimeoutEvent did not fire."
+                testLog.println("ServerNoTimeoutHandler: Same Connection was used, idleConnectionTimeoutEvent did not fire."
                         + " First remote: " + oldRemote + ", Second Remote: " + newRemote);
                 exchange.sendResponseHeaders(200, 0);
             } else {

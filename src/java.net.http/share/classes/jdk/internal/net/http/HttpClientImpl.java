@@ -1522,7 +1522,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return Optional.ofNullable(connectTimeout);
     }
 
-    public Optional<Duration> idleConnectionTimeout() {
+    Optional<Duration> idleConnectionTimeout() {
         return Optional.ofNullable(getIdleConnectionTimeoutProp());
     }
 
@@ -1692,9 +1692,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     private Duration getIdleConnectionTimeoutProp() {
         // Http 2 in prop name somewhere
-        String s = Utils.getNetProperty("jdk.httpclient.idleConnectionTimeout");
-        if (s != null)
-            return Duration.ofMillis(Long.parseLong(s));
+        String s = Utils.getNetProperty("jdk.httpclient.keepalive.timeout");
+        if (s != null) {
+            try {
+                long val = Long.parseLong(s);
+                if (val >= 0)
+                    return Duration.ofMillis(Long.parseLong(s));
+            } catch (NumberFormatException ignored) {}
+        }
         return null;
     }
 

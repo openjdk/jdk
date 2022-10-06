@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.http.HttpTimeoutException;
+import java.net.http.HttpConnectTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -197,7 +197,7 @@ class Http2Connection  {
             if (debug.on()) {
                 debug.log("HTTP connection idle for too long");
             }
-            HttpTimeoutException hte = new HttpTimeoutException("HTTP connection idle, no active streams. Shutting down.");
+            HttpConnectTimeoutException hte = new HttpConnectTimeoutException("HTTP connection idle, no active streams. Shutting down.");
             shutdown(hte);
         }
 
@@ -725,7 +725,9 @@ class Http2Connection  {
             closed = true;
         }
         if (Log.errors()) {
-            if (!(t instanceof EOFException) || isActive()) {
+            if (idleConnectionTimeoutEvent != null) {
+                Log.logTrace("idleConnectionTimeout timeout fired, shutting down connection: {0}", t.getMessage());
+            } else if (!(t instanceof EOFException) || isActive()) {
                 Log.logError(t);
             } else if (t != null) {
                 Log.logError("Shutting down connection: {0}", t.getMessage());
@@ -1219,7 +1221,6 @@ class Http2Connection  {
                 // idleConnectionTimerEvent is always accessed within a synchronized block
                 if (idleConnectionTimeoutEvent != null) {
                     client().cancelTimer(idleConnectionTimeoutEvent);
-                    System.err.println("Http2Connection: Timer Event Cancelled");
                     idleConnectionTimeoutEvent = null;
                 }
                 return;
