@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -38,13 +39,13 @@ import java.util.List;
 public class IRMethodMatchResult implements MatchResult {
     private final AcceptChildren acceptChildren;
     private final boolean failed;
-    private final IRMethod irMethod;
+    private final Method method;
     private final int failedIRRules;
 
-    public IRMethodMatchResult(IRMethod irMethod, List<MatchResult> matchResults) {
+    public IRMethodMatchResult(Method method, List<MatchResult> matchResults) {
         this.acceptChildren = new AcceptChildren(matchResults);
         this.failed = !matchResults.isEmpty();
-        this.irMethod = irMethod;
+        this.method = method;
         this.failedIRRules = matchResults.size();
     }
 
@@ -55,6 +56,6 @@ public class IRMethodMatchResult implements MatchResult {
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visitIRMethod(acceptChildren, irMethod, failedIRRules);
+        visitor.visitIRMethod(acceptChildren, method, failedIRRules);
     }
 }

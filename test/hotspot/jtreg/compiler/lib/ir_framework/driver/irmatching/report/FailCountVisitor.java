@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
@@ -47,7 +46,7 @@ class FailCountVisitor implements MatchResultVisitor {
     }
 
     @Override
-    public void visitIRMethod(AcceptChildren acceptChildren, IRMethod irMethod, int failedIRRules) {
+    public void visitIRMethod(AcceptChildren acceptChildren, Method method, int failedIRRules) {
         irMethodCount++;
         acceptChildren.accept(this);
     }
@@ -73,7 +72,7 @@ class FailCountVisitor implements MatchResultVisitor {
     }
 
     @Override
-    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase) {}
+    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase, String compilationOutput) {}
 
     @Override
     public void visitNoCompilePhaseCompilation(CompilePhase compilePhase) {}

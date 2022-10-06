@@ -28,7 +28,6 @@ import compiler.lib.ir_framework.driver.FlagVMProcess;
 import compiler.lib.ir_framework.driver.TestVMProcess;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
@@ -373,8 +372,8 @@ class FailureBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visitIRMethod(AcceptChildren acceptChildren, IRMethod irMethod, int failedIRRules) {
-        methodName = irMethod.name();
+    public void visitIRMethod(AcceptChildren acceptChildren, Method method, int failedIRRules) {
+        methodName = method.getName();
         acceptChildren.accept(this);
     }
 
@@ -391,7 +390,7 @@ class FailureBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase) {
+    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase, String compilationOutput) {
         this.compilePhase = compilePhase;
         acceptChildren.accept(this);
     }

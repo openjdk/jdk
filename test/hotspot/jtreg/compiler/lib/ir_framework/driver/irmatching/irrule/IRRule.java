@@ -25,10 +25,10 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleBuilder;
 
@@ -47,10 +47,10 @@ public class IRRule implements Matchable {
      */
     private final MatchableMatcher matcher;
 
-    public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
+    public IRRule(int ruleId, IR irAnno, Compilation compilation) {
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        this.matcher = new MatchableMatcher(CompilePhaseIRRuleBuilder.build(irMethod, irAnno));
+        this.matcher = new MatchableMatcher(new CompilePhaseIRRuleBuilder(irAnno, compilation).build());
     }
 
     /**

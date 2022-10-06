@@ -24,8 +24,8 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
@@ -45,10 +45,10 @@ import java.util.stream.Collectors;
  * {@link Constraint} objects for a compile phase in order to create {@link FailOn} and {@link Counts} objects for it.
  */
 class DefaultPhaseRawConstraintParser {
-    private final IRMethod irMethod;
+    private final Compilation compilation;
 
-    public DefaultPhaseRawConstraintParser(IRMethod irMethod) {
-        this.irMethod = irMethod;
+    public DefaultPhaseRawConstraintParser(Compilation compilation) {
+        this.compilation = compilation;
     }
 
     public Map<CompilePhase, List<Matchable>> parse(List<RawConstraint> rawFailOnConstraints,
@@ -67,7 +67,7 @@ class DefaultPhaseRawConstraintParser {
             CompilePhase compilePhase = rawConstraint.defaultCompilePhase();
             List<Constraint> checkAttribute =
                     matchableForCompilePhase.computeIfAbsent(compilePhase, k -> new ArrayList<>());
-            checkAttribute.add(rawConstraint.parse(compilePhase, irMethod.getOutput(compilePhase)));
+            checkAttribute.add(rawConstraint.parse(compilePhase, compilation.output(compilePhase)));
         }
         return replaceConstraintsWithCheckAttribute(matchableForCompilePhase, checkAttributeType);
     }
@@ -87,7 +87,7 @@ class DefaultPhaseRawConstraintParser {
                                            List<Constraint> constraints) {
         switch (checkAttributeType) {
             case FAIL_ON -> {
-                return new FailOn(constraints, irMethod.getOutput(compilePhase));
+                return new FailOn(constraints, compilation.output(compilePhase));
             }
             case COUNTS -> {
                 return new Counts(constraints);

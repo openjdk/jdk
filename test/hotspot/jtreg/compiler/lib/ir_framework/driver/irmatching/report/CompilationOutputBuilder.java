@@ -26,7 +26,6 @@ package compiler.lib.ir_framework.driver.irmatching.report;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
@@ -52,7 +51,6 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
      * Number of collected distinct compile phases.
      */
     private int compilePhaseCount = 0;
-    private IRMethod irMethod;
 
     public CompilationOutputBuilder(MatchResult testClassMatchResult) {
         this.msg = new StringBuilder();
@@ -85,10 +83,9 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visitIRMethod(AcceptChildren acceptChildren, IRMethod irMethod, int failedIRRules) {
-        this.irMethod = irMethod;
+    public void visitIRMethod(AcceptChildren acceptChildren, Method method, int failedIRRules) {
         acceptChildren.accept(this);
-        appendIRMethodHeader(irMethod.getMethod());
+        appendIRMethodHeader(method);
         appendMatchedCompilationOutputOfPhases();
         failedCompilePhases.clear();
     }
@@ -130,9 +127,9 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase) {
+    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase, String compilationOutput) {
         if (!failedCompilePhases.containsKey(compilePhase)) {
-            failedCompilePhases.put(compilePhase, irMethod.getOutput(compilePhase));
+            failedCompilePhases.put(compilePhase, compilationOutput);
             compilePhaseCount++;
         }
         // No need to visit check attributes

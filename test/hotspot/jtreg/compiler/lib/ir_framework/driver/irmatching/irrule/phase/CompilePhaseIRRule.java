@@ -43,15 +43,17 @@ import java.util.List;
 public class CompilePhaseIRRule implements CompilePhaseIRRuleMatchable {
     private final CompilePhase compilePhase;
     private final MatchableMatcher matcher;
+    private final String compilationOutput;
 
-    public CompilePhaseIRRule(CompilePhase compilePhase, List<Matchable> checkAttributes) {
+    public CompilePhaseIRRule(CompilePhase compilePhase, List<Matchable> checkAttributes, String compilationOutput) {
         this.compilePhase = compilePhase;
         this.matcher = new MatchableMatcher(checkAttributes);
+        this.compilationOutput = compilationOutput;
     }
 
     @Override
     public MatchResult match() {
-        return new CompilePhaseIRRuleMatchResult(compilePhase, matcher.match());
+        return new CompilePhaseIRRuleMatchResult(compilePhase, compilationOutput, matcher.match());
     }
 
     @Override

@@ -39,11 +39,14 @@ public class CompilePhaseIRRuleMatchResult implements MatchResult {
     private final AcceptChildren acceptChildren;
     private final boolean failed;
     private final CompilePhase compilePhase;
+    private final String compilationOutput;
 
-    public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase, List<MatchResult> matchResults) {
+    public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase, String compilationOutput,
+                                         List<MatchResult> matchResults) {
         this.acceptChildren = new AcceptChildren(matchResults);
         this.failed = !matchResults.isEmpty();
         this.compilePhase = compilePhase;
+        this.compilationOutput = compilationOutput;
     }
 
     @Override
@@ -53,6 +56,6 @@ public class CompilePhaseIRRuleMatchResult implements MatchResult {
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visitCompilePhaseIRRule(acceptChildren, compilePhase);
+        visitor.visitCompilePhaseIRRule(acceptChildren, compilePhase, compilationOutput);
     }
 }
