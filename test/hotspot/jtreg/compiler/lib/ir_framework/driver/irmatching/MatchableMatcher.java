@@ -27,13 +27,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * This class performs matching on a collection of {@link Matchable} objects. It returns a list of {@link MatchResult}
+ * objects which failed or an empty list of there was not failure.
+ */
 public class MatchableMatcher {
-
     private final Collection<? extends Matchable> matchables;
-
-    public MatchableMatcher() {
-        this.matchables = new ArrayList<>();
-    }
 
     public MatchableMatcher(Collection<? extends Matchable> matchables) {
         this.matchables = matchables;

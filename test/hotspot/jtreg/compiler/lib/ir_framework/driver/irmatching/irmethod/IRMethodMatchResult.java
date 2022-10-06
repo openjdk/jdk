@@ -43,8 +43,8 @@ public class IRMethodMatchResult implements MatchResult {
 
     public IRMethodMatchResult(IRMethod irMethod, List<MatchResult> matchResults) {
         this.acceptChildren = new AcceptChildren(matchResults);
-        this.irMethod = irMethod;
         this.failed = !matchResults.isEmpty();
+        this.irMethod = irMethod;
         this.failedIRRules = matchResults.size();
     }
 

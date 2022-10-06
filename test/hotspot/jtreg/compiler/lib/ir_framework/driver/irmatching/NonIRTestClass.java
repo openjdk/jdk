@@ -23,24 +23,17 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
-import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.SuccessResult;
 
 /**
- * This interface is implemented by all classes that represent an IR match result of a {@link Matchable} class.
- * A match result class accepts a {@link MatchResultVisitor} to visit the result (i.e. for reporting etc.).
- * The visitor is responsible to call {@link #accept(MatchResultVisitor)} of the children match results by using
- * {@link AcceptChildren#accept(MatchResultVisitor)}.
+ * Test class that does not contain any applicable {@link IR @IR} annotations and therefore does not fail. It simply
+ * return a {@link SuccessResult} objects when being matched.
  */
-public interface MatchResult {
-    /**
-     * Does this match result represent an IR match failure?
-     */
-    boolean fail();
+public class NonIRTestClass implements Matchable {
 
-    /**
-     * Allow a {@link MatchResultVisitor} to visit the match result which in turn invokes the visit methods of the
-     * visitor.
-     */
-    void accept(MatchResultVisitor visitor);
+    @Override
+    public MatchResult match() {
+        return SuccessResult.getInstance();
+    }
 }

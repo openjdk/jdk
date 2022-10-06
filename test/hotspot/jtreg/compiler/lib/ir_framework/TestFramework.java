@@ -347,11 +347,11 @@ public class TestFramework {
     }
 
     private void checkIRRuleCompilePhasesFormat() {
-        for (Method m : testClass.getDeclaredMethods()) {
-            for (IR irAnno : m.getAnnotationsByType(IR.class)) {
+        for (Method method : testClass.getDeclaredMethods()) {
+            for (IR irAnno : method.getAnnotationsByType(IR.class)) {
                 TestFormat.checkNoThrow(irAnno.phase().length > 0,
                                         "@IR rule " + irAnno + " must specify a non-empty list of compile " +
-                                        "phases \"phase\" at " + m);
+                                        "phases \"phase\" at " + method);
             }
         }
         TestFormat.throwIfAnyFailures();

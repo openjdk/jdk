@@ -32,14 +32,14 @@ import compiler.lib.ir_framework.driver.irmatching.report.FailureMessageBuilder;
  */
 public class IRMatcher {
     public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
-    private final TestClass testClass;
+    private final Matchable testClass;
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
         MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
         this.testClass = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
     }
 
-    public TestClass getTestClass() {
+    public Matchable getTestClass() {
         return testClass;
     }
 
@@ -64,9 +64,11 @@ public class IRMatcher {
         throwIfNoSafepointWhilePrinting(failureMsg, compilationOutput);
     }
 
-    // In some very rare cases, the hotspot_pid* file to IR match on contains "<!-- safepoint while printing -->"
-    // (emitted by ttyLocker::break_tty_for_safepoint) which might be the reason for a matching error.
-    // Do not throw an exception in this case (i.e. bailout).
+    /**
+     * In some very rare cases, the hotspot_pid* file to IR match on contains "<!-- safepoint while printing -->"
+     * (emitted by ttyLocker::break_tty_for_safepoint) which might be the reason for a matching error.
+     * Do not throw an exception in this case (i.e. bailout).
+     */
     private void throwIfNoSafepointWhilePrinting(String failures, String compilations) {
         if (!compilations.contains(SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
             throw new IRViolationException(failures, compilations);

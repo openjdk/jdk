@@ -40,13 +40,6 @@ import java.util.SortedSet;
 public class TestClass implements Matchable {
     private final MatchableMatcher matcher;
 
-    /**
-     * Constructor for classes without @IR annotations.
-     */
-    public TestClass() {
-        this.matcher = new MatchableMatcher();
-    }
-
     public TestClass(SortedSet<IRMethodMatchable> irMethods) {
         TestFramework.check(!irMethods.isEmpty(), "must not be empty");
         this.matcher = new MatchableMatcher(irMethods);
