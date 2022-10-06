@@ -1849,10 +1849,8 @@ void ReducedAllocationMergeNode::register_value_for_field(int offset, Node* base
 }
 
 Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, int offset, PhaseIterGVN* igvn) {
-  base                       = base->is_EncodeP() ? base->in(1) : base;
-  Node* off                  = igvn->transform((Node*)ConLNode::make(offset));
-  Node* addp                 = igvn->transform(new AddPNode(base, base, off));
-
+  base                        = base->is_EncodeP() ? base->in(1) : base;
+  Node* addp                  = igvn->transform(new AddPNode(base, base, igvn->MakeConX(offset)));
   const TypePtr* adr_type     = addp->bottom_type()->is_ptr();
   const TypeInstPtr* res_type = igvn->type(base)->is_instptr();
   ciInstanceKlass* iklass     = res_type->instance_klass();
