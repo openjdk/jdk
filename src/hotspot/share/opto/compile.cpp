@@ -561,7 +561,9 @@ void Compile::print_ideal_ir(const char* phase_name) {
                phase_name);
   }
   if (_output == nullptr) {
-    root()->dump(9999);
+    tty->print_cr("AFTER: %s", phase_name);
+    // Print out all nodes in ascending order of index.
+    root()->dump_bfs(MaxNodeLimit, nullptr, "+S$");
   } else {
     // Dump the node blockwise if we have a scheduling
     _output->print_scheduling();
@@ -635,7 +637,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
-                  _print_inlining_stream(NULL),
+                  _print_inlining_stream(new stringStream()),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
@@ -908,7 +910,7 @@ Compile::Compile( ciEnv* ci_env,
     _initial_gvn(NULL),
     _for_igvn(NULL),
     _number_of_mh_late_inlines(0),
-    _print_inlining_stream(NULL),
+    _print_inlining_stream(new stringStream()),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
     _print_inlining_output(NULL),
@@ -3084,7 +3086,7 @@ void Compile::eliminate_redundant_card_marks(Node* n) {
 
 //------------------------------final_graph_reshaping_impl----------------------
 // Implement items 1-5 from final_graph_reshaping below.
-void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
+void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
 
   if ( n->outcnt() == 0 ) return; // dead node
   uint nop = n->Opcode();
@@ -3135,9 +3137,9 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   }
 #endif
   // Count FPU ops and common calls, implements item (3)
-  bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop);
+  bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop, dead_nodes);
   if (!gc_handled) {
-    final_graph_reshaping_main_switch(n, frc, nop);
+    final_graph_reshaping_main_switch(n, frc, nop, dead_nodes);
   }
 
   // Collect CFG split points
@@ -3146,7 +3148,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   }
 }
 
-void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop) {
+void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
   // Count all float operations that may use FPU
   case Op_AddF:
@@ -3768,22 +3770,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       // that input may be a chain of Phis. If those phis have no
       // other use, then the MemBarAcquire keeps them alive and
       // register allocation can be confused.
-      ResourceMark rm;
-      Unique_Node_List wq;
-      wq.push(n->in(MemBarNode::Precedent));
+      dead_nodes.push(n->in(MemBarNode::Precedent));
       n->set_req(MemBarNode::Precedent, top());
-      while (wq.size() > 0) {
-        Node* m = wq.pop();
-        if (m->outcnt() == 0 && m != top()) {
-          for (uint j = 0; j < m->req(); j++) {
-            Node* in = m->in(j);
-            if (in != NULL) {
-              wq.push(in);
-            }
-          }
-          m->disconnect_inputs(this);
-        }
-      }
     }
     break;
   }
@@ -3856,7 +3844,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 //------------------------------final_graph_reshaping_walk---------------------
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
-void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc ) {
+void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
   Unique_Node_List sfpt;
 
   frc._visited.set(root->_idx); // first, mark node as visited
@@ -3882,7 +3870,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
       }
     } else {
       // Now do post-visit work
-      final_graph_reshaping_impl( n, frc );
+      final_graph_reshaping_impl(n, frc, dead_nodes);
       if (nstack.is_empty())
         break;             // finished
       n = nstack.node();   // Get node from stack
@@ -3982,7 +3970,8 @@ bool Compile::final_graph_reshaping() {
   // Visit everybody reachable!
   // Allocate stack of size C->live_nodes()/2 to avoid frequent realloc
   Node_Stack nstack(live_nodes() >> 1);
-  final_graph_reshaping_walk(nstack, root(), frc);
+  Unique_Node_List dead_nodes;
+  final_graph_reshaping_walk(nstack, root(), frc, dead_nodes);
 
   // Check for unreachable (from below) code (i.e., infinite loops).
   for( uint i = 0; i < frc._tests.size(); i++ ) {
@@ -3995,7 +3984,7 @@ bool Compile::final_graph_reshaping() {
       // 'fall-thru' path, so expected kids is 1 less.
       if (n->is_PCTable() && n->in(0) && n->in(0)->in(0)) {
         if (n->in(0)->in(0)->is_Call()) {
-          CallNode *call = n->in(0)->in(0)->as_Call();
+          CallNode* call = n->in(0)->in(0)->as_Call();
           if (call->entry_point() == OptoRuntime::rethrow_stub()) {
             required_outcnt--;      // Rethrow always has 1 less kid
           } else if (call->req() > TypeFunc::Parms &&
@@ -4004,22 +3993,27 @@ bool Compile::final_graph_reshaping() {
             // detected that the virtual call will always result in a null
             // pointer exception. The fall-through projection of this CatchNode
             // will not be populated.
-            Node *arg0 = call->in(TypeFunc::Parms);
+            Node* arg0 = call->in(TypeFunc::Parms);
             if (arg0->is_Type() &&
                 arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
               required_outcnt--;
             }
-          } else if (call->entry_point() == OptoRuntime::new_array_Java() &&
-                     call->req() > TypeFunc::Parms+1 &&
-                     call->is_CallStaticJava()) {
-            // Check for negative array length. In such case, the optimizer has
+          } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
+                     call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
+            // Check for illegal array length. In such case, the optimizer has
             // detected that the allocation attempt will always result in an
             // exception. There is no fall-through projection of this CatchNode .
-            Node *arg1 = call->in(TypeFunc::Parms+1);
-            if (arg1->is_Type() &&
-                arg1->as_Type()->type()->join(TypeInt::POS)->empty()) {
+            assert(call->is_CallStaticJava(), "static call expected");
+            assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+            uint valid_length_test_input = call->req() - 1;
+            Node* valid_length_test = call->in(valid_length_test_input);
+            call->del_req(valid_length_test_input);
+            if (valid_length_test->find_int_con(1) == 0) {
               required_outcnt--;
             }
+            dead_nodes.push(valid_length_test);
+            assert(n->outcnt() == required_outcnt, "malformed control flow");
+            continue;
           }
         }
       }
@@ -4027,6 +4021,16 @@ bool Compile::final_graph_reshaping() {
       if (n->outcnt() != required_outcnt) {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
+      }
+    } else if (n->is_PCTable() && n->in(0) && n->in(0)->in(0) && n->in(0)->in(0)->is_Call()) {
+      CallNode* call = n->in(0)->in(0)->as_Call();
+      if (call->entry_point() == OptoRuntime::new_array_Java() ||
+          call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
+        assert(call->is_CallStaticJava(), "static call expected");
+        assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+        uint valid_length_test_input = call->req() - 1;
+        dead_nodes.push(call->in(valid_length_test_input));
+        call->del_req(valid_length_test_input); // valid length test useless now
       }
     }
     // Check that I actually visited all kids.  Unreached kids
@@ -4043,6 +4047,19 @@ bool Compile::final_graph_reshaping() {
       IfNode* init_iff = n->as_If();
       Node* iff = new IfNode(init_iff->in(0), init_iff->in(1), init_iff->_prob, init_iff->_fcnt);
       n->subsume_by(iff, this);
+    }
+  }
+
+  while (dead_nodes.size() > 0) {
+    Node* m = dead_nodes.pop();
+    if (m->outcnt() == 0 && m != top()) {
+      for (uint j = 0; j < m->req(); j++) {
+        Node* in = m->in(j);
+        if (in != NULL) {
+          dead_nodes.push(in);
+        }
+      }
+      m->disconnect_inputs(this);
     }
   }
 
@@ -4396,13 +4413,6 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
   return phase->transform(new ConvI2LNode(value, ltype));
 }
 
-void Compile::print_inlining_stream_free() {
-  if (_print_inlining_stream != NULL) {
-    _print_inlining_stream->~stringStream();
-    _print_inlining_stream = NULL;
-  }
-}
-
 // The message about the current inlining is accumulated in
 // _print_inlining_stream and transferred into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
@@ -4414,17 +4424,14 @@ void Compile::print_inlining_stream_free() {
 void Compile::print_inlining_init() {
   if (print_inlining() || print_intrinsics()) {
     // print_inlining_init is actually called several times.
-    print_inlining_stream_free();
-    _print_inlining_stream = new stringStream();
+    print_inlining_reset();
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer*>(comp_arena(), 1, 1, new PrintInliningBuffer());
   }
 }
 
 void Compile::print_inlining_reinit() {
   if (print_inlining() || print_intrinsics()) {
-    print_inlining_stream_free();
-    // Re allocate buffer when we change ResourceMark
-    _print_inlining_stream = new stringStream();
+    print_inlining_reset();
   }
 }
 
@@ -4514,7 +4521,7 @@ void Compile::process_print_inlining() {
     // It is on the arena, so it will be freed when the arena is reset.
     _print_inlining_list = NULL;
     // _print_inlining_stream won't be used anymore, either.
-    print_inlining_stream_free();
+    print_inlining_reset();
     size_t end = ss.size();
     _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
     strncpy(_print_inlining_output, ss.freeze(), end+1);

@@ -248,9 +248,9 @@ void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
 
   bind(stub->slow_path());
 
-  int32_t _offset = 0;
-  movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), _offset);
-  jalr(ra, t0, _offset);
+  int32_t offset = 0;
+  movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+  jalr(ra, t0, offset);
   j(stub->continuation());
 
   bind(stub->guard());
