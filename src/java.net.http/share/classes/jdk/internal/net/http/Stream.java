@@ -751,9 +751,11 @@ class Stream<T> extends ExchangeImpl<T> {
         hdrs.setHeader(":method", method);
         URI uri = request.uri();
         hdrs.setHeader(":scheme", uri.getScheme());
-        // TODO: userinfo deprecated. Needs to be removed
-        hdrs.setHeader(":authority", uri.getAuthority());
-        // TODO: ensure header names beginning with : not in user headers
+        if(uri.getHost() != null && uri.getPort() != -1) {
+            hdrs.setHeader(":authority", uri.getHost() + ":" + uri.getPort());
+        } else if (uri.getHost()!=null) {
+            hdrs.setHeader(":authority", uri.getHost());
+        }
         String query = uri.getRawQuery();
         String path = uri.getRawPath();
         if (path == null || path.isEmpty()) {
