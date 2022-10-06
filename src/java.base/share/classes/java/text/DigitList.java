@@ -161,12 +161,12 @@ final class DigitList implements Cloneable {
             return 0.0;
         }
 
-        StringBuffer temp = getStringBuffer();
-        temp.append('.');
-        temp.append(digits, 0, count);
-        temp.append('E');
-        temp.append(decimalAt);
-        return Double.parseDouble(temp.toString());
+        return Double.parseDouble(getStringBuilder()
+                .append('.')
+                .append(digits, 0, count)
+                .append('E')
+                .append(decimalAt)
+                .toString());
     }
 
     /**
@@ -187,7 +187,7 @@ final class DigitList implements Cloneable {
             return Long.MIN_VALUE;
         }
 
-        StringBuffer temp = getStringBuffer();
+        StringBuilder temp = getStringBuilder();
         temp.append(digits, 0, count);
         for (int i = count; i < decimalAt; ++i) {
             temp.append('0');
@@ -736,7 +736,7 @@ final class DigitList implements Cloneable {
             char[] newDigits = new char[digits.length];
             System.arraycopy(digits, 0, newDigits, 0, digits.length);
             other.digits = newDigits;
-            other.tempBuffer = null;
+            other.tempBuilder = null;
             return other;
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
@@ -788,23 +788,24 @@ final class DigitList implements Cloneable {
         if (isZero()) {
             return "0";
         }
-        StringBuffer buf = getStringBuffer();
-        buf.append("0.");
-        buf.append(digits, 0, count);
-        buf.append("x10^");
-        buf.append(decimalAt);
-        return buf.toString();
+
+        return getStringBuilder()
+                .append("0.")
+                .append(digits, 0, count)
+                .append("x10^")
+                .append(decimalAt)
+                .toString();
     }
 
-    private StringBuffer tempBuffer;
+    private StringBuilder tempBuilder;
 
-    private StringBuffer getStringBuffer() {
-        if (tempBuffer == null) {
-            tempBuffer = new StringBuffer(MAX_COUNT);
+    private StringBuilder getStringBuilder() {
+        if (tempBuilder == null) {
+            tempBuilder = new StringBuilder(MAX_COUNT);
         } else {
-            tempBuffer.setLength(0);
+            tempBuilder.setLength(0);
         }
-        return tempBuffer;
+        return tempBuilder;
     }
 
     private void extendDigits(int len) {
