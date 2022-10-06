@@ -37,6 +37,7 @@ public interface ConstraintFailure extends MatchResult {
     default boolean fail() {
         return true;
     }
-    Constraint constraint();
+    String nodeRegex();
+    int constraintId();
     List<String> matchedNodes();
 }

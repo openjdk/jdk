@@ -21,44 +21,30 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
+package compiler.lib.ir_framework.driver.irmatching.visitor;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
- * This class represents a special IR matching result of an {@link IRMethod} where the compilation output of a the
- * method was empty.
- *
- * @see IRMethod
- * @see IRMethodMatchResult
+ * Class to delegate accept call to all match result children of a {@link MatchResult} object.
  */
-public class MethodNotCompiledResult implements MatchResult {
-    private final int failedIRRules;
-    private final Method method;
+public class AcceptChildren implements Consumer<MatchResultVisitor> {
+    private final Collection<? extends MatchResult> matchResults;
 
-    MethodNotCompiledResult(Method method, int failedIRRules) {
-        this.method = method;
-        this.failedIRRules = failedIRRules;
-    }
-
-    @Override
-    public boolean fail() {
-        return true;
-    }
-
-    public Method getMethod() {
-        return method;
-    }
-
-    public int getFailedIRRuleCount() {
-        return failedIRRules;
+    public AcceptChildren(List<MatchResult> matchResults) {
+        this.matchResults = matchResults;
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
+        for (MatchResult result : matchResults) {
+            if (result.fail()) {
+                result.accept(visitor);
+            }
+        }
     }
 }

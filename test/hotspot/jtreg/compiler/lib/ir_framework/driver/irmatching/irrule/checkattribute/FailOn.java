@@ -69,7 +69,7 @@ public class FailOn implements Matchable {
      * "regex_1|regex_2|...|regex_n"
      */
     private boolean hasNoMatchQuick() {
-        String patternString = constraints.stream().map(Constraint::regex).collect(Collectors.joining("|"));
+        String patternString = constraints.stream().map(Constraint::nodeRegex).collect(Collectors.joining("|"));
         Pattern pattern = Pattern.compile(String.join("|", patternString));
         Matcher matcher = pattern.matcher(compilationOutput);
         return !matcher.find();

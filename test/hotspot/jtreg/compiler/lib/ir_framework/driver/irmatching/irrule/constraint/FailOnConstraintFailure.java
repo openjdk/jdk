@@ -35,13 +35,14 @@ import java.util.List;
  * @see Constraint
  * @see FailOn
  */
-public record FailOnConstraintFailure(Constraint constraint, List<String> matchedNodes) implements ConstraintFailure {
+public record FailOnConstraintFailure(String nodeRegex, int constraintId, List<String> matchedNodes)
+        implements ConstraintFailure {
     public FailOnConstraintFailure {
         TestFramework.check(!matchedNodes.isEmpty(), "must have at least one matched node");
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
+        visitor.visitFailOnConstraint(this);
     }
 }

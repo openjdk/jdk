@@ -31,5 +31,5 @@ import java.util.List;
  * Interface to represent a check on a single {@link Constraint}.
  */
 interface ConstraintCheck {
-    MatchResult check(Constraint constraint, List<String> matchedNodes);
+    MatchResult check(List<String> matchedNodes);
 }

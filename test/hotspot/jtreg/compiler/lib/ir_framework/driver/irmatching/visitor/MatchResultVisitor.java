@@ -23,47 +23,28 @@
 
 package compiler.lib.ir_framework.driver.irmatching.visitor;
 
+import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.MethodNotCompiledResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
+
+import java.lang.reflect.Method;
 
 /**
  * This interface specifies default visit methods for each {@link MatchResult} class which can be overridden.
  */
 public interface MatchResultVisitor {
-    default void visit(TestClassMatchResult testClassMatchResult) {
-        testClassMatchResult.acceptChildren(this);
-    }
-
-    default void visit(IRMethodMatchResult irMethodMatchResult) {
-        irMethodMatchResult.acceptChildren(this);
-    }
-
-    default void visit(MethodNotCompiledResult methodNotCompiledResult) {}
-
-    default void visit(IRRuleMatchResult irRuleMatchResult) {
-        irRuleMatchResult.acceptChildren(this);
-    }
-
-    default void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
-        compilePhaseIRRuleMatchResult.acceptChildren(this);
-    }
-
-    default void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {}
-
-    default void visit(CheckAttributeMatchResult checkAttributeMatchResult) {
-        checkAttributeMatchResult.acceptChildren(this);
-    }
-
-    default void visit(FailOnConstraintFailure failOnConstraintFailure) {}
-
-    default void visit(CountsConstraintFailure countsConstraintMatchResult) {}
+    void visitTestClass(AcceptChildren acceptChildren);
+    void visitIRMethod(AcceptChildren acceptChildren, IRMethod irMethod, int failedIRRules);
+    void visitMethodNotCompiled(Method method, int failedIRRules);
+    void visitIRRule(AcceptChildren acceptChildren, int irRuleId, IR irAnno);
+    void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase);
+    void visitNoCompilePhaseCompilation(CompilePhase compilePhase);
+    void visitCheckAttribute(AcceptChildren acceptChildren, CheckAttributeType checkAttributeType);
+    void visitFailOnConstraint(FailOnConstraintFailure failOnConstraintFailure);
+    void visitCountsConstraint(CountsConstraintFailure countsConstraintFailure);
 }
 

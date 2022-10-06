@@ -52,6 +52,6 @@ public class NoCompilePhaseCompilationResult implements MatchResult {
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
+        visitor.visitNoCompilePhaseCompilation(compilePhase);
     }
 }

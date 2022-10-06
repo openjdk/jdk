@@ -39,22 +39,4 @@ public interface MatchResult {
     boolean fail();
 
     void accept(MatchResultVisitor visitor);
-
-    /**
-     * If the implementing class is not a leaf, it must call
-     * {@link MatchResult#acceptChildren(MatchResultVisitor, Collection)} which calls
-     * {@link MatchResult#accept(MatchResultVisitor)} on all the children specified in the parameter.
-     */
-    default void acceptChildren(MatchResultVisitor visitor) {}
-
-    /**
-     * Call {@link #accept(MatchResultVisitor)} on all children which are port of an IR matching failure.
-     */
-    default void acceptChildren(MatchResultVisitor visitor, Collection<? extends MatchResult> children) {
-        for (var result : children) {
-            if (result.fail()) {
-                result.accept(visitor);
-            }
-        }
-    }
 }

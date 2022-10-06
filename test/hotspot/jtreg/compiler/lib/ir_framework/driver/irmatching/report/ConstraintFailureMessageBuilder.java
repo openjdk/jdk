@@ -32,20 +32,20 @@ import java.util.List;
  */
 public class ConstraintFailureMessageBuilder {
     private final String nodeRegex;
-    private final int constraintIndex;
+    private final int constraintId;
     private final List<String> matchedNodes;
     private final Indentation indentation;
 
     public ConstraintFailureMessageBuilder(ConstraintFailure constraintFailure, Indentation indentation) {
-        this.nodeRegex = constraintFailure.constraint().regex();
-        this.constraintIndex = constraintFailure.constraint().index();
+        this.nodeRegex = constraintFailure.nodeRegex();
+        this.constraintId = constraintFailure.constraintId();
         this.matchedNodes = constraintFailure.matchedNodes();
         this.indentation = indentation;
     }
 
     public String buildConstraintHeader() {
         return indentation + "* Constraint "
-               + constraintIndex + ": \"" + nodeRegex + "\""
+               + constraintId + ": \"" + nodeRegex + "\""
                + System.lineSeparator();
     }
 

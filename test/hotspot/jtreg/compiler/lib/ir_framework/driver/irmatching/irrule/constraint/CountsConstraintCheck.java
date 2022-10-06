@@ -35,16 +35,20 @@ import java.util.List;
  * @see Constraint
  */
 class CountsConstraintCheck implements ConstraintCheck {
+    private final String nodeRegex;
+    private final int constraintId; // constraint indices start at 1.
     private final Comparison<Integer> comparison;
 
-    public CountsConstraintCheck(Comparison<Integer> comparison) {
+    public CountsConstraintCheck(String nodeRegex, int constraintId, Comparison<Integer> comparison) {
         this.comparison = comparison;
+        this.nodeRegex = nodeRegex;
+        this.constraintId = constraintId;
     }
 
     @Override
-    public MatchResult check(Constraint constraint, List<String> matchedNodes) {
+    public MatchResult check(List<String> matchedNodes) {
         if (!comparison.compare(matchedNodes.size())) {
-            return new CountsConstraintFailure(constraint, matchedNodes, comparison);
+            return new CountsConstraintFailure(nodeRegex, constraintId, matchedNodes, comparison);
         }
         return SuccessResult.getInstance();
     }

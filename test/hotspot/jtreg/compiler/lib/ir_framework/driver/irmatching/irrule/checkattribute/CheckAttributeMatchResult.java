@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.List;
@@ -36,29 +37,23 @@ import java.util.List;
  * @see CheckAttributeType
  */
 public class CheckAttributeMatchResult implements MatchResult {
-    private final List<MatchResult> constraintFailures;
+    private final AcceptChildren acceptChildren;
+    private final boolean failed;
     private final CheckAttributeType checkAttributeType;
 
-    CheckAttributeMatchResult(CheckAttributeType checkAttributeType, List<MatchResult> constraintFailures) {
+    CheckAttributeMatchResult(CheckAttributeType checkAttributeType, List<MatchResult> matchResults) {
+        this.acceptChildren = new AcceptChildren(matchResults);
+        this.failed = !matchResults.isEmpty();
         this.checkAttributeType = checkAttributeType;
-        this.constraintFailures = constraintFailures;
-    }
-
-    public CheckAttributeType getCheckAttributeKind() {
-        return checkAttributeType;
     }
 
     @Override
     public boolean fail() {
-        return !constraintFailures.isEmpty();
-    }
-
-    public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
+        return failed;
     }
 
     @Override
-    public void acceptChildren(MatchResultVisitor visitor) {
-        acceptChildren(visitor, constraintFailures);
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visitCheckAttribute(acceptChildren, checkAttributeType);
     }
 }

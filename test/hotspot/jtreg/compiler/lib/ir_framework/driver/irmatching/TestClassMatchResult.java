@@ -23,37 +23,33 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
+import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.List;
 
 /**
- * This class represents a test class matching result of a {@link TestClass}.
+ * This class represents a test class matching result of a {@link TestClass}. It contains all IR method results,
+ * sorted by method names.
  *
  * @see TestClass
  */
 public class TestClassMatchResult implements MatchResult {
-    /**
-     * List of all IR method results, sorted by method names.
-     */
-    private final List<MatchResult> results;
+    private final AcceptChildren acceptChildren;
+    private final boolean failed;
 
-    public TestClassMatchResult(List<MatchResult> results) {
-        this.results = results;
+    public TestClassMatchResult(List<MatchResult> matchResults) {
+        this.acceptChildren = new AcceptChildren(matchResults);
+        this.failed = !matchResults.isEmpty();
     }
 
     @Override
     public boolean fail() {
-        return !results.isEmpty();
+        return failed;
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
-    }
-
-    @Override
-    public void acceptChildren(MatchResultVisitor visitor) {
-        acceptChildren(visitor, results);
+        visitor.visitTestClass(acceptChildren);
     }
 }

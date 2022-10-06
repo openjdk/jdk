@@ -47,41 +47,36 @@ import java.util.stream.Collectors;
  */
 public class Constraint implements Matchable {
     private final ConstraintCheck constraintCheck;
-    private final String regex;
-    private final int index; // constraint indices start at 1.
+    private final String nodeRegex;
     private final String compilationOutput;
 
-    private Constraint(ConstraintCheck constraintCheck, String regex, int index, String compilationOutput) {
+    private Constraint(ConstraintCheck constraintCheck, String nodeRegex, String compilationOutput) {
         this.constraintCheck = constraintCheck;
-        this.regex = regex;
-        this.index = index;
+        this.nodeRegex = nodeRegex;
         this.compilationOutput = compilationOutput;
     }
 
-    public static Constraint createFailOn(String regex, int index, String compilationOutput) {
-        return new Constraint(new FailOnConstraintCheck(), regex, index, compilationOutput);
+    public static Constraint createFailOn(String nodeRegex, int constraintId, String compilationOutput) {
+        return new Constraint(new FailOnConstraintCheck(nodeRegex, constraintId), nodeRegex, compilationOutput);
     }
 
-    public static Constraint createCounts(String regex, int index, Comparison<Integer> comparison,
+    public static Constraint createCounts(String nodeRegex, int constraintId, Comparison<Integer> comparison,
                                           String compilationOutput) {
-        return new Constraint(new CountsConstraintCheck(comparison), regex, index, compilationOutput);
+        return new Constraint(new CountsConstraintCheck(nodeRegex, constraintId, comparison), nodeRegex, compilationOutput);
     }
 
-    public String regex() {
-        return regex;
+    public String nodeRegex() {
+        return nodeRegex;
     }
 
-    public int index() {
-        return index;
-    }
-
+    @Override
     public MatchResult match() {
         List<String> matchedNodes = matchNodes(compilationOutput);
-        return constraintCheck.check(this, matchedNodes);
+        return constraintCheck.check(matchedNodes);
     }
 
     private List<String> matchNodes(String compilationOutput) {
-        Pattern pattern = Pattern.compile(regex);
+        Pattern pattern = Pattern.compile(nodeRegex);
         Matcher matcher = pattern.matcher(compilationOutput);
         return matcher.results().map(java.util.regex.MatchResult::group).collect(Collectors.toList());
     }

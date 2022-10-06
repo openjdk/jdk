@@ -34,10 +34,10 @@ import java.util.List;
  *
  * @see Counts
  */
-public record CountsConstraintFailure(Constraint constraint, List<String> matchedNodes,
+public record CountsConstraintFailure(String nodeRegex, int constraintId, List<String> matchedNodes,
                                       Comparison<Integer> comparison) implements ConstraintFailure {
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
+        visitor.visitCountsConstraint(this);
     }
 }

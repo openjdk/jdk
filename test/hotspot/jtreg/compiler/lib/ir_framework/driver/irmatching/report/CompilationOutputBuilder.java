@@ -24,14 +24,13 @@
 package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.TestClassMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.MethodNotCompiledResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.NoCompilePhaseCompilationResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
+import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.lang.reflect.Method;
@@ -61,8 +60,8 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visit(TestClassMatchResult testClassMatchResult) {
-        testClassMatchResult.acceptChildren(this);
+    public void visitTestClass(AcceptChildren acceptChildren) {
+        acceptChildren.accept(this);
         StringBuilder builder = new StringBuilder();
         builder.append("Compilation");
         if (compilePhaseCount > 1) {
@@ -86,10 +85,10 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visit(IRMethodMatchResult irMethodMatchResult) {
-        irMethod = irMethodMatchResult.getIRMethod();
-        irMethodMatchResult.acceptChildren(this);
-        appendIRMethodHeader(irMethodMatchResult.getIRMethod().getMethod());
+    public void visitIRMethod(AcceptChildren acceptChildren, IRMethod irMethod, int failedIRRules) {
+        this.irMethod = irMethod;
+        acceptChildren.accept(this);
+        appendIRMethodHeader(irMethod.getMethod());
         appendMatchedCompilationOutputOfPhases();
         failedCompilePhases.clear();
     }
@@ -119,29 +118,28 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visit(MethodNotCompiledResult methodNotCompiledResult) {
-        appendIRMethodHeader(methodNotCompiledResult.getMethod());
+    public void visitMethodNotCompiled(Method method, int failedIRRules) {
+        appendIRMethodHeader(method);
         compilePhaseCount++; // Count this as one phase
         msg.append("<empty>").append(System.lineSeparator());
     }
 
     @Override
-    public void visit(IRRuleMatchResult irRuleMatchResult) {
-        irRuleMatchResult.acceptChildren(this);
+    public void visitIRRule(AcceptChildren acceptChildren, int irRuleId, IR irAnno) {
+        acceptChildren.accept(this);
     }
 
     @Override
-    public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
-        CompilePhase compilePhase = compilePhaseIRRuleMatchResult.compilePhase();
+    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase) {
         if (!failedCompilePhases.containsKey(compilePhase)) {
             failedCompilePhases.put(compilePhase, irMethod.getOutput(compilePhase));
             compilePhaseCount++;
         }
+        // No need to visit check attributes
     }
 
     @Override
-    public void visit(NoCompilePhaseCompilationResult noCompilePhaseCompilationResult) {
-        CompilePhase compilePhase = noCompilePhaseCompilationResult.compilePhase();
+    public void visitNoCompilePhaseCompilation(CompilePhase compilePhase) {
         if (!failedCompilePhases.containsKey(compilePhase)) {
             failedCompilePhases.put(compilePhase,
                                     "> Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator() + "<empty>" +
@@ -149,6 +147,15 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
             compilePhaseCount++;
         }
     }
+
+    @Override
+    public void visitCheckAttribute(AcceptChildren acceptChildren, CheckAttributeType checkAttributeType) {}
+
+    @Override
+    public void visitFailOnConstraint(FailOnConstraintFailure failOnConstraintFailure) {}
+
+    @Override
+    public void visitCountsConstraint(CountsConstraintFailure countsConstraintFailure) {}
 
     public String build() {
         testClassMatchResult.accept(this);

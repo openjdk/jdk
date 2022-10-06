@@ -34,11 +34,18 @@ import java.util.List;
  * @see Constraint
  */
 class FailOnConstraintCheck implements ConstraintCheck {
+    private final String nodeRegex;
+    private final int constraintId; // constraint indices start at 1.
+
+    public FailOnConstraintCheck(String nodeRegex, int constraintId) {
+        this.nodeRegex = nodeRegex;
+        this.constraintId = constraintId;
+    }
 
     @Override
-    public MatchResult check(Constraint constraint, List<String> matchedNodes) {
+    public MatchResult check(List<String> matchedNodes) {
         if (!matchedNodes.isEmpty()) {
-            return new FailOnConstraintFailure(constraint, matchedNodes);
+            return new FailOnConstraintFailure(nodeRegex, constraintId, matchedNodes);
         }
         return SuccessResult.getInstance();
     }

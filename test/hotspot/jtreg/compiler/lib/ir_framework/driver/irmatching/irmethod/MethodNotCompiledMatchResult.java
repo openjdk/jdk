@@ -24,37 +24,34 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
-import java.util.List;
+import java.lang.reflect.Method;
 
 /**
- * This class represents an IR matching result of an {@link IRMethod}. It contains a list of all IR rule match results
- * which could have been applied on different compile phases.
+ * This class represents a special IR matching result of an {@link IRMethod} where the compilation output of a the
+ * method was empty.
  *
  * @see IRMethod
+ * @see IRMethodMatchResult
  */
-public class IRMethodMatchResult implements MatchResult {
-    private final AcceptChildren acceptChildren;
-    private final boolean failed;
-    private final IRMethod irMethod;
+public class MethodNotCompiledMatchResult implements MatchResult {
+    private final Method method;
     private final int failedIRRules;
 
-    public IRMethodMatchResult(IRMethod irMethod, List<MatchResult> matchResults) {
-        this.acceptChildren = new AcceptChildren(matchResults);
-        this.irMethod = irMethod;
-        this.failed = !matchResults.isEmpty();
-        this.failedIRRules = matchResults.size();
+    MethodNotCompiledMatchResult(Method method, int failedIRRules) {
+        this.method = method;
+        this.failedIRRules = failedIRRules;
     }
 
     @Override
     public boolean fail() {
-        return failed;
+        return true;
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visitIRMethod(acceptChildren, irMethod, failedIRRules);
+        visitor.visitMethodNotCompiled(method, failedIRRules);
     }
 }
+

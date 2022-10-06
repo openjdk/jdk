@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.List;
@@ -35,30 +36,23 @@ import java.util.List;
  * @see CompilePhaseIRRule
  */
 public class CompilePhaseIRRuleMatchResult implements MatchResult {
+    private final AcceptChildren acceptChildren;
+    private final boolean failed;
     private final CompilePhase compilePhase;
-    private final List<MatchResult> checkAttributeFailures;
 
-    public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase, List<MatchResult> checkAttributeFailures) {
-        this.checkAttributeFailures = checkAttributeFailures;
+    public CompilePhaseIRRuleMatchResult(CompilePhase compilePhase, List<MatchResult> matchResults) {
+        this.acceptChildren = new AcceptChildren(matchResults);
+        this.failed = !matchResults.isEmpty();
         this.compilePhase = compilePhase;
     }
 
     @Override
     public boolean fail() {
-        return !checkAttributeFailures.isEmpty();
-    }
-
-    public CompilePhase compilePhase() {
-        return compilePhase;
+        return failed;
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
-    }
-
-    @Override
-    public void acceptChildren(MatchResultVisitor visitor) {
-        acceptChildren(visitor, checkAttributeFailures);
+        visitor.visitCompilePhaseIRRule(acceptChildren, compilePhase);
     }
 }
