@@ -1570,7 +1570,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @since 19
      */
     public static <T> ForkJoinTask<T> adaptInterruptible(Callable<? extends T> callable) {
-        // https://bugs.openjdk.java.net/browse/JDK-8246587
+        // https://bugs.openjdk.org/browse/JDK-8246587
         return new AdaptedInterruptibleCallable<T>(callable);
     }
 
