@@ -996,15 +996,15 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
-jlong SharedRuntime::get_java_tid(Thread* thread) {
-  if (thread != NULL && thread->is_Java_thread()) {
-    Thread* current = Thread::current();
-    guarantee(current != thread || JavaThread::cast(thread)->is_oop_safe(),
-              "current cannot touch oops after its GC barrier is detached.");
-    oop obj = JavaThread::cast(thread)->threadObj();
-    return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
+jlong SharedRuntime::get_java_tid(JavaThread* thread) {
+  assert(thread != NULL, "No thread");
+  if (thread == NULL) {
+    return 0;
   }
-  return 0;
+  guarantee(Thread::current() != thread || thread->is_oop_safe(),
+            "current cannot touch oops after its GC barrier is detached.");
+  oop obj = thread->threadObj();
+  return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
 }
 
 /**
@@ -1013,14 +1013,14 @@ jlong SharedRuntime::get_java_tid(Thread* thread) {
  * 6254741.  Once that is fixed we can remove the dummy return value.
  */
 int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
-  return dtrace_object_alloc(Thread::current(), o, o->size());
+  return dtrace_object_alloc(JavaThread::current(), o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o) {
+int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o) {
   return dtrace_object_alloc(thread, o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size) {
+int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
   Symbol* name = klass->name();

@@ -553,7 +553,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             "ANT_HOME": input.get("ant", "home_path")
         }
     };
-    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64"]
+    [ "linux-x64", "macosx-aarch64", "macosx-x64", "windows-x64", "linux-aarch64"]
         .forEach(function (name) {
             var maketestName = name + "-testmake";
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
@@ -1147,7 +1147,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-12-jdk-asm+1.0",
+            revision: "3.0-13-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
