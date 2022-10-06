@@ -250,16 +250,18 @@ public interface Path
     Path getFileName();
 
     /**
-     * Returns the file name extension of this path as a {@code String}. The
-     * extension is the portion of the {@linkplain #getFileName file name}
-     * string after the last period character ('.', U+002E FULL STOP). Leading
-     * period characters in the string are ignored. If there is no  extension,
-     * then {@code null} is returned. This will occur if the path has zero
-     * elements ({@link #getFileName()} returns {@code null}), the file name
-     * string does not contain a period character, or only the first character
-     * is a period character. If the last character is a period character but
-     * some other character is not, then the extension is the
-     * {@linkplain String#isEmpty() empty} string.
+     * Returns the file name extension of this path as a {@code String}.
+     * The extension is derived from this {@code Path} by obtaining the
+     * {@linkplain #getFileName file name element}, deriving its {@linkplain
+     * #toString string representation}, and then extracting a substring
+     * determined by the position of a period character ('.', U+002E FULL STOP)
+     * within the file name string. If the file name element is {@code null},
+     * or if the file name string does not contain a period character, or if
+     * the only period in the file name string is its first character, then
+     * the extension is {@code null}. Otherwise, the extension is the substring
+     * after the last period in the file name string. If this last period is
+     * also the last character in the file name string, then the  extension is
+     * {@linkplain String#isEmpty empty}.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
@@ -267,9 +269,9 @@ public interface Path
      * int lastPeriod = fileName.lastIndexOf('.');
      * if (lastPeriod <= 0)
      *     return null;
-     * return lastPeriod == fileName.length() - 1 ?
-     *     "" :
-     *     fileName.substring(lastPeriod + 1);
+     * return (lastPeriod == fileName.length() - 1)
+     *     ? ""
+     *     : fileName.substring(lastPeriod + 1);
      * }</pre>
      *
      * @return  the file name extension of this path, which might be the
@@ -293,9 +295,8 @@ public interface Path
             // only the first character is a period character
             if (lastPeriodIndex > 0) {
                 if (lastPeriodIndex == length - 1) {
-                    // null if all period characters, otherwise empty
-                    return fileNameString.matches("\\.{" + length + "}") ?
-                        null : "";
+                    // empty string
+                    return "";
                 } else {
                     return fileNameString.substring(lastPeriodIndex + 1);
                 }

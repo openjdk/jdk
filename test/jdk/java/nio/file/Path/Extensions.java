@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @bug 8057113
- * @summary Verify extension methods
+ * @summary Verify getExtension method
  * @run testng Extensions
  */
 public class Extensions {
@@ -45,10 +45,10 @@ public class Extensions {
         Object[][] pairs = {
             {"",               null},
             {".",              null},
-            {"..",             null},
-            {"...",            null},
-            {"....",           null},
-            {".....",          null},
+            {"..",             ""},
+            {"...",            ""},
+            {"....",           ""},
+            {".....",          ""},
             {"aa",             null},
             {"a.",             ""},
             {".a",             null},
@@ -73,6 +73,8 @@ public class Extensions {
             {"foo.bar.",       ""},
             {"archive.zip",    "zip"},
             {"compress.gzip",  "gzip"},
+            {"waitwhat.&$!#%", "&$!#%"},
+            {"6.283185307",    "283185307"}
         };
         return pairs;
     }
