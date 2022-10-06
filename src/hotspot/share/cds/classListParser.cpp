@@ -49,7 +49,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
 volatile Thread* ClassListParser::_parsing_thread = NULL;

@@ -40,6 +40,7 @@ import static java.net.Proxy.NO_PROXY;
 public class KeepAliveProperty {
 
     static volatile boolean pass = false;
+    static Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
 
     static class Server extends Thread {
         final ServerSocket server;
@@ -138,7 +139,6 @@ public class KeepAliveProperty {
 
     public static void main(String args[]) throws Exception {
         // exercise the logging code
-        Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
         logger.setLevel(Level.FINEST);
         ConsoleHandler h = new ConsoleHandler();
         h.setLevel(Level.FINEST);
@@ -171,6 +171,7 @@ public class KeepAliveProperty {
             if (!expectClose)
                 throw e;
         }
+        s.join();
 
         if (!pass)
             throw new RuntimeException("Failed in server");

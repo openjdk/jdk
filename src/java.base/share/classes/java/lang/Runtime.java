@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,6 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.loader.NativeLibrary;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -1075,7 +1074,7 @@ public class Runtime {
                     m.group(VersionPattern.OPT_GROUP));
 
             // empty '+'
-            if (!build.isPresent()) {
+            if (build.isEmpty()) {
                 if (m.group(VersionPattern.PLUS_GROUP) != null) {
                     if (optional.isPresent()) {
                         if (pre.isPresent())
@@ -1087,7 +1086,7 @@ public class Runtime {
                             + " build or optional components: '" + s + "'");
                     }
                 } else {
-                    if (optional.isPresent() && !pre.isPresent()) {
+                    if (optional.isPresent() && pre.isEmpty()) {
                         throw new IllegalArgumentException("optional component"
                             + " must be preceded by a pre-release component"
                             + " or '+': '" + s + "'");
@@ -1353,11 +1352,11 @@ public class Runtime {
 
         private int comparePre(Version obj) {
             Optional<String> oPre = obj.pre();
-            if (!pre.isPresent()) {
+            if (pre.isEmpty()) {
                 if (oPre.isPresent())
                     return 1;
             } else {
-                if (!oPre.isPresent())
+                if (oPre.isEmpty())
                     return -1;
                 String val = pre.get();
                 String oVal = oPre.get();
@@ -1388,11 +1387,11 @@ public class Runtime {
 
         private int compareOptional(Version obj) {
             Optional<String> oOpt = obj.optional();
-            if (!optional.isPresent()) {
+            if (optional.isEmpty()) {
                 if (oOpt.isPresent())
                     return -1;
             } else {
-                if (!oOpt.isPresent())
+                if (oOpt.isEmpty())
                     return 1;
                 return optional.get().compareTo(oOpt.get());
             }

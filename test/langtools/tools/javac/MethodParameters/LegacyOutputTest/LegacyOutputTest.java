@@ -57,16 +57,7 @@ public class LegacyOutputTest {
     }
 
     void test() throws Exception {
-        release7();
         release8();
-    }
-
-    void release7() throws Exception {
-        List<String> names = getParameterNames("7");
-        if (names != null) {
-            throw new AssertionError(
-                    "expected no MethodParameters for --release 7, actual: " + names);
-        }
     }
 
     void release8() throws Exception {

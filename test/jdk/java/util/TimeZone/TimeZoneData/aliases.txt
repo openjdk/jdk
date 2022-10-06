@@ -7,6 +7,7 @@ Link Africa/Abidjan Africa/Freetown	# Sierra Leone
 Link Africa/Abidjan Africa/Lome		# Togo
 Link Africa/Abidjan Africa/Nouakchott	# Mauritania
 Link Africa/Abidjan Africa/Ouagadougou	# Burkina Faso
+Link Africa/Abidjan Atlantic/Reykjavik	# Iceland
 Link Africa/Abidjan Atlantic/St_Helena	# St Helena
 Link Africa/Nairobi Africa/Addis_Ababa	 # Ethiopia
 Link Africa/Nairobi Africa/Asmara	 # Eritrea
@@ -35,33 +36,53 @@ Link Africa/Lagos Africa/Niamey		# Niger
 Link Africa/Lagos Africa/Porto-Novo	# Benin
 Link Africa/Johannesburg Africa/Maseru	# Lesotho
 Link Africa/Johannesburg Africa/Mbabane	# Eswatini
+Link Asia/Yangon Indian/Cocos
+Link Asia/Urumqi Antarctica/Vostok
 Link	Asia/Nicosia	Europe/Nicosia
+Link Asia/Kuching Asia/Brunei
+Link Indian/Maldives Indian/Kerguelen
 Link Asia/Qatar Asia/Bahrain
 Link Asia/Riyadh Antarctica/Syowa
 Link Asia/Riyadh Asia/Aden	# Yemen
 Link Asia/Riyadh Asia/Kuwait
+Link Asia/Singapore Asia/Kuala_Lumpur
 Link Asia/Bangkok Asia/Phnom_Penh	# Cambodia
 Link Asia/Bangkok Asia/Vientiane	# Laos
+Link Asia/Bangkok Indian/Christmas
 Link Asia/Dubai Asia/Muscat	# Oman
+Link Asia/Dubai Indian/Mahe
+Link Asia/Dubai Indian/Reunion
 Link Pacific/Guam Pacific/Saipan # N Mariana Is
+Link Pacific/Tarawa Pacific/Funafuti
+Link Pacific/Tarawa Pacific/Majuro
+Link Pacific/Tarawa Pacific/Wake
+Link Pacific/Tarawa Pacific/Wallis
 Link Pacific/Auckland Antarctica/McMurdo
 Link Pacific/Port_Moresby Antarctica/DumontDUrville
+Link Pacific/Port_Moresby Pacific/Chuuk
 Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
+Link Pacific/Guadalcanal Pacific/Pohnpei
 Link	Europe/London	Europe/Jersey
 Link	Europe/London	Europe/Guernsey
 Link	Europe/London	Europe/Isle_of_Man
+Link Europe/Brussels Europe/Amsterdam
+Link Europe/Brussels Europe/Luxembourg
+Link Europe/Prague Europe/Bratislava
 Link	Europe/Helsinki	Europe/Mariehamn
-Link	Europe/Zurich	Europe/Busingen
-Link	Europe/Rome	Europe/Vatican
-Link	Europe/Rome	Europe/San_Marino
-Link Europe/Zurich Europe/Vaduz
-Link	Europe/Oslo	Arctic/Longyearbyen
+Link Europe/Paris Europe/Monaco
+Link Europe/Berlin Arctic/Longyearbyen
+Link Europe/Berlin Europe/Copenhagen
+Link Europe/Berlin Europe/Oslo
+Link Europe/Berlin Europe/Stockholm
+Link Europe/Rome Europe/Vatican
+Link Europe/Rome Europe/San_Marino
 Link Europe/Belgrade Europe/Ljubljana	# Slovenia
 Link Europe/Belgrade Europe/Podgorica	# Montenegro
 Link Europe/Belgrade Europe/Sarajevo	# Bosnia and Herzegovina
 Link Europe/Belgrade Europe/Skopje	# North Macedonia
 Link Europe/Belgrade Europe/Zagreb	# Croatia
-Link Europe/Prague Europe/Bratislava
+Link Europe/Zurich Europe/Busingen
+Link Europe/Zurich Europe/Vaduz
 Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 Link America/Phoenix America/Creston
 Link America/Toronto America/Nassau
@@ -128,7 +149,7 @@ Link	Asia/Thimphu		Asia/Thimbu
 Link	Asia/Makassar		Asia/Ujung_Pandang
 Link	Asia/Ulaanbaatar	Asia/Ulan_Bator
 Link	Atlantic/Faroe		Atlantic/Faeroe
-Link	Europe/Oslo		Atlantic/Jan_Mayen
+Link	Europe/Berlin		Atlantic/Jan_Mayen
 Link	Australia/Sydney	Australia/ACT
 Link	Australia/Sydney	Australia/Canberra
 Link	Australia/Hobart	Australia/Currie
@@ -160,6 +181,7 @@ Link	Africa/Cairo		Egypt
 Link	Europe/Dublin		Eire
 Link	Etc/UTC			Etc/UCT
 Link	Europe/London		Europe/Belfast
+Link	Europe/Kyiv		Europe/Kiev
 Link	Europe/Chisinau		Europe/Tiraspol
 Link	Europe/London		GB
 Link	Europe/London		GB-Eire
@@ -168,7 +190,7 @@ Link	Etc/GMT			GMT-0
 Link	Etc/GMT			GMT0
 Link	Etc/GMT			Greenwich
 Link	Asia/Hong_Kong		Hongkong
-Link	Atlantic/Reykjavik	Iceland
+Link	Africa/Abidjan		Iceland
 Link	Asia/Tehran		Iran
 Link	Asia/Jerusalem		Israel
 Link	America/Jamaica		Jamaica
@@ -184,10 +206,10 @@ Link	America/Denver		Navajo
 Link	Asia/Shanghai		PRC
 Link	Pacific/Kanton		Pacific/Enderbury
 Link	Pacific/Honolulu	Pacific/Johnston
-Link	Pacific/Pohnpei		Pacific/Ponape
+Link	Pacific/Guadalcanal	Pacific/Ponape
 Link	Pacific/Pago_Pago	Pacific/Samoa
-Link	Pacific/Chuuk		Pacific/Truk
-Link	Pacific/Chuuk		Pacific/Yap
+Link	Pacific/Port_Moresby	Pacific/Truk
+Link	Pacific/Port_Moresby	Pacific/Yap
 Link	Europe/Warsaw		Poland
 Link	Europe/Lisbon		Portugal
 Link	Asia/Taipei		ROC

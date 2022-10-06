@@ -25,7 +25,8 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -55,6 +56,7 @@
 #include "oops/klass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -894,7 +896,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (HeapShared::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1118,7 +1120,7 @@ class ResetMirrorField: public FieldClosure {
 static void set_klass_field_in_archived_mirror(oop mirror_obj, int offset, Klass* k) {
   assert(java_lang_Class::is_instance(mirror_obj), "must be");
   // this is the copy of k in the output buffer
-  Klass* copy = ArchiveBuilder::get_relocated_klass(k);
+  Klass* copy = ArchiveBuilder::get_buffered_klass(k);
 
   // This is the address of k, if the archive is loaded at the requested location
   Klass* def = ArchiveBuilder::current()->to_requested(copy);
@@ -1321,7 +1323,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  if (HeapShared::is_mapped()) {
+  if (ArchiveHeapLoader::is_mapped()) {
     assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
   }
   assert(as_Klass(m) == k, "must be");
@@ -1640,7 +1642,6 @@ void java_lang_Class::set_classRedefinedCount(oop the_class_mirror, int value) {
 int java_lang_Thread_FieldHolder::_group_offset;
 int java_lang_Thread_FieldHolder::_priority_offset;
 int java_lang_Thread_FieldHolder::_stackSize_offset;
-int java_lang_Thread_FieldHolder::_stillborn_offset;
 int java_lang_Thread_FieldHolder::_daemon_offset;
 int java_lang_Thread_FieldHolder::_thread_status_offset;
 
@@ -1648,7 +1649,6 @@ int java_lang_Thread_FieldHolder::_thread_status_offset;
   macro(_group_offset,         k, vmSymbols::group_name(),    threadgroup_signature, false); \
   macro(_priority_offset,      k, vmSymbols::priority_name(), int_signature,         false); \
   macro(_stackSize_offset,     k, "stackSize",                long_signature,        false); \
-  macro(_stillborn_offset,     k, "stillborn",                bool_signature,        false); \
   macro(_daemon_offset,        k, vmSymbols::daemon_name(),   bool_signature,        false); \
   macro(_thread_status_offset, k, "threadStatus",             int_signature,         false)
 
@@ -1679,14 +1679,6 @@ void java_lang_Thread_FieldHolder::set_priority(oop holder, ThreadPriority prior
 
 jlong java_lang_Thread_FieldHolder::stackSize(oop holder) {
   return holder->long_field(_stackSize_offset);
-}
-
-bool java_lang_Thread_FieldHolder::is_stillborn(oop holder) {
-  return holder->bool_field(_stillborn_offset) != 0;
-}
-
-void java_lang_Thread_FieldHolder::set_stillborn(oop holder) {
-  holder->bool_field_put(_stillborn_offset, true);
 }
 
 bool java_lang_Thread_FieldHolder::is_daemon(oop holder) {
@@ -1849,21 +1841,6 @@ oop java_lang_Thread::threadGroup(oop java_thread) {
   oop holder = java_lang_Thread::holder(java_thread);
   assert(holder != NULL, "Java Thread not initialized");
   return java_lang_Thread_FieldHolder::threadGroup(holder);
-}
-
-
-bool java_lang_Thread::is_stillborn(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != NULL, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::is_stillborn(holder);
-}
-
-
-// We never have reason to turn the stillborn bit off
-void java_lang_Thread::set_stillborn(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != NULL, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_stillborn(holder);
 }
 
 

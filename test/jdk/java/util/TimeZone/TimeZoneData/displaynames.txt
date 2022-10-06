@@ -97,7 +97,6 @@ America/Winnipeg CST CDT
 America/Yakutat AKST AKDT
 America/Yellowknife MST MDT
 Antarctica/Macquarie AEST AEDT
-Antarctica/Troll UTC
 Asia/Amman EET EEST
 Asia/Beirut EET EEST
 Asia/Damascus EET EEST
@@ -124,7 +123,6 @@ Atlantic/Bermuda AST ADT
 Atlantic/Canary WET WEST
 Atlantic/Faroe WET WEST
 Atlantic/Madeira WET WEST
-Atlantic/Reykjavik GMT
 Australia/Adelaide ACST ACDT
 Australia/Brisbane AEST AEDT
 Australia/Broken_Hill ACST ACDT
@@ -139,7 +137,6 @@ CST6CDT CST CDT
 EET EET EEST
 EST EST
 EST5EDT EST EDT
-Europe/Amsterdam CET CEST
 Europe/Andorra CET CEST
 Europe/Athens EET EEST
 Europe/Belgrade CET CEST
@@ -148,27 +145,22 @@ Europe/Brussels CET CEST
 Europe/Bucharest EET EEST
 Europe/Budapest CET CEST
 Europe/Chisinau EET EEST
-Europe/Copenhagen CET CEST
 Europe/Dublin IST/GMT IST/GMT
 Europe/Gibraltar CET CEST
 Europe/Helsinki EET EEST
 Europe/Kaliningrad EET
-Europe/Kiev EET EEST
+Europe/Kyiv EET EEST
 Europe/Lisbon WET WEST
 Europe/London GMT/BST GMT/BST
-Europe/Luxembourg CET CEST
 Europe/Madrid CET CEST
 Europe/Malta CET CEST
-Europe/Monaco CET CEST
 Europe/Moscow MSK
-Europe/Oslo CET CEST
 Europe/Paris CET CEST
 Europe/Prague CET CEST
 Europe/Riga EET EEST
 Europe/Rome CET CEST
 Europe/Simferopol MSK
 Europe/Sofia EET EEST
-Europe/Stockholm CET CEST
 Europe/Tallinn EET EEST
 Europe/Tirane CET CEST
 Europe/Uzhgorod EET EEST

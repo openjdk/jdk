@@ -280,7 +280,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Load pointer for resolved_references[] objArray
   ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
   ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  resolve_oop_handle(result, tmp);
+  resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
@@ -524,7 +524,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     bnez(t1, safepoint);
   }
   if (table == Interpreter::dispatch_table(state)) {
-    li(t1, Interpreter::distance_from_dispatch_table(state));
+    mv(t1, Interpreter::distance_from_dispatch_table(state));
     add(t1, Rs, t1);
     shadd(t1, t1, xdispatch, t1, 3);
   } else {
@@ -548,11 +548,11 @@ void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll
 }
 
 void InterpreterMacroAssembler::dispatch_only_normal(TosState state, Register Rs) {
-  dispatch_base(state, Interpreter::normal_table(state), Rs);
+  dispatch_base(state, Interpreter::normal_table(state), true, false, Rs);
 }
 
 void InterpreterMacroAssembler::dispatch_only_noverify(TosState state, Register Rs) {
-  dispatch_base(state, Interpreter::normal_table(state), false, Rs);
+  dispatch_base(state, Interpreter::normal_table(state), false, false, Rs);
 }
 
 void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {
@@ -828,7 +828,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // least significant 3 bits clear.
     // NOTE: the oopMark is in swap_reg x10 as the result of cmpxchg
     sub(swap_reg, swap_reg, sp);
-    li(t0, (int64_t)(7 - os::vm_page_size()));
+    mv(t0, (int64_t)(7 - os::vm_page_size()));
     andr(swap_reg, swap_reg, t0);
 
     // Save the test result, for recursive case, the result is zero
@@ -915,7 +915,7 @@ void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
 void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Label set_mdp;
-  push_reg(0xc00, sp); // save x10, x11
+  push_reg(RegSet::of(x10, x11), sp); // save x10, x11
 
   // Test MDO to avoid the call if it is NULL.
   ld(x10, Address(xmethod, in_bytes(Method::method_data_offset())));
@@ -928,7 +928,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   add(x10, x11, x10);
   sd(x10, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
   bind(set_mdp);
-  pop_reg(0xc00, sp);
+  pop_reg(RegSet::of(x10, x11), sp);
 }
 
 void InterpreterMacroAssembler::verify_method_data_pointer() {
@@ -1666,7 +1666,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
 
   ld(t0, mdo_addr);
   beqz(t0, none);
-  li(tmp, (u1)TypeEntries::null_seen);
+  mv(tmp, (u1)TypeEntries::null_seen);
   beq(t0, tmp, none);
   // There is a chance that the checks above (re-reading profiling
   // data from memory) fail if another thread has just set the
@@ -1701,10 +1701,10 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
 
     lbu(t0, Address(mdp, in_bytes(DataLayout::tag_offset()) - off_to_start));
     if (is_virtual) {
-      li(tmp, (u1)DataLayout::virtual_call_type_data_tag);
+      mv(tmp, (u1)DataLayout::virtual_call_type_data_tag);
       bne(t0, tmp, profile_continue);
     } else {
-      li(tmp, (u1)DataLayout::call_type_data_tag);
+      mv(tmp, (u1)DataLayout::call_type_data_tag);
       bne(t0, tmp, profile_continue);
     }
 
@@ -1734,7 +1734,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       mv(index, zr); // index < TypeProfileArgsLimit
       bind(loop);
       bgtz(index, profileReturnType);
-      li(t0, (int)MethodData::profile_return());
+      mv(t0, (int)MethodData::profile_return());
       beqz(t0, profileArgument); // (index > 0 || MethodData::profile_return()) == false
       bind(profileReturnType);
       // If return value type is profiled we may have no argument to profile
@@ -1742,7 +1742,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       mv(t1, - TypeStackSlotEntries::per_arg_count());
       mul(t1, index, t1);
       add(tmp, tmp, t1);
-      li(t1, TypeStackSlotEntries::per_arg_count());
+      mv(t1, TypeStackSlotEntries::per_arg_count());
       add(t0, mdp, off_to_args);
       blt(tmp, t1, done);
 
@@ -1753,8 +1753,8 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       // stack offset o (zero based) from the start of the argument
       // list, for n arguments translates into offset n - o - 1 from
       // the end of the argument list
-      li(t0, stack_slot_offset0);
-      li(t1, slot_step);
+      mv(t0, stack_slot_offset0);
+      mv(t1, slot_step);
       mul(t1, index, t1);
       add(t0, t0, t1);
       add(t0, mdp, t0);
@@ -1764,8 +1764,8 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       Address arg_addr = argument_address(tmp);
       ld(tmp, arg_addr);
 
-      li(t0, argument_type_offset0);
-      li(t1, type_step);
+      mv(t0, argument_type_offset0);
+      mv(t1, type_step);
       mul(t1, index, t1);
       add(t0, t0, t1);
       add(mdo_addr, mdp, t0);
@@ -1777,7 +1777,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
 
       // increment index by 1
       addi(index, index, 1);
-      li(t1, TypeProfileArgsLimit);
+      mv(t1, TypeProfileArgsLimit);
       blt(index, t1, loop);
       bind(loopEnd);
 
@@ -1832,13 +1832,13 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       // length
       Label do_profile;
       lbu(t0, Address(xbcp, 0));
-      li(tmp, (u1)Bytecodes::_invokedynamic);
+      mv(tmp, (u1)Bytecodes::_invokedynamic);
       beq(t0, tmp, do_profile);
-      li(tmp, (u1)Bytecodes::_invokehandle);
+      mv(tmp, (u1)Bytecodes::_invokehandle);
       beq(t0, tmp, do_profile);
       get_method(tmp);
       lhu(t0, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
-      li(t1, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
+      mv(t1, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       bne(t0, t1, profile_continue);
       bind(do_profile);
     }

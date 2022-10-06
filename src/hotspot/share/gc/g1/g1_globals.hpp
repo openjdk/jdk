@@ -216,7 +216,7 @@
           "The threshold that defines (>=) a hot card.")                    \
           range(0, max_jubyte)                                              \
                                                                             \
-  develop(uint, G1RemSetArrayOfCardsEntriesBase, 4,                         \
+  develop(uint, G1RemSetArrayOfCardsEntriesBase, 8,                         \
           "Maximum number of entries per region in the Array of Cards "     \
           "card set container per MB of a heap region.")                    \
           range(1, 65536)                                                   \
@@ -367,10 +367,15 @@
           "percentage of the currently used memory.")                       \
           range(0.0, 1.0)                                                   \
                                                                             \
-  product(bool, G1UsePreventiveGC, true, DIAGNOSTIC,                        \
+  product(bool, G1UsePreventiveGC, false, DIAGNOSTIC,                       \
           "Allows collections to be triggered proactively based on the      \
            number of free regions and the expected survival rates in each   \
            section of the heap.")                                           \
+                                                                            \
+  product(uint, G1RestoreRetainedRegionChunksPerWorker, 16, DIAGNOSTIC,     \
+          "The number of chunks assigned per worker thread for "            \
+          "retained region restore purposes.")                              \
+          range(1, 256)                                                     \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \

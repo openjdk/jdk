@@ -25,14 +25,14 @@
 #include "services/nmtCommon.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#define MEMORY_TYPE_DECLARE_NAME(type, human_readable) \
-  human_readable,
-
 STATIC_ASSERT(NMT_off > NMT_unknown);
 STATIC_ASSERT(NMT_summary > NMT_off);
 STATIC_ASSERT(NMT_detail > NMT_summary);
 
-const char* NMTUtil::_memory_type_names[] = {
+#define MEMORY_TYPE_DECLARE_NAME(type, human_readable) \
+  { #type, human_readable },
+
+NMTUtil::S NMTUtil::_strings[] = {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_NAME)
 };
 
@@ -85,4 +85,17 @@ NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
     }
   }
   return NMT_unknown;
+}
+
+MEMFLAGS NMTUtil::string_to_flag(const char* s) {
+  for (int i = 0; i < mt_number_of_types; i ++) {
+    assert(::strlen(_strings[i].enum_s) > 2, "Sanity"); // should always start with "mt"
+    if (::strcasecmp(_strings[i].human_readable, s) == 0 ||
+        ::strcasecmp(_strings[i].enum_s, s) == 0 ||
+        ::strcasecmp(_strings[i].enum_s + 2, s) == 0) // "mtXXX" -> match also "XXX" or "xxx"
+    {
+      return (MEMFLAGS)i;
+    }
+  }
+  return mtNone;
 }

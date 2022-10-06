@@ -33,9 +33,13 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.VM;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -231,6 +235,34 @@ public final class Services {
             throw new UnsupportedOperationException(errorMessage.toString());
         }
         return singleProvider;
+    }
+
+    /**
+     * Creates a thread-local variable that notifies {@code onThreadTermination} when a thread
+     * terminates and it has been initialized in the terminating thread (even if it was initialized
+     * with a null value). A typical use is to release resources associated with a thread.
+     *
+     * @param initialValue a supplier to be used to determine the initial value
+     * @param onThreadTermination a consumer invoked by a thread when terminating and the
+     *            thread-local has an associated value for the terminating thread. The current
+     *            thread's value of the thread-local variable is passed as a parameter to the
+     *            consumer.
+     */
+    public static <T> ThreadLocal<T> createTerminatingThreadLocal(Supplier<T> initialValue, Consumer<T> onThreadTermination) {
+        Objects.requireNonNull(initialValue, "initialValue must be non null.");
+        Objects.requireNonNull(onThreadTermination, "onThreadTermination must be non null.");
+        return new TerminatingThreadLocal<>() {
+
+            @Override
+            protected T initialValue() {
+                return initialValue.get();
+            }
+
+            @Override
+            protected void threadTerminated(T value) {
+                onThreadTermination.accept(value);
+            }
+        };
     }
 
     /**

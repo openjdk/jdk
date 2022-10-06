@@ -2399,7 +2399,7 @@ public class RandomSupport {
             long multiplier = (1L << SALT_SHIFT) - 1;
             long salt = multiplier << (64 - SALT_SHIFT);
             while ((salt & multiplier) == 0) {
-                long digit = Math.multiplyHigh(bits, multiplier);
+                long digit = Math.unsignedMultiplyHigh(bits, multiplier);
                 salt = (salt >>> SALT_SHIFT) | (digit << (64 - SALT_SHIFT));
                 bits *= multiplier;
             }

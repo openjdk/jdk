@@ -90,6 +90,7 @@ gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
+runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
@@ -120,6 +121,7 @@ serviceability/sa/ClhsdbPmap.java#core 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/TestJmapCore.java 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,macosx-x64
+serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
 # Missing Lilliput support to load Klass*
 serviceability/sa/CDSJMapClstats.java 1234567 generic-all

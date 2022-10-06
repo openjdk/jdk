@@ -73,12 +73,12 @@ public:
     return first() + ((ConcreteRegisterImpl::number_of_registers + 7) & ~7);
   }
 
-  static VMReg  as_VMReg(int val, bool bad_ok = false) {
+  static VMReg as_VMReg(int val, bool bad_ok = false) {
     assert(val > BAD_REG || bad_ok, "invalid");
     return val + first();
   }
 
-  const char*  name() {
+  const char* name() {
     if (is_reg()) {
       return regName[value()];
     } else if (!is_valid()) {
@@ -130,7 +130,7 @@ public:
   // amounts that are part of the native abi. The VMReg must be a stack slot
   // and the result must be also.
 
-  VMReg bias(int offset) {
+  VMReg bias(int offset) const {
     assert(is_stack(), "must be");
     // VMReg res = VMRegImpl::as_VMReg(value() + offset);
     VMReg res = stack2reg(reg2stack() + offset);
@@ -139,12 +139,12 @@ public:
   }
 
   // Convert register numbers to stack slots and vice versa
-  static VMReg stack2reg( int idx ) {
+  static VMReg stack2reg(int idx) {
     return stack_0() + idx;
   }
 
-  uintptr_t reg2stack() {
-    assert( is_stack(), "Not a stack-based register" );
+  uintptr_t reg2stack() const {
+    assert(is_stack(), "Not a stack-based register");
     return this - stack_0();
   }
 

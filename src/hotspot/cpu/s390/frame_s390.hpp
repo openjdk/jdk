@@ -28,8 +28,6 @@
 #ifndef CPU_S390_FRAME_S390_HPP
 #define CPU_S390_FRAME_S390_HPP
 
-#include "runtime/synchronizer.hpp"
-
   //  C frame layout on ZARCH_64.
   //
   //  In this figure the stack grows upwards, while memory grows

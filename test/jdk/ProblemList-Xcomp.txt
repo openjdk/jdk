@@ -29,4 +29,6 @@
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
 java/lang/ref/ReferenceEnqueue.java 8284236 generic-all
-java/lang/ProcessBuilder/PipelineLeaksFD.java                   8290885 generic-all
+
+com/sun/jdi/JdbLastErrorTest.java 8293829 windows-x64
+

@@ -31,6 +31,9 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
+#endif
 
 inline const ImmutableOopMap* ImmutableOopMapSet::find_map_at_slot(int slot, int pc_offset) const {
   assert(slot >= 0 && slot < _count, "bounds count: %d slot: %d", _count, slot);

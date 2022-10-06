@@ -31,6 +31,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/downcallLinker.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 
 #define __ _masm->
@@ -247,8 +248,10 @@ void DowncallStubGenerator::generate() {
   __ strw(tmp1, Address(rthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ membar(Assembler::LoadLoad | Assembler::LoadStore |
-            Assembler::StoreLoad | Assembler::StoreStore);
+  if (!UseSystemMemoryBarrier) {
+    __ membar(Assembler::LoadLoad | Assembler::LoadStore |
+              Assembler::StoreLoad | Assembler::StoreStore);
+  }
 
   __ verify_sve_vector_length(tmp1);
 

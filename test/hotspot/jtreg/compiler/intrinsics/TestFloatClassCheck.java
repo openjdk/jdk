@@ -23,8 +23,8 @@
 
 /**
 * @test
-* @summary Test x86_64 intrinsics for Float methods isNaN, isFinite, isInfinite.
-* @requires vm.cpu.features ~= ".*avx512dq.*"
+* @summary Test intrinsics for Float methods isNaN, isFinite, isInfinite.
+* @requires vm.cpu.features ~= ".*avx512dq.*" | os.arch == "riscv64"
 * @library /test/lib /
 * @run driver compiler.intrinsics.TestFloatClassCheck
 */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ import sun.security.util.*;
 /**
  * Lists all the object identifiers of the X509 extensions of the PKIX profile.
  *
- * <p>Extensions are addiitonal attributes which can be inserted in a X509
+ * <p>Extensions are additional attributes which can be inserted in a X509
  * v3 certificate. For example a "Driving License Certificate" could have
- * the driving license number as a extension.
+ * the driving license number as an extension.
  *
  * <p>Extensions are represented as a sequence of the extension identifier
  * (Object Identifier), a boolean flag stating whether the extension is to

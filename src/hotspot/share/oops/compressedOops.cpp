@@ -177,4 +177,3 @@ void CompressedOops::print_mode(outputStream* st) {
   }
   st->cr();
 }
-

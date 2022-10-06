@@ -674,12 +674,9 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *     uncaught exception handler} installed, and if so, its
      *     {@code uncaughtException} method is called with the same
      *     two arguments.
-     * <li>Otherwise, this method determines if the {@code Throwable}
-     *     argument is an instance of {@link ThreadDeath}. If so, nothing
-     *     special is done. Otherwise, a message containing the
-     *     thread's name, as returned from the thread's {@link
-     *     Thread#getName getName} method, and a stack backtrace,
-     *     using the {@code Throwable}'s {@link
+     * <li>Otherwise, a message containing the thread's name, as returned
+     *     from the thread's {@link Thread#getName getName} method, and a
+     *     stack backtrace, using the {@code Throwable}'s {@link
      *     Throwable#printStackTrace() printStackTrace} method, is
      *     printed to the {@linkplain System#err standard error stream}.
      * </ul>
@@ -699,9 +696,8 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
                 Thread.getDefaultUncaughtExceptionHandler();
             if (ueh != null) {
                 ueh.uncaughtException(t, e);
-            } else if (!(e instanceof ThreadDeath)) {
-                System.err.print("Exception in thread \""
-                                 + t.getName() + "\" ");
+            } else {
+                System.err.print("Exception in thread \"" + t.getName() + "\" ");
                 e.printStackTrace(System.err);
             }
         }

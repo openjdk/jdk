@@ -143,11 +143,12 @@ final class Finished {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"Finished\": '{'\n" +
-                    "  \"verify data\": '{'\n" +
-                    "{0}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                    """
+                            "Finished": '{'
+                              "verify data": '{'
+                            {0}
+                              '}'
+                            '}'""",
                     Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -214,7 +215,6 @@ final class Finished {
             HandshakeHash handshakeHash = context.handshakeHash;
             SecretKey masterSecretKey =
                     context.handshakeSession.getMasterSecret();
-
             boolean useClientLabel =
                     (context.sslConfig.isClientMode && !isValidation) ||
                     (!context.sslConfig.isClientMode && isValidation);

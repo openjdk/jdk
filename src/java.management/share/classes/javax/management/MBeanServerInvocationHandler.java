@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,14 +335,13 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                     iae.setStackTrace(e.getStackTrace());
                     throw iae;
                 }
-                mxbeanProxies.put(mxbeanInterface,
-                                  new WeakReference<MXBeanProxy>(p));
+                mxbeanProxies.put(mxbeanInterface, new WeakReference<>(p));
             }
             return p;
         }
     }
     private static final WeakHashMap<Class<?>, WeakReference<MXBeanProxy>>
-            mxbeanProxies = new WeakHashMap<Class<?>, WeakReference<MXBeanProxy>>();
+            mxbeanProxies = new WeakHashMap<>();
 
     private Object invokeBroadcasterMethod(Object proxy, Method method,
                                            Object[] args) throws Exception {

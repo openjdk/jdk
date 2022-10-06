@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class AnchorCertificates {
      */
     public static boolean contains(X509Certificate cert) {
         String key = X509CertImpl.getFingerprint(HASH, cert, debug);
-        boolean result = (key == null ? false : certs.contains(key));
+        boolean result = (key != null && certs.contains(key));
         if (result && debug != null) {
             debug.println("AnchorCertificate.contains: matched " +
                     cert.getSubjectX500Principal());

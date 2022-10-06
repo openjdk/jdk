@@ -33,6 +33,10 @@
 #include "utilities/globalDefinitions.hpp"
 
 
+static inline bool check_alignment(Klass* v) {
+  return (intptr_t)v % KlassAlignmentInBytes == 0;
+}
+
 inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v) {
   return decode_raw(v, base());
 }

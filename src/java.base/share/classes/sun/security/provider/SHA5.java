@@ -239,7 +239,7 @@ abstract class SHA5 extends DigestBase {
     // offset 'ofs') and not on array 'W', therefore 'buf' and 'ofs'
     // must be passed as parameter to the method.
     @IntrinsicCandidate
-    private final void implCompress0(byte[] buf, int ofs) {
+    private void implCompress0(byte[] buf, int ofs) {
         if (W == null) {
             W = new long[80];
         }

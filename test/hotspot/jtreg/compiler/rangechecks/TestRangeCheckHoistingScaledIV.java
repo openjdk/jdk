@@ -26,7 +26,7 @@
  * @bug 8289996
  * @summary Test range check hoisting for some scaled iv at array index
  * @library /test/lib /
- * @requires vm.debug & vm.compiler2.enabled
+ * @requires vm.debug & vm.compiler2.enabled & (os.simpleArch == "x64" | os.arch == "aarch64")
  * @modules jdk.incubator.vector
  * @compile --enable-preview -source ${jdk.version} TestRangeCheckHoistingScaledIV.java
  * @run main/othervm --enable-preview compiler.rangechecks.TestRangeCheckHoistingScaledIV
@@ -90,15 +90,11 @@ public class TestRangeCheckHoistingScaledIV {
         analyzer.outputTo(System.out);
 
         // Check if int range checks are hoisted
-        analyzer.stdoutShouldContain("rc_predicate init * 3 <u range");
-        analyzer.stdoutShouldContain("rc_predicate (limit - 2) * 3 <u range");
-        analyzer.stdoutShouldContain("rc_predicate init * 7 <u range");
-        analyzer.stdoutShouldContain("rc_predicate (limit - 2) * 7 <u range");
+        analyzer.stdoutShouldContain("rc_predicate init * 3");
+        analyzer.stdoutShouldContain("rc_predicate init * 7");
 
         // Check if long range checks are hoisted
-        analyzer.stdoutShouldContain("rc_predicate init * 6 <u range");
-        analyzer.stdoutShouldContain("rc_predicate (limit - 64) * 6 <u range");
-        analyzer.stdoutShouldContain("rc_predicate init * 15 <u range");
-        analyzer.stdoutShouldContain("rc_predicate (limit - 64) * 15 <u range");
+        analyzer.stdoutShouldContain("rc_predicate init * 6");
+        analyzer.stdoutShouldContain("rc_predicate init * 15");
     }
 }

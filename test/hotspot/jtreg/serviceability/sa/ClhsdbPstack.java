@@ -78,7 +78,6 @@ public class ClhsdbPstack {
                 expStrMap.put("pstack -v", List.of(
                     "No deadlocks found", "Common-Cleaner",
                     "Signal Dispatcher", "CompilerThread",
-                    "Sweeper thread", "Service Thread",
                     "Reference Handler", "Finalizer", "main"));
             }
 

@@ -461,6 +461,10 @@ public class TestIntVect {
       for (int i=0; i<ARRLEN; i++) {
         errn += verify("test_reverse_bytes: ", i, a0[i], Integer.reverseBytes(a1[i]));
       }
+      test_reverse(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_reverse: ", i, a0[i], Integer.reverse(a1[i]));
+      }
 
       test_pack2(p2, a1);
       for (int i=0; i<ARRLEN/2; i++) {
@@ -936,6 +940,13 @@ public class TestIntVect {
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
+      test_reverse(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_reverse: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
       test_pack2(p2, a1);
     }
     end = System.currentTimeMillis();
@@ -1284,6 +1295,12 @@ public class TestIntVect {
   static void test_reverse_bytes(int [] a0, int [] a1) {
     for(int i = 0; i < a0.length; i++) {
       a0[i] = Integer.reverseBytes(a1[i]);
+    }
+  }
+
+  static void test_reverse(int [] a0, int [] a1) {
+    for(int i = 0; i < a0.length; i++) {
+      a0[i] = Integer.reverse(a1[i]);
     }
   }
 

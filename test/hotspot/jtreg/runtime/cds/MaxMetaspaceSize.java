@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ public class MaxMetaspaceSize {
       processArgs.add("-XX:MaxMetaspaceSize=1m");
     }
 
-    String msg = "OutOfMemoryError: Metaspace";
+    String msg = "OutOfMemoryError: ((Metaspace)|(Compressed class space))";
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(processArgs);
-    CDSTestUtils.executeAndLog(pb, "dump").shouldContain(msg).shouldHaveExitValue(1);
+    CDSTestUtils.executeAndLog(pb, "dump").shouldMatch(msg).shouldHaveExitValue(1);
   }
 }

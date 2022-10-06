@@ -29,6 +29,8 @@ import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+
+import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.TerminatingThreadLocal;
 
 /**
@@ -172,6 +174,7 @@ public class ThreadLocal<T> {
      * thread-local variable.
      */
     T getCarrierThreadLocal() {
+        assert this instanceof CarrierThreadLocal<T>;
         return get(Thread.currentCarrierThread());
     }
 
@@ -193,14 +196,18 @@ public class ThreadLocal<T> {
     }
 
     /**
-     * Returns {@code true} if there is a value in the current thread's copy of
+     * Returns {@code true} if there is a value in the current carrier thread's copy of
      * this thread-local variable, even if that values is {@code null}.
      *
-     * @return {@code true} if current thread has associated value in this
+     * @return {@code true} if current carrier thread has associated value in this
      *         thread-local variable; {@code false} if not
      */
-    boolean isPresent() {
-        Thread t = Thread.currentThread();
+    boolean isCarrierThreadLocalPresent() {
+        assert this instanceof CarrierThreadLocal<T>;
+        return isPresent(Thread.currentCarrierThread());
+    }
+
+    private boolean isPresent(Thread t) {
         ThreadLocalMap map = getMap(t);
         if (map != null && map != ThreadLocalMap.NOT_SUPPORTED) {
             return map.getEntry(this) != null;
@@ -224,8 +231,8 @@ public class ThreadLocal<T> {
         } else {
             createMap(t, value);
         }
-        if (this instanceof TerminatingThreadLocal) {
-            TerminatingThreadLocal.register((TerminatingThreadLocal<?>) this);
+        if (this instanceof TerminatingThreadLocal<?> ttl) {
+            TerminatingThreadLocal.register(ttl);
         }
         return value;
     }
@@ -249,6 +256,7 @@ public class ThreadLocal<T> {
     }
 
     void setCarrierThreadLocal(T value) {
+        assert this instanceof CarrierThreadLocal<T>;
         set(Thread.currentCarrierThread(), value);
     }
 
@@ -276,7 +284,16 @@ public class ThreadLocal<T> {
      * @since 1.5
      */
      public void remove() {
-         ThreadLocalMap m = getMap(Thread.currentThread());
+         remove(Thread.currentThread());
+     }
+
+     void removeCarrierThreadLocal() {
+         assert this instanceof CarrierThreadLocal<T>;
+         remove(Thread.currentCarrierThread());
+     }
+
+     private void remove(Thread t) {
+         ThreadLocalMap m = getMap(t);
          if (m != null && m != ThreadLocalMap.NOT_SUPPORTED) {
              m.remove(this);
          }

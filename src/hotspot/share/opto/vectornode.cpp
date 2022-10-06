@@ -1851,41 +1851,66 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return NULL;
 }
 
+static Node* reverse_operations_identity(Node* n, Node* in1) {
+  if (n->is_predicated_using_blend()) {
+    return n;
+  }
+  if (n->Opcode() == in1->Opcode()) {
+    // OperationV (OperationV X MASK) MASK =>  X
+    if (n->is_predicated_vector() && in1->is_predicated_vector() && n->in(2) == in1->in(2)) {
+      return in1->in(1);
+    // OperationV (OperationV X) =>  X
+    } else if (!n->is_predicated_vector() && !in1->is_predicated_vector())  {
+      return in1->in(1);
+    }
+  }
+  return n;
+}
+
 Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
   // "(ReverseBytesV X) => X" if the element type is T_BYTE.
   if (vect_type()->element_basic_type() == T_BYTE) {
     return in(1);
   }
-
-  if (is_predicated_using_blend()) {
-    return this;
-  }
-  // (ReverseBytesV (ReverseBytesV X MASK) MASK) => X
-  if (in(1)->Opcode() == Op_ReverseBytesV) {
-    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
-      return in(1)->in(1);
-    } else {
-      // ReverseBytesV (ReverseBytesV X) => X
-      return in(1)->in(1);
-    }
-  }
-  return this;
+  return reverse_operations_identity(this, in(1));
 }
 
 Node* ReverseVNode::Identity(PhaseGVN* phase) {
-  if (is_predicated_using_blend()) {
-    return this;
-  }
-  // ReverseV (ReverseV X , MASK) , MASK =>  X
-  if (in(1)->Opcode() == Op_ReverseV) {
-    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
-      return in(1)->in(1);
-    } else {
-      // ReverseV (ReverseV X) =>  X
-      return in(1)->in(1);
+  return reverse_operations_identity(this, in(1));
+}
+
+// Optimize away redundant AndV/OrV nodes when the operation
+// is applied on the same input node multiple times
+static Node* redundant_logical_identity(Node* n) {
+  Node* n1 = n->in(1);
+  // (OperationV (OperationV src1 src2) src1) => (OperationV src1 src2)
+  // (OperationV (OperationV src1 src2) src2) => (OperationV src1 src2)
+  // (OperationV (OperationV src1 src2 m1) src1 m1) => (OperationV src1 src2 m1)
+  // (OperationV (OperationV src1 src2 m1) src2 m1) => (OperationV src1 src2 m1)
+  if (n->Opcode() == n1->Opcode()) {
+    if (((!n->is_predicated_vector() && !n1->is_predicated_vector()) ||
+         ( n->is_predicated_vector() &&  n1->is_predicated_vector() && n->in(3) == n1->in(3))) &&
+         ( n->in(2) == n1->in(1) || n->in(2) == n1->in(2))) {
+      return n1;
     }
   }
-  return this;
+
+  Node* n2 = n->in(2);
+  if (n->Opcode() == n2->Opcode()) {
+    // (OperationV src1 (OperationV src1 src2)) => OperationV(src1, src2)
+    // (OperationV src2 (OperationV src1 src2)) => OperationV(src1, src2)
+    // (OperationV src1 (OperationV src1 src2 m1) m1) => OperationV(src1 src2 m1)
+    // It is not possible to optimize - (OperationV src2 (OperationV src1 src2 m1) m1) as the
+    // results of both "OperationV" nodes are different for unmasked lanes
+    if ((!n->is_predicated_vector() && !n2->is_predicated_vector() &&
+         (n->in(1) == n2->in(1) || n->in(1) == n2->in(2))) ||
+         (n->is_predicated_vector() && n2->is_predicated_vector() && n->in(3) == n2->in(3) &&
+         n->in(1) == n2->in(1))) {
+      return n2;
+    }
+  }
+
+  return n;
 }
 
 Node* AndVNode::Identity(PhaseGVN* phase) {
@@ -1921,7 +1946,7 @@ Node* AndVNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
     return in(1);
   }
-  return this;
+  return redundant_logical_identity(this);
 }
 
 Node* OrVNode::Identity(PhaseGVN* phase) {
@@ -1957,7 +1982,7 @@ Node* OrVNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
     return in(1);
   }
-  return this;
+  return redundant_logical_identity(this);
 }
 
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {

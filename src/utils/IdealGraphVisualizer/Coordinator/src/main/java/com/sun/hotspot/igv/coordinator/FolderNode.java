@@ -59,6 +59,10 @@ public class FolderNode extends AbstractNode {
             folder.getChangedEvent().addListener(this);
         }
 
+        public Folder getFolder() {
+            return folder;
+        }
+
         @Override
         protected Node[] createNodes(FolderElement e) {
             if (e instanceof InputGraph) {
@@ -137,6 +141,11 @@ public class FolderNode extends AbstractNode {
         }
     }
 
+    public boolean isRootNode() {
+        Folder folder = getFolder();
+        return (folder != null && folder instanceof GraphDocument);
+    }
+
     @Override
     public Image getOpenedIcon(int i) {
         return getIcon(i);
@@ -148,5 +157,9 @@ public class FolderNode extends AbstractNode {
 
     public static GraphNode getGraphNode(InputGraph graph) {
         return graphNode.get(graph);
+    }
+
+    public Folder getFolder() {
+        return children.getFolder();
     }
 }

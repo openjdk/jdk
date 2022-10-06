@@ -40,6 +40,7 @@ import java.util.HashSet;
  * model future releases of the language.
  *
  * @since 1.6
+ * @see java.lang.reflect.ClassFileFormatVersion
  */
 public enum SourceVersion {
     /*
@@ -350,6 +351,10 @@ public enum SourceVersion {
      * No major changes from the prior release.
      *
      * @since 19
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se19/html/index.html">
+     * <cite>The Java Language Specification, Java SE 19 Edition</cite></a>
      */
     RELEASE_19,
 
@@ -358,6 +363,10 @@ public enum SourceVersion {
      * 20.
      *
      * @since 20
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se20/html/index.html">
+     * <cite>The Java Language Specification, Java SE 20 Edition</cite></a>
      */
     RELEASE_20;
 

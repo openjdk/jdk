@@ -167,6 +167,10 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);
   };
 
+  // If (thread == NULL) then return current thread object.
+  // Otherwise return JNIHandles::resolve_external_guard(thread).
+  static oop current_thread_obj_or_resolve_external_guard(jthread thread);
+
   static jvmtiError get_JavaThread(ThreadsList* tlist, jthread thread, JavaThread** jt_pp) {
     jvmtiError err = JVMTI_ERROR_NONE;
     if (thread == NULL) {

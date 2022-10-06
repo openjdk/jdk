@@ -45,7 +45,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -113,14 +112,15 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool explicit_gc,
                                  bool clear_soft_refs,
-                                 bool do_maximal_compaction) :
+                                 bool do_maximal_compaction,
+                                 G1FullGCTracer* tracer) :
     _heap(heap),
-    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction),
+    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
-    _serial_compaction_point(),
+    _serial_compaction_point(this),
     _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
@@ -133,13 +133,15 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_regions(), mtGC);
+  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_regions(), mtGC);
   for (uint j = 0; j < heap->max_regions(); j++) {
     _live_stats[j].clear();
+    _compaction_tops[j] = nullptr;
   }
 
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
-    _compaction_points[i] = new G1FullGCCompactionPoint();
+    _compaction_points[i] = new G1FullGCCompactionPoint(this);
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
@@ -153,6 +155,7 @@ G1FullCollector::~G1FullCollector() {
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
+  FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
@@ -208,8 +211,8 @@ void G1FullCollector::collect() {
 
   phase4_do_compaction();
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 }
 
 void G1FullCollector::complete_collection() {
@@ -299,9 +302,10 @@ void G1FullCollector::phase1_mark_live_objects() {
   // Class unloading and cleanup.
   if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
+    CodeCache::UnloadingScope unloading_scope(&_is_alive);
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
-    _heap->complete_cleaning(&_is_alive, purged_class);
+    _heap->complete_cleaning(purged_class);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);
@@ -347,36 +351,40 @@ bool G1FullCollector::phase2b_forward_oops() {
 
 void G1FullCollector::phase2c_prepare_serial_compaction() {
   ShouldNotReachHere(); // Disabled in Lilliput.
-//  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
-//  // At this point we know that after parallel compaction there will be no
-//  // completely free regions. That means that the last region of
-//  // all compaction queues still have data in them. We try to compact
-//  // these regions in serial to avoid a premature OOM when the mutator wants
-//  // to allocate the first eden region after gc.
-//  for (uint i = 0; i < workers(); i++) {
-//    G1FullGCCompactionPoint* cp = compaction_point(i);
-//    if (cp->has_regions()) {
-//      serial_compaction_point()->add(cp->remove_last());
-//    }
-//  }
-//
-//  // Update the forwarding information for the regions in the serial
-//  // compaction point.
-//  G1FullGCCompactionPoint* cp = serial_compaction_point();
-//  for (GrowableArrayIterator<HeapRegion*> it = cp->regions()->begin(); it != cp->regions()->end(); ++it) {
-//    HeapRegion* current = *it;
-//    if (!cp->is_initialized()) {
-//      // Initialize the compaction point. Nothing more is needed for the first heap region
-//      // since it is already prepared for compaction.
-//      cp->initialize(current);
-//    } else {
-//      assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
-//      G1SerialRePrepareClosure re_prepare(cp, current);
-//      current->set_compaction_top(current->bottom());
-//      current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
-//    }
-//  }
-//  cp->update();
+  //GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
+  // At this point we know that after parallel compaction there will be no
+  // completely free regions. That means that the last region of
+  // all compaction queues still have data in them. We try to compact
+  // these regions in serial to avoid a premature OOM when the mutator wants
+  // to allocate the first eden region after gc.
+  /*
+  for (uint i = 0; i < workers(); i++) {
+    G1FullGCCompactionPoint* cp = compaction_point(i);
+    if (cp->has_regions()) {
+      serial_compaction_point()->add(cp->remove_last());
+    }
+  }
+  */
+
+  // Update the forwarding information for the regions in the serial
+  // compaction point.
+  /*
+  G1FullGCCompactionPoint* cp = serial_compaction_point();
+  for (GrowableArrayIterator<HeapRegion*> it = cp->regions()->begin(); it != cp->regions()->end(); ++it) {
+    HeapRegion* current = *it;
+    if (!cp->is_initialized()) {
+      // Initialize the compaction point. Nothing more is needed for the first heap region
+      // since it is already prepared for compaction.
+      cp->initialize(current);
+    } else {
+      assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
+      G1SerialRePrepareClosure re_prepare(cp, current);
+      set_compaction_top(current, current->bottom());
+      current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
+    }
+  }
+  cp->update();
+  */
 }
 
 void G1FullCollector::phase3_adjust_pointers() {

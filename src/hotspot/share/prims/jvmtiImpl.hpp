@@ -500,7 +500,7 @@ class JvmtiDeferredEvent {
   void post() NOT_JVMTI_RETURN;
   void post_compiled_method_load_event(JvmtiEnv* env) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers() NOT_JVMTI_RETURN;
-  // Sweeper support to keep nmethods from being zombied while in the queue.
+  // GC support to keep nmethods from unloading while in the queue.
   void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
   void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
@@ -543,7 +543,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   void enqueue(JvmtiDeferredEvent event) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers();
 
-  // Sweeper support to keep nmethods from being zombied while in the queue.
+  // GC support to keep nmethods from unloading while in the queue.
   void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
   void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;

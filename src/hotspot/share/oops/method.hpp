@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_METHOD_HPP
 #define SHARE_OOPS_METHOD_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -135,7 +134,10 @@ class Method : public Metadata {
 
   virtual bool is_method() const { return true; }
 
+#if INCLUDE_CDS
+  void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+#endif
 
   // accessors for instance variables
 
@@ -405,14 +407,6 @@ class Method : public Metadata {
     }
   }
 
-  int nmethod_age() const {
-    if (method_counters() == NULL) {
-      return INT_MAX;
-    } else {
-      return method_counters()->nmethod_age();
-    }
-  }
-
   int invocation_count() const;
   int backedge_count() const;
 
@@ -432,10 +426,6 @@ class Method : public Metadata {
   // for PrintMethodData in a product build
   int64_t  compiled_invocation_count() const    { return 0; }
 #endif // not PRODUCT
-
-  // Clear (non-shared space) pointers which could not be relevant
-  // if this (shared) method were mapped into another JVM.
-  void remove_unshareable_info();
 
   // nmethod/verified compiler entry
   address verified_code_entry();
@@ -736,9 +726,10 @@ public:
 
 
   // Continuation
-  bool is_continuation_enter_intrinsic() const { return intrinsic_id() == vmIntrinsics::_Continuation_enterSpecial; }
-
-  bool is_special_native_intrinsic() const { return is_method_handle_intrinsic() || is_continuation_enter_intrinsic(); }
+  inline bool is_continuation_enter_intrinsic() const;
+  inline bool is_continuation_yield_intrinsic() const;
+  inline bool is_continuation_native_intrinsic() const;
+  inline bool is_special_native_intrinsic() const;
 
   static Klass* check_non_bcp_klass(Klass* klass);
 

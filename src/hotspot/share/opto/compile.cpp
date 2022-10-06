@@ -406,7 +406,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::remove_useless_nodes(Unique_Node_List &useful) {
+void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -429,7 +429,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       }
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
-      record_for_igvn(n->unique_out());
+      worklist->push(n->unique_out());
     }
   }
 
@@ -440,6 +440,11 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
+#ifdef ASSERT
+  if (_modified_nodes != NULL) {
+    _modified_nodes->remove_useless_nodes(useful.member_set());
+  }
+#endif
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_useless_gc_barriers(useful, this);
@@ -556,7 +561,9 @@ void Compile::print_ideal_ir(const char* phase_name) {
                phase_name);
   }
   if (_output == nullptr) {
-    root()->dump(9999);
+    tty->print_cr("AFTER: %s", phase_name);
+    // Print out all nodes in ascending order of index.
+    root()->dump_bfs(MaxNodeLimit, nullptr, "+S$");
   } else {
     // Dump the node blockwise if we have a scheduling
     _output->print_scheduling();
@@ -630,7 +637,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
-                  _print_inlining_stream(NULL),
+                  _print_inlining_stream(new stringStream()),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
@@ -903,7 +910,7 @@ Compile::Compile( ciEnv* ci_env,
     _initial_gvn(NULL),
     _for_igvn(NULL),
     _number_of_mh_late_inlines(0),
-    _print_inlining_stream(NULL),
+    _print_inlining_stream(new stringStream()),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
     _print_inlining_output(NULL),
@@ -1017,7 +1024,6 @@ void Compile::Init(int aliaslevel) {
   set_use_cmove(UseCMoveUnconditionally /* || do_vector_loop()*/); //TODO: consider do_vector_loop() mandate use_cmove unconditionally
   NOT_PRODUCT(if (use_cmove() && Verbose && has_method()) {tty->print("Compile::Init: use CMove without profitability tests for method %s\n",  method()->name()->as_quoted_ascii());})
 
-  set_age_code(has_method() && method()->profile_aging());
   set_rtm_state(NoRTM); // No RTM lock eliding by default
   _max_node_limit = _directive->MaxNodeLimitOption;
 
@@ -2970,6 +2976,8 @@ void Compile::Code_Gen() {
       cfg.set_loop_alignment();
     }
     cfg.fixup_flow();
+    cfg.remove_unreachable_blocks();
+    cfg.verify_dominator_tree();
   }
 
   // Apply peephole optimizations
@@ -3237,11 +3245,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_StoreB:
   case Op_StoreC:
-  case Op_StorePConditional:
   case Op_StoreI:
   case Op_StoreL:
-  case Op_StoreIConditional:
-  case Op_StoreLConditional:
   case Op_CompareAndSwapB:
   case Op_CompareAndSwapS:
   case Op_CompareAndSwapI:
@@ -3281,7 +3286,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadNKlass:
   case Op_LoadL:
   case Op_LoadL_unaligned:
-  case Op_LoadPLocked:
   case Op_LoadP:
   case Op_LoadN:
   case Op_LoadRange:
@@ -3993,7 +3997,7 @@ bool Compile::final_graph_reshaping() {
       // 'fall-thru' path, so expected kids is 1 less.
       if (n->is_PCTable() && n->in(0) && n->in(0)->in(0)) {
         if (n->in(0)->in(0)->is_Call()) {
-          CallNode* call = n->in(0)->in(0)->as_Call();
+          CallNode *call = n->in(0)->in(0)->as_Call();
           if (call->entry_point() == OptoRuntime::rethrow_stub()) {
             required_outcnt--;      // Rethrow always has 1 less kid
           } else if (call->req() > TypeFunc::Parms &&
@@ -4002,25 +4006,22 @@ bool Compile::final_graph_reshaping() {
             // detected that the virtual call will always result in a null
             // pointer exception. The fall-through projection of this CatchNode
             // will not be populated.
-            Node* arg0 = call->in(TypeFunc::Parms);
+            Node *arg0 = call->in(TypeFunc::Parms);
             if (arg0->is_Type() &&
                 arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
               required_outcnt--;
             }
-          } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
-                     call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
-            // Check for illegal array length. In such case, the optimizer has
+          } else if (call->entry_point() == OptoRuntime::new_array_Java() &&
+                     call->req() > TypeFunc::Parms+1 &&
+                     call->is_CallStaticJava()) {
+            // Check for negative array length. In such case, the optimizer has
             // detected that the allocation attempt will always result in an
             // exception. There is no fall-through projection of this CatchNode .
-            assert(call->is_CallStaticJava(), "static call expected");
-            assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
-            Node* valid_length_test = call->in(call->req()-1);
-            call->del_req(call->req()-1);
-            if (valid_length_test->find_int_con(1) == 0) {
+            Node *arg1 = call->in(TypeFunc::Parms+1);
+            if (arg1->is_Type() &&
+                arg1->as_Type()->type()->join(TypeInt::POS)->empty()) {
               required_outcnt--;
             }
-            assert(n->outcnt() == required_outcnt, "malformed control flow");
-            continue;
           }
         }
       }
@@ -4028,14 +4029,6 @@ bool Compile::final_graph_reshaping() {
       if (n->outcnt() != required_outcnt) {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
-      }
-    } else if (n->is_PCTable() && n->in(0) && n->in(0)->in(0) && n->in(0)->in(0)->is_Call()) {
-      CallNode* call = n->in(0)->in(0)->as_Call();
-      if (call->entry_point() == OptoRuntime::new_array_Java() ||
-          call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
-        assert(call->is_CallStaticJava(), "static call expected");
-        assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
-        call->del_req(call->req()-1); // valid length test useless now
       }
     }
     // Check that I actually visited all kids.  Unreached kids
@@ -4405,13 +4398,6 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
   return phase->transform(new ConvI2LNode(value, ltype));
 }
 
-void Compile::print_inlining_stream_free() {
-  if (_print_inlining_stream != NULL) {
-    _print_inlining_stream->~stringStream();
-    _print_inlining_stream = NULL;
-  }
-}
-
 // The message about the current inlining is accumulated in
 // _print_inlining_stream and transferred into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
@@ -4423,17 +4409,14 @@ void Compile::print_inlining_stream_free() {
 void Compile::print_inlining_init() {
   if (print_inlining() || print_intrinsics()) {
     // print_inlining_init is actually called several times.
-    print_inlining_stream_free();
-    _print_inlining_stream = new stringStream();
+    print_inlining_reset();
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer*>(comp_arena(), 1, 1, new PrintInliningBuffer());
   }
 }
 
 void Compile::print_inlining_reinit() {
   if (print_inlining() || print_intrinsics()) {
-    print_inlining_stream_free();
-    // Re allocate buffer when we change ResourceMark
-    _print_inlining_stream = new stringStream();
+    print_inlining_reset();
   }
 }
 
@@ -4515,7 +4498,7 @@ void Compile::process_print_inlining() {
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       PrintInliningBuffer* pib = _print_inlining_list->at(i);
-      ss.print("%s", pib->ss()->as_string());
+      ss.print("%s", pib->ss()->freeze());
       delete pib;
       DEBUG_ONLY(_print_inlining_list->at_put(i, NULL));
     }
@@ -4523,10 +4506,10 @@ void Compile::process_print_inlining() {
     // It is on the arena, so it will be freed when the arena is reset.
     _print_inlining_list = NULL;
     // _print_inlining_stream won't be used anymore, either.
-    print_inlining_stream_free();
+    print_inlining_reset();
     size_t end = ss.size();
     _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
-    strncpy(_print_inlining_output, ss.base(), end+1);
+    strncpy(_print_inlining_output, ss.freeze(), end+1);
     _print_inlining_output[end] = 0;
   }
 }
@@ -4586,6 +4569,35 @@ void Compile::dump_inline_data(outputStream* out) {
   if (inl_tree != NULL) {
     out->print(" inline %d", inl_tree->count());
     inl_tree->dump_replay_data(out);
+  }
+}
+
+void Compile::dump_inline_data_reduced(outputStream* out) {
+  assert(ReplayReduce, "");
+
+  InlineTree* inl_tree = ilt();
+  if (inl_tree == NULL) {
+    return;
+  }
+  // Enable iterative replay file reduction
+  // Output "compile" lines for depth 1 subtrees,
+  // simulating that those trees were compiled
+  // instead of inlined.
+  for (int i = 0; i < inl_tree->subtrees().length(); ++i) {
+    InlineTree* sub = inl_tree->subtrees().at(i);
+    if (sub->inline_level() != 1) {
+      continue;
+    }
+
+    ciMethod* method = sub->method();
+    int entry_bci = -1;
+    int comp_level = env()->task()->comp_level();
+    out->print("compile ");
+    method->dump_name_as_ascii(out);
+    out->print(" %d %d", entry_bci, comp_level);
+    out->print(" inline %d", sub->count());
+    sub->dump_replay_data(out, -1);
+    out->cr();
   }
 }
 

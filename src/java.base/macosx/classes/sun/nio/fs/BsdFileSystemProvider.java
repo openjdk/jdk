@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,23 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
                                                                 Class<V> type,
                                                                 LinkOption... options)
     {
-        if (type == UserDefinedFileAttributeView.class) {
-            return (V) new BsdUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                    Util.followLinks(options));
+        if (type == BasicFileAttributeView.class ||
+            type == PosixFileAttributeView.class ||
+            type == UserDefinedFileAttributeView.class) {
+
+            UnixPath file = UnixPath.toUnixPath(obj);
+            boolean followLinks = Util.followLinks(options);
+
+            if (type == BasicFileAttributeView.class)
+                return (V) BsdFileAttributeViews.createBasicView(file,
+                                                                 followLinks);
+            else if (type == PosixFileAttributeView.class)
+                return (V) BsdFileAttributeViews.createPosixView(file,
+                                                                 followLinks);
+            // user-defined is the only possibility
+            return (V) new BsdUserDefinedFileAttributeView(file, followLinks);
         }
+
         return super.getFileAttributeView(obj, type, options);
     }
 
@@ -66,10 +79,25 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
                                                          String name,
                                                          LinkOption... options)
     {
-        if (name.equals("user")) {
-            return new BsdUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                    Util.followLinks(options));
+        if (name.equals("basic") || name.equals("posix") ||
+            name.equals("unix")  || name.equals("user")) {
+
+            UnixPath file = UnixPath.toUnixPath(obj);
+            boolean followLinks = Util.followLinks(options);
+
+            if (name.equals("basic"))
+                return BsdFileAttributeViews.createBasicView(file, followLinks);
+
+            if (name.equals("posix"))
+                return BsdFileAttributeViews.createPosixView(file, followLinks);
+
+            if (name.equals("unix"))
+                return BsdFileAttributeViews.createUnixView(file, followLinks);
+
+            // user-defined is the only possibility
+            return new BsdUserDefinedFileAttributeView(file, followLinks);
         }
+
         return super.getFileAttributeView(obj, name, options);
     }
 }

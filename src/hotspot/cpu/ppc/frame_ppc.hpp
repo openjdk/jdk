@@ -26,8 +26,6 @@
 #ifndef CPU_PPC_FRAME_PPC_HPP
 #define CPU_PPC_FRAME_PPC_HPP
 
-#include "runtime/synchronizer.hpp"
-
   //  C frame layout on PPC-64.
   //
   //  In this figure the stack grows upwards, while memory grows

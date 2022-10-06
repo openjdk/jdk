@@ -331,7 +331,7 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {
     __ mov(reg, zr);
   } else {
-    __ movoop(reg, o, /*immediate*/true);
+    __ movoop(reg, o);
   }
 }
 

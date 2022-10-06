@@ -48,7 +48,7 @@ inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
     return true;
   }
 
-  HeapRegion* hr = _g1h->heap_region_containing(cast_from_oop<HeapWord*>(obj));
+  HeapRegion* hr = _g1h->heap_region_containing(obj);
   // All objects allocated since the start of marking are considered live.
   if (hr->obj_allocated_since_marking_start(obj)) {
     return true;
@@ -214,7 +214,7 @@ inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
 }
 
 inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {
-  _mark_stats_cache.add_live_words(_g1h->addr_to_region(cast_from_oop<HeapWord*>(obj)), obj_size);
+  _mark_stats_cache.add_live_words(_g1h->addr_to_region(obj), obj_size);
 }
 
 inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
@@ -280,8 +280,8 @@ inline bool G1CMTask::deal_with_reference(T* p) {
   return make_reference_grey(obj);
 }
 
-inline void G1ConcurrentMark::raw_mark_in_bitmap(oop p) {
-  _mark_bitmap.par_mark(p);
+inline void G1ConcurrentMark::raw_mark_in_bitmap(oop obj) {
+  _mark_bitmap.par_mark(obj);
 }
 
 bool G1ConcurrentMark::is_marked_in_bitmap(oop p) const {

@@ -77,7 +77,7 @@ public class VectorMaskedNotTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { "sve_not", ">= 1" })
+    @IR(counts = { "vnotI_masked", ">= 1" })
     public static void testIntNotMasked() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -95,7 +95,7 @@ public class VectorMaskedNotTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { "sve_not", ">= 1" })
+    @IR(counts = { "vnotL_masked", ">= 1" })
     public static void testLongNotMasked() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);

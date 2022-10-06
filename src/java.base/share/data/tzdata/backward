@@ -27,9 +27,14 @@
 # 2009-05-17 by Arthur David Olson.
 
 # This file provides links from old or merged timezone names to current ones.
-# Many names changed in late 1993.  Several of these names are
+# Many names changed in late 1993, and many merged names moved here
+# in the period from 2013 through 2022.  Several of these names are
 # also present in the file 'backzone', which has data important only
 # for pre-1970 timestamps and so is out of scope for tzdb proper.
+
+# Although this file is optional and tzdb will work if you omit it by
+# building with 'make BACKWARD=', in practice downstream users
+# typically use this file for backward compatibility.
 
 # Link	TARGET			LINK-NAME
 Link	Africa/Nairobi		Africa/Asmera
@@ -71,7 +76,7 @@ Link	Asia/Thimphu		Asia/Thimbu
 Link	Asia/Makassar		Asia/Ujung_Pandang
 Link	Asia/Ulaanbaatar	Asia/Ulan_Bator
 Link	Atlantic/Faroe		Atlantic/Faeroe
-Link	Europe/Oslo		Atlantic/Jan_Mayen
+Link	Europe/Berlin		Atlantic/Jan_Mayen
 Link	Australia/Sydney	Australia/ACT
 Link	Australia/Sydney	Australia/Canberra
 Link	Australia/Hobart	Australia/Currie
@@ -106,6 +111,7 @@ Link	Africa/Cairo		Egypt
 Link	Europe/Dublin		Eire
 Link	Etc/UTC			Etc/UCT
 Link	Europe/London		Europe/Belfast
+Link	Europe/Kyiv		Europe/Kiev
 Link	Europe/Chisinau		Europe/Tiraspol
 Link	Europe/London		GB
 Link	Europe/London		GB-Eire
@@ -114,7 +120,7 @@ Link	Etc/GMT			GMT-0
 Link	Etc/GMT			GMT0
 Link	Etc/GMT			Greenwich
 Link	Asia/Hong_Kong		Hongkong
-Link	Atlantic/Reykjavik	Iceland
+Link	Africa/Abidjan		Iceland
 Link	Asia/Tehran		Iran
 Link	Asia/Jerusalem		Israel
 Link	America/Jamaica		Jamaica
@@ -130,10 +136,10 @@ Link	America/Denver		Navajo
 Link	Asia/Shanghai		PRC
 Link	Pacific/Kanton		Pacific/Enderbury
 Link	Pacific/Honolulu	Pacific/Johnston
-Link	Pacific/Pohnpei		Pacific/Ponape
+Link	Pacific/Guadalcanal	Pacific/Ponape
 Link	Pacific/Pago_Pago	Pacific/Samoa
-Link	Pacific/Chuuk		Pacific/Truk
-Link	Pacific/Chuuk		Pacific/Yap
+Link	Pacific/Port_Moresby	Pacific/Truk
+Link	Pacific/Port_Moresby	Pacific/Yap
 Link	Europe/Warsaw		Poland
 Link	Europe/Lisbon		Portugal
 Link	Asia/Taipei		ROC

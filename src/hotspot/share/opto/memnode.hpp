@@ -796,19 +796,6 @@ public:
   int oop_alias_idx() const { return _oop_alias_idx; }
 };
 
-//------------------------------LoadPLockedNode---------------------------------
-// Load-locked a pointer from memory (either object or array).
-// On Sparc & Intel this is implemented as a normal pointer load.
-// On PowerPC and friends it's a real load-locked.
-class LoadPLockedNode : public LoadPNode {
-public:
-  LoadPLockedNode(Node *c, Node *mem, Node *adr, MemOrd mo)
-    : LoadPNode(c, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, mo) {}
-  virtual int Opcode() const;
-  virtual int store_Opcode() const { return Op_StorePConditional; }
-  virtual bool depends_only_on_test() const { return true; }
-};
-
 //------------------------------SCMemProjNode---------------------------------------
 // This class defines a projection of the memory  state of a store conditional node.
 // These nodes return a value, but also update memory.
@@ -863,39 +850,6 @@ public:
   };
   LoadStoreConditionalNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex);
   virtual const Type* Value(PhaseGVN* phase) const;
-};
-
-//------------------------------StorePConditionalNode---------------------------
-// Conditionally store pointer to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StorePConditionalNode : public LoadStoreConditionalNode {
-public:
-  StorePConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreConditionalNode(c, mem, adr, val, ll) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
-};
-
-//------------------------------StoreIConditionalNode---------------------------
-// Conditionally store int to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StoreIConditionalNode : public LoadStoreConditionalNode {
-public:
-  StoreIConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ii ) : LoadStoreConditionalNode(c, mem, adr, val, ii) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
-};
-
-//------------------------------StoreLConditionalNode---------------------------
-// Conditionally store long to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StoreLConditionalNode : public LoadStoreConditionalNode {
-public:
-  StoreLConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreConditionalNode(c, mem, adr, val, ll) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
 };
 
 class CompareAndSwapNode : public LoadStoreConditionalNode {
