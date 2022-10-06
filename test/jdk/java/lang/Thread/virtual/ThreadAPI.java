@@ -780,8 +780,12 @@ public class ThreadAPI {
     @Test
     public void testJoin34() throws Exception {
         // need at least two carrier threads due to pinning
-        try (var restorer = VThreadRunner.ensureParallelism(2)) {
+        int previousParallelism = VThreadRunner.ensureParallelism(2);
+        try {
             VThreadRunner.run(this::testJoin33);
+        } finally {
+            // restore
+            VThreadRunner.setParallelism(previousParallelism);
         }
     }
 

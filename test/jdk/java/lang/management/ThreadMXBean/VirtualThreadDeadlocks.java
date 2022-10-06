@@ -22,7 +22,7 @@
  */
 
 /**
- * @test
+ * @test id=default
  * @bug 8284161 8287103
  * @summary Test ThredMXBean.findMonitorDeadlockedThreads with cycles of
  *   platform and virtual threads in deadlock
@@ -35,7 +35,7 @@
  */
 
 /**
- * @test
+ * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @enablePreview
  * @modules java.base/java.lang:+open java.management
