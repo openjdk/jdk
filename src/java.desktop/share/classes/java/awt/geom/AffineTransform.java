@@ -3902,13 +3902,23 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @since 1.2
      */
     public int hashCode() {
-        long bits = Double.doubleToLongBits(m00);
-        bits = bits * 31 + Double.doubleToLongBits(m01);
-        bits = bits * 31 + Double.doubleToLongBits(m02);
-        bits = bits * 31 + Double.doubleToLongBits(m10);
-        bits = bits * 31 + Double.doubleToLongBits(m11);
-        bits = bits * 31 + Double.doubleToLongBits(m12);
+        long bits = hash(m00);
+        bits = bits * 31 + hash(m01);
+        bits = bits * 31 + hash(m02);
+        bits = bits * 31 + hash(m10);
+        bits = bits * 31 + hash(m11);
+        bits = bits * 31 + hash(m12);
         return (((int) bits) ^ ((int) (bits >> 32)));
+    }
+
+    /**
+     * Returns a hash code for the given value, with negative zero
+     * collapsed to the single positive zero.
+     */
+    private static long hash(double m) {
+        long h = Double.doubleToLongBits(m);
+        if (h == 0x8000000000000000L) h = 0;    // Replace -0 by +0.
+        return h;
     }
 
     /**
@@ -3928,8 +3938,17 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
 
         AffineTransform a = (AffineTransform)obj;
 
-        return ((m00 == a.m00) && (m01 == a.m01) && (m02 == a.m02) &&
-                (m10 == a.m10) && (m11 == a.m11) && (m12 == a.m12));
+        return equals(m00, a.m00) && equals(m01, a.m01) &&
+               equals(m02, a.m02) && equals(m10, a.m10) &&
+               equals(m11, a.m11) && equals(m12, a.m12);
+    }
+
+    /**
+     * Compares the given floating point values, with negative zero
+     * considered equals to positive zero.
+     */
+    private static boolean equals(double a, double b) {
+        return (a == b) || (Double.isNaN(a) && Double.isNaN(b));
     }
 
     /* Serialization support.  A readObject method is neccessary because
