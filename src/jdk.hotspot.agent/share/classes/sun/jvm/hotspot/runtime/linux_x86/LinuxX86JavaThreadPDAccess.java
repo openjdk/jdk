@@ -116,7 +116,7 @@ public class LinuxX86JavaThreadPDAccess implements JavaThreadPDAccess {
   public    Address getLastSP(Address addr) {
     ThreadProxy t = getThreadProxy(addr);
     X86ThreadContext context = (X86ThreadContext) t.getContext();
-    return context.getRegisterAsAddress(X86ThreadContext.ESP);
+    return context.getRegisterAsAddress(X86ThreadContext.SP);
   }
 
   public    ThreadProxy getThreadProxy(Address addr) {
