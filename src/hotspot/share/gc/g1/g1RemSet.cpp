@@ -1308,18 +1308,22 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   // Visitor for the remembered sets of humongous candidate regions to merge their
   // remembered set into the card table.
-  class G1FlushHumongousCandidateRemSets : public HeapRegionClosure {
+  class G1FlushHumongousCandidateRemSets : public HeapRegionIndexClosure {
     G1RemSetScanState* _scan_state;
     G1MergeCardSetStats _merge_stats;
 
   public:
     G1FlushHumongousCandidateRemSets(G1RemSetScanState* scan_state) : _scan_state(scan_state), _merge_stats() { }
 
-    virtual bool do_heap_region(HeapRegion* r) {
+    bool do_heap_region_index(uint region_index) override {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate() ||
-          r->rem_set()->is_empty()) {
+      if (!g1h->region_attr(region_index).is_humongous_candidate()) {
+        return false;
+      }
+
+      HeapRegion* r = g1h->region_at(region_index);
+      if (r->rem_set()->is_empty()) {
         return false;
       }
 
@@ -1343,7 +1347,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // reclaimed.
       r->rem_set()->set_state_complete();
 #ifdef ASSERT
-      G1HeapRegionAttr region_attr = g1h->region_attr(r->hrm_index());
+      G1HeapRegionAttr region_attr = g1h->region_attr(region_index);
       assert(region_attr.remset_is_tracked(), "must be");
 #endif
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
