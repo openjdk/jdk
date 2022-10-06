@@ -30,11 +30,10 @@ import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet;
 
-import javax.lang.model.element.Element;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.NoType;
+import javax.lang.model.type.TypeKind;
 
 import java.io.*;
 import java.util.*;
@@ -88,7 +87,19 @@ public final class SealedGraph implements Taglet {
         File dotFile = new File(sealedGraphDotPath,
                 module.getQualifiedName() + "_" + typeElement.getQualifiedName() + ".dot");
 
-        String dotContent = Renderer.graph(typeElement);
+        Set<String> exports = module.getDirectives().stream()
+                .filter(ModuleElement.ExportsDirective.class::isInstance)
+                .map(ModuleElement.ExportsDirective.class::cast)
+                // Only include packages that are globally exported (i.e. no "to" exports)
+                .filter(me -> me.getTargetModules() == null)
+                .map(ModuleElement.ExportsDirective::getPackage)
+                .map(PackageElement::getQualifiedName)
+                .map(Objects::toString)
+                .collect(Collectors.toUnmodifiableSet());
+
+        System.out.println("exports = " + exports);
+
+        String dotContent = Renderer.graph(typeElement, exports);
 
         try (PrintWriter pw = new PrintWriter(dotFile)) {
             pw.println(dotContent);
@@ -129,17 +140,19 @@ public final class SealedGraph implements Taglet {
         }
 
         // Generates a graph in DOT format
-        static String graph(TypeElement rootClass) {
+        static String graph(TypeElement rootClass, Set<String> exports) {
             final State state = new State(rootClass);
-            traverse(state, rootClass);
+            traverse(state, rootClass, exports);
             return state.render();
         }
 
-        static void traverse(State state, TypeElement node) {
+        static void traverse(State state, TypeElement node, Set<String> exports) {
             state.addNode(node);
-            for (TypeElement subNode : permittedSubclasses(node)) {
-                state.addEdge(node, subNode);
-                traverse(state, subNode);
+            for (TypeElement subNode : permittedSubclasses(node, exports)) {
+                if (isInPublicApi(node, exports) && isInPublicApi(subNode, exports)) {
+                    state.addEdge(node, subNode);
+                }
+                traverse(state, subNode, exports);
             }
         }
 
@@ -179,14 +192,12 @@ public final class SealedGraph implements Taglet {
             }
 
             public void addEdge(TypeElement node, TypeElement subNode) {
-                if (isInPublicApi(node) && isInPublicApi(subNode)) {
-                    builder.append("  ")
-                            .append(quotedId(subNode))
-                            .append(" -> ")
-                            .append(quotedId(node))
-                            .append(";")
-                            .append(lineSeparator());
-                }
+                builder.append("  ")
+                        .append(quotedId(subNode))
+                        .append(" -> ")
+                        .append(quotedId(node))
+                        .append(";")
+                        .append(lineSeparator());
             }
 
             public String render() {
@@ -205,6 +216,7 @@ public final class SealedGraph implements Taglet {
             private String id(TypeElement node) {
                 return node.getQualifiedName().toString();
             }
+
             private String quotedId(TypeElement node) {
                 return "\"" + id(node) + "\"";
             }
@@ -218,24 +230,31 @@ public final class SealedGraph implements Taglet {
 
         }
 
-        private static List<TypeElement> permittedSubclasses(TypeElement node) {
+        private static List<TypeElement> permittedSubclasses(TypeElement node, Set<String> exports) {
             return node.getPermittedSubclasses().stream()
                     .filter(DeclaredType.class::isInstance)
                     .map(DeclaredType.class::cast)
                     .map(DeclaredType::asElement)
                     .filter(TypeElement.class::isInstance)
                     .map(TypeElement.class::cast)
-                    .filter(Renderer::isInPublicApi)
+                    .filter(te -> isInPublicApi(te, exports))
                     .toList();
         }
 
-        private static boolean isInPublicApi(TypeElement typeElement) {
-            // Todo: Use the module definition to determine if in the public API or not.
-            return !typeElement.getQualifiedName()
-                    .toString()
-                    .contains(".internal") &&
-                    typeElement.getModifiers().contains(Modifier.PUBLIC);
+
+        private static boolean isInPublicApi(TypeElement typeElement, Set<String> exports) {
+           return (exports.contains(packageName(typeElement.getQualifiedName().toString())) ||
+                   exports.contains(packageName(typeElement.getSuperclass().toString()))) &&
+                   typeElement.getModifiers().contains(Modifier.PUBLIC);
+        }
+
+        private static String packageName(String name) {
+            int lastDot = name.lastIndexOf('.');
+            return lastDot < 0
+                    ? ""
+                    : name.substring(0, lastDot);
         }
     }
 
 }
+
