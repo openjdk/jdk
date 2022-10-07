@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import jdk.internal.net.http.common.Utils;
 final class ConnectionPool {
 
     static final long KEEP_ALIVE = Utils.getIntegerNetProperty(
-            "jdk.httpclient.keepalive.timeout", 1200); // seconds
+            "jdk.httpclient.keepalive.timeout", 600); // seconds
     static final long MAX_POOL_SIZE = Utils.getIntegerNetProperty(
             "jdk.httpclient.connectionPoolSize", 0); // unbounded
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
