@@ -38,7 +38,7 @@ import org.w3c.dom.NodeList;
 
 /*
  * @test
- * @bug 8289510
+ * @bug 8289509
  * @library /javax/xml/jaxp/unittest
  * @run testng/othervm xpath.XPathExpDescendantTest
  * @summary Tests for XPath descendant/descendant-or-self axis specifier.
@@ -54,15 +54,27 @@ public class XPathExpDescendantTest extends XPathTestBase {
                 {"/Customers/descendant::*", "/Customers//*"},
                 {"/Customers/descendant::Customer", "//Customer"},
                 {"/Customers/descendant::foo:Customer", "//foo:Customer"},
-                {"/Customers/Customer[@id='x1']/descendant::Address", "/Customers/Customer[@id='x1']/Address"},
-                {"/Customers/Customer[@id='x1']/descendant::*", "/Customers/Customer[@id='x1']//*"},
-                {"/Customers/foo:Customer/foo:Address/descendant::*", "/Customers/foo:Customer/foo:Address//*"},
+                {"/Customers/Customer[@id='x1']/descendant::Address",
+                        "/Customers/Customer[@id='x1']/Address"},
+                {"/Customers/Customer[@id='x1']/descendant::*",
+                        "/Customers/Customer[@id='x1']//*"},
+                {"/Customers/foo:Customer/foo:Address/descendant::*",
+                        "/Customers/foo:Customer/foo:Address//*"},
+                {"/Customers/descendant::Name", "/Customers//Name"},
+                {"/Customers/descendant::Street", "/Customers//Street"},
+                {"/Customers/descendant::Street[2]", "Customers/Customer[@id='x2']/Address/Street"},
+                {"/Customers/descendant::Street[2]", "(Customers//Street)[2]"},
+                {"/Customers/descendant::Street[position() = 2]",
+                        "Customers/Customer[@id='x2']/Address/Street"},
                 {"/Customers/descendant-or-self::*", "//*"},
                 {"/Customers/descendant-or-self::Customer", "/Customers/Customer"},
                 {"/Customers/descendant-or-self::foo:Customer", "/Customers/foo:Customer"},
-                {"/Customers/Customer[@id='x1']/descendant-or-self::Address", "/Customers/Customer[@id = 'x1']/Address"},
-                {"/Customers/Customer[@id='x1']/descendant-or-self::*", "/Customers/Customer[@id='x1'] | /Customers/Customer[@id = 'x1']//*"},
-                {"/Customers/foo:Customer/foo:Address/descendant-or-self::*", "/Customers/foo:Customer/foo:Address | /Customers/foo:Customer/foo:Address//*"}
+                {"/Customers/Customer[@id='x1']/descendant-or-self::Address",
+                        "/Customers/Customer[@id = 'x1']/Address"},
+                {"/Customers/Customer[@id='x1']/descendant-or-self::*",
+                        "/Customers/Customer[@id='x1'] | /Customers/Customer[@id = 'x1']//*"},
+                {"/Customers/foo:Customer/foo:Address/descendant-or-self::*",
+                        "/Customers/foo:Customer/foo:Address | /Customers/foo:Customer/foo:Address//*"}
         };
     }
 

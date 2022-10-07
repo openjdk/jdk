@@ -36,7 +36,7 @@ import org.w3c.dom.NodeList;
 
 /*
  * @test
- * @bug 8289510
+ * @bug 8289509
  * @library /javax/xml/jaxp/unittest
  * @run testng/othervm xpath.XPathExpFollowingTest
  * @summary Tests for XPath following/following-sibling axis specifier.
@@ -51,16 +51,34 @@ public class XPathExpFollowingTest extends  XPathTestBase {
                 {"/Customers/following::*", "/None"},
                 {"/Customers/Customer/following::Customer", "//Customer[@id != 'x1']"},
                 {"/Customers/Customer/following::foo:Customer", "//foo:Customer"},
-                {"/Customers/Customer[@id='x1']/following::Address", "/Customers/Customer[@id != 'x1']/Address"},
-                {"/Customers/Customer[@id='x1']/following::*", "/Customers/Customer[@id != 'x1']/descendant-or-self::* | /Customers/foo:Customer/descendant-or-self::*"},
-                {"/Customers/foo:Customer/foo:Address/following::*", "/Customers/foo:Customer/foo:Age | /Customers/foo:Customer/foo:ClubMember"},
+                {"/Customers/Customer[@id='x1']/following::Address",
+                        "/Customers/Customer[@id != 'x1']/Address"},
+                {"/Customers/Customer[@id='x1']/following::Street",
+                        "/Customers/Customer[@id != 'x1']/Address/Street"},
+                {"/Customers/Customer[@id='x1']/following::Street[2]",
+                        "/Customers/Customer[@id='x2']/Address/Street"},
+                {"/Customers/Customer[@id='x1']/following::*",
+                        "/Customers/Customer[@id != 'x1']/descendant-or-self::*" +
+                                " | /Customers/foo:Customer/descendant-or-self::*"},
+                {"/Customers/foo:Customer/foo:Address/following::*",
+                        "/Customers/foo:Customer/foo:Age | /Customers/foo:Customer/foo:ClubMember"},
                 {"/Customers/following-sibling::*", "/None"},
-                {"/Customers/Customer/following-sibling::Customer", "/Customers/Customer[@id != 'x1']"},
-                {"/Customers/Customer/following-sibling::foo:Customer", "/Customers/foo:Customer"},
-                {"/Customers/Customer[@id='x1']/Name/following-sibling::Address", "/Customers/Customer[@id='x1']/Address"},
-                {"/Customers/Customer/Name/following-sibling::Address", "/Customers//Address"},
-                {"/Customers/Customer[@id='x1']/following-sibling::*", "/Customers/Customer[@id != 'x1'] | /Customers/foo:Customer"},
-                {"/Customers/foo:Customer/foo:Address/following-sibling::*", "/Customers/foo:Customer/foo:Age | /Customers/foo:Customer/foo:ClubMember"}
+                {"/Customers/Customer/following-sibling::Customer",
+                        "/Customers/Customer[@id != 'x1']"},
+                {"/Customers/Customer/following-sibling::foo:Customer",
+                        "/Customers/foo:Customer"},
+                {"/Customers/Customer[@id='x1']/Name/following-sibling::Address",
+                        "/Customers/Customer[@id='x1']/Address"},
+                {"/Customers/Customer/Name/following-sibling::Address",
+                        "/Customers//Address"},
+                {"(/Customers/Customer/Address/Street/following-sibling::State)[3]",
+                        "/Customers/Customer[@id='x3']/Address/State"},
+                {"/Customers/Customer[@id='x1']/Address/Street/following-sibling::*[2]",
+                        "/Customers/Customer[@id='x3']/Address/State"},
+                {"/Customers/Customer[@id='x1']/following-sibling::*",
+                        "/Customers/Customer[@id != 'x1'] | /Customers/foo:Customer"},
+                {"/Customers/foo:Customer/foo:Address/following-sibling::*",
+                        "/Customers/foo:Customer/foo:Age | /Customers/foo:Customer/foo:ClubMember"}
         };
     }
 
