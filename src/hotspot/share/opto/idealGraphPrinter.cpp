@@ -149,7 +149,7 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   } else {
     init_network_stream();
   }
-  _xml = new (ResourceObj::C_HEAP, mtCompiler) xmlStream(_output);
+  _xml = new (mtCompiler) xmlStream(_output);
   if (!append) {
     head(TOP_ELEMENT);
   }
@@ -851,9 +851,9 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
     } else {
       st.print("%s%d", file_name, _file_count);
     }
-    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(st.as_string(), "w");
+    _output = new (mtCompiler) fileStream(st.as_string(), "w");
   } else {
-    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, append ? "a" : "w");
+    _output = new (mtCompiler) fileStream(file_name, append ? "a" : "w");
   }
   if (use_multiple_files) {
     assert(!append, "append should only be used for debugging with a single file");
@@ -862,7 +862,7 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
 }
 
 void IdealGraphPrinter::init_network_stream() {
-  _network_stream = new (ResourceObj::C_HEAP, mtCompiler) networkStream();
+  _network_stream = new (mtCompiler) networkStream();
   // Try to connect to visualizer
   if (_network_stream->connect(PrintIdealGraphAddress, PrintIdealGraphPort)) {
     char c = 0;
