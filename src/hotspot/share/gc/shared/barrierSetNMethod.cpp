@@ -153,7 +153,12 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
 
   address return_address = *return_address_ptr;
   AARCH64_PORT_ONLY(return_address = pauth_strip_pointer(return_address));
+
   CodeBlob* cb = CodeCache::find_blob(return_address);
+
+  // FIXME: Remove
+  if (cb == NULL) printf("Failed to find %lx (return_address) from %lx (return_address_ptr) in CodeCache\n", return_address, return_address_ptr);
+
   assert(cb != NULL, "invariant");
 
   nmethod* nm = cb->as_nmethod();
