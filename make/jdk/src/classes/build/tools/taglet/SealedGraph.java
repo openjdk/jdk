@@ -32,8 +32,6 @@ import jdk.javadoc.doclet.Taglet;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.NoType;
-import javax.lang.model.type.TypeKind;
 
 import java.io.*;
 import java.util.*;
@@ -96,8 +94,6 @@ public final class SealedGraph implements Taglet {
                 .map(PackageElement::getQualifiedName)
                 .map(Objects::toString)
                 .collect(Collectors.toUnmodifiableSet());
-
-        System.out.println("exports = " + exports);
 
         String dotContent = Renderer.graph(typeElement, exports);
 
