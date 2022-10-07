@@ -38,22 +38,36 @@ class ClassPrinter::KlassPrintClosure : public LockedClassesDo {
   const char* _class_name_pattern;
   const char* _method_name_pattern;
   const char* _method_signature_pattern;
+<<<<<<< HEAD
   bool _always_print_class_name;
   int _flags;
   outputStream* _st;
   int _num;
   bool _has_printed_methods;
+=======
+  int _flags;
+  outputStream* _st;
+  int _num;
+  bool _last_printed_methods;
+>>>>>>> Prints interpreted values for CPCache entry flags
 public:
   KlassPrintClosure(const char* class_name_pattern,
                     const char* method_name_pattern,
                     const char* method_signature_pattern,
+<<<<<<< HEAD
                     bool always_print_class_name,
+=======
+>>>>>>> Prints interpreted values for CPCache entry flags
                     int flags, outputStream* st)
     : _class_name_pattern(class_name_pattern),
       _method_name_pattern(method_name_pattern),
       _method_signature_pattern(method_signature_pattern),
+<<<<<<< HEAD
       _always_print_class_name(always_print_class_name),
       _flags(flags), _st(st), _num(0), _has_printed_methods(false)
+=======
+      _flags(flags), _st(st), _num(0), _last_printed_methods(false)
+>>>>>>> Prints interpreted values for CPCache entry flags
   {
     if (has_mode(_flags, PRINT_METHOD_HANDLE)) {
       _flags |= (PRINT_METHOD_NAME | PRINT_BYTECODE);
@@ -76,6 +90,7 @@ public:
     print_instance_klass(InstanceKlass::cast(k));
   }
 
+<<<<<<< HEAD
   static bool match(const char* pattern, Symbol* sym) {
     return (pattern == NULL || sym->is_star_match(pattern));
   }
@@ -98,6 +113,18 @@ public:
       if (_always_print_class_name) {
         print_klass_name(ik);
       }
+=======
+  void print_instance_klass(InstanceKlass* ik) {
+    if (ik->is_loaded() && matches(_class_name_pattern, ik->name())) {
+      ResourceMark rm;
+      if (_last_printed_methods) {
+        _st->cr();
+      }
+      _last_printed_methods = false;
+      _st->print("[%3d] " INTPTR_FORMAT " class %s ", _num++, p2i(ik), ik->name()->as_C_string());
+      ik->class_loader_data()->print_value_on(_st);
+      _st->cr();
+>>>>>>> Prints interpreted values for CPCache entry flags
 
       if (has_mode(_flags, ClassPrinter::PRINT_METHOD_NAME)) {
         bool print_codes = has_mode(_flags, ClassPrinter::PRINT_BYTECODE);
@@ -106,6 +133,7 @@ public:
 
         for (int index = 0; index < len; index++) {
           Method* m = ik->methods()->at(index);
+<<<<<<< HEAD
           if (match(_method_name_pattern, m->name()) &&
               match(_method_signature_pattern, m->signature())) {
             if (print_codes && num_methods_printed++ > 0) {
@@ -120,6 +148,21 @@ public:
             }
             print_method(m);
           }
+=======
+          if (_method_name_pattern != NULL &&
+              !matches(_method_name_pattern, m->name())) {
+            continue;
+          }
+          if (_method_signature_pattern != NULL &&
+              !matches(_method_signature_pattern, m->signature())) {
+            continue;
+          }
+          if (print_codes && num_methods_printed++ > 0) {
+            _st->cr();
+          }
+          print_method(m);
+          _last_printed_methods = true;
+>>>>>>> Prints interpreted values for CPCache entry flags
         }
       }
     }
@@ -136,6 +179,7 @@ public:
   }
 };
 
+<<<<<<< HEAD
 void ClassPrinter::print_flags_help(outputStream* os) {
   os->print_cr("flags (bitmask):");
   os->print_cr("   0x%02x  - print names of methods", PRINT_METHOD_NAME);
@@ -148,10 +192,55 @@ void ClassPrinter::print_flags_help(outputStream* os) {
 
 void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outputStream* os) {
   KlassPrintClosure closure(class_name_pattern, NULL, NULL, true, flags, os);
+=======
+bool ClassPrinter::matches(const char *pattern, const char *candidate, int p, int c) {
+  if (pattern[p] == '\0') {
+    return candidate[c] == '\0';
+  } else if (pattern[p] == '*') {
+    for (; candidate[c] != '\0'; c++) {
+      if (matches(pattern, candidate, p+1, c))
+        return true;
+    }
+    return matches(pattern, candidate, p+1, c);
+  } else if (pattern[p] != '?' && pattern[p] != candidate[c]) {
+    return false;
+  }  else {
+    return matches(pattern, candidate, p+1, c+1);
+  }
+}
+
+bool ClassPrinter::matches(const char* pattern, Symbol* symbol) {
+  if (pattern == NULL) {
+    return true;
+  }
+  if (strchr(pattern, '*') == NULL) {
+    return symbol->equals(pattern);
+  } else {
+    ResourceMark rm;
+    char* buf = symbol->as_C_string();
+    return matches(pattern, buf, 0, 0);
+  }
+}
+
+void ClassPrinter::print_help() {
+  tty->print_cr("flags (bitmask):");
+  tty->print_cr("   0x%02x  - print names of methods", PRINT_METHOD_NAME);
+  tty->print_cr("   0x%02x  - print bytecodes", PRINT_BYTECODE);
+  tty->print_cr("   0x%02x  - print the address of bytecodes", PRINT_BYTECODE_ADDR);
+  tty->print_cr("   0x%02x  - print info for invokedynamic", PRINT_DYNAMIC);
+  tty->print_cr("   0x%02x  - print info for invokehandle",  PRINT_METHOD_HANDLE);
+  tty->cr();
+}
+
+void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outputStream* os) {
+  print_help();
+  KlassPrintClosure closure(class_name_pattern, NULL, NULL, flags, os);
+>>>>>>> Prints interpreted values for CPCache entry flags
   ClassLoaderDataGraph::classes_do(&closure);
 }
 
 void ClassPrinter::print_methods(const char* class_name_pattern,
+<<<<<<< HEAD
                                  const char* method_pattern, int flags, outputStream* os) {
   ResourceMark rm;
   const char* method_name_pattern;
@@ -176,3 +265,34 @@ void ClassPrinter::print_methods(const char* class_name_pattern,
                             false, flags | PRINT_METHOD_NAME, os);
   ClassLoaderDataGraph::classes_do(&closure);
 }
+=======
+                                 const char* method_name_pattern, int flags, outputStream* os) {
+  print_help();
+  KlassPrintClosure closure(class_name_pattern, method_name_pattern, NULL,
+                            flags | PRINT_METHOD_NAME, os);
+  ClassLoaderDataGraph::classes_do(&closure);
+
+}
+
+void ClassPrinter::print_methods(const char* class_name_pattern,
+                                 const char* method_name_pattern,
+                                 const char* method_signature_pattern, int flags, outputStream* os) {
+  print_help();
+  KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
+                            flags | PRINT_METHOD_NAME, os);
+  ClassLoaderDataGraph::classes_do(&closure);
+}
+
+void ClassPrinter::print_class(InstanceKlass* k, int flags, outputStream* os) {
+  print_help();
+  KlassPrintClosure closure(NULL, NULL, NULL, flags, os);
+  closure.print_instance_klass(k);
+}
+
+void ClassPrinter::print_method(Method* m, int flags, outputStream* os) {
+  print_help();
+  KlassPrintClosure closure(NULL, "", "", flags | PRINT_METHOD_NAME | PRINT_BYTECODE, os);
+  closure.print_instance_klass(m->method_holder());
+  closure.print_method(m);
+}
+>>>>>>> Prints interpreted values for CPCache entry flags
