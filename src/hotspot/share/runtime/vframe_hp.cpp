@@ -407,6 +407,24 @@ vframe* compiledVFrame::sender() const {
   }
 }
 
+
+bool compiledVFrame::sender(vframe *sender) const {
+  const frame f = fr();
+  if (scope() == NULL) {
+    // native nmethods have no scope the method/bci is implied
+    nmethod* nm = code()->as_nmethod();
+    assert(nm->is_native_method(), "must be native");
+    return vframe::sender(sender);
+  } else {
+    if (scope()->is_top()) {
+      return vframe::sender(sender);
+    }
+    compiledVFrame frame(&f, register_map(), thread(), scope()->sender(), vframe_id() + 1);
+    memcpy((char*)sender, (char*)&frame, sizeof(compiledVFrame));
+    return true;
+  }
+}
+
 jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id, int vframe_id) {
   _method = method;
   _bci = bci;

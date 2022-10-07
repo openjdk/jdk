@@ -93,6 +93,49 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
   return new externalVFrame(f, reg_map, thread);
 }
 
+void vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThread* thread, vframe* vframe_) {
+  // Interpreter frame
+  if (f->is_interpreted_frame()) {
+    interpretedVFrame iframe(f, reg_map, thread);
+    memcpy((char*)vframe_, (char*)&iframe, sizeof(interpretedVFrame));
+    return;
+  }
+
+  // Compiled frame
+  CodeBlob* cb = f->cb();
+  if (cb != NULL) {
+    if (cb->is_compiled()) {
+      CompiledMethod* nm = (CompiledMethod*)cb;
+      compiledVFrame cframe(f, reg_map, thread, nm);
+      memcpy((char*)vframe_, (char*)&cframe, sizeof(compiledVFrame));
+      return;
+    }
+
+    if (f->is_runtime_frame()) {
+      // Skip this frame and try again.
+      RegisterMap temp_map = *reg_map;
+      frame s = f->sender(&temp_map);
+      new_vframe(&s, &temp_map, thread, vframe_);
+      return;
+    }
+  }
+
+  // Entry frame
+  if (f->is_entry_frame()) {
+    entryVFrame eframe(f, reg_map, thread);
+    memcpy((char*)vframe_, (char*)&eframe, sizeof(eframe));
+    return;
+  }
+
+  // External frame
+  externalVFrame eframe(f, reg_map, thread);
+  memcpy((char*)vframe_, (char*)&eframe, sizeof(entryVFrame));
+}
+
+size_t vframe::max_allocated_size() {
+  return MAX(sizeof(vframe), MAX(sizeof(javaVFrame), sizeof(externalVFrame)));
+}
+
 vframe* vframe::sender() const {
   RegisterMap temp_map = *register_map();
   assert(is_top(), "just checking");
@@ -101,6 +144,16 @@ vframe* vframe::sender() const {
   frame s = _fr.real_sender(&temp_map);
   if (s.is_first_frame()) return nullptr;
   return vframe::new_vframe(&s, &temp_map, thread());
+}
+
+bool vframe::sender(vframe* sender) const {
+  RegisterMap temp_map = *register_map();
+  assert(is_top(), "just checking");
+  if (_fr.is_entry_frame() && _fr.is_first_frame()) return false;
+  frame s = _fr.real_sender(&temp_map);
+  if (s.is_first_frame()) return false;
+  vframe::new_vframe(&s, &temp_map, thread(), sender);
+  return true;
 }
 
 bool vframe::is_vthread_entry() const {
