@@ -31,8 +31,8 @@ import javax.swing.DefaultListSelectionModel;
 
 public class TestDefListModelException {
     public static void main(String[] args) throws Exception {
-	test1();
-	test2();
+        test1();
+        test2();
     }
 
     private static void test1() {
