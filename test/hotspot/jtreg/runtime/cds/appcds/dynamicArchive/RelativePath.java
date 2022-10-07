@@ -58,7 +58,7 @@ public class RelativePath extends DynamicArchiveTestBase {
         // Create CDS Archive
         dump(topArchiveName, "-Xlog:cds",
             "-Xlog:cds+dynamic=debug",
-            "-cp", "." + File.separator + "hello.jar" + File.pathSeparator + appJar2,
+            "-cp", appJar + File.pathSeparator + appJar2,
             "HelloMore")
             .assertNormalExit(output-> {
                     output.shouldContain("Written dynamic archive 0x");
