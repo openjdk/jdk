@@ -403,8 +403,8 @@ public class TransPatterns extends TreeTranslator {
             Type seltype = selector.type.hasTag(BOT)
                     ? syms.objectType
                     : selector.type;
-//            Assert.check(preview.isEnabled());
-//            Assert.check(preview.usesPreview(env.toplevel.sourcefile));
+            Assert.check(preview.isEnabled());
+            Assert.check(preview.usesPreview(env.toplevel.sourcefile));
 
             //rewrite pattern matching switches:
             //switch ($obj) {

@@ -73,7 +73,6 @@ public class Preview {
 
     /** test flag: should all features be considered as preview features? */
     private final boolean forcePreview;
-    private final boolean ignorePrevew;
 
     /** a mapping from classfile numbers to Java SE versions */
     private final Map<Integer, Source> majorVersionToSource;
@@ -106,7 +105,6 @@ public class Preview {
         this.previewHandler =
                 new MandatoryWarningHandler(log, source, lint.isEnabled(LintCategory.PREVIEW), true, "preview", LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
-        ignorePrevew = forcePreview || !options.isSet("ignorePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
 
@@ -211,10 +209,10 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case CASE_NULL -> ignorePrevew;
-            case PATTERN_SWITCH -> ignorePrevew;
-            case UNCONDITIONAL_PATTERN_IN_INSTANCEOF -> ignorePrevew;
-            case RECORD_PATTERNS -> ignorePrevew;
+            case CASE_NULL -> true;
+            case PATTERN_SWITCH -> true;
+            case UNCONDITIONAL_PATTERN_IN_INSTANCEOF -> true;
+            case RECORD_PATTERNS -> true;
 
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
