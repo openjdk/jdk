@@ -74,7 +74,7 @@ import javax.swing.UIManager;
 
 public class InternalFrameBorderTest {
     private static final int FRAME_SIZE = 300;
-    private static final int INTFRAME_SIZE = 200;
+    private static final int INTFRAME_SIZE = 150;
     private static final int MIDPOINT = INTFRAME_SIZE / 2;
     private static final int BORDER_THICKNESS = 5;
 
@@ -149,25 +149,25 @@ public class InternalFrameBorderTest {
                 x = iFrameLoc.x + MIDPOINT;
                 y = iFrameLoc.y + BORDER_THICKNESS;
                 start = iFrameLoc.y;
-                stop = iFrameLoc.y + BORDER_THICKNESS;
+                stop = iFrameLoc.y + BORDER_THICKNESS - 1;
             }
             case "RIGHT" -> {
                 x = iFrameMaxX - BORDER_THICKNESS;
                 y = iFrameLoc.y + MIDPOINT;
-                start = iFrameMaxX - BORDER_THICKNESS;
+                start = iFrameMaxX - BORDER_THICKNESS + 1;
                 stop = iFrameMaxX;
             }
             case "BOTTOM" -> {
                 x = iFrameLoc.x + MIDPOINT;
                 y = iFrameMaxY - BORDER_THICKNESS;
-                start = iFrameMaxY - BORDER_THICKNESS;
+                start = iFrameMaxY - BORDER_THICKNESS + 1;
                 stop = iFrameMaxY;
             }
             case "LEFT" -> {
                 x = iFrameLoc.x;
                 y = iFrameLoc.y + MIDPOINT;
                 start = iFrameLoc.x;
-                stop = iFrameLoc.x + BORDER_THICKNESS;
+                stop = iFrameLoc.x + BORDER_THICKNESS - 1;
             }
             default -> throw new IllegalStateException("Unexpected value: "
                     + borderDirection);
@@ -222,8 +222,7 @@ public class InternalFrameBorderTest {
                 || cornerLocation.equals("BOTTOM_LEFT");
 
         robot.mouseMove(x, y);
-
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < BORDER_THICKNESS - 1; i++) {
             int locX = isLeft ? (x + i) : (x - i);
             int locY = isTop ? (y + i) : (y - i);
             if (Color.RED.equals(robot.getPixelColor(locX, locY))) {
@@ -241,7 +240,7 @@ public class InternalFrameBorderTest {
         jFrame.setLayout(null);
         jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        JLabel scale = new JLabel("UI Scale: "+ uiScale);
+        JLabel scale = new JLabel("UI Scale: " + uiScale);
         iFrame = new JInternalFrame("iframe", true);
         iFrame.setLayout(new GridBagLayout());
         iFrame.setBackground(Color.RED);

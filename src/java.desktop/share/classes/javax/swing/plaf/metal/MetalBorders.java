@@ -62,6 +62,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
 
+import sun.java2d.pipe.Region;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
 
@@ -246,18 +247,6 @@ public class MetalBorders {
          */
         public InternalFrameBorder() {}
 
-        /**
-         * Rounds a double to the nearest integer. It rounds 0.5 down,
-         * for example 1.5 is rounded to 1.0.
-         *
-         * @param d number to be rounded
-         * @return the rounded value
-         */
-        private static int roundHalfDown(double d) {
-            double decP = (Math.ceil(d) - d);
-            return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
-        }
-
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
             Color background;
@@ -287,7 +276,7 @@ public class MetalBorders {
 
             if (resetTransform) {
                 g2d.setTransform(new AffineTransform());
-                stkWidth = roundHalfDown(Math.min(at.getScaleX(), at.getScaleY()));
+                stkWidth = Region.clipRound(Math.min(at.getScaleX(), at.getScaleY()));
                 g2d.setStroke(new BasicStroke((float) stkWidth));
             }
 
@@ -297,10 +286,10 @@ public class MetalBorders {
             int height = 0;
 
             if (resetTransform) {
-                width = roundHalfDown(at.getScaleX() * w);
-                height = roundHalfDown(at.getScaleY() * h);
-                xtranslation = roundHalfDown(at.getScaleX() * x + at.getTranslateX());
-                ytranslation = roundHalfDown(at.getScaleY() * y + at.getTranslateY());
+                width = Region.clipRound(at.getScaleX() * w);
+                height = Region.clipRound(at.getScaleY() * h);
+                xtranslation = Region.clipRound(at.getScaleX() * x + at.getTranslateX());
+                ytranslation = Region.clipRound(at.getScaleY() * y + at.getTranslateY());
             } else {
                 width = w;
                 height = h;
@@ -310,18 +299,11 @@ public class MetalBorders {
             g2d.translate(xtranslation, ytranslation);
 
             g.setColor(background);
-            // Draw outermost lines
-            g.drawLine(0, 0, width - 1, 0);
-            g.drawLine(0, 1, 0, height - 1);
-            g.drawLine(width - 1, 1, width - 1, height - 1);
-            g.drawLine(1, height - 1, width - 1, height - 1);
-
             // loop constraint for bulk of the border
-            int loopCount = (int) Math.round(5 * at.getScaleX());
+            int loopCount = (int) Math.ceil(5 * at.getScaleX());
             // Draw the bulk of the border
-            for (int i = 1; i <= loopCount; i++) {
-                g.drawRect(x + i,y + i,width - (i * 2) - 1,
-                        height - (i * 2) - 1);
+            for (int i = 0; i <= loopCount; i++) {
+                g.drawRect(x + i,y + i,width - (i * 2), height - (i * 2));
             }
 
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
