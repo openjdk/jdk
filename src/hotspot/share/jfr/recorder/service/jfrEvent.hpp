@@ -160,11 +160,13 @@ class JfrEvent {
 
  private:
   bool should_write() {
-    return _evaluated ? _should_commit : is_enabled_for_thread() && evaluate();
-  }
-
-  static bool is_enabled_for_thread() {
-    return is_enabled() && JfrThreadLocal::is_included(Thread::current());
+    if (_evaluated) {
+      return _should_commit;
+    }
+    if (!is_enabled()) {
+      return false;
+    }
+    return evaluate() && JfrThreadLocal::is_included(Thread::current());
   }
 
   bool evaluate() {
