@@ -141,8 +141,7 @@ public class ReferenceParser {
                 qualExpr = (hash == afterSlash) ? null : parseType(sig, afterSlash, hash, dh);
                 int afterHash = hash + 1;
                 if (sig.indexOf("#", afterHash) == afterHash) {
-                    // A hash symbol followed by another hash represents a verbatim URL fragment
-                    // or static file path and is not not parsed as a member.
+                    // A hash symbol followed by another hash indicates a literal URL fragment.
                     member = null;
                 } else if (lparen == -1) {
                     member = parseMember(sig, afterHash, sig.length(), dh);

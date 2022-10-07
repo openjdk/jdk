@@ -629,12 +629,7 @@ public class HtmlDocletWriter {
         }
         DocLink targetLink;
         if (included || packageElement == null) {
-            if (fragment != null && fragment.contains("/")) {
-                // Fragments containing a slash are interpreted as static file paths relative to the package root.
-                targetLink = new DocLink(pathString(packageElement, DocPath.create(fragment)), null);
-            } else {
-                targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY), fragment);
-            }
+            targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY), fragment);
         } else {
             targetLink = getCrossPackageLink(packageElement);
         }
@@ -681,12 +676,7 @@ public class HtmlDocletWriter {
         boolean included = utils.isIncluded(mdle);
         if (included) {
             DocLink targetLink;
-            if (fragment != null && fragment.contains("/")) {
-                // Fragments containing a slash are interpreted as static file paths relative to the module root.
-                targetLink = new DocLink(pathToRoot.resolve(docPaths.modulePath(mdle, fragment)),null);
-            } else {
-                targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), fragment);
-            }
+            targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), fragment);
             Content link = links.createLink(targetLink, label, "");
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
                 link = new ContentBuilder(

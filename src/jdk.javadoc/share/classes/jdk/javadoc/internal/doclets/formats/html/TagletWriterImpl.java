@@ -546,10 +546,6 @@ public class TagletWriterImpl extends TagletWriter {
                     .label(labelContent));
         } else if (refMem == null) {
             // This is a fragment reference since refClass and refFragment are not null but refMem is null.
-            if (refFragment.contains("/")) {
-                // Link to static file, use package URL as basis
-                return htmlWriter.getPackageLink(utils.elementUtils.getPackageOf(refClass), labelContent, refFragment);
-            }
             return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SEE_TAG, refClass)
                     .label(labelContent)
                     .where(refFragment)

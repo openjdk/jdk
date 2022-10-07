@@ -89,9 +89,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     Plain link <a href="../p1/Class1.html#main">to Class1</a>.""");
         checkOrder("p2/package-summary.html",
             """
-                    <a href="Class2.html#class2-sub-heading"><code>See sub heading in p2.Class2</code></a>""",
-            """
-                    <a href="doc-files/file.html#package-p2-html-file-heading"><code>Heading in doc-files</code></a>""");
+                    <a href="Class2.html#class2-sub-heading"><code>See sub heading in p2.Class2</code></a>""");
 
         checkOrder("p2/doc-files/file.html",
             """
@@ -113,8 +111,6 @@ public class TestSeeLinkAnchor extends JavadocTester {
         checkExit(Exit.OK);
         checkOrder("m1/module-summary.html",
             """
-                    Link to <a href="../m2/doc-files/file.html"><code>doc file in module m2</code></a>.""",
-            """
                     <a href="../m2/com/m2/Class2.html#main-heading"><code>See main heading in Class2</code></a>""");
         checkOrder("m1/com/m1/Class1.html",
             """
@@ -122,7 +118,6 @@ public class TestSeeLinkAnchor extends JavadocTester {
             """
                     <li><a href="../../../m2/com/m2/Class2.html#main-heading"><code>See main heading in Class2</code></a></li>
                     <li><a href="../../module-summary.html#module-m1-heading"><code>See heading in module m1</code></a></li>
-                    <li><a href="../../../m2/doc-files/file.html#module-m2-html-file-heading"><code>See heading in module m2 HTML file</code></a></li>
                     """);
         checkOrder("m2/com/m2/Class2.html",
             """
@@ -221,7 +216,6 @@ public class TestSeeLinkAnchor extends JavadocTester {
                      * <h2>Package p2</h2>
                      *
                      * @see p2.Class2##class2-sub-heading See sub heading in p2.Class2
-                     * @see p2.Class2##doc-files/file.html#package-p2-html-file-heading Heading in doc-files
                      */
                     package p2;
                     """);
@@ -248,13 +242,11 @@ public class TestSeeLinkAnchor extends JavadocTester {
                      *
                      * @see m2/com.m2.Class2##main-heading See main heading in Class2
                      * @see m1/##module-m1-heading See heading in module m1
-                     * @see m2/##doc-files/file.html#module-m2-html-file-heading See heading in module m2 HTML file
                      */
                     public class Class1 {}
                     """)
                 .comment("""
                     <h2>Module m1</h2>
-                    Link to {@link m2/##doc-files/file.html doc file in module m2}.
                     @see m2/com.m2.Class2##main-heading See main heading in Class2
                     """)
                 .write(src);
