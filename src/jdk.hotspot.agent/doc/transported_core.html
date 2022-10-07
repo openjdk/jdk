@@ -54,7 +54,8 @@ may still face problems with transported core dumps, because matching shared
 objects may not be in the path(s) specified in core dump file. To
 workaround this, you can define environment variable <b>SA_ALTROOT</b>
 to be the directory where shared libraries are kept. In this directory you should
-copy all the needed JDK libraries. You should also copy any referenced linux
+copy all the needed JDK libraries, and any other user JNI libraries that were used.
+You should also copy any referenced linux
 libraries from the core dump machine, unless they are identical to what are
 installed on the debugger machine.
 </p>
@@ -80,8 +81,9 @@ installed on the debugger machine.
 </p>
 
 <p>
- If the windows libraries are not identical, then they may also need to be copied
- to the debugger machine and included in <b>PATH</b>.
+You can also include user JNI libraries in <b>PATH</b>.
+If the windows libraries are not identical, then they may also need to be copied
+to the debugger machine and included in <b>PATH</b>.
 </p>
 
 <h3>Using  transported core dumps on macOS</h3>
