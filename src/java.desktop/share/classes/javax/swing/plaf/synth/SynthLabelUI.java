@@ -47,8 +47,6 @@ import java.beans.PropertyChangeEvent;
  */
 public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     private SynthStyle style;
-    private Color fgColor;
-
     /**
      *
      * Constructs a {@code SynthLabelUI}.
@@ -71,12 +69,16 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     @Override
     protected void installDefaults(JLabel c) {
         updateStyle(c);
-        fgColor =  UIManager.getColor("Label.foreground");
+        Color fg = c.getForeground();
+        if (fg == null || fg instanceof UIResource) {
+            c.setForeground(UIManager.getColor("Label.foreground"));
+        }
     }
 
     void updateStyle(JLabel c) {
         SynthContext context = getContext(c, ENABLED);
         style = SynthLookAndFeel.updateStyle(context, this);
+
     }
 
     /**
@@ -88,6 +90,10 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
 
         style.uninstallDefaults(context);
         style = null;
+        Color fg = c.getForeground();
+        if (fg instanceof UIResource) {
+            c.setForeground(null);
+        }
     }
 
     /**
@@ -217,9 +223,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
         } else {
             g.setColor(context.getStyle().getColor(context,
                     ColorType.TEXT_FOREGROUND));
-            if (fgColor != null) {
-                label.setForeground(fgColor);
-            }
         }
 
         g.setFont(style.getFont(context));
