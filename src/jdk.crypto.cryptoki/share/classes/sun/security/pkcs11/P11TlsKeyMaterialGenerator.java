@@ -215,8 +215,13 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                 serverMacKey = P11Key.secretKey
                     (session, out.hServerMacSecret, "MAC", macBits, attributes);
             } else {
-                token.p11.C_DestroyObject(session.id(), out.hClientMacSecret);
-                token.p11.C_DestroyObject(session.id(), out.hServerMacSecret);
+                // NSS allocates MAC keys even if macBits is zero
+                if (out.hClientMacSecret != CK_INVALID_HANDLE) {
+                    token.p11.C_DestroyObject(session.id(), out.hClientMacSecret);
+                }
+                if (out.hServerMacSecret != CK_INVALID_HANDLE) {
+                    token.p11.C_DestroyObject(session.id(), out.hServerMacSecret);
+                }
                 clientMacKey = null;
                 serverMacKey = null;
             }
