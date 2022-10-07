@@ -730,7 +730,7 @@ class Tcp {
             return reader.read();
         }
         finally {
-            timeoutLeft -= System.currentTimeMillis() - start;
+            timeoutLeft -= (int) (System.currentTimeMillis() - start);
         }
     }
 
