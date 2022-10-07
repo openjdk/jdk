@@ -184,7 +184,6 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
       if (method->is_hidden()) {
         LogTarget(Debug, stackwalk) lt;
         if (lt.is_enabled()) {
-          ResourceMark rm(THREAD);
           LogStream ls(lt);
           ls.print("  hidden method: ");
           method->print_short_name(&ls);
@@ -197,7 +196,6 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     int index = end_index++;
     LogTarget(Debug, stackwalk) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
       LogStream ls(lt);
       ls.print("  %d: frame method: ", index);
       method->print_short_name(&ls);
@@ -215,7 +213,6 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     stream.fill_frame(index, frames_array, methodHandle(THREAD, method), CHECK_0);
 
     if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
       LogStream ls(lt);
       ls.print("  %d: done frame method: ", index);
       method->print_short_name(&ls);
@@ -414,7 +411,6 @@ oop StackWalk::walk(Handle stackStream, jlong mode, int skip_frames, Handle cont
   log_debug(stackwalk)("Start walking: mode " JLONG_FORMAT " skip %d frames batch size %d", mode, skip_frames, frame_count);
   LogTarget(Debug, stackwalk) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
     LogStream ls(lt);
     if (cont_scope() != nullptr) {
       ls.print("cont_scope: ");
@@ -462,7 +458,6 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
 
       LogTarget(Debug, stackwalk) lt;
       if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         ls.print("  skip ");
         stream.method()->print_short_name(&ls);
@@ -476,7 +471,6 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
     for (int n=0; n < skip_frames && !stream.at_end(); stream.next(), n++) {
       LogTarget(Debug, stackwalk) lt;
       if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         ls.print("  skip ");
         stream.method()->print_short_name(&ls);

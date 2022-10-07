@@ -2095,7 +2095,6 @@ static Method* unpack_method_and_appendix(Handle mname,
       oop appendix = appendix_box->obj_at(0);
       LogTarget(Info, methodhandles) lt;
       if (lt.develop_is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         ls.print("Linked method=" INTPTR_FORMAT ": ", p2i(m));
         m->print_on(&ls);

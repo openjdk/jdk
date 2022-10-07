@@ -251,7 +251,6 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
     assert(m_klass->verify_itable_index(vmindex), "");
     flags |= IS_METHOD | (JVM_REF_invokeInterface << REFERENCE_KIND_SHIFT);
     if (lt_indy.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(lt_indy);
       ls.print_cr("memberName: invokeinterface method_holder::method: %s, itableindex: %d, access_flags:",
                   Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),

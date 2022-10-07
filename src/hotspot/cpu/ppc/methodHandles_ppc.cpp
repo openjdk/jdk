@@ -505,7 +505,6 @@ void trace_method_handle_stub(const char* adaptername,
 
   LogTarget(Trace, methodhandles) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     ls.print_cr("Registers:");
     const int abi_offset = frame::abi_reg_args_size / 8;

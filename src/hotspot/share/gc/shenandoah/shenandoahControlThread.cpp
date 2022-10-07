@@ -265,7 +265,6 @@ void ShenandoahControlThread::run_service() {
       {
         LogTarget(Info, gc, stats) lt;
         if (lt.is_enabled()) {
-          ResourceMark rm;
           LogStream ls(lt);
           heap->phase_timings()->print_cycle_on(&ls);
           if (ShenandoahPacing) {

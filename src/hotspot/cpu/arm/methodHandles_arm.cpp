@@ -506,7 +506,6 @@ void trace_method_handle_stub(const char* adaptername,
   }
   LogTarget(Trace, methodhandles) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     ls.print(" reg dump: ");
     int i;

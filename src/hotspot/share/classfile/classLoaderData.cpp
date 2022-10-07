@@ -92,7 +92,6 @@ void ClassLoaderData::init_null_class_loader_data() {
 
   LogTarget(Trace, class, loader, data) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     ls.print("create ");
     _the_null_class_loader_data->print_value_on(&ls);
@@ -451,7 +450,6 @@ void ClassLoaderData::record_dependency(const Klass* k) {
     NOT_PRODUCT(Atomic::inc(&_dependency_count));
     LogTarget(Trace, class, loader, data) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(lt);
       ls.print("adding dependency from ");
       print_value_on(&ls);
@@ -537,7 +535,6 @@ void ClassLoaderData::unload() {
 
   LogTarget(Trace, class, loader, data) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     ls.print("unload");
     print_value_on(&ls);

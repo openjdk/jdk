@@ -89,7 +89,6 @@ inline void GenericTaskQueueSet<T, F>::print_and_reset_taskqueue_stats(const cha
     return;
   }
   Log(gc, task, stats) log;
-  ResourceMark rm;
   LogStream ls(log.trace());
 
   print_taskqueue_stats(&ls, label);

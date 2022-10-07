@@ -1856,6 +1856,7 @@ static void log_deopt(CompiledMethod* nm, Method* tm, intptr_t pc, frame& fr, in
                               const char* reason_name, const char* reason_action) {
   LogTarget(Debug, deoptimization) lt;
   if (lt.is_enabled()) {
+    ResourceMark rm;
     LogStream ls(lt);
     bool is_osr = nm->is_osr_method();
     ls.print("cid=%4d %s level=%d",

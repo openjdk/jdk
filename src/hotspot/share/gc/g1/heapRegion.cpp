@@ -592,7 +592,6 @@ public:
           log.error("Missing rem set entry:");
           log.error("Field " PTR_FORMAT " of obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
-          ResourceMark rm;
           LogStream ls(log.error());
           _containing_obj->print_on(&ls);
           log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",

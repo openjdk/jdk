@@ -572,7 +572,6 @@ void trace_method_handle_stub(const char* adaptername,
   LogTarget(Trace, methodhandles) lt;
   if (lt.is_enabled()) {
     // Dumping last frame with frame::describe.
-    ResourceMark rm;
     LogStream ls(lt);
     JavaThread* p = JavaThread::active();
 

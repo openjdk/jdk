@@ -1193,7 +1193,6 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
 void ShenandoahHeap::print_tracing_info() const {
   LogTarget(Info, gc, stats) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
 
     phase_timings()->print_global_on(&ls);

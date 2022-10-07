@@ -677,7 +677,6 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
   LogTarget(Debug, defaultmethods) lt;
   if (lt.is_enabled()) {
     lt.print("Slots that need filling:");
-    ResourceMark rm;
     LogStream ls(lt);
     streamIndentor si(&ls);
     for (int i = 0; i < slots->length(); ++i) {
@@ -965,7 +964,6 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
 
       LogTarget(Debug, defaultmethods) lt;
       if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         ls.print("for slot: ");
         slot->print_on(&ls);

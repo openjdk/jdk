@@ -226,7 +226,6 @@ void PSParallelCompact::print_region_ranges() {
     return;
   }
   Log(gc, compaction) log;
-  ResourceMark rm;
   LogStream ls(log.trace());
   Universe::print_on(&ls);
   log.trace("space  bottom     top        end        new_top");
@@ -2339,7 +2338,6 @@ void PSParallelCompact::write_block_fill_histogram()
   }
 
   Log(gc, compaction) log;
-  ResourceMark rm;
   LogStream ls(log.trace());
   outputStream* out = &ls;
 

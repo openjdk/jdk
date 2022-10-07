@@ -63,7 +63,6 @@ void ShenandoahObjToScanQueueSet::print_taskqueue_stats() const {
     return;
   }
   Log(gc, task, stats) log;
-  ResourceMark rm;
   LogStream ls(log.trace());
   outputStream* st = &ls;
   print_taskqueue_stats_hdr(st);

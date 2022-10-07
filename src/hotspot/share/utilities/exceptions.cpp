@@ -62,7 +62,6 @@ void ThreadShadow::set_pending_exception(oop exception, const char* file, int li
 void ThreadShadow::clear_pending_exception() {
   LogTarget(Debug, exceptions) lt;
   if (_pending_exception != NULL && lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     ls.print("Thread::clear_pending_exception: cleared exception:");
     _pending_exception->print_on(&ls);

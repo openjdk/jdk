@@ -259,7 +259,6 @@ void Dictionary::add_klass(JavaThread* current, Symbol* class_name,
     // It would be nice to have a JFR event here, add some logging.
     LogTarget(Info, class, loader, data) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(&lt);
       ls.print("Dictionary resized to %d entries %d for ", table_size(), _number_of_entries);
       loader_data()->print_value_on(&ls);
@@ -375,7 +374,6 @@ void Dictionary::validate_protection_domain(InstanceKlass* klass,
 
     LogTarget(Debug, protectiondomain) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
       // Print out trace information
       LogStream ls(lt);
       ls.print_cr("Checking package access");
@@ -428,7 +426,6 @@ void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainE
         if (current->object_no_keepalive() == NULL) {
           LogTarget(Debug, protectiondomain) lt;
           if (lt.is_enabled()) {
-            ResourceMark rm;
             // Print out trace information
             LogStream ls(lt);
             ls.print_cr("PD in set is not alive:");

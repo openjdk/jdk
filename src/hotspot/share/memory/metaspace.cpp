@@ -848,7 +848,6 @@ void Metaspace::global_initialize() {
     // Note: "cds" would be a better fit but keep this for backward compatibility.
     LogTarget(Info, gc, metaspace) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(lt);
       CDS_ONLY(MetaspaceShared::print_on(&ls);)
       Metaspace::print_compressed_class_space(&ls);
@@ -941,7 +940,6 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
   if (log.is_info()) {
     log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
              is_class_space_allocation(mdtype) ? "class" : "data", word_size);
-    ResourceMark rm;
     if (log.is_debug()) {
       if (loader_data->metaspace_or_null() != NULL) {
         LogStream ls(log.debug());

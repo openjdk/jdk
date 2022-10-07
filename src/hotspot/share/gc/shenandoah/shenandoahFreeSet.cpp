@@ -448,7 +448,6 @@ void ShenandoahFreeSet::log_status() {
 
   LogTarget(Info, gc, ergo) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
 
     {

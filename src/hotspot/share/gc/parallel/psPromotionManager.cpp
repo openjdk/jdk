@@ -153,7 +153,6 @@ void PSPromotionManager::print_taskqueue_stats() {
     return;
   }
   Log(gc, task, stats) log;
-  ResourceMark rm;
   LogStream ls(log.trace());
 
   stack_array_depth()->print_taskqueue_stats(&ls, "Oop Queue");

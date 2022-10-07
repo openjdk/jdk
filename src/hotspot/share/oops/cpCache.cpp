@@ -399,7 +399,6 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   LogStream* log_stream = NULL;
   LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
   if (lsh_indy.is_enabled()) {
-    ResourceMark rm;
     log_stream = &lsh_indy;
     log_stream->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method=" PTR_FORMAT " (local signature) ",
                          invoke_code,
