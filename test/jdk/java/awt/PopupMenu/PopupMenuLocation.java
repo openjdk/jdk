@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
@@ -33,8 +34,15 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
+import javax.imageio.ImageIO;
+import javax.swing.SwingUtilities;
+
 
 /**
  * @test
@@ -48,8 +56,12 @@ public final class PopupMenuLocation {
     public static final String TEXT =
             "Long-long-long-long-long-long-long text in the item-";
     private static volatile boolean action = false;
+    private static Robot robot;
+
 
     public static void main(final String[] args) throws Exception {
+        robot = new Robot();
+        robot.setAutoDelay(200);
         GraphicsEnvironment ge =
                 GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] sds = ge.getScreenDevices();
@@ -71,10 +83,11 @@ public final class PopupMenuLocation {
 
     private static void test(final Point tmp) throws Exception {
         PopupMenu pm = new PopupMenu();
-        for (int i = 1; i < 7; i++) {
-            pm.add(TEXT + i);
-        }
-        pm.addActionListener(e -> action = true);
+        IntStream.rangeClosed(1, 6).forEach(i -> pm.add(TEXT + i));
+        pm.addActionListener(e -> {
+            action = true;
+            System.out.println(" Got action event " + e);
+        });
         Frame frame = new Frame();
         try {
             frame.setAlwaysOnTop(true);
@@ -106,22 +119,37 @@ public final class PopupMenuLocation {
     }
 
     private static void openPopup(final Frame frame) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(200);
         robot.waitForIdle();
-        Point pt = frame.getLocationOnScreen();
-        robot.mouseMove(pt.x + frame.getWidth() / 2, pt.y + 50);
+        final AtomicReference<Point> pointObj = new AtomicReference<>();
+        SwingUtilities.invokeAndWait(() -> pointObj.set(frame.getLocationOnScreen()));
+        Point pt = pointObj.get();
+        int x = pt.x + frame.getWidth() / 2;
+        int y = pt.y + 50;
+        robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-        int x = pt.x + frame.getWidth() / 2;
-        int y = pt.y + 130;
+         y = y+50;
         robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
         if (!action) {
-            throw new RuntimeException();
+            captureScreen();
+            throw new RuntimeException(
+                    "Failed, Not received the PopupMenu ActionEvent yet");
         }
         action = false;
     }
+
+    private static void captureScreen() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        try {
+            ImageIO.write(robot.createScreenCapture(
+                    new Rectangle(0, 0, screenSize.width, screenSize.height)),
+                          "png", new File("screen1.png"));
+        } catch (IOException ignore) {
+        }
+        action = false;
+    }
+
 }
