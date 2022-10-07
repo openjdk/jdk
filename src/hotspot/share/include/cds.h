@@ -39,7 +39,7 @@
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
 #define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
-#define CURRENT_CDS_ARCHIVE_VERSION 14
+#define CURRENT_CDS_ARCHIVE_VERSION 15
 
 typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
@@ -81,6 +81,12 @@ typedef struct GenericCDSFileMapHeader {
                                           //   dynamic:
                                           //     0 for default base archive
                                           //     non-zero for non-default base archive
+  unsigned int _common_app_classpath_offset; // offset to the common prefix of app class paths
+                                             // if there exists a common prefix, the following offset
+                                             // points to a 0-terminated string for the prefix
+                                             // (char*)this + _base_archive_name_offset + _common_app_classpath_offset
+  unsigned int _common_app_classpath_size;   // size of the common prefix of app class paths
+                                             //    0 if no common prefix exists
 } GenericCDSFileMapHeader;
 
 // This type is used by the Serviceability Agent to access the contents of

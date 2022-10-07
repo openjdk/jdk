@@ -53,6 +53,8 @@ public class CDSArchiveUtils {
     private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
     private static int offsetVersion;              // offset of GenericCDSFileMapHeader::_version
     private static int offsetHeaderSize;           // offset of GenericCDSFileMapHeader::_header_size
+    private static int offsetCommonAppClasspathOffset;// offset of GenericCDSFileMapHeader::_common_app_classpath_offset
+    private static int offsetCommonAppClasspathSize;// offset of GenericCDSFileMapHeader::_common_app_classpath_size
     private static int offsetBaseArchiveNameOffset;// offset of GenericCDSFileMapHeader::_base_archive_name_offset
     private static int offsetBaseArchiveNameSize;  // offset of GenericCDSFileMapHeader::_base_archive_name_size
     private static int offsetJvmIdent;             // offset of FileMapHeader::_jvm_ident
@@ -93,6 +95,8 @@ public class CDSArchiveUtils {
             offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
             offsetVersion = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_version");
             offsetHeaderSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_header_size");
+            offsetCommonAppClasspathOffset = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_common_app_classpath_offset");
+            offsetCommonAppClasspathSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_common_app_classpath_size");
             offsetBaseArchiveNameOffset = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_offset");
             offsetBaseArchiveNameSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_size");
             offsetJvmIdent = wb.getCDSOffsetForName("FileMapHeader::_jvm_ident");
@@ -131,6 +135,8 @@ public class CDSArchiveUtils {
     public static int offsetCrc()                   { return offsetCrc;                   }
     public static int offsetVersion()               { return offsetVersion;               }
     public static int offsetHeaderSize()            { return offsetHeaderSize;            }
+    public static int offsetCommonAppClasspathOffset() { return offsetCommonAppClasspathOffset; }
+    public static int offsetCommonAppClasspathSize() { return offsetCommonAppClasspathSize; }
     public static int offsetBaseArchiveNameOffset() { return offsetBaseArchiveNameOffset; }
     public static int offsetBaseArchiveNameSize()   { return offsetBaseArchiveNameSize;   }
     public static int offsetJvmIdent()              { return offsetJvmIdent;              }
@@ -156,6 +162,14 @@ public class CDSArchiveUtils {
     public static long fileHeaderSizeAligned(File jsaFile) throws Exception {
         long size = fileHeaderSize(jsaFile);
         return alignUpWithAlignment(size);
+    }
+
+    public static int commonAppClasspathOffset(File jsaFile) throws Exception {
+        return (int)readInt(jsaFile, offsetCommonAppClasspathOffset, 4);
+    }
+
+    public static int commonAppClasspathSize(File jsaFile) throws Exception {
+        return (int)readInt(jsaFile, offsetCommonAppClasspathSize, 4);
     }
 
     public static int baseArchiveNameOffset(File jsaFile) throws Exception {
