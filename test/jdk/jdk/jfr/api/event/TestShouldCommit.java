@@ -33,6 +33,9 @@ import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.consumer.RecordingFile;
 
+import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertFalse;
+
 /**
  * @test
  * @summary Test jdk.jfr.Event::shouldCommit()
@@ -90,26 +93,28 @@ public class TestShouldCommit {
         testEnablement();
         testThreshold();
         testCustomSetting();
-        testShouldCommitWithoutEnd();
-        testCommitAfterShouldCommit();
+        testWithoutEnd();
+        testCommit();
     }
 
     private static void testEnablement() throws Exception {
+        DogEvent b = new DogEvent();
+        assertFalse(b.shouldCommit(), "Expected false before recording is started");
+
         try (Recording r = new Recording()) {
             r.enable(CatEvent.class);
             r.disable(DogEvent.class);
             r.start();
-            // Test enabled event
+
             CatEvent c = new CatEvent();
-            if (!c.shouldCommit()) {
-                throw new Exception("Expected shouldCommit to be true");
-            }
-            // Test disabled event
+            assertTrue(c.shouldCommit(), "Expected true for enabled event");
+
             DogEvent d = new DogEvent();
-            if (d.shouldCommit()) {
-                throw new Exception("Expected shouldCommit to be false");
-            }
+            assertFalse(d.shouldCommit(), "Expected false for disabled event");
         }
+
+        CatEvent c = new CatEvent();
+        assertFalse(c.shouldCommit(), "Expected false after recording is stopped");
     }
 
     private static void testThreshold() throws Exception {
@@ -117,22 +122,18 @@ public class TestShouldCommit {
             r.enable(CatEvent.class).withThreshold(Duration.ofNanos(0));
             r.enable(DogEvent.class).withThreshold(Duration.ofDays(1));
             r.start();
-            // Test event above threshold
+
             CatEvent c = new CatEvent();
             c.begin();
             Thread.sleep(1);
             c.end();
-            if (!c.shouldCommit()) {
-                throw new Exception("Expected shouldCommit to be true");
-            }
-            // Test event below threshold
+            assertTrue(c.shouldCommit(), "Expected true if above threshold");
+
             DogEvent d = new DogEvent();
             d.begin();
             Thread.sleep(1);
             d.end();
-            if (d.shouldCommit()) {
-                throw new Exception("Expected shouldCommit to be false");
-            }
+            assertFalse(d.shouldCommit(), "Expected false if below threshold");
         }
     }
 
@@ -140,48 +141,39 @@ public class TestShouldCommit {
         try (Recording r = new Recording()) {
             r.enable(BirdEvent.class).with("fly", "true");
             r.start();
-            // Test rejection by custom setting
             BirdEvent b1 = new BirdEvent();
             b1.isFlying = false;
             b1.begin();
             b1.end();
-            if (b1.shouldCommit()) {
-                throw new Exception("Expected shouldCommit to be false");
-            }
-            // Test acceptance by custom setting
+            assertFalse(b1.shouldCommit(), "Expected false if rejected by custom setting");
+
             BirdEvent b2 = new BirdEvent();
             b2.isFlying = true;
             b2.begin();
             b2.end();
-            if (!b2.shouldCommit()) {
-                throw new Exception("Expected shouldCommit to be true");
-            }
+            assertTrue(b2.shouldCommit(), "Expected true if accepted by custom setting");
         }
     }
 
-    private static void testShouldCommitWithoutEnd() throws Exception {
+    private static void testWithoutEnd() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(CatEvent.class).withThreshold(Duration.ofDays(0));
             r.enable(DogEvent.class).withThreshold(Duration.ofDays(1));
             r.start();
-            // Test above threshold
+
             CatEvent c = new CatEvent();
             c.begin();
             Thread.sleep(1);
-            if (!c.shouldCommit()) {
-                throw new Exception("Expected shouldCommit to be true");
-            }
-            // Test below threshold
+            assertTrue(c.shouldCommit(), "Expected true when above threshold and end() not invoked");
+
             DogEvent d = new DogEvent();
             d.begin();
             Thread.sleep(1);
-            if (d.shouldCommit()) {
-                throw new Exception("Expected shouldCommit to be false");
-            }
+            assertFalse(d.shouldCommit(), "Expected false when below threshold and end() not invoked");
         }
     }
 
-    private static void testCommitAfterShouldCommit() throws Exception {
+    private static void testCommit() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(CatEvent.class);
             r.start();
@@ -195,9 +187,8 @@ public class TestShouldCommit {
             r.stop();
             Path file = Path.of("dump.jfr");
             r.dump(file);
-            if (RecordingFile.readAllEvents(file).isEmpty()) {
-                throw new Exception("Expected event");
-            }
+            boolean hasEvent = RecordingFile.readAllEvents(file).size() > 0;
+            assertTrue(hasEvent, "Expected event when using commit() after shouldCommit()");
         }
     }
 }
