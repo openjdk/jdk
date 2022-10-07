@@ -2865,8 +2865,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     // Save caller's sp & return_pc
-    __ push_frame(frame::z_abi_16_size);
     __ save_return_pc();
+    __ push_frame(frame::z_abi_16_size);
 
     // Prep arg for VM call
     // Since we call address* -> int and not address -> int, we must provide an extra level of indirection.
@@ -2879,8 +2879,8 @@ class StubGenerator: public StubCodeGenerator {
     __ pop_frame();
 
     // Restore caller's sp & return_pc
-    __ restore_return_pc();
     __ pop_frame();
+    __ restore_return_pc();
 
     // Check return val of vm call
     // if (return val != 0)
