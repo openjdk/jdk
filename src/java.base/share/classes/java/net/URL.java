@@ -170,6 +170,14 @@ import sun.security.action.GetPropertyAction;
  * the recommendations advised in <a
  * href="https://tools.ietf.org/html/rfc3986#section-7">RFC3986,
  * Section 7, Security Considerations</a>.
+ * <p>
+ * All {@code URL} constructors may additionally throw
+ * {@link MalformedURLException} if the underlying {@link URLStreamHandler}
+ * implementation rejects, or is known to reject, any of the parameters.
+ * In particular, if {@link URLStreamHandler#parseURL(URL, String, int, int)
+ * URLStreamHandler.parseURL} is called and throws {@code IllegalArgumentException}.
+ * However, which checks are performed is implementation dependent, and
+ * callers should not rely on such checks for full URL validation.
  *
  * @author  James Gosling
  * @since 1.0
@@ -352,7 +360,9 @@ public final class URL implements java.io.Serializable {
      * @param      port       the port number on the host.
      * @param      file       the file on the host
      * @throws     MalformedURLException  if an unknown protocol or the port
-     *                  is a negative number other than -1
+     *                  is a negative number other than -1, or if the
+     *                  underlying protocol implementation rejects the
+     *                  {@code URL}
      * @see        java.lang.System#getProperty(java.lang.String)
      * @see        java.net.URL#setURLStreamHandlerFactory(
      *                  java.net.URLStreamHandlerFactory)
@@ -380,7 +390,9 @@ public final class URL implements java.io.Serializable {
      * @param      protocol   the name of the protocol to use.
      * @param      host       the name of the host.
      * @param      file       the file on the host.
-     * @throws     MalformedURLException  if an unknown protocol is specified.
+     * @throws     MalformedURLException  if an unknown protocol is specified,
+     *                        or if the underlying protocol implementation
+     *                        rejects the {@code URL}
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *                  int, java.lang.String)
      */
@@ -415,7 +427,9 @@ public final class URL implements java.io.Serializable {
      * @param      file       the file on the host
      * @param      handler    the stream handler for the URL.
      * @throws     MalformedURLException  if an unknown protocol or the port
-     *                    is a negative number other than -1
+     *                    is a negative number other than -1, or if the
+     *                    underlying protocol implementation rejects the
+     *                    {@code URL}
      * @throws     SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow
