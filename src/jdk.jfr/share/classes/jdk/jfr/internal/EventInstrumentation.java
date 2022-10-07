@@ -60,15 +60,7 @@ import jdk.jfr.internal.event.EventWriter;
  */
 public final class EventInstrumentation {
 
-    record SettingInfo(String fieldName, int index, Type paramType, String methodName, SettingControl settingControl) {
-        /**
-         * A malicious user must never be able to run a callback in the wrong
-         * context. Methods on SettingControl must therefore never be invoked directly
-         * by JFR, instead use jdk.jfr.internal.Control.
-         */
-        public SettingControl settingControl() {
-            return this.settingControl;
-        }
+    record SettingInfo(Type paramType, String methodName) {
     }
 
     record FieldInfo(String fieldName, String fieldDescriptor, String internalClassName) {
@@ -244,10 +236,8 @@ public final class EventInstrumentation {
                             Type[] args = Type.getArgumentTypes(m.desc);
                             if (args.length == 1) {
                                 Type paramType = args[0];
-                                String fieldName = EventControl.FIELD_SETTING_PREFIX + settingInfos.size();
-                                int index = settingInfos.size();
                                 methodSet.add(m.name);
-                                settingInfos.add(new SettingInfo(fieldName, index, paramType, m.name, null));
+                                settingInfos.add(new SettingInfo(paramType, m.name));
                             }
                         }
                     }
@@ -263,10 +253,8 @@ public final class EventInstrumentation {
                             if (method.getParameterCount() == 1) {
                                 Parameter param = method.getParameters()[0];
                                 Type paramType = Type.getType(param.getType());
-                                String fieldName = EventControl.FIELD_SETTING_PREFIX + settingInfos.size();
-                                int index = settingInfos.size();
                                 methodSet.add(method.getName());
-                                settingInfos.add(new SettingInfo(fieldName, index, paramType, method.getName(), null));
+                                settingInfos.add(new SettingInfo(paramType, method.getName()));
                             }
                         }
                     }
@@ -633,8 +621,8 @@ public final class EventInstrumentation {
             methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_DURATION, "J");
             invokeVirtual(methodVisitor, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT);
             methodVisitor.visitJumpInsn(Opcodes.IFEQ, fail);
-            int index = 0;
-            for (SettingInfo si : settingInfos) {
+            for (int index = 0; index < settingInfos.size(); index++) {
+                SettingInfo si = settingInfos.get(index);
                 // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
                 methodVisitor.visitIntInsn(Opcodes.ALOAD, 0);
                 if (untypedEventConfiguration) {
@@ -648,7 +636,6 @@ public final class EventInstrumentation {
                 methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, si.paramType().getInternalName());
                 methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), si.methodName, "(" + si.paramType().getDescriptor() + ")Z", false);
                 methodVisitor.visitJumpInsn(Opcodes.IFEQ, fail);
-                index++;
             }
             // return true
             methodVisitor.visitInsn(Opcodes.ICONST_1);
