@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.net.http.HttpResponse;
 
 public class UserInfoTest {
 
-    static class Http2TestHandler implements Http2Handler{
+    static class Http2TestHandler implements Http2Handler {
         @Override
         public void handle(Http2TestExchange e) throws IOException {
             InputStream is = e.getRequestBody();
@@ -55,7 +55,7 @@ public class UserInfoTest {
             }
             is.readAllBytes();
             is.close();
-            if(e.getRequestURI().getAuthority().contains("user@")){
+            if (e.getRequestURI().getAuthority().contains("user@")) {
                 e.sendResponseHeaders(500, -1);
             } else {
                 e.sendResponseHeaders(200, -1);
@@ -64,7 +64,7 @@ public class UserInfoTest {
     }
 
     private static Http2TestServer createServer(SSLContext sslContext) throws Exception {
-        Http2TestServer http2TestServer = new Http2TestServer("localhost",true, sslContext);
+        Http2TestServer http2TestServer = new Http2TestServer("localhost", true, sslContext);
         Http2TestHandler handler = new Http2TestHandler();
         http2TestServer.addHandler(handler, "/");
         return http2TestServer;
@@ -89,11 +89,14 @@ public class UserInfoTest {
                 .GET()
                 .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if(response.statusCode()==500){
-            throw new RuntimeException("Test Failed : " + response.uri().getAuthority());
+            if (response.statusCode() == 500) {
+                throw new RuntimeException("Test Failed : " + response.uri().getAuthority());
+            }
+        } finally {
+            server.stop();
         }
-        server.stop();
     }
 }

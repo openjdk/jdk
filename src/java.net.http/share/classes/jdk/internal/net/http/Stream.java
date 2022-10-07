@@ -751,9 +751,9 @@ class Stream<T> extends ExchangeImpl<T> {
         hdrs.setHeader(":method", method);
         URI uri = request.uri();
         hdrs.setHeader(":scheme", uri.getScheme());
-        if(uri.getHost() != null && uri.getPort() != -1) {
+        if (uri.getHost() != null && uri.getPort() != -1) {
             hdrs.setHeader(":authority", uri.getHost() + ":" + uri.getPort());
-        } else if (uri.getHost()!=null) {
+        } else if (uri.getHost() != null) {
             hdrs.setHeader(":authority", uri.getHost());
         }
         String query = uri.getRawQuery();
