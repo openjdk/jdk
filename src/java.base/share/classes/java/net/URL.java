@@ -361,8 +361,8 @@ public final class URL implements java.io.Serializable {
      * @param      file       the file on the host
      * @throws     MalformedURLException  if an unknown protocol or the port
      *                  is a negative number other than -1, or if the
-     *                  underlying protocol implementation rejects the
-     *                  {@code URL}
+     *                  underlying stream handler implementation rejects,
+     *                  or is known to reject, the {@code URL}
      * @see        java.lang.System#getProperty(java.lang.String)
      * @see        java.net.URL#setURLStreamHandlerFactory(
      *                  java.net.URLStreamHandlerFactory)
@@ -391,8 +391,8 @@ public final class URL implements java.io.Serializable {
      * @param      host       the name of the host.
      * @param      file       the file on the host.
      * @throws     MalformedURLException  if an unknown protocol is specified,
-     *                        or if the underlying protocol implementation
-     *                        rejects the {@code URL}
+     *                        or if the underlying stream handler implementation
+     *                        rejects, or is known to reject, the {@code URL}
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *                  int, java.lang.String)
      */
@@ -427,9 +427,9 @@ public final class URL implements java.io.Serializable {
      * @param      file       the file on the host
      * @param      handler    the stream handler for the URL.
      * @throws     MalformedURLException  if an unknown protocol or the port
-     *                    is a negative number other than -1, or if the
-     *                    underlying protocol implementation rejects the
-     *                    {@code URL}
+     *                    is a negative number other than -1,
+     *                    or if the underlying stream handler implementation
+     *                    rejects, or is known to reject, the {@code URL}
      * @throws     SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow
