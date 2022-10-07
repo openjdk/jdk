@@ -92,6 +92,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
     __ z_cfi(tmp, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)
 
     // Conditional Jump
+    __ z_larl(Z_R14, (Assembler::instr_len((unsigned long)LARL_ZOPC) + Assembler::instr_len((unsigned long)BCR_ZOPC)) / 2); // 6 bytes
     __ z_bcr(Assembler::bcondNotEqual, Z_R1_scratch); // 2 bytes
 
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");

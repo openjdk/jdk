@@ -45,7 +45,7 @@ class NativeMethodBarrier: public NativeInstruction {
     }
 
   public:
-    static const int BARRIER_TOTAL_LENGTH = GUARD_INSTRUCTION_OFFSET + 6 + 2; // bytes
+    static const int BARRIER_TOTAL_LENGTH = GUARD_INSTRUCTION_OFFSET + 2*6 + 2; // bytes
 
     int get_guard_value() const {
       NativeMovRegMem* guard_addr = get_patchable_instruction_handle();

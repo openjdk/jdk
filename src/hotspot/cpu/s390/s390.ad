@@ -848,7 +848,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-  Register nmethod_tmp = Z_R3;
+  // Register nmethod_tmp = Z_R3;
 
   __ verify_thread();
 
