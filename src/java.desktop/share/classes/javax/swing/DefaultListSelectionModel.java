@@ -449,6 +449,10 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             if (shouldClear) {
                 clear(i);
             }
+            // Integer overlfow
+            if (i + 1 < i) {
+                break;
+            }
         }
         fireValueChanged();
     }
@@ -686,6 +690,8 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * the selection model.  This is typically called to sync the selection
      * model width a corresponding change in the data model.  Note
      * that (as always) index0 need not be &lt;= index1.
+     *
+     * @throws IndexOutOfBoundsException if either index is negative
      */
     public void removeIndexInterval(int index0, int index1)
     {
@@ -698,10 +704,12 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          * gap.
          */
         for(int i = rmMinIndex; i <= maxIndex; i++) {
-            if ((i + gapLength) > gapLength) {
+
+            if ((i + gapLength) >= gapLength) {
                 setState(i, value.get(i + gapLength));
             } else {
                 setState(i, value.get(gapLength));
+                break;
             }
         }
 
