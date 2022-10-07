@@ -130,7 +130,9 @@ public abstract class URLStreamHandler {
      *                  "{@code #}" character, if present. All information
      *                  after the sharp sign indicates an anchor.
      * @throws IllegalArgumentException if the implementation of the protocol
-     *                    handler rejects any of the given parameters
+     *                  handler rejects any of the given parameters
+     * @throws NullPointerException if {@code u} is {@code null} or {@code start < limit}
+     *                  and {@code spec} is {@code null}
      */
     protected void parseURL(URL u, String spec, int start, int limit) {
         // These fields may receive context content if this was relative URL
@@ -501,6 +503,7 @@ public abstract class URLStreamHandler {
      *                                  different from this one
      * @throws IllegalArgumentException if the implementation of the protocol
      *                    handler rejects any of the given parameters
+     * @throws NullPointerException if {@code u} is {@code null}
      * @since 1.3
      */
     protected void setURL(URL u, String protocol, String host, int port,
@@ -532,6 +535,7 @@ public abstract class URLStreamHandler {
      *                                  different from this one
      * @throws IllegalArgumentException if the implementation of the protocol
      *                    handler rejects any of the given parameters
+     * @throws NullPointerException if {@code u} is {@code null}
      * @deprecated Use setURL(URL, String, String, int, String, String, String,
      *             String);
      */
