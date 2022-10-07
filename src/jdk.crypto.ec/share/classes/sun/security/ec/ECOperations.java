@@ -304,9 +304,6 @@ public class ECOperations {
         p.getY().setValue(t2).setProduct(b);
         p.getY().setDifference(p.getZ());
 
-//        p.getX().setValue(p.getY()).setProduct(two);
-//        p.getY().setSum(p.getX());
-//        p.getY().setReduced();
         p.getY().setProduct(three);
         p.getX().setValue(t1).setDifference(p.getY());
 
@@ -314,17 +311,11 @@ public class ECOperations {
         p.getY().setProduct(p.getX());
         p.getX().setProduct(t3);
 
-//        t3.setValue(t2).setProduct(two);
-//        t2.setSum(t3);
-//        t2.setReduced();
         t2.setProduct(three);
         p.getZ().setProduct(b);
 
         p.getZ().setDifference(t2);
         p.getZ().setDifference(t0);
-//        t3.setValue(p.getZ()).setProduct(two);
-//        p.getZ().setReduced();
-//        p.getZ().setSum(t3);
         p.getZ().setProduct(three);
         t0.setProduct(three);
 
@@ -385,29 +376,18 @@ public class ECOperations {
         p.getZ().setProduct(b);
 
         p.getX().setValue(p.getY()).setDifference(p.getZ());
-//        p.getX().setReduced();
-//        p.getZ().setValue(p.getX()).setProduct(two);
-//        p.getX().setSum(p.getZ());
         p.getX().setProduct(three);
 
         p.getZ().setValue(t1).setDifference(p.getX());
         p.getX().setSum(t1);
         p.getY().setProduct(b);
 
-//        t1.setValue(t2).setProduct(two);
-//        t2.setSum(t1);
-//        t2.setReduced();
         t2.setProduct(three);
         p.getY().setDifference(t2);
 
         p.getY().setDifference(t0);
-//        p.getY().setReduced();
-//        t1.setValue(p.getY()).setProduct(two);
-//        p.getY().setSum(t1);
         p.getY().setProduct(three);
 
-//        t1.setValue(t0).setProduct(two);
-//        t0.setSum(t1);
         t0.setProduct(three);
         t0.setDifference(t2);
 
@@ -420,8 +400,6 @@ public class ECOperations {
         p.getX().setDifference(t1);
 
         p.getZ().setProduct(t4);
-//        t1.setValue(t3).setProduct(t0);
-//        p.getZ().setSum(t1);
         t3.setProduct(t0);
         p.getZ().setSum(t3);
 
@@ -463,29 +441,18 @@ public class ECOperations {
         p.getZ().setValue(t2).setProduct(b);
         p.getX().setValue(p.getY()).setDifference(p.getZ());
 
-//        p.getZ().setValue(p.getX()).setProduct(two);
-//        p.getX().setSum(p.getZ());
-//        p.getX().setReduced();
         p.getX().setProduct(three);
 
         p.getZ().setValue(t1).setDifference(p.getX());
         p.getX().setSum(t1);
 
         p.getY().setProduct(b);
-//        t1.setValue(t2).setSum(t2);
-//        t2.setSum(t1);
-//        t2.setReduced();
         t2.setProduct(three);
 
         p.getY().setDifference(t2);
         p.getY().setDifference(t0);
-//        p.getY().setReduced();
-//        t1.setValue(p.getY()).setSum(p.getY());
-//        p.getY().setSum(t1);
         p.getY().setProduct(three);
 
-//        t1.setValue(t0).setProduct(two);
-//        t0.setSum(t1);
         t0.setProduct(three);
 
         t0.setDifference(t2);
@@ -499,8 +466,6 @@ public class ECOperations {
         p.getX().setDifference(t1);
         p.getZ().setProduct(t4);
 
-//        t1.setValue(t3).setProduct(t0);
-//        p.getZ().setSum(t1);
         t3.setProduct(t0);
         p.getZ().setSum(t3);
 
