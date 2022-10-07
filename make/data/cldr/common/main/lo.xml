@@ -9302,13 +9302,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="givenFirst">und lo</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{suffix} {given} {given2} {surname}</namePattern>
+			<namePattern>{suffix}{given}{given2}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{given-informal} {surname}</namePattern>
+			<namePattern>{given-informal}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{prefix}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9317,13 +9317,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{suffix} {given} {given2-initial} {surname}</namePattern>
+			<namePattern>{suffix}{given}{given2-initial}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{given-informal} {surname}</namePattern>
+			<namePattern>{given-informal}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{prefix}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9335,13 +9335,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+			<namePattern>{given-initial}{given2-initial}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{given-informal} {surname-initial}</namePattern>
+			<namePattern>{given-informal}{surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{prefix}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>

@@ -1364,9 +1364,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2016-03-26 23:00" from="1992-01-19 00:00" mzone="Moscow"/>
 			</timezone>
 			<timezone type="Europe/Uzhgorod">
-				<usesMetazone to="1990-06-30 23:00" mzone="Moscow"/>
-				<usesMetazone to="1991-03-31 02:00" from="1990-06-30 23:00" mzone="Europe_Central"/>
-				<usesMetazone from="1991-03-31 02:00" mzone="Europe_Eastern"/>
+				<usesMetazone to="1990-06-30 22:00" mzone="Moscow"/>
+				<usesMetazone from="1990-06-30 22:00" mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Europe/Vaduz">
 				<usesMetazone mzone="Europe_Central"/>
@@ -1393,8 +1392,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Europe_Central"/>
 			</timezone>
 			<timezone type="Europe/Zaporozhye">
-				<usesMetazone to="1991-03-30 23:00" mzone="Moscow"/>
-				<usesMetazone from="1991-03-30 23:00" mzone="Europe_Eastern"/>
+				<usesMetazone to="1990-06-30 22:00" mzone="Moscow"/>
+				<usesMetazone from="1990-06-30 22:00" mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Europe/Zurich">
 				<usesMetazone mzone="Europe_Central"/>

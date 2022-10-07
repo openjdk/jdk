@@ -10975,7 +10975,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="givenFirst">und th</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{given} {given2} {surname} {surname2} {suffix}</namePattern>
+			<namePattern>{given}{given2}{surname}{surname2}{suffix}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10987,7 +10987,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{given-informal} {surname}</namePattern>
+			<namePattern>{given-informal}{surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10999,7 +10999,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{given} {given2} {surname} {surname2}</namePattern>
+			<namePattern>{given}{given2}{surname}{surname2}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -11029,10 +11029,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname-core} {given} {given2} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}{given}{given2}{surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}</namePattern>
+			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<sampleName item="givenOnly">
 			<nameField type="given">ธนา</nameField>

@@ -13,7 +13,7 @@
 			<type name="uksystem" description="UK System of measurement: feet, pints, etc.; pints are 20oz"
 				alias="imperial" since="28" />
 		</key>
-		<key name="mu" alias="measurement-unit" since="42" description="Allows setting overrides for measurement units. Currently limited to quantity=temperature, and no provision for usage or size.">
+		<key name="mu" since="42" description="Allows setting overrides for measurement units. Currently limited to quantity=temperature, and no provision for usage or size.">
 			<type name="celsius" description="temperature unit is Celsius" since="42" />
 			<type name="kelvin" description="temperature unit is Kelvin" since="42" />
 			<type name="fahrenhe" description="temperature unit is Fahrenheit" since="42" />

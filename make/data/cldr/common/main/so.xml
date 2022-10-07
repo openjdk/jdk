@@ -704,7 +704,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CG" alt="variant">Jamhuuriyadda Kongo</territory>
 			<territory type="CH">Swiiserlaand</territory>
 			<territory type="CI">Ayfori Koost</territory>
-			<territory type="CI" alt="variant">Ivory Coast (translation hint: Warning, see info panel on right.)</territory>
+			<territory type="CI" alt="variant" draft="contributed">Côte d’Ivoire</territory>
 			<territory type="CK">Jasiiradda Kook</territory>
 			<territory type="CL">Jili</territory>
 			<territory type="CM">Kaameruun</territory>
@@ -854,7 +854,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PN">Bitkairn</territory>
 			<territory type="PR">Bueerto Riiko</territory>
 			<territory type="PS">Dhulka Falastiiniyiinta daanta galbeed iyo marinka qasa</territory>
-			<territory type="PS" alt="short">Palestine (translation hint: Warning, see info panel on right.)</territory>
+			<territory type="PS" alt="short" draft="contributed">Falastiin</territory>
 			<territory type="PT">Bortugaal</territory>
 			<territory type="PW">Balaaw</territory>
 			<territory type="PY">Baraguaay</territory>

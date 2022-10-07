@@ -2489,11 +2489,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Àfẹnukò Ìgba Oòru Greenland</daylight>
 				</long>
 			</metazone>
-			<metazone type="Gulf">
-				<long>
-					<standard>Gulf Standard Time [translation hint: translate as just &quot;Gulf Time&quot;]</standard>
-				</long>
-			</metazone>
 			<metazone type="Guyana">
 				<long>
 					<standard>Àkókò Gúyànà</standard>
