@@ -34,6 +34,7 @@ import java.security.SecureRandom;
 import java.security.spec.*;
 
 import javax.crypto.spec.DHParameterSpec;
+import static sun.security.util.SecurityProviderConstants.getDefDHPrivateExpSize;
 
 /**
  * Cache for DSA and DH parameter specs. Used by the KeyPairGenerators
@@ -563,15 +564,23 @@ public final class ParameterCache {
                 "60C980DD98EDD3DFFFFFFFFFFFFFFFFF", 16);
 
         // use DSA parameters for DH for sizes not defined in RFC 7296, 3526
-        dhCache.put(Integer.valueOf(512), new DHParameterSpec(p512, g512));
-
-        dhCache.put(Integer.valueOf(768), new DHParameterSpec(dhP768, dhG));
-        dhCache.put(Integer.valueOf(1024), new DHParameterSpec(dhP1024, dhG));
-        dhCache.put(Integer.valueOf(1536), new DHParameterSpec(dhP1536, dhG));
-        dhCache.put(Integer.valueOf(2048), new DHParameterSpec(dhP2048, dhG));
-        dhCache.put(Integer.valueOf(3072), new DHParameterSpec(dhP3072, dhG));
-        dhCache.put(Integer.valueOf(4096), new DHParameterSpec(dhP4096, dhG));
-        dhCache.put(Integer.valueOf(6144), new DHParameterSpec(dhP6144, dhG));
-        dhCache.put(Integer.valueOf(8192), new DHParameterSpec(dhP8192, dhG));
+        dhCache.put(Integer.valueOf(512), new DHParameterSpec(p512, g512,
+                getDefDHPrivateExpSize(512)));
+        dhCache.put(Integer.valueOf(768), new DHParameterSpec(dhP768, dhG,
+                getDefDHPrivateExpSize(768)));
+        dhCache.put(Integer.valueOf(1024), new DHParameterSpec(dhP1024, dhG,
+                getDefDHPrivateExpSize(1024)));
+        dhCache.put(Integer.valueOf(1536), new DHParameterSpec(dhP1536, dhG,
+                getDefDHPrivateExpSize(1536)));
+        dhCache.put(Integer.valueOf(2048), new DHParameterSpec(dhP2048, dhG,
+                getDefDHPrivateExpSize(2048)));
+        dhCache.put(Integer.valueOf(3072), new DHParameterSpec(dhP3072, dhG,
+                getDefDHPrivateExpSize(3072)));
+        dhCache.put(Integer.valueOf(4096), new DHParameterSpec(dhP4096, dhG,
+                getDefDHPrivateExpSize(4096)));
+        dhCache.put(Integer.valueOf(6144), new DHParameterSpec(dhP6144, dhG,
+                getDefDHPrivateExpSize(6144)));
+        dhCache.put(Integer.valueOf(8192), new DHParameterSpec(dhP8192, dhG,
+                getDefDHPrivateExpSize(8192)));
     }
 }

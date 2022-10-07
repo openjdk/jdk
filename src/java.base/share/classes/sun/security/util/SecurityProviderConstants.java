@@ -105,6 +105,30 @@ public final class SecurityProviderConstants {
         }
     }
 
+    public static final int getDefDHPrivateExpSize(int dhGroupSize) {
+        // use 2*security strength as default private exponent size
+        // as in table 2 of NIST SP 800-57 part 1 rev 5, sec 5.6.1.1
+        // and table 25 of NIST SP 800-56A rev 3, appendix D.
+        if (dhGroupSize >= 15360) {
+            return 512;
+        } else if (dhGroupSize >= 8192) {
+            return 400;
+        } else if (dhGroupSize >= 7680) {
+            return 384;
+        } else if (dhGroupSize >= 6144) {
+            return 352;
+        } else if (dhGroupSize >= 4096) {
+            return 304;
+        } else if (dhGroupSize >= 3072) {
+            return 256;
+        } else if (dhGroupSize >= 2048) {
+            return 224;
+        } else {
+            // min value for legacy key sizes
+            return 160;
+        }
+    }
+
     public static final int DEF_DSA_KEY_SIZE;
     public static final int DEF_RSA_KEY_SIZE;
     public static final int DEF_RSASSA_PSS_KEY_SIZE;
