@@ -858,11 +858,6 @@ int err_check_handle(HANDLE handle) {
 
 #define unused_var(v) ((void) (v))
 
-/* Polyfill `inline` for older versions of msvc (up to Visual Studio 2013) */
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#define inline __inline
-#endif
-
 WEPOLL_INTERNAL int ws_global_init(void);
 WEPOLL_INTERNAL SOCKET ws_get_base_socket(SOCKET socket);
 
