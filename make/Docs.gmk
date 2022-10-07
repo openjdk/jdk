@@ -498,24 +498,6 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 # REFERENCE_API_MODULEGRAPH_TARGETS.
 
 ################################################################################
-# Setup generation of Classfile Processing API javadoc
-
-CLASSFILE_SRC := $(TOPDIR)/src/java.base/share/classes
-CLASSFILE_TARGET := $(DOCS_OUTPUTDIR)/classfile-api/javadoc
-
-$(eval $(call SetupExecute, CLASSFILE_API_TARGET, \
-    DEPS := $(BUILD_TOOLS_JDK), \
-    OUTPUT_DIR := $(CLASSFILE_TARGET), \
-    SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/docs, \
-    COMMAND := $(BUILD_JAVA) -Djava.awt.headless=true \
-      $(NEW_JAVADOC) -d $(CLASSFILE_TARGET) \
-      -XDignorePreview=true -notimestamp -public \
-      -encoding ISO-8859-1 -docencoding UTF-8 -Xdoclint:none \
-      --snippet-path $(CLASSFILE_SRC) -locale en_US \
-      $(call FindFiles, $(CLASSFILE_SRC)/jdk/classfile/), \
-))
-
-################################################################################
 
 # Use this variable to control which spec files are included in the output.
 # Format: space-delimited list of names, including at most one '%' as a
@@ -749,8 +731,6 @@ docs-reference-api-javadoc: $(REFERENCE_API_JAVADOC_TARGETS) $(REFERENCE_API_CUS
 
 docs-reference-api-modulegraph: $(REFERENCE_API_MODULEGRAPH_TARGETS)
 
-docs-classfile-api-javadoc: $(CLASSFILE_API_TARGET)
-
 docs-jdk-specs: $(JDK_SPECS_TARGETS)
 
 docs-jdk-index: $(JDK_INDEX_TARGETS)
@@ -762,9 +742,9 @@ docs-specs-zip: $(SPECS_ZIP_TARGETS)
 all: docs-jdk-api-javadoc docs-jdk-api-modulegraph docs-javase-api-javadoc \
     docs-javase-api-modulegraph docs-reference-api-javadoc \
     docs-reference-api-modulegraph docs-jdk-specs docs-jdk-index docs-zip \
-    docs-specs-zip docs-classfile-api-javadoc
+    docs-specs-zip
 
 .PHONY: default all docs-jdk-api-javadoc docs-jdk-api-modulegraph \
     docs-javase-api-javadoc docs-javase-api-modulegraph \
     docs-reference-api-javadoc docs-reference-api-modulegraph docs-jdk-specs \
-    docs-jdk-index docs-zip docs-specs-zip docs-classfile-api-javadoc
+    docs-jdk-index docs-zip docs-specs-zip

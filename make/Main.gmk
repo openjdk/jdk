@@ -500,12 +500,6 @@ $(eval $(call SetupTarget, docs-reference-api-modulegraph, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
-$(eval $(call SetupTarget, docs-classfile-api-javadoc, \
-    MAKEFILE := Docs, \
-    TARGET := docs-classfile-api-javadoc, \
-    DEPS := buildtools-modules runnable-buildjdk, \
-))
-
 # The gensrc steps for jdk.jdi create html spec files.
 $(eval $(call SetupTarget, docs-jdk-specs, \
     MAKEFILE := Docs, \
