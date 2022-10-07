@@ -45,8 +45,8 @@ static bool isTestClass(const char* name) {
 
 /*
  * Helper class for data exchange between RedefineClasses/RetransformClasses and
- * ClassFileLoadHook callback (saves class bytes passed to CFLH,
- * allows to set new class bytes to return from CFLH).
+ * ClassFileLoadHook callback (saves class bytes to be passed to CFLH,
+ * allows setting new class bytes to return from CFLH).
  * Callers create an instance on the stack, ClassFileLoadHook handler uses getInstance().
  */
 class ClassFileLoadHookHelper {
