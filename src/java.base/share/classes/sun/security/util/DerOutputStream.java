@@ -290,8 +290,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * @param ba the bit string, MSB first
      */
     public DerOutputStream putTruncatedUnalignedBitString(BitArray ba) throws IOException {
-        putUnalignedBitString(ba.truncate());
-        return this;
+        return putUnalignedBitString(ba.truncate());
     }
 
     /**
@@ -300,8 +299,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * @param octets the octet string
      */
     public DerOutputStream putOctetString(byte[] octets) throws IOException {
-        write(DerValue.tag_OctetString, octets);
-        return this;
+        return write(DerValue.tag_OctetString, octets);
     }
 
     /**
@@ -335,8 +333,7 @@ extends ByteArrayOutputStream implements DerEncoder {
         for (i = 0; i < seq.length; i++)
             seq[i].encode(bytes);
 
-        write(DerValue.tag_Sequence, bytes);
-        return this;
+        return write(DerValue.tag_Sequence, bytes);
     }
 
     /**
@@ -353,8 +350,7 @@ extends ByteArrayOutputStream implements DerEncoder {
         for (i = 0; i < set.length; i++)
             set[i].encode(bytes);
 
-        write(DerValue.tag_Set, bytes);
-        return this;
+        return write(DerValue.tag_Set, bytes);
     }
 
     /**
@@ -423,8 +419,7 @@ extends ByteArrayOutputStream implements DerEncoder {
         for (int i = 0; i < streams.length; i++) {
             bytes.write(bufs[i]);
         }
-        write(tag, bytes);
-        return this;
+        return write(tag, bytes);
     }
 
     /**
