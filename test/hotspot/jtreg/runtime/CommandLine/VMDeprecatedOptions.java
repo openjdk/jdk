@@ -61,6 +61,7 @@ public class VMDeprecatedOptions {
             {"InitialRAMFraction",        "64"},
             {"TLABStats",                 "false"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
+	    {"UseCompressedClassPointers", Platform.is32bit() ? "false": "true"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"DefaultMaxRAMFraction", "4"},
