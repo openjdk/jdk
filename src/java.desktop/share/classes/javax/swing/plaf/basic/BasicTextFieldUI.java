@@ -83,7 +83,7 @@ public class BasicTextFieldUI extends BasicTextUI {
     }
 
     /**
-     * Creates a view based on an element.
+     * Creates a view for an element.
      *
      * @param elem the element
      * @return the view for the element
