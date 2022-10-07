@@ -131,8 +131,8 @@ public abstract class URLStreamHandler {
      *                  after the sharp sign indicates an anchor.
      * @throws IllegalArgumentException if the implementation of the protocol
      *                  handler rejects any of the given parameters
-     * @throws NullPointerException if {@code u} is {@code null} or {@code start < limit}
-     *                  and {@code spec} is {@code null}
+     * @throws NullPointerException if {@code u} is {@code null},
+     *                  or if {@code start < limit} and {@code spec} is {@code null}
      */
     protected void parseURL(URL u, String spec, int start, int limit) {
         // These fields may receive context content if this was relative URL

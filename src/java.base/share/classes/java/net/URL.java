@@ -174,8 +174,9 @@ import sun.security.action.GetPropertyAction;
  * All {@code URL} constructors may additionally throw
  * {@link MalformedURLException} if the underlying {@link URLStreamHandler}
  * implementation rejects, or is known to reject, any of the parameters.
- * In particular, if {@link URLStreamHandler#parseURL(URL, String, int, int)
- * URLStreamHandler.parseURL} is called and throws {@code IllegalArgumentException}.
+ * In particular when the stream handler’s {@linkplain
+ * URLStreamHandler#parseURL(URL, String, int, int) parseURL method} is
+ * called during URL construction and it throws {@code IllegalArgumentException}.
  * However, which checks are performed is implementation dependent, and
  * callers should not rely on such checks for full URL validation.
  *
