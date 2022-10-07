@@ -60,6 +60,7 @@ import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.border.Border;
 
+
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
@@ -160,12 +161,11 @@ public record PassFailJFrame(String title, String instructions,
             if ((leftTime < 0) || failed) {
                 timer.stop();
                 testFailedReason = FAILURE_REASON
-                        + "Timeout User did not perform testing.";
+                                   + "Timeout User did not perform testing.";
                 timeout = true;
                 latch.countDown();
             }
-            testTimeoutLabel.setText(String.format("Test timeout: %s",
-                    convertMillisToTimeStr(leftTime)));
+            testTimeoutLabel.setText(String.format("Test timeout: %s", convertMillisToTimeStr(leftTime)));
         });
         timer.start();
         frame.add(testTimeoutLabel, BorderLayout.NORTH);
@@ -218,8 +218,9 @@ public record PassFailJFrame(String title, String instructions,
 
                 if (individualTopLevelRB.isSelected()) {
                     windowList.stream().forEach(window -> {
-                        if (window.getBounds().width > 0 && window.getBounds().height > 0) {
-                            captureScreen(window.getBounds());
+                        if (window.isShowing()) {
+                            Rectangle bounds = window.getBounds();
+                            captureScreen(bounds);
                         } else {
                             System.out.println(window.toString() + " should " +
                                     "be visible on screen");
@@ -240,7 +241,7 @@ public record PassFailJFrame(String title, String instructions,
             public void windowClosing(WindowEvent e) {
                 super.windowClosing(e);
                 testFailedReason = FAILURE_REASON
-                        + "User closed the instruction Frame";
+                                   + "User closed the instruction Frame";
                 failed = true;
                 latch.countDown();
             }
@@ -249,9 +250,6 @@ public record PassFailJFrame(String title, String instructions,
         frame.add(buttonsPanel, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
-        if (windowList.size() == 0) {
-            frame.setVisible(true);
-        }
         windowList.add(frame);
     }
 
@@ -260,22 +258,24 @@ public record PassFailJFrame(String title, String instructions,
             try {
                 robot = new Robot();
             } catch (AWTException e) {
-                throw new RuntimeException(e.getMessage());
+                String errorMsg = "Failed to create the " +
+                        "instance of Robot.";
+                JOptionPane.showMessageDialog(frame, errorMsg, "Failed",
+                        JOptionPane.ERROR_MESSAGE);
+                forceFail(errorMsg + e.getMessage());
             }
         }
         MultiResolutionImage multiResolutionImage = robot
                 .createMultiResolutionScreenCapture(bounds);
         List<Image> imageList =
                 multiResolutionImage.getResolutionVariants();
-        if (imageList.size() > 0) {
-            Image image = imageList.get(imageList.size() - 1);
-            File file = new java.io.File("CaptureScreen_" +
-                    imgCounter.incrementAndGet() + ".png");
-            try {
-                ImageIO.write((RenderedImage) image, "png", file);
-            } catch (IOException e) {
-                throw new RuntimeException(e.getMessage());
-            }
+        Image image = imageList.get(imageList.size() - 1);
+        File file = new java.io.File("CaptureScreen_" +
+                imgCounter.incrementAndGet() + ".png");
+        try {
+            ImageIO.write((RenderedImage) image, "png", file);
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -370,23 +370,24 @@ public record PassFailJFrame(String title, String instructions,
      *
      * @param testWindow test window that the test created.
      *                   May be {@code null}.
-     * @param position   position must be one of:
-     *                   <ul>
-     *                   <li>{@code HORIZONTAL} - the test instruction frame is positioned
-     *                   such that its right edge aligns with screen's horizontal center
-     *                   and the test window (if not {@code null}) is placed to the right
-     *                   of the instruction frame.</li>
      *
-     *                   <li>{@code VERTICAL} - the test instruction frame is positioned
-     *                   such that its bottom edge aligns with the screen's vertical center
-     *                   and the test window (if not {@code null}) is placed below the
-     *                   instruction frame.</li>
+     * @param position  position must be one of:
+     *                  <ul>
+     *                  <li>{@code HORIZONTAL} - the test instruction frame is positioned
+     *                  such that its right edge aligns with screen's horizontal center
+     *                  and the test window (if not {@code null}) is placed to the right
+     *                  of the instruction frame.</li>
      *
-     *                   <li>{@code TOP_LEFT_CORNER} - the test instruction frame is positioned
-     *                   such that its top left corner is at the top left corner of the screen
-     *                   and the test window (if not {@code null}) is placed to the right of
-     *                   the instruction frame.</li>
-     *                   </ul>
+     *                  <li>{@code VERTICAL} - the test instruction frame is positioned
+     *                  such that its bottom edge aligns with the screen's vertical center
+     *                  and the test window (if not {@code null}) is placed below the
+     *                  instruction frame.</li>
+     *
+     *                  <li>{@code TOP_LEFT_CORNER} - the test instruction frame is positioned
+     *                  such that its top left corner is at the top left corner of the screen
+     *                  and the test window (if not {@code null}) is placed to the right of
+     *                  the instruction frame.</li>
+     *                  </ul>
      */
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -451,11 +452,12 @@ public record PassFailJFrame(String title, String instructions,
      * as a {@code Position} option.
      *
      * @return Rectangle bounds of test instruction frame
+     * @see #positionTestWindow
+     *
      * @throws InterruptedException      exception thrown when thread is
      *                                   interrupted
      * @throws InvocationTargetException if an exception is thrown while
      *                                   obtaining frame bounds on EDT
-     * @see #positionTestWindow
      */
     public static Rectangle getInstructionFrameBounds()
             throws InterruptedException, InvocationTargetException {
@@ -498,14 +500,14 @@ public record PassFailJFrame(String title, String instructions,
     }
 
     /**
-     * Forcibly fail the test.
+     *  Forcibly fail the test.
      */
     public static void forceFail() {
         forceFail("forceFail called");
     }
 
     /**
-     * Forcibly fail the test and provide a reason.
+     *  Forcibly fail the test and provide a reason.
      *
      * @param reason the reason why the test is failed
      */
