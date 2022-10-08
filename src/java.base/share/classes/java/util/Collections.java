@@ -30,7 +30,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -425,8 +424,13 @@ public class Collections {
      *         its list-iterator does not support the {@code set} operation.
      */
     public static void shuffle(List<?> list) {
-        shuffle(list, (RandomGenerator) ThreadLocalRandom.current());
+        Random rnd = r;
+        if (rnd == null)
+            r = rnd = new Random(); // harmless race.
+        shuffle(list, rnd);
     }
+
+    private static Random r;
 
     /**
      * Randomly permute the specified list using the specified source of
