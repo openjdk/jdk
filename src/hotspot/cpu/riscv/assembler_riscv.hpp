@@ -2079,29 +2079,30 @@ enum Nf {
 // RISC-V Compressed Instructions Extension
 // ========================================
 // Note:
-// 1. When UseRVC is enabled, 32-bit instructions under 'CompressibleRegion's will be
-//    transformed to 16-bit instructions if compressible.
-// 2. RVC instructions in Assembler always begin with 'c_' prefix, as 'c_li',
-//    but most of time we have no need to explicitly use these instructions.
-// 3. 'CompressibleRegion' is introduced to hint instructions in this Region's RTTI range
-//    are qualified to be compressed with their 2-byte versions.
-//    'IncompressibleRegion' hints instructions to remain their 4-byte forms.
-//    An example:
+// 1. Assembler functions encoding 16-bit compressed instructions always begin with a 'c_'
+//    prefix, such as 'c_add'. Correspondingly, assembler functions encoding normal 32-bit
+//    instructions with begin with a '_' prefix, such as "_add". Most of time users have no
+//    need to explicitly emit these compressed instructions. Instead, they still use unified
+//    wrappers such as 'add' which do the compressing work through 'c_add' depending on the
+//    the operands of the instruction and availability of the RVC hardware extension.
+//
+// 2. 'CompressibleRegion' and 'IncompressibleRegion' are introduced to mark assembler scopes
+//     within which instructions are qualified or unqualified to be compressed into their 16-bit
+//     versions. An example:
 //
 //      CompressibleRegion cr(_masm);
-//      __ andr(...);       // this instruction could change to 'c.and' if able to
+//      __ add(...);       // this instruction will be compressed into 'c.and' when possible
 //      {
 //         IncompressibleRegion ir(_masm);
-//         __ andr(...);    // this instruction should not be compressed
+//         __ add(...);    // this instruction will not be compressed
 //         {
 //            CompressibleRegion cr(_masm);
-//            __ andr(...); // this instruction could change to 'c.and' if able to
+//            __ add(...); // this instruction will be compressed into 'c.and' when possible
 //         }
 //      }
 //
-// 4. Using -XX:PrintAssemblyOptions=no-aliases could distinguish RVC instructions from
-//    normal ones.
-//
+// 3. When printing JIT assembly code, using -XX:PrintAssemblyOptions=no-aliases could help
+//    distinguish compressed 16-bit instructions from normal 32-bit ones.
 
 private:
   bool _in_compressible_region;
