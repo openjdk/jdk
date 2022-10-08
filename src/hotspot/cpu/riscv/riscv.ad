@@ -1319,7 +1319,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
   {
-    Assembler::IncompressibleRegion ir(&_masm);  // keep the nop as 4 byte for patching.
+    Assembler::IncompressibleRegion ir(&_masm);  // keep the nop as 4 bytes for patching.
     MacroAssembler::assert_alignment(__ pc());
     __ nop();  // 4 bytes
   }
