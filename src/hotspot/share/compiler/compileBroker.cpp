@@ -2093,11 +2093,6 @@ CompilerDirectives* DirectivesStack::_bottom = NULL;
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   task->print_ul();
-  if (PrintCompilation) {
-    ResourceMark rm;
-    task->print_tty();
-  }
-  elapsedTimer time;
 
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
@@ -2135,6 +2130,12 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, compiler_name(task_level));
   }
+
+  if (task->directive()->PrintCompilationOption) {
+    ResourceMark rm;
+    task->print_tty();
+  }
+  elapsedTimer time;
 
   should_break = directive->BreakAtCompileOption || task->check_break_at_flags();
   if (should_log && !directive->LogOption) {
