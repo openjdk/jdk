@@ -27,6 +27,7 @@
  * @bug 8231988 8293996
  * @summary Unexpected test result caused by C2 IdealLoopTree::do_remove_empty_loop
  *
+ * @requires vm.debug == true
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation
  *      -XX:StressLongCountedLoop=0
  *      compiler.loopopts.TestRemoveEmptyLoop
