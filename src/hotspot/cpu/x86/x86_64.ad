@@ -319,6 +319,12 @@ reg_class int_rdi_reg(RDI);
 //----------SOURCE BLOCK-------------------------------------------------------
 // This is a block of C++ code which provides values, functions, and
 // definitions necessary in the rest of the architecture description
+
+source_hpp %{
+  #include CPU_HEADER(peephole)
+%}
+
+// Register masks
 source_hpp %{
 
 extern RegMask _ANY_REG_mask;

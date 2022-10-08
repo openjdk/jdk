@@ -25,9 +25,8 @@
 
 #ifdef COMPILER2
 
-#include "opto/peephole.hpp"
+#include "peephole_x86.hpp"
 
-#ifdef _LP64
 // This function transforms the shapes
 // mov d, s1; add d, s2 into
 // lea d, [s1 + s2]     and
@@ -142,6 +141,5 @@ bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, P
                                 MachNode* (*new_root)(), uint inst0_rule) {
   return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, true);
 }
-#endif // _LP64
 
 #endif // COMPILER2
