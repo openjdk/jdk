@@ -61,7 +61,7 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm/timeout=180 -Xmx1g TransferTo
+ * @run testng/othervm/timeout=180 -Xmx1280m TransferTo
  * @bug 8279283 8294541
  * @summary Tests whether java.io.BufferedInputStream.transferTo conforms to the
  *          InputStream.transferTo specification
