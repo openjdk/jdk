@@ -86,7 +86,7 @@ class Chunk: CHeapObj<mtChunk> {
 
 //------------------------------Arena------------------------------------------
 // Fast allocation of memory
-class Arena : public CHeapObj<mtNone> {
+class Arena {
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
