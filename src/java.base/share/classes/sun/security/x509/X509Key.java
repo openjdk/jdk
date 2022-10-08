@@ -101,12 +101,12 @@ public class X509Key implements PublicKey {
      */
     public X509Key() { }
 
-    /*
+    /**
      * Build and initialize as a "default" key.  All X.509 key
      * data is stored and transmitted losslessly, but no knowledge
      * about this particular algorithm is available.
      */
-    private X509Key(AlgorithmId algid, BitArray key)
+    public X509Key(AlgorithmId algid, BitArray key)
     throws InvalidKeyException {
         this.algid = algid;
         setKey(key);
@@ -133,7 +133,7 @@ public class X509Key implements PublicKey {
      * Gets the key. The key may or may not be byte aligned.
      * @return a BitArray containing the key.
      */
-    protected BitArray getKey() {
+    public BitArray getKey() {
         /*
          * Do this for consistency in case a subclass
          * modifies byte[] key directly. Remove when

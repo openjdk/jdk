@@ -33,11 +33,11 @@ import java.security.spec.*;
 import java.util.*;
 
 import javax.crypto.*;
+import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.spec.*;
 import javax.security.auth.x500.*;
 
 import sun.security.pkcs.*;
-import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.util.*;
 import sun.security.x509.*;
 
@@ -47,6 +47,7 @@ import sun.security.x509.*;
  * a file-based implementation.
  */
 
+@SuppressWarnings("removal")
 public final class KeychainStore extends KeyStoreSpi {
 
     // Private keys and their supporting certificate chains
@@ -206,7 +207,7 @@ public final class KeychainStore extends KeyStoreSpi {
                 encryptedKey = encrInfo.getEncryptedData();
 
                 // parse Algorithm parameters
-                DerValue val = new DerValue(encrInfo.getAlgorithm().encode());
+                DerValue val = new DerValue(AlgorithmId.get(encrInfo.getAlgName()).encode());
                 DerInputStream in = val.toDerInputStream();
                 algOid = in.getOID();
                 algParams = parseAlgParameters(in);
@@ -1184,12 +1185,15 @@ public final class KeychainStore extends KeyStoreSpi {
     private byte[] encryptPrivateKey(byte[] data, char[] password)
         throws IOException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        byte[] key = null;
+        return EncryptedPrivateKeyInfo.encryptKey(data, password,"PBEWithSHA1AndDESede", null);
+
+/*        byte[] key = null;
 
         try {
             // create AlgorithmParameters
             AlgorithmParameters algParams =
             getAlgorithmParameters("PBEWithSHA1AndDESede");
+
 
             // Use JCE
             SecretKey skey = getPBEKey(password);
@@ -1213,6 +1217,7 @@ public final class KeychainStore extends KeyStoreSpi {
         }
 
         return key;
+             */
     }
 
 

@@ -25,12 +25,10 @@
 
 package sun.security.ec;
 
-import java.security.KeyFactorySpi;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.InvalidKeyException;
-import java.security.ProviderException;
+import sun.security.pkcs.PKCS8Key;
+
+import java.io.IOException;
+import java.security.*;
 import java.security.interfaces.XECKey;
 import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
@@ -160,6 +158,19 @@ public class XDHKeyFactory extends KeyFactorySpi {
                 InvalidKeySpecException::new, publicKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
             return new XDHPublicKeyImpl(params, publicKeySpec.getU());
+        } else if (keySpec instanceof PKCS8EncodedKeySpec) {
+            PKCS8Key p8key = null;
+            try {
+                p8key = (PKCS8Key) XDHPrivateKeyImpl.parseKey((
+                    (PKCS8EncodedKeySpec)keySpec).getEncoded());
+            } catch (IOException e) {
+                throw new InvalidKeyException(e);
+            }
+            XDHPublicKeyImpl result =
+                new XDHPublicKeyImpl(p8key.getPubKeyEncoded());
+            checkLockedParams(InvalidKeySpecException::new,
+                result.getParams());
+            return result;
         } else {
             throw new InvalidKeySpecException(
                 "Only X509EncodedKeySpec and XECPublicKeySpec are supported");

@@ -62,6 +62,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.SecretKey;
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
+import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
 
@@ -71,7 +72,6 @@ import sun.security.tools.KeyStoreUtil;
 import sun.security.util.*;
 import sun.security.pkcs.ContentInfo;
 import sun.security.x509.AlgorithmId;
-import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.provider.JavaKeyStore.JKS;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 
@@ -325,8 +325,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             encryptedKey = encrInfo.getEncryptedData();
 
             // parse Algorithm parameters
-            DerValue val = new DerValue(encrInfo.getAlgorithm().encode());
-            DerInputStream in = val.toDerInputStream();
+            DerValue val = new DerValue(AlgorithmId.get(encrInfo.getAlgName()).encode());
             aid = AlgorithmId.parse(val);
             algParams = aid.getParameters();
 
@@ -953,7 +952,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             // wrap encrypted private key in EncryptedPrivateKeyInfo
             // as defined in PKCS#8
             EncryptedPrivateKeyInfo encrInfo =
-                new EncryptedPrivateKeyInfo(algid, encryptedKey);
+                new EncryptedPrivateKeyInfo(algid.getParameters(), encryptedKey);
             key = encrInfo.getEncoded();
         } catch (Exception e) {
             UnrecoverableKeyException uke =

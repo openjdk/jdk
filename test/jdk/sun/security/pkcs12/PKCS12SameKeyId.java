@@ -41,11 +41,11 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import javax.crypto.Cipher;
+import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
-import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
@@ -98,7 +98,7 @@ public class PKCS12SameKeyId {
             aliases[i] = "p" + i;
             byte[] enckey = cipher.doFinal(
                     ks.getKey(aliases[i], PASSWORD).getEncoded());
-            keys[i] = new EncryptedPrivateKeyInfo(algid, enckey).getEncoded();
+            keys[i] = new EncryptedPrivateKeyInfo(algid.getParameters(), enckey).getEncoded();
             certChains[i] = ks.getCertificateChain(aliases[i]);
         }
 

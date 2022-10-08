@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,19 +68,24 @@ public class PKCS8Key implements PrivateKey {
     protected AlgorithmId algid;
 
     /* The key bytes, without the algorithm information */
-    protected byte[] key;
+    protected byte[] privKeyMaterial;
 
     /* The encoded for the key. Created on demand by encode(). */
     protected byte[] encodedKey;
 
+    /* The encoded x509 public key for v2 */
+    protected byte[] pubKeyEncoded;
+
     /* The version for this key */
     private static final int V1 = 0;
     private static final int V2 = 1;
+    private byte[] attributes;
+    private int version;
 
     /**
      * Default constructor. Constructors in subclasses that create a new key
      * from its components require this. These constructors must initialize
-     * {@link #algid} and {@link #key}.
+     * {@link #algid} and {@link #privKeyMaterial}.
      */
     protected PKCS8Key() { }
 
@@ -91,10 +96,19 @@ public class PKCS8Key implements PrivateKey {
      *
      * This method is also used by {@link #parseKey} to create a raw key.
      */
-    protected PKCS8Key(byte[] input) throws InvalidKeyException {
+    public PKCS8Key(byte[] input) throws InvalidKeyException {
         decode(new ByteArrayInputStream(input));
     }
 
+    public int getVersion() {
+        return version;
+    }
+
+    /**
+     * Method for decoding PKCS8 v1 and v2 formats. Decoded values are stored
+     * in this class, key material remains in DER format for algorithm
+     * subclasses to decode.
+     */
     private void decode(InputStream is) throws InvalidKeyException {
         DerValue val = null;
         try {
@@ -103,35 +117,44 @@ public class PKCS8Key implements PrivateKey {
                 throw new InvalidKeyException("invalid key format");
             }
 
-            int version = val.data.getInteger();
+            // Support check for V1, aka 0, and V2, aka 1.
+            version = val.data.getInteger();
             if (version != V1 && version != V2) {
                 throw new InvalidKeyException("unknown version: " + version);
             }
-            algid = AlgorithmId.parse (val.data.getDerValue ());
-            key = val.data.getOctetString();
+            // Parse and store AlgorithmID
+            algid = AlgorithmId.parse(val.data.getDerValue());
 
-            DerValue next;
+            // Store key material for subclasses to parse
+            privKeyMaterial = val.data.getOctetString();
+
+            // PKCS8 v1 typically ends here
             if (val.data.available() == 0) {
                 return;
             }
-            next = val.data.getDerValue();
-            if (next.isContextSpecific((byte)0)) {
+
+            // OPTIONAL Context tag 0 for Attributes for PKCS8 v1 & v2
+            var result = val.data.getOptionalImplicitContextSpecific(0, DerValue.tag_Sequence);
+            if (result.isPresent()) {
+                attributes = result.get().toByteArray();
                 if (val.data.available() == 0) {
                     return;
                 }
-                next = val.data.getDerValue();
             }
 
-            if (next.isContextSpecific((byte)1)) {
-                if (version == V1) {
-                    throw new InvalidKeyException("publicKey seen in v1");
-                }
-                if (val.data.available() == 0) {
-                    return;
+            // OPTIONAL context tag 1 for Public Key for PKCS8 v2 only
+            if (version == V2) {
+                result = val.data.getOptionalImplicitContextSpecific(1, DerValue.tag_BitString);
+                if (result.isPresent()) {
+                    // Store public key material for later parsing
+                    pubKeyEncoded = new X509Key(algid, result.get().getUnalignedBitString()).getEncoded();
                 }
             }
-            throw new InvalidKeyException("Extra bytes");
-        } catch (IOException e) {
+
+            if (val.data.available() != 0) {
+                throw new InvalidKeyException("Extra bytes");
+            }
+        } catch (Exception e) {
             throw new InvalidKeyException("IOException : " + e.getMessage());
         } finally {
             if (val != null) {
@@ -189,8 +212,20 @@ public class PKCS8Key implements PrivateKey {
     /**
      * Returns the algorithm ID to be used with this key.
      */
-    public AlgorithmId  getAlgorithmId () {
+    public AlgorithmId getAlgorithmId () {
         return algid;
+    }
+
+    public byte[] getAttributes() {
+        return attributes;
+    }
+
+    public byte[] getPrivKeyMaterial() {
+        return privKeyMaterial;
+    }
+
+    public byte[] getPubKeyEncoded() {
+        return pubKeyEncoded;
     }
 
     /**
@@ -221,7 +256,7 @@ public class PKCS8Key implements PrivateKey {
                 DerOutputStream tmp = new DerOutputStream();
                 tmp.putInteger(V1);
                 algid.encode(tmp);
-                tmp.putOctetString(key);
+                tmp.putOctetString(privKeyMaterial);
                 DerValue out = DerValue.wrap(DerValue.tag_Sequence, tmp);
                 encodedKey = out.toByteArray();
                 out.clear();
@@ -300,6 +335,6 @@ public class PKCS8Key implements PrivateKey {
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);
         }
-        Arrays.fill(key, (byte)0);
+        Arrays.fill(privKeyMaterial, (byte)0);
     }
 }

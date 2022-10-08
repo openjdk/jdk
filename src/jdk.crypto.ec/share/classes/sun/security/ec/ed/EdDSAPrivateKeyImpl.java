@@ -27,7 +27,6 @@ package sun.security.ec.ed;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
-import java.security.ProviderException;
 import java.security.interfaces.EdECPrivateKey;
 import java.util.Optional;
 import java.security.spec.NamedParameterSpec;
@@ -54,7 +53,7 @@ public final class EdDSAPrivateKeyImpl
 
         DerValue val = new DerValue(DerValue.tag_OctetString, h);
         try {
-            this.key = val.toByteArray();
+            this.privKeyMaterial = val.toByteArray();
         } catch (IOException ex) {
             throw new AssertionError("Should not happen", ex);
         } finally {
@@ -71,7 +70,7 @@ public final class EdDSAPrivateKeyImpl
         paramSpec = new NamedParameterSpec(params.getName());
 
         try {
-            DerInputStream derStream = new DerInputStream(key);
+            DerInputStream derStream = new DerInputStream(privKeyMaterial);
             h = derStream.getOctetString();
         } catch (IOException ex) {
             throw new InvalidKeyException(ex);
@@ -103,6 +102,6 @@ public final class EdDSAPrivateKeyImpl
 
     @Override
     public Optional<byte[]> getBytes() {
-        return Optional.of(getKey());
+        return Optional.of(privKeyMaterial);
     }
 }

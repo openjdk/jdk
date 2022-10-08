@@ -41,6 +41,7 @@ import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherSpi;
+import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKey;
 import javax.crypto.SealedObject;
 import javax.crypto.spec.*;
@@ -150,7 +151,8 @@ final class KeyProtector {
         AlgorithmId encrAlg = new AlgorithmId
             (ObjectIdentifier.of(KnownOIDs.JAVASOFT_JCEKeyProtector),
              pbeParams);
-        return new EncryptedPrivateKeyInfo(encrAlg,encrKey).getEncoded();
+        return new javax.crypto.EncryptedPrivateKeyInfo(encrAlg.getParameters(),
+            encrKey).getEncoded();
     }
 
     /*
@@ -163,7 +165,7 @@ final class KeyProtector {
         byte[] plain = null;
         SecretKey sKey = null;
         try {
-            String encrAlg = encrInfo.getAlgorithm().getOID().toString();
+            String encrAlg = encrInfo.getAlgName();
             if (!encrAlg.equals(KnownOIDs.JAVASOFT_JCEKeyProtector.value())
                 && !encrAlg.equals(KnownOIDs.JAVASOFT_JDKKeyProtector.value())) {
                 throw new UnrecoverableKeyException("Unsupported encryption "
@@ -175,7 +177,7 @@ final class KeyProtector {
                 plain = recover(encrInfo.getEncryptedData());
             } else {
                 byte[] encodedParams =
-                    encrInfo.getAlgorithm().getEncodedParams();
+                    encrInfo.getAlgParameters().getEncoded();
 
                 if (encodedParams == null) {
                     throw new IOException("Missing PBE parameters");
