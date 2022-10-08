@@ -30,6 +30,9 @@
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/epsilon_globals.hpp"
 #endif
+#if INCLUDE_ZEROGC
+#include "gc/zero/zero_globals.hpp"
+#endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1_globals.hpp"
 #endif
@@ -55,6 +58,15 @@
                  constraint)                                                \
                                                                             \
   EPSILONGC_ONLY(GC_EPSILON_FLAGS(                                          \
+    develop,                                                                \
+    develop_pd,                                                             \
+    product,                                                                \
+    product_pd,                                                             \
+    notproduct,                                                             \
+    range,                                                                  \
+    constraint))                                                            \
+                                                                            \
+  ZEROGC_ONLY(GC_ZERO_FLAGS(                                                \
     develop,                                                                \
     develop_pd,                                                             \
     product,                                                                \
@@ -121,6 +133,9 @@
                                                                             \
   product(bool, UseEpsilonGC, false, EXPERIMENTAL,                          \
           "Use the Epsilon (no-op) garbage collector")                      \
+                                                                            \
+  product(bool, UseZeroGC, false, EXPERIMENTAL,                             \
+          "Use the Zero garbage collector")                                 \
                                                                             \
   product(bool, UseZGC, false,                                              \
           "Use the Z garbage collector")                                    \

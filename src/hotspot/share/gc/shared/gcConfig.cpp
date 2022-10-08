@@ -31,6 +31,9 @@
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/epsilonArguments.hpp"
 #endif
+#if INCLUDE_ZEROGC
+#include "gc/zero/zeroArguments.hpp"
+#endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
 #endif
@@ -58,6 +61,7 @@ struct IncludedGC {
 };
 
    EPSILONGC_ONLY(static EpsilonArguments    epsilonArguments;)
+      ZEROGC_ONLY(static ZeroArguments       zeroArguments;)
         G1GC_ONLY(static G1Arguments         g1Arguments;)
   PARALLELGC_ONLY(static ParallelArguments   parallelArguments;)
     SERIALGC_ONLY(static SerialArguments     serialArguments;)
@@ -68,6 +72,7 @@ SHENANDOAHGC_ONLY(static ShenandoahArguments shenandoahArguments;)
 // line flag, CollectedHeap::Name and GCArguments instance.
 static const IncludedGC IncludedGCs[] = {
    EPSILONGC_ONLY_ARG(IncludedGC(UseEpsilonGC,       CollectedHeap::Epsilon,    epsilonArguments,    "epsilon gc"))
+      ZEROGC_ONLY_ARG(IncludedGC(UseZeroGC,          CollectedHeap::Zero,       zeroArguments,       "zero gc"))
         G1GC_ONLY_ARG(IncludedGC(UseG1GC,            CollectedHeap::G1,         g1Arguments,         "g1 gc"))
   PARALLELGC_ONLY_ARG(IncludedGC(UseParallelGC,      CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
     SERIALGC_ONLY_ARG(IncludedGC(UseSerialGC,        CollectedHeap::Serial,     serialArguments,     "serial gc"))
@@ -88,6 +93,7 @@ bool GCConfig::_gc_selected_ergonomically = false;
 
 void GCConfig::fail_if_non_included_gc_is_selected() {
   NOT_EPSILONGC(   FAIL_IF_SELECTED(UseEpsilonGC));
+  NOT_ZEROGC(      FAIL_IF_SELECTED(UseZeroGC));
   NOT_G1GC(        FAIL_IF_SELECTED(UseG1GC));
   NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelGC));
   NOT_SERIALGC(    FAIL_IF_SELECTED(UseSerialGC));

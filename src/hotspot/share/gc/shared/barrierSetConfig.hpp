@@ -33,8 +33,8 @@
   EPSILONGC_ONLY(f(EpsilonBarrierSet))               \
   G1GC_ONLY(f(G1BarrierSet))                         \
   SHENANDOAHGC_ONLY(f(ShenandoahBarrierSet))         \
-  ZGC_ONLY(f(ZBarrierSet))
-
+  ZGC_ONLY(f(ZBarrierSet))                           \
+  ZEROGC_ONLY(f(ZeroBarrierSet))
 #define FOR_EACH_ABSTRACT_BARRIER_SET_DO(f)          \
   f(ModRef)
 
