@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,7 @@ import sun.security.util.SecurityConstants;
  * @since   1.0
  * @deprecated The Security Manager is deprecated and subject to removal in a
  *       future release. There is no replacement for the Security Manager.
- *       See <a href="https://openjdk.java.net/jeps/411">JEP 411</a> for
+ *       See <a href="https://openjdk.org/jeps/411">JEP 411</a> for
  *       discussion and alternatives.
  */
 @Deprecated(since="17", forRemoval=true)

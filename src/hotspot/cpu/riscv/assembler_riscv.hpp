@@ -302,7 +302,8 @@ public:
       lui(Rd, upper);
       offset = lower;
     } else {
-      movptr(Rd, (address)(uintptr_t)adr.offset(), offset);
+      offset = ((int32_t)adr.offset() << 20) >> 20;
+      li(Rd, adr.offset() - offset);
     }
     add(Rd, Rd, adr.base());
   }
@@ -331,17 +332,6 @@ public:
   void jal(const Address &adr, Register temp = t0);
   void jr(Register Rs);
   void jalr(Register Rs);
-  void ret();
-  void call(const address &dest, Register temp = t0);
-  void call(const Address &adr, Register temp = t0);
-  void tail(const address &dest, Register temp = t0);
-  void tail(const Address &adr, Register temp = t0);
-  void call(Label &l, Register temp) {
-    call(target(l), temp);
-  }
-  void tail(Label &l, Register temp) {
-    tail(target(l), temp);
-  }
 
   static inline uint32_t extract(uint32_t val, unsigned msb, unsigned lsb) {
     assert_cond(msb >= lsb && msb <= 31);
