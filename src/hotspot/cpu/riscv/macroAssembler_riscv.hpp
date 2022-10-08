@@ -402,7 +402,7 @@ class MacroAssembler: public Assembler {
 
  public:
   // Standard pseudoinstruction
-  void nop(bool compressible = true);
+  void nop();
   void mv(Register Rd, Register Rs);
   void notr(Register Rd, Register Rs);
   void neg(Register Rd, Register Rs);

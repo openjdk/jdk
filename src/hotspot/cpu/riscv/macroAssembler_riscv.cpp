@@ -633,12 +633,8 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
 }
 
-void MacroAssembler::nop(bool compressible) {
-  if (compressible) {
-    addi(x0, x0, 0);
-  } else {
-    _addi(x0, x0, 0);
-  }
+void MacroAssembler::nop() {
+  addi(x0, x0, 0);
 }
 
 void MacroAssembler::mv(Register Rd, Register Rs) {
