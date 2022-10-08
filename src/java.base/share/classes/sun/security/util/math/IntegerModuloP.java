@@ -265,27 +265,56 @@ public interface IntegerModuloP {
                 //  p -2 = FFFFFFFF 00000001 00000000 00000000
                 //         00000000 FFFFFFFF FFFFFFFF FFFFFFFD
                 //
-                // There are 4 contiguous 31-bit set, and thus imp^(2^31 - 1)
-                // is pre-computed to speed up the computation.
+                // There are 3 contiguous 32-bit set, and 1 contiguous 30-bit
+                // set. Thus values imp^(2^32 - 1) and imp^(2^30 - 1) are
+                // pre-computed to speed up the computation.
 
-                // calculate imp ^ (2^31 - 1)
+                // calculate imp ^ (2^32 - 1)
                 MutableIntegerModuloP t = imp.mutable();
-                for (int i = 30; i != 0; i--) {
+                MutableIntegerModuloP v = null;
+                MutableIntegerModuloP w = null;
+                for (int i = 0; i < 31; i++) {
                     t.setSquare();
-                    t.setProduct(imp);
+                    switch (i) {
+                        case 0 -> {
+                            t.setProduct(imp);
+                            v = t.mutable();    // 2: imp ^ (2^2 - 1)
+                        }
+                        case 4 -> {
+                            t.setProduct(v);
+                            w = t.mutable();    // 4: imp ^ (2^6 - 1)
+                        }
+                        case 12, 28 -> {
+                            t.setProduct(w);
+                            w = t.mutable();    // 12: imp ^ (2^14 - 1)
+                                                // 28: imp ^ (2^30 - 1)
+                        }
+                        case 2, 6, 14, 30 -> {
+                            t.setProduct(v);
+                        }
+                    }
                 }
+
+                // here we have:
+                //     v = imp ^ (2^2 - 1)
+                //     w = imp ^ (2^30 - 1)
+                //     t = imp ^ (2^32 - 1)
 
                 // calculate (1 / imp)
                 MutableIntegerModuloP d = t.mutable();
-                for (int i = 31; i < 256; i++) {
+                for (int i = 32; i < 256; i++) {
                     d.setSquare();
                     switch (i) {
-                        // For contiguous 31-bit set.
-                        case 190, 221, 252 -> {
+                        // For contiguous 32-bit set.
+                        case 191, 223 -> {
                             d.setProduct(t);
                         }
+                        // For contiguous 30-bit set.
+                        case 253 -> {
+                            d.setProduct(w);
+                        }
                         // For individual 1-bit set.
-                        case 31, 63, 253, 255 -> {
+                        case 63, 255 -> {
                             d.setProduct(imp);
                         }
                     }
@@ -308,34 +337,77 @@ public interface IntegerModuloP {
                 //  n - 2 = FFFFFFFF 00000000 FFFFFFFF FFFFFFFF
                 //          BCE6FAAD A7179E84 F3B9CAC2 FC63254F
                 //
-                // There are 3 contiguous 32-bit set, and imp^(2^16 - 1)
+                // There are 3 contiguous 32-bit set, and imp^(2^32 - 1)
                 // is pre-computed to speed up the computation.
 
-                // calculate imp ^ (2^16 - 1)
+                // calculate and cache imp ^ (2^2 - 1) - imp ^ (2^4 - 1)
+                IntegerModuloP[] w = new IntegerModuloP[4];
+                w[0] = imp.fixed();
                 MutableIntegerModuloP t = imp.mutable();
-                for (int i = 15; i != 0; i--) {
+                for (int i = 1; i < 4; i++) {
                     t.setSquare();
                     t.setProduct(imp);
+                    w[i] = t.fixed();
                 }
 
-                // calculate (1 / imp)
+                // calculate imp ^ (2^32 - 1)
+                MutableIntegerModuloP d = null;
+                for (int i = 4; i < 32; i++) {
+                    t.setSquare();
+                    switch (i) {
+                        case 7 -> {
+                            t.setProduct(w[3]);
+                            d = t.mutable();   // 7: imp ^ (2^8 - 1)
+                        }
+                        case 15 -> {
+                            t.setProduct(d);
+                            d = t.mutable();   // 15: imp ^ (2^16 - 1)
+                        }
+                        case 31 -> {
+                            t.setProduct(d); // 31: imp ^ (2^32 - 1)
+                        }
+                    }
+                }
+
+                // Here we have:
+                //    w[i] = imp ^ (2 ^ ( i + 1) - 1), i = {0, 1, 2, 3}
+                //       t = imp ^ (2^32 - 1)
                 //
-                // calculate for bit 16-128, for contiguous 16-bit set.
-                MutableIntegerModuloP d = t.mutable();
+                // calculate for bit 32-128, for contiguous 32-bit set.
+                d = t.mutable();
                 for (int i = 32; i < 128; i++) {
                     d.setSquare();
-                    if (i == 31 || i == 79 || i == 95 || i == 111 || i == 127) {
-                            d.setProduct(t);
+                    if (i == 95 || i == 127) {
+                        d.setProduct(t);
                     }
                 }
 
                 // Calculate for bit 128-255, for individual 1-bit set.
-                for (int i = 127; i >= 0; i--) {
-                    d.setSquare();
+                for (int k = -1, i = 127; i >= 0; i--) {
                     if (b.testBit(i)) {
-                        d.setProduct(imp);
+                        if (k == w.length - 2) {
+                            // calculate the current & reserved bits
+                            d.setSquare();
+                            d.setProduct(w[w.length - 1]);
+                            k = -1;
+                        } else {
+                            k++;
+                            d.setSquare();
+                        }
+                    } else {    // calculate the reserved bits
+                        if (k >= 0) {
+                            // add back the reserved bits
+                            d.setProduct(w[k]);
+                            k = -1;
+                        }
+                        d.setSquare();
                     }
                 }
+
+                // Note that the last 4 bits was handled in the for-lopp above
+                // as it hapeens to be 4. For bit set other than 4 bits, for
+                // example, 3 bits set (0x8), the value should be added back.
+                // d.setProduct(w[2]);
 
                 return d.fixed();
             }
