@@ -96,7 +96,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte64ToLong512() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
         Asserts.assertEquals(mByte64.cast(LongVector.SPECIES_512).toString(), mByte64.toString());
@@ -104,7 +104,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte64ToDouble512() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
         Asserts.assertEquals(mByte64.cast(DoubleVector.SPECIES_512).toString(), mByte64.toString());
@@ -120,7 +120,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte128ToInt512() {
         VectorMask<Byte> mByte128 = VectorMask.fromArray(ByteVector.SPECIES_128, mask_arr, 0);
         Asserts.assertEquals(mByte128.cast(IntVector.SPECIES_512).toString(), mByte128.toString());
@@ -128,7 +128,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte128ToFloat512() {
         VectorMask<Byte> mByte128 = VectorMask.fromArray(ByteVector.SPECIES_128, mask_arr, 0);
         Asserts.assertEquals(mByte128.cast(FloatVector.SPECIES_512).toString(), mByte128.toString());
@@ -136,7 +136,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte256ToShort512() {
         VectorMask<Byte> mByte256 = VectorMask.fromArray(ByteVector.SPECIES_256, mask_arr, 0);
         Asserts.assertEquals(mByte256.cast(ShortVector.SPECIES_512).toString(), mByte256.toString());
@@ -201,7 +201,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort128ToLong512() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
         Asserts.assertEquals(mShort128.cast(LongVector.SPECIES_512).toString(), mShort128.toString());
@@ -209,7 +209,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort128ToDouble512() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
         Asserts.assertEquals(mShort128.cast(DoubleVector.SPECIES_512).toString(), mShort128.toString());
@@ -225,7 +225,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort256ToInt512() {
         VectorMask<Short> mShort256 = VectorMask.fromArray(ShortVector.SPECIES_256, mask_arr, 0);
         Asserts.assertEquals(mShort256.cast(IntVector.SPECIES_512).toString(), mShort256.toString());
@@ -233,7 +233,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort256ToFloat512() {
         VectorMask<Short> mShort256 = VectorMask.fromArray(ShortVector.SPECIES_256, mask_arr, 0);
         Asserts.assertEquals(mShort256.cast(FloatVector.SPECIES_512).toString(), mShort256.toString());
@@ -241,7 +241,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort512ToByte256() {
         VectorMask<Short> mShort512 = VectorMask.fromArray(ShortVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mShort512.cast(ByteVector.SPECIES_256).toString(), mShort512.toString());
@@ -306,7 +306,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testInt256ToLong512() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
         Asserts.assertEquals(mInt256.cast(LongVector.SPECIES_512).toString(), mInt256.toString());
@@ -314,7 +314,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testInt256ToDouble512() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
         Asserts.assertEquals(mInt256.cast(DoubleVector.SPECIES_512).toString(), mInt256.toString());
@@ -322,7 +322,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testInt512ToShort256() {
         VectorMask<Integer> mInt512 = VectorMask.fromArray(IntVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mInt512.cast(ShortVector.SPECIES_256).toString(), mInt512.toString());
@@ -330,7 +330,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testInt512ToByte128() {
         VectorMask<Integer> mInt512 = VectorMask.fromArray(IntVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mInt512.cast(ByteVector.SPECIES_128).toString(), mInt512.toString());
@@ -395,7 +395,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testFloat256ToLong512() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
         Asserts.assertEquals(mFloat256.cast(LongVector.SPECIES_512).toString(), mFloat256.toString());
@@ -403,7 +403,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testFloat256ToDouble512() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
         Asserts.assertEquals(mFloat256.cast(DoubleVector.SPECIES_512).toString(), mFloat256.toString());
@@ -411,7 +411,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testFloat512ToShort256() {
         VectorMask<Float> mFloat512 = VectorMask.fromArray(FloatVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mFloat512.cast(ShortVector.SPECIES_256).toString(), mFloat512.toString());
@@ -419,7 +419,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testFloat512ToByte128() {
         VectorMask<Float> mFloat512 = VectorMask.fromArray(FloatVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mFloat512.cast(ByteVector.SPECIES_128).toString(), mFloat512.toString());
@@ -468,7 +468,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testLong512ToInt256() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mLong512.cast(IntVector.SPECIES_256).toString(), mLong512.toString());
@@ -476,7 +476,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testLong512ToFloat256() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mLong512.cast(FloatVector.SPECIES_256).toString(), mLong512.toString());
@@ -484,7 +484,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testLong512ToShort128() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mLong512.cast(ShortVector.SPECIES_128).toString(), mLong512.toString());
@@ -492,7 +492,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testLong512ToByte64() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mLong512.cast(ByteVector.SPECIES_64).toString(), mLong512.toString());
@@ -541,7 +541,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testDouble512ToInt256() {
         VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mDouble512.cast(IntVector.SPECIES_256).toString(), mDouble512.toString());
@@ -549,7 +549,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testDouble512ToFloat256() {
         VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mDouble512.cast(FloatVector.SPECIES_256).toString(), mDouble512.toString());
@@ -557,7 +557,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testDouble512ToShort128() {
         VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mDouble512.cast(ShortVector.SPECIES_128).toString(), mDouble512.toString());
@@ -565,7 +565,7 @@ public class VectorMaskCastTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testDouble512ToByte64() {
         VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
         Asserts.assertEquals(mDouble512.cast(ByteVector.SPECIES_64).toString(), mDouble512.toString());
