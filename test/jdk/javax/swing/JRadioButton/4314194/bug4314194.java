@@ -50,7 +50,7 @@ public class bug4314194 {
     private static Robot robot;
     private static final Color radioButtonColor = Color.RED;
     private static final Color checkboxColor = Color.GREEN;
-    private static final int tolerance = 20;
+    private static final int tolerance = 10;
 
     private static boolean checkComponent(Component comp, Color c) throws Exception {
         int correctColoredPixels = 0;
@@ -72,6 +72,7 @@ public class bug4314194 {
             totalPixels++;
         }
 
+        System.out.println("correctColoredPixels " + correctColoredPixels + " totalPixels " + totalPixels);
         return ((double)correctColoredPixels/totalPixels*100) >= tolerance;
     }
 
