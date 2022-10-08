@@ -1978,21 +1978,42 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  Register rscratch3 = r0;
-  __ push(rscratch1);
-  __ push(rscratch2);
-  __ push(rscratch3);
+  Register rscratch3 = r10;
   __ mov(rscratch3, (address) &BytecodeCounter::_counter_value);
-  __ atomic_add(noreg, 1, rscratch3);
-  __ pop(rscratch3);
-  __ pop(rscratch2);
-  __ pop(rscratch1);
+  __ atomic_addw(noreg, 1, rscratch3);
 }
 
-void TemplateInterpreterGenerator::histogram_bytecode(Template* t) { ; }
+void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
+  Register rscratch3 = r10;
+  __ mov(rscratch3, (address) &BytecodeHistogram::_counters[t->bytecode()]);
+  __ atomic_addw(noreg, 1, rscratch3);
+}
 
-void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) { ; }
+void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
+  // Calculate new index for counter:
+  //   _index = (_index >> log2_number_of_codes) |
+  //            (bytecode << log2_number_of_codes);
+  Register index_addr = r10;
+  Register index = r11;
+  Label L;
+  __ mov(index_addr, (address) &BytecodePairHistogram::_index);
+  __ mov(rscratch1,
+         ((int)t->bytecode()) << BytecodePairHistogram::log2_number_of_codes);
+  __ prfm(Address(index_addr), PSTL1STRM);
+  __ bind(L);
+  __ ldxrw(rscratch2, index_addr);
+  __ orrw(index, rscratch1, rscratch2, Assembler::LSR,
+          BytecodePairHistogram::log2_number_of_codes);
+  __ stxrw(rscratch2, index, index_addr);
+  __ cbnzw(rscratch2, L);  // retry to load _index
 
+  // Bump bucket contents:
+  //   _counters[_index] ++;
+  Register counter_addr = r10;
+  __ mov(rscratch1, (address) &BytecodePairHistogram::_counters);
+  __ lea(counter_addr, Address(rscratch1, index, Address::lsl(LogBytesPerInt)));
+  __ atomic_addw(noreg, 1, counter_addr);
+}
 
 void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // Call a little run-time stub to avoid blow-up for each bytecode.
