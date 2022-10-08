@@ -62,6 +62,9 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   double alloc_region_rate = analytics->predict_alloc_rate_ms();
   double alloc_bytes_rate = alloc_region_rate * HeapRegion::GrainBytes;
   if (alloc_bytes_rate == 0.0) {
+    // A zero rate indicates we don't yet have data to use for predictions.
+    // Since we don't have any idea how long until the next GC, use a time of
+    // zero.
     _predicted_time_until_next_gc_ms = 0.0;
   } else {
     // If the heap size is large and the allocation rate is small, we can get
@@ -76,7 +79,8 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // Estimate number of cards that need to be processed before next GC.  There
   // are no incoming cards when time is short, because in that case the
   // controller activates refinement by mutator threads to stay on target even
-  // if threads deactivate in the meantime.
+  // if threads deactivate in the meantime.  This also covers the case of not
+  // having a real prediction of time until GC.
   size_t incoming_cards = 0;
   if (_predicted_time_until_next_gc_ms > _update_period_ms) {
     double incoming_rate = analytics->predict_dirtied_cards_rate_ms();
@@ -97,8 +101,8 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // time is short, and can lead to starting up lots of threads for not much
   // profit.  If we're in the last update period, don't change the number of
   // threads running, other than to treat the current thread as running.  That
-  // might not be sufficient, but hopefully we were reasonably close
-  // previously and won't accumulate a large excess in the remaining time.
+  // might not be sufficient, but hopefully we were already reasonably close.
+  // We won't accumulate more because mutator refinement will be activated.
   if (_predicted_time_until_next_gc_ms <= _update_period_ms) {
     _threads_needed = MAX2(active_threads, 1u);
     return;
