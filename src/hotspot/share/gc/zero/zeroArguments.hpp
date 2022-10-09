@@ -6,9 +6,10 @@
 class CollectedHeap;
 
 class ZeroArguments : public GCArguments {
-private:
+protected:
     virtual void initialize_alignments();
 
+public:
     virtual void initialize();
     virtual size_t conservative_max_heap_alignment();
     virtual CollectedHeap* create_heap();
