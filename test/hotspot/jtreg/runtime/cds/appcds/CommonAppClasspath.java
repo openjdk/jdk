@@ -63,7 +63,7 @@ public class CommonAppClasspath {
     Path destPath = destDir.resolve(jarName);
     Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
 
-    // copy AppendClasspath_HelloMore.jar to USER_DIR/deploy 
+    // copy AppendClasspath_HelloMore.jar to USER_DIR/deploy
     idx = appJar2.lastIndexOf(File.separator);
     jarName = appJar2.substring(idx + 1);
     srcPath = Paths.get(appJar2);
