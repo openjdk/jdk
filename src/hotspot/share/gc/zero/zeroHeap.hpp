@@ -9,6 +9,7 @@
 #include "gc/zero/zeroBarrierSet.hpp"
 
 class ZeroHeap: public CollectedHeap {
+    friend class VMStructs;
 private:
     SoftRefPolicy _soft_ref_policy;
     GCMemoryManager _memory_manager;
