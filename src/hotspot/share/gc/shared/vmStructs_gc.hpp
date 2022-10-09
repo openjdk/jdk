@@ -64,6 +64,9 @@
   EPSILONGC_ONLY(VM_STRUCTS_EPSILONGC(nonstatic_field,                                                                               \
                                       volatile_nonstatic_field,                                                                      \
                                       static_field))                                                                                 \
+  ZEROGC_ONLY(VM_STRUCTS_ZEROGC(nonstatic_field,                                                                                     \
+                                      volatile_nonstatic_field,                                                                      \
+                                      static_field))                                                                                 \
   G1GC_ONLY(VM_STRUCTS_G1GC(nonstatic_field,                                                                                         \
                             volatile_nonstatic_field,                                                                                \
                             static_field))                                                                                           \
@@ -142,6 +145,9 @@
   EPSILONGC_ONLY(VM_TYPES_EPSILONGC(declare_type,                         \
                                     declare_toplevel_type,                \
                                     declare_integer_type))                \
+  ZEROGC_ONLY(VM_TYPES_ZEROGC(declare_type,                               \
+                                    declare_toplevel_type,                \
+                                    declare_integer_type))                \
   G1GC_ONLY(VM_TYPES_G1GC(declare_type,                                   \
                           declare_toplevel_type,                          \
                           declare_integer_type))                          \
@@ -213,6 +219,8 @@
                             declare_constant_with_value)                    \
   EPSILONGC_ONLY(VM_INT_CONSTANTS_EPSILONGC(declare_constant,               \
                                             declare_constant_with_value))   \
+  ZEROGC_ONLY(VM_INT_CONSTANTS_ZEROGC(declare_constant,                     \
+                                        declare_constant_with_value))       \
   G1GC_ONLY(VM_INT_CONSTANTS_G1GC(declare_constant,                         \
                                   declare_constant_with_value))             \
   PARALLELGC_ONLY(VM_INT_CONSTANTS_PARALLELGC(declare_constant,             \
