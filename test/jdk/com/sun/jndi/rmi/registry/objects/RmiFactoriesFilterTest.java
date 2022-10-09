@@ -21,7 +21,6 @@
  * questions.
  */
 
-import javax.naming.ConfigurationException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -44,67 +43,81 @@ import java.util.Hashtable;
  * @build TestLibrary
  * @compile TestFactory.java
  *
- * @run main/othervm RmiFactoriesFilterTest false
+ * @run main/othervm RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=*
- *                   RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.**;!*
- *                   RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.**;!*
- *                   RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.*;!*
- *                   RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.Test*;!*
- *                   RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=!com.test.**
- *                   RmiFactoriesFilterTest false
+ *                   RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=!com.test.TestFactory;com.**
- *                   RmiFactoriesFilterTest false
+ *                   RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=!com.test.TestFactory;com.test.*
- *                   RmiFactoriesFilterTest false
+ *                   RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=!com.test.Test*
- *                   RmiFactoriesFilterTest false
+ *                   RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.*;!*
- *                    RmiFactoriesFilterTest false
+ *                    RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.TestFactor;!*
- *                   RmiFactoriesFilterTest false
+ *                   RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=com.test.TestFactoryy;!*
- *                   RmiFactoriesFilterTest false
+ *                   RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/disallowRmiFilter.props
- *                   RmiFactoriesFilterTest false
+ *                   RmiFactoriesFilterTest false true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/disallowRmiFilter.props
  *                   -Djdk.jndi.rmi.object.factoriesFilter=com.test.TestFactory
- *                   RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/allowRmiFilter.props
- *                   RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/allowRmiFilter.props
  *                   -Djdk.jndi.ldap.object.factoriesFilter=!com.test.TestFactory
- *                   RmiFactoriesFilterTest true
+ *                   RmiFactoriesFilterTest true true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/allowRmiFilter.props
  *                   -Djdk.jndi.rmi.object.factoriesFilter=!com.test.TestFactory
- *                   RmiFactoriesFilterTest false
+ *                   RmiFactoriesFilterTest false true
+ *
+ * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=.*
+ *                   RmiFactoriesFilterTest false false
+ *
+ * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=*
+ *                   -Djdk.jndi.object.factoriesFilter=.*
+ *                   RmiFactoriesFilterTest false false
+ *
+ * @run main/othervm -Djdk.jndi.rmi.object.factoriesFilter=*
+ *                   -Djdk.jndi.object.factoriesFilter=*
+ *                   -Djdk.jndi.ldap.object.factoriesFilter=.*
+ *                   RmiFactoriesFilterTest true true
  */
 
 public class RmiFactoriesFilterTest {
 
     public static void main(String[] args) throws Exception {
         boolean classExpectedToLoad = Boolean.parseBoolean(args[0]);
+        boolean rmiAndGlobalFiltersValid =
+                Boolean.parseBoolean(args[1]);
         int registryPort;
         try {
             Registry registry = TestLibrary.createRegistryOnEphemeralPort();
@@ -114,22 +127,35 @@ public class RmiFactoriesFilterTest {
             throw new RuntimeException("Failed to create registry", re);
         }
 
-        loadUsingFactoryFromTCCL(registryPort, classExpectedToLoad);
-    }
-
-    private static void loadUsingFactoryFromTCCL(int registryPort, boolean classExpectedToLoad)
-            throws NamingException {
-        Hashtable<String, String> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY,
-                "com.sun.jndi.rmi.registry.RegistryContextFactory");
-        env.put(Context.PROVIDER_URL, "rmi://127.0.0.1:" + registryPort);
-
-        Context context = new InitialContext(env);
+        Context context = getInitialContext(registryPort);
+        // Bind the Reference object
         Reference ref = new Reference("TestObject", "com.test.TestFactory",
                 null);
         context.bind("objectTest", ref);
 
+        loadUsingFactoryFromTCCL(registryPort, classExpectedToLoad, rmiAndGlobalFiltersValid);
+        if (!rmiAndGlobalFiltersValid) {
+            // Check that IAE is set as NamingException cause for malformed RMI or GLOBAL
+            // filter values when lookup is called for the second time
+            loadUsingFactoryFromTCCL(registryPort, classExpectedToLoad, false);
+        }
+    }
+
+    private static Context getInitialContext(int port) throws NamingException {
+        Hashtable<String, String> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY,
+                "com.sun.jndi.rmi.registry.RegistryContextFactory");
+        env.put(Context.PROVIDER_URL, "rmi://127.0.0.1:" + port);
+        return new InitialContext(env);
+    }
+
+    private static void loadUsingFactoryFromTCCL(int registryPort,
+                                                 boolean classExpectedToLoad,
+                                                 boolean rmiAndGlobalFiltersValid) {
+
+
         try {
+            Context context = getInitialContext(registryPort);
             Object object = context.lookup("objectTest");
             System.out.println("Number of getObjectInstance calls:" +
                     com.test.TestFactory.getNumberOfGetInstanceCalls());
@@ -144,8 +170,20 @@ public class RmiFactoriesFilterTest {
                     throw new AssertionError("Class was unexpectedly loaded by the factory");
                 }
             }
-        } catch (ConfigurationException ce) {
-            throw new AssertionError("Test infrastructure failure", ce);
+        } catch (NamingException ne) {
+            // Only expecting NamingException for cases when RMI or GLOBAL filters are malformed
+            if (rmiAndGlobalFiltersValid) {
+                throw new AssertionError("Unexpected NamingException observed", ne);
+            }
+            if (ne.getCause() instanceof IllegalArgumentException iae) {
+                // All tests with malformed filters contain wildcards with
+                // package name missing, therefore the message is expected
+                // to start with "package missing in:"
+                System.err.println("Found expected exception: " + iae);
+            } else {
+                throw new AssertionError("IllegalArgument exception" +
+                        " is expected for malformed filter values");
+            }
         }
     }
 }

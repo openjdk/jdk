@@ -43,67 +43,81 @@ import java.util.Hashtable;
  * @library /test/lib ../../lib /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils TestFactory
  *
- * @run main/othervm LdapFactoriesFilterTest false
+ * @run main/othervm LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=*
- *                   LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.**;!*
- *                   LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.**;!*
- *                   LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.*;!*
- *                   LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.Test*;!*
- *                   LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=!com.test.**
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=!com.test.TestFactory;com.**
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=!com.test.TestFactory;com.test.*
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=!com.test.Test*
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.*;!*
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.TestFactor;!*
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=com.test.TestFactoryy;!*
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/disallowLdapFilter.props
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/disallowLdapFilter.props
  *                   -Djdk.jndi.ldap.object.factoriesFilter=com.test.TestFactory
- *                   LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/allowLdapFilter.props
- *                   LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/allowLdapFilter.props
  *                   -Djdk.jndi.rmi.object.factoriesFilter=!com.test.TestFactory
- *                   LdapFactoriesFilterTest true
+ *                   LdapFactoriesFilterTest true true
  *
  * @run main/othervm -Djava.security.properties=${test.src}/allowLdapFilter.props
  *                   -Djdk.jndi.ldap.object.factoriesFilter=!com.test.TestFactory
- *                   LdapFactoriesFilterTest false
+ *                   LdapFactoriesFilterTest false true
+ *
+ * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=.*
+ *                   LdapFactoriesFilterTest false false
+ *
+ * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=*
+ *                   -Djdk.jndi.object.factoriesFilter=.*
+ *                   LdapFactoriesFilterTest false false
+ *
+ * @run main/othervm -Djdk.jndi.ldap.object.factoriesFilter=*
+ *                   -Djdk.jndi.object.factoriesFilter=*
+ *                   -Djdk.jndi.rmi.object.factoriesFilter=.*
+ *                   LdapFactoriesFilterTest true true
  */
 
 public class LdapFactoriesFilterTest {
     public static void main(String[] args) throws Exception {
 
         boolean testFactoryAllowed = Boolean.parseBoolean(args[0]);
+        boolean ldapAndGlobalFiltersValid =
+                Boolean.parseBoolean(args[1]);
 
         // Create unbound server socket
         ServerSocket serverSocket = new ServerSocket();
@@ -160,6 +174,23 @@ public class LdapFactoriesFilterTest {
                 } else {
                     throw new AssertionError(
                             "NamingException was not thrown as expected");
+                }
+            } else if (!ldapAndGlobalFiltersValid) {
+                // If LDAP or GLOBAL factories filter are not properly formatted we're expecting to
+                // get NamingException with IllegalArgumentException set as a cause that contains
+                // formatting error message.
+                // If RMI filter is not properly formatted we're not expecting IAE here since
+                // this test only performing LDAP lookups
+                if (observedException instanceof NamingException ne) {
+                    if (ne.getCause() instanceof IllegalArgumentException iae) {
+                        // All tests with malformed filters contain wildcards with
+                        // package name missing, therefore the message is expected
+                        // to start with "package missing in:"
+                        System.err.println("Found expected exception: " + iae);
+                    } else {
+                        throw new AssertionError("IllegalArgumentException" +
+                                " is expected for malformed filter values");
+                    }
                 }
             } else {
                 // Object factory is not allowed by the factories filter

@@ -53,11 +53,11 @@ public final class ObjectFactoriesFilter {
      * If the filter result is {@linkplain Status#ALLOWED ALLOWED}, the filter will
      * allow the instantiation of objects factory class.
      *
-     * @param clz objects factory class
+     * @param serialClass objects factory class
      * @return true - if the factory is allowed to be instantiated; false - otherwise
      */
-    public static boolean checkGlobalFilter(Class<?> clz) {
-        return checkInput("global", () -> clz);
+    public static boolean checkGlobalFilter(Class<?> serialClass) {
+        return checkInput(GLOBAL_FILTER, () -> serialClass);
     }
 
     /**
@@ -67,11 +67,11 @@ public final class ObjectFactoriesFilter {
      * The given factory class is rejected if any of these two filters reject
      * it, or if none of them allow it.
      *
-     * @param clz objects factory class
+     * @param serialClass objects factory class
      * @return true - if the factory is allowed to be instantiated; false - otherwise
      */
-    public static boolean checkLdapFilter(Class<?> clz) {
-        return checkInput("ldap", () -> clz);
+    public static boolean checkLdapFilter(Class<?> serialClass) {
+        return checkInput(LDAP_FILTER, () -> serialClass);
     }
 
     /**
@@ -81,26 +81,29 @@ public final class ObjectFactoriesFilter {
      * The given factory class is rejected if any of these two filters reject
      * it, or if none of them allow it.
      *
-     * @param clz objects factory class
+     * @param serialClass objects factory class
      * @return true - if the factory is allowed to be instantiated; false - otherwise
      */
-    public static boolean checkRmiFilter(Class<?> clz) {
-        return checkInput("rmi", () -> clz);
+    public static boolean checkRmiFilter(Class<?> serialClass) {
+        return checkInput(RMI_FILTER, () -> serialClass);
     }
 
-    private static boolean checkInput(String scheme, FactoryInfo factoryInfo) {
-        Status result = switch(scheme) {
-            case "ldap" -> LDAP_FILTER.checkInput(factoryInfo);
-            case "rmi" -> RMI_FILTER.checkInput(factoryInfo);
-            default -> Status.UNDECIDED;
-        };
-        return switch(result) {
+    private static boolean checkInput(ConfiguredFilter filter, FactoryInfo serialClass) {
+        var globalFilter = GLOBAL_FILTER.filter();
+        var specificFilter = filter.filter();
+
+        Status globalResult = globalFilter.checkInput(serialClass);
+        if (filter == GLOBAL_FILTER) {
+            return globalResult == Status.ALLOWED;
+        }
+
+        Status specificResult = specificFilter.checkInput(serialClass);
+        return switch (specificResult) {
             // Only allowed if not rejected by global filter
-            case ALLOWED -> GLOBAL_FILTER.checkInput(factoryInfo) != Status.REJECTED;
-            // Rejected
+            case ALLOWED -> globalResult != Status.REJECTED;
             case REJECTED -> false;
             // Only allowed if allowed by global filter
-            case UNDECIDED -> GLOBAL_FILTER.checkInput(factoryInfo) == Status.ALLOWED;
+            case UNDECIDED -> globalResult == Status.ALLOWED;
         };
     }
 
@@ -136,7 +139,7 @@ public final class ObjectFactoriesFilter {
      }
 
     // System property name that contains the patterns to filter object factory names
-    private static final String FACTORIES_FILTER_PROPNAME =
+    private static final String GLOBAL_FACTORIES_FILTER_PROPNAME =
             "jdk.jndi.object.factoriesFilter";
 
     // System property name that contains the patterns to filter LDAP object factory
@@ -165,24 +168,57 @@ public final class ObjectFactoriesFilter {
 
     // A system-wide global object factories filter constructed from the system
     // property
-    private static final ObjectInputFilter GLOBAL_FILTER =
-            ObjectInputFilter.Config.createFilter(
-                    getFilterPropertyValue(FACTORIES_FILTER_PROPNAME,
-                                           DEFAULT_GLOBAL_SP_VALUE));
+    private static final ConfiguredFilter GLOBAL_FILTER =
+            initializeFilter(GLOBAL_FACTORIES_FILTER_PROPNAME, DEFAULT_GLOBAL_SP_VALUE);
 
     // A system-wide LDAP specific object factories filter constructed from the system
     // property
-    private static final ObjectInputFilter LDAP_FILTER =
-            ObjectInputFilter.Config.createFilter(
-                    getFilterPropertyValue(LDAP_FACTORIES_FILTER_PROPNAME,
-                                           DEFAULT_LDAP_SP_VALUE));
+    private static final ConfiguredFilter LDAP_FILTER =
+            initializeFilter(LDAP_FACTORIES_FILTER_PROPNAME, DEFAULT_LDAP_SP_VALUE);
 
     // A system-wide RMI specific object factories filter constructed from the system
     // property
-    private static final ObjectInputFilter RMI_FILTER =
-            ObjectInputFilter.Config.createFilter(
-                    getFilterPropertyValue(RMI_FACTORIES_FILTER_PROPNAME,
-                                           DEFAULT_RMI_SP_VALUE));
+    private static final ConfiguredFilter RMI_FILTER =
+            initializeFilter(RMI_FACTORIES_FILTER_PROPNAME, DEFAULT_RMI_SP_VALUE);
+
+    // Record for storing a factory filter configuration
+    private interface ConfiguredFilter {
+        ObjectInputFilter filter();
+    }
+
+    // Record to store an object input filter constructed from a valid filter
+    // pattern string
+    private record ValidFilter(ObjectInputFilter filter)
+            implements ConfiguredFilter {
+    }
+
+    // Record to store parsing results for a filter with
+    // illegal or malformed pattern string
+    private record InvalidFilter(String filterPropertyName,
+                                 IllegalArgumentException error)
+            implements ConfiguredFilter {
+
+        @Override
+        public ObjectInputFilter filter() {
+            // Report a filter property name and an error message
+            throw new IllegalArgumentException(filterPropertyName +
+                    ": " + error.getMessage());
+        }
+    }
+
+    // Read filter pattern value from a system/security property
+    // and create a filter record from it (valid or invalid).
+    private static ConfiguredFilter initializeFilter(String filterPropertyName,
+                                                     String filterDefaultValue) {
+        try {
+            var filter = ObjectInputFilter.Config.createFilter(
+                    getFilterPropertyValue(filterPropertyName,
+                            filterDefaultValue));
+            return new ValidFilter(filter);
+        } catch (IllegalArgumentException iae) {
+            return new InvalidFilter(filterPropertyName, iae);
+        }
+    }
 
     // Get security or system property value
     private static String getFilterPropertyValue(String propertyName,
