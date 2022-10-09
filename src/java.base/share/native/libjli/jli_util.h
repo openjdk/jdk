@@ -82,9 +82,10 @@ JLI_GetAppArgIndex();
 #define JLI_StrPBrk(p1, p2)     strpbrk((p1), (p2))
 
 /*
- * Visual Studio 2015 and above, alongside Windows 10 and the UCRT, use the
- * C99 snprintf, which is no longer identical to the outdated Windows _snprintf,
- * so we can remove the compatibility hack.
+ * Visual Studio 2015 and above, alongside Windows 10 and the UCRT
+ * now use the C99 snprintf, which is no longer identical to the
+ * outdated Windows _snprintf, so we can remove the compatibility
+ * workaround.
  * https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference
  * /snprintf-snprintf-snprintf-l-snwprintf-snwprintf-l?view=msvc-170
  */
