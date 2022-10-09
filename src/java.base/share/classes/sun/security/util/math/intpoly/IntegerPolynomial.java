@@ -548,7 +548,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             for (int i = 0; i < limbs.length; i++) {
                 newLimbs[i] = limbs[i] + b.limbs[i];
             }
-	    reduce(newLimbs);
+            reduce(newLimbs);
 
             return new ImmutableElement(newLimbs);
         }

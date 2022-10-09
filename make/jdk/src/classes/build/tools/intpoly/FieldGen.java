@@ -302,7 +302,7 @@ public class FieldGen {
         private final List<CarryReduce> smallCrSequence;
 
         public FieldParams(String className, int bitsPerLimb, int numLimbs,
-		int power, Iterable<Term> terms, List<CarryReduce> crSequence,
+                int power, Iterable<Term> terms, List<CarryReduce> crSequence,
                 List<CarryReduce> smallCrSequence) {
             this.className = className;
             this.bitsPerLimb = bitsPerLimb;
@@ -314,7 +314,7 @@ public class FieldGen {
         }
 
         public FieldParams(String className, int bitsPerLimb, int numLimbs,
-		int power, String term, List<CarryReduce> crSequence,
+                int power, String term, List<CarryReduce> crSequence,
                 List<CarryReduce> smallCrSequence) {
             this.className = className;
             this.bitsPerLimb = bitsPerLimb;
