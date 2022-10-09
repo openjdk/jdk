@@ -7,7 +7,7 @@
 // Defines all globals flags used by the Zero GC.
 //
 
-#define GC_Zero_FLAGS(develop,                                              \
+#define GC_ZERO_FLAGS(develop,                                              \
                          develop_pd,                                        \
                          product,                                           \
                          product_pd,                                        \
