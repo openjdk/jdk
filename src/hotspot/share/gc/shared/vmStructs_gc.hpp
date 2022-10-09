@@ -37,6 +37,9 @@
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/vmStructs_epsilon.hpp"
 #endif
+#if INCLUDE_ZEROGC
+#include "gc/zero/vmStructs_zero.hpp"
+#endif
 #if INCLUDE_G1GC
 #include "gc/g1/vmStructs_g1.hpp"
 #endif
