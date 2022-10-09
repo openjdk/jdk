@@ -543,7 +543,7 @@ public class BufferedInputStream extends FilterInputStream {
 
     private void implReset() throws IOException {
         getBufIfOpen(); // Cause exception if closed
-        if (markpos == -1)
+        if (markpos < 0)
             throw new IOException("Resetting to invalid mark");
         pos = markpos;
     }
