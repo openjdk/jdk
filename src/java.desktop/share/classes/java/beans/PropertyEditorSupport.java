@@ -285,7 +285,7 @@ public class PropertyEditorSupport implements PropertyEditor {
             if (listeners == null) {
                 return;
             }
-            targets = unsafeClone(listeners);
+            targets = new ArrayList<>(listeners);
         }
         // Tell our listeners that "everything" has changed.
         PropertyChangeEvent evt = new PropertyChangeEvent(source, null, null, null);
@@ -294,11 +294,6 @@ public class PropertyEditorSupport implements PropertyEditor {
             PropertyChangeListener target = targets.get(i);
             target.propertyChange(evt);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> ArrayList<T> unsafeClone(ArrayList<T> v) {
-        return (ArrayList<T>)v.clone();
     }
 
     //----------------------------------------------------------------------
