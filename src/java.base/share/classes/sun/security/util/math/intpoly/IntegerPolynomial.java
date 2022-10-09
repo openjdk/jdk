@@ -35,9 +35,7 @@ import java.util.Arrays;
 /**
  * A large number polynomial representation using sparse limbs of signed
  * long (64-bit) values. Limb values will always fit within a long, so inputs
- * to multiplication must be less than 32 bits. All IntegerPolynomial
- * implementations allow at most one addition before multiplication. Additions
- * after that will result in an ArithmeticException.
+ * to multiplication must be less than 32 bits.
  *
  * The following element operations are branch-free for all subclasses:
  *
@@ -76,7 +74,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
     private final BigInteger modulus;
     protected final int bitsPerLimb;
     private final long[] posModLimbs;
-    private final int maxAdds;
 
     /**
      * Reduce an IntegerPolynomial representation (a) and store the result
@@ -114,14 +111,12 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
 
     IntegerPolynomial(int bitsPerLimb,
                       int numLimbs,
-                      int maxAdds,
                       BigInteger modulus) {
 
 
         this.numLimbs = numLimbs;
         this.modulus = modulus;
         this.bitsPerLimb = bitsPerLimb;
-        this.maxAdds = maxAdds;
 
         posModLimbs = setPosModLimbs();
     }
@@ -134,10 +129,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
 
     protected int getNumLimbs() {
         return numLimbs;
-    }
-
-    public int getMaxAdds() {
-        return maxAdds;
     }
 
     @Override
@@ -280,7 +271,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
 
         encode(v, offset, length, highByte, result);
 
-        return new ImmutableElement(result, 0);
+        return new ImmutableElement(result);
     }
 
     protected BigInteger evaluate(long[] limbs) {
@@ -514,7 +505,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
     private abstract class Element implements IntegerModuloP {
 
         protected long[] limbs;
-        protected int numAdds;
 
         public Element(BigInteger v) {
             limbs = new long[numLimbs];
@@ -524,17 +514,14 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
         public Element(boolean v) {
             this.limbs = new long[numLimbs];
             this.limbs[0] = v ? 1L : 0L;
-            this.numAdds = 0;
         }
 
-        private Element(long[] limbs, int numAdds) {
+        private Element(long[] limbs) {
             this.limbs = limbs;
-            this.numAdds = numAdds;
         }
 
         private void setValue(BigInteger v) {
             setLimbsValue(v, limbs);
-            this.numAdds = 0;
         }
 
         @Override
@@ -549,28 +536,21 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
 
         @Override
         public MutableElement mutable() {
-            return new MutableElement(limbs.clone(), numAdds);
-        }
-
-        protected boolean isSummand() {
-            return numAdds < maxAdds;
+            return new MutableElement(limbs.clone());
         }
 
         @Override
         public ImmutableElement add(IntegerModuloP genB) {
             assert IntegerPolynomial.this == genB.getField();
             Element b = (Element) genB;
-            if (!(isSummand() && b.isSummand())) {
-                throw new ArithmeticException("Not a valid summand");
-            }
 
             long[] newLimbs = new long[limbs.length];
             for (int i = 0; i < limbs.length; i++) {
                 newLimbs[i] = limbs[i] + b.limbs[i];
             }
+	    reduce(newLimbs);
 
-            int newNumAdds = Math.max(numAdds, b.numAdds) + 1;
-            return new ImmutableElement(newLimbs, newNumAdds);
+            return new ImmutableElement(newLimbs);
         }
 
         @Override
@@ -581,7 +561,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
                 newLimbs[i] = -limbs[i];
             }
 
-            return new ImmutableElement(newLimbs, numAdds);
+            return new ImmutableElement(newLimbs);
         }
 
         protected long[] cloneLow(long[] limbs) {
@@ -600,29 +580,23 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
 
             long[] newLimbs = new long[limbs.length];
             mult(limbs, b.limbs, newLimbs);
-            return new ImmutableElement(newLimbs, 0);
+            return new ImmutableElement(newLimbs);
         }
 
         @Override
         public ImmutableElement square() {
             long[] newLimbs = new long[limbs.length];
             IntegerPolynomial.this.square(limbs, newLimbs);
-            return new ImmutableElement(newLimbs, 0);
+            return new ImmutableElement(newLimbs);
         }
 
         public void addModPowerTwo(IntegerModuloP arg, byte[] result) {
             assert IntegerPolynomial.this == arg.getField();
             Element other = (Element) arg;
-            if (!(isSummand() && other.isSummand())) {
-                throw new ArithmeticException("Not a valid summand");
-            }
             addLimbsModPowerTwo(limbs, other.limbs, result);
         }
 
         public void asByteArray(byte[] result) {
-            if (!isSummand()) {
-                throw new ArithmeticException("Not a valid summand");
-            }
             limbsToByteArray(limbs, result);
         }
     }
@@ -630,13 +604,13 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
     protected class MutableElement extends Element
         implements MutableIntegerModuloP {
 
-        protected MutableElement(long[] limbs, int numAdds) {
-            super(limbs, numAdds);
+        protected MutableElement(long[] limbs) {
+            super(limbs);
         }
 
         @Override
         public ImmutableElement fixed() {
-            return new ImmutableElement(limbs.clone(), numAdds);
+            return new ImmutableElement(limbs.clone());
         }
 
         @Override
@@ -645,7 +619,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             Element other = (Element) b;
 
             conditionalAssign(set, limbs, other.limbs);
-            numAdds = other.numAdds;
         }
 
         @Override
@@ -654,9 +627,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             MutableElement other = (MutableElement) b;
 
             conditionalSwap(swap, limbs, other.limbs);
-            int numAddsTemp = numAdds;
-            numAdds = other.numAdds;
-            other.numAdds = numAddsTemp;
         }
 
 
@@ -666,7 +636,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             Element other = (Element) v;
 
             System.arraycopy(other.limbs, 0, limbs, 0, other.limbs.length);
-            numAdds = other.numAdds;
             return this;
         }
 
@@ -675,7 +644,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
                                        int length, byte highByte) {
 
             encode(arr, offset, length, highByte, limbs);
-            this.numAdds = 0;
 
             return this;
         }
@@ -685,7 +653,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
                                        byte highByte) {
 
             encode(buf, length, highByte, limbs);
-            numAdds = 0;
 
             return this;
         }
@@ -695,7 +662,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             assert IntegerPolynomial.this == genB.getField();
             Element b = (Element) genB;
             mult(limbs, b.limbs, limbs);
-            numAdds = 0;
             return this;
         }
 
@@ -703,7 +669,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
         public MutableElement setProduct(SmallValue v) {
             int value = ((Limb) v).value;
             multByInt(limbs, value);
-            numAdds = 0;
             return this;
         }
 
@@ -711,15 +676,12 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
         public MutableElement setSum(IntegerModuloP genB) {
             assert IntegerPolynomial.this == genB.getField();
             Element b = (Element) genB;
-            if (!(isSummand() && b.isSummand())) {
-                throw new ArithmeticException("Not a valid summand");
-            }
 
             for (int i = 0; i < limbs.length; i++) {
                 limbs[i] = limbs[i] + b.limbs[i];
             }
+            reduce(limbs);
 
-            numAdds = Math.max(numAdds, b.numAdds) + 1;
             return this;
         }
 
@@ -727,22 +689,18 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
         public MutableElement setDifference(IntegerModuloP genB) {
             assert IntegerPolynomial.this == genB.getField();
             Element b = (Element) genB;
-            if (!(isSummand() && b.isSummand())) {
-                throw new ArithmeticException("Not a valid summand");
-            }
 
             for (int i = 0; i < limbs.length; i++) {
                 limbs[i] = limbs[i] - b.limbs[i];
             }
+            reduce(limbs);
 
-            numAdds = Math.max(numAdds, b.numAdds) + 1;
             return this;
         }
 
         @Override
         public MutableElement setSquare() {
             IntegerPolynomial.this.square(limbs, limbs);
-            numAdds = 0;
             return this;
         }
 
@@ -751,13 +709,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             for (int i = 0; i < limbs.length; i++) {
                 limbs[i] = -limbs[i];
             }
-            return this;
-        }
-
-        @Override
-        public MutableElement setReduced() {
-            reduce(limbs);
-            numAdds = 0;
             return this;
         }
     }
@@ -772,8 +723,8 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             super(v);
         }
 
-        protected ImmutableElement(long[] limbs, int numAdds) {
-            super(limbs, numAdds);
+        protected ImmutableElement(long[] limbs) {
+            super(limbs);
         }
 
         @Override
@@ -790,6 +741,5 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             this.value = value;
         }
     }
-
-
 }
+

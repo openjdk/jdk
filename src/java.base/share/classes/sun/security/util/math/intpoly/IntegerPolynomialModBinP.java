@@ -49,7 +49,7 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
                                     int numLimbs,
                                     int power,
                                     BigInteger subtrahend) {
-        super(bitsPerLimb, numLimbs, 1,
+        super(bitsPerLimb, numLimbs,
             BigInteger.valueOf(2).pow(power).subtract(subtrahend));
 
         boolean negate = false;
@@ -114,7 +114,7 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
             encode(v, offset, length, highByte, result);
         }
 
-        return new ImmutableElement(result, 0);
+        return new ImmutableElement(result);
     }
 
     /**

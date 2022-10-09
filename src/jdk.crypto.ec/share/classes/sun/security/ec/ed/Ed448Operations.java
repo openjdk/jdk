@@ -154,7 +154,7 @@ public class Ed448Operations extends EdECOperations {
         t3.setValue(d).setProduct(t1).setProduct(p1.getY());
         // t3 holds E
         // do part of the final calculation of x and y to free up t1
-        p1.getX().setDifference(t1).setReduced().setDifference(p1.getY());
+        p1.getX().setDifference(t1).setDifference(p1.getY());
         p1.getY().setDifference(t1);
         t1.setValue(p1.getZ()).setSquare();
         // t2 holds B
@@ -185,7 +185,7 @@ public class Ed448Operations extends EdECOperations {
         p.getZ().setSquare();
         // z holds H
 
-        t1.setValue(t2).setSum(p.getY()).setReduced();
+        t1.setValue(t2).setSum(p.getY());
         // t1 holds E
         t2.setDifference(p.getY());
         p.getY().setValue(t1).setProduct(t2);
