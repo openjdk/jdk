@@ -193,7 +193,7 @@
         return 0;
       case Op_VectorCastF2X: // fall through
       case Op_VectorCastD2X: {
-        return is_subword_type(ety) ? 35 : 30;
+        return is_floating_point_type(ety) ? 0 : (is_subword_type(ety) ? 35 : 30);
       }
       case Op_CountTrailingZerosV:
       case Op_CountLeadingZerosV:
