@@ -76,7 +76,7 @@ public:
     get_patchable_instruction_handle()->verify();
     current_instruction += 2;
 
-    verify_op_code(current_instruction, Assembler::LWZ_OPCODE);
+    verify_op_code(current_instruction, Assembler::LD_OPCODE);
 
     // cmpw (mnemonic)
     verify_op_code(current_instruction, Assembler::CMP_OPCODE);

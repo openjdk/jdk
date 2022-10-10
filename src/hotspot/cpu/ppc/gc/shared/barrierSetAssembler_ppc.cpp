@@ -162,7 +162,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   // Actual patching is done in (platform-specific part of) BarrierSetNMethod.
   __ load_const32(tmp, 0 /* Value is patched */); // 2 instructions
 
-  __ lwz(R0, in_bytes(bs_nm->thread_disarmed_offset()), R16_thread);
+  // Low order half of 64 bit value is currently used.
+  __ ld(R0, in_bytes(bs_nm->thread_disarmed_offset()), R16_thread);
   __ cmpw(CCR0, R0, tmp);
 
   __ bnectrl(CCR0);
