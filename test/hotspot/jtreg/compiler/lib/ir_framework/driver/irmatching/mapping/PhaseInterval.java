@@ -35,6 +35,14 @@ public class PhaseInterval {
     private final CompilePhase start;
     private final CompilePhase end;
 
+    /**
+     * Create an interval that represents a singleton set (i.e. an interval that only contains a single compile phase).
+     */
+    public PhaseInterval(CompilePhase singlePhase) {
+        this.start = singlePhase;
+        this.end = singlePhase;
+    }
+
     public PhaseInterval(CompilePhase start, CompilePhase end) {
         this.start = start;
         this.end = end;

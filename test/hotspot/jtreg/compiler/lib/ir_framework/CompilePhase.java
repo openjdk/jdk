@@ -124,7 +124,7 @@ public enum CompilePhase {
         return name;
     }
 
-    public RegexType getRegexType() {
+    public RegexType regexType() {
         return regexType;
     }
 

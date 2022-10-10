@@ -35,20 +35,22 @@ import java.util.Map;
  * If there is only one {@link PhaseInterval}, a {@link SinglePhaseRangeEntry} should be used.
  *
  * @see PhaseInterval
+ * @see SinglePhaseRangeEntry
  */
-public class MultiPhaseRangeEntry extends IRNodeMapEntry {
+public class MultiPhaseRangeEntry implements IRNodeMapEntry {
     private final Map<PhaseInterval, String> intervalToRegex;
+    private final CompilePhase defaultCompilePhase;
 
     public MultiPhaseRangeEntry(CompilePhase defaultCompilePhase, Map<PhaseInterval, String> intervalToRegex) {
-        super(defaultCompilePhase);
         checkOverlap(new ArrayList<>(intervalToRegex.keySet()));
         this.intervalToRegex = intervalToRegex;
+        this.defaultCompilePhase = defaultCompilePhase;
     }
 
     /**
      * Checks that there is no compile phase overlap of
      */
-    private void checkOverlap(List<PhaseInterval> phaseRanges) {
+    private static void checkOverlap(List<PhaseInterval> phaseRanges) {
         // Sort ascending by start field of phase range.
         phaseRanges.sort((i1, i2) -> i1.start().ordinal() - i2.end().ordinal());
         for (int i = 1; i < phaseRanges.size(); i++) {
@@ -60,7 +62,7 @@ public class MultiPhaseRangeEntry extends IRNodeMapEntry {
     }
 
     @Override
-    public String getRegexForPhase(CompilePhase compilePhase) {
+    public String regexForCompilePhase(CompilePhase compilePhase) {
         for (var entry : intervalToRegex.entrySet()) {
             PhaseInterval interval = entry.getKey();
             if (interval.includes(compilePhase)) {
@@ -68,5 +70,10 @@ public class MultiPhaseRangeEntry extends IRNodeMapEntry {
             }
         }
         return null;
+    }
+
+    @Override
+    public CompilePhase defaultCompilePhase() {
+        return defaultCompilePhase;
     }
 }

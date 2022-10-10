@@ -27,22 +27,34 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.RegexType;
 
 /**
- * This class represents a mapping entry for an IR node that is only applied on ideal graph phases that are machine
- * independent (i.e. before matching creates a machine dependent Mach Graph). All these compile phases on the ideal graph
- * specify {@link RegexType#IDEAL_INDEPENDENT} as regex type.
+ * This class represents a mapping entry for an IR node that maps to a single regex for all compile phases whose
+ * {@link CompilePhase#regexType()} match the specified {@link RegexType} for this entry.
  */
-public class IdealIndependentEntry extends SingleRegexEntry {
+public class RegexTypeEntry implements IRNodeMapEntry {
+    private final SingleRegexEntry singleRegexEntry;
+    private final RegexType regexType;
 
-    public IdealIndependentEntry(CompilePhase defaultCompilePhase, String regex) {
-        super(defaultCompilePhase, regex);
+    public RegexTypeEntry(RegexType regexType, String regex) {
+        this.regexType = regexType;
+        CompilePhase defaultCompilePhase = switch (regexType) {
+            case IDEAL_INDEPENDENT -> CompilePhase.PRINT_IDEAL;
+            case MACH -> CompilePhase.FINAL_CODE;
+            case OPTO_ASSEMBLY -> CompilePhase.PRINT_OPTO_ASSEMBLY;
+        };
+        this.singleRegexEntry = new SingleRegexEntry(defaultCompilePhase, regex);
     }
 
     @Override
-    public String getRegexForPhase(CompilePhase compilePhase) {
-        if (compilePhase.getRegexType() == RegexType.IDEAL_INDEPENDENT) {
-            return regex;
+    public String regexForCompilePhase(CompilePhase compilePhase) {
+        if (compilePhase.regexType() == regexType) {
+            return singleRegexEntry.regex();
         } else {
             return null;
         }
+    }
+
+    @Override
+    public CompilePhase defaultCompilePhase() {
+        return singleRegexEntry.defaultCompilePhase();
     }
 }

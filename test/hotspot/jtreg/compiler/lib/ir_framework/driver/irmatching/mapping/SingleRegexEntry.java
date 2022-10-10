@@ -29,16 +29,5 @@ import compiler.lib.ir_framework.CompilePhase;
  * This class represents a mapping entry for an IR node that maps to a single regex for multiple compile phases.
  * If the IR node is only applicable to a single compile phase, a {@link SinglePhaseEntry} should be used.
  */
-class SingleRegexEntry extends IRNodeMapEntry {
-    protected final String regex;
-
-    protected SingleRegexEntry(CompilePhase defaultCompilePhase, String regex) {
-        super(defaultCompilePhase);
-        this.regex = regex;
-    }
-
-    @Override
-    public String getRegexForPhase(CompilePhase compilePhase) {
-        return regex;
-    }
+record SingleRegexEntry(CompilePhase defaultCompilePhase, String regex) {
 }

@@ -28,25 +28,23 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 
 /**
- * Base class to represent an IR node mapping entry in {@code IR_NODE_MAPPINGS} in {@link IRNode}. Each entry must
- * define a default compile phase to fall back to when a user test specifies {@link CompilePhase#DEFAULT} in
+ * This interface represents an IR node mapping entry in {@code IR_NODE_MAPPINGS} in {@link IRNode}. Each entry must
+ * return a regex for a {@link CompilePhase} or null if it does not support the compile phase. Additionally, a default
+ * compile phase must be specified to fall back to when a user test specifies {@link CompilePhase#DEFAULT} in
  * {@link IR#phase} or does not provide the {@link IR#phase} attribute.
  *
  * @see IRNode
+ * @see CompilePhase
  */
-public abstract class IRNodeMapEntry {
-    private final CompilePhase defaultCompilePhase;
-
-    public IRNodeMapEntry(CompilePhase defaultCompilePhase) {
-        this.defaultCompilePhase = defaultCompilePhase;
-    }
-
-    public CompilePhase getDefaultCompilePhase() {
-        return defaultCompilePhase;
-    }
+public interface IRNodeMapEntry {
+    /**
+     * Return the regex string which shall be used by the IR framework when matching on {@code compilePhase}.
+     */
+    String regexForCompilePhase(CompilePhase compilePhase);
 
     /**
-     * Get the regex string which shall be used by the IR framework when matching on {@code compilePhase}.
+     * Return the default compile phase that shall be used for an {@link IRNode} placeholeder string when the user test
+     * specifies {@link CompilePhase#DEFAULT}.
      */
-    abstract public String getRegexForPhase(CompilePhase compilePhase);
+    CompilePhase defaultCompilePhase();
 }
