@@ -39,9 +39,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * This class uses {@link CompilePhaseCollector} to collect all necessary compile phases in order to write a compile
- * command file with the required compile commands for each method such that the {@link TestVM} only prints the
- * necessary output required by the {@link IRMatcher}.
+ * This class uses {@link CompilePhaseCollector} to collect all compile phases in order to write a compile command file
+ * with the required compile commands for each method such that the {@link TestVM} only prints the output required by
+ * the {@link IRMatcher} to perform IR matching.
  *
  * @see FlagVM
  * @see CompilePhaseCollector

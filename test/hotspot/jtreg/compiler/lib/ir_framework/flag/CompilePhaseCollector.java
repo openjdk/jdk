@@ -32,10 +32,9 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
- * This class collects all unique compile phases which are specified in all method {@link IR @IR} annotations.
- * If {@link CompilePhase#DEFAULT} is found, then we try to replace it with {@link CompilePhase#PRINT_IDEAL} or
- * {@link CompilePhase#PRINT_OPTO_ASSEMBLY} depending on whether all string placeholders specified in {@link IRNode}
- * could be replaced.
+ * This class collects all unique compile phases associated with all {@link IR @IR} annotations of a method.
+ * If {@link CompilePhase#DEFAULT} is found, then we look up the default compile phases of all {@link IRNode}
+ * placeholder strings.
  *
  * @see FlagVM
  * @see CompilerDirectivesFlagBuilder
@@ -60,6 +59,14 @@ class CompilePhaseCollector {
         return methodNameToCompilePhasesMap;
     }
 
+    private static Set<CompilePhase> collectCompilePhases(Method method) {
+        return new MethodCompilePhaseCollector(method).collect();
+    }
+
+    private static List<Method> getIRAnnotatedMethods(Class<?> testClass) {
+        return Arrays.stream(testClass.getDeclaredMethods()).filter(m -> m.getAnnotationsByType(IR.class).length > 0).toList();
+    }
+
     /**
      * Creates a default map that just contains PrintIdeal and PrintOptoAssembly.
      */
@@ -70,13 +77,5 @@ class CompilePhaseCollector {
         defaultSet.add(CompilePhase.PRINT_OPTO_ASSEMBLY);
         defaultMap.put(testClass.getCanonicalName() + "::*", defaultSet);
         return defaultMap;
-    }
-
-    private static Set<CompilePhase> collectCompilePhases(Method method) {
-        return new MethodCompilePhaseCollector(method).getCompilePhases();
-    }
-
-    private static List<Method> getIRAnnotatedMethods(Class<?> testClass) {
-        return Arrays.stream(testClass.getDeclaredMethods()).filter(m -> m.getAnnotationsByType(IR.class).length > 0).toList();
     }
 }

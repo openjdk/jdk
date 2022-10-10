@@ -42,15 +42,17 @@ import java.util.Set;
  */
 class MethodCompilePhaseCollector {
     private final Set<CompilePhase> compilePhases = new HashSet<>();
+    private final Method method;
 
     public MethodCompilePhaseCollector(Method method) {
+        this.method = method;
+    }
+
+    public Set<CompilePhase> collect() {
         IR[] irAnnos = method.getAnnotationsByType(IR.class);
         for (IR irAnno : irAnnos) {
             collectCompilePhases(irAnno);
         }
-    }
-
-    public Set<CompilePhase> getCompilePhases() {
         return compilePhases;
     }
 

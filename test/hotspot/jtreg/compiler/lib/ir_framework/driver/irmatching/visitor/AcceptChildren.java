@@ -30,7 +30,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Class to delegate accept call to all match result children of a {@link MatchResult} object.
+ * This class invokes {@link MatchResult#accept(MatchResultVisitor)} on all failed match results (i.e. children) inside
+ * a {@link MatchResult} object to visit them.
  */
 public class AcceptChildren implements Consumer<MatchResultVisitor> {
     private final Collection<? extends MatchResult> matchResults;

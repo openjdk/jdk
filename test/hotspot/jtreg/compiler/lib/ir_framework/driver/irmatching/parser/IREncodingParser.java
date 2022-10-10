@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.test.IREncodingPrinter;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -74,7 +75,7 @@ class IREncodingParser {
      */
     private void createTestMethodMap(String irEncoding, Class<?> testClass) {
         Map<String, int[]> irRulesMap = parseIREncoding(irEncoding);
-        createIRMethodsWithEncoding(testClass, irRulesMap);
+        createTestMethodsWithEncoding(testClass, irRulesMap);
     }
 
     /**
@@ -125,8 +126,8 @@ class IREncodingParser {
         return irRulesIdx;
     }
 
-    private void createIRMethodsWithEncoding(Class<?> testClass, Map<String, int[]> irRulesMap) {
-        for (java.lang.reflect.Method m : testClass.getDeclaredMethods()) {
+    private void createTestMethodsWithEncoding(Class<?> testClass, Map<String, int[]> irRulesMap) {
+        for (Method m : testClass.getDeclaredMethods()) {
             IR[] irAnnos = m.getAnnotationsByType(IR.class);
             if (irAnnos.length > 0) {
                 // Validation of legal @IR attributes and placement of the annotation was already done in Test VM.
@@ -139,7 +140,7 @@ class IREncodingParser {
         }
     }
 
-    private void validateIRRuleIds(java.lang.reflect.Method m, IR[] irAnnos, int[] ids) {
+    private void validateIRRuleIds(Method m, IR[] irAnnos, int[] ids) {
         TestFramework.check(ids != null, "Should find method name in validIrRulesMap for " + m);
         TestFramework.check(ids.length > 0, "Did not find any rule indices for " + m);
         TestFramework.check((ids[0] >= 1 || ids[0] == IREncodingPrinter.NO_RULE_APPLIED)

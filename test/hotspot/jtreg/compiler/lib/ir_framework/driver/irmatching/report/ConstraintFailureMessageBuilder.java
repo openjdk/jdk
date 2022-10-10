@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.ConstraintF
 import java.util.List;
 
 /**
- * Base class to create a failure message for a failed constraint.
+ * This class creates a failure message for a failed constraint.
  */
 public class ConstraintFailureMessageBuilder {
     private final String nodeRegex;

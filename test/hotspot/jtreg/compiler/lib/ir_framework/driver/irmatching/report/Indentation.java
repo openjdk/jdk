@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
  * equals 2 whitespaces.
  */
 class Indentation {
+    private static final int LEVEL_SIZE = 2;
     private int indentation;
 
     public Indentation(int initialIndentation) {
@@ -38,15 +39,17 @@ class Indentation {
     }
 
     public void add() {
-        indentation += 2;
+        indentation += LEVEL_SIZE;
     }
 
     public void sub() {
-        indentation -= 2;
+        indentation -= LEVEL_SIZE;
     }
 
     public List<String> prependForLines(List<String> lines) {
-        return lines.stream().map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator() + this)).collect(Collectors.toList());
+        return lines.stream()
+                    .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator() + this))
+                    .collect(Collectors.toList());
     }
 
     @Override

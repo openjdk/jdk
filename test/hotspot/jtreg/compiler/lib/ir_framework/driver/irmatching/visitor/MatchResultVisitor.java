@@ -33,7 +33,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConst
 import java.lang.reflect.Method;
 
 /**
- * This interface specifies default visit methods for each {@link MatchResult} class which can be overridden.
+ * This interface specifies visit methods for each {@link MatchResult} class must be implemented a by a concrete visitor.
  */
 public interface MatchResultVisitor {
     void visitTestClass(AcceptChildren acceptChildren);

@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
  * order as specified in {@link CompilePhase}.
  */
 public class CompilationOutputBuilder implements MatchResultVisitor {
-    private final StringBuilder msg;
+    private final StringBuilder output;
     private final MatchResult testClassMatchResult;
     private final SortedMap<CompilePhase, String> failedCompilePhases = new TreeMap<>();
     private int methodIndex;
@@ -53,7 +53,7 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
     private int compilePhaseCount = 0;
 
     public CompilationOutputBuilder(MatchResult testClassMatchResult) {
-        this.msg = new StringBuilder();
+        this.output = new StringBuilder();
         this.testClassMatchResult = testClassMatchResult;
     }
 
@@ -73,7 +73,7 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
         builder.append(System.lineSeparator())
                .append(getTitleSeparator(failedIRMethods))
                .append(System.lineSeparator());
-        msg.insert(0, builder);
+        output.insert(0, builder);
     }
 
     private String getTitleSeparator(int failedIRMethods) {
@@ -93,32 +93,32 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
     private void appendMethodIndex() {
         methodIndex++;
         if (methodIndex > 1) {
-            msg.append(System.lineSeparator());
+            output.append(System.lineSeparator());
         }
-        msg.append(methodIndex).append(") ");
+        output.append(methodIndex).append(") ");
     }
 
     private void appendIRMethodHeader(Method method) {
         appendMethodIndex();
-        msg.append("Compilation");
+        output.append("Compilation");
         if (failedCompilePhases.size() > 1) {
-            msg.append("s (").append(failedCompilePhases.size()).append(")");
+            output.append("s (").append(failedCompilePhases.size()).append(")");
         }
-        msg.append(" of \"").append(method).append("\":")
-           .append(System.lineSeparator());
+        output.append(" of \"").append(method).append("\":")
+              .append(System.lineSeparator());
     }
 
     private void appendMatchedCompilationOutputOfPhases() {
-        msg.append(failedCompilePhases.values()
-                                      .stream()
-                                      .collect(Collectors.joining(System.lineSeparator())));
+        output.append(failedCompilePhases.values()
+                                         .stream()
+                                         .collect(Collectors.joining(System.lineSeparator())));
     }
 
     @Override
     public void visitMethodNotCompiled(Method method, int failedIRRules) {
         appendIRMethodHeader(method);
         compilePhaseCount++; // Count this as one phase
-        msg.append("<empty>").append(System.lineSeparator());
+        output.append("<empty>").append(System.lineSeparator());
     }
 
     @Override
@@ -156,7 +156,7 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
 
     public String build() {
         testClassMatchResult.accept(this);
-        return msg.toString();
+        return output.toString();
     }
 
     private static int digitCount(int digit) {

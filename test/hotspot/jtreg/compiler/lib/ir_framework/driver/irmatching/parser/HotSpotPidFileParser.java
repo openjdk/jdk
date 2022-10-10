@@ -63,7 +63,6 @@ class HotSpotPidFileParser {
         this.testMethodMap = testMethodMap;
     }
 
-
     /**
      * Parse the hotspot_pid*.log file from the test VM. Read the ideal compile phase and PrintOptoAssembly outputs for
      * all methods defined by the IR encoding.
@@ -155,7 +154,7 @@ class HotSpotPidFileParser {
         return compileIdMap.containsKey(getCompileId(line.getLine()));
     }
 
-    public void setIRMethodOutput(String blockOutput, Line blockStartLine, Map<Integer, TestMethod> compileIdMap) {
+    private void setIRMethodOutput(String blockOutput, Line blockStartLine, Map<Integer, TestMethod> compileIdMap) {
         TestMethod testMethod = compileIdMap.get(getCompileId(blockStartLine.getLine()));
         setIRMethodOutput(blockOutput, blockStartLine, testMethod);
     }
