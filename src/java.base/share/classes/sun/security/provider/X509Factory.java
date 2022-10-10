@@ -30,7 +30,6 @@ import java.io.*;
 import java.security.cert.*;
 import java.util.*;
 
-import sun.security.jca.JCAUtil;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.ParsingException;
 import sun.security.provider.certpath.X509CertPath;

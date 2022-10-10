@@ -354,8 +354,6 @@ public class CertificateFactory {
         return c;
     }
 
-
-
     /**
      * Returns an iteration of the {@code CertPath} encodings supported
      * by this certificate factory, with the default encoding first. See
