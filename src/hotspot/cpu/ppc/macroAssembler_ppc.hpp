@@ -653,6 +653,8 @@ class MacroAssembler: public Assembler {
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level);
+  void resolve_local_jobject(Register value, Register tmp1, Register tmp2,
+                             MacroAssembler::PreservationLevel preservation_level);
 
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).

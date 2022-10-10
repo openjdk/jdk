@@ -3920,7 +3920,7 @@ class StubGenerator: public StubCodeGenerator {
     Register java_thread = rdi;
     __ get_thread(java_thread);
     __ reset_last_Java_frame(java_thread, true);
-    __ resolve_jobject(rax, java_thread, rdx);
+    __ resolve_local_jobject(rax, java_thread, rdx);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.

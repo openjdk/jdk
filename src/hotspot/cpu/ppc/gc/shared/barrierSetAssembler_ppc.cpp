@@ -145,6 +145,33 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
   __ bind(done);
 }
 
+// Generic implementation. GCs can provide an optimized one.
+void BarrierSetAssembler::resolve_local_jobject(MacroAssembler* masm, Register value,
+                                          Register tmp1, Register tmp2,
+                                          MacroAssembler::PreservationLevel preservation_level) {
+  Label done;
+
+  __ cmpdi(CCR0, value, 0);
+  __ beq(CCR0, done);         // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    STATIC_ASSERT((JNIHandles::global_tag_value | JNIHandles::weak_tag_value) == JNIHandles::tag_mask);
+    Label valid_local_tag;
+    __ andi_(tmp1, value, JNIHandles::tag_mask);
+    __ beq(CCR0, valid_local_tag);       // Test for tag.
+    __ stop("non local jobject using resolve_local_jobject");
+    __ bind(valid_local_tag);
+  }
+#endif
+
+  __ access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, // no uncoloring
+                    value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+  __ verify_oop(value, FILE_AND_LINE);
+
+  __ bind(done);
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   __ clrrdi(dst, obj, JNIHandles::tag_size);

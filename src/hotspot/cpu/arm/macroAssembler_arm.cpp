@@ -1292,7 +1292,7 @@ void MacroAssembler::resolve_jobject(Register value,
 
   // Resolve local handle
   access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2, noreg);
-  //verify_oop(value);
+  verify_oop(value);
   b(done);
 
   bind(tagged);
@@ -1309,7 +1309,32 @@ void MacroAssembler::resolve_jobject(Register value,
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
                  Address(value, -JNIHandles::weak_tag_value), value, tmp1, tmp2, noreg);
   verify_oop(value);
-  // b(done);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_local_jobject(Register value,
+                                     Register tmp1,
+                                     Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  cbz(value, done);           // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    STATIC_ASSERT((JNIHandles::global_tag_value | JNIHandles::weak_tag_value) == JNIHandles::tag_mask);
+    Label valid_local_tag;
+    tst(value, JNIHandles::tag_mask); // Test for tag.
+    b(valid_local_tag, eq);
+    stop("non local jobject using resolve_local_jobject");
+    bind(valid_local_tag);
+  }
+#endif
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2, noreg);
+  verify_oop(value);
 
   bind(done);
 }

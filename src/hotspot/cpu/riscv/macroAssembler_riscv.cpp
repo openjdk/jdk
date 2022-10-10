@@ -519,7 +519,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   andi(t0, value, JNIHandles::tag_mask);
   bnez(t0, tagged);
 
-  // Resolve global handle
+  // Resolve local handle
   access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp1, tmp2);
   verify_oop(value);
   j(done);
@@ -538,6 +538,30 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
                  Address(value, -JNIHandles::weak_tag_value), tmp1, tmp2);
+  verify_oop(value);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_local_jobject(Register value, Register tmp1, Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  beqz(value, done);           // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    STATIC_ASSERT((JNIHandles::global_tag_value | JNIHandles::weak_tag_value) == JNIHandles::tag_mask);
+    Label valid_local_tag;
+    andi(t0, value, JNIHandles::tag_mask); // Test for tag.
+    beqz(t0, valid_local_tag);
+    stop("non local jobject using resolve_local_jobject");
+    bind(valid_local_tag);
+  }
+#endif
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp1, tmp2);
   verify_oop(value);
 
   bind(done);
