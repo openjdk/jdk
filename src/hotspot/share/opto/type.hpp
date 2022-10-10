@@ -1281,6 +1281,7 @@ public:
   virtual const Type* remove_speculative() const;
   virtual const TypePtr* with_inline_depth(int depth) const;
   virtual const TypePtr* with_instance_id(int instance_id) const;
+  virtual const TypePtr* with_offset(int offset) const;
 
   // the core of the computation of the meet of 2 types
   virtual const Type *xmeet_helper(const Type *t) const;

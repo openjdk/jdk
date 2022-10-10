@@ -4613,6 +4613,11 @@ const TypePtr *TypeAryPtr::with_instance_id(int instance_id) const {
   return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
 
+const TypePtr *TypeAryPtr::with_offset(int offset) const {
+  assert(offset != OffsetTop && offset != OffsetBot, "should be known");
+  return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, offset, _instance_id, _speculative, _inline_depth);
+}
+
 //=============================================================================
 
 //------------------------------hash-------------------------------------------
