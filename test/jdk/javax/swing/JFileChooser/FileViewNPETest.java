@@ -32,14 +32,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import javax.swing.filechooser.FileView;
-import jdk.test.lib.Platform;
+
 /*
  * @test
  * @bug 6616245
  * @key headful
  * @requires (os.family == "windows" | os.family == "linux")
- * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jdk.test.lib.Platform
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @summary Test to check if NPE occurs when using custom FileView.
  * @run main/manual FileViewNPETest
  */
@@ -65,23 +65,27 @@ public class FileViewNPETest {
         //Initialize the components
         final String INSTRUCTIONS = """
                 Instructions to Test:
-                1. The traversable folder set is to "user/home" Directory,
-                 other than these folder all other
-                 folders are considered as non-traversable.
-                2. When file chooser appears on screen, select any
-                 non-traversable folder from "Look-In" ComboBox by mouse
-                 click/key press. (The folder will not be opened since its
-                 non-traversable). Select the same folder again.
-                3. If NPE occurs on second selection then test FAILS, else test
-                 is PASS.
+                1. The traversable folder is set to the Documents folder,
+                 if it exists, in the user's home folder, otherwise
+                 it's the user's home. Other folders are non-traversable.
+                2. When the file chooser appears on the screen, select any
+                 non-traversable folder from "Look-In" combo box,
+                 for example the user's folder or a folder above it.
+                 (The folder will not be opened since it's non-traversable).
+                3. Select the Documents folder again.
+                4. If NullPointerException does not occurs in the step 3,
+                 click Pass, otherwise the Test Fails.
                 """;
         frame = new JFrame("JFileChooser File View NPE test");
         passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 13, 40);
         jfc = new JFileChooser();
-        String path = System.getProperty("user.home") + File.separator + "Documents";
+        String userHome = System.getProperty("user.home");
+        String docs = userHome + File.separator + "Documents";
+        String path = (new File(docs).exists()) ? docs : userHome;
 
         jfc.setCurrentDirectory(new File(path));
         jfc.setFileView(new CustomFileView(path));
+        jfc.setControlButtonsAreShown(false);
 
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
