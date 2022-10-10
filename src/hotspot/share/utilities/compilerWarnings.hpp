@@ -33,10 +33,6 @@
 
 // Defaults when not defined for the TARGET_COMPILER_xxx.
 
-#ifndef PRAGMA
-#define PRAGMA(x) _Pragma(#x)
-#endif
-
 #ifndef PRAGMA_DIAG_PUSH
 #define PRAGMA_DIAG_PUSH
 #endif

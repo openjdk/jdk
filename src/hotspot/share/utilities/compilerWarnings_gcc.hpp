@@ -27,10 +27,6 @@
 
 // Macros related to control of compiler warnings.
 
-#ifndef PRAGMA
-#define PRAGMA(x) _Pragma(#x)
-#endif
-
 #ifndef ATTRIBUTE_PRINTF
 #define ATTRIBUTE_PRINTF(fmt,vargs)  __attribute__((format(printf, fmt, vargs)))
 #endif

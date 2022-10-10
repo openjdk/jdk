@@ -25,10 +25,6 @@
 #ifndef SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP
 #define SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP
 
-#ifndef PRAGMA
-#define PRAGMA(x) _Pragma(#x)
-#endif
-
 #define PRAGMA_DIAG_PUSH _Pragma("warning(push)")
 #define PRAGMA_DIAG_POP  _Pragma("warning(pop)")
 

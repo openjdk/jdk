@@ -25,6 +25,8 @@
 #ifndef SHARE_UTILITIES_MACROS_HPP
 #define SHARE_UTILITIES_MACROS_HPP
 
+#define PRAGMA(x) _Pragma(#x)
+
 // Use this to mark code that needs to be cleaned up (for development only)
 #define NEEDS_CLEANUP
 
