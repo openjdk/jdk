@@ -37,7 +37,7 @@ JfrBuffer::JfrBuffer() : _next(NULL),
                          _flags(0),
                          _context(0) {}
 
-bool JfrBuffer::initialize(size_t header_size, size_t size) {
+void JfrBuffer::initialize(size_t header_size, size_t size) {
   assert(_next == NULL, "invariant");
   assert(_identity == NULL, "invariant");
   _header_size = (u2)header_size;
@@ -48,10 +48,9 @@ bool JfrBuffer::initialize(size_t header_size, size_t size) {
   assert(!transient(), "invariant");
   assert(!lease(), "invariant");
   assert(!retired(), "invariant");
-  return true;
 }
 
-void JfrBuffer::reinitialize(bool exclusion /* false */) {
+void JfrBuffer::reinitialize() {
   acquire_critical_section_top();
   set_pos(start());
   release_critical_section_top(start());
@@ -173,8 +172,7 @@ size_t JfrBuffer::unflushed_size() const {
 enum FLAG {
   RETIRED = 1,
   TRANSIENT = 2,
-  LEASE = 4,
-  EXCLUDED = 8
+  LEASE = 4
 };
 
 inline u1 load(const volatile u1* dest) {
