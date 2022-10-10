@@ -26,7 +26,6 @@
  * @bug 8291974
  * @summary     PrivateCredentialPermission should not use local variable to enable debugging
  *              implementation-dependent class
- * @run main/othervm/policy=Serial.policy Serial2
  */
 
 import javax.security.auth.*;
@@ -49,20 +48,19 @@ public class Serial2 implements java.io.Serializable {
 
     public static void main(String[] args) {
 
-        try {
-            // Decode Base64 string and turn it into an input stream.
-            byte[] decoded = Base64.getDecoder().decode(before);
-            InputStream is = new ByteArrayInputStream(decoded);
+        byte[] decoded = Base64.getDecoder().decode(before);
 
+        try (
+            // Decode Base64 string and turn it into an input stream.
+            InputStream is = new ByteArrayInputStream(decoded);
+            ObjectInputStream ois = new ObjectInputStream(is)
+        ) {
             // Deserialize input stream and create a new object.
-            ObjectInputStream ois = new ObjectInputStream(is);
             PrivateCredentialPermission pcp2 =
                     (PrivateCredentialPermission)ois.readObject();
-            is.close();
-
-            PrivateCredentialPermission pcp = new PrivateCredentialPermission
-                        ("cred1 pc1 \"pn1\" pc2 \"pn2\"", "read");
-
+            PrivateCredentialPermission pcp =
+                    new PrivateCredentialPermission
+                    ("cred1 pc1 \"pn1\" pc2 \"pn2\"", "read");
             /*
              * Compare deserialized object with current object.
              * This should always succeed. What is important is
@@ -70,13 +68,12 @@ public class Serial2 implements java.io.Serializable {
              */
             if (!pcp.equals(pcp2) || !pcp2.equals(pcp)) {
                 throw new SecurityException("Serial2 test failed: " +
-                                        "EQUALS TEST FAILED");
+                                    "EQUALS TEST FAILED");
             }
 
             System.out.println("Serial2 test succeeded");
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new SecurityException("Serial test failed");
+            throw new SecurityException("Serial test failed", e);
         }
     }
 }
