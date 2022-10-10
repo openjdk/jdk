@@ -48,6 +48,7 @@ ifeq ($(call isTargetOs, windows), true)
           -I$(TOPDIR)/src/java.security.jgss/share/native/libj2gss, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
+      LIBS := Secur32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBSSPI_BRIDGE)
