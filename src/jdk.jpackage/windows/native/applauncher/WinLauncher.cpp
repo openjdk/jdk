@@ -42,8 +42,7 @@
 #include "WinErrorHandling.h"
 
 
-// AllowSetForegroundWindow
-#pragma comment(lib, "user32")
+// AllowSetForegroundWindow - user32.lib
 
 
 namespace {
