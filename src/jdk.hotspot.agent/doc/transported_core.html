@@ -34,7 +34,7 @@ messages in standard error which can be useful for further debugging. Note that
 </p>
 
 <p>
-On  most platforms, core dumps do not contain text (code) pages.
+On most platforms, core dumps do not contain text (code) pages.
 Their pages are instead read from the executable and shared objects (or DLLs).
 Therefore it is important to have a matching java executable and shared object
 files on the debugger machine. The best way to guarantee this match is to match the
@@ -47,7 +47,7 @@ to tell SA where these are all located. That is done differently for each
 OS type, and is described in the following sections.
 </p>
 
-<h3>Using  transported core dumps on Linux</h3>
+<h3>Using transported core dumps on Linux</h3>
 <p>
 On Linux, SA parses core and shared library ELF files. But, you
 may still face problems with transported core dumps, because matching shared
@@ -67,7 +67,7 @@ installed on the debugger machine.
  <b>/altroot/lib/libfoo.so</b>, and <b>/altroot/libfoo.so</b>.
 </p>
 
-<h3>Using  transported core dumps on Windows</h3>
+<h3>Using transported core dumps on Windows</h3>
 <p>
  If the debugger machine and core dump machine have identical Windows libraries, then you only
  need to point SA to the location of the JDK <b>java.exe</b> and libraries. This is done by making
@@ -86,21 +86,35 @@ If the windows libraries are not identical, then they may also need to be copied
 to the debugger machine and included in <b>PATH</b>.
 </p>
 
-<h3>Using  transported core dumps on macOS</h3>
+<h3>Using transported core dumps on macOS</h3>
 <p>
-SA normally uses the path to the specified java executable to locate the JDK libraries. It will look in the following subdirectories for them (relative to the path to the specified java executable): <b>../lib</b>, <b>../lib/server</b>, <b>../jre/lib</b>, and <b>../jre/lib/server</b>. If not found in any of those locations, it will look in the same subdirectories relative to the <b>JAVA_HOME</b> environment variable, but using <b>JAVA_HOME</b> normally should not be necessary.
+ SA normally uses the path to the specified java executable to locate the JDK libraries. It will look
+ in the following subdirectories for them (relative to the path to the specified java executable):
+ <b>../lib</b>, <b>../lib/server</b>, <b>../jre/lib</b>, and <b>../jre/lib/server</b>. If not found
+ in any of those locations, it will look in the same subdirectories relative to the <b>JAVA_HOME</b>
+ environment variable, but using <b>JAVA_HOME</b> normally should not be necessary.
 </p>
 
 <p>
-For locating the user JNI libraries, SA uses <b>DYLD_LIBRARY_PATH</b>. It can contain more than one directory separated by a colon. <b>DYLD_LIBRARY_PATH</b> can also be used for locating the JDK libraries, but it needs to specify the full path to the libraries. SA will not automatically search subdirs such as <b>lib/server</b> as it does for <b>JAVA_HOME</b>.
+ For locating the user JNI libraries, SA uses <b>DYLD_LIBRARY_PATH</b>. It can contain
+ more than one directory separated by a colon. <b>DYLD_LIBRARY_PATH</b> can also be
+ used for locating the JDK libraries, but it needs to specify the full path to the libraries. SA will
+ not automatically search subdirs such as <b>lib/server</b> as it does for <b>JAVA_HOME</b>.
 </p>
 
 <p>
-For locating the macOS libraries, SA uses <b>SA_ALTROOT</b> similar to the linux support, except it does not use it to map all the subdirs. It just appends <b>SA_ALTROOT</b> to the full path of each macOS library. So if you specify <b>SA_ALTROOT=/altroot</b>, SA will prepend <b>/altroot</b> to the full path of each macOS library. Note however, due to <a href="https://bugs.openjdk.org/browse/JDK-8249779">JDK-8249779</a> , SA will not even try to open macOS libraries, so at the moment there is no need to try to match up the macOS libraries by pointing to them with <b>SA_ALTROOT</b>.
+ For locating the macOS libraries, SA uses <b>SA_ALTROOT</b> similar to the linux support,
+ except it does not use it to map all the subdirs. It just appends <b>SA_ALTROOT</b> to the
+ full path of each macOS library. So if you specify <b>SA_ALTROOT=/altroot</b>, SA will
+ prepend <b>/altroot</b> to the full path of each macOS library. Note however, due to
+ <a href="https://bugs.openjdk.org/browse/JDK-8249779">JDK-8249779</a> , SA will not
+ even try to open macOS libraries, so at the moment there is no need to try to match up the
+ macOS libraries by pointing to them with <b>SA_ALTROOT</b>.
 </p>
 
 <p>
-Note: Starting with macOS 12, core files are no longer working with macOS on the x64 platform. See <a href="https://bugs.openjdk.org/browse/JDK-8294316">JDK-8294316</a>.
+ Note: Starting with macOS 12, core files are no longer working with macOS on the x64 platform.
+ See <a href="https://bugs.openjdk.org/browse/JDK-8294316">JDK-8294316</a>.
 </p>
 
 </body>
