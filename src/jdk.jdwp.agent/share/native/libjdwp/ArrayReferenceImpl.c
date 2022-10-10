@@ -415,8 +415,8 @@ readLongComponents(JNIEnv *env, PacketInputStream *in,
                    jarray array, int index, int length)
 {
     int i;
-#if defined (_WIN32) && defined (_MSC_VER)
-    __declspec(align(8))
+#ifdef _WIN32
+    _Alignas(8)
 #endif
     jlong component;
 
@@ -446,8 +446,8 @@ readDoubleComponents(JNIEnv *env, PacketInputStream *in,
                    jarray array, int index, int length)
 {
     int i;
-#if defined (_WIN32) && defined (_MSC_VER)
-    __declspec(align(8))
+#ifdef _WIN32
+    _Alignas(8)
 #endif
     jdouble component;
 

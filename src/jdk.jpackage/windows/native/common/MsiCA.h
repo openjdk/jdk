@@ -268,7 +268,7 @@ private:
 #define JP_CA_BASE(name, ca_type) \
     static void name ## Body(ca_type&); \
     extern "C" UINT __stdcall name(MSIHANDLE hInstall) { \
-        __pragma(comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)); \
+        _Pragma("comment(linker, \"/EXPORT:\" __FUNCTION__ \"=\" __FUNCDNAME__)"); \
         const msi::MsiLogTrigger logTrigger(hInstall); \
         JP_DEBUG_BREAK(JP_CA_DEBUG_BREAK, name); \
         LOG_TRACE_FUNCTION(); \
@@ -287,7 +287,7 @@ private:
 
 #define JP_CA_DECLARE(name) \
     extern "C" UINT __stdcall name(MSIHANDLE); \
-    __pragma(comment(linker, "/INCLUDE:" JP_CA_MANGLED_NAME(name)))
+    _Pragma("comment(linker, \"/INCLUDE:\" JP_CA_MANGLED_NAME(name))")
 
 #ifdef _WIN64
     #define JP_CA_MANGLED_NAME(name) #name

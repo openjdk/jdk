@@ -156,8 +156,4 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #define ALWAYSINLINE inline __attribute__ ((always_inline))
 #define ATTRIBUTE_FLATTEN __attribute__ ((flatten))
 
-// Alignment
-//
-#define ATTRIBUTE_ALIGNED(x) __attribute__((aligned(x)))
-
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP

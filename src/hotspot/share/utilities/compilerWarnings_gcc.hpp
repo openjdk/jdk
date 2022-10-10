@@ -34,31 +34,6 @@
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
 
-#define PRAGMA_DISABLE_GCC_WARNING_AUX(x) _Pragma(#x)
-#define PRAGMA_DISABLE_GCC_WARNING(option_string) \
-  PRAGMA_DISABLE_GCC_WARNING_AUX(GCC diagnostic ignored option_string)
-
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
-  PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
-  PRAGMA_DISABLE_GCC_WARNING("-Wformat-security")
-
-#define PRAGMA_FORMAT_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wformat")
-
-// Disable -Wstringop-truncation which is introduced in GCC 8.
-// https://gcc.gnu.org/gcc-8/changes.html
-#if !defined(__clang_major__) && (__GNUC__ >= 8)
-#define PRAGMA_STRINGOP_TRUNCATION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-truncation")
-#endif
-
-// Disable -Wstringop-overflow which is introduced in GCC 7.
-// https://gcc.gnu.org/gcc-7/changes.html
-#if !defined(__clang_major__) && (__GNUC__ >= 7)
-#define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
-#endif
-
-#define PRAGMA_NONNULL_IGNORED \
-  PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
-
 #if defined(__clang_major__) && \
       (__clang_major__ >= 4 || \
       (__clang_major__ >= 3 && __clang_minor__ >= 1)) || \
@@ -68,6 +43,30 @@
 #define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
 
 #endif // clang/gcc version check
+
+#define PRAGMA_DISABLE_COMPILER_WARNING(opt) \
+  _Pragma("GCC diagnostic ignored" #opt)
+
+#define PRAGMA_FORMAT_NONLITERAL_IGNORED                     \
+  PRAGMA_DISABLE_COMPILER_WARNING("-Wformat-nonliteral")     \
+  PRAGMA_DISABLE_COMPILER_WARNING("-Wformat-security")
+
+#define PRAGMA_FORMAT_IGNORED PRAGMA_DISABLE_COMPILER_WARNING("-Wformat")
+
+// Disable -Wstringop-truncation which is introduced in GCC 8.
+// https://gcc.gnu.org/gcc-8/changes.html
+#if !defined(__clang_major__) && (__GNUC__ >= 8)
+#define PRAGMA_STRINGOP_TRUNCATION_IGNORED PRAGMA_DISABLE_COMPILER_WARNING("-Wstringop-truncation")
+#endif
+
+// Disable -Wstringop-overflow which is introduced in GCC 7.
+// https://gcc.gnu.org/gcc-7/changes.html
+#if !defined(__clang_major__) && (__GNUC__ >= 7)
+#define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_COMPILER_WARNING("-Wstringop-overflow")
+#endif
+
+#define PRAGMA_NONNULL_IGNORED \
+  PRAGMA_DISABLE_COMPILER_WARNING("-Wnonnull")
 
 #if (__GNUC__ >= 10)
 // TODO: Re-enable warning attribute for Clang once
@@ -89,10 +88,10 @@
 
 // Disable warning attribute over the scope of the affected statement.
 // The name serves only to document the intended function.
-#define ALLOW_C_FUNCTION(name, ...)                     \
-  PRAGMA_DIAG_PUSH                                      \
-  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")     \
-  __VA_ARGS__                                           \
+#define ALLOW_C_FUNCTION(name, ...)                          \
+  PRAGMA_DIAG_PUSH                                           \
+  PRAGMA_DISABLE_COMPILER_WARNING("-Wattribute-warning")     \
+  __VA_ARGS__                                                \
   PRAGMA_DIAG_POP
 
 #endif // gcc10+
