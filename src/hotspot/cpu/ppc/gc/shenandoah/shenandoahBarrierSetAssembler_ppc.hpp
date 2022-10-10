@@ -61,6 +61,7 @@ private:
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp);
 
 public:
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
 
   /* ==== C1 stubs ==== */
 #ifdef COMPILER1

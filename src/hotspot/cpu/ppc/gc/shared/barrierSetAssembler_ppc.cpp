@@ -167,9 +167,10 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   __ bnectrl(CCR0);
 
-  // Oops may have been changed; exploiting isync semantics (used as acquire) to make those updates observable.
+  // Oops may have been changed. Make those updates observable.
+  // "isync" can serve both, data and instruction patching.
   // But, many GCs don't modify nmethods during a concurrent phase.
-  if (!UseSerialGC && !UseG1GC && !UseParallelGC && !UseEpsilonGC) {
+  if (nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
     __ isync();
   }
 

@@ -26,6 +26,8 @@
 #include "code/codeBlob.hpp"
 #include "code/nmethod.hpp"
 #include "code/nativeInst.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "utilities/debug.hpp"
 
@@ -100,8 +102,9 @@ private:
 };
 
 static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
   address barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-8 * 4);
-  if (!UseSerialGC && !UseG1GC && !UseParallelGC && !UseEpsilonGC) {
+  if (bs_asm->nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
     barrier_address -= 4; // isync (see nmethod_entry_barrier)
   }
 
