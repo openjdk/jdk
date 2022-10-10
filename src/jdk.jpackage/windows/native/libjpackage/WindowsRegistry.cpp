@@ -27,8 +27,6 @@
 #include "FileUtils.h"
 #include "ErrorHandling.h"
 
-#pragma comment(lib, "advapi32")
-
 namespace {
 
 std::wstring GetLongPath(const std::wstring& path) {
