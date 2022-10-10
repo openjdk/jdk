@@ -91,19 +91,16 @@ public final class ObjectFactoriesFilter {
     private static boolean checkInput(ConfiguredFilter filter, FactoryInfo serialClass) {
         var globalFilter = GLOBAL_FILTER.filter();
         var specificFilter = filter.filter();
-
         Status globalResult = globalFilter.checkInput(serialClass);
+
+        // Check if a specific filter is the global one
         if (filter == GLOBAL_FILTER) {
             return globalResult == Status.ALLOWED;
         }
-
-        Status specificResult = specificFilter.checkInput(serialClass);
-        return switch (specificResult) {
-            // Only allowed if not rejected by global filter
-            case ALLOWED -> globalResult != Status.REJECTED;
+        return switch (globalResult) {
+            case ALLOWED -> specificFilter.checkInput(serialClass) != Status.REJECTED;
             case REJECTED -> false;
-            // Only allowed if allowed by global filter
-            case UNDECIDED -> globalResult == Status.ALLOWED;
+            case UNDECIDED -> specificFilter.checkInput(serialClass) == Status.ALLOWED;
         };
     }
 
