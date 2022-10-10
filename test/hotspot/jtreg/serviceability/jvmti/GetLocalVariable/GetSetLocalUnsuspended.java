@@ -34,11 +34,11 @@
 public class GetSetLocalUnsuspended {
     private static final String agentLib = "GetSetLocalUnsuspended";
 
-    static native void testUnsuspendedThread(Thread thread);
+    private static native void testUnsuspendedThread(Thread thread);
 
-    static private volatile boolean doStop;
+    private static volatile boolean doStop;
 
-    static private void sleep(long millis) {
+    private static void sleep(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
@@ -52,7 +52,7 @@ public class GetSetLocalUnsuspended {
         }
     };
 
-    public static void testPlatformThread() throws Exception {
+    private static void testPlatformThread() throws Exception {
         doStop = false;
         Thread thread = Thread.ofPlatform().name("SleepingPlatformThread").start(SLEEPING_THREAD);
         testUnsuspendedThread(thread);
@@ -60,7 +60,7 @@ public class GetSetLocalUnsuspended {
         thread.join();
     }
 
-    public static void testVirtualThread() throws Exception {
+    private static void testVirtualThread() throws Exception {
         doStop = false;
         Thread thread = Thread.ofVirtual().name("SleepingVirtualThread").start(SLEEPING_THREAD);
         testUnsuspendedThread(thread);
@@ -68,7 +68,7 @@ public class GetSetLocalUnsuspended {
         thread.join();
     }
 
-    void runTest() throws Exception {
+    private void runTest() throws Exception {
         testPlatformThread();
         testVirtualThread();
     }
