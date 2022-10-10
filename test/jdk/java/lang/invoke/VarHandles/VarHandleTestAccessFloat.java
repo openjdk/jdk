@@ -24,8 +24,20 @@
 /*
  * @test
  * @run testng/othervm -Diters=10    -Xint                   VarHandleTestAccessFloat
+ */
+
+/*
+ * @test
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessFloat
+ */
+
+/*
+ * @test
  * @run testng/othervm -Diters=20000                         VarHandleTestAccessFloat
+ */
+
+/*
+ * @test
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessFloat
  */
 

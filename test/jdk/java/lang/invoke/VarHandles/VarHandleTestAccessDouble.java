@@ -24,8 +24,20 @@
 /*
  * @test
  * @run testng/othervm -Diters=10    -Xint                   VarHandleTestAccessDouble
+ */
+
+/*
+ * @test
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessDouble
+ */
+
+/*
+ * @test
  * @run testng/othervm -Diters=20000                         VarHandleTestAccessDouble
+ */
+
+/*
+ * @test
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessDouble
  */
 

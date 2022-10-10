@@ -25,7 +25,15 @@
  * @test
  * @bug 8154556
  * @run testng/othervm/timeout=360 -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsFloat
+ */
+
+/*
+ * @test
  * @run testng/othervm/timeout=360 -Diters=20000                         VarHandleTestByteArrayAsFloat
+ */
+
+/*
+ * @test
  * @run testng/othervm/timeout=360 -Diters=20000 -XX:-TieredCompilation  VarHandleTestByteArrayAsFloat
  */
 
