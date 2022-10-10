@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,57 @@
  */
 
 /*
- *
+ * @test
  * @bug 4619757
  * @summary User Policy Setting is not recognized on Netscape 6
  *          when invoked as root.
- * @run main/manual Root
+ * @library /test/lib
+ * @run driver Root
  */
 
-/*
- * Place Root.policy in the root home directory (/),
- * as /.java.policy and run as test as root user.
- */
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.*;
 
 public class Root {
-    public static void main(String[] args) {
-        Policy p = Policy.getPolicy();
-        if (p.implies(Root.class.getProtectionDomain(), new AllPermission())) {
-            System.out.println("Test succeeded");
-        } else {
-            throw new SecurityException("Test failed");
+    private static final String SRC = System.getProperty("test.src");
+    private static final String ROOT = System.getProperty("user.home");
+    private static final Path SOURCE = Paths.get(SRC, "Root.policy");
+    private static final Path TARGET = Paths.get(ROOT, ".java.policy");
+    public static void main(String[] args) throws Exception {
+        Files.copy(SOURCE, TARGET, StandardCopyOption.REPLACE_EXISTING);
+        try {
+            test();
+        } finally {
+            Files.delete(TARGET);
+        }
+    }
+
+    private static void test() throws Exception{
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                RootTest.class.getName()
+        );
+
+        Process proc = pb.start();
+        OutputAnalyzer output = new OutputAnalyzer(proc);
+        output.stdoutShouldNotBeEmpty();
+        output.shouldContain("Test succeeded");
+        System.out.println("Test passed.");
+    }
+
+    class RootTest {
+        public static void main(String[] args) {
+            Policy p = Policy.getPolicy();
+            if (p.implies(Root.class.getProtectionDomain(), new AllPermission())) {
+                System.out.println("Test succeeded");
+            } else {
+                throw new SecurityException("Test failed");
+            }
         }
     }
 }
