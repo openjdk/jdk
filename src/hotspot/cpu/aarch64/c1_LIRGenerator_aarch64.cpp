@@ -148,7 +148,7 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   if (index->is_constant()) {
     LIR_Const *constant = index->as_constant_ptr();
     if (constant->type() == T_INT) {
-      large_disp += index->as_jint() << shift;
+      large_disp += ((intx)index->as_jint()) << shift;
     } else {
       assert(constant->type() == T_LONG, "should be");
       jlong c = index->as_jlong() << shift;
@@ -194,7 +194,7 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   if (large_disp == 0 && index->is_register()) {
     return new LIR_Address(base, index, type);
   } else {
-    assert(Address::offset_ok_for_immed(large_disp, 0), "must be");
+    assert(Address::offset_ok_for_immed(large_disp, shift), "failed for large_disp: " INTPTR_FORMAT " and shift %d", large_disp, shift);
     return new LIR_Address(base, large_disp, type);
   }
 }
@@ -204,24 +204,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   int offset_in_bytes = arrayOopDesc::base_offset_in_bytes(type);
   int elem_size = type2aelembytes(type);
   int shift = exact_log2(elem_size);
-
-  LIR_Address* addr;
-  if (index_opr->is_constant()) {
-    addr = new LIR_Address(array_opr,
-                           offset_in_bytes + (intx)(index_opr->as_jint()) * elem_size, type);
-  } else {
-    if (offset_in_bytes) {
-      LIR_Opr tmp = new_pointer_register();
-      __ add(array_opr, LIR_OprFact::intConst(offset_in_bytes), tmp);
-      array_opr = tmp;
-      offset_in_bytes = 0;
-    }
-    addr =  new LIR_Address(array_opr,
-                            index_opr,
-                            LIR_Address::scale(type),
-                            offset_in_bytes, type);
-  }
-  return addr;
+  return generate_address(array_opr, index_opr, shift, offset_in_bytes, type);
 }
 
 LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
