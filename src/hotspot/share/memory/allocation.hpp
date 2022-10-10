@@ -488,7 +488,7 @@ protected:
 #ifndef PRODUCT
   // Printing support
   void print() const;
-  virtual void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const;
 #endif // PRODUCT
 };
 
