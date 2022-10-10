@@ -745,4 +745,33 @@ public class TestCommon extends CDSTestUtils {
         }
         return sb.toString();
     }
+
+    public static void stdoutMustMatch(OutputAnalyzer a, OutputAnalyzer b) {
+        linesMustMatch(a.getStdout().split("\n"),
+                             b.getStdout().split("\n"));
+    }
+
+    public static void linesMustMatch(String a[], String b[]) {
+        int max = Math.max(a.length, b.length);
+        for (int i = 0; i < max; i++) {
+            if (!a[i].equals(b[i])) {
+                System.out.println("a:" + i + " " + a[i]);
+                System.out.println("b:" + i + " " + b[i]);
+                throw new RuntimeException("Output mismatch on line :" + i
+                                           + ", a=" + a[i]
+                                           + ", b=" + b[i]);
+            }
+        }
+        if (a.length > b.length) {
+            throw new RuntimeException("Output mismatch on line :" + max
+                                       + ", a=" + a[max]
+                                       + ", b=<none>");
+
+        }
+        if (a.length < b.length) {
+            throw new RuntimeException("Output mismatch on line :" + max
+                                       + ", a=<none>"
+                                       + ", b=" + b[max]);
+        }
+    }
 }
