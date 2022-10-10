@@ -1431,7 +1431,8 @@ public abstract class SunToolkit extends Toolkit
     private static final int MINIMAL_DELAY = 5;
 
     /**
-     * Parameterless version of realsync which uses default timout (see DEFAUL_WAIT_TIME).
+     * Parameterless version of {@link #realSync(long)} which uses
+     * the default timeout of {@link #DEFAULT_WAIT_TIME}.
      */
     public void realSync() {
         realSync(DEFAULT_WAIT_TIME);
