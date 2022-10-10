@@ -1601,15 +1601,18 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
   // We do not need to restore the position afterwards as this is the last step of parsing from the file for this compilation unit.
   _reader.set_position(_header._file_names_offset);
   uint32_t current_index = 1; // file_names start at index 1
+  const size_t dwarf_filename_len = 1024;
+  char dwarf_filename[dwarf_filename_len]; // Store the filename read from DWARF which is then copied to 'filename'.
   while (_reader.has_bytes_left()) {
-    if (!_reader.read_string(filename, filename_len)) {
+    if (!_reader.read_string(dwarf_filename, dwarf_filename_len)) {
       // Either an error while reading or we have reached the end of the file_names. Both should not happen.
       return false;
     }
 
     if (current_index == file_index) {
       // Found correct file.
-      strip_path_prefix(filename, filename_len);
+      strip_path_prefix(dwarf_filename, dwarf_filename_len);
+      copy_dwarf_filename_to_filename(dwarf_filename, dwarf_filename_len, filename, filename_len);
       return true;
     }
 
@@ -1637,6 +1640,15 @@ void DwarfFile::LineNumberProgram::strip_path_prefix(char* filename, const size_
     // Add null terminator.
     filename[bytes_written] = '\0';
   }
+}
+
+// Copy the read filename from the DWARF file stored in 'src' to the provided output buffer 'dst'.
+void DwarfFile::LineNumberProgram::copy_dwarf_filename_to_filename(char* src, const size_t src_len,
+                                                                   char* dst, const size_t dst_len) {
+  const size_t count = MIN(src_len, dst_len);
+  int bytes_written = jio_snprintf(dst, count, "%s", src);
+  // Add null terminator.
+  dst[count - 1] = '\0';
 }
 
 void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {

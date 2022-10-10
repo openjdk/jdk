@@ -862,6 +862,7 @@ class DwarfFile : public ElfFile {
     void print_and_store_prev_entry(uint32_t previous_file, uint32_t previous_line);
     bool get_filename_from_header(uint32_t file_index, char* filename, size_t filename_len);
     static void strip_path_prefix(char* filename, const size_t filename_len);
+    static void copy_dwarf_filename_to_filename(char* src, size_t src_len, char* dst, size_t dst_len);
 
    public:
     LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset, bool is_pc_after_call)
