@@ -737,7 +737,7 @@ void MetaspaceShared::get_default_classlist(char* default_classlist, const size_
   // Construct the path to the class list (in jre/lib)
   // Walk up two directories from the location of the VM and
   // optionally tack on "lib" (depending on platform)
-  os::jvm_path(default_classlist, buf_size);
+  os::jvm_path(default_classlist, (jint)(buf_size));
   for (int i = 0; i < 3; i++) {
     char *end = strrchr(default_classlist, *os::file_separator());
     if (end != NULL) *end = '\0';
@@ -780,8 +780,12 @@ void MetaspaceShared::preload_classes(TRAPS) {
                                                     ClassListParser::_parse_all, CHECK);
   }
   if (classlist_path != default_classlist) {
-    class_count += ClassListParser::parse_classlist(default_classlist,
-                                                    ClassListParser::_parse_lambda_forms_invokers_only, CHECK);
+    struct stat statbuf;
+    if (os::stat(default_classlist, &statbuf) == 0) {
+      // File exists, let's use it.
+      class_count += ClassListParser::parse_classlist(default_classlist,
+                                                      ClassListParser::_parse_lambda_forms_invokers_only, CHECK);
+    }
   }
 
   // Exercise the manifest processing code to ensure classes used by CDS at runtime

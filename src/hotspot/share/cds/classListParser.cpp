@@ -56,7 +56,7 @@ ClassListParser* ClassListParser::_instance = NULL;
 
 ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
   log_info(cds)("Parsing %s%s", file,
-                (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only" : "");
+                (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
