@@ -71,7 +71,6 @@ public class VectorMaskCastTest {
 
     // Byte
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public static void testByte64ToShort128() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
@@ -79,7 +78,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testByte64ToInt256() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
@@ -87,7 +85,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testByte64ToFloat256() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
@@ -95,7 +92,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte64ToLong512() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
@@ -103,7 +99,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte64ToDouble512() {
         VectorMask<Byte> mByte64 = VectorMask.fromArray(ByteVector.SPECIES_64, mask_arr, 0);
@@ -111,7 +106,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testByte128ToShort256() {
         VectorMask<Byte> mByte128 = VectorMask.fromArray(ByteVector.SPECIES_128, mask_arr, 0);
@@ -119,7 +113,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte128ToInt512() {
         VectorMask<Byte> mByte128 = VectorMask.fromArray(ByteVector.SPECIES_128, mask_arr, 0);
@@ -127,7 +120,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte128ToFloat512() {
         VectorMask<Byte> mByte128 = VectorMask.fromArray(ByteVector.SPECIES_128, mask_arr, 0);
@@ -135,7 +127,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testByte256ToShort512() {
         VectorMask<Byte> mByte256 = VectorMask.fromArray(ByteVector.SPECIES_256, mask_arr, 0);
@@ -144,7 +135,6 @@ public class VectorMaskCastTest {
 
     // Short
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public static void testShort64ToInt128() {
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mask_arr, 0);
@@ -152,7 +142,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public static void testShort64ToFloat128() {
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mask_arr, 0);
@@ -160,7 +149,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testShort64ToLong256() {
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mask_arr, 0);
@@ -168,7 +156,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testShort64ToDouble256() {
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mask_arr, 0);
@@ -176,7 +163,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public static void testShort128ToByte64() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
@@ -184,7 +170,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testShort128ToInt256() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
@@ -192,7 +177,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testShort128ToFloat256() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
@@ -200,7 +184,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort128ToLong512() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
@@ -208,7 +191,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort128ToDouble512() {
         VectorMask<Short> mShort128 = VectorMask.fromArray(ShortVector.SPECIES_128, mask_arr, 0);
@@ -216,7 +198,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testShort256ToByte128() {
         VectorMask<Short> mShort256 = VectorMask.fromArray(ShortVector.SPECIES_256, mask_arr, 0);
@@ -224,7 +205,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort256ToInt512() {
         VectorMask<Short> mShort256 = VectorMask.fromArray(ShortVector.SPECIES_256, mask_arr, 0);
@@ -232,7 +212,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort256ToFloat512() {
         VectorMask<Short> mShort256 = VectorMask.fromArray(ShortVector.SPECIES_256, mask_arr, 0);
@@ -240,7 +219,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testShort512ToByte256() {
         VectorMask<Short> mShort512 = VectorMask.fromArray(ShortVector.SPECIES_512, mask_arr, 0);
@@ -249,7 +227,6 @@ public class VectorMaskCastTest {
 
     // Int
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
     public static void testInt64ToLong128() {
         VectorMask<Integer> mInt64 = VectorMask.fromArray(IntVector.SPECIES_64, mask_arr, 0);
@@ -257,7 +234,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
     public static void testInt64ToDouble128() {
         VectorMask<Integer> mInt64 = VectorMask.fromArray(IntVector.SPECIES_64, mask_arr, 0);
@@ -265,7 +241,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public static void testInt128ToShort64() {
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mask_arr, 0);
@@ -273,7 +248,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testInt128ToLong256() {
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mask_arr, 0);
@@ -281,7 +255,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testInt128ToDouble256() {
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mask_arr, 0);
@@ -289,7 +262,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testInt256ToShort128() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
@@ -297,7 +269,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testInt256ToByte64() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
@@ -305,7 +276,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testInt256ToLong512() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
@@ -313,7 +283,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testInt256ToDouble512() {
         VectorMask<Integer> mInt256 = VectorMask.fromArray(IntVector.SPECIES_256, mask_arr, 0);
@@ -321,7 +290,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testInt512ToShort256() {
         VectorMask<Integer> mInt512 = VectorMask.fromArray(IntVector.SPECIES_512, mask_arr, 0);
@@ -329,7 +297,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testInt512ToByte128() {
         VectorMask<Integer> mInt512 = VectorMask.fromArray(IntVector.SPECIES_512, mask_arr, 0);
@@ -338,7 +305,6 @@ public class VectorMaskCastTest {
 
     // Float
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
     public static void testFloat64ToLong128() {
         VectorMask<Float> mFloat64 = VectorMask.fromArray(FloatVector.SPECIES_64, mask_arr, 0);
@@ -346,7 +312,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
     public static void testFloat64ToDouble128() {
         VectorMask<Float> mFloat64 = VectorMask.fromArray(FloatVector.SPECIES_64, mask_arr, 0);
@@ -354,7 +319,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public static void testFloat128ToShort64() {
         VectorMask<Float> mFloat128 = VectorMask.fromArray(FloatVector.SPECIES_128, mask_arr, 0);
@@ -362,7 +326,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testFloat128ToLong256() {
         VectorMask<Float> mFloat128 = VectorMask.fromArray(FloatVector.SPECIES_128, mask_arr, 0);
@@ -370,7 +333,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testFloat128ToDouble256() {
         VectorMask<Float> mFloat128 = VectorMask.fromArray(FloatVector.SPECIES_128, mask_arr, 0);
@@ -378,7 +340,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testFloat256ToShort128() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
@@ -386,7 +347,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testFloat256ToByte64() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
@@ -394,7 +354,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testFloat256ToLong512() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
@@ -402,7 +361,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testFloat256ToDouble512() {
         VectorMask<Float> mFloat256 = VectorMask.fromArray(FloatVector.SPECIES_256, mask_arr, 0);
@@ -410,7 +368,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testFloat512ToShort256() {
         VectorMask<Float> mFloat512 = VectorMask.fromArray(FloatVector.SPECIES_512, mask_arr, 0);
@@ -418,7 +375,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testFloat512ToByte128() {
         VectorMask<Float> mFloat512 = VectorMask.fromArray(FloatVector.SPECIES_512, mask_arr, 0);
@@ -427,7 +383,6 @@ public class VectorMaskCastTest {
 
     // Long
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
     public static void testLong128ToInt64() {
         VectorMask<Long> mLong128 = VectorMask.fromArray(LongVector.SPECIES_128, mask_arr, 0);
@@ -435,7 +390,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
     public static void testLong128ToFloat64() {
         VectorMask<Long> mLong128 = VectorMask.fromArray(LongVector.SPECIES_128, mask_arr, 0);
@@ -443,7 +397,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testLong256ToInt128() {
         VectorMask<Long> mLong256 = VectorMask.fromArray(LongVector.SPECIES_256, mask_arr, 0);
@@ -451,7 +404,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testLong256ToFloat128() {
         VectorMask<Long> mLong256 = VectorMask.fromArray(LongVector.SPECIES_256, mask_arr, 0);
@@ -459,7 +411,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testLong256ToShort64() {
         VectorMask<Long> mLong256 = VectorMask.fromArray(LongVector.SPECIES_256, mask_arr, 0);
@@ -467,7 +418,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testLong512ToInt256() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
@@ -475,7 +425,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testLong512ToFloat256() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
@@ -483,7 +432,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testLong512ToShort128() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
@@ -491,7 +439,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testLong512ToByte64() {
         VectorMask<Long> mLong512 = VectorMask.fromArray(LongVector.SPECIES_512, mask_arr, 0);
@@ -500,7 +447,6 @@ public class VectorMaskCastTest {
 
     // Double
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
     public static void testDouble128ToInt64() {
         VectorMask<Double> mDouble128 = VectorMask.fromArray(DoubleVector.SPECIES_128, mask_arr, 0);
@@ -508,7 +454,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
     public static void testDouble128ToFloat64() {
         VectorMask<Double> mDouble128 = VectorMask.fromArray(DoubleVector.SPECIES_128, mask_arr, 0);
@@ -516,7 +461,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testDouble256ToInt128() {
         VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
@@ -524,7 +468,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testDouble256ToFloat128() {
         VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
@@ -532,7 +475,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx2", "true"})
     public static void testDouble256ToShort64() {
         VectorMask<Double> mDouble256 = VectorMask.fromArray(DoubleVector.SPECIES_256, mask_arr, 0);
@@ -540,7 +482,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testDouble512ToInt256() {
         VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
@@ -548,7 +489,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testDouble512ToFloat256() {
         VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
@@ -556,7 +496,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testDouble512ToShort128() {
         VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
@@ -564,7 +503,6 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"avx512vl", "true"})
     public static void testDouble512ToByte64() {
         VectorMask<Double> mDouble512 = VectorMask.fromArray(DoubleVector.SPECIES_512, mask_arr, 0);
@@ -572,6 +510,9 @@ public class VectorMaskCastTest {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+        TestFramework testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(5000)
+                     .addFlags("--add-modules=jdk.incubator.vector")
+                     .start();
     }
 }
