@@ -63,7 +63,7 @@ public final class EventInstrumentation {
     record SettingInfo(Type paramType, String methodName) {
     }
 
-    record FieldInfo(String fieldName, String fieldDescriptor, String internalClassName) {
+    record FieldInfo(String name, String descriptor) {
     }
 
     public static final String FIELD_EVENT_THREAD = "eventThread";
@@ -128,8 +128,8 @@ public final class EventInstrumentation {
     public static Method findStaticCommitMethod(ClassNode classNode, List<FieldInfo> fields) {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
-        for (FieldInfo v : fields) {
-            sb.append(v.fieldDescriptor);
+        for (FieldInfo field : fields) {
+            sb.append(field.descriptor);
         }
         sb.append(")V");
         Method m = new Method("commit", sb.toString());
@@ -273,11 +273,11 @@ public final class EventInstrumentation {
         // control in which order they occur and we can add @Name, @Description
         // in Java, instead of in native. It also means code for adding implicit
         // fields for native can be reused by Java.
-        fieldInfos.add(new FieldInfo("startTime", Type.LONG_TYPE.getDescriptor(), classNode.name));
-        fieldInfos.add(new FieldInfo("duration", Type.LONG_TYPE.getDescriptor(), classNode.name));
+        fieldInfos.add(new FieldInfo("startTime", Type.LONG_TYPE.getDescriptor()));
+        fieldInfos.add(new FieldInfo("duration", Type.LONG_TYPE.getDescriptor()));
         for (FieldNode field : classNode.fields) {
             if (!fieldSet.contains(field.name) && isValidField(field.access, Type.getType(field.desc).getClassName())) {
-                FieldInfo fi = new FieldInfo(field.name, field.desc, classNode.name);
+                FieldInfo fi = new FieldInfo(field.name, field.desc);
                 fieldInfos.add(fi);
                 fieldSet.add(field.name);
             }
@@ -291,7 +291,7 @@ public final class EventInstrumentation {
                         if (!fieldSet.contains(fieldName)) {
                             Type fieldType = Type.getType(field.getType());
                             String internalClassName = ASMToolkit.getInternalName(c.getName());
-                            fieldInfos.add(new FieldInfo(fieldName, fieldType.getDescriptor(), internalClassName));
+                            fieldInfos.add(new FieldInfo(fieldName, fieldType.getDescriptor()));
                             fieldSet.add(fieldName);
                         }
                     }
@@ -562,7 +562,7 @@ public final class EventInstrumentation {
                     // stack: [EW] [EW]
                     methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                     // stack: [EW] [EW] [this]
-                    methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), field.fieldName, field.fieldDescriptor);
+                    methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), field.name, field.descriptor);
                     // stack: [EW] [EW] <T>
                     EventWriterMethod eventMethod = EventWriterMethod.lookupMethod(field);
                     invokeVirtual(methodVisitor, TYPE_EVENT_WRITER, eventMethod.asmMethod);
