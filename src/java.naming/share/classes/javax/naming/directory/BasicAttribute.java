@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,6 +474,8 @@ public class BasicAttribute implements Attribute {
       *<p>
       * This method by default throws OperationNotSupportedException. A subclass
       * should override this method if it supports schema.
+      *
+      * @throws OperationNotSupportedException {@inheritDoc}
       */
     public DirContext getAttributeSyntaxDefinition() throws NamingException {
             throw new OperationNotSupportedException("attribute syntax");
@@ -484,6 +486,8 @@ public class BasicAttribute implements Attribute {
       *<p>
       * This method by default throws OperationNotSupportedException. A subclass
       * should override this method if it supports schema.
+      *
+      * @throws OperationNotSupportedException {@inheritDoc}
       */
     public DirContext getAttributeDefinition() throws NamingException {
         throw new OperationNotSupportedException("attribute definition");

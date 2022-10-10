@@ -188,15 +188,15 @@ public final class MetadataRepository {
         return Utils.getConfiguration(eventClass);
     }
 
-    private EventConfiguration newEventConfiguration(EventType eventType, EventControl ec, SettingControl[] settings) {
+    private EventConfiguration newEventConfiguration(EventType eventType, EventControl ec) {
         try {
             if (cachedEventConfigurationConstructor == null) {
-                var argClasses = new Class<?>[] { EventType.class, EventControl.class, SettingControl[].class };
+                var argClasses = new Class<?>[] { EventType.class, EventControl.class};
                 Constructor<EventConfiguration> c = EventConfiguration.class.getDeclaredConstructor(argClasses);
                 SecuritySupport.setAccessible(c);
                 cachedEventConfigurationConstructor = c;
             }
-            return cachedEventConfigurationConstructor.newInstance(eventType, ec, settings);
+            return cachedEventConfigurationConstructor.newInstance(eventType, ec);
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             throw new InternalError(e);
         }
@@ -209,13 +209,7 @@ public final class MetadataRepository {
         }
         EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
         EventControl ec = new EventControl(pEventType, eventClass);
-        List<SettingInfo> settingInfos = ec.getSettingInfos();
-        SettingControl[] settings = new SettingControl[settingInfos.size()];
-        int index = 0;
-        for (var settingInfo : settingInfos) {
-            settings[index++] = settingInfo.settingControl();
-        }
-        EventConfiguration configuration = newEventConfiguration(eventType, ec, settings);
+        EventConfiguration configuration = newEventConfiguration(eventType, ec);
         PlatformEventType pe = configuration.getPlatformEventType();
         pe.setRegistered(true);
         // If class is instrumented or should not be instrumented, mark as instrumented.
