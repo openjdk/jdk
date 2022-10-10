@@ -129,7 +129,7 @@ public class ConfigFileTest {
                 oa.shouldContain("security.provider.2=SunRsaSign")
                         .shouldNotContain(EXPECTED_DEBUG_OUTPUT)
                         .shouldNotContain(UNEXPECTED_DEBUG_OUTPUT);
-            } else{
+            } else {
                 oa.shouldContain(EXPECTED_DEBUG_OUTPUT)
                         .shouldNotContain(UNEXPECTED_DEBUG_OUTPUT);
             }

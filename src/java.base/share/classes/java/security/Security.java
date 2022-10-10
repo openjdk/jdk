@@ -63,6 +63,9 @@ public final class Security {
     /* The java.security properties */
     private static Properties props;
 
+    /* cache a copy for recording purposes */
+    static Properties initialSecurityProperties;
+
     // An element in the cache
     private static class ProviderProperty {
         String className;
@@ -104,7 +107,7 @@ public final class Security {
             }
             loadProps(null, extraPropFile, overrideAll);
         }
-        ProtectionDomain.JavaSecurityAccessImpl.initialSecurityProperties = (Properties) props.clone();
+        initialSecurityProperties = (Properties) props.clone();
         if (sdebug != null) {
             for (Map.Entry<Object, Object> entry : props.entrySet()) {
                 sdebug.println("Initial security property: " + entry.getKey() + "=" +
@@ -168,6 +171,10 @@ public final class Security {
                 }
             }
         }
+    }
+
+    static Properties getInitialSecurityProperties() {
+        return initialSecurityProperties;
     }
 
     /**

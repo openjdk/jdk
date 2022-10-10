@@ -71,10 +71,7 @@ public class ProtectionDomain {
             "true".equals(GetPropertyAction.privilegedGetProperty(
                 "jdk.security.filePermCompat"));
 
-    static class JavaSecurityAccessImpl implements JavaSecurityAccess {
-        /* cache a copy for recording purposes */
-        static Properties initialSecurityProperties;
-
+    private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
         private JavaSecurityAccessImpl() {
         }
 
@@ -134,7 +131,7 @@ public class ProtectionDomain {
 
         @Override
         public Properties getInitialProperties() {
-            return initialSecurityProperties;
+            return Security.getInitialSecurityProperties();
         }
     }
 

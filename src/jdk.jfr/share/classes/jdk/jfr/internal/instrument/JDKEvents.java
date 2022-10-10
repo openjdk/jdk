@@ -312,10 +312,10 @@ public final class JDKEvents {
     private static void emitInitialSecurityProperties() {
         Properties p = SharedSecrets.getJavaSecurityAccess().getInitialProperties();
         if (p != null) {
-            for (Map.Entry<Object, Object> entry : p.entrySet()) {
+            for (String key : p.stringPropertyNames()) {
                 InitialSecurityPropertyEvent e = new InitialSecurityPropertyEvent();
-                e.key = (String) entry.getKey();
-                e.value = (String) entry.getValue();
+                e.key = key;
+                e.value = p.getProperty(key);
                 e.commit();
             }
         }

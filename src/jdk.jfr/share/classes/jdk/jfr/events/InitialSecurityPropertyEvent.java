@@ -25,8 +25,10 @@
 
 package jdk.jfr.events;
 
-import jdk.jfr.*;
-import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.Category;
+import jdk.jfr.Description;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
 
 @Category({"Java Development Kit", "Security"})
 @Label("Initial Security Property")
