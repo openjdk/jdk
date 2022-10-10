@@ -110,6 +110,7 @@ class vframe: public ResourceObj {
   // printing operations
   virtual void print_value() const;
   virtual void print();
+  void print_on(outputStream* st) const override;
 #endif
 };
 

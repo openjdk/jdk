@@ -27,6 +27,7 @@
 #include "code/vmreg.inline.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
@@ -323,19 +324,32 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       iframe()->interpreter_frame_set_mdp(mdp);
     }
   }
-
 #ifndef PRODUCT
-  if (PrintDeoptimizationDetails) {
-    tty->print_cr("Expressions size: %d", expressions()->size());
-  }
+  log_debug(deoptimization)("Expressions size: %d", expressions()->size());
 #endif // !PRODUCT
-
   // Unpack expression stack
   // If this is an intermediate frame (i.e. not top frame) then this
   // only unpacks the part of the expression stack not used by callee
   // as parameters. The callee parameters are unpacked as part of the
   // callee locals.
   int i;
+
+#ifndef PRODUCT
+  auto log_deopt = [](int i, intptr_t* addr) {
+    LogTarget(Debug, deoptimization) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print(" - Reconstructed expression %d (OBJECT): ", i);
+      oop o = cast_to_oop((address)(*addr));
+      if (o == NULL) {
+        ls.print_cr("NULL");
+      } else {
+        ResourceMark rm;
+        ls.print_raw_cr(o->klass()->name()->as_C_string());
+      }
+    }
+  };
+#endif // !PRODUCT
   for(i = 0; i < expressions()->size(); i++) {
     StackValue *value = expressions()->at(i);
     intptr_t*   addr  = iframe()->interpreter_frame_expression_stack_at(i);
@@ -344,24 +358,13 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       case T_INT:
         *addr = value->get_int();
 #ifndef PRODUCT
-        if (PrintDeoptimizationDetails) {
-          tty->print_cr(" - Reconstructed expression %d (INT): %d", i, (int)(*addr));
-        }
+        log_debug(deoptimization)(" - Reconstructed expression %d (INT): %d", i, (int)(*addr));
 #endif // !PRODUCT
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
 #ifndef PRODUCT
-        if (PrintDeoptimizationDetails) {
-          tty->print(" - Reconstructed expression %d (OBJECT): ", i);
-          oop o = cast_to_oop((address)(*addr));
-          if (o == NULL) {
-            tty->print_cr("NULL");
-          } else {
-            ResourceMark rm;
-            tty->print_raw_cr(o->klass()->name()->as_C_string());
-          }
-        }
+        log_deopt(i, addr);
 #endif // !PRODUCT
         break;
       case T_CONFLICT:
@@ -372,13 +375,23 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
         ShouldNotReachHere();
     }
   }
-
 #ifndef PRODUCT
-  if (PrintDeoptimizationDetails) {
-    tty->print_cr("Locals size: %d", locals()->size());
-  }
+  log_debug(deoptimization)("Locals size: %d", locals()->size());
+  auto log_it = [](int i, intptr_t* addr) {
+    LogTarget(Debug, deoptimization) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print(" - Reconstructed local %d (OBJECT): ", i);
+      oop o = cast_to_oop((address)(*addr));
+      if (o == NULL) {
+        ls.print_cr("NULL");
+      } else {
+        ResourceMark rm;
+        ls.print_raw_cr(o->klass()->name()->as_C_string());
+      }
+    }
+  };
 #endif // !PRODUCT
-
   // Unpack the locals
   for(i = 0; i < locals()->size(); i++) {
     StackValue *value = locals()->at(i);
@@ -388,24 +401,13 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       case T_INT:
         *addr = value->get_int();
 #ifndef PRODUCT
-        if (PrintDeoptimizationDetails) {
-          tty->print_cr(" - Reconstructed local %d (INT): %d", i, (int)(*addr));
-        }
+        log_debug(deoptimization)(" - Reconstructed local %d (INT): %d", i, (int)(*addr));
 #endif // !PRODUCT
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
 #ifndef PRODUCT
-        if (PrintDeoptimizationDetails) {
-          tty->print(" - Reconstructed local %d (OBJECT): ", i);
-          oop o = cast_to_oop((address)(*addr));
-          if (o == NULL) {
-            tty->print_cr("NULL");
-          } else {
-            ResourceMark rm;
-            tty->print_raw_cr(o->klass()->name()->as_C_string());
-          }
-        }
+        log_it(i, addr);
 #endif // !PRODUCT
         break;
       case T_CONFLICT:
@@ -446,23 +448,24 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       thread->popframe_free_preserved_args();
     }
   }
-
 #ifndef PRODUCT
-  if (PrintDeoptimizationDetails) {
-    ttyLocker ttyl;
-    tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
-    iframe()->print_on(tty);
-    RegisterMap map(thread,
-                    RegisterMap::UpdateMap::include,
-                    RegisterMap::ProcessFrames::include,
-                    RegisterMap::WalkContinuation::skip);
-    vframe* f = vframe::new_vframe(iframe(), &map, thread);
-    f->print();
-    if (WizardMode && Verbose) method()->print_codes();
-    tty->cr();
+  {
+    LogMessage(deoptimization) lm;
+    if (lm.is_debug()) {
+      NonInterleavingLogStream ls(LogLevelType::Debug, lm);
+      ls.print_cr("[%d. Interpreted Frame]", ++unpack_counter);
+      iframe()->print_on(&ls);
+      RegisterMap map(thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
+      vframe* f = vframe::new_vframe(iframe(), &map, thread);
+      f->print_on(&ls);
+      if (WizardMode && Verbose) method()->print_codes_on(&ls);
+      ls.cr();
+    }
   }
 #endif // !PRODUCT
-
   // The expression stack and locals are in the resource area don't leave
   // a dangling pointer in the vframeArray we leave around for debug
   // purposes
