@@ -50,7 +50,7 @@ public class bug4314194 {
     private static Robot robot;
     private static final Color radioButtonColor = Color.RED;
     private static final Color checkboxColor = Color.GREEN;
-    private static final int tolerance = 10;
+    private static final int tolerance = 20;
 
     private static boolean checkComponent(Component comp, Color c) throws Exception {
         int correctColoredPixels = 0;
@@ -91,8 +91,8 @@ public class bug4314194 {
         UIManager.getDefaults().put("CheckBox.disabledText", checkboxColor);
         UIManager.getDefaults().put("RadioButton.disabledText", radioButtonColor);
 
-        checkBox = new JCheckBox("WWWWW");
-        radioButton = new JRadioButton("WWWWW");
+        checkBox = new JCheckBox("\u2588".repeat(5));
+        radioButton = new JRadioButton("\u2588".repeat(5));
         checkBox.setFont(checkBox.getFont().deriveFont(50.0f));
         radioButton.setFont(radioButton.getFont().deriveFont(50.0f));
         checkBox.setEnabled(false);
