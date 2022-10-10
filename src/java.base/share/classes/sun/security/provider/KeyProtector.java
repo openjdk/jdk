@@ -34,7 +34,6 @@ import java.security.*;
 import java.util.Arrays;
 
 import sun.security.pkcs.PKCS8Key;
-//import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.x509.AlgorithmId;
@@ -237,7 +236,6 @@ final class KeyProtector {
         int encrKeyLen; // the length of the encrypted key
 
         // do we support the algorithm?
-
         AlgorithmId encrAlg;
         try {
             encrAlg = AlgorithmId.get(encrInfo.getAlgName());
