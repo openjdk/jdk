@@ -80,6 +80,7 @@ public class UserInfoTest {
 
         HttpClient client = HttpClient
                 .newBuilder()
+                .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .build();
 
@@ -92,7 +93,7 @@ public class UserInfoTest {
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() == 500) {
+            if (response.statusCode() != 200) {
                 throw new RuntimeException("Test Failed : " + response.uri().getAuthority());
             }
         } finally {
