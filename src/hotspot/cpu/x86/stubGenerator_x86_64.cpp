@@ -3463,7 +3463,7 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
   __ reset_last_Java_frame(true);
 
   // rax is jobject handle result, unpack and process it through a barrier.
-  __ resolve_jobject(rax, r15_thread, c_rarg0);
+  __ resolve_local_jobject(rax, r15_thread, c_rarg0);
 
   __ leave();
   __ ret(0);

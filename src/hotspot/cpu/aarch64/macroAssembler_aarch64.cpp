@@ -2505,6 +2505,30 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   bind(done);
 }
 
+void MacroAssembler::resolve_local_jobject(Register value, Register tmp1, Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  cbz(value, done);           // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    STATIC_ASSERT((JNIHandles::global_tag_value | JNIHandles::weak_tag_value) == JNIHandles::tag_mask);
+    Label valid_local_tag;
+    tst(value, JNIHandles::tag_mask); // Test for tag.
+    br(Assembler::EQ, valid_local_tag);
+    stop("non local jobject using resolve_local_jobject");
+    bind(valid_local_tag);
+  }
+#endif
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp1, tmp2);
+  verify_oop(value);
+
+  bind(done);
+}
+
 void MacroAssembler::stop(const char* msg) {
   BLOCK_COMMENT(msg);
   dcps1(0xdeae);

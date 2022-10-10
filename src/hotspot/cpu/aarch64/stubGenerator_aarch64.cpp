@@ -7041,7 +7041,7 @@ class StubGenerator: public StubCodeGenerator {
   // The handle is dereferenced through a load barrier.
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    __ resolve_jobject(r0, rscratch1, rscratch2);
+    __ resolve_local_jobject(r0, rscratch1, rscratch2);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
