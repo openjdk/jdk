@@ -795,7 +795,7 @@ static address get_signal_handler(const struct sigaction* action) {
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
 
-static void SR_handler(int sig, siginfo_t* siginfo, void* context);
+static void SR_handler(int sig, siginfo_t* siginfo, void* ucVoid);
 
 // Semantically compare two sigaction structures. Return true if they are referring to
 // the same handler, using the same flags.
