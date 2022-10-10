@@ -1409,17 +1409,6 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
     if [ -f "$THIS_SEC_DIR/sec-bin.zip" ] && [ -f "$OTHER_SEC_DIR/sec-bin.zip" ]; then
         OTHER_SEC_BIN="$OTHER_SEC_DIR/sec-bin.zip"
         THIS_SEC_BIN="$THIS_SEC_DIR/sec-bin.zip"
-        if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-            if [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
-                JGSS_WINDOWS_BIN="jgss-windows-x64-bin.zip"
-            else
-                JGSS_WINDOWS_BIN="jgss-windows-i586-bin.zip"
-            fi
-            OTHER_SEC_WINDOWS_BIN="$OTHER_SEC_DIR/sec-windows-bin.zip"
-            OTHER_JGSS_WINDOWS_BIN="$OTHER_SEC_DIR/$JGSS_WINDOWS_BIN"
-            THIS_SEC_WINDOWS_BIN="$THIS_SEC_DIR/sec-windows-bin.zip"
-            THIS_JGSS_WINDOWS_BIN="$THIS_SEC_DIR/$JGSS_WINDOWS_BIN"
-        fi
     fi
 
     if [ -d "$THIS/images/docs" ] && [ -d "$OTHER/images/docs" ]; then
@@ -1547,18 +1536,6 @@ if [ "$CMP_ZIPS" = "true" ]; then
         if [ -n "$(echo $THIS_SEC_BIN | $FILTER)" ]; then
             echo "sec-bin.zip..."
             compare_zip_file $THIS_SEC_DIR $OTHER_SEC_DIR $COMPARE_ROOT/sec-bin sec-bin.zip
-        fi
-    fi
-    if [ -n "$THIS_SEC_WINDOWS_BIN" ] && [ -n "$OTHER_SEC_WINDOWS_BIN" ]; then
-        if [ -n "$(echo $THIS_SEC_WINDOWS_BIN | $FILTER)" ]; then
-            echo "sec-windows-bin.zip..."
-            compare_zip_file $THIS_SEC_DIR $OTHER_SEC_DIR $COMPARE_ROOT/sec-bin sec-windows-bin.zip
-        fi
-    fi
-    if [ -n "$THIS_JGSS_WINDOWS_BIN" ] && [ -n "$OTHER_JGSS_WINDOWS_BIN" ]; then
-        if [ -n "$(echo $THIS_JGSS_WINDOWS_BIN | $FILTER)" ]; then
-            echo "$JGSS_WINDOWS_BIN..."
-            compare_zip_file $THIS_SEC_DIR $OTHER_SEC_DIR $COMPARE_ROOT/sec-bin $JGSS_WINDOWS_BIN
         fi
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then

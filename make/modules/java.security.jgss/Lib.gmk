@@ -55,39 +55,36 @@ endif
 
 ################################################################################
 
-ifneq ($(BUILD_CRYPTO), false)
+ifeq ($(call isTargetOs, windows), true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
+      NAME := w2k_lsa_auth, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := advapi32.lib Secur32.lib netapi32.lib kernel32.lib user32.lib \
+          gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib \
+          ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib, \
+  ))
 
-  ifeq ($(call isTargetOs, windows), true)
-    $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
-        NAME := w2k_lsa_auth, \
-        OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LIBS := advapi32.lib Secur32.lib netapi32.lib kernel32.lib user32.lib \
-            gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib \
-            ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib, \
-    ))
+  TARGETS += $(BUILD_LIBW2K_LSA_AUTH)
+endif
 
-    TARGETS += $(BUILD_LIBW2K_LSA_AUTH)
-  endif
+ifeq ($(call isTargetOs, macosx), true)
+  # libosxkrb5 needs to call deprecated krb5 APIs so that java
+  # can use the native credentials cache.
+  $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
+      NAME := osxkrb5, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      DISABLED_WARNINGS_clang := deprecated-declarations, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := -framework Cocoa -framework SystemConfiguration \
+          -framework Kerberos, \
+  ))
 
-  ifeq ($(call isTargetOs, macosx), true)
-    # libosxkrb5 needs to call deprecated krb5 APIs so that java
-    # can use the native credentials cache.
-    $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
-        NAME := osxkrb5, \
-        OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
-        DISABLED_WARNINGS_clang := deprecated-declarations, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LIBS := -framework Cocoa -framework SystemConfiguration \
-            -framework Kerberos, \
-    ))
-
-    TARGETS += $(BUILD_LIBOSXKRB5)
-  endif
+  TARGETS += $(BUILD_LIBOSXKRB5)
 endif
 
 ################################################################################
