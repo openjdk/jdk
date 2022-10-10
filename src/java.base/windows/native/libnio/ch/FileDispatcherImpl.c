@@ -35,7 +35,6 @@
 #include "sun_nio_ch_FileDispatcherImpl.h"
 
 #include <Mswsock.h>
-#pragma comment(lib, "Mswsock.lib")
 
 /**************************************************************
  * FileDispatcherImpl.c
