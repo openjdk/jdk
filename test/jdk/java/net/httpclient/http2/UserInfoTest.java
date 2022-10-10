@@ -22,7 +22,8 @@
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.Test;
+import jdk.test.lib.net.URIBuilder;
+
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +41,7 @@ import java.net.http.HttpResponse;
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @run testng UserInfoTest
+ * @run junit UserInfoTest
  */
 
 public class UserInfoTest {
@@ -70,7 +71,6 @@ public class UserInfoTest {
         return http2TestServer;
     }
 
-    @Test
     public void main() throws Exception {
         SSLContext sslContext = new SimpleSSLContext().get();
         Http2TestServer server = createServer(sslContext);
@@ -84,9 +84,14 @@ public class UserInfoTest {
                 .sslContext(sslContext)
                 .build();
 
-        URI uri = new URI("https://user@127.0.0.1:" + Integer.toString(port));
+        URI uri = URIBuilder.newBuilder()
+                .userInfo("user")
+                .loopback()
+                .port(port)
+                .buildUnchecked();
 
-        HttpRequest request = HttpRequest.newBuilder(uri)
+        HttpRequest request = HttpRequest
+                .newBuilder(uri)
                 .GET()
                 .build();
 
