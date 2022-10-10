@@ -143,6 +143,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -219,15 +225,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-#ifndef AMD64
-    // Halt if SI_KERNEL before more crashes get misdiagnosed as Java bugs
-    // This can happen in any running code (currently more frequently in
-    // interpreter code but has been seen in compiled code)
     if (sig == SIGSEGV && info->si_addr == 0 && info->si_code == SI_KERNEL) {
-      fatal("An irrecoverable SI_KERNEL SIGSEGV has occurred due "
-            "to unstable signal handling in this distribution.");
+      // An irrecoverable SI_KERNEL SIGSEGV has occurred.
+      // It's likely caused by dereferencing an address larger than TASK_SIZE.
+      return false;
     }
-#endif // AMD64
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
@@ -579,15 +581,14 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
-  intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
-  print_hex_dump(st, (address)sp, (address)(sp + 8), sizeof(intptr_t));
+  address sp = (address)os::Linux::ucontext_get_sp(uc);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
+  address pc = os::fetch_frame_from_context(uc).pc();
   print_instructions(st, pc, sizeof(char));
   st->cr();
 }

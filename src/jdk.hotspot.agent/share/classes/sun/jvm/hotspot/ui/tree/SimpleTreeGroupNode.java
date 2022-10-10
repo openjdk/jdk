@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ public class SimpleTreeGroupNode implements SimpleTreeNode {
 
   public int getChildCount() { return children.size(); }
   public SimpleTreeNode getChild(int index) {
-    return (SimpleTreeNode) children.get(index);
+    return children.get(index);
   }
   public void addChild(SimpleTreeNode child) {
     children.add(child);
   }
   public SimpleTreeNode removeChild(int index) {
-    return (SimpleTreeNode) children.remove(index);
+    return children.remove(index);
   }
   public void removeAllChildren() {
     children.clear();

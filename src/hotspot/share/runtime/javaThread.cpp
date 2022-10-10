@@ -421,6 +421,7 @@ JavaThread::JavaThread() :
 #if INCLUDE_JVMTI
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
+  _is_in_tmp_VTMS_transition(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
@@ -687,11 +688,9 @@ void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
   assert(_threadObj.peek() != NULL, "just checking");
 
-  // Execute thread entry point unless this thread has a pending exception
-  // or has been stopped before starting.
-  // Note: Due to JVM_StopThread we can have pending exceptions already!
-  if (!this->has_pending_exception() &&
-      !java_lang_Thread::is_stillborn(this->threadObj())) {
+  // Execute thread entry point unless this thread has a pending exception.
+  // Note: Due to JVMTI StopThread we can have pending exceptions already!
+  if (!this->has_pending_exception()) {
     {
       ResourceMark rm(this);
       this->set_native_thread_name(this->name());
@@ -719,15 +718,13 @@ static void ensure_join(JavaThread* thread) {
   Handle threadObj(thread, thread->threadObj());
   assert(threadObj.not_null(), "java thread object must exist");
   ObjectLocker lock(threadObj, thread);
-  // Ignore pending exception (ThreadDeath), since we are exiting anyway
-  thread->clear_pending_exception();
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
   java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below
   java_lang_Thread::set_thread(threadObj(), NULL);
   lock.notify_all(thread);
-  // Ignore pending exception (ThreadDeath), since we are exiting anyway
+  // Ignore pending exception, since we are exiting anyway
   thread->clear_pending_exception();
 }
 
@@ -1067,29 +1064,25 @@ void JavaThread::handle_async_exception(oop java_throwable) {
     }
   }
 
-  // Only overwrite an already pending exception if it is not a ThreadDeath.
-  if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
+  // We cannot call Exceptions::_throw(...) here because we cannot block
+  set_pending_exception(java_throwable, __FILE__, __LINE__);
 
-    // We cannot call Exceptions::_throw(...) here because we cannot block
-    set_pending_exception(java_throwable, __FILE__, __LINE__);
+  // Clear any extent-local bindings
+  set_extentLocalCache(NULL);
+  oop threadOop = threadObj();
+  assert(threadOop != NULL, "must be");
+  java_lang_Thread::clear_extentLocalBindings(threadOop);
 
-    // Clear any extent-local bindings on ThreadDeath
-    set_extentLocalCache(NULL);
-    oop threadOop = threadObj();
-    assert(threadOop != NULL, "must be");
-    java_lang_Thread::clear_extentLocalBindings(threadOop);
-
-    LogTarget(Info, exceptions) lt;
-    if (lt.is_enabled()) {
-      ResourceMark rm;
-      LogStream ls(lt);
-      ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
-      if (has_last_Java_frame()) {
-        frame f = last_frame();
-        ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
-      }
-      ls.print_cr(" of type: %s", java_throwable->klass()->external_name());
+  LogTarget(Info, exceptions) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
+    if (has_last_Java_frame()) {
+      frame f = last_frame();
+      ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
     }
+    ls.print_cr(" of type: %s", java_throwable->klass()->external_name());
   }
 }
 
@@ -1097,16 +1090,6 @@ void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
   // Do not throw asynchronous exceptions against the compiler thread
   // or if the thread is already exiting.
   if (!can_call_java() || is_exiting()) {
-    delete aeh;
-    return;
-  }
-
-  // Don't install a new pending async exception if there is already
-  // a pending ThreadDeath one. Just interrupt thread from potential
-  // wait()/sleep()/park() and return.
-  if (has_async_exception_condition(true /* ThreadDeath_only */)) {
-    java_lang_Thread::set_interrupted(threadObj(), true);
-    this->interrupt();
     delete aeh;
     return;
   }

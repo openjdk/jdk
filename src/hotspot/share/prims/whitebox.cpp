@@ -2463,7 +2463,7 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean u
   }
   if (log) {
     tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
-    tty->print_raw(st.as_string());
+    tty->print_raw(st.freeze());
     tty->print_cr("[WhiteBox::VerifyFrames] Done");
   }
 WB_END

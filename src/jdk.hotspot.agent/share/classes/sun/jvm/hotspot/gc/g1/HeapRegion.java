@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
         super(addr);
         Address typeAddr = (addr instanceof OopHandle) ? addr.addOffsetToAsOopHandle(typeFieldOffset)
                                                        : addr.addOffsetTo(typeFieldOffset);
-        type = (HeapRegionType)VMObjectFactory.newObject(HeapRegionType.class, typeAddr);
+        type = VMObjectFactory.newObject(HeapRegionType.class, typeAddr);
     }
 
     public Address bottom()        { return bottomField.getValue(addr); }
