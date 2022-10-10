@@ -405,6 +405,28 @@ public class IRNode {
         trapNodes(INTRINSIC_TRAP,"intrinsic");
     }
 
+    // Is only supported on riscv64.
+    public static final String IS_FINITE_D = PREFIX + "IS_FINITE_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(IS_FINITE_D, "IsFiniteD");
+    }
+
+    // Is only supported on riscv64.
+    public static final String IS_FINITE_F = PREFIX + "IS_FINITE_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(IS_FINITE_F, "IsFiniteF");
+    }
+
+    public static final String IS_INFINITE_D = PREFIX + "IS_INFINITE_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(IS_INFINITE_D, "IsInfiniteD");
+    }
+
+    public static final String IS_INFINITE_F = PREFIX + "IS_INFINITE_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(IS_INFINITE_F, "IsInfiniteF");
+    }
+
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD, "Load(B|UB|S|US|I|L|F|D|P|N)");
@@ -558,6 +580,11 @@ public class IRNode {
         beforeMatchingNameRegex(LSHIFT_L, "LShiftL");
     }
 
+    public static final String MACRO_LOGIC_V = PREFIX + "MACRO_LOGIC_V" + POSTFIX;
+    static {
+        afterBarrierExpansionToBeforeMatching(MACRO_LOGIC_V, "MacroLogicV");
+    }
+
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_I, "MaxI");
@@ -662,6 +689,11 @@ public class IRNode {
     public static final String POPCOUNT_L = PREFIX + "POPCOUNT_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(POPCOUNT_L, "PopCountL");
+    }
+
+    public static final String POPCOUNT_VL = PREFIX + "POPCOUNT_VL" + POSTFIX;
+    static {
+        superWordNodes(POPCOUNT_VL, "PopCountVL");
     }
 
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
@@ -954,6 +986,16 @@ public class IRNode {
         beforeMatchingNameRegex(URSHIFT_S, "URShiftS");
     }
 
+    public static final String VAND_NOT_I = PREFIX + "VAND_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(VAND_NOT_I, "vand_notI");
+    }
+
+    public static final String VAND_NOT_L = PREFIX + "VAND_NOT_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(VAND_NOT_L, "vand_notL");
+    }
+
     public static final String VECTOR_BLEND = PREFIX + "VECTOR_BLEND" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
@@ -1009,6 +1051,26 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_UCAST_S2X, "VectorUCastS2X");
     }
 
+    public static final String VFABD = PREFIX + "VFABD" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFABD, "vfabd");
+    }
+
+    public static final String VFABD_MASKED = PREFIX + "VFABD_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFABD_MASKED, "vfabd_masked");
+    }
+
+    public static final String VMLA = PREFIX + "VMLA" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMLA, "vmla");
+    }
+
+    public static final String VMLS = PREFIX + "VMLS" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMLS, "vmls");
+    }
+
     public static final String XOR_I = PREFIX + "XOR_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(XOR_I, "XorI");
@@ -1028,7 +1090,6 @@ public class IRNode {
     static {
         beforeMatchingNameRegex(XOR_V_MASK, "XorVMask");
     }
-
 
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
@@ -1077,6 +1138,11 @@ public class IRNode {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.MACH, regex));
     }
 
+    private static void machOnlyNameRegex(String irNodePlaceholder, String irNodeRegex) {
+        String regex = START + irNodeRegex + MID + END;
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.MACH, regex));
+    }
+
     /**
      * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#AFTER_CLOOPS}.
      */
@@ -1102,6 +1168,16 @@ public class IRNode {
     private static void fromMacroToBeforeMatching(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
                                                                           CompilePhase.MACRO_EXPANSION,
+                                                                          CompilePhase.BEFORE_MATCHING));
+    }
+
+    /**
+     * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#BEFORE_CLOOPS} up to and
+     * including {@link CompilePhase#BEFORE_MATCHING}
+     */
+    private static void afterBarrierExpansionToBeforeMatching(String irNodePlaceholder, String regex) {
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
+                                                                          CompilePhase.OPTIMIZE_FINISHED,
                                                                           CompilePhase.BEFORE_MATCHING));
     }
 
@@ -1167,7 +1243,7 @@ public class IRNode {
 
     /**
      * Is this IR node supported on current platform, used VM build, etc.?
-     * Throws a {@link CheckedTestFrameworkException} if the default regex is unsupported.
+     * Throws a {@link CheckedTestFrameworkException} if the IR node is unsupported.
      */
     public static void checkIRNodeSupported(String node) throws CheckedTestFrameworkException {
         switch (node) {
@@ -1180,6 +1256,11 @@ public class IRNode {
             case CHECKCAST_ARRAYCOPY -> {
                 if (Platform.isS390x()) {
                     throw new CheckedTestFrameworkException("CHECKCAST_ARRAYCOPY is unsupported on s390.");
+                }
+            }
+            case IS_FINITE_D, IS_FINITE_F -> {
+                if (!Platform.isRISCV64()) {
+                    throw new CheckedTestFrameworkException("IS_FINITE_* is only supported on riscv64.");
                 }
             }
             // default: do nothing -> IR node is supported and can be used by the user.

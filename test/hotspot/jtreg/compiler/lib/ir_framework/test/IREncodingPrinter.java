@@ -103,7 +103,7 @@ public class IREncodingPrinter {
 
     private boolean shouldApplyIrRule(IR irAnno, String m) {
         checkIRAnnotations(irAnno);
-        if (isDefaultRegexUnsupported(irAnno)) {
+        if (isIRNodeUnsupported(irAnno)) {
             return false;
         } else if (irAnno.applyIf().length != 0 && !hasAllRequiredFlags(irAnno.applyIf(), "applyIf")) {
             printDisableReason(m, "Flag constraint not met");
@@ -159,12 +159,12 @@ public class IREncodingPrinter {
         }
         if (irAnno.applyIfCPUFeatureAnd().length != 0) {
             cpuFeatureConstraints++;
-            TestFormat.checkNoThrow((irAnno.applyIfCPUFeatureAnd().length % 2) == 0 && irAnno.applyIfCPUFeatureAnd().length >= 2,
+            TestFormat.checkNoThrow(irAnno.applyIfCPUFeatureAnd().length % 2 == 0,
                                     "applyIfCPUFeatureAnd expects more than one CPU feature pair" + failAt());
         }
         if (irAnno.applyIfCPUFeatureOr().length != 0) {
             cpuFeatureConstraints++;
-            TestFormat.checkNoThrow((irAnno.applyIfCPUFeatureOr().length % 2) == 0 && irAnno.applyIfCPUFeatureOr().length >= 2,
+            TestFormat.checkNoThrow(irAnno.applyIfCPUFeatureOr().length % 2 == 0,
                                     "applyIfCPUFeatureOr expects more than one CPU feature pair" + failAt());
         }
         if (irAnno.applyIfNot().length != 0) {
@@ -176,7 +176,7 @@ public class IREncodingPrinter {
         TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
     }
 
-    private boolean isDefaultRegexUnsupported(IR irAnno) {
+    private boolean isIRNodeUnsupported(IR irAnno) {
         try {
             for (String s : irAnno.failOn()) {
                 IRNode.checkIRNodeSupported(s);
