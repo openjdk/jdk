@@ -27,6 +27,10 @@
 
 // Macros related to control of compiler warnings.
 
+#ifndef PRAGMA
+#define PRAGMA(x) _Pragma(#x)
+#endif
+
 #ifndef ATTRIBUTE_PRINTF
 #define ATTRIBUTE_PRINTF(fmt,vargs)  __attribute__((format(printf, fmt, vargs)))
 #endif
@@ -44,8 +48,8 @@
 
 #endif // clang/gcc version check
 
-#define PRAGMA_DISABLE_COMPILER_WARNING(opt) \
-  _Pragma("GCC diagnostic ignored" #opt)
+#define PRAGMA_DISABLE_COMPILER_WARNING(option) \
+  PRAGMA(GCC diagnostic ignored option)
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                     \
   PRAGMA_DISABLE_COMPILER_WARNING("-Wformat-nonliteral")     \
