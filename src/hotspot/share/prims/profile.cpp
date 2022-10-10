@@ -34,10 +34,8 @@
 #include "prims/stackWalker.hpp"
 #include "prims/jvmtiExport.hpp"
 
-namespace asgst {
-
 static void fill_call_trace_given_top(JavaThread* thd,
-                                      CallTrace* trace,
+                                      ASGST_CallTrace* trace,
                                       int depth,
                                       frame top_frame,
                                       bool skip_c_frames) {
@@ -52,28 +50,29 @@ static void fill_call_trace_given_top(JavaThread* thd,
   for (; count < depth && !st.at_end(); st.next(), count++) {
     if (st.at_error()) {
       trace->num_frames = st.state();
+      printf("error: %d at count %d\n", st.state(), count);
       return;
     }
     if (st.is_java_frame()) {
-      FrameTypeId type = FRAME_JAVA;
+      uint8_t type = ASGST_FRAME_JAVA;
       if (st.is_native_frame()) {
-        type = FRAME_NATIVE;
+        type = ASGST_FRAME_NATIVE;
       } else if (st.is_inlined()) {
-        type = FRAME_JAVA_INLINED;
+        type = ASGST_FRAME_JAVA_INLINED;
       }
       int comp_level = 0;
       if (st.state() == STACKWALKER_COMPILED_FRAME) {
         comp_level = st.method()->highest_comp_level();
       }
       trace->frames[count] = {.java_frame = {
-          type, (uint8_t)comp_level,
+          type, (int8_t)comp_level,
           st.is_native_frame() ? (uint16_t)0 : (uint16_t)st.bci(),
           st.method()->find_jmethod_id_or_null()
         }
       };
     } else {
       trace->frames[count] = {.non_java_frame = {
-          st.base_frame()->is_stub_frame() ? FRAME_STUB : FRAME_CPP,
+          st.base_frame()->is_stub_frame() ? ASGST_FRAME_STUB : ASGST_FRAME_CPP,
           st.base_frame()->pc()
         }
       };
@@ -81,37 +80,34 @@ static void fill_call_trace_given_top(JavaThread* thd,
   }
   trace->num_frames = count;
 }
-}
 
-extern "C" {
-JNIEXPORT
-void AsyncGetStackTrace(asgst::CallTrace *trace, jint depth, void* ucontext, int32_t options) {
+extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options) {
   assert(trace->frames != NULL, "");
   JavaThread* thread = JavaThread::current();
   if (thread->is_terminated()) {
     thread->block_if_vm_exited();
     // thread has exited or thread is exiting
-    trace->num_frames = (jint)asgst::Error::THREAD_EXIT; // -8;
+    trace->num_frames = (jint)ASGST_THREAD_EXIT; // -8;
     return;
   }
   if (!thread->is_Java_thread()) {
-    trace->num_frames = (jint)asgst::Error::THREAD_NOT_JAVA; // -10
+    trace->num_frames = (jint)ASGST_THREAD_NOT_JAVA; // -10
     return;
   }
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames
-    trace->num_frames = (jint)asgst::Error::DEOPT; // -9
+    trace->num_frames = (jint)ASGST_DEOPT; // -9
     return;
   }
 
   if (!JvmtiExport::should_post_class_load()) {
-    trace->num_frames = (jint)asgst::Error::NO_CLASS_LOAD; // -1
+    trace->num_frames = (jint)ASGST_NO_CLASS_LOAD; // -1
     return;
   }
 
   if (Universe::heap()->is_gc_active()) {
-    trace->num_frames = (jint)asgst::Error::GC_ACTIVE; // -2
+    trace->num_frames = (jint)ASGST_GC_ACTIVE; // -2
     return;
   }
 
@@ -134,17 +130,16 @@ void AsyncGetStackTrace(asgst::CallTrace *trace, jint depth, void* ucontext, int
     {
       frame ret_frame;
       if (!thread->pd_get_top_frame_for_signal_handler(&ret_frame, ucontext, true)) {
-        trace->num_frames = (jint)asgst::Error::UNKNOWN_NOT_JAVA;  // -3 unknown frame
+        trace->num_frames = (jint)ASGST_UNKNOWN_NOT_JAVA;  // -3 unknown frame
         return;
       }
       fill_call_trace_given_top(thread, trace, depth, ret_frame,
-        (options & asgst::INCLUDE_C_FRAMES) == 0);
+        (options & ASGST_INCLUDE_C_FRAMES) == 0);
     }
     break;
   default:
     // Unknown thread state
-    trace->num_frames = (jint)asgst::Error::UNKNOWN_STATE; // -7
+    trace->num_frames = (jint)ASGST_UNKNOWN_STATE; // -7
     break;
   }
-}
 }

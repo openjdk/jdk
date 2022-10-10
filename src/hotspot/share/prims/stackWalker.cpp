@@ -348,6 +348,7 @@ bool StackWalker::checkFrame() {
 void StackWalker::advance_normal() {
   assert(!_inlined || in_c_on_top || !_st.invalid(), "have to advance somehow");
   if (checkFrame()) {
+    ST_LOG("advance_normal check frame ok is_c_on_top %d _inlined %d\n", in_c_on_top, _inlined);
     if (in_c_on_top) {
       advance_fully_c();
     } else if (!_inlined) {
@@ -357,27 +358,23 @@ void StackWalker::advance_normal() {
 }
 
 void StackWalker::process() {
-  ST_LOG("state %d c_on_top %d\n", _state, in_c_on_top);
-  if (in_c_on_top){ // nothing to do
+  if (in_c_on_top || at_end()){ // nothing to do
     return;
   }
-    ST_LOG("%d\n", __LINE__);
+  ST_LOG("%d\n", __LINE__);
   if (_st.invalid()) {
-      ST_LOG("%d\n", __LINE__);
     process_normal();
-
-  ST_LOG("state %d line %d\n", _state, __LINE__);
   } else {
-      ST_LOG("%d\n", __LINE__);
     process_in_compiled();
-    ST_LOG("state %d line %d\n", _state, __LINE__);
   }
 }
 
 // assumes that _frame has been advanced and not already in compiled stream
 // leaves the _frame unchanged
 void StackWalker::process_normal() {
+  ST_LOG("process_normal\n");
   if (_frame.is_native_frame()) {
+    ST_LOG("is_native_frame\n");
     CompiledMethod* nm = _frame.cb()->as_compiled_method();
     if (!is_decipherable_native_frame(&_frame, nm)) {
       set_state(STACKWALKER_INDECIPHERABLE_FRAME);
@@ -389,6 +386,7 @@ void StackWalker::process_normal() {
     set_state(STACKWALKER_NATIVE_FRAME);
     return;
   } else if (_frame.is_java_frame()) { // another validity check
+    ST_LOG("process_normal java frame\n");
     if (_frame.is_interpreted_frame()) {
       _inlined = false;
       if (!_frame.is_interpreted_frame_valid(_thread) || !is_decipherable_interpreted_frame(_thread, &_frame, &_method, &_bci)) {
@@ -443,7 +441,7 @@ void StackWalker::process_in_compiled() {
   _inlined = _st.inlined();
   if (!_inlined) {
     _st = {};
-    advance_normal();
+    //advance_normal();
     return;
   }
   _st.cf_next();
@@ -458,7 +456,8 @@ void StackWalker::advance_fully_c() {
 }
 
 bool StackWalker::skip_c_frames() {
-  for (int i = 0; (i < _max_c_frames_skip || _max_c_frames_skip == -1) && is_c_frame(); i++) {
+  int i = 0;
+  for (; (i < _max_c_frames_skip || _max_c_frames_skip == -1) && is_c_frame(); i++) {
     advance();
   }
   if (is_c_frame()) {
@@ -475,6 +474,7 @@ void StackWalker::skip_frames(int skip) {
 }
 
 int StackWalker::next(){
+  ST_LOG("next\n");
   advance();
   if (_skip_c_frames) {
     skip_c_frames();

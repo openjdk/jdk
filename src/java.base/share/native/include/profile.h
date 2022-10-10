@@ -26,53 +26,52 @@
 #ifndef JVM_PROFILE_H
 #define JVM_PROFILE_H
 
-#include <cstdint>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdint.h>
 
 #include "jni.h"
 
 
-namespace asgst {
 // error codes, equivalent to the forte error codes for AsyncGetCallTrace
-enum Error {
-  NO_JAVA_FRAME         =   0,
-  NO_CLASS_LOAD         =  -1,
-  GC_ACTIVE             =  -2,
-  UNKNOWN_NOT_JAVA      =  -3,
-  NOT_WALKABLE_NOT_JAVA =  -4,
-  UNKNOWN_JAVA          =  -5,
-  UNKNOWN_STATE         =  -7,
-  THREAD_EXIT           =  -8,
-  DEOPT                 =  -9,
-  THREAD_NOT_JAVA       = -10
+enum ASGST_Error {
+  ASGST_NO_JAVA_FRAME         =   0,
+  ASGST_NO_CLASS_LOAD         =  -1,
+  ASGST_GC_ACTIVE             =  -2,
+  ASGST_UNKNOWN_NOT_JAVA      =  -3,
+  ASGST_NOT_WALKABLE_NOT_JAVA =  -4,
+  ASGST_UNKNOWN_JAVA          =  -5,
+  ASGST_UNKNOWN_STATE         =  -7,
+  ASGST_THREAD_EXIT           =  -8,
+  ASGST_DEOPT                 =  -9,
+  ASGST_THREAD_NOT_JAVA       = -10
 };
 
-enum FrameTypeId : uint8_t {
-  FRAME_JAVA         = 1, // JIT compiled and interpreted
-  FRAME_JAVA_INLINED = 2, // inlined JIT compiled
-  FRAME_NATIVE       = 3, // native wrapper to call C methods from Java
-  FRAME_STUB         = 4, // VM generated stubs
-  FRAME_CPP          = 5  // C/C++/... frames
+enum ASGST_FrameTypeId {
+  ASGST_FRAME_JAVA         = 1, // JIT compiled and interpreted
+  ASGST_FRAME_JAVA_INLINED = 2, // inlined JIT compiled
+  ASGST_FRAME_NATIVE       = 3, // native wrapper to call C methods from Java
+  ASGST_FRAME_STUB         = 4, // VM generated stubs
+  ASGST_FRAME_CPP          = 5  // C/C++/... frames
 };
 
 typedef struct {
-  FrameTypeId type;            // frame type
-  uint8_t comp_level;      // compilation level, 0 is interpreted, -1 is undefined, > 1 is JIT compiled
+  uint8_t type;            // frame type
+  int8_t comp_level;      // compilation level, 0 is interpreted, -1 is undefined, > 1 is JIT compiled
   uint16_t bci;            // 0 < bci < 65536
   jmethodID method_id;
-} JavaFrame;               // used for FRAME_JAVA and FRAME_JAVA_INLINED
+} ASGST_JavaFrame;         // used for FRAME_JAVA, FRAME_JAVA_INLINED and FRAME_NATIVE
 
 typedef struct {
-  FrameTypeId type;  // frame type
+  uint8_t type;      // frame type
   void *pc;          // current program counter inside this frame
-} NonJavaFrame;
+} ASGST_NonJavaFrame;
 
 typedef union {
-  FrameTypeId type;     // to distinguish between JavaFrame and NonJavaFrame
-  JavaFrame java_frame;
-  NonJavaFrame non_java_frame;
-} CallFrame;
+  uint8_t type;     // to distinguish between JavaFrame and NonJavaFrame
+  ASGST_JavaFrame java_frame;
+  ASGST_NonJavaFrame non_java_frame;
+} ASGST_CallFrame;
 
 // Enumeration to distinguish tiers of compilation, only >= 0 are used
 /*enum CompLevel {
@@ -88,16 +87,14 @@ typedef union {
 typedef struct {
   jint num_frames;                // number of frames in this trace,
                                   // (< 0 indicates the frame is not walkable).
-  CallFrame *frames;              // frames that make up this trace. Callee followed by callers.
+  ASGST_CallFrame *frames;        // frames that make up this trace. Callee followed by callers.
   void* frame_info;               // more information on frames
-} CallTrace;
+} ASGST_CallTrace;
 
 
-enum Options {
-  INCLUDE_C_FRAMES = 1
+enum ASGST_Options {
+  ASGST_INCLUDE_C_FRAMES = 1
 };
-
-}
 
 
 // Asynchronous profiling entry point which is usually called from signal
@@ -109,11 +106,11 @@ enum Options {
 // The jmethodIDs cannot be allocated in a signal handler because locks
 // cannot be grabbed in a signal handler safely.
 //
-// void AsyncGetStackTrace(asgst::CallTrace *trace, jint depth, void* ucontext, int32_t options)
+// void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options)
 //
 // Called by the profiler to obtain the current method call stack trace for
 // a given thread. The thread is identified by the env_id field in the
-// asgst::CallTrace structure. The profiler agent should allocate a asgst::CallTrace
+// ASGST_CallTrace structure. The profiler agent should allocate a ASGST_CallTrace
 // structure with enough memory for the requested stack depth. The VM fills in
 // the frames buffer and the num_frames field.
 //
@@ -124,9 +121,8 @@ enum Options {
 //   ucontext - ucontext_t of the LWP
 //   options  - bit flags for additional configuration,
 //              currently only the lowest bit is used: setting it to 1 enables capturing C frames
-extern "C" {
-JNIEXPORT
-void AsyncGetStackTrace(asgst::CallTrace *trace, jint depth, void* ucontext, int32_t options);
-}
+
+extern "C" JNIEXPORT
+void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options);
 
 #endif // JVM_PROFILE_H

@@ -22,6 +22,7 @@
 #
 
 AsyncGetCallTrace
+AsyncGetStackTrace
 jio_fprintf
 jio_printf
 jio_snprintf
