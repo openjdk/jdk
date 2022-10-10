@@ -530,7 +530,7 @@ endef
 #   DISABLED_WARNINGS_CXX_<toolchain> Disable the given warnings for the specified
 #       toolchain when compiling C++ code
 #   DISABLED_WARNINGS_CXX_<toolchain>_<OS> Disable the given warnings for the specified
-#       toolchain and target OS  when compiling C++ code
+#       toolchain and target OS when compiling C++ code
 #   DISABLED_WARNINGS_<toolchain>_<filename> Disable the given warnings for the specified
 #       toolchain when compiling the file specified by filename
 #   DISABLED_WARNINGS_<toolchain>_<OS>_<filename> Disable the given warnings for the specified
