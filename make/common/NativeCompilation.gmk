@@ -486,7 +486,19 @@ endef
 #   CFLAGS the compiler flags to be used, used both for C and C++.
 #   CXXFLAGS the compiler flags to be used for c++, if set overrides CFLAGS.
 #   LDFLAGS the linker flags to be used, used both for C and C++.
+#   LDFLAGS_<toolchain> the linker flags to be used for the specified toolchain,
+#       used both for C and C++.
+#   LDFLAGS_<OS> the linker flags to be used for the specified target OS,
+#       used both for C and C++.
+#   LDFLAGS_<toolchain>_<OS> the linker flags to be used for the specified
+#       toolchain and target OS, used both for C and C++.
 #   LIBS the libraries to link to
+#   LIBS_<OS> the libraries to link to for the specified target OS,
+#       used both for C and C++.
+#   LIBS_<toolchain> the libraries to link to for the specified toolchain,
+#       used both for C and C++.
+#   LIBS_<OS>_<toolchain> the libraries to link to for the specified target
+#       OS and toolchain, used both for C and C++.
 #   ARFLAGS the archiver flags to be used
 #   OBJECT_DIR the directory where we store the object files
 #   OUTPUT_DIR the directory where the resulting binary is put
@@ -509,10 +521,20 @@ endef
 #   LD the linker to use, default is $(LD)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST, HIGHEST_JVM, SIZE
 #   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
+#   DISABLED_WARNINGS_<toolchain>_<OS> Disable the given warnings for the specified
+#       toolchain and target OS
 #   DISABLED_WARNINGS_C_<toolchain> Disable the given warnings for the specified toolchain
 #       when compiling C code
+#   DISABLED_WARNINGS_C_<toolchain>_<OS> Disable the given warnings for the specified
+#       toolchain and target OS when compiling C code
 #   DISABLED_WARNINGS_CXX_<toolchain> Disable the given warnings for the specified
 #       toolchain when compiling C++ code
+#   DISABLED_WARNINGS_CXX_<toolchain>_<OS> Disable the given warnings for the specified
+#       toolchain and target OS  when compiling C++ code
+#   DISABLED_WARNINGS_<toolchain>_<filename> Disable the given warnings for the specified
+#       toolchain when compiling the file specified by filename
+#   DISABLED_WARNINGS_<toolchain>_<OS>_<filename> Disable the given warnings for the specified
+#       toolchain and target OS when compiling the file specified by filename
 #   STRIP_SYMBOLS Set to false to override global strip policy and always leave
 #       symbols in the binary, if the toolchain allows for it
 #   DEBUG_SYMBOLS Set to false to disable generation of debug symbols
