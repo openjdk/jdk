@@ -345,7 +345,7 @@ define SetupCompileNativeFileBody
 
     ifneq ($(DISABLE_WARNING_PREFIX), )
       $1_WARNINGS_FLAGS := $$(addprefix $(DISABLE_WARNING_PREFIX), \
-        $$($$($1_BASE)_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$$($1_FILENAME)))
+        $$($$($1_BASE)_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$$($1_FILENAME)) \
         $$($$($1_BASE)_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)_$$($1_FILENAME)))
     endif
 
