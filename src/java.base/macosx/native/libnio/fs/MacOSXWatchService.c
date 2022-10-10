@@ -24,11 +24,12 @@
 
 #include "jni.h"
 #include "jni_util.h"
-#include "nio_util.h"
+#include "jvm.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
 
+static JavaVM *jvm;
 // MacOSXWatchService.callback()
 static jmethodID        callbackMID;
 // The instance of MacOSXWatchService that is associated with this thread
@@ -37,6 +38,11 @@ static __thread jobject watchService;
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_MacOSXWatchService_initIDs(JNIEnv* env, jclass clazz)
 {
+    if ((*env)->GetJavaVM(env, &jvm) < 0) {
+      JNU_ThrowInternalError(env, "GetJavaVM() call failed");
+      return;
+    }
+
     callbackMID = (*env)->GetMethodID(env, clazz,
                                       "handleEvents", "(J[Ljava/lang/String;J)V");
 }
