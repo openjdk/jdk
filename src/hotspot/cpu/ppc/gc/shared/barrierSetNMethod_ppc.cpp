@@ -82,7 +82,7 @@ public:
     // bnectrl (mnemonic) (weak check; not checking the exact type)
     verify_op_code(current_instruction, Assembler::BCCTR_OPCODE);
 
-    verify_op_code(current_instruction, Assembler::ISYNC_OPCODE);
+    // isync is optional
   }
 
 private:
@@ -100,7 +100,10 @@ private:
 };
 
 static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-9 * 4);
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-8 * 4);
+  if (!UseSerialGC && !UseG1GC && !UseParallelGC && !UseEpsilonGC) {
+    barrier_address -= 4; // isync (see nmethod_entry_barrier)
+  }
 
   auto barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
   debug_only(barrier->verify());

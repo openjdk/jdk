@@ -23,7 +23,6 @@
  *
  */
 
-#include "nativeInst_ppc.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -169,7 +168,10 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   __ bnectrl(CCR0);
 
   // Oops may have been changed; exploiting isync semantics (used as acquire) to make those updates observable.
-  __ isync();
+  // But, many GCs don't modify nmethods during a concurrent phase.
+  if (!UseSerialGC && !UseG1GC && !UseParallelGC && !UseEpsilonGC) {
+    __ isync();
+  }
 
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
