@@ -25,25 +25,24 @@
 
 package sun.security.pkcs;
 
-import java.io.*;
-import java.security.Key;
-import java.security.KeyRep;
-import java.security.PrivateKey;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import jdk.internal.access.SharedSecrets;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.x509.AlgorithmId;
+import sun.security.x509.X509Key;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 
-import jdk.internal.access.SharedSecrets;
-import sun.security.x509.*;
-import sun.security.util.*;
-
 /**
  * Holds a PKCS#8 key, for example a private key
- *
+ * <p>
  * According to https://tools.ietf.org/html/rfc5958:
  *
  *     OneAsymmetricKey ::= SEQUENCE {
@@ -55,7 +54,7 @@ import sun.security.util.*;
  *        [[2: publicKey        [1] PublicKey OPTIONAL ]],
  *        ...
  *      }
- *
+ * <p>
  * We support this format but do not parse attributes and publicKey now.
  */
 public class PKCS8Key implements PrivateKey {
@@ -99,6 +98,8 @@ public class PKCS8Key implements PrivateKey {
     public PKCS8Key(byte[] input) throws InvalidKeyException {
         decode(new ByteArrayInputStream(input));
     }
+
+    public PKCS8Key(String s) {}
 
     public int getVersion() {
         return version;

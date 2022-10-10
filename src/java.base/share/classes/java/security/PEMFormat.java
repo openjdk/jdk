@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package java.security;
 
 import sun.nio.cs.ISO_8859_1;
@@ -9,7 +34,6 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.spec.*;
@@ -47,7 +71,7 @@ public class PEMFormat {
 
     private static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
 
-    enum KeyType {UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE};
+    enum KeyType {UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE}
 
     private PEMData pemData;
     private PEMData pemDataOAS; // Only used for Public Key with OneAsymmetricKey
@@ -217,10 +241,6 @@ public class PEMFormat {
 
     private byte[] generatePKCS8v2() throws IOException {
 
-        DerOutputStream out = new DerOutputStream();
-        boolean beginning = true;
-
-        out.putInteger(1); // version 2
         PKCS8Key privateKey;
         try {
             privateKey = new PKCS8Key(pemData.data());
@@ -228,29 +248,26 @@ public class PEMFormat {
             throw new IOException(e);
         }
 
-        if (beginning) {
-            privateKey.getAlgorithmId().encode(out);
-            beginning = false;
-        }
-
+        DerOutputStream out = new DerOutputStream();
+        out.putInteger(1); // version 2
+        privateKey.getAlgorithmId().encode(out);
         out.putOctetString(privateKey.getPrivKeyMaterial());
+
         byte[] attribute = privateKey.getAttributes();
         if (attribute != null) {
-            out.putTag(DerValue.TAG_CONTEXT, false, (byte)0);
-            out.putDerValue(new DerValue(attribute));
+            var d = new DerValue[] {DerValue.wrap(attribute)};
+            out.writeImplicit(
+                DerValue.createTag(DerValue.TAG_CONTEXT, false, (byte) 0),
+                new DerOutputStream().putSequence(d));
+            //out.putDerValue(new DerValue(attribute));
         }
         if (pemDataOAS != null) {
             X509Key x = (X509Key) X509Key.parseKey(pemDataOAS.data());
-            //DerOutputStream keyDER = new DerOutputStream();
-            //keyDER.derEncode(x.getKey().toByteArray());
-            //out.writeImplicit((byte)0x01, keyDER);  // Will be 0x81
             DerOutputStream pubOut = new DerOutputStream();
             pubOut.putUnalignedBitString(x.getKey());
             out.writeImplicit(
                 DerValue.createTag(DerValue.TAG_CONTEXT, false, (byte) 1),
                 pubOut);
-//            out.putTaggedBitString(DerValue.TAG_CONTEXT, false, (byte)1,
-//                x.getKey().toByteArray());//publicKey.getEncoded());
         }
 
     DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
@@ -278,8 +295,8 @@ public class PEMFormat {
     private static byte[] decodeEncrypted(byte[] encodedBytes, char[] password) throws IOException {
 
         // Find the PEM between the header and footer
-        int endHeader = find(encodedBytes, STARTHEADER.length, DASHES);
-        int startFooter = findReverse(encodedBytes, encodedBytes.length - 6, DASHES);
+        int endHeader = find(encodedBytes, STARTHEADER.length);
+        int startFooter = findReverse(encodedBytes, encodedBytes.length - 6);
         if (endHeader == -1 || startFooter == -1) {
             return null;
         }
@@ -290,7 +307,6 @@ public class PEMFormat {
                 Arrays.compare(encodedBytes, startFooter, encodedBytes.length,
                     PKCS8ENCFOOTER, 0, PKCS8ENCFOOTER.length) == 0) {
 
-                ByteArrayOutputStream pembuf = new ByteArrayOutputStream(100);
                 encodedBytes = Base64.getMimeDecoder().decode(
                     Arrays.copyOfRange(encodedBytes, endHeader, startFooter));
             } else {
@@ -302,18 +318,6 @@ public class PEMFormat {
         }
 
         encodedBytes = p8Decrypt(encodedBytes, password);
-            /*
-            // Rewrite as an unencrypted private key
-            pembuf.write(PKCS8HEADER);
-            pembuf.write(0x0d); // /r
-            pembuf.write(0x0a); // /n
-            pembuf.write(Base64.getMimeEncoder().encode(data));
-            pembuf.write(0x0d); // /r
-            pembuf.write(0x0a); // /n
-            pembuf.write(PKCS8FOOTER);
-
-            return pembuf.toByteArray();
-             */
         return encodedBytes;
     }
 
@@ -340,8 +344,8 @@ public class PEMFormat {
             */
 
             // Find the PEM between the header and footer
-            int endHeader = find(encodedBytes, STARTHEADER.length, DASHES);
-            int startFooter = findReverse(encodedBytes, encodedBytes.length - 6, DASHES);
+            int endHeader = find(encodedBytes, STARTHEADER.length);
+            int startFooter = findReverse(encodedBytes, encodedBytes.length - 6);
             if (endHeader == -1 || startFooter == -1) {
                 throw new IOException("Invalid PEM format");
             }
@@ -364,9 +368,8 @@ public class PEMFormat {
                         PUBFOOTER, 0, PUBFOOTER.length) == 0)) {
                 encodedBytes = Base64.getMimeDecoder().decode(
                     Arrays.copyOfRange(encodedBytes, endHeader, startFooter));
-                //String algo = KeyUtil.getAlgorithm(encodedBytes).getName();
-                //return new X509EncodedKeySpec(encodedBytes, algo);
                 kt = KeyType.PUBLIC;
+
             } else if (Arrays.compare(encodedBytes, 0, endHeader,
                 PKCS8ENCHEADER, 0, PKCS8ENCHEADER.length) == 0 &&
                 Arrays.compare(encodedBytes, startFooter, encodedBytes.length,
@@ -401,48 +404,6 @@ public class PEMFormat {
      * @return the encoded key. Returns a new array each time
      * this method is called.
      */
-/*
-    // XXX Can OAS being done with interface methods, or does OAS need to have special methods
-    private byte[] encode(EncodedKeySpec eks, char[] password, String algorithm,
-        AlgorithmParameterSpec aps) throws IOException {
-
-        Base64.Encoder encoder = Base64.getMimeEncoder();
-        ByteArrayOutputStream pembuf = new ByteArrayOutputStream(100);
-        byte[] footer;
-        byte[] data;
-
-        // Header
-        switch (pemData.keyType()) {
-            case ENCRYPTED_PRIVATE -> {
-                pembuf.write(PKCS8ENCHEADER);
-                footer = PKCS8ENCFOOTER;
-            }
-            case PRIVATE -> {
-                pembuf.write(PKCS8HEADER);
-                footer = PKCS8FOOTER;
-            }
-            case PUBLIC -> {
-                pembuf.write(PUBHEADER);
-                footer = PUBFOOTER;
-            }
-            default -> throw new IOException("Unknown Key Type");
-
-        }
-
-        pembuf.write(0x0d); // /r
-        pembuf.write(0x0a); // /n
-        pembuf.write(encoder.encode(pemData.data()));
-        pembuf.write(0x0d); // /r
-        pembuf.write(0x0a); // /n
-        pembuf.write(footer);
-
-
-        return pembuf.toByteArray();
-    }
-
- */
-
-    // XXX Can OAS being done with interface methods, or does OAS need to have special methods
     private byte[] encode() throws IOException {
         if (pemData == null) {
             throw new IOException("No encoded data provided");
@@ -454,7 +415,6 @@ public class PEMFormat {
     }
 
     private String encodeString() throws IOException {
-
         if (pemData == null) {
             throw new IOException("No encoded data provided");
         }
@@ -580,14 +540,17 @@ public class PEMFormat {
      *
      * @param <T> the type parameter
      * @param p   the p
-     * @param key the key
+     * @param kClass the key
      * @return the key
      * @throws IOException the io exception
      */
-    public <T> T getKey(Provider p, Class<T> key) throws IOException {
+    public <T> T getKey(Provider p, Class<T> kClass) throws IOException {
+        Key key = null;
+
         if (!pemData.isComplete()) {
             pemData = decode(pemData);
         }
+
         try {
             KeyFactory kf;
             if (p == null) {
@@ -596,28 +559,31 @@ public class PEMFormat {
                 kf = KeyFactory.getInstance(pemData.algorithm(), p);
             }
 
-            if (key.isAssignableFrom(PrivateKey.class)) {
+            if (kClass.isAssignableFrom(PrivateKey.class)) {
                 if (pemData.keyType() == KeyType.PRIVATE) {
-                    return key.cast(kf.generatePrivate(new PKCS8EncodedKeySpec(
-                        pemData.data(), pemData.algorithm())));
+                    key = kf.generatePrivate(new PKCS8EncodedKeySpec(
+                        pemData.data(), pemData.algorithm()));
+                } else {
+                    return null;
                 }
-                return null;
-            }
-            if (key.isAssignableFrom(PublicKey.class)) {
+
+            } else if (kClass.isAssignableFrom(PublicKey.class)) {
                 if (pemData.keyType() == KeyType.PUBLIC) {
-                    return key.cast(kf.generatePublic(new X509EncodedKeySpec(
-                        pemData.data(), pemData.algorithm())));
-                }
-                if (pemData.keyType() == KeyType.PRIVATE) {
-                    return key.cast(kf.generatePublic(new PKCS8EncodedKeySpec(
-                        pemData.data(), pemData.algorithm())));
+                    key = kf.generatePublic(new X509EncodedKeySpec(
+                        pemData.data(), pemData.algorithm()));
+                } else if (pemData.keyType() == KeyType.PRIVATE) {
+                    key = kf.generatePublic(new PKCS8EncodedKeySpec(
+                        pemData.data(), pemData.algorithm()));
+                } else {
+                    return null;
                 }
             }
         } catch (Exception e) {
             throw new IOException(e);
         }
-            return null;
-        }
+        pemData.destroy();
+        return kClass.cast(key);
+    }
 
 
     /**
@@ -683,7 +649,7 @@ public class PEMFormat {
     private static byte[] p8Decrypt(byte[] data, char[] password) throws IOException {
         try {
             EncryptedPrivateKeyInfo epki = new EncryptedPrivateKeyInfo(data);
-            var ap = epki.getAlgParameters();
+            //var ap = epki.getAlgParameters();
             //Base64.getMimeDecoder().decode(data));
             PBEKeySpec pks = new PBEKeySpec(password);
             SecretKeyFactory skf = SecretKeyFactory.getInstance(epki.getAlgName());
@@ -700,16 +666,15 @@ public class PEMFormat {
      *
      * @param a      the a
      * @param offset the offset
-     * @param d      the d
      * @return the int
      */
-    private static int find(byte[] a, int offset, byte[] d) {
+    private static int find(byte[] a, int offset) {
         int index = offset;
         int dindex = 0;
         while (index < a.length) {
-            while (a[index] == d[dindex]) {
+            while (a[index] == DASHES[dindex]) {
                 index++;
-                if (dindex == d.length - 1) {
+                if (dindex == DASHES.length - 1) {
                     return index;
                 }
                 dindex++;
@@ -725,58 +690,40 @@ public class PEMFormat {
      *
      * @param a      the a
      * @param offset the offset
-     * @param d      the d
      * @return the int
      */
-    private static int findReverse(byte[] a, int offset, byte[] d) {
+    private static int findReverse(byte[] a, int offset) {
         int index = offset;
-        int dindex = d.length - 1;
+        int dindex = DASHES.length - 1;
         while (index > 0) {
-            while (a[index] == d[dindex]) {
+            while (a[index] == DASHES[dindex]) {
                 if (dindex == 0) {
                     return index;
                 }
                 index--;
                 dindex--;
             }
-            dindex = d.length - 1;
+            dindex = DASHES.length - 1;
             index--;
         }
         return -1;
     }
-}
 
-record PEMData(byte[] data, String algorithm, PEMFormat.KeyType keyType) {
-//record PEMData(byte[] data, String algorithm, PEMFormat.KeyType keyType, Format format) {
-    //enum Format {UNKNOWN, PEM, DER};
-/*
-    public PEMData {
-        if (format == Format.UNKNOWN) {
-            switch (data[0]) {
-                case 0x30 -> format = Format.DER;
-                case 0x45 -> format = Format.PEM;
+    /**
+     * Storage for PEM data
+     */
+    record PEMData(byte[] data, String algorithm, PEMFormat.KeyType keyType) {
+        boolean isComplete() {
+            if (algorithm == null || keyType == null) {
+                return false;
             }
+            return true;
         }
-    }
 
-    public PEMData(byte[] data, String algorithm, PEMFormat.KeyType keyType) {
-        this(data, algorithm, keyType, Format.UNKNOWN);
-    }
-*/
-    boolean isComplete() {
-        if (algorithm == null || keyType == null) {
-            return false;
+        void destroy() {
+            //Arrays.fill(data, (byte) 0);
         }
-        return true;
     }
-
-/*    String getAlgorithm() {
-        if (algoId == null) {
-            return "";
-        }
-        return algoId.getName();
-    }
-*/
 }
 
 
