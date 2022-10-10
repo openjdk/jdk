@@ -28,7 +28,7 @@
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm i18n en
+ * @run main/manual/othervm -Duser.language=en i18n
  */
 
 /*
@@ -38,7 +38,7 @@
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm i18n de
+ * @run main/manual/othervm -Duser.language=de i18n
  */
 
 /*
@@ -48,7 +48,7 @@
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm i18n ja
+ * @run main/manual/othervm -Duser.language=ja i18n
  */
 
 /*
@@ -58,13 +58,12 @@
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm i18n zh CN
+ * @run main/manual/othervm -Duser.language=zh -Duser.country=CN i18n
  */
+
+import jdk.test.lib.TestUI;
 
 import javax.swing.*;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Locale;
@@ -247,99 +246,30 @@ public class i18n {
     private volatile boolean aborted = false;
     private Thread currentThread = null;
 
-    public static class DialogBuilder {
-        private JDialog dialog;
-        private JTextArea instructionsText;
-        private JTextArea messageText;
-        private JButton pass;
-        private JButton fail;
-
-        public DialogBuilder() {
-            dialog = new JDialog(new JFrame());
-            dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-            instructionsText = new JTextArea("", 5, 100);
-
-            dialog.add("North", new JScrollPane(instructionsText,
-                    JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                    JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS));
-
-            messageText = new JTextArea("", 20, 100);
-            dialog.add("Center", new JScrollPane(messageText,
-                    JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                    JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS));
-
-            JPanel buttons = new JPanel();
-            pass = new JButton("pass");
-            pass.setActionCommand("pass");
-            buttons.add("East", pass);
-
-            fail = new JButton("fail");
-            fail.setActionCommand("fail");
-            buttons.add("West", fail);
-
-            dialog.add("South", buttons);
-        }
-
-        public DialogBuilder setTitle(String title) {
-            dialog.setTitle(title);
-            return this;
-        }
-
-        public DialogBuilder setInstruction(String instruction) {
-            instructionsText.setText("Test instructions:\n" + instruction);
-            return this;
-        }
-
-        public DialogBuilder setMessage(String message) {
-            messageText.setText(message);
-            return this;
-        }
-
-        public DialogBuilder setPassAction(ActionListener action) {
-            pass.addActionListener(action);
-            return this;
-        }
-
-        public DialogBuilder setFailAction(ActionListener action) {
-            fail.addActionListener(action);
-            return this;
-        }
-
-        public DialogBuilder setAbortAction(Runnable action) {
-            dialog.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    super.windowClosing(e);
-                    action.run();
-                }
-            });
-            return this;
-        }
-
-        public JDialog build() {
-            dialog.pack();
-            return dialog;
-        }
-    }
-
     public static void executeKeytool(String command) throws Exception {
         sun.security.tools.keytool.Main.main(command.split("\\s+"));
     }
 
     public static void main(String[] args) {
-        if (args.length == 1) {
-            Locale.setDefault(Locale.of(args[0]));
-        } else if (args.length == 2) {
-            Locale.setDefault(Locale.of(args[0], args[1]));
+        final String lang = System.getProperty("user.language");
+        final String country = System.getProperty("user.country");
+
+        if (lang != null) {
+            if (country != null) {
+                Locale.setDefault(Locale.of(lang, country));
+            } else {
+                Locale.setDefault(Locale.of(lang));
+            }
         }
-        final String LANG = Locale.getDefault().getDisplayLanguage();
+
+        final String displayName = Locale.getDefault().getDisplayName();
 
         boolean testFailed = false;
         i18n i18nTest = new i18n();
 
         for (String[] entry : TABLE) {
             String command = entry[0].replaceAll("\\$\\{TEST_SRC\\}", TEST_SRC);
-            String instruction = entry[1].replaceAll("\\$\\{LANG\\}", LANG);
+            String instruction = entry[1].replaceAll("\\$\\{LANG\\}", displayName);
 
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
@@ -375,13 +305,13 @@ public class i18n {
     public boolean validate(String command, String instruction, String message) {
         failed = false;
         currentThread = Thread.currentThread();
-        JDialog dialog = new DialogBuilder()
+        JDialog dialog = new TestUI.DialogBuilder()
                 .setTitle("keytool " + command)
                 .setInstruction(instruction)
                 .setMessage(message)
                 .setPassAction(e -> pass())
                 .setFailAction(e -> fail())
-                .setAbortAction(() -> abort())
+                .setCloseAction(() -> abort())
                 .build();
 
         SwingUtilities.invokeLater(() -> {
