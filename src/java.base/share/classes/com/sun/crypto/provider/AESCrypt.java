@@ -50,6 +50,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Rijmen</a> and <a href="mailto:Joan.Daemen@village.uunet.be">Joan Daemen</a>.
  */
 final class AESCrypt extends SymmetricCipher implements AESConstants {
+    //
+    // Pre-computed tables, which are copied or derived from FIPS 197.
+    //
+
     // the pre-computed substitution table (S-box), 256 bytes
     private static final byte[] S = {
             (byte)0x63, (byte)0x7C, (byte)0x77, (byte)0x7B,
@@ -118,6 +122,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
             (byte)0xB0, (byte)0x54, (byte)0xBB, (byte)0x16,
     };
 
+    // the pre-computed substitution table (inverse S-box), 256 bytes
     private static final byte[] Si = {
             (byte)0x52, (byte)0x09, (byte)0x6A, (byte)0xD5,
             (byte)0x30, (byte)0x36, (byte)0xA5, (byte)0x38,
@@ -185,7 +190,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
             (byte)0x55, (byte)0x21, (byte)0x0C, (byte)0x7D,
     };
 
-    // pre-computed tables
+    // pre-computed tables (T-box)
     private static final int[] T1 = {
             0xC66363A5, 0xF87C7C84, 0xEE777799, 0xF67B7B8D,
             0xFFF2F20D, 0xD66B6BBD, 0xDE6F6FB1, 0x91C5C554,
@@ -455,7 +460,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
     };
 
 
-    // pre-computed inverse tables
+    // pre-computed inverse tables (inverse T-box)
     private static final int[] T5 = {
             0x51F4A750, 0x7E416553, 0x1A17A4C3, 0x3A275E96,
             0x3BAB6BCB, 0x1F9D45F1, 0xACFA58AB, 0x4BE30393,
@@ -1062,7 +1067,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
      * @param kr The round keys for encryption or decryption.
      * @param decrypting True if 'kr' is for decryption and false otherwise.
      */
-    private static int[] expandToSubKey(int[][] kr, boolean decrypting) {
+    private static final int[] expandToSubKey(int[][] kr, boolean decrypting) {
         int total = kr.length;
         int[] expK = new int[total*4];
         if (decrypting) {
