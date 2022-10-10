@@ -55,24 +55,21 @@ endif
 
 ################################################################################
 
-ifneq ($(BUILD_CRYPTO), false)
+ifeq ($(call isTargetOs, macosx), true)
+  # libosxkrb5 needs to call deprecated krb5 APIs so that java
+  # can use the native credentials cache.
+  $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
+      NAME := osxkrb5, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      DISABLED_WARNINGS_clang := deprecated-declarations, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := -framework Cocoa -framework SystemConfiguration \
+          -framework Kerberos, \
+  ))
 
-  ifeq ($(call isTargetOs, macosx), true)
-    # libosxkrb5 needs to call deprecated krb5 APIs so that java
-    # can use the native credentials cache.
-    $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
-        NAME := osxkrb5, \
-        OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
-        DISABLED_WARNINGS_clang := deprecated-declarations, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LIBS := -framework Cocoa -framework SystemConfiguration \
-            -framework Kerberos, \
-    ))
-
-    TARGETS += $(BUILD_LIBOSXKRB5)
-  endif
+  TARGETS += $(BUILD_LIBOSXKRB5)
 endif
 
 ################################################################################
