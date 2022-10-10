@@ -78,7 +78,7 @@ public class FileViewNPETest {
         frame = new JFrame("JFileChooser File View NPE test");
         passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 13, 40);
         jfc = new JFileChooser();
-        String path = System.getProperty("user.home");
+        String path = System.getProperty("user.home") + File.separator + "Documents";
 
         jfc.setCurrentDirectory(new File(path));
         jfc.setFileView(new CustomFileView(path));
@@ -94,14 +94,14 @@ public class FileViewNPETest {
 }
 
 class CustomFileView extends FileView {
-    private String basePath;
+    private final String basePath;
 
     public CustomFileView(String path) {
         basePath = path;
     }
 
     public Boolean isTraversable(File filePath) {
-        return ((filePath != null) && (filePath.isDirectory())) &&
-                filePath.getAbsolutePath().startsWith(basePath);
+        return ((filePath != null) && (filePath.isDirectory()))
+                && filePath.getAbsolutePath().startsWith(basePath);
     }
 }
