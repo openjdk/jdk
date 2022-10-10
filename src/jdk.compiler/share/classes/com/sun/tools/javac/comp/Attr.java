@@ -5349,7 +5349,7 @@ public class Attr extends JCTree.Visitor {
                     if (permittedTypes.contains(subTypeSym)) {
                         DiagnosticPosition pos =
                                 env.enclClass.permitting.stream()
-                                        .filter(permittedExpr -> TreeInfo.diagnosticPositionFor(subTypeSym, permittedExpr, true) != null)
+                                        .filter(permittedExpr -> TreeInfo.diagnosticPositionFor(subTypeSym, permittedExpr, null, true) != null)
                                         .limit(2).collect(List.collector()).get(1);
                         log.error(pos, Errors.InvalidPermitsClause(Fragments.IsDuplicated(subTypeSym.type)));
                     } else {
