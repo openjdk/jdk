@@ -3518,16 +3518,16 @@ public class Lower extends TreeTranslator {
                                               syms.iterableType.tsym);
             if (iterableType.getTypeArguments().nonEmpty())
                 iteratorTarget = types.erasure(iterableType.getTypeArguments().head);
-            Type eType = types.skipTypeVars(tree.expr.type, false);
-            tree.expr.type = types.erasure(eType);
-            if (eType.isCompound())
+            tree.expr.type = types.erasure(types.skipTypeVars(tree.expr.type, false));
+            if (types.asSuper(tree.expr.type, syms.iterableType.tsym) == null)
                 tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);
             Symbol iterator = lookupMethod(tree.expr.pos(),
                                            names.iterator,
-                                           eType,
+                                           tree.expr.type,
                                            List.nil());
+            Assert.check(types.isSameType(types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)), types.erasure(syms.iteratorType)));
             VarSymbol itvar = new VarSymbol(SYNTHETIC, names.fromString("i" + target.syntheticNameChar()),
-                                            types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)),
+                                            types.erasure(syms.iteratorType),
                                             currentMethodSym);
 
              JCStatement init = make.
