@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_PEEPHOLE_X86_HPP
-#define CPU_X86_PEEPHOLE_X86_HPP
+#ifndef CPU_X86_PEEPHOLE_X86_64_HPP
+#define CPU_X86_PEEPHOLE_X86_64_HPP
 
 #include "opto/machnode.hpp"
 #include "opto/regalloc.hpp"
@@ -36,4 +36,4 @@ public:
                                MachNode* (*new_root)(), uint inst0_rule);
 };
 
-#endif // CPU_X86_PEEPHOLE_X86_HPP
+#endif // CPU_X86_PEEPHOLE_X86_64_HPP
