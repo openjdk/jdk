@@ -31,9 +31,8 @@
 
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
@@ -54,13 +53,12 @@ public class TestMixedMallocFree extends NativeTestHelper {
 
     @Test
     public void testMalloc() throws Throwable {
-        MemoryAddress ma = (MemoryAddress) MH_my_malloc.invokeExact(4L);
-        MemorySegment seg = MemorySegment.ofAddress(ma, 4L, MemorySession.openImplicit());
+        MemorySegment seg = (MemorySegment) MH_my_malloc.invokeExact(4L);
         seg.set(JAVA_INT, 0, 42);
         assertEquals(seg.get(JAVA_INT, 0), 42);
         // Test if this free crashes the VM, which might be the case if we load the wrong default library
         // and end up mixing two allocators together.
-        freeMemory(ma);
+        freeMemory(seg);
     }
 
 }

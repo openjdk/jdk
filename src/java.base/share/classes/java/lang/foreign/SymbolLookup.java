@@ -45,16 +45,16 @@ import java.util.function.BiFunction;
  * A <em>symbol lookup</em> is an object that may be used to retrieve the address of a symbol in one or more libraries.
  * A symbol is a named entity, such as a function or a global variable.
  * <p>
- * A symbol lookup is created with respect to a particular library (or libraries). Subsequently, the {@link SymbolLookup#lookup(String)}
+ * A symbol lookup is created with respect to a particular library (or libraries). Subsequently, the {@link SymbolLookup#find(String)}
  * method takes the name of a symbol and returns the address of the symbol in that library.
  * <p>
  * The address of a symbol is modelled as a zero-length {@linkplain MemorySegment memory segment}. The segment can be used in different ways:
  * <ul>
- *     <li>It can be passed to a {@link Linker} to create a downcall method handle, which can then be used to call the foreign function at the segment's base address.</li>
- *     <li>It can be passed to an existing {@linkplain Linker#downcallHandle(FunctionDescriptor) downcall method handle}, as an argument to the underlying foreign function.</li>
- *     <li>It can be {@linkplain MemorySegment#set(ValueLayout.OfAddress, long, Addressable) stored} inside another memory segment.</li>
- *     <li>It can be used to dereference memory associated with a global variable (this might require
- *     {@link MemorySegment#ofAddress(MemoryAddress, long, MemorySession) resizing} the segment first).</li>
+ *     <li>It can be passed to a {@link Linker} to create a downcall method handle, which can then be used to call the foreign function at the segment's address.</li>
+ *     <li>It can be passed to an existing {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}, as an argument to the underlying foreign function.</li>
+ *     <li>It can be {@linkplain MemorySegment#set(ValueLayout.OfAddress, long, MemorySegment) stored} inside another memory segment.</li>
+ *     <li>It can be used to access the region of memory backing a global variable (this might require
+ *     {@link MemorySegment#ofAddress(long, long, MemorySession) resizing} the segment first).</li>
  * </ul>
  *
  * <h2 id="obtaining">Obtaining a symbol lookup</h2>
@@ -64,13 +64,13 @@ import java.util.function.BiFunction;
  * The library is loaded if not already loaded. The symbol lookup, which is known as a <em>library lookup</em>, is associated
  * with a {@linkplain  MemorySession memory session}; when the session is {@linkplain MemorySession#close() closed}, the library is unloaded:
  *
- * {@snippet lang=java :
+ * {@snippet lang = java:
  * try (MemorySession session = MemorySession.openConfined()) {
  *     SymbolLookup libGL = SymbolLookup.libraryLookup("libGL.so"); // libGL.so loaded here
- *     MemorySegment glGetString = libGL.lookup("glGetString").orElseThrow();
+ *     MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
  *     ...
  * } //  libGL.so unloaded here
- * }
+ *}
  * <p>
  * If a library was previously loaded through JNI, i.e., by {@link System#load(String)}
  * or {@link System#loadLibrary(String)}, then the library was also associated with a particular class loader. The factory
@@ -80,7 +80,7 @@ import java.util.function.BiFunction;
  * System.loadLibrary("GL"); // libGL.so loaded here
  * ...
  * SymbolLookup libGL = SymbolLookup.loaderLookup();
- * MemorySegment glGetString = libGL.lookup("glGetString").orElseThrow();
+ * MemorySegment glGetString = libGL.find("glGetString").orElseThrow();
  * }
  *
  * This symbol lookup, which is known as a <em>loader lookup</em>, is dynamic with respect to the libraries associated
@@ -91,18 +91,18 @@ import java.util.function.BiFunction;
  * by {@link System#load(String)} or {@link System#loadLibrary(String)}. A loader lookup does not expose symbols in libraries
  * that were loaded in the course of creating a library lookup:
  *
- * {@snippet lang=java :
- * libraryLookup("libGL.so", session).lookup("glGetString").isPresent(); // true
- * loaderLookup().lookup("glGetString").isPresent(); // false
- * }
+ * {@snippet lang = java:
+ * libraryLookup("libGL.so", session).find("glGetString").isPresent(); // true
+ * loaderLookup().find("glGetString").isPresent(); // false
+ *}
  *
  * Note also that a library lookup for library {@code L} exposes symbols in {@code L} even if {@code L} was previously loaded
  * through JNI (the association with a class loader is immaterial to the library lookup):
  *
- * {@snippet lang=java :
+ * {@snippet lang = java:
  * System.loadLibrary("GL"); // libGL.so loaded here
- * libraryLookup("libGL.so", session).lookup("glGetString").isPresent(); // true
- * }
+ * libraryLookup("libGL.so", session).find("glGetString").isPresent(); // true
+ *}
  *
  * <p>
  * Finally, each {@link Linker} provides a symbol lookup for libraries that are commonly used on the OS and processor
@@ -110,11 +110,11 @@ import java.util.function.BiFunction;
  * helps clients to quickly find addresses of well-known symbols. For example, a {@link Linker} for Linux/x64 might choose to
  * expose symbols in {@code libc} through the default lookup:
  *
- * {@snippet lang=java :
+ * {@snippet lang = java:
  * Linker nativeLinker = Linker.nativeLinker();
  * SymbolLookup stdlib = nativeLinker.defaultLookup();
- * MemorySegment malloc = stdlib.lookup("malloc").orElseThrow();
- * }
+ * MemorySegment malloc = stdlib.find("malloc").orElseThrow();
+ *}
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 @FunctionalInterface
@@ -123,9 +123,9 @@ public interface SymbolLookup {
     /**
      * Returns the address of the symbol with the given name.
      * @param name the symbol name.
-     * @return a zero-length memory segment whose base address indicates the address of the symbol, if found.
+     * @return a zero-length memory segment whose address indicates the address of the symbol, if found.
      */
-    Optional<MemorySegment> lookup(String name);
+    Optional<MemorySegment> find(String name);
 
     /**
      * Returns a symbol lookup for symbols in the libraries associated with the caller's class loader.
@@ -165,8 +165,8 @@ public interface SymbolLookup {
             Objects.requireNonNull(name);
             JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
             // note: ClassLoader::findNative supports a null loader
-            MemoryAddress addr = MemoryAddress.ofLong(javaLangAccess.findNative(loader, name));
-            return addr == MemoryAddress.NULL ?
+            long addr = javaLangAccess.findNative(loader, name);
+            return addr == 0L ?
                     Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr, 0L, loaderSession));
         };
@@ -243,10 +243,10 @@ public interface SymbolLookup {
         });
         return name -> {
             Objects.requireNonNull(name);
-            MemoryAddress addr = MemoryAddress.ofLong(library.find(name));
-            return addr == MemoryAddress.NULL
-                    ? Optional.empty() :
-                    Optional.of(MemorySegment.ofAddress(addr, 0L, session));
+            long addr = library.find(name);
+            return addr == 0L ?
+                    Optional.empty() :
+                    Optional.of(MemorySegment.ofAddress(addr, 0, session));
         };
     }
 }

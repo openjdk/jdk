@@ -21,10 +21,10 @@
  * questions.
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySession;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -73,7 +73,7 @@ public class ThrowingUpcall extends NativeTestHelper {
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
         try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), session);
+            MemorySegment stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), session);
 
             downcallVoid.invoke(stub); // should call Shutdown.exit(1);
         }
@@ -86,7 +86,7 @@ public class ThrowingUpcall extends NativeTestHelper {
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
         try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), session);
+            MemorySegment stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), session);
 
             downcallNonVoid.invoke(42, stub); // should call Shutdown.exit(1);
         }

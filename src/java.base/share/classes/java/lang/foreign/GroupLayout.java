@@ -25,12 +25,7 @@
  */
 package java.lang.foreign;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.LongBinaryOperator;
-import java.util.stream.Collectors;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -45,55 +40,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public final class GroupLayout extends AbstractLayout implements MemoryLayout {
-
-    /**
-     * The group kind.
-     */
-    enum Kind {
-        /**
-         * A 'struct' kind.
-         */
-        STRUCT("", Math::addExact),
-        /**
-         * A 'union' kind.
-         */
-        UNION("|", Math::max);
-
-        final String delimTag;
-        final LongBinaryOperator sizeOp;
-
-        Kind(String delimTag, LongBinaryOperator sizeOp) {
-            this.delimTag = delimTag;
-            this.sizeOp = sizeOp;
-        }
-
-        long sizeof(List<MemoryLayout> elems) {
-            long size = 0;
-            for (MemoryLayout elem : elems) {
-                size = sizeOp.applyAsLong(size, elem.bitSize());
-            }
-            return size;
-        }
-
-        long alignof(List<MemoryLayout> elems) {
-            return elems.stream().mapToLong(MemoryLayout::bitAlignment).max() // max alignment in case we have member layouts
-                    .orElse(1); // or minimal alignment if no member layout is given
-        }
-    }
-
-    private final Kind kind;
-    private final List<MemoryLayout> elements;
-
-    GroupLayout(Kind kind, List<MemoryLayout> elements) {
-        this(kind, elements, kind.alignof(elements), Optional.empty());
-    }
-
-    GroupLayout(Kind kind, List<MemoryLayout> elements, long alignment, Optional<String> name) {
-        super(kind.sizeof(elements), alignment, name);
-        this.kind = kind;
-        this.elements = elements;
-    }
+public sealed interface GroupLayout extends MemoryLayout permits StructLayout, UnionLayout {
 
     /**
      * Returns the member layouts associated with this group.
@@ -104,84 +51,11 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
      *
      * @return the member layouts associated with this group.
      */
-    public List<MemoryLayout> memberLayouts() {
-        return Collections.unmodifiableList(elements);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return decorateLayoutString(elements.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining(kind.delimTag, "[", "]")));
-    }
-
-    /**
-     * {@return {@code true}, if this group layout is a struct layout}
-     */
-    public boolean isStruct() {
-        return kind == Kind.STRUCT;
-    }
-
-    /**
-     * {@return {@code true}, if this group layout is a union layout}
-     */
-    public boolean isUnion() {
-        return kind == Kind.UNION;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!super.equals(other)) {
-            return false;
-        }
-        return other instanceof GroupLayout otherGroup &&
-                kind == otherGroup.kind &&
-                elements.equals(otherGroup.elements);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), kind, elements);
-    }
+    List<MemoryLayout> memberLayouts();
 
     @Override
-    GroupLayout dup(long alignment, Optional<String> name) {
-        return new GroupLayout(kind, elements, alignment, name);
-    }
+    GroupLayout withName(String name);
 
     @Override
-    boolean hasNaturalAlignment() {
-        return alignment == kind.alignof(elements);
-    }
-
-    //hack: the declarations below are to make javadoc happy; we could have used generics in AbstractLayout
-    //but that causes issues with javadoc, see JDK-8224052
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public GroupLayout withName(String name) {
-        return (GroupLayout)super.withName(name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public GroupLayout withBitAlignment(long alignmentBits) {
-        return (GroupLayout)super.withBitAlignment(alignmentBits);
-    }
+    GroupLayout withBitAlignment(long bitAlignment);
 }

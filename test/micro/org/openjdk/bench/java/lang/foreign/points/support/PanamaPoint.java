@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.java.lang.foreign.points.support;
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
@@ -53,11 +52,11 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
         System.loadLibrary("Point");
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
         MH_distance = abi.downcallHandle(
-                loaderLibs.lookup("distance").get(),
+                loaderLibs.find("distance").get(),
                 FunctionDescriptor.of(C_DOUBLE, LAYOUT, LAYOUT)
         );
         MH_distance_ptrs = abi.downcallHandle(
-                loaderLibs.lookup("distance_ptrs").get(),
+                loaderLibs.find("distance_ptrs").get(),
                 FunctionDescriptor.of(C_DOUBLE, C_POINTER, C_POINTER)
         );
     }
@@ -65,7 +64,7 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
     private final MemorySegment segment;
 
     public PanamaPoint(int x, int y) {
-        this.segment = MemorySegment.allocateNative(LAYOUT, MemorySession.openConfined());
+        this.segment = MemorySession.openConfined().allocate(LAYOUT);
         setX(x);
         setY(y);
     }
@@ -96,7 +95,7 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
 
     public double distanceToPtrs(PanamaPoint other) {
         try {
-            return (double) MH_distance_ptrs.invokeExact((Addressable)segment, (Addressable)other.segment);
+            return (double) MH_distance_ptrs.invokeExact(segment, other.segment);
         } catch (Throwable throwable) {
             throw new InternalError(throwable);
         }

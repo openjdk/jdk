@@ -25,9 +25,9 @@
 package jdk.internal.foreign.abi.x64.windows;
 
 import jdk.internal.foreign.abi.AbstractLinker;
+import jdk.internal.foreign.abi.LinkerOptions;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.VaList;
@@ -39,18 +39,22 @@ import java.util.function.Consumer;
  * ABI implementation based on Windows ABI AMD64 supplement v.0.99.6
  */
 public final class Windowsx64Linker extends AbstractLinker {
-    private static Windowsx64Linker instance;
 
     public static Windowsx64Linker getInstance() {
-        if (instance == null) {
-            instance = new Windowsx64Linker();
+        final class Holder {
+            private static final Windowsx64Linker INSTANCE = new Windowsx64Linker();
         }
-        return instance;
+
+        return Holder.INSTANCE;
+    }
+
+    private Windowsx64Linker() {
+        // Ensure there is only one instance
     }
 
     @Override
-    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function) {
-        return CallArranger.arrangeDowncall(inferredMethodType, function);
+    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
+        return CallArranger.arrangeDowncall(inferredMethodType, function, options);
     }
 
     @Override
@@ -64,8 +68,8 @@ public final class Windowsx64Linker extends AbstractLinker {
         return builder.build();
     }
 
-    public static VaList newVaListOfAddress(MemoryAddress ma, MemorySession session) {
-        return WinVaList.ofAddress(ma, session);
+    public static VaList newVaListOfAddress(long address, MemorySession session) {
+        return WinVaList.ofAddress(address, session);
     }
 
     public static VaList emptyVaList() {

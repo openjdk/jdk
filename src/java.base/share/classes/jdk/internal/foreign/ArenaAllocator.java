@@ -48,46 +48,47 @@ public final class ArenaAllocator implements SegmentAllocator {
         this.segment = newSegment(blockSize, 1);
     }
 
-    MemorySegment trySlice(long bytesSize, long bytesAlignment) {
-        long min = segment.address().toRawLongValue();
-        long start = Utils.alignUp(min + sp, bytesAlignment) - min;
-        if (segment.byteSize() - start < bytesSize) {
+    MemorySegment trySlice(long byteSize, long byteAlignment) {
+        long min = segment.address();
+        long start = Utils.alignUp(min + sp, byteAlignment) - min;
+        if (segment.byteSize() - start < byteSize) {
             return null;
         } else {
-            MemorySegment slice = segment.asSlice(start, bytesSize);
-            sp = start + bytesSize;
+            MemorySegment slice = segment.asSlice(start, byteSize);
+            sp = start + byteSize;
             return slice;
         }
     }
 
-    private MemorySegment newSegment(long bytesSize, long bytesAlignment) {
-        long allocatedSize = Utils.alignUp(bytesSize, bytesAlignment);
+    private MemorySegment newSegment(long byteSize, long byteAlignment) {
+        long allocatedSize = Utils.alignUp(byteSize, byteAlignment);
         if (size + allocatedSize > arenaSize) {
             throw new OutOfMemoryError();
         }
         size += allocatedSize;
-        return MemorySegment.allocateNative(bytesSize, bytesAlignment, session);
+        return session.allocate(byteSize, byteAlignment);
     }
 
     @Override
-    public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        Utils.checkAllocationSizeAndAlign(bytesSize, bytesAlignment);
+    public MemorySegment allocate(long byteSize, long byteAlignment) {
+        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        MemorySessionImpl.toSessionImpl(session).checkValidState();
         // try to slice from current segment first...
-        MemorySegment slice = trySlice(bytesSize, bytesAlignment);
+        MemorySegment slice = trySlice(byteSize, byteAlignment);
         if (slice != null) {
             return slice;
         } else {
-            long maxPossibleAllocationSize = bytesSize + bytesAlignment - 1;
+            long maxPossibleAllocationSize = byteSize + byteAlignment - 1;
             if (maxPossibleAllocationSize < 0) {
                 throw new OutOfMemoryError();
             } else if (maxPossibleAllocationSize > blockSize) {
                 // too big
-                return newSegment(bytesSize, bytesAlignment);
+                return newSegment(byteSize, byteAlignment);
             } else {
                 // allocate a new segment and slice from there
                 sp = 0L;
                 segment = newSegment(blockSize, 1L);
-                slice = trySlice(bytesSize, bytesAlignment);
+                slice = trySlice(byteSize, byteAlignment);
                 return slice;
             }
         }

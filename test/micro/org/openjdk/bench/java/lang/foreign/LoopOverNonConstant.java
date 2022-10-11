@@ -40,7 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -66,7 +66,7 @@ public class LoopOverNonConstant extends JavaLayouts {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putInt(unsafe_addr + (i * CARRIER_SIZE) , i);
         }
-        segment = MemorySegment.allocateNative(ALLOC_SIZE, MemorySession.openConfined());
+        segment = MemorySession.openConfined().allocate(ALLOC_SIZE);
         for (int i = 0; i < ELEM_SIZE; i++) {
             VH_INT.set(segment, (long) i, i);
         }
@@ -155,24 +155,6 @@ public class LoopOverNonConstant extends JavaLayouts {
             res += segment.get(JAVA_INT_UNALIGNED, i * CARRIER_SIZE);
         }
         return res;
-    }
-
-    @Benchmark
-    public int segment_loop_instance_address() {
-        int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += segment.address().get(JAVA_INT, i * CARRIER_SIZE);
-        }
-        return sum;
-    }
-
-    @Benchmark
-    public int segment_loop_instance_address_index() {
-        int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += segment.address().getAtIndex(JAVA_INT, i);
-        }
-        return sum;
     }
 
     @Benchmark

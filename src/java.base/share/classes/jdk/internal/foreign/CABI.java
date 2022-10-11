@@ -29,10 +29,10 @@ import static java.lang.foreign.ValueLayout.ADDRESS;
 import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 public enum CABI {
-    SysV,
-    Win64,
-    LinuxAArch64,
-    MacOsAArch64;
+    SYS_V,
+    WIN_64,
+    LINUX_AARCH_64,
+    MAC_OS_AARCH_64;
 
     private static final CABI ABI;
     private static final String ARCH;
@@ -47,16 +47,16 @@ public enum CABI {
         // addressSize will be correctly 32
         if ((ARCH.equals("amd64") || ARCH.equals("x86_64")) && ADDRESS_SIZE == 64) {
             if (OS.startsWith("Windows")) {
-                ABI = Win64;
+                ABI = WIN_64;
             } else {
-                ABI = SysV;
+                ABI = SYS_V;
             }
         } else if (ARCH.equals("aarch64")) {
             if (OS.startsWith("Mac")) {
-                ABI = MacOsAArch64;
+                ABI = MAC_OS_AARCH_64;
             } else {
                 // The Linux ABI follows the standard AAPCS ABI
-                ABI = LinuxAArch64;
+                ABI = LINUX_AARCH_64;
             }
         } else {
             // unsupported

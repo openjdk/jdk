@@ -42,10 +42,10 @@ public class TestLoaderLookupJNI {
     @Test
     void testLoaderLookupJNI() {
         SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
-        assertTrue(loaderLookup.lookup("Java_TestLoaderLookupJNI_loaderLookup0").isPresent());
+        assertTrue(loaderLookup.find("Java_TestLoaderLookupJNI_loaderLookup0").isPresent());
         // now try calling via JNI
         loaderLookup = loaderLookup0(); // lookup backed by application loader, so can see same symbols
-        assertTrue(loaderLookup.lookup("Java_TestLoaderLookupJNI_loaderLookup0").isPresent());
+        assertTrue(loaderLookup.find("Java_TestLoaderLookupJNI_loaderLookup0").isPresent());
     }
 
     static native SymbolLookup loaderLookup0();

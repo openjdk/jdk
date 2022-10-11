@@ -29,7 +29,6 @@
  */
 
 import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
@@ -55,6 +54,6 @@ public class TestUnsupportedLinker {
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testUnsafeVaList() {
-        VaList.ofAddress(MemoryAddress.NULL, MemorySession.openImplicit());
+        VaList.ofAddress(0L, MemorySession.openImplicit());
     }
 }

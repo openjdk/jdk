@@ -31,7 +31,6 @@
  */
 
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.MemorySegment;
@@ -93,7 +92,7 @@ public class TestMemoryAccess {
     private void testAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout layout, VarHandle handle, Checker checker) {
         MemorySegment outer_segment;
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout, session));
+            MemorySegment segment = viewFactory.apply(session.allocate(layout));
             boolean isRO = segment.isReadOnly();
             try {
                 checker.check(handle, segment);
@@ -125,7 +124,7 @@ public class TestMemoryAccess {
     private void testArrayAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, ArrayChecker checker) {
         MemorySegment outer_segment;
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, session));
+            MemorySegment segment = viewFactory.apply(session.allocate(seq));
             boolean isRO = segment.isReadOnly();
             try {
                 for (int i = 0; i < seq.elementCount(); i++) {
@@ -194,7 +193,7 @@ public class TestMemoryAccess {
     private void testMatrixAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, MatrixChecker checker) {
         MemorySegment outer_segment;
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, session));
+            MemorySegment segment = viewFactory.apply(session.allocate(seq));
             boolean isRO = segment.isReadOnly();
             try {
                 for (int i = 0; i < seq.elementCount(); i++) {
@@ -465,8 +464,8 @@ public class TestMemoryAccess {
         };
 
         MatrixChecker ADDR = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, MemoryAddress.ofLong(r + c));
-            assertEquals(MemoryAddress.ofLong(r + c), (MemoryAddress)handle.get(segment, r, c));
+            handle.set(segment, r, c, MemorySegment.ofAddress(r + c));
+            assertEquals(MemorySegment.ofAddress(r + c), (MemorySegment) handle.get(segment, r, c));
         };
 
         MatrixChecker FLOAT = (handle, segment, r, c) -> {

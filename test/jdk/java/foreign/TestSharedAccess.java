@@ -49,7 +49,7 @@ public class TestSharedAccess {
     public void testShared() throws Throwable {
         SequenceLayout layout = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
         try (MemorySession session = MemorySession.openShared()) {
-            MemorySegment s = MemorySegment.allocateNative(layout, session);
+            MemorySegment s = session.allocate(layout);
             for (int i = 0 ; i < layout.elementCount() ; i++) {
                 setInt(s.asSlice(i * 4), 42);
             }
@@ -94,7 +94,7 @@ public class TestSharedAccess {
     @Test
     public void testSharedUnsafe() throws Throwable {
         try (MemorySession session = MemorySession.openShared()) {
-            MemorySegment s = MemorySegment.allocateNative(4, 1, session);
+            MemorySegment s = session.allocate(4, 1);
             setInt(s, 42);
             assertEquals(getInt(s), 42);
             List<Thread> threads = new ArrayList<>();
@@ -121,7 +121,7 @@ public class TestSharedAccess {
         CountDownLatch b = new CountDownLatch(1);
         CompletableFuture<?> r;
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s1 = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT), session);
+            MemorySegment s1 = session.allocate(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT));
             r = CompletableFuture.runAsync(() -> {
                 try {
                     ByteBuffer bb = s1.asByteBuffer();

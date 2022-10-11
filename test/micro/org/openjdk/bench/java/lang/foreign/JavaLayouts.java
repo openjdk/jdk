@@ -26,29 +26,15 @@ package org.openjdk.bench.java.lang.foreign;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.*;
 
 /**
  * Some useful Java {@link ValueLayout} and associated {@link ValueLayout#arrayElementVarHandle(int...)} var handles.
  */
 public class JavaLayouts {
-    static final ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
-
-    static final ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
-
-    static final ValueLayout.OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
 
     static final VarHandle VH_INT_UNALIGNED = JAVA_INT_UNALIGNED.arrayElementVarHandle();
 
     static final VarHandle VH_INT = JAVA_INT.arrayElementVarHandle();
 
-    static final VarHandle VH_FLOAT_UNALIGNED = JAVA_FLOAT_UNALIGNED.arrayElementVarHandle();
-
-    static final VarHandle VH_FLOAT = JAVA_FLOAT.arrayElementVarHandle();
-
-    static final VarHandle VH_LONG_UNALIGNED = JAVA_LONG_UNALIGNED.arrayElementVarHandle();
-
-    static final VarHandle VH_LONG = JAVA_LONG.arrayElementVarHandle();
 }

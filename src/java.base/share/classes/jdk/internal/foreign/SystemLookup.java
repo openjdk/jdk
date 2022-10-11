@@ -25,7 +25,6 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.SymbolLookup;
@@ -41,32 +40,32 @@ import sun.security.action.GetPropertyAction;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
-public class SystemLookup implements SymbolLookup {
+public final class SystemLookup implements SymbolLookup {
 
     private SystemLookup() { }
 
-    static final SystemLookup INSTANCE = new SystemLookup();
+    private static final SystemLookup INSTANCE = new SystemLookup();
 
     /* A fallback lookup, used when creation of system lookup fails. */
-    private static final SymbolLookup fallbackLookup = name -> Optional.empty();
+    private static final SymbolLookup FALLBACK_LOOKUP = name -> Optional.empty();
 
     /*
      * On POSIX systems, dlsym will allow us to lookup symbol in library dependencies; the same trick doesn't work
      * on Windows. For this reason, on Windows we do not generate any side-library, and load msvcrt.dll directly instead.
      */
-    private static final SymbolLookup syslookup = makeSystemLookup();
+    private static final SymbolLookup SYSTEM_LOOKUP = makeSystemLookup();
 
-    private static final SymbolLookup makeSystemLookup() {
+    private static SymbolLookup makeSystemLookup() {
         try {
             return switch (CABI.current()) {
-                case SysV, LinuxAArch64, MacOsAArch64 -> libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
-                case Win64 -> makeWindowsLookup(); // out of line to workaround javac crash
+                case SYS_V, LINUX_AARCH_64, MAC_OS_AARCH_64 -> libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
+                case WIN_64 -> makeWindowsLookup(); // out of line to workaround javac crash
             };
         } catch (Throwable ex) {
             // This can happen in the event of a library loading failure - e.g. if one of the libraries the
             // system lookup depends on cannot be loaded for some reason. In such extreme cases, rather than
             // fail, return a dummy lookup.
-            return fallbackLookup;
+            return FALLBACK_LOOKUP;
         }
     }
 
@@ -86,14 +85,14 @@ public class SystemLookup implements SymbolLookup {
                     libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
 
             int numSymbols = WindowsFallbackSymbols.values().length;
-            MemorySegment funcs = MemorySegment.ofAddress(fallbackLibLookup.lookup("funcs").orElseThrow().address(),
+            MemorySegment funcs = MemorySegment.ofAddress(fallbackLibLookup.find("funcs").orElseThrow().address(),
                 ADDRESS.byteSize() * numSymbols, MemorySession.global());
 
             Function<String, Optional<MemorySegment>> fallbackLookup = name -> Optional.ofNullable(WindowsFallbackSymbols.valueOfOrNull(name))
-                .map(symbol -> MemorySegment.ofAddress(funcs.getAtIndex(ADDRESS, symbol.ordinal()), 0L, MemorySession.global()));
+                .map(symbol -> MemorySegment.ofAddress(funcs.getAtIndex(ADDRESS, symbol.ordinal()).address(), 0L, MemorySession.global()));
 
             final SymbolLookup finalLookup = lookup;
-            lookup = name -> finalLookup.lookup(name).or(() -> fallbackLookup.apply(name));
+            lookup = name -> finalLookup.find(name).or(() -> fallbackLookup.apply(name));
         }
 
         return lookup;
@@ -107,7 +106,7 @@ public class SystemLookup implements SymbolLookup {
                 long addr = lib.lookup(name);
                 return addr == 0 ?
                         Optional.empty() :
-                        Optional.of(MemorySegment.ofAddress(MemoryAddress.ofLong(addr), 0, MemorySession.global()));
+                        Optional.of(MemorySegment.ofAddress(addr, 0, MemorySession.global()));
             } catch (NoSuchMethodException e) {
                 return Optional.empty();
             }
@@ -120,8 +119,8 @@ public class SystemLookup implements SymbolLookup {
     private static Path jdkLibraryPath(String name) {
         Path javahome = Path.of(GetPropertyAction.privilegedGetProperty("java.home"));
         String lib = switch (CABI.current()) {
-            case SysV, LinuxAArch64, MacOsAArch64 -> "lib";
-            case Win64 -> "bin";
+            case SYS_V, LINUX_AARCH_64, MAC_OS_AARCH_64 -> "lib";
+            case WIN_64 -> "bin";
         };
         String libname = System.mapLibraryName(name);
         return javahome.resolve(lib).resolve(libname);
@@ -133,8 +132,8 @@ public class SystemLookup implements SymbolLookup {
     }
 
     @Override
-    public Optional<MemorySegment> lookup(String name) {
-        return syslookup.lookup(name);
+    public Optional<MemorySegment> find(String name) {
+        return SYSTEM_LOOKUP.find(name);
     }
 
     // fallback symbols missing from ucrtbase.dll

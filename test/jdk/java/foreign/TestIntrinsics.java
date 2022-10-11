@@ -32,18 +32,18 @@
  *   TestIntrinsics
  */
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 
 import java.lang.foreign.MemoryLayout;
 import org.testng.annotations.*;
 
+import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.invoke.MethodType.methodType;
 import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static org.testng.Assert.assertEquals;
@@ -84,8 +84,7 @@ public class TestIntrinsics extends NativeTestHelper {
         }
 
         AddIdentity addIdentity = (name, carrier, layout, arg) -> {
-            Addressable ma = findNativeOrThrow(name);
-            MethodType mt = methodType(carrier, carrier);
+            MemorySegment ma = findNativeOrThrow(name);
             FunctionDescriptor fd = FunctionDescriptor.of(layout, layout);
 
             tests.add(abi.downcallHandle(ma, fd), arg, arg);
@@ -93,8 +92,7 @@ public class TestIntrinsics extends NativeTestHelper {
         };
 
         { // empty
-            Addressable ma = findNativeOrThrow("empty");
-            MethodType mt = methodType(void.class);
+            MemorySegment ma = findNativeOrThrow("empty");
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
             tests.add(abi.downcallHandle(ma, fd), null);
         }
@@ -108,21 +106,18 @@ public class TestIntrinsics extends NativeTestHelper {
         addIdentity.add("identity_double", double.class,  C_DOUBLE,        10D);
 
         { // identity_va
-            Addressable ma = findNativeOrThrow("identity_va");
-            MethodType mt = methodType(int.class, int.class, double.class, int.class, float.class, long.class);
-            FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT).asVariadic(C_DOUBLE, C_INT, C_FLOAT, C_LONG_LONG);
-            tests.add(abi.downcallHandle(ma, fd), 1, 1, 10D, 2, 3F, 4L);
+            MemorySegment ma = findNativeOrThrow("identity_va");
+            FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT,
+                                                                 C_DOUBLE, C_INT, C_FLOAT, C_LONG_LONG);
+            tests.add(abi.downcallHandle(ma, fd, firstVariadicArg(1)), 1, 1, 10D, 2, 3F, 4L);
         }
 
         { // high_arity
-            MethodType baseMT = methodType(void.class, int.class, double.class, long.class, float.class, byte.class,
-                    short.class, char.class);
             FunctionDescriptor baseFD = FunctionDescriptor.ofVoid(C_INT, C_DOUBLE, C_LONG_LONG, C_FLOAT, C_CHAR,
                     C_SHORT, JAVA_CHAR);
             Object[] args = {1, 10D, 2L, 3F, (byte) 0, (short) 13, 'a'};
             for (int i = 0; i < args.length; i++) {
-                Addressable ma = findNativeOrThrow("invoke_high_arity" + i);
-                MethodType mt = baseMT.changeReturnType(baseMT.parameterType(i));
+                MemorySegment ma = findNativeOrThrow("invoke_high_arity" + i);
                 FunctionDescriptor fd = baseFD.changeReturnLayout(baseFD.argumentLayouts().get(i));
                 Object expected = args[i];
                 tests.add(abi.downcallHandle(ma, fd), expected, args);

@@ -28,12 +28,11 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED SafeFunctionAccessTest
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySession;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.MemoryLayout;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -57,7 +56,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
     public void testClosedStruct() throws Throwable {
         MemorySegment segment;
         try (MemorySession session = MemorySession.openConfined()) {
-            segment = MemorySegment.allocateNative(POINT, session);
+            segment = session.allocate(POINT);
         }
         assertFalse(segment.session().isAlive());
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
@@ -74,12 +73,12 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER));
         for (int i = 0 ; i < 6 ; i++) {
             MemorySegment[] segments = new MemorySegment[]{
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared())
+                    MemorySession.openShared().allocate(POINT),
+                    MemorySession.openShared().allocate(POINT),
+                    MemorySession.openShared().allocate(POINT),
+                    MemorySession.openShared().allocate(POINT),
+                    MemorySession.openShared().allocate(POINT),
+                    MemorySession.openShared().allocate(POINT)
             };
             // check liveness
             segments[i].session().close();
@@ -110,12 +109,12 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
         try (MemorySession session = MemorySession.openConfined()) {
             list = VaList.make(b -> b.addVarg(C_INT, 42), session);
         }
-        assertFalse(list.session().isAlive());
+        assertFalse(list.segment().session().isAlive());
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func"),
                 FunctionDescriptor.ofVoid(C_POINTER));
 
-        handle.invokeExact((Addressable)list);
+        handle.invokeExact(list.segment());
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
@@ -130,7 +129,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
                 findNativeOrThrow("addr_func"),
                 FunctionDescriptor.ofVoid(C_POINTER));
 
-        handle.invokeExact((Addressable)upcall);
+        handle.invokeExact(upcall);
     }
 
     static void dummy() { }
@@ -143,7 +142,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
         try (MemorySession session = MemorySession.openConfined()) {
             VaList list = VaList.make(b -> b.addVarg(C_INT, 42), session);
-            handle.invoke(list, sessionChecker(session));
+            handle.invokeExact(list.segment(), sessionChecker(session));
         }
     }
 
@@ -154,8 +153,8 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
 
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(POINT, session);
-            handle.invoke(segment, sessionChecker(session));
+            MemorySegment segment = session.allocate(POINT);
+            handle.invokeExact(segment, sessionChecker(session));
         }
     }
 
@@ -168,7 +167,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
         try (MemorySession session = MemorySession.openConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
             MemorySegment upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), session);
-            handle.invoke(upcall, sessionChecker(session));
+            handle.invokeExact(upcall, sessionChecker(session));
         }
     }
 

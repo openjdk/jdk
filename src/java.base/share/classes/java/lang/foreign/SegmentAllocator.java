@@ -47,7 +47,7 @@ import jdk.internal.javac.PreviewFeature;
  * <ul>
  *     <li>{@link #newNativeArena(MemorySession)} creates a more efficient arena-style allocator, where off-heap memory
  *     is allocated in bigger blocks, which are then sliced accordingly to fit allocation requests;</li>
- *     <li>{@link #implicitAllocator()} obtains an allocator which allocates native memory segment in independent,
+ *     <li>{@link #implicitAllocator()} obtains an allocator which allocates native segment in independent,
  *     {@linkplain MemorySession#openImplicit() implicit memory sessions}; and</li>
  *     <li>{@link #prefixAllocator(MemorySegment)} obtains an allocator which wraps a segment (either on-heap or off-heap)
  *     and recycles its content upon each new allocation request.</li>
@@ -55,7 +55,7 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * Passing a segment allocator to an API can be especially useful in circumstances where a client wants to communicate <em>where</em>
  * the results of a certain operation (performed by the API) should be stored, as a memory segment. For instance,
- * {@linkplain Linker#downcallHandle(FunctionDescriptor) downcall method handles} can accept an additional
+ * {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handles} can accept an additional
  * {@link SegmentAllocator} parameter if the underlying foreign function is known to return a struct by-value. Effectively,
  * the allocator parameter tells the linker runtime where to store the return value of the foreign function.
  */
@@ -80,7 +80,7 @@ public interface SegmentAllocator {
      * @implSpec the default implementation for this method copies the contents of the provided Java string
      * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
      * @param str the Java string to be converted into a C string.
-     * @return a new native memory segment containing the converted C string.
+     * @return a new native segment containing the converted C string.
      */
     default MemorySegment allocateUtf8String(String str) {
         Objects.requireNonNull(str);
@@ -200,11 +200,11 @@ public interface SegmentAllocator {
      * @param value the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
      */
-    default MemorySegment allocate(ValueLayout.OfAddress layout, Addressable value) {
+    default MemorySegment allocate(ValueLayout.OfAddress layout, MemorySegment value) {
         Objects.requireNonNull(value);
         Objects.requireNonNull(layout);
         MemorySegment segment = allocate(layout);
-        layout.varHandle().set(segment, value.address());
+        layout.varHandle().set(segment, value);
         return segment;
     }
 
@@ -287,10 +287,8 @@ public interface SegmentAllocator {
 
     private <Z> MemorySegment copyArrayWithSwapIfNeeded(Z array, ValueLayout elementLayout,
                                                         Function<Z, MemorySegment> heapSegmentFactory) {
-        Objects.requireNonNull(array);
-        Objects.requireNonNull(elementLayout);
-        int size = Array.getLength(array);
-        MemorySegment addr = allocateArray(elementLayout, size);
+        int size = Array.getLength(Objects.requireNonNull(array));
+        MemorySegment addr = allocateArray(Objects.requireNonNull(elementLayout), size);
         if (size > 0) {
             MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
                     addr, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
@@ -327,24 +325,24 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given size.
-     * @implSpec the default implementation for this method calls {@code this.allocate(bytesSize, 1)}.
-     * @param bytesSize the size (in bytes) of the block of memory to be allocated.
+     * @implSpec the default implementation for this method calls {@code this.allocate(byteSize, 1)}.
+     * @param byteSize the size (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}
+     * @throws IllegalArgumentException if {@code byteSize < 0}
      */
-    default MemorySegment allocate(long bytesSize) {
-        return allocate(bytesSize, 1);
+    default MemorySegment allocate(long byteSize) {
+        return allocate(byteSize, 1);
     }
 
     /**
-     * Allocates a memory segment with the given size and alignment constraints.
-     * @param bytesSize the size (in bytes) of the block of memory to be allocated.
-     * @param bytesAlignment the alignment (in bytes) of the block of memory to be allocated.
+     * Allocates a memory segment with the given size and alignment constraint.
+     * @param byteSize the size (in bytes) of the block of memory to be allocated.
+     * @param byteAlignment the alignment (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code alignmentBytes <= 0},
+     * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0},
      * or if {@code alignmentBytes} is not a power of 2.
      */
-    MemorySegment allocate(long bytesSize, long bytesAlignment);
+    MemorySegment allocate(long byteSize, long byteAlignment);
 
     /**
      * Creates an unbounded arena-based allocator used to allocate native memory segments.
@@ -385,12 +383,12 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Creates an arena-based allocator used to allocate native memory segments. The returned allocator features
+     * Creates an arena-based allocator used to allocate native segments. The returned allocator features
      * the given block size {@code B} and the given arena size {@code A}, and the native segments
      * it allocates are associated with the provided memory session.
      * <p>
-     * The allocator arena is first initialized by {@linkplain MemorySegment#allocateNative(long, MemorySession) allocating} a
-     * native memory segment {@code S} of size {@code B}. The allocator then responds to allocation requests in one of the following ways:
+     * The allocator arena is first initialized by {@linkplain MemorySession#allocate(long) allocating} a
+     * native segment {@code S} of size {@code B}. The allocator then responds to allocation requests in one of the following ways:
      * <ul>
      *     <li>if the size of the allocation requests is smaller than the size of {@code S}, and {@code S} has a <em>free</em>
      *     slice {@code S'} which fits that allocation request, return that {@code S'}.
@@ -449,23 +447,21 @@ public interface SegmentAllocator {
      * @return an allocator which recycles an existing segment upon each new allocation request.
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        Objects.requireNonNull(segment);
-        return (AbstractMemorySegmentImpl)segment;
+        return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
     }
 
     /**
      * Returns an allocator which allocates native segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
      * Equivalent to (but likely more efficient than) the following code:
      * {@snippet lang=java :
-     * SegmentAllocator implicitAllocator = (size, align) -> MemorySegment.allocateNative(size, align, MemorySession.openImplicit());
+     * SegmentAllocator implicitAllocator = MemorySegment::allocateNative;
      * }
      *
      * @return an allocator which allocates native segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
      */
     static SegmentAllocator implicitAllocator() {
-        class Holder {
-            static final SegmentAllocator IMPLICIT_ALLOCATOR = (size, align) ->
-                    MemorySegment.allocateNative(size, align, MemorySession.openImplicit());
+        final class Holder {
+            static final SegmentAllocator IMPLICIT_ALLOCATOR = MemorySegment::allocateNative;
         }
         return Holder.IMPLICIT_ALLOCATOR;
     }

@@ -52,18 +52,25 @@ import sun.nio.ch.DirectBuffer;
  * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-public abstract non-sealed class MemorySessionImpl implements MemorySession, SegmentAllocator {
-    final ResourceList resourceList;
-    final Cleaner.Cleanable cleanable;
-    final Thread owner;
-
+public abstract sealed class MemorySessionImpl
+        implements MemorySession, SegmentAllocator
+        permits ConfinedSession, MemorySessionImpl.GlobalSessionImpl, SharedSession {
     static final int OPEN = 0;
     static final int CLOSING = -1;
     static final int CLOSED = -2;
 
-    int state = OPEN;
-
     static final VarHandle STATE;
+    static final int MAX_FORKS = Integer.MAX_VALUE;
+
+    public static final MemorySessionImpl GLOBAL = new GlobalSessionImpl(null);
+
+    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
+    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
+
+    final ResourceList resourceList;
+    final Cleaner.Cleanable cleanable;
+    final Thread owner;
+    int state = OPEN;
 
     static {
         try {
@@ -72,8 +79,6 @@ public abstract non-sealed class MemorySessionImpl implements MemorySession, Seg
             throw new ExceptionInInitializerError(ex);
         }
     }
-
-    static final int MAX_FORKS = Integer.MAX_VALUE;
 
     @Override
     public void addCloseAction(Runnable runnable) {
@@ -131,8 +136,9 @@ public abstract non-sealed class MemorySessionImpl implements MemorySession, Seg
     }
 
     @Override
-    public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        return MemorySegment.allocateNative(bytesSize, bytesAlignment, this);
+    public MemorySegment allocate(long byteSize, long byteAlignment) {
+        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
     }
 
     public abstract void release0();
@@ -256,7 +262,7 @@ public abstract non-sealed class MemorySessionImpl implements MemorySession, Seg
      * Adding new resources to the global session, does nothing: as the session can never become not-alive, there is nothing to track.
      * Acquiring and or releasing a memory session similarly does nothing.
      */
-    static class GlobalSessionImpl extends MemorySessionImpl {
+    static final class GlobalSessionImpl extends MemorySessionImpl {
 
         final Object ref;
 
@@ -293,8 +299,6 @@ public abstract non-sealed class MemorySessionImpl implements MemorySession, Seg
         }
     }
 
-    public static final MemorySessionImpl GLOBAL = new GlobalSessionImpl(null);
-
     public static MemorySessionImpl heapSession(Object ref) {
         return new GlobalSessionImpl(ref);
     }
@@ -307,7 +311,7 @@ public abstract non-sealed class MemorySessionImpl implements MemorySession, Seg
      * {@link DirectBuffer#address()}, where obtaining an address of a buffer instance associated
      * with a potentially closeable session is forbidden.
      */
-    static class ImplicitSession extends SharedSession {
+    static final class ImplicitSession extends SharedSession {
 
         public ImplicitSession() {
             super(CleanerFactory.cleaner());
@@ -341,7 +345,7 @@ public abstract non-sealed class MemorySessionImpl implements MemorySession, Seg
      * a strong reference to the original session, so even if the original session is dropped by the client
      * it would still be reachable by the GC, which is important if the session is implicitly closed.
      */
-    public final static class NonCloseableView implements MemorySession {
+    public static final class NonCloseableView implements MemorySession {
         final MemorySessionImpl session;
 
         public NonCloseableView(MemorySessionImpl session) {
@@ -464,7 +468,4 @@ public abstract non-sealed class MemorySessionImpl implements MemorySession, Seg
         return new UnsupportedOperationException("Attempted to close a non-closeable session");
     }
 
-    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
-
-    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
 }

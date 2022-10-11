@@ -29,13 +29,11 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySession;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 
 import org.testng.annotations.Test;
 
@@ -59,13 +57,13 @@ public class TestVarArgs extends CallGeneratorHelper {
         System.loadLibrary("VarArgs");
         try {
             MH_CHECK = MethodHandles.lookup().findStatic(TestVarArgs.class, "check",
-                    MethodType.methodType(void.class, int.class, MemoryAddress.class, List.class));
+                    MethodType.methodType(void.class, int.class, MemorySegment.class, List.class));
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
     }
 
-    static final Addressable VARARGS_ADDR = findNativeOrThrow("varargs");
+    static final MemorySegment VARARGS_ADDR = findNativeOrThrow("varargs");
 
     @Test(dataProvider = "functions")
     public void testVarArgs(int count, String fName, Ret ret, // ignore this stuff
@@ -75,10 +73,10 @@ public class TestVarArgs extends CallGeneratorHelper {
         try (MemorySession session = MemorySession.openConfined()) {
             MethodHandle checker = MethodHandles.insertArguments(MH_CHECK, 2, args);
             MemorySegment writeBack = LINKER.upcallStub(checker, FunctionDescriptor.ofVoid(C_INT, C_POINTER), session);
-            MemorySegment callInfo = MemorySegment.allocateNative(CallInfo.LAYOUT, session);
-            MemorySegment argIDs = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(args.size(), C_INT), session);
+            MemorySegment callInfo = session.allocate(CallInfo.LAYOUT);
+            MemorySegment argIDs = session.allocate(MemoryLayout.sequenceLayout(args.size(), C_INT));
 
-            MemoryAddress callInfoPtr = callInfo.address();
+            MemorySegment callInfoPtr = callInfo;
 
             CallInfo.writeback(callInfo, writeBack);
             CallInfo.argIDs(callInfo, argIDs);
@@ -91,10 +89,11 @@ public class TestVarArgs extends CallGeneratorHelper {
             argLayouts.add(C_POINTER); // call info
             argLayouts.add(C_INT); // size
 
-            FunctionDescriptor desc = FunctionDescriptor.ofVoid(argLayouts.toArray(MemoryLayout[]::new))
-                    .asVariadic(args.stream().map(a -> a.layout).toArray(MemoryLayout[]::new));
+            FunctionDescriptor baseDesc = FunctionDescriptor.ofVoid(argLayouts.toArray(MemoryLayout[]::new));
+            Linker.Option varargIndex = Linker.Option.firstVariadicArg(baseDesc.argumentLayouts().size());
+            FunctionDescriptor desc = baseDesc.appendArgumentLayouts(args.stream().map(a -> a.layout).toArray(MemoryLayout[]::new));
 
-            MethodHandle downcallHandle = LINKER.downcallHandle(VARARGS_ADDR, desc);
+            MethodHandle downcallHandle = LINKER.downcallHandle(VARARGS_ADDR, desc, varargIndex);
 
             List<Object> argValues = new ArrayList<>();
             argValues.add(callInfoPtr); // call info
@@ -121,13 +120,13 @@ public class TestVarArgs extends CallGeneratorHelper {
         return args;
     }
 
-    private static void check(int index, MemoryAddress ptr, List<Arg> args) {
+    private static void check(int index, MemorySegment ptr, List<Arg> args) {
         Arg varArg = args.get(index);
         MemoryLayout layout = varArg.layout;
         MethodHandle getter = varArg.getter;
         List<Consumer<Object>> checks = varArg.checks;
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment seg = MemorySegment.ofAddress(ptr, layout.byteSize(), session);
+            MemorySegment seg = MemorySegment.ofAddress(ptr.address(), layout.byteSize(), session);
             Object obj = getter.invoke(seg);
             checks.forEach(check -> check.accept(obj));
         } catch (Throwable e) {
@@ -143,11 +142,11 @@ public class TestVarArgs extends CallGeneratorHelper {
         static final VarHandle VH_writeback = LAYOUT.varHandle(groupElement("writeback"));
         static final VarHandle VH_argIDs = LAYOUT.varHandle(groupElement("argIDs"));
 
-        static void writeback(MemorySegment seg, Addressable addr) {
-            VH_writeback.set(seg, addr.address());
+        static void writeback(MemorySegment seg, MemorySegment addr) {
+            VH_writeback.set(seg, addr);
         }
-        static void argIDs(MemorySegment seg, Addressable addr) {
-            VH_argIDs.set(seg, addr.address());
+        static void argIDs(MemorySegment seg, MemorySegment addr) {
+            VH_argIDs.set(seg, addr);
         }
     }
 

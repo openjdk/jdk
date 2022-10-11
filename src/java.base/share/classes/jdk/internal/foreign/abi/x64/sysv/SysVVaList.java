@@ -25,10 +25,15 @@
  */
 package jdk.internal.foreign.abi.x64.sysv;
 
-import java.lang.foreign.*;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.VaList;
+import java.lang.foreign.ValueLayout;
 
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.misc.Unsafe;
@@ -45,7 +50,7 @@ import static jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
 import static jdk.internal.foreign.abi.SharedUtils.THROWING_ALLOCATOR;
 
 // See https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf "3.5.7 Variable Argument Lists"
-public non-sealed class SysVVaList implements VaList, Scoped {
+public non-sealed class SysVVaList implements VaList {
     private static final Unsafe U = Unsafe.getUnsafe();
 
 //    struct typedef __va_list_tag __va_list_tag {
@@ -127,23 +132,22 @@ public non-sealed class SysVVaList implements VaList, Scoped {
         this.fpLimit = fpLimit;
     }
 
-    private static SysVVaList readFromSegment(MemorySegment segment) {
+    private static SysVVaList readFromAddress(long address, MemorySession session) {
+        MemorySegment segment = MemorySegment.ofAddress(address, LAYOUT.byteSize(), session);
         MemorySegment regSaveArea = getRegSaveArea(segment);
         MemorySegment overflowArgArea = getArgOverflowArea(segment);
         return new SysVVaList(segment, overflowArgArea, regSaveArea, MAX_GP_OFFSET, MAX_FP_OFFSET);
     }
 
-    private static MemoryAddress emptyListAddress() {
+    private static MemorySegment emptyListAddress() {
         long ptr = U.allocateMemory(LAYOUT.byteSize());
-        MemorySession session = MemorySession.openImplicit();
-        session.addCloseAction(() -> U.freeMemory(ptr));
-        MemorySegment base = MemorySegment.ofAddress(MemoryAddress.ofLong(ptr),
-                LAYOUT.byteSize(), session);
+        MemorySegment base = MemorySegment.ofAddress(ptr, LAYOUT.byteSize(), MemorySession.openImplicit());
+        base.session().addCloseAction(() -> U.freeMemory(ptr));
         VH_gp_offset.set(base, MAX_GP_OFFSET);
         VH_fp_offset.set(base, MAX_FP_OFFSET);
-        VH_overflow_arg_area.set(base, MemoryAddress.NULL);
-        VH_reg_save_area.set(base, MemoryAddress.NULL);
-        return base.address();
+        VH_overflow_arg_area.set(base, MemorySegment.NULL);
+        VH_reg_save_area.set(base, MemorySegment.NULL);
+        return base;
     }
 
     public static VaList empty() {
@@ -167,19 +171,18 @@ public non-sealed class SysVVaList implements VaList, Scoped {
     }
 
     private static MemorySegment getRegSaveArea(MemorySegment segment) {
-        return MemorySegment.ofAddress(((MemoryAddress)VH_reg_save_area.get(segment)),
-                LAYOUT_REG_SAVE_AREA.byteSize(), segment.session());
+        return ((MemorySegment)VH_reg_save_area.get(segment))
+                .asSlice(0, LAYOUT_REG_SAVE_AREA.byteSize());
     }
 
     private static MemorySegment getArgOverflowArea(MemorySegment segment) {
-        return MemorySegment.ofAddress(((MemoryAddress)VH_overflow_arg_area.get(segment)),
-                Long.MAX_VALUE, segment.session()); // size unknown
+        return (MemorySegment)VH_overflow_arg_area.get(segment); // size unknown
     }
 
     private long preAlignOffset(MemoryLayout layout) {
         long alignmentOffset = 0;
         if (layout.byteAlignment() > STACK_SLOT_SIZE) {
-            long addr = overflowArgArea.address().toRawLongValue();
+            long addr = overflowArgArea.address();
             alignmentOffset = Utils.alignUp(addr, 16) - addr;
         }
         return alignmentOffset;
@@ -187,7 +190,7 @@ public non-sealed class SysVVaList implements VaList, Scoped {
 
     private void setOverflowArgArea(MemorySegment newSegment) {
         overflowArgArea = newSegment;
-        VH_overflow_arg_area.set(segment, overflowArgArea.address());
+        VH_overflow_arg_area.set(segment, overflowArgArea);
     }
 
     private void preAlignStack(MemoryLayout layout) {
@@ -214,8 +217,8 @@ public non-sealed class SysVVaList implements VaList, Scoped {
     }
 
     @Override
-    public MemoryAddress nextVarg(ValueLayout.OfAddress layout) {
-        return (MemoryAddress) read(layout);
+    public MemorySegment nextVarg(ValueLayout.OfAddress layout) {
+        return (MemorySegment) read(layout);
     }
 
     @Override
@@ -307,7 +310,7 @@ public non-sealed class SysVVaList implements VaList, Scoped {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        sessionImpl().checkValidState();
+        MemorySessionImpl.toSessionImpl(segment.session()).checkValidState();
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
             TypeClass typeClass = TypeClass.classifyLayout(layout);
@@ -327,25 +330,20 @@ public non-sealed class SysVVaList implements VaList, Scoped {
         return new SysVVaList.Builder(session);
     }
 
-    public static VaList ofAddress(MemoryAddress ma, MemorySession session) {
-        return readFromSegment(MemorySegment.ofAddress(ma, LAYOUT.byteSize(), session));
-    }
-
-    @Override
-    public MemorySession session() {
-        return segment.session();
+    public static VaList ofAddress(long address, MemorySession session) {
+        return readFromAddress(address, session);
     }
 
     @Override
     public VaList copy() {
-        MemorySegment copy = MemorySegment.allocateNative(LAYOUT, segment.session());
+        MemorySegment copy = segment.session().allocate(LAYOUT);
         copy.copyFrom(segment);
         return new SysVVaList(copy, overflowArgArea, regSaveArea, gpLimit, fpLimit);
     }
 
     @Override
-    public MemoryAddress address() {
-        return segment.address();
+    public MemorySegment segment() {
+        return segment.asSlice(0, 0);
     }
 
     private static boolean isRegOverflow(long currentGPOffset, long currentFPOffset, TypeClass typeClass) {
@@ -372,7 +370,7 @@ public non-sealed class SysVVaList implements VaList, Scoped {
 
         public Builder(MemorySession session) {
             this.session = session;
-            this.reg_save_area = MemorySegment.allocateNative(LAYOUT_REG_SAVE_AREA, session);
+            this.reg_save_area = session.allocate(LAYOUT_REG_SAVE_AREA);
         }
 
         @Override
@@ -391,8 +389,8 @@ public non-sealed class SysVVaList implements VaList, Scoped {
         }
 
         @Override
-        public Builder addVarg(ValueLayout.OfAddress layout, Addressable value) {
-            return arg(layout, value.address());
+        public Builder addVarg(ValueLayout.OfAddress layout, MemorySegment value) {
+            return arg(layout, value);
         }
 
         @Override
@@ -451,19 +449,18 @@ public non-sealed class SysVVaList implements VaList, Scoped {
                 return EMPTY;
             }
 
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
-            MemorySegment vaListSegment = allocator.allocate(LAYOUT);
+            MemorySegment vaListSegment = session.allocate(LAYOUT);
             MemorySegment stackArgsSegment;
             if (!stackArgs.isEmpty()) {
                 long stackArgsSize = stackArgs.stream().reduce(0L,
                         (acc, e) -> acc + Utils.alignUp(e.layout.byteSize(), STACK_SLOT_SIZE), Long::sum);
-                stackArgsSegment = allocator.allocate(stackArgsSize, 16);
+                stackArgsSegment = session.allocate(stackArgsSize, 16);
                 MemorySegment writeCursor = stackArgsSegment;
                 for (SimpleVaArg arg : stackArgs) {
                     if (arg.layout.byteSize() > 8) {
                         writeCursor = Utils.alignUp(writeCursor, Math.min(16, arg.layout.byteSize()));
                     }
-                    if (arg.value instanceof MemorySegment) {
+                    if (arg.layout instanceof GroupLayout) {
                         writeCursor.copyFrom((MemorySegment) arg.value);
                     } else {
                         VarHandle writer = arg.varHandle();
@@ -472,12 +469,12 @@ public non-sealed class SysVVaList implements VaList, Scoped {
                     writeCursor = writeCursor.asSlice(Utils.alignUp(arg.layout.byteSize(), STACK_SLOT_SIZE));
                 }
             } else {
-                stackArgsSegment = MemorySegment.ofAddress(MemoryAddress.NULL, 0, session);
+                stackArgsSegment = MemorySegment.NULL;
             }
 
             VH_fp_offset.set(vaListSegment, (int) FP_OFFSET);
-            VH_overflow_arg_area.set(vaListSegment, stackArgsSegment.address());
-            VH_reg_save_area.set(vaListSegment, reg_save_area.address());
+            VH_overflow_arg_area.set(vaListSegment, stackArgsSegment);
+            VH_reg_save_area.set(vaListSegment, reg_save_area);
             assert reg_save_area.session().ownerThread() == vaListSegment.session().ownerThread();
             return new SysVVaList(vaListSegment, stackArgsSegment, reg_save_area, currentGPOffset, currentFPOffset);
         }

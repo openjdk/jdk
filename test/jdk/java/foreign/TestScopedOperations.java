@@ -28,7 +28,6 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestScopedOperations
  */
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -112,7 +111,7 @@ public class TestScopedOperations {
         // session operations
         ScopedOperation.ofScope(session -> session.addCloseAction(() -> {
         }), "MemorySession::addCloseAction");
-        ScopedOperation.ofScope(session -> MemorySegment.allocateNative(100, session), "MemorySegment::allocateNative");
+        ScopedOperation.ofScope(session -> session.allocate(100), "MemorySession::allocate");
         ScopedOperation.ofScope(session -> {
             try (FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
                 fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, session);
@@ -121,16 +120,14 @@ public class TestScopedOperations {
             }
         }, "FileChannel::map");
         ScopedOperation.ofScope(session -> VaList.make(b -> b.addVarg(JAVA_INT, 42), session), "VaList::make");
-        ScopedOperation.ofScope(session -> VaList.ofAddress(MemoryAddress.ofLong(42), session), "VaList::make");
+        ScopedOperation.ofScope(session -> VaList.ofAddress(42, session), "VaList::make");
         ScopedOperation.ofScope(SegmentAllocator::newNativeArena, "SegmentAllocator::arenaAllocator");
         // segment operations
         ScopedOperation.ofSegment(s -> s.toArray(JAVA_BYTE), "MemorySegment::toArray(BYTE)");
-        ScopedOperation.ofSegment(MemorySegment::address, "MemorySegment::address");
         ScopedOperation.ofSegment(s -> s.copyFrom(s), "MemorySegment::copyFrom");
         ScopedOperation.ofSegment(s -> s.mismatch(s), "MemorySegment::mismatch");
         ScopedOperation.ofSegment(s -> s.fill((byte) 0), "MemorySegment::fill");
         // valist operations
-        ScopedOperation.ofVaList(VaList::address, "VaList::address");
         ScopedOperation.ofVaList(VaList::copy, "VaList::copy");
         ScopedOperation.ofVaList(list -> list.nextVarg(ValueLayout.ADDRESS), "VaList::nextVarg/address");
         ScopedOperation.ofVaList(list -> list.nextVarg(ValueLayout.JAVA_INT), "VaList::nextVarg/int");
@@ -220,7 +217,7 @@ public class TestScopedOperations {
 
         enum SegmentFactory {
 
-            NATIVE(session -> MemorySegment.allocateNative(10, session)),
+            NATIVE(session -> session.allocate(10)),
             MAPPED(session -> {
                 try (FileChannel fileChannel = FileChannel.open(Path.of("foo.txt"), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
                     return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, session);
@@ -228,7 +225,7 @@ public class TestScopedOperations {
                     throw new AssertionError(ex);
                 }
             }),
-            UNSAFE(session -> MemorySegment.ofAddress(MemoryAddress.NULL, 10, session));
+            UNSAFE(session -> MemorySegment.ofAddress(0, 10, session));
 
             static {
                 try {

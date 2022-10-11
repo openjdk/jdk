@@ -196,7 +196,7 @@ public class UpcallLinker {
     }
 
     // used for transporting data into native code
-    private static record CallRegs(VMStorage[] argRegs, VMStorage[] retRegs) {}
+    private record CallRegs(VMStorage[] argRegs, VMStorage[] retRegs) {}
 
     static native long makeUpcallStub(MethodHandle mh, ABIDescriptor abi, CallRegs conv,
                                       boolean needsReturnBuffer, long returnBufferSize);

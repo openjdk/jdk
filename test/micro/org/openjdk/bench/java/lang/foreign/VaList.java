@@ -22,10 +22,10 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySession;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -57,9 +57,10 @@ public class VaList extends CLayouts {
 
     static {
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
-        MH_ellipsis = linker.downcallHandle(loaderLibs.lookup("ellipsis").get(),
-                FunctionDescriptor.ofVoid(C_INT).asVariadic(C_INT, C_DOUBLE, C_LONG_LONG));
-        MH_vaList = linker.downcallHandle(loaderLibs.lookup("vaList").get(),
+        MH_ellipsis = linker.downcallHandle(loaderLibs.find("ellipsis").get(),
+                FunctionDescriptor.ofVoid(C_INT, C_INT, C_DOUBLE, C_LONG_LONG),
+                Linker.Option.firstVariadicArg(1));
+        MH_vaList = linker.downcallHandle(loaderLibs.find("vaList").get(),
                 FunctionDescriptor.ofVoid(C_INT, C_POINTER));
     }
 
@@ -77,7 +78,7 @@ public class VaList extends CLayouts {
                             .addVarg(C_DOUBLE, 2D)
                             .addVarg(C_LONG_LONG, 3L), session);
             MH_vaList.invokeExact(3,
-                    (Addressable)vaList);
+                    vaList.segment());
         }
     }
 }

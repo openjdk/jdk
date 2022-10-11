@@ -80,7 +80,6 @@ public class TestNulls {
 
     static final Class<?>[] CLASSES = new Class<?>[] {
             MemorySegment.class,
-            MemoryAddress.class,
             MemoryLayout.class,
             MemoryLayout.PathElement.class,
             SequenceLayout.class,
@@ -95,7 +94,6 @@ public class TestNulls {
             ValueLayout.OfDouble.class,
             ValueLayout.OfAddress.class,
             GroupLayout.class,
-            Addressable.class,
             Linker.class,
             VaList.class,
             VaList.Builder.class,
@@ -162,8 +160,6 @@ public class TestNulls {
         addDefaultMapping(Charset.class, Charset.defaultCharset());
         addDefaultMapping(Consumer.class, x -> {});
         addDefaultMapping(MethodType.class, MethodType.methodType(void.class));
-        addDefaultMapping(MemoryAddress.class, MemoryAddress.ofLong(1));
-        addDefaultMapping(Addressable.class, MemoryAddress.ofLong(1));
         addDefaultMapping(MemoryLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(ValueLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(ValueLayout.OfAddress.class, ValueLayout.ADDRESS);

@@ -75,7 +75,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
              var server = AsynchronousServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel);
              var session = closeableSessionOrNull(sessionSupplier.get())) {
-            var segment = MemorySegment.allocateNative(10, 1, session);
+            var segment = session.allocate(10, 1);
             var bb = segment.asByteBuffer();
             var bba = new ByteBuffer[] { bb };
             List<ThrowingConsumer<TestHandler,?>> ioOps = List.of(
@@ -160,8 +160,8 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
              var assc = AsynchronousServerSocketChannel.open();
              var asc2 = connectChannels(assc, asc1);
              var scp = closeableSessionOrNull(session = sessionSupplier.get())) {
-            MemorySegment segment1 = MemorySegment.allocateNative(10, 1, session);
-            MemorySegment segment2 = MemorySegment.allocateNative(10, 1, session);
+            MemorySegment segment1 = session.allocate(10, 1);
+            MemorySegment segment2 = session.allocate(10, 1);
             for (int i = 0; i < 10; i++) {
                 segment1.set(JAVA_BYTE, i, (byte) i);
             }
@@ -207,7 +207,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
              var assc = AsynchronousServerSocketChannel.open();
              var asc2 = connectChannels(assc, asc1);
              var session = closeableSessionOrNull(sessionSupplier.get())) {
-            var segment = MemorySegment.allocateNative(10, 1, session);
+            var segment = session.allocate(10, 1);
             var bb = segment.asByteBuffer();
             var bba = new ByteBuffer[] { bb };
             List<ThrowingConsumer<TestHandler,?>> readOps = List.of(

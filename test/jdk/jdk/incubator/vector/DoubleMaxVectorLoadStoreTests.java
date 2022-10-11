@@ -486,8 +486,8 @@ public class DoubleMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "doubleByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<double[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE, MemorySession.openImplicit()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE, MemorySession.openImplicit());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -515,8 +515,8 @@ public class DoubleMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "doubleByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<double[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE, MemorySession.openImplicit()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE, MemorySession.openImplicit());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -579,8 +579,8 @@ public class DoubleMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "doubleByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<double[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE, MemorySession.openImplicit()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE, MemorySession.openImplicit());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromValues(SPECIES, mask);
 
@@ -610,8 +610,8 @@ public class DoubleMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "doubleByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<double[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE, MemorySession.openImplicit()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE, MemorySession.openImplicit());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromValues(SPECIES, mask);
 

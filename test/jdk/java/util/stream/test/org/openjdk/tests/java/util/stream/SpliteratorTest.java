@@ -66,7 +66,7 @@ public class SpliteratorTest {
     @Test(dataProvider = "SegmentSpliterator", dataProviderClass = SegmentTestDataProvider.class )
     public void testSegmentSpliterator(String name, SequenceLayout layout, SpliteratorTestHelper.ContentAsserter<MemorySegment> contentAsserter) {
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, session);
+            MemorySegment segment = session.allocate(layout);
             SegmentTestDataProvider.initSegment(segment);
             SpliteratorTestHelper.testSpliterator(() -> segment.spliterator(layout),
                     SegmentTestDataProvider::segmentCopier, contentAsserter);

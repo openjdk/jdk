@@ -38,6 +38,6 @@ public class TestFallbackLookup {
     void testBadSystemLookupRequest() {
         // we request a Linker, forcing OS name to be "Windows". This should trigger an exception when
         // attempting to load a non-existent ucrtbase.dll. Make sure that no error is generated at this stage.
-        assertTrue(Linker.nativeLinker().defaultLookup().lookup("nonExistentSymbol").isEmpty());
+        assertTrue(Linker.nativeLinker().defaultLookup().find("nonExistentSymbol").isEmpty());
     }
 }

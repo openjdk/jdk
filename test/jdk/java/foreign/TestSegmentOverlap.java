@@ -61,7 +61,7 @@ public class TestSegmentOverlap {
     @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
-                () -> MemorySegment.allocateNative(16, MemorySession.openConfined()),
+                () -> MemorySession.openConfined().allocate(16),
                 () -> {
                     try (FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
                         return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 16L, MemorySession.openConfined());
@@ -123,7 +123,7 @@ public class TestSegmentOverlap {
             assertEquals(slice.asOverlappingSlice(s1).get().session(), slice.session());
 
             if (s1.isNative()) {
-                assertEquals(s1.asOverlappingSlice(slice).get().address(), s1.address().addOffset(offset));
+                assertEquals(s1.asOverlappingSlice(slice).get().address(), s1.address() + offset);
                 assertEquals(slice.asOverlappingSlice(s1).get().address(), slice.address());
             }
             assertTrue(s2.asOverlappingSlice(slice).isEmpty());
@@ -131,7 +131,7 @@ public class TestSegmentOverlap {
     }
 
     enum OtherSegmentFactory {
-        NATIVE(() -> MemorySegment.allocateNative(16, MemorySession.openConfined())),
+        NATIVE(() -> MemorySession.openConfined().allocate(16)),
         HEAP(() -> MemorySegment.ofArray(new byte[]{16}));
 
         final Supplier<MemorySegment> factory;

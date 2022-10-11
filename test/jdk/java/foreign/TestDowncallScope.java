@@ -38,7 +38,6 @@
 
 import org.testng.annotations.Test;
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemorySegment;
@@ -61,7 +60,7 @@ public class TestDowncallScope extends TestDowncallBase {
                              List<CallGeneratorHelper.ParamType> paramTypes,
                              List<CallGeneratorHelper.StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> checks = new ArrayList<>();
-        Addressable addr = findNativeOrThrow(fName);
+        MemorySegment addr = findNativeOrThrow(fName);
         FunctionDescriptor descriptor = function(ret, paramTypes, fields);
         Object[] args = makeArgs(paramTypes, fields, checks);
         try (MemorySession session = MemorySession.openShared()) {

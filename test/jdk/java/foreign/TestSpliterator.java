@@ -58,7 +58,7 @@ public class TestSpliterator {
 
         //setup
         try (MemorySession session = MemorySession.openShared()) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, session);
+            MemorySegment segment = session.allocate(layout);
             for (int i = 0; i < layout.elementCount(); i++) {
                 INT_HANDLE.set(segment, (long) i, i);
             }
@@ -84,7 +84,7 @@ public class TestSpliterator {
         SequenceLayout layout = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
 
         //setup
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openImplicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout);
         for (int i = 0; i < layout.elementCount(); i++) {
             INT_HANDLE.set(segment, (long) i, i);
         }

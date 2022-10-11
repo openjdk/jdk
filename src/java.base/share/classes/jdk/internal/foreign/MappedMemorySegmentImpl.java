@@ -37,11 +37,11 @@ import jdk.internal.misc.ScopedMemoryAccess;
  * memory mapped segment, such as the file descriptor associated with the mapping. This information is crucial
  * in order to correctly reconstruct a byte buffer object from the segment (see {@link #makeByteBuffer()}).
  */
-public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
+public sealed class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     private final UnmapperProxy unmapper;
 
-    static ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     public MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, MemorySession session) {
         super(min, length, readOnly, session);
@@ -50,7 +50,7 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return nioAccess.newMappedByteBuffer(unmapper, min, (int)length, null,
+        return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int)length, null,
                 session == MemorySessionImpl.GLOBAL ? null : this);
     }
 
@@ -93,7 +93,7 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
         SCOPED_MEMORY_ACCESS.force(sessionImpl(), unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
     }
 
-    public static class EmptyMappedMemorySegmentImpl extends MappedMemorySegmentImpl {
+    public static final class EmptyMappedMemorySegmentImpl extends MappedMemorySegmentImpl {
 
         public EmptyMappedMemorySegmentImpl(boolean readOnly, MemorySessionImpl session) {
             super(0, null, 0, readOnly, session);

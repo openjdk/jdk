@@ -54,32 +54,32 @@ public class TestTypeAccess {
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueGetAsString() {
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, session);
-            String address = (String)ADDR_HANDLE.get(s.address());
+            MemorySegment s = session.allocate(8, 8);
+            String address = (String)ADDR_HANDLE.get(s);
         }
     }
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueSetAsString() {
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, session);
-            ADDR_HANDLE.set(s.address(), "string");
+            MemorySegment s = session.allocate(8, 8);
+            ADDR_HANDLE.set(s, "string");
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueGetAsPrimitive() {
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, session);
-            int address = (int)ADDR_HANDLE.get(s.address());
+            MemorySegment s = session.allocate(8, 8);
+            int address = (int)ADDR_HANDLE.get(s);
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueSetAsPrimitive() {
         try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, session);
-            ADDR_HANDLE.set(s.address(), 1);
+            MemorySegment s = session.allocate(8, 8);
+            ADDR_HANDLE.set(s, 1);
         }
     }
 

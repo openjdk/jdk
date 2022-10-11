@@ -995,8 +995,9 @@ public abstract class FileChannel
         throws IOException;
 
     /**
-     * Maps a region of this channel's file into a new mapped memory segment,
-     * with the given offset, size and memory session.
+     * Maps a region of this channel's file into a new mapped memory segment, with the given offset,
+     * size and memory session. The {@linkplain MemorySegment#address() address} of the returned memory segment
+     * is the starting address of the mapped off-heap region backing the segment.
      *
      * <p> If the specified mapping mode is
      * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting

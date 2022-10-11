@@ -29,6 +29,8 @@ import java.lang.ref.Cleaner;
 import java.util.Objects;
 
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.NativeMemorySegmentImpl;
+import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -44,8 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  * can be used to specify the cleanup code that must run when a given resource (or set of resources) is no longer in use.
  * When a memory session is closed, the {@linkplain #addCloseAction(Runnable) close actions}
  * associated with that session are executed (in unspecified order). For instance, closing the memory session associated with
- * one or more {@linkplain MemorySegment#allocateNative(long, long, MemorySession) native memory segments} results in releasing
- * the off-heap memory associated with said segments.
+ * one or more {@linkplain MemorySession#allocate(long, long) native memory segments} results in releasing
+ * the off-heap memory backing said segments.
  * <p>
  * The {@linkplain #global() global session} is a memory session that cannot be closed.
  * As a result, resources associated with the global session are never released. Examples of resources associated with
@@ -76,8 +78,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * {@snippet lang=java :
  * try (MemorySession session = MemorySession.openConfined()) {
- *    MemorySegment segment1 = MemorySegment.allocateNative(100);
- *    MemorySegment segment1 = MemorySegment.allocateNative(200);
+ *    MemorySegment segment1 = session.allocate(100);
+ *    MemorySegment segment1 = session.allocate(200);
  *    ...
  * } // all memory released here
  * }
@@ -211,34 +213,55 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
     @Override
     int hashCode();
 
-    /**
-     * Allocates a native segment, using this session. Equivalent to the following code:
-     * {@snippet lang=java :
-     * MemorySegment.allocateNative(size, align, this);
-     * }
+     /**
+     * Creates a native memory segment with the given size (in bytes), alignment constraint (in bytes) associated with
+     * this memory session. The {@link MemorySegment#address()} of the returned memory segment is the starting address of
+     * the newly allocated off-heap memory region backing the segment. Moreover, the {@linkplain MemorySegment#address() address}
+     * of the returned segment will be aligned according the provided alignment constraint.
+     * <p>
+     * A client is responsible for ensuring that this memory session is closed when the
+     * segment is no longer in use. Failure to do so will result in off-heap memory leaks.
+     * <p>
+     * The off-heap region of memory backing the returned native memory segment is initialized to zero.
      *
-     * @throws IllegalStateException if this memory session is not {@linkplain #isAlive() alive}.
+     * @param byteSize the size (in bytes) of the off-heap memory block backing the native memory segment.
+     * @param byteAlignment the alignment constraint (in bytes) of the off-heap region of memory backing the native memory segment.
+     * @return a new native memory segment.
+     * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code alignmentBytes <= 0}, or if {@code alignmentBytes}
+     * is not a power of 2.
+     * @throws IllegalStateException if this session is not {@linkplain MemorySession#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain #ownerThread() owning} this memory session.
-     * @return a new native segment, associated with this session.
+     * {@linkplain MemorySession#ownerThread() owning} this session.
+     * @see MemorySegment#allocateNative(long, long)
      */
     @Override
-    default MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        return MemorySegment.allocateNative(bytesSize, bytesAlignment, this);
+    default MemorySegment allocate(long byteSize, long byteAlignment) {
+        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
     }
 
     /**
-     * Creates a closeable confined memory session.
-     * @return a new closeable confined memory session.
+     * Creates a new closeable, thread-confined memory session.
+     * <p>
+     * The returned memory session is confined to the current thread.
+     * <p>
+     * The returned memory session <em>must</em> eventually be {@linkplain #close() closed}
+     * to prevent memory leaks.
+     *
+     * @return a new closeable, thread-confined memory session
      */
     static MemorySession openConfined() {
         return MemorySessionImpl.createConfined(Thread.currentThread(), null);
     }
 
     /**
-     * Creates a closeable confined memory session, managed by the provided cleaner instance.
-     * @param cleaner the cleaner to be associated with the returned memory session.
-     * @return a new closeable confined memory session, managed by {@code cleaner}.
+     * Creates a new closeable, thread-confined memory session, managed by
+     * the provided {@code cleaner}.
+     * <p>
+     * The returned memory session is confined to the current thread.
+     *
+     * @param cleaner the cleaner to be associated with the returned memory session
+     * @return a new closeable thread-confined memory session, managed by the provided {@code cleaner}
      */
     static MemorySession openConfined(Cleaner cleaner) {
         Objects.requireNonNull(cleaner);
@@ -246,17 +269,30 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
     }
 
     /**
-     * Creates a closeable shared memory session.
-     * @return a new closeable shared memory session.
+     * Creates a new closeable memory session that can be shared across threads.
+     * <p>
+     * The returned memory session can be used by any thread. Users are responsible for
+     * assuring thread-safety across threads that use objects associated with this memory session.
+     * <p>
+     * The returned memory session <em>must</em> eventually be {@linkplain #close() closed}
+     * to prevent memory leaks.
+     *
+     * @return a new closeable memory session that can be shared across threads
      */
     static MemorySession openShared() {
         return MemorySessionImpl.createShared(null);
     }
 
     /**
-     * Creates a closeable shared memory session, managed by the provided cleaner instance.
-     * @param cleaner the cleaner to be associated with the returned memory session.
-     * @return a new closeable shared memory session, managed by {@code cleaner}.
+     * Creates a new closeable memory session that can be shared across threads,
+     * managed by the provided {@code cleaner}.
+     * <p>
+     * The returned memory session can be used by any thread. Users are responsible for
+     * assuring thread-safety across threads that use objects associated with this memory session.
+     *
+     * @param cleaner the cleaner to be associated with the returned memory session
+     * @return a new closeable memory session that can be shared across threads, managed
+     * by the provided {@code cleaner}
      */
     static MemorySession openShared(Cleaner cleaner) {
         Objects.requireNonNull(cleaner);
@@ -264,20 +300,23 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
     }
 
     /**
-     * Creates a non-closeable shared memory session, managed by a private {@link Cleaner} instance.
-     * Equivalent to (but likely more efficient than) the following code:
+     * Creates a new non-closeable memory session that can be shared across threads,
+     * manage by a private {@link Cleaner} instance.
+     * <p>
+     * This is equivalent to (but likely more efficient than) the following code:
      * {@snippet lang=java :
      * openShared(Cleaner.create()).asNonCloseable();
      * }
-     * @return a non-closeable shared memory session, managed by a private {@link Cleaner} instance.
+     *
+     * @return a new closeable memory session that can be shared across threads, managed
+     * by a private {@link Cleaner} instance
      */
     static MemorySession openImplicit() {
         return MemorySessionImpl.createImplicit();
     }
 
     /**
-     * Returns the global memory session.
-     * @return the global memory session.
+     * {@return the global memory session}
      */
     static MemorySession global() {
         return MemorySessionImpl.GLOBAL;

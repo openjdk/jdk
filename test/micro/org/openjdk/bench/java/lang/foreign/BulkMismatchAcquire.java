@@ -86,14 +86,14 @@ public class BulkMismatchAcquire {
     @Setup
     public void setup() {
         session = sessionKind.makeSession();
-        mismatchSegmentLarge1 = MemorySegment.allocateNative(SIZE_WITH_TAIL, session);
-        mismatchSegmentLarge2 = MemorySegment.allocateNative(SIZE_WITH_TAIL, session);
+        mismatchSegmentLarge1 = session.allocate(SIZE_WITH_TAIL);
+        mismatchSegmentLarge2 = session.allocate(SIZE_WITH_TAIL);
         mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
         mismatchBufferLarge2 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);
 
         // mismatch at first byte
-        mismatchSegmentSmall1 = MemorySegment.allocateNative(7, session);
-        mismatchSegmentSmall2 = MemorySegment.allocateNative(7, session);
+        mismatchSegmentSmall1 = session.allocate(7);
+        mismatchSegmentSmall2 = session.allocate(7);
         mismatchBufferSmall1 = ByteBuffer.allocateDirect(7);
         mismatchBufferSmall2 = ByteBuffer.allocateDirect(7);
         {

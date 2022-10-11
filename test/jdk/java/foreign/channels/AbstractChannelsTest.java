@@ -73,7 +73,7 @@ public class AbstractChannelsTest {
     static final Random RANDOM = RandomFactory.getRandom();
 
     static ByteBuffer segmentBufferOfSize(MemorySession session, int size) {
-        var segment = MemorySegment.allocateNative(size, 1, session);
+        var segment = session.allocate(size, 1);
         for (int i = 0; i < size; i++) {
             segment.set(JAVA_BYTE, i, ((byte)RANDOM.nextInt()));
         }

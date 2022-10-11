@@ -26,12 +26,12 @@
 package jdk.internal.foreign.abi.aarch64.linux;
 
 import jdk.internal.foreign.abi.AbstractLinker;
+import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.VaList;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -42,18 +42,22 @@ import java.util.function.Consumer;
  * the ARM 64-bit Architecture".
  */
 public final class LinuxAArch64Linker extends AbstractLinker {
-    private static LinuxAArch64Linker instance;
 
     public static LinuxAArch64Linker getInstance() {
-        if (instance == null) {
-            instance = new LinuxAArch64Linker();
+        final class Holder {
+            private static final LinuxAArch64Linker INSTANCE = new LinuxAArch64Linker();
         }
-        return instance;
+
+        return Holder.INSTANCE;
+    }
+
+    private LinuxAArch64Linker() {
+        // Ensure there is only one instance
     }
 
     @Override
-    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function) {
-        return CallArranger.LINUX.arrangeDowncall(inferredMethodType, function);
+    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
+        return CallArranger.LINUX.arrangeDowncall(inferredMethodType, function, options);
     }
 
     @Override
@@ -67,8 +71,8 @@ public final class LinuxAArch64Linker extends AbstractLinker {
         return builder.build();
     }
 
-    public static VaList newVaListOfAddress(MemoryAddress ma, MemorySession session) {
-        return LinuxAArch64VaList.ofAddress(ma, session);
+    public static VaList newVaListOfAddress(long address, MemorySession session) {
+        return LinuxAArch64VaList.ofAddress(address, session);
     }
 
     public static VaList emptyVaList() {

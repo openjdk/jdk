@@ -38,7 +38,7 @@ import sun.misc.Unsafe;
 
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -67,8 +67,9 @@ public class LoopOverPollutedSegments extends JavaLayouts {
             unsafe.putInt(addr + (i * 4), i);
         }
         arr = new byte[ALLOC_SIZE];
-        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session = MemorySession.openConfined());
-        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        session = MemorySession.openConfined();
+        nativeSegment = session.allocate(ALLOC_SIZE, 4);
+        nativeSharedSegment = session.allocate(ALLOC_SIZE, 4); // <- This segment is not shared!
         heapSegmentBytes = MemorySegment.ofArray(new byte[ALLOC_SIZE]);
         heapSegmentFloats = MemorySegment.ofArray(new float[ELEM_SIZE]);
 

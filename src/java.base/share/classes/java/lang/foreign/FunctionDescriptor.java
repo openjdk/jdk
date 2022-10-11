@@ -25,101 +25,38 @@
 package java.lang.foreign;
 
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.lang.invoke.MethodType;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.List;
+
+import jdk.internal.foreign.FunctionDescriptorImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
  * A function descriptor is made up of zero or more argument layouts and zero or one return layout. A function descriptor
  * is used to model the signature of foreign functions when creating
- * {@linkplain Linker#downcallHandle(Addressable, FunctionDescriptor) downcall method handles} or
+ * {@linkplain Linker#downcallHandle(MemorySegment, FunctionDescriptor, Linker.Option...) downcall method handles} or
  * {@linkplain Linker#upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stubs}.
  *
  * @implSpec
- * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ * Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
  * @see MemoryLayout
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public sealed class FunctionDescriptor permits FunctionDescriptor.VariadicFunction {
-
-    private final MemoryLayout resLayout;
-    private final List<MemoryLayout> argLayouts;
-
-    private FunctionDescriptor(MemoryLayout resLayout, List<MemoryLayout> argLayouts) {
-        this.resLayout = resLayout;
-        this.argLayouts = argLayouts;
-    }
+public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
 
     /**
      * {@return the return layout (if any) associated with this function descriptor}
      */
-    public Optional<MemoryLayout> returnLayout() {
-        return Optional.ofNullable(resLayout);
-    }
+    Optional<MemoryLayout> returnLayout();
 
     /**
      * {@return the argument layouts associated with this function descriptor (as an immutable list)}.
      */
-    public List<MemoryLayout> argumentLayouts() {
-        return Collections.unmodifiableList(argLayouts);
-    }
-
-    /**
-     * Creates a function descriptor with the given return and argument layouts.
-     * @param resLayout the return layout.
-     * @param argLayouts the argument layouts.
-     * @return the new function descriptor.
-     */
-    public static FunctionDescriptor of(MemoryLayout resLayout, MemoryLayout... argLayouts) {
-        Objects.requireNonNull(resLayout);
-        Objects.requireNonNull(argLayouts);
-        Arrays.stream(argLayouts).forEach(Objects::requireNonNull);
-        return new FunctionDescriptor(resLayout, List.of(argLayouts));
-    }
-
-    /**
-     * Creates a function descriptor with the given argument layouts and no return layout.
-     * @param argLayouts the argument layouts.
-     * @return the new function descriptor.
-     */
-    public static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
-        Objects.requireNonNull(argLayouts);
-        Arrays.stream(argLayouts).forEach(Objects::requireNonNull);
-        return new FunctionDescriptor(null, List.of(argLayouts));
-    }
-
-    /**
-     * Creates a specialized variadic function descriptor, by appending given variadic layouts to this
-     * function descriptor argument layouts. The resulting function descriptor can report the position
-     * of the {@linkplain #firstVariadicArgumentIndex() first variadic argument}, and cannot be altered
-     * in any way: for instance, calling {@link #changeReturnLayout(MemoryLayout)} on the resulting descriptor
-     * will throw an {@link UnsupportedOperationException}.
-     * @param variadicLayouts the variadic argument layouts to be appended to this descriptor argument layouts.
-     * @return a variadic function descriptor, or this descriptor if {@code variadicLayouts.length == 0}.
-     */
-    public FunctionDescriptor asVariadic(MemoryLayout... variadicLayouts) {
-        Objects.requireNonNull(variadicLayouts);
-        Arrays.stream(variadicLayouts).forEach(Objects::requireNonNull);
-        return variadicLayouts.length == 0 ? this : new VariadicFunction(this, variadicLayouts);
-    }
-
-    /**
-     * The index of the first variadic argument layout (where defined).
-     * @return The index of the first variadic argument layout, or {@code -1} if this is not a
-     * {@linkplain #asVariadic(MemoryLayout...) variadic} layout.
-     */
-    public int firstVariadicArgumentIndex() {
-        return -1;
-    }
+    List<MemoryLayout> argumentLayouts();
 
     /**
      * Returns a function descriptor with the given argument layouts appended to the argument layout array
@@ -127,9 +64,7 @@ public sealed class FunctionDescriptor permits FunctionDescriptor.VariadicFuncti
      * @param addedLayouts the argument layouts to append.
      * @return the new function descriptor.
      */
-    public FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts) {
-        return insertArgumentLayouts(argLayouts.size(), addedLayouts);
-    }
+    FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts);
 
     /**
      * Returns a function descriptor with the given argument layouts inserted at the given index, into the argument
@@ -139,110 +74,57 @@ public sealed class FunctionDescriptor permits FunctionDescriptor.VariadicFuncti
      * @return the new function descriptor.
      * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}.
      */
-    public FunctionDescriptor insertArgumentLayouts(int index, MemoryLayout... addedLayouts) {
-        if (index < 0 || index > argLayouts.size())
-            throw new IllegalArgumentException("Index out of bounds: " + index);
-        List<MemoryLayout> added = List.of(addedLayouts); // null check on array and its elements
-        List<MemoryLayout> newLayouts = new ArrayList<>(argLayouts.size() + addedLayouts.length);
-        newLayouts.addAll(argLayouts.subList(0, index));
-        newLayouts.addAll(added);
-        newLayouts.addAll(argLayouts.subList(index, argLayouts.size()));
-        return new FunctionDescriptor(resLayout, newLayouts);
-    }
+    FunctionDescriptor insertArgumentLayouts(int index, MemoryLayout... addedLayouts);
 
     /**
      * Returns a function descriptor with the given memory layout as the new return layout.
      * @param newReturn the new return layout.
      * @return the new function descriptor.
      */
-    public FunctionDescriptor changeReturnLayout(MemoryLayout newReturn) {
-        Objects.requireNonNull(newReturn);
-        return new FunctionDescriptor(newReturn, argLayouts);
-    }
+    FunctionDescriptor changeReturnLayout(MemoryLayout newReturn);
 
     /**
      * Returns a function descriptor with the return layout dropped. This is useful to model functions
      * which return no values.
      * @return the new function descriptor.
      */
-    public FunctionDescriptor dropReturnLayout() {
-        return new FunctionDescriptor(null, argLayouts);
-    }
+    FunctionDescriptor dropReturnLayout();
 
     /**
-     * {@return the string representation of this function descriptor}
-     */
-    @Override
-    public String toString() {
-        return String.format("(%s)%s",
-                IntStream.range(0, argLayouts.size())
-                        .mapToObj(i -> (i == firstVariadicArgumentIndex() ?
-                                "..." : "") + argLayouts.get(i))
-                        .collect(Collectors.joining()),
-                returnLayout().map(Object::toString).orElse("v"));
-    }
-
-    /**
-     * Compares the specified object with this function descriptor for equality. Returns {@code true} if and only if the specified
-     * object is also a function descriptor, and all the following conditions are met:
+     * Returns the method type consisting of the carrier types of the layouts in this function descriptor.
+     * <p>
+     * The carrier type of a layout is determined as follows:
      * <ul>
-     *     <li>the two function descriptors have equals return layouts (see {@link MemoryLayout#equals(Object)}), or both have no return layout;</li>
-     *     <li>the two function descriptors have argument layouts that are pair-wise {@linkplain MemoryLayout#equals(Object) equal}; and</li>
-     *     <li>the two function descriptors have the same leading {@linkplain #firstVariadicArgumentIndex() variadic argument index}</li>
+     * <li>If the layout is a {@link ValueLayout} the carrier type is determined through {@link ValueLayout#carrier()}.</li>
+     * <li>If the layout is a {@link GroupLayout} the carrier type is {@link MemorySegment}.</li>
+     * <li>If the layout is a {@link PaddingLayout}, or {@link SequenceLayout} an {@link IllegalArgumentException} is thrown.</li>
      * </ul>
      *
-     * @param other the object to be compared for equality with this function descriptor.
-     * @return {@code true} if the specified object is equal to this function descriptor.
+     * @return the method type consisting of the carrier types of the layouts in this function descriptor
+     * @throws IllegalArgumentException if one or more layouts in the function descriptor can not be mapped to carrier
+     *                                  types (e.g. if they are sequence layouts or padding layouts).
      */
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof FunctionDescriptor f &&
-                Objects.equals(resLayout, f.resLayout) &&
-                Objects.equals(argLayouts, f.argLayouts) &&
-                firstVariadicArgumentIndex() == f.firstVariadicArgumentIndex();
+    MethodType toMethodType();
+
+    /**
+     * Creates a function descriptor with the given return and argument layouts.
+     * @param resLayout the return layout.
+     * @param argLayouts the argument layouts.
+     * @return the new function descriptor.
+     */
+    static FunctionDescriptor of(MemoryLayout resLayout, MemoryLayout... argLayouts) {
+        Objects.requireNonNull(resLayout);
+        // Null checks are implicit in List.of(argLayouts)
+        return FunctionDescriptorImpl.of(resLayout, List.of(argLayouts));
     }
 
     /**
-     * {@return the hash code value for this function descriptor}
+     * Creates a function descriptor with the given argument layouts and no return layout.
+     * @param argLayouts the argument layouts.
+     * @return the new function descriptor.
      */
-    @Override
-    public int hashCode() {
-        return Objects.hash(argLayouts, resLayout, firstVariadicArgumentIndex());
-    }
-
-    static final class VariadicFunction extends FunctionDescriptor {
-
-        private final int firstVariadicIndex;
-
-        public VariadicFunction(FunctionDescriptor descriptor, MemoryLayout... argLayouts) {
-            super(descriptor.returnLayout().orElse(null),
-                    Stream.concat(descriptor.argumentLayouts().stream(), Stream.of(argLayouts)).toList());
-            this.firstVariadicIndex = descriptor.argumentLayouts().size();
-        }
-
-        @Override
-        public int firstVariadicArgumentIndex() {
-            return firstVariadicIndex;
-        }
-
-        @Override
-        public FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public FunctionDescriptor insertArgumentLayouts(int index, MemoryLayout... addedLayouts) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public FunctionDescriptor changeReturnLayout(MemoryLayout newReturn) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public FunctionDescriptor dropReturnLayout() {
-            throw new UnsupportedOperationException();
-        }
+    static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
+        // Null checks are implicit in List.of(argLayouts)
+        return FunctionDescriptorImpl.ofVoid(List.of(argLayouts));
     }
 }

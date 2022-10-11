@@ -33,9 +33,8 @@
  *   TestUpcallAsync
  */
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -61,7 +60,7 @@ public class TestUpcallAsync extends TestUpcallBase {
     public void testUpcallsAsync(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
         List<Consumer<Object[]>> argChecks = new ArrayList<>();
-        Addressable addr = findNativeOrThrow(fName);
+        MemorySegment addr = findNativeOrThrow(fName);
         try (MemorySession session = MemorySession.openShared()) {
             SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
             FunctionDescriptor descriptor = function(ret, paramTypes, fields);
@@ -73,12 +72,13 @@ public class TestUpcallAsync extends TestUpcallBase {
             FunctionDescriptor callbackDesc = descriptor.returnLayout()
                     .map(FunctionDescriptor::of)
                     .orElse(FunctionDescriptor.ofVoid());
-            Addressable callback = ABI.upcallStub(mh.asType(Linker.upcallType(callbackDesc)), callbackDesc, session);
+            MemorySegment callback = ABI.upcallStub(mh, callbackDesc, session);
 
             MethodHandle invoker = asyncInvoker(ret, ret == Ret.VOID ? null : paramTypes.get(0), fields);
 
-            Object res = invoker.type().returnType() == MemorySegment.class
-                    ? invoker.invoke(allocator, callback)
+            Object res = (descriptor.returnLayout().isPresent() &&
+                         descriptor.returnLayout().get() instanceof GroupLayout)
+                    ? invoker.invoke(session, callback)
                     : invoker.invoke(callback);
             argChecks.forEach(c -> c.accept(args));
             if (ret == Ret.NON_VOID) {
@@ -102,7 +102,7 @@ public class TestUpcallAsync extends TestUpcallBase {
                 + (returnType == ParamType.STRUCT ? "_" + sigCode(fields) : "");
 
         return INVOKERS.computeIfAbsent(name, symbol -> {
-            Addressable invokerSymbol = findNativeOrThrow(symbol);
+            MemorySegment invokerSymbol = findNativeOrThrow(symbol);
             MemoryLayout returnLayout = returnType.layout(fields);
             FunctionDescriptor desc = FunctionDescriptor.of(returnLayout, C_POINTER);
 

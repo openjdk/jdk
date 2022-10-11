@@ -22,9 +22,9 @@
  *
  */
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
@@ -36,7 +36,7 @@ public class TestDowncallBase extends CallGeneratorHelper {
 
     static Linker LINKER = Linker.nativeLinker();
 
-    Object doCall(Addressable symbol, SegmentAllocator allocator, FunctionDescriptor descriptor, Object[] args) throws Throwable {
+    Object doCall(MemorySegment symbol, SegmentAllocator allocator, FunctionDescriptor descriptor, Object[] args) throws Throwable {
         MethodHandle mh = downcallHandle(LINKER, symbol, allocator, descriptor);
         Object res = mh.invokeWithArguments(args);
         return res;
