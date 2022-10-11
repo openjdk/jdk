@@ -2229,7 +2229,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov(c_rarg1, r15_thread);
 
     // Not a leaf but we have last_Java_frame setup as we want
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), 3);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), 2);
     restore_args(masm, total_c_args, c_arg, out_regs);
 
 #ifdef ASSERT
