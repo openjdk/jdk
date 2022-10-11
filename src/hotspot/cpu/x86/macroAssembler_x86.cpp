@@ -3900,7 +3900,7 @@ void MacroAssembler::resolve_jobject(Register value,
   bind(done);
 }
 
-void MacroAssembler::resolve_local_jobject(Register value,
+void MacroAssembler::resolve_global_jobject(Register value,
                                             Register thread,
                                             Register tmp) {
   assert_different_registers(value, thread, tmp);
@@ -3911,17 +3911,16 @@ void MacroAssembler::resolve_local_jobject(Register value,
 
 #ifdef ASSERT
   {
-    STATIC_ASSERT((JNIHandles::global_tag_value | JNIHandles::weak_tag_value) == JNIHandles::tag_mask);
-    Label valid_local_tag;
-    testptr(value, JNIHandles::tag_mask); // Test for tag.
-    jcc(Assembler::zero, valid_local_tag);
-    stop("non local jobject using resolve_local_jobject");
-    bind(valid_local_tag);
+    Label valid_global_tag;
+    testptr(value, JNIHandles::global_tag_value); // Test for global tag.
+    jcc(Assembler::notZero, valid_global_tag);
+    stop("non global jobject using resolve_global_jobject");
+    bind(valid_global_tag);
   }
 #endif
 
-  // Resolve local handle
-  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp, thread);
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::global_tag_value), tmp, thread);
   verify_oop(value);
 
   bind(done);

@@ -328,7 +328,7 @@ class MacroAssembler: public Assembler {
   // jobjects
   void clear_jobject_tag(Register possibly_non_local);
   void resolve_jobject(Register value, Register thread, Register tmp);
-  void resolve_local_jobject(Register value, Register thread, Register tmp);
+  void resolve_global_jobject(Register value, Register thread, Register tmp);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
