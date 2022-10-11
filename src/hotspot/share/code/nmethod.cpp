@@ -2088,6 +2088,11 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, con
   upper -= 1; // exclude final sentinel
   if (lower >= upper)  return nullptr;  // native method; no PcDescs at all
 
+  if (lower->pc_offset() >= pc_offset || upper->pc_offset() < pc_offset) {
+    // this might happen during AsyncGetStackTrace stack walking
+    return NULL;
+  }
+
 #define assert_LU_OK \
   /* invariant on lower..upper during the following search: */ \
   assert(lower->pc_offset() <  pc_offset, "sanity"); \

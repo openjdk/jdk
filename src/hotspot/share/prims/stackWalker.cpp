@@ -352,7 +352,11 @@ void StackWalker::advance_normal() {
     if (in_c_on_top) {
       advance_fully_c();
     } else if (!_inlined) {
-      _frame = _frame.sender(&_map);
+      if (_frame.safe_for_sender(_thread)) {
+        _frame = _frame.sender(&_map);
+      } else {
+        in_c_on_top = true;
+      }
     }
   }
 }
