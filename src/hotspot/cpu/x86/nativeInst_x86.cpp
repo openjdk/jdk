@@ -495,7 +495,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 }
 
 
-// MT safe inserting of a jump over an unknown instruction sequence (used by nmethod::makeZombie)
+// MT safe inserting of a jump over an unknown instruction sequence (used by nmethod::make_not_entrant)
 // The problem: jmp <dest> is a 5-byte instruction. Atomic write can be only with 4 bytes.
 // First patches the first word atomically to be a jump to itself.
 // Then patches the last byte  and then atomically patches the first word (4-bytes),

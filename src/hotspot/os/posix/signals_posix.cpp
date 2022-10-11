@@ -342,7 +342,7 @@ static const struct {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// sun.misc.Signal support
+// sun.misc.Signal and BREAK_SIGNAL support
 
 void jdk_misc_signal_init() {
   // Initialize signal structures
@@ -563,11 +563,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 {
   assert(info != NULL && ucVoid != NULL, "sanity");
 
-  if (sig == BREAK_SIGNAL) {
-    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
-    return true; // ignore it
-  }
-
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
@@ -629,13 +624,12 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     signal_was_handled = true; // unconditionally.
   }
 
+#ifndef ZERO
   // Check for UD trap caused by NOP patching.
   // If it is, patch return address to be deopt handler.
-  if (!signal_was_handled) {
-    address pc = os::Posix::ucontext_get_pc(uc);
-    assert(pc != NULL, "");
+  if (!signal_was_handled && pc != NULL && os::is_readable_pointer(pc)) {
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
-      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      CodeBlob* cb = CodeCache::find_blob(pc);
       if (cb != NULL && cb->is_compiled()) {
         MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
         CompiledMethod* cm = cb->as_compiled_method();
@@ -653,6 +647,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       }
     }
   }
+#endif // !ZERO
 
   // Call platform dependent signal handler.
   if (!signal_was_handled) {
@@ -890,7 +885,7 @@ int os::sigexitnum_pd() {
 
 // This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
 
   if (check_signals == false) return;
 
@@ -924,8 +919,8 @@ void os::run_periodic_checks() {
     // - print all signal handlers. As part of that printout, details will be printed
     //   about any modified handlers.
     char buf[O_BUFLEN];
-    os::print_signal_handlers(tty, buf, O_BUFLEN);
-    tty->print_cr("Consider using jsig library.");
+    os::print_signal_handlers(st, buf, O_BUFLEN);
+    st->print_cr("Consider using jsig library.");
   }
 }
 
@@ -1225,7 +1220,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig, bool do_check = true) {
+void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
@@ -1268,10 +1263,9 @@ void set_signal_handler(int sig, bool do_check = true) {
 #endif
 
   // Save handler setup for possible later checking
-  if (do_check) {
-    vm_handlers.set(sig, &sigAct);
-  }
-  do_check_signal_periodically[sig] = do_check;
+  vm_handlers.set(sig, &sigAct);
+
+  do_check_signal_periodically[sig] = true;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
@@ -1310,11 +1304,24 @@ void install_signal_handlers() {
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
   if (!ReduceSignalUsage) {
-    // This is just for early initialization phase. Intercepting the signal here reduces the risk
-    // that an attach client accidentally forces HotSpot to quit prematurely. We skip the periodic
-    // check because late initialization will overwrite it to UserHandler.
-    set_signal_handler(BREAK_SIGNAL, false);
+    // Install BREAK_SIGNAL's handler in early initialization phase, in
+    // order to reduce the risk that an attach client accidentally forces
+    // HotSpot to quit prematurely.
+    // The actual work for handling BREAK_SIGNAL is performed by the Signal
+    // Dispatcher thread, which is created and started at a much later point,
+    // see os::initialize_jdk_signal_support(). Any BREAK_SIGNAL received
+    // before the Signal Dispatcher thread is started is queued up via the
+    // pending_signals[BREAK_SIGNAL] counter, and will be processed by the
+    // Signal Dispatcher thread in a delayed fashion.
+    //
+    // Also note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
+    // Applications that require a custom BREAK_SIGNAL handler should run with
+    // -XX:+ReduceSignalUsage. Otherwise if libjsig is used together with
+    // -XX:+ReduceSignalUsage, libjsig will prevent changing BREAK_SIGNAL's
+    // handler to a custom handler.
+    os::signal(BREAK_SIGNAL, os::user_handler());
   }
+
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
   // handlers. By replacing the existing task exception handler, we disable lldb's mach
@@ -1397,7 +1404,6 @@ static void print_single_signal_handler(outputStream* st,
   st->print(", flags=");
   int flags = get_sanitized_sa_flags(act);
   print_sa_flags(st, flags);
-
 }
 
 // Print established signal handler for this signal.
@@ -1414,6 +1420,11 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   sigaction(sig, NULL, &current_act);
 
   print_single_signal_handler(st, &current_act, buf, buflen);
+
+  sigset_t thread_sig_mask;
+  if (::pthread_sigmask(/* ignored */ SIG_BLOCK, NULL, &thread_sig_mask) == 0) {
+    st->print(", %s", sigismember(&thread_sig_mask, sig) ? "blocked" : "unblocked");
+  }
   st->cr();
 
   // If we expected to see our own hotspot signal handler but found a different one,
@@ -1819,12 +1830,12 @@ int PosixSignals::init() {
 
   signal_sets_init();
 
-  install_signal_handlers();
-
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal and BREAK_SIGNAL's handler.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
+
+  install_signal_handlers();
 
   return JNI_OK;
 }

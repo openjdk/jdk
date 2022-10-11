@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
+class G1AbstractSubTask;
+class G1HeapRegionChunkClosure;
 class HeapRegionClosure;
 class HeapRegionClaimer;
 
@@ -41,12 +43,15 @@ class G1EvacFailureRegions {
   uint* _evac_failure_regions;
   // Number of regions evacuation failed in the current collection.
   volatile uint _evac_failure_regions_cur_length;
-  // Maximum of regions number.
-  uint _max_regions;
 
 public:
   G1EvacFailureRegions();
   ~G1EvacFailureRegions();
+
+  uint get_region_idx(uint idx) const {
+    assert(idx < _evac_failure_regions_cur_length, "precondition");
+    return _evac_failure_regions[idx];
+  }
 
   // Sets up the bitmap and failed regions array for addition.
   void pre_collection(uint max_regions);
@@ -55,8 +60,11 @@ public:
 
   bool contains(uint region_idx) const;
   void par_iterate(HeapRegionClosure* closure,
-                   HeapRegionClaimer* _hrclaimer,
+                   HeapRegionClaimer* hrclaimer,
                    uint worker_id) const;
+
+  // Return a G1AbstractSubTask which does necessary preparation for evacuation failure regions
+  G1AbstractSubTask* create_prepare_regions_task();
 
   uint num_regions_failed_evacuation() const {
     return Atomic::load(&_evac_failure_regions_cur_length);

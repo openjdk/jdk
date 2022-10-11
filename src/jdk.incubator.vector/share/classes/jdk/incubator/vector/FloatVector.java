@@ -764,15 +764,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
         if (opKind(op, VO_SPECIAL )) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Integer> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (int) 0);
-                that = that.blend((float) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
-                // FIXME: Support OR_UNCHECKED on float/double also!
-                return this.viewAsIntegralLanes()
-                    .lanewise(op, that.viewAsIntegralLanes())
-                    .viewAsFloatingLanes();
+                VectorMask<Integer> mask
+                    = this.viewAsIntegralLanes().compare(EQ, (int) 0);
+                return this.blend(that, mask.cast(vspecies()));
             }
         }
 
@@ -803,7 +797,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
         if (opKind(op, VO_SPECIAL )) {
             if (op == FIRST_NONZERO) {
-                return blend(lanewise(op, v), m);
+                IntVector bits = this.viewAsIntegralLanes();
+                VectorMask<Integer> mask
+                    = bits.compare(EQ, (int) 0, m.cast(bits.vspecies()));
+                return this.blend(that, mask.cast(vspecies()));
             }
         }
 

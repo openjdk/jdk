@@ -37,13 +37,14 @@
 #include "runtime/threadSMR.hpp"
 #include "services/management.hpp"
 
+class DeadlockCycle;
+class ObjectMonitorsHashtable;
 class OopClosure;
-class ThreadDumpResult;
-class ThreadStackTrace;
-class ThreadSnapshot;
 class StackFrameInfo;
 class ThreadConcurrentLocks;
-class DeadlockCycle;
+class ThreadDumpResult;
+class ThreadSnapshot;
+class ThreadStackTrace;
 
 // VM monitoring and management support for the thread and
 // synchronization subsystem

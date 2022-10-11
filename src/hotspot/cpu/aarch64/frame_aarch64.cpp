@@ -188,13 +188,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_pc == NULL ||  sender_blob == NULL) {
-      return false;
-    }
-
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
       return false;
     }
 

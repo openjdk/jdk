@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
@@ -34,7 +35,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/klass.hpp"
 #include "oops/oopHandle.hpp"
-#include "utilities/resourceHash.hpp"
 
 
 /*===============================================================================
@@ -168,15 +168,6 @@ private:
   static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
   static DumpTimeLambdaProxyClassDictionary* _cloned_dumptime_lambda_proxy_class_dictionary;
 
-  // Doesn't need to be cloned as it's not modified during dump time.
-  using SavedCpCacheEntriesTable = ResourceHashtable<
-    ConstantPoolCache*,
-    ConstantPoolCacheEntry*,
-    15889, // prime number
-    ResourceObj::C_HEAP,
-    mtClassShared>;
-  static SavedCpCacheEntriesTable* _saved_cpcache_entries_table;
-
   static ArchiveInfo _static_archive;
   static ArchiveInfo _dynamic_archive;
 
@@ -247,11 +238,6 @@ public:
   static Dictionary* boot_loader_dictionary() {
     return ClassLoaderData::the_null_class_loader_data()->dictionary();
   }
-
-  static void set_saved_cpcache_entries(ConstantPoolCache* cpc, ConstantPoolCacheEntry* entries);
-  static ConstantPoolCacheEntry* get_saved_cpcache_entries_locked(ConstantPoolCache* k);
-  static void remove_saved_cpcache_entries(ConstantPoolCache* cpc);
-  static void remove_saved_cpcache_entries_locked(ConstantPoolCache* cpc);
 
   static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);

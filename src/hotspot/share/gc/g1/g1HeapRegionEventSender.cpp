@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1HeapRegionEventSender.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "g1HeapRegionEventSender.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "runtime/vmThread.hpp"
 

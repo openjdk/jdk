@@ -305,7 +305,7 @@ public class Continuation {
     }
 
     @IntrinsicCandidate
-    private static int doYield() { throw new Error("Intrinsic not installed"); }
+    private native static int doYield();
 
     @IntrinsicCandidate
     private native static void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);

@@ -275,6 +275,8 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
       AC_MSG_RESULT([yes])
     elif test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
       AC_MSG_RESULT([yes])
+    elif test "x$OPENJDK_TARGET_CPU" = "xriscv64"; then
+      AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
       AVAILABLE=false
@@ -410,7 +412,7 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
   elif test "x$variant" = "xcore"; then
     JVM_FEATURES_VARIANT_UNAVAILABLE="cds minimal zero"
   elif test "x$variant" = "xzero"; then
-    JVM_FEATURES_VARIANT_UNAVAILABLE="cds compiler1 compiler2 \
+    JVM_FEATURES_VARIANT_UNAVAILABLE="compiler1 compiler2 \
         jvmci minimal zgc"
   else
     JVM_FEATURES_VARIANT_UNAVAILABLE="minimal zero"

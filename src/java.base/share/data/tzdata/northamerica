@@ -367,8 +367,7 @@ Zone	PST8PDT		 -8:00	US	P%sT
 # From Paul Eggert (2014-09-06):
 # Monthly Notices of the Royal Astronomical Society 44, 4 (1884-02-08), 208
 # says that New York City Hall time was 3 minutes 58.4 seconds fast of
-# Eastern time (i.e., -4:56:01.6) just before the 1883 switch.  Round to the
-# nearest second.
+# Eastern time (i.e., -4:56:01.6) just before the 1883 switch.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER
 Rule	NYC	1920	only	-	Mar	lastSun	2:00	1:00	D
@@ -377,7 +376,8 @@ Rule	NYC	1921	1966	-	Apr	lastSun	2:00	1:00	D
 Rule	NYC	1921	1954	-	Sep	lastSun	2:00	0	S
 Rule	NYC	1955	1966	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 12:03:58
+		#STDOFF	-4:56:01.6
+Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 17:00u
 			-5:00	US	E%sT	1920
 			-5:00	NYC	E%sT	1942
 			-5:00	US	E%sT	1946
@@ -2841,7 +2841,7 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 
 # Barbados
 
-# For 1899 Milne gives -3:58:29.2; round that.
+# For 1899 Milne gives -3:58:29.2.
 
 # From P Chan (2020-12-09 and 2020-12-11):
 # Standard time of GMT-4 was adopted in 1911.
@@ -2885,6 +2885,7 @@ Rule	Barb	1978	1980	-	Apr	Sun>=15	2:00	1:00	D
 Rule	Barb	1979	only	-	Sep	30	2:00	0	S
 Rule	Barb	1980	only	-	Sep	25	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-3:58:29.2
 Zone America/Barbados	-3:58:29 -	LMT	1911 Aug 28 # Bridgetown
 			-4:00	Barb	A%sT	1944
 			-4:00	Barb	AST/-0330 1945
@@ -2945,10 +2946,10 @@ Zone	America/Belize	-5:52:48 -	LMT	1912 Apr  1
 
 # Bermuda
 
-# From Paul Eggert (2020-11-24):
+# From Paul Eggert (2022-07-27):
 # For 1899 Milne gives -4:19:18.3 as the meridian of the clock tower,
 # Bermuda dockyard, Ireland I.  This agrees with standard offset given in the
-# Daylight Saving Act, 1917 cited below.  Round that to the nearest second.
+# Daylight Saving Act, 1917 cited below.
 # It is not known when this time became standard for Bermuda; guess 1890.
 # The transition to -04 was specified by:
 # 1930: The Time Zone Act, 1929 (1929: No. 39) [1929-11-08]
@@ -3043,6 +3044,7 @@ Rule	Bermuda	1956	only	-	May	Sun>=22	 2:00	1:00	D
 Rule	Bermuda	1956	only	-	Oct	lastSun	 2:00	0	S
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-4:19:18.3
 Zone Atlantic/Bermuda	-4:19:18 -	LMT	1890	# Hamilton
 			-4:19:18 Bermuda BMT/BST 1930 Jan 1  2:00
 			-4:00	Bermuda	A%sT	1974 Apr 28  2:00
@@ -3057,7 +3059,7 @@ Zone Atlantic/Bermuda	-4:19:18 -	LMT	1890	# Hamilton
 
 # Costa Rica
 
-# Milne gives -5:36:13.3 as San José mean time; round to nearest.
+# Milne gives -5:36:13.3 as San José mean time.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	CR	1979	1980	-	Feb	lastSun	0:00	1:00	D
@@ -3069,6 +3071,7 @@ Rule	CR	1991	only	-	Jul	 1	0:00	0	S
 Rule	CR	1992	only	-	Mar	15	0:00	0	S
 # There are too many San Josés elsewhere, so we'll use 'Costa Rica'.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-5:36:13.3
 Zone America/Costa_Rica	-5:36:13 -	LMT	1890        # San José
 			-5:36:13 -	SJMT	1921 Jan 15 # San José Mean Time
 			-6:00	CR	C%sT
@@ -3491,7 +3494,7 @@ Zone America/Tegucigalpa -5:48:52 -	LMT	1921 Apr
 # Jamaica
 # Shanks & Pottenger give -5:07:12, but Milne records -5:07:10.41 from an
 # unspecified official document, and says "This time is used throughout the
-# island".  Go with Milne.  Round to the nearest second as required by zic.
+# island".  Go with Milne.
 #
 # Shanks & Pottenger give April 28 for the 1974 spring-forward transition, but
 # Lance Neita writes that Prime Minister Michael Manley decreed it January 5.
@@ -3504,6 +3507,7 @@ Zone America/Tegucigalpa -5:48:52 -	LMT	1921 Apr
 # http://www.jamaicaobserver.com/columns/The-politician-in-all-of-us_17573647
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-5:07:10.41
 Zone	America/Jamaica	-5:07:10 -	LMT	1890        # Kingston
 			-5:07:10 -	KMT	1912 Feb    # Kingston Mean Time
 			-5:00	-	EST	1974
@@ -3701,6 +3705,7 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Grand_Turk	-4:44:32 -	LMT	1890
+		#STDOFF	-5:07:10.41
 			-5:07:10 -	KMT	1912 Feb # Kingston Mean Time
 			-5:00	-	EST	1979
 			-5:00	US	E%sT	2015 Mar  8  2:00

@@ -46,8 +46,6 @@
 #include "utilities/accessFlags.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/pair.hpp"
-#include "utilities/resourceHash.hpp"
 
 typedef enum { QUALIFIED, DISQUALIFIED } QualifiedState;
 

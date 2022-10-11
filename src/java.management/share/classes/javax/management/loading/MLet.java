@@ -189,7 +189,7 @@ public class MLet extends java.net.URLClassLoader
       * @serial
       */
      @SuppressWarnings("serial") // Type of field is not Serializable
-     private List<MLetContent> mletList = new ArrayList<MLetContent>();
+     private List<MLetContent> mletList = new ArrayList<>();
 
 
      /**
@@ -226,8 +226,7 @@ public class MLet extends java.net.URLClassLoader
       * objects maps from primitive classes to primitive object classes.
       */
      @SuppressWarnings("serial") // Type of field is not Serializable
-     private Map<String,Class<?>> primitiveClasses =
-         new HashMap<String,Class<?>>(8) ;
+     private Map<String,Class<?>> primitiveClasses = new HashMap<>(8) ;
      {
          primitiveClasses.put(Boolean.TYPE.toString(), Boolean.class);
          primitiveClasses.put(Character.TYPE.toString(), Character.class);
@@ -515,7 +514,7 @@ public class MLet extends java.net.URLClassLoader
          }
 
          // Walk through the list of MLets
-         Set<Object> mbeans = new HashSet<Object>();
+         Set<Object> mbeans = new HashSet<>();
          for (MLetContent elmt : mletList) {
              // Initialize local variables
              String code = elmt.getCode();
@@ -609,7 +608,7 @@ public class MLet extends java.net.URLClassLoader
 
                      List<String> signat = elmt.getParameterTypes();
                      List<String> stringPars = elmt.getParameterValues();
-                     List<Object> objectPars = new ArrayList<Object>();
+                     List<Object> objectPars = new ArrayList<>();
 
                      for (int i = 0; i < signat.size(); i++) {
                          objectPars.add(constructParameter(stringPars.get(i),
@@ -1275,7 +1274,7 @@ public class MLet extends java.net.URLClassLoader
     private synchronized void setMBeanServer(final MBeanServer server) {
         this.server = server;
         PrivilegedAction<ClassLoaderRepository> act =
-            new PrivilegedAction<ClassLoaderRepository>() {
+            new PrivilegedAction<>() {
                 public ClassLoaderRepository run() {
                     return server.getClassLoaderRepository();
                 }

@@ -113,19 +113,19 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
-    <event name="jdk.ContinuationFreezeYoung">
+    <event name="jdk.ContinuationFreezeFast">
       <setting name="enabled">false</setting>
     </event>
 
-    <event name="jdk.ContinuationFreezeOld">
+    <event name="jdk.ContinuationFreezeSlow">
       <setting name="enabled">false</setting>
     </event>
 
-    <event name="jdk.ContinuationThawYoung">
+    <event name="jdk.ContinuationThawFast">
       <setting name="enabled">false</setting>
     </event>
 
-    <event name="jdk.ContinuationThawOld">
+    <event name="jdk.ContinuationThawSlow">
       <setting name="enabled">false</setting>
     </event>
 
@@ -426,6 +426,10 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
+    <event name="jdk.GCCPUTime">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+    </event>
+
     <event name="jdk.PromotionFailed">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -538,21 +542,6 @@
 
     <event name="jdk.JitRestart">
       <setting name="enabled" control="compiler-enabled">true</setting>
-    </event>
-
-    <event name="jdk.CodeSweeperConfiguration">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="period">beginChunk</setting>
-    </event>
-
-    <event name="jdk.CodeSweeperStatistics">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="period">everyChunk</setting>
-    </event>
-
-    <event name="jdk.SweepCodeCache">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="threshold" control="compiler-sweeper-threshold">100 ms</setting>
     </event>
 
     <event name="jdk.CodeCacheConfiguration">
@@ -725,6 +714,11 @@
        <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.SecurityProviderService">
+       <setting name="enabled">false</setting>
+       <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.TLSHandshake">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
@@ -874,10 +868,10 @@
 
 
 
-  <!--                                                                                                        
-  Contents of the control element is not read by the JVM, it's used                                           
-  by JDK Mission Control and the 'jfr' tool to change settings that                                           
-  carry the control attribute.                                                                                
+  <!--
+  Contents of the control element is not read by the JVM, it's used
+  by JDK Mission Control and the 'jfr' tool to change settings that
+  carry the control attribute.
   -->
     <control>
      <selection name="gc" default="normal" label="Garbage Collector">

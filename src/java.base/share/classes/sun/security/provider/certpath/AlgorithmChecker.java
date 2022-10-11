@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,16 @@
 
 package sun.security.provider.certpath;
 
-import java.security.AlgorithmConstraints;
-import java.security.CryptoPrimitive;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
-import java.util.EnumSet;
 import java.math.BigInteger;
-import java.security.PublicKey;
-import java.security.KeyFactory;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
+import java.security.*;
+import java.security.cert.*;
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.security.cert.PKIXCertPathChecker;
-import java.security.cert.TrustAnchor;
-import java.security.cert.CRLException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
-import java.security.cert.PKIXReason;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
+import java.util.*;
 
-import sun.security.util.ConstraintsParameters;
 import sun.security.util.Debug;
 import sun.security.util.DisabledAlgorithmConstraints;
 import sun.security.validator.Validator;
@@ -175,7 +159,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     @Override
     public boolean isForwardCheckingSupported() {
         //  Note that as this class does not support forward mode, the method
-        //  will always returns false.
+        //  will always return false.
         return false;
     }
 
@@ -215,9 +199,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
         PublicKey currPubKey = cert.getPublicKey();
         String currSigAlg = x509Cert.getSigAlgName();
 
-        if (constraints instanceof DisabledAlgorithmConstraints) {
-            DisabledAlgorithmConstraints dac =
-                (DisabledAlgorithmConstraints)constraints;
+        if (constraints instanceof DisabledAlgorithmConstraints dac) {
             if (prevPubKey != null && prevPubKey == trustedPubKey) {
                 // check constraints of trusted public key (make sure
                 // algorithm and size is not restricted)

@@ -1055,14 +1055,6 @@ void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
   deps.add_dependent_nmethod(nm);
 }
 
-void MethodHandles::remove_dependent_nmethod(oop call_site, nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
-  DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-  deps.remove_dependent_nmethod(nm);
-}
-
 void MethodHandles::clean_dependency_context(oop call_site) {
   oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
   DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
@@ -1495,7 +1487,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
       NoSafepointVerifier nsv;
       MutexLocker mu2(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-      marked = deps.remove_all_dependents();
+      marked = deps.remove_and_mark_for_deoptimization_all_dependents();
     }
     if (marked > 0) {
       // At least one nmethod has been marked for deoptimization

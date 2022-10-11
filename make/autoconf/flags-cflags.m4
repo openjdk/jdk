@@ -113,7 +113,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g"
+    CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
@@ -167,11 +167,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
       WARNINGS_ENABLE_ALL="-W3"
-      DISABLED_WARNINGS="4800"
-      if test "x$TOOLCHAIN_VERSION" = x2017; then
-        # VS2017 incorrectly triggers this warning for constexpr
-        DISABLED_WARNINGS="$DISABLED_WARNINGS 4307"
-      fi
+      DISABLED_WARNINGS="4800 5105"
       ;;
 
     gcc)
@@ -534,25 +530,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:strictStrings -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:strictStrings -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
-  # Ideally we would have a common level across all toolchains so that all sources
-  # are sure to conform to the same standard. Unfortunately neither our sources nor
-  # our toolchains are in a condition to support that. But what we loosely aim for is
-  # C99 level.
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
-    # Explicitly set C99. clang and xlclang support the same flag.
-    LANGSTD_CFLAGS="-std=c99"
+    LANGSTD_CFLAGS="-std=c11"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # MSVC doesn't support C99/C11 explicitly, unless you compile as C++:
-    # LANGSTD_CFLAGS="-TP"
-    # but that requires numerous changes to the sources files. So we are limited
-    # to C89/C90 plus whatever extensions Visual Studio has decided to implement.
-    # This is the lowest bar for shared code.
-    LANGSTD_CFLAGS=""
+    LANGSTD_CFLAGS="-std:c11"
   fi
   TOOLCHAIN_CFLAGS_JDK_CONLY="$LANGSTD_CFLAGS $TOOLCHAIN_CFLAGS_JDK_CONLY"
 

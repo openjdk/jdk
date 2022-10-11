@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,6 +700,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
     STRRET strret;
     OLECHAR olePath[MAX_PATH]; // wide-char version of path name
     LPWSTR wstr;
+    int ret;
 
     IShellFolder* pParent = (IShellFolder*)parentIShellFolder;
     if (pParent == NULL) {
@@ -719,12 +720,18 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
     switch (strret.uType) {
       case STRRET_CSTR :
         // IShellFolder::ParseDisplayName requires the path name in Unicode.
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, strret.cStr, -1, olePath, MAX_PATH);
+        ret = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, strret.cStr, -1, olePath, MAX_PATH);
+        if (ret == 0) {
+            return NULL;
+        }
         wstr = olePath;
         break;
 
       case STRRET_OFFSET :
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, (CHAR *)pidl + strret.uOffset, -1, olePath, MAX_PATH);
+        ret = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, (CHAR *)pidl + strret.uOffset, -1, olePath, MAX_PATH);
+        if (ret == 0) {
+            return NULL;
+        }
         wstr = olePath;
         break;
 

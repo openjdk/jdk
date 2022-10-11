@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,9 +110,11 @@ public enum Target {
         return instance;
     }
 
-    public static final Target MIN = Target.JDK1_7;
+    public static final Target MIN = Target.JDK1_8;
 
     private static final Target MAX = values()[values().length - 1];
+
+    public static final Target DEFAULT = MAX;
 
     private static final Map<String,Target> tab = new HashMap<>();
     static {
@@ -135,8 +137,6 @@ public enum Target {
         this.majorVersion = majorVersion;
         this.minorVersion = minorVersion;
     }
-
-    public static final Target DEFAULT = values()[values().length - 1];
 
     public static Target lookup(String name) {
         return tab.get(name);

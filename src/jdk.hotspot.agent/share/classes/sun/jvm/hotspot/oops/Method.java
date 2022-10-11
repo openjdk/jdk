@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,18 +113,18 @@ public class Method extends Metadata {
   // Accessors for declared fields
   public ConstMethod  getConstMethod()                {
     Address addr = constMethod.getValue(getAddress());
-    return (ConstMethod) VMObjectFactory.newObject(ConstMethod.class, addr);
+    return VMObjectFactory.newObject(ConstMethod.class, addr);
   }
   public ConstantPool getConstants()                  {
     return getConstMethod().getConstants();
   }
   public MethodData   getMethodData()                 {
     Address addr = methodData.getValue(getAddress());
-    return (MethodData) VMObjectFactory.newObject(MethodData.class, addr);
+    return VMObjectFactory.newObject(MethodData.class, addr);
   }
   public MethodCounters getMethodCounters()           {
     Address addr = methodCounters.getValue(getAddress());
-    return (MethodCounters) VMObjectFactory.newObject(MethodCounters.class, addr);
+    return VMObjectFactory.newObject(MethodCounters.class, addr);
   }
   /** WARNING: this is in words, not useful in this system; use getObjectSize() instead */
   public long         getMaxStack()                   { return                getConstMethod().getMaxStack();   }
@@ -148,7 +148,7 @@ public class Method extends Metadata {
   // get associated compiled native method, if available, else return null.
   public NMethod getNativeMethod() {
     Address addr = code.getValue(getAddress());
-    return (NMethod) VMObjectFactory.newObject(NMethod.class, addr);
+    return VMObjectFactory.newObject(NMethod.class, addr);
   }
 
   // Convenience routine

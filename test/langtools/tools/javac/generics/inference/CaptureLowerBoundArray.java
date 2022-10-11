@@ -3,7 +3,7 @@
  * @bug 8075793
  * @summary Capture variable as an inference lower bound followed by an array write
  * @compile/fail/ref=CaptureLowerBoundArray.out -XDrawDiagnostics CaptureLowerBoundArray.java
- * @compile --release 7 CaptureLowerBoundArray.java
+ *
  */
 
 class CaptureLowerBoundArray {

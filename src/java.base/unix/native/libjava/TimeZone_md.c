@@ -408,12 +408,11 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
     size_t tz_len = 0;
 
     /* On AIX, the TZ environment variable may end with a comma
-     * followed by modifier fields. These are ignored here. */
-    temp_tz = strchr(tz, ',');
-    tz_len = (temp_tz == NULL) ? strlen(tz) : temp_tz - tz;
-    tz_buf = (char *)malloc(tz_len + 1);
-    memcpy(tz_buf, tz, tz_len);
-    tz_buf[tz_len] = 0;
+     * followed by modifier fields until early AIX6.1.
+     * This restriction has been removed from AIX7. */
+
+    tz_buf = strdup(tz);
+    tz_len = strlen(tz_buf);
 
     /* Open tzmappings file, with buffer overrun check */
     if ((strlen(java_home_dir) + 15) > PATH_MAX) {
@@ -582,11 +581,22 @@ getGMTOffsetID()
     }
 #endif
 
+#if defined(_AIX)
+    // strftime() with "%z" does not return ISO 8601 format by AIX default.
+    // XPG_SUS_ENV=ON environment variable is required.
+    // But Hotspot does not support XPG_SUS_ENV=ON.
+    // Ignore daylight saving settings to calculate current time difference
+    localtm.tm_isdst = 0;
+    int gmt_off = (int)(difftime(mktime(&localtm), mktime(&gmt)) / 60.0);
+    sprintf(buf, (const char *)"GMT%c%02.2d:%02.2d",
+            gmt_off < 0 ? '-' : '+' , abs(gmt_off / 60), gmt_off % 60);
+#else
     if (strftime(offset, 6, "%z", &localtm) != 5) {
         return strdup("GMT");
     }
 
     sprintf(buf, (const char *)"GMT%c%c%c:%c%c", offset[0], offset[1], offset[2],
         offset[3], offset[4]);
+#endif
     return strdup(buf);
 }

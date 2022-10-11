@@ -37,7 +37,7 @@ import javax.management.openmbean.CompositeData;
 
 public class isexceeded001 {
     private static boolean testFailed = false;
-    private static final int INCREMENT = 100 * 1024; // 100kb
+    private static final int INCREMENT = 100 * 1024 * 1024 ; // 100MB
     public static void main(String[] argv) {
         System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
     }
@@ -54,17 +54,20 @@ public class isexceeded001 {
 
         for (int i = 0; i < pools.size(); i++) {
             Object pool = pools.get(i);
-            log.display(i + " pool " + monitor.getName(pool) + " of type: " + monitor.getType(pool));
-            if (!monitor.isUsageThresholdSupported(pool)) {
-                log.display("  does not support usage thresholds: skip");
+            // Skip non-heap pools, as they have unpredictable behaviour, or if
+            // usage threshold not supported:
+            if (monitor.getType(pool) != MemoryType.HEAP  || !monitor.isUsageThresholdSupported(pool)) {
                 continue;
             }
+            log.display(i + " pool " + monitor.getName(pool) + " of type: " + monitor.getType(pool));
 
             // Set a threshold that is greater than used value
             MemoryUsage usage = monitor.getUsage(pool);
+            MemoryUsage peakUsage = monitor.getPeakUsage(pool);
             boolean isExceeded = monitor.isUsageThresholdExceeded(pool);
             long used = usage.getUsed();
             long max = usage.getMax();
+            long peakUsed = peakUsage.getUsed();
             long threshold = used + 1;
 
             if ( (max > -1) && (threshold > max) ) {
@@ -76,6 +79,7 @@ public class isexceeded001 {
 
             monitor.setUsageThreshold(pool, threshold);
             log.display("     used value is " + used     + "      max is " + max + " isExceeded = " + isExceeded);
+            log.display("peak used value is " + peakUsed);
             log.display("  threshold set to " + threshold);
             log.display("  threshold count  " + monitor.getUsageThresholdCount(pool));
 
@@ -95,23 +99,15 @@ public class isexceeded001 {
             // Fetch usage information: use peak usage in comparisons below, in case usage went up and then down.
             // Log used and peak used in case of failure.
             usage = monitor.getUsage(pool);
-            MemoryUsage peakUsage = monitor.getPeakUsage(pool);
+            peakUsage = monitor.getPeakUsage(pool);
             used = usage.getUsed();
             max = usage.getMax();
-            long peakUsed = usage.getUsed();
-            long peakMax = usage.getMax();
+            peakUsed = peakUsage.getUsed();
 
             log.display("     used value is " + used     + "      max is " + max + " isExceeded = " + isExceeded);
-            log.display("peak used value is " + peakUsed + " peak max is " + peakMax);
-            log.display("  threshold set to " + threshold);
+            log.display("peak used value is " + peakUsed);
             long thresholdCount = monitor.getUsageThresholdCount(pool);
             log.display("  threshold count  " + thresholdCount);
-
-            // Test can be imprecise, particularly with CodeHeap: usage changes outside our control.
-            if (thresholdCount > 0 && monitor.getType(pool) != MemoryType.HEAP) {
-                log.display("  thresholdCount increasing outside our control for non-heap Pool: skip");
-                continue;
-            }
 
             // If peak used value is less than threshold, then isUsageThresholdExceeded()
             // is expected to return false.

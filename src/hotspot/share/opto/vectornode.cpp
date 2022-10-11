@@ -1879,6 +1879,40 @@ Node* ReverseVNode::Identity(PhaseGVN* phase) {
   return reverse_operations_identity(this, in(1));
 }
 
+// Optimize away redundant AndV/OrV nodes when the operation
+// is applied on the same input node multiple times
+static Node* redundant_logical_identity(Node* n) {
+  Node* n1 = n->in(1);
+  // (OperationV (OperationV src1 src2) src1) => (OperationV src1 src2)
+  // (OperationV (OperationV src1 src2) src2) => (OperationV src1 src2)
+  // (OperationV (OperationV src1 src2 m1) src1 m1) => (OperationV src1 src2 m1)
+  // (OperationV (OperationV src1 src2 m1) src2 m1) => (OperationV src1 src2 m1)
+  if (n->Opcode() == n1->Opcode()) {
+    if (((!n->is_predicated_vector() && !n1->is_predicated_vector()) ||
+         ( n->is_predicated_vector() &&  n1->is_predicated_vector() && n->in(3) == n1->in(3))) &&
+         ( n->in(2) == n1->in(1) || n->in(2) == n1->in(2))) {
+      return n1;
+    }
+  }
+
+  Node* n2 = n->in(2);
+  if (n->Opcode() == n2->Opcode()) {
+    // (OperationV src1 (OperationV src1 src2)) => OperationV(src1, src2)
+    // (OperationV src2 (OperationV src1 src2)) => OperationV(src1, src2)
+    // (OperationV src1 (OperationV src1 src2 m1) m1) => OperationV(src1 src2 m1)
+    // It is not possible to optimize - (OperationV src2 (OperationV src1 src2 m1) m1) as the
+    // results of both "OperationV" nodes are different for unmasked lanes
+    if ((!n->is_predicated_vector() && !n2->is_predicated_vector() &&
+         (n->in(1) == n2->in(1) || n->in(1) == n2->in(2))) ||
+         (n->is_predicated_vector() && n2->is_predicated_vector() && n->in(3) == n2->in(3) &&
+         n->in(1) == n2->in(1))) {
+      return n2;
+    }
+  }
+
+  return n;
+}
+
 Node* AndVNode::Identity(PhaseGVN* phase) {
   // (AndV src (Replicate m1))   => src
   // (AndVMask src (MaskAll m1)) => src
@@ -1912,7 +1946,7 @@ Node* AndVNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
     return in(1);
   }
-  return this;
+  return redundant_logical_identity(this);
 }
 
 Node* OrVNode::Identity(PhaseGVN* phase) {
@@ -1948,7 +1982,7 @@ Node* OrVNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
     return in(1);
   }
-  return this;
+  return redundant_logical_identity(this);
 }
 
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {

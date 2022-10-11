@@ -64,6 +64,7 @@ class GCCause : public AllStatic {
     /* implementation specific */
 
     _codecache_GC_threshold,
+    _codecache_GC_aggressive,
     _metadata_GC_threshold,
     _metadata_GC_clear_soft_refs,
 

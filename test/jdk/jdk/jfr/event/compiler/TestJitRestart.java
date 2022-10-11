@@ -72,7 +72,7 @@ public class TestJitRestart {
         r.start();
         long addr = WHITE_BOX.allocateCodeBlob(availableSize, btype.id);
         WHITE_BOX.freeCodeBlob(addr);
-        WHITE_BOX.forceNMethodSweep();
+        WHITE_BOX.fullGC();
         r.stop();
 
         List<RecordedEvent> events = Events.fromRecording(r);

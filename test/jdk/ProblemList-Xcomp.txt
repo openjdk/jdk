@@ -30,7 +30,5 @@
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
 java/lang/ref/ReferenceEnqueue.java 8284236 generic-all
 
-java/lang/Integer/BitTwiddle.java 8291649 generic-x64
-java/lang/Long/BitTwiddle.java    8291649 generic-x64
-java/util/zip/TestCRC32C.java     8291649 generic-x64
-java/util/zip/TestChecksum.java   8291649 generic-x64
+com/sun/jdi/JdbLastErrorTest.java 8293829 windows-x64
+

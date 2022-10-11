@@ -163,7 +163,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
 
     // A ClassLoaderData created solely for a non-strong hidden class should never
     // have a ModuleEntryTable or PackageEntryTable created for it.
-    _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
+    _packages = new PackageEntryTable();
     if (h_class_loader.is_null()) {
       // Create unnamed module for boot loader
       _unnamed_module = ModuleEntry::create_boot_unnamed_module(this);
@@ -407,13 +407,7 @@ void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
 void ClassLoaderData::packages_do(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   if (_packages != NULL) {
-    for (int i = 0; i < _packages->table_size(); i++) {
-      for (PackageEntry* entry = _packages->bucket(i);
-           entry != NULL;
-           entry = entry->next()) {
-        f(entry);
-      }
-    }
+    _packages->packages_do(f);
   }
 }
 

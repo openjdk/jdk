@@ -142,6 +142,8 @@ public class IRNode {
     public static final String SAFEPOINT = START + "SafePoint" + MID + END;
 
     public static final String CMOVEI = START + "CMoveI" + MID + END;
+    public static final String CMOVEVF = START + "CMoveVF" + MID + END;
+    public static final String CMOVEVD = START + "CMoveVD" + MID + END;
     public static final String ABS_I = START + "AbsI" + MID + END;
     public static final String ABS_L = START + "AbsL" + MID + END;
     public static final String ABS_F = START + "AbsF" + MID + END;
@@ -149,6 +151,7 @@ public class IRNode {
     public static final String AND = START + "And(I|L)" + MID + END;
     public static final String AND_I = START + "AndI" + MID + END;
     public static final String AND_L = START + "AndL" + MID + END;
+    public static final String XOR = START + "Xor(I|L)" + MID + END;
     public static final String XOR_I = START + "XorI" + MID + END;
     public static final String XOR_L = START + "XorL" + MID + END;
     public static final String LSHIFT = START + "LShift(I|L)" + MID + END;
@@ -176,6 +179,7 @@ public class IRNode {
     public static final String CMP_UL = START + "CmpUL" + MID + END;
     public static final String CMP_U3 = START + "CmpU3" + MID + END;
     public static final String CMP_UL3 = START + "CmpUL3" + MID + END;
+    public static final String CMP_I = START + "CmpI" + MID + END;
     public static final String MUL = START + "Mul(I|L|F|D)" + MID + END;
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
@@ -215,6 +219,12 @@ public class IRNode {
     public static final String Max_I = START + "MaxI" + MID + END;
     public static final String Min_V = START + "MinV" + MID + END;
     public static final String Max_V = START + "MaxV" + MID + END;
+    public static final String MUL_VL = START + "MulVL" + MID + END;
+
+    public static final String ADD_REDUCTION_VF = START + "AddReductionVF" + MID + END;
+    public static final String ADD_REDUCTION_VD = START + "AddReductionVD" + MID + END;
+    public static final String MUL_REDUCTION_VF = START + "MulReductionVF" + MID + END;
+    public static final String MUL_REDUCTION_VD = START + "MulReductionVD" + MID + END;
 
     public static final String FAST_LOCK   = START + "FastLock" + MID + END;
     public static final String FAST_UNLOCK = START + "FastUnlock" + MID + END;

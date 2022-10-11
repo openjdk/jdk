@@ -28,7 +28,9 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.hpp"
+#include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "nativeInst_riscv.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -47,7 +49,10 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
   // Alignment
-  void align(int modulus, int extra_offset = 0);
+  int align(int modulus, int extra_offset = 0);
+  static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
+    assert(is_aligned(pc, alignment), "bad alignment");
+  }
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP
@@ -171,21 +176,21 @@ class MacroAssembler: public Assembler {
   virtual void check_and_handle_earlyret(Register java_thread);
   virtual void check_and_handle_popframe(Register java_thread);
 
-  void resolve_weak_handle(Register result, Register tmp);
-  void resolve_oop_handle(Register result, Register tmp = x15);
-  void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
-  void movoop(Register dst, jobject obj, bool immediate = false);
+  void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
   void bang_stack_size(Register size, Register tmp);
   void set_narrow_oop(Register dst, jobject obj);
   void set_narrow_klass(Register dst, Klass* k);
 
-  void load_mirror(Register dst, Register method, Register tmp = x15);
+  void load_mirror(Register dst, Register method, Register tmp1, Register tmp2);
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst,
-                      Address src, Register tmp1, Register thread_tmp);
+                      Address src, Register tmp1, Register tmp2);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
-                       Register src, Register tmp1, Register thread_tmp);
+                       Register src, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp, Label &L);
@@ -201,11 +206,11 @@ class MacroAssembler: public Assembler {
   void encode_heap_oop(Register d, Register s);
   void encode_heap_oop(Register r) { encode_heap_oop(r, r); };
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                     Register tmp2 = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                              Register tmp2 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
+                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -473,17 +478,26 @@ class MacroAssembler: public Assembler {
   void double_blt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
   void double_bgt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
 
-  void push_reg(RegSet regs, Register stack) { if (regs.bits()) { push_reg(regs.bits(), stack); } }
-  void pop_reg(RegSet regs, Register stack) { if (regs.bits()) { pop_reg(regs.bits(), stack); } }
+private:
+  int push_reg(unsigned int bitset, Register stack);
+  int pop_reg(unsigned int bitset, Register stack);
+  int push_fp(unsigned int bitset, Register stack);
+  int pop_fp(unsigned int bitset, Register stack);
+#ifdef COMPILER2
+  int push_v(unsigned int bitset, Register stack);
+  int pop_v(unsigned int bitset, Register stack);
+#endif // COMPILER2
+
+public:
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
-  int  push_reg(unsigned int bitset, Register stack);
-  int  pop_reg(unsigned int bitset, Register stack);
+  void push_reg(RegSet regs, Register stack) { if (regs.bits()) push_reg(regs.bits(), stack); }
+  void pop_reg(RegSet regs, Register stack)  { if (regs.bits()) pop_reg(regs.bits(), stack); }
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
+  void pop_fp(FloatRegSet regs, Register stack)  { if (regs.bits()) pop_fp(regs.bits(), stack); }
 #ifdef COMPILER2
-  void push_vp(VectorRegSet regs, Register stack) { if (regs.bits()) push_vp(regs.bits(), stack); }
-  void pop_vp(VectorRegSet regs, Register stack) { if (regs.bits()) pop_vp(regs.bits(), stack); }
+  void push_v(VectorRegSet regs, Register stack) { if (regs.bits()) push_v(regs.bits(), stack); }
+  void pop_v(VectorRegSet regs, Register stack)  { if (regs.bits()) pop_v(regs.bits(), stack); }
 #endif // COMPILER2
 
   // Push and pop everything that might be clobbered by a native
@@ -513,15 +527,20 @@ class MacroAssembler: public Assembler {
   }
 
   // mv
-  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  inline void mv(Register Rd, T o) {
-    li(Rd, (int64_t)o);
+  void mv(Register Rd, address addr)                  { li(Rd, (int64_t)addr); }
+  void mv(Register Rd, address addr, int32_t &offset) {
+    // Split address into a lower 12-bit sign-extended offset and the remainder,
+    // so that the offset could be encoded in jalr or load/store instruction.
+    offset = ((int32_t)(int64_t)addr << 20) >> 20;
+    li(Rd, (int64_t)addr - offset);
   }
 
-  inline void mvw(Register Rd, int32_t imm32) { mv(Rd, imm32); }
+  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+  inline void mv(Register Rd, T o)                    { li(Rd, (int64_t)o); }
+
+  inline void mvw(Register Rd, int32_t imm32)         { mv(Rd, imm32); }
 
   void mv(Register Rd, Address dest);
-  void mv(Register Rd, address addr);
   void mv(Register Rd, RegisterOrConstant src);
 
   // logic
@@ -588,10 +607,17 @@ class MacroAssembler: public Assembler {
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Jumps that can reach anywhere in the code cache.
-  // Trashes tmp.
-  void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = t0);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = t0);
+  // Emit a direct call/jump if the entry address will always be in range,
+  // otherwise a far call/jump.
+  // The address must be inside the code cache.
+  // Supported entry.rspec():
+  // - relocInfo::external_word_type
+  // - relocInfo::runtime_call_type
+  // - relocInfo::none
+  // In the case of a far call/jump, the entry address is put in the tmp register.
+  // The tmp register is invalidated.
+  void far_call(Address entry, Register tmp = t0);
+  void far_jump(Address entry, Register tmp = t0);
 
   static int far_branch_size() {
     if (far_branches()) {
@@ -625,9 +651,74 @@ class MacroAssembler: public Assembler {
   void reserved_stack_check();
 
   void get_polling_page(Register dest, relocInfo::relocType rtype);
-  address read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
+  void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  // RISCV64 OpenJDK uses four different types of calls:
+  //   - direct call: jal pc_relative_offset
+  //     This is the shortest and the fastest, but the offset has the range: +/-1MB.
+  //
+  //   - far call: auipc reg, pc_relative_offset; jalr ra, reg, offset
+  //     This is longer than a direct call. The offset has
+  //     the range [-(2G + 2K), 2G - 2K). Addresses out of the range in the code cache
+  //     requires indirect call.
+  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset' can
+  //     be used instead.
+  //     All instructions are embedded at a call site.
+  //
+  //   - trampoline call:
+  //     This is only available in C1/C2-generated code (nmethod). It is a combination
+  //     of a direct call, which is used if the destination of a call is in range,
+  //     and a register-indirect call. It has the advantages of reaching anywhere in
+  //     the RISCV address space and being patchable at runtime when the generated
+  //     code is being executed by other threads.
+  //
+  //     [Main code section]
+  //       jal trampoline
+  //     [Stub code section]
+  //     trampoline:
+  //       ld    reg, pc + 8 (auipc + ld)
+  //       jr    reg
+  //       <64-bit destination address>
+  //
+  //     If the destination is in range when the generated code is moved to the code
+  //     cache, 'jal trampoline' is replaced with 'jal destination' and the trampoline
+  //     is not used.
+  //     The optimization does not remove the trampoline from the stub section.
+
+  //     This is necessary because the trampoline may well be redirected later when
+  //     code is patched, and the new destination may not be reachable by a simple JAL
+  //     instruction.
+  //
+  //   - indirect call: movptr + jalr
+  //     This too can reach anywhere in the address space, but it cannot be
+  //     patched while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses, which
+  //     will never be patched.
+  //
+  //
+  // To patch a trampoline call when the JAL can't reach, we first modify
+  // the 64-bit destination address in the trampoline, then modify the
+  // JAL to point to the trampoline, then flush the instruction cache to
+  // broadcast the change to all executing threads. See
+  // NativeCall::set_destination_mt_safe for the details.
+  //
+  // There is a benign race in that the other thread might observe the
+  // modified JAL before it observes the modified 64-bit destination
+  // address. That does not matter because the destination method has been
+  // invalidated, so there will be a trap at its start.
+  // For this to work, the destination address in the trampoline is
+  // always updated, even if we're not using the trampoline.
+
+  // Emit a direct call if the entry address will always be in range,
+  // otherwise a trampoline call.
+  // Supported entry.rspec():
+  // - relocInfo::runtime_call_type
+  // - relocInfo::opt_virtual_call_type
+  // - relocInfo::static_call_type
+  // - relocInfo::virtual_call_type
+  //
+  // Return: the call PC or NULL if CodeCache is full.
+  address trampoline_call(Address entry);
   address ic_call(address entry, jint method_index = 0);
 
   // Support for memory inc/dec
@@ -784,16 +875,38 @@ class MacroAssembler: public Assembler {
   // if [src1 < src2], dst = -1;
   void cmp_l2i(Register dst, Register src1, Register src2, Register tmp = t0);
 
-  int push_fp(unsigned int bitset, Register stack);
-  int pop_fp(unsigned int bitset, Register stack);
-
-  int push_vp(unsigned int bitset, Register stack);
-  int pop_vp(unsigned int bitset, Register stack);
-
   // vext
   void vmnot_m(VectorRegister vd, VectorRegister vs);
   void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked);
   void vfneg_v(VectorRegister vd, VectorRegister vs);
+
+
+  // support for argument shuffling
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = t0);
+  void object_move(OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
+
+  void rt_call(address dest, Register tmp = t0);
+
+  void call(const address dest, Register temp = t0) {
+    assert_cond(dest != NULL);
+    assert(temp != noreg, "temp must not be empty register!");
+    int32_t offset = 0;
+    mv(temp, dest, offset);
+    jalr(x1, temp, offset);
+  }
+
+  void ret() {
+    jalr(x0, x1, 0);
+  }
 
 private:
 

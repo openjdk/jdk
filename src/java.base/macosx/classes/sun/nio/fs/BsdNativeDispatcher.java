@@ -55,14 +55,31 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
      * returns buf->f_mntonname (directory on which mounted)
      */
     static byte[] getmntonname(UnixPath path) throws UnixException {
-        NativeBuffer pathBuffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer pathBuffer = copyToNativeBuffer(path)) {
             return getmntonname0(pathBuffer.address());
-        } finally {
-            pathBuffer.release();
         }
     }
     static native byte[] getmntonname0(long pathAddress) throws UnixException;
+
+    /**
+     * int clonefile(const char * src, const char * dst, int flags);
+     */
+    static int clonefile(UnixPath src, UnixPath dst, int flags)
+        throws UnixException
+    {
+        try (NativeBuffer srcBuffer = copyToNativeBuffer(src);
+            NativeBuffer dstBuffer = copyToNativeBuffer(dst)) {
+            long comp = Blocker.begin();
+            try {
+                return clonefile0(srcBuffer.address(), dstBuffer.address(),
+                                  flags);
+            } finally {
+                Blocker.end(comp);
+            }
+        }
+    }
+    private static native int clonefile0(long srcAddress, long dstAddress,
+                                         int flags);
 
     /**
      * setattrlist(const char* path, struct attrlist* attrList, void* attrBuf,

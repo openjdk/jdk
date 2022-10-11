@@ -153,10 +153,8 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   DEBUG_ONLY(_frame_index = -1;)
 
   // Here's a sticky one. This constructor can be called via AsyncGetCallTrace
-  // when last_Java_sp is non-null but the pc fetched is junk. If we are truly
-  // unlucky the junk value could be to a zombied method and we'll die on the
-  // find_blob call. This is also why we can have no asserts on the validity
-  // of the pc we find here. AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
+  // when last_Java_sp is non-null but the pc fetched is junk.
+  // AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
   // -> pd_last_frame should use a specialized version of pd_last_frame which could
   // call a specialized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious
@@ -395,7 +393,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
 
   // frame owned by optimizing compiler
-  assert(_cb->frame_size() >= 0, "must have non-zero frame size");
+  assert(_cb->frame_size() > 0, "must have non-zero frame size");
   intptr_t* sender_sp = unextended_sp() + _cb->frame_size();
   assert(sender_sp == real_fp(), "");
 

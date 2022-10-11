@@ -194,15 +194,12 @@ julong os::Linux::available_memory() {
   julong avail_mem;
 
   if (OSContainer::is_containerized()) {
-    jlong mem_limit, mem_usage;
-    if ((mem_limit = OSContainer::memory_limit_in_bytes()) < 1) {
-      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
-                             mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
-    }
+    jlong mem_limit = OSContainer::memory_limit_in_bytes();
+    jlong mem_usage;
     if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
       log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
     }
-    if (mem_limit > 0 && mem_usage > 0 ) {
+    if (mem_limit > 0 && mem_usage > 0) {
       avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
       log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
       return avail_mem;
@@ -223,8 +220,6 @@ julong os::physical_memory() {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
       return mem_limit;
     }
-    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
-                            mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
   }
 
   phys_mem = Linux::physical_memory();
@@ -338,6 +333,14 @@ pid_t os::Linux::gettid() {
   int rslt = syscall(SYS_gettid);
   assert(rslt != -1, "must be."); // old linuxthreads implementation?
   return (pid_t)rslt;
+}
+
+// Returns the amount of swap currently configured, in bytes.
+// This can change at any time.
+julong os::Linux::host_swap() {
+  struct sysinfo si;
+  sysinfo(&si);
+  return (julong)si.totalswap;
 }
 
 // Most versions of linux have a bug where the number of processors are

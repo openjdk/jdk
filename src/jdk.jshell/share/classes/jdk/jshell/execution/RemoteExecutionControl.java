@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,12 +110,24 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         // handled by JDI
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     * @throws ExecutionControl.EngineTerminationException {@inheritDoc}
+     * @throws ExecutionControl.NotImplementedException {@inheritDoc}
+     */
     // Overridden only so this stack frame is seen
     @Override
     protected String invoke(Method doitMethod) throws Exception {
         return super.invoke(doitMethod);
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     */
     // Overridden only so this stack frame is seen
     @Override
     public String varValue(String className, String varName) throws RunException, EngineTerminationException, InternalException {
@@ -160,7 +172,7 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         }
     }
 
-    @SuppressWarnings("serial")             // serialVersionUID intentionally omitted
+    @SuppressWarnings({"serial", "removal"})       // serialVersionUID intentionally omitted
     private class StopExecutionException extends ThreadDeath {
 
         @Override

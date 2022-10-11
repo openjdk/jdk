@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ public class ToolBox {
     public void copyFile(Path from, Path to) throws IOException {
         if (Files.isDirectory(to)) {
             to = to.resolve(from.getFileName());
-        } else {
+        } else if (to.getParent() != null) {
             Files.createDirectories(to.getParent());
         }
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
@@ -752,7 +752,7 @@ public class ToolBox {
         private final static Pattern packagePattern =
                 Pattern.compile("package\\s+(((?:\\w+\\.)*)\\w+)");
         private final static Pattern classPattern =
-                Pattern.compile("(?:public\\s+)?(?:class|enum|interface|record)\\s+(\\w+)");
+                Pattern.compile("(?:public\\s+)?(?:class|enum|interface|record)\\s+((\\w|\\$)+)");
 
         /**
          * Extracts the Java file name from the class declaration.

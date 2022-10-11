@@ -106,10 +106,8 @@ public class Resolve {
     ModuleFinder moduleFinder;
     Types types;
     JCDiagnostic.Factory diags;
-    public final boolean allowFunctionalInterfaceMostSpecific;
     public final boolean allowModules;
     public final boolean allowRecords;
-    public final boolean checkVarargsAccessAfterResolution;
     private final boolean compactMethodDiags;
     private final boolean allowLocalVariableTypeInference;
     private final boolean allowYieldStatement;
@@ -145,11 +143,8 @@ public class Resolve {
                 options.isUnset(Option.XDIAGS) && options.isUnset("rawDiagnostics");
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
-        allowFunctionalInterfaceMostSpecific = Feature.FUNCTIONAL_INTERFACE_MOST_SPECIFIC.allowedInSource(source);
         allowLocalVariableTypeInference = Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source);
         allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
-        checkVarargsAccessAfterResolution =
-                Feature.POST_APPLICABILITY_VARARGS_ACCESS_CHECK.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
@@ -915,7 +910,7 @@ public class Resolve {
             super.argumentsAcceptable(env, deferredAttrContext, argtypes, formals, warn);
             // should we check varargs element type accessibility?
             if (deferredAttrContext.phase.isVarargsRequired()) {
-                if (deferredAttrContext.mode == AttrMode.CHECK || !checkVarargsAccessAfterResolution) {
+                if (deferredAttrContext.mode == AttrMode.CHECK) {
                     varargsAccessible(env, types.elemtype(formals.last()), deferredAttrContext.inferenceContext);
                 }
             }
@@ -1170,9 +1165,8 @@ public class Resolve {
             }
 
             public boolean compatible(Type found, Type req, Warner warn) {
-                if (allowFunctionalInterfaceMostSpecific &&
-                        unrelatedFunctionalInterfaces(found, req) &&
-                        (actual != null && actual.getTag() == DEFERRED)) {
+                if (unrelatedFunctionalInterfaces(found, req) &&
+                    (actual != null && actual.getTag() == DEFERRED)) {
                     DeferredType dt = (DeferredType) actual;
                     JCTree speculativeTree = dt.speculativeTree(deferredAttrContext);
                     if (speculativeTree != deferredAttr.stuckTree) {

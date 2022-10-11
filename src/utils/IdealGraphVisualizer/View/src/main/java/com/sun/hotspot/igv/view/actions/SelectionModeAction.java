@@ -27,29 +27,25 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
 public class SelectionModeAction extends AbstractAction {
 
-    private boolean state;
-
-    public static final String STATE = "state";
-
     public SelectionModeAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(Action.SHORT_DESCRIPTION, "Selection mode");
-        state = false;
-        putValue(STATE, false);
+        putValue(SELECTED_KEY, false);
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
-        setState(!state);
-    }
-
-    public void setState(boolean b) {
-        this.putValue(STATE, b);
-        this.state = b;
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            boolean selected = (boolean)getValue(SELECTED_KEY);
+            editor.setSelectionMode(selected);
+        }
     }
 
     protected String iconResource() {
