@@ -257,11 +257,6 @@ inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
   Unimplemented();
 }
 
-inline intptr_t* frame::interpreter_frame_last_sp() const {
-  Unimplemented();
-  return NULL;
-}
-
 inline int frame::sender_sp_ret_address_offset() {
   Unimplemented();
   return 0;

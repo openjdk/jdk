@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,44 +65,53 @@ public final class ClassInfo {
 
     private final Object mutex = new Object();
     private final Class<?> type;
-    private List<Method> methods;
-    private Map<String,PropertyInfo> properties;
-    private Map<String,EventSetInfo> eventSets;
+    private volatile List<Method> methods;
+    private volatile Map<String,PropertyInfo> properties;
+    private volatile Map<String,EventSetInfo> eventSets;
 
     private ClassInfo(Class<?> type) {
         this.type = type;
     }
 
     public List<Method> getMethods() {
-        if (this.methods == null) {
+        List<Method> methods = this.methods;
+        if (methods == null) {
             synchronized (this.mutex) {
-                if (this.methods == null) {
-                    this.methods = MethodInfo.get(this.type);
+                methods = this.methods;
+                if (methods == null) {
+                    methods = MethodInfo.get(this.type);
+                    this.methods = methods;
                 }
             }
         }
-        return this.methods;
+        return methods;
     }
 
     public Map<String,PropertyInfo> getProperties() {
-        if (this.properties == null) {
+        Map<String, PropertyInfo> properties = this.properties;
+        if (properties == null) {
             synchronized (this.mutex) {
-                if (this.properties == null) {
-                    this.properties = PropertyInfo.get(this.type);
+                properties = this.properties;
+                if (properties == null) {
+                    properties = PropertyInfo.get(this.type);
+                    this.properties = properties;
                 }
             }
         }
-        return this.properties;
+        return properties;
     }
 
     public Map<String,EventSetInfo> getEventSets() {
-        if (this.eventSets == null) {
+        Map<String, EventSetInfo> eventSets = this.eventSets;
+        if (eventSets == null) {
             synchronized (this.mutex) {
-                if (this.eventSets == null) {
-                    this.eventSets = EventSetInfo.get(this.type);
+                eventSets = this.eventSets;
+                if (eventSets == null) {
+                    eventSets = EventSetInfo.get(this.type);
+                    this.eventSets = eventSets;
                 }
             }
         }
-        return this.eventSets;
+        return eventSets;
     }
 }

@@ -7,7 +7,7 @@ the time. They assume that you have installed Git (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `git clone https://git.openjdk.java.net/jdk/`
+    `git clone https://git.openjdk.org/jdk/`
 
  2. [Run configure](#running-configure): \
     `bash configure`
@@ -40,14 +40,14 @@ reasonably powerful hardware.
 
 If you just want to use the JDK and not build it yourself, this document is not
 for you. See for instance [OpenJDK installation](
-http://openjdk.java.net/install) for some methods of installing a prebuilt
+http://openjdk.org/install) for some methods of installing a prebuilt
 JDK.
 
 ## Getting the Source Code
 
 Make sure you are getting the correct version. As of JDK 10, the source is no
 longer split into separate repositories so you only need to clone one single
-repository. At the [OpenJDK Git site](https://git.openjdk.java.net/) you
+repository. At the [OpenJDK Git site](https://git.openjdk.org/) you
 can see a list of all available repositories. If you want to build an older version,
 e.g. JDK 11, it is recommended that you get the `jdk11u` repo, which contains
 incremental updates, instead of the `jdk11` repo, which was frozen at JDK 11 GA.
@@ -96,7 +96,7 @@ on where and how to check out the source code.
           Cygwin paths (which are used throughout the JDK build system).
           However, it does not currently work well with the Skara CLI tooling.
           Please see the [Skara wiki on Git clients](
-          https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git) for
+          https://wiki.openjdk.org/display/SKARA/Skara#Skara-Git) for
           up-to-date information about the Skara git client support.
 
         * The [Git for Windows](https://gitforwindows.org) client has issues
@@ -173,7 +173,7 @@ used at Oracle, where header files and external libraries from an older version
 are used when building on a more modern version of the OS.
 
 The Build Group has a wiki page with [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms). From
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms). From
 time to time, this is updated by contributors to list successes or failures of
 building on different platforms.
 
@@ -303,7 +303,7 @@ sudo apk add build-base bash grep zip
 ### AIX
 
 Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms) OpenJDK
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of AIX are supported.
 
 ## Native Compiler (Toolchain) Requirements
@@ -397,7 +397,7 @@ be because of [spaces in path](#spaces-in-path).
 ### IBM XL C/C++
 
 Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms) OpenJDK
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of XLC are supported.
 
 
@@ -848,14 +848,14 @@ Suggestions for Advanced Users](#hints-and-suggestions-for-advanced-users) and
 
 ## Running Tests
 
-Most of the JDK tests are using the [JTReg](http://openjdk.java.net/jtreg)
+Most of the JDK tests are using the [JTReg](http://openjdk.org/jtreg)
 test framework. Make sure that your configuration knows where to find your
 installation of JTReg. If this is not picked up automatically, use the
 `--with-jtreg=<path to jtreg home>` option to point to the JTReg framework.
 Note that this option should point to the JTReg home, i.e. the top directory,
 containing `lib/jtreg.jar` etc.
 
-The [Adoption Group](https://wiki.openjdk.java.net/display/Adoption) provides
+The [Adoption Group](https://wiki.openjdk.org/display/Adoption) provides
 recent builds of jtreg [here](
 https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
@@ -1548,7 +1548,7 @@ You can run `fsutil file setshortname` in `cmd` on certain directories, such as
 
 If none of the suggestions in this document helps you, or if you find what you
 believe is a bug in the build system, please contact the Build Group by sending
-a mail to [build-dev@openjdk.java.net](mailto:build-dev@openjdk.java.net).
+a mail to [build-dev@openjdk.org](mailto:build-dev@openjdk.org).
 Please include the relevant parts of the configure and/or build log.
 
 If you need general help or advice about developing for the JDK, you can also
@@ -1958,7 +1958,7 @@ To analyze build performance, run with `LOG=trace` and check `$BUILD/build-trace
 Use `JOBS=1` to avoid parallelism.
 
 Please check that you adhere to the [Code Conventions for the Build System](
-http://openjdk.java.net/groups/build/doc/code-conventions.html) before
+http://openjdk.org/groups/build/doc/code-conventions.html) before
 submitting patches.
 
 ## Contributing to the JDK
@@ -1971,19 +1971,19 @@ However, please bear in mind that the JDK is a massive project, and we must ask
 you to follow our rules and guidelines to be able to accept your contribution.
 
 The official place to start is the ['How to contribute' page](
-http://openjdk.java.net/contribute/). There is also an official (but somewhat
+http://openjdk.org/contribute/). There is also an official (but somewhat
 outdated and skimpy on details) [Developer's Guide](
-http://openjdk.java.net/guide/).
+http://openjdk.org/guide/).
 
 If this seems overwhelming to you, the Adoption Group is there to help you! A
 good place to start is their ['New Contributor' page](
-https://wiki.openjdk.java.net/display/Adoption/New+Contributor), or start
+https://wiki.openjdk.org/display/Adoption/New+Contributor), or start
 reading the comprehensive [Getting Started Kit](
 https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/). The
 Adoption Group will also happily answer any questions you have about
 contributing. Contact them by [mail](
-http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss) or [IRC](
-http://openjdk.java.net/irc/).
+http://mail.openjdk.org/mailman/listinfo/adoption-discuss) or [IRC](
+http://openjdk.org/irc/).
 
 ## Editing this document
 
