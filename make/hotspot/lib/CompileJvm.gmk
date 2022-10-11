@@ -61,11 +61,6 @@ else
   OPENJDK_TARGET_CPU_VM_VERSION := $(OPENJDK_TARGET_CPU)
 endif
 
-ifeq ($(VERSION_BUILD), )
-  # Hotspot cannot handle an empty build number
-  VERSION_BUILD := 0
-endif
-
 ifeq ($(HOTSPOT_BUILD_TIME), )
   HOTSPOT_BUILD_TIME := $(call EpochToISO8601, $(shell $(DATE) +"%s"))
 endif
