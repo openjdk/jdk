@@ -42,65 +42,114 @@ public class TestUndoInsertArabicText {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
+        testEnd();
+        Thread.sleep(1000);
+        testMiddle();
+        Thread.sleep(1000);
+        testBeginning();
+    }
 
+    private static void createUI() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            textArea = new JTextArea();
+            manager = new UndoManager();
+            frame = new JFrame("Undo - Redo Error");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+            JScrollPane scrollPane = new JScrollPane(textArea);
+
+            textArea.getDocument().addUndoableEditListener(manager);
+
+            frame.getContentPane().setLayout(new BorderLayout());
+            frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
+            frame.setLocationRelativeTo(null);
+            frame.setSize(100, 100);
+            frame.setVisible(true);
+        });
+    }
+
+    private static void undoAndCheck() throws Exception {
+
+        if (textArea.getText().contains("\u0633")) {
+            System.out.println("\u0633 is present");
+        }
+        SwingUtilities.invokeAndWait(() -> {
+            if (manager.canUndo()) {
+                manager.undo();
+            }
+        });
+        Thread.sleep(1000);
+        if (textArea.getText().contains("\u0633")) {
+            throw new RuntimeException("Undo-ed arabic character still present");
+        }
+    }
+
+    private static void testEnd() throws Exception {
         try {
-            SwingUtilities.invokeAndWait(() -> {
-                textArea = new JTextArea();
-                manager = new UndoManager();
-                frame = new JFrame("Undo - Redo Error");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-                JScrollPane scrollPane = new JScrollPane(textArea);
-
-                textArea.getDocument().addUndoableEditListener(manager);
-
-                frame.getContentPane().setLayout(new BorderLayout());
-                frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
-                frame.setLocationRelativeTo(null);
-                frame.setSize(100, 100);
-                frame.setVisible(true);
-            });
+            createUI();
             Thread.sleep(1000);
             // insert at end of existing text and undo
             SwingUtilities.invokeAndWait(() -> {
-                for (int i = 0; i < 5 ; i++) {
-                    textArea.insert("\u0633", textArea.getText().length());
-                }
+                textArea.insert("\u0631", textArea.getText().length());
+                textArea.insert("\u0632", textArea.getText().length());
+                textArea.insert("\u0633", textArea.getText().length());
                 textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
             });
+
             Thread.sleep(1000);
+            undoAndCheck();
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
-                if (manager.canUndo()) {
-                    manager.undo();
+                if (frame != null) {
+                    frame.dispose();
                 }
             });
+        }
+
+    }
+
+    private static void testBeginning() throws Exception {
+        try {
+            createUI();
             Thread.sleep(1000);
 
             // insert at beginning of existing text and undo
             SwingUtilities.invokeAndWait(() -> {
+                textArea.insert("\u0631", textArea.getText().length());
+                textArea.insert("\u0632", textArea.getText().length());
                 textArea.setCaretPosition(0);
                 textArea.insert("\u0633", 0);
+                textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
             });
             Thread.sleep(1000);
+            undoAndCheck();
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
-                if (manager.canUndo()) {
-                    manager.undo();
+                if (frame != null) {
+                    frame.dispose();
                 }
             });
+        }
+
+    }
+
+    private static void testMiddle() throws Exception {
+        try {
+            createUI();
             Thread.sleep(1000);
 
             // insert at middle of existing text and undo
             SwingUtilities.invokeAndWait(() -> {
+                textArea.insert("\u0631", textArea.getText().length());
+                textArea.insert("\u0632", textArea.getText().length());
+                textArea.insert("\u0634", textArea.getText().length());
+                textArea.insert("\u0635", textArea.getText().length());
                 textArea.setCaretPosition(2);
                 textArea.insert("\u0633", 2);
+                textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
             });
             Thread.sleep(1000);
-            SwingUtilities.invokeAndWait(() -> {
-                if (manager.canUndo()) {
-                    manager.undo();
-                }
-            });
-            Thread.sleep(1000);
+            undoAndCheck();
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
