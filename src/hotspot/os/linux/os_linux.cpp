@@ -79,37 +79,38 @@
 #include "utilities/vmError.hpp"
 
 // put OS-includes here
-# include <sys/types.h>
-# include <sys/mman.h>
-# include <sys/stat.h>
-# include <sys/select.h>
-# include <pthread.h>
-# include <signal.h>
+# include <dlfcn.h>
 # include <endian.h>
 # include <errno.h>
-# include <dlfcn.h>
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/resource.h>
-# include <pthread.h>
-# include <sys/stat.h>
-# include <sys/time.h>
-# include <sys/times.h>
-# include <sys/utsname.h>
-# include <sys/socket.h>
-# include <pwd.h>
-# include <poll.h>
 # include <fcntl.h>
+# include <fenv.h>
+# include <inttypes.h>
+# include <link.h>
+# include <linux/elf-em.h>
+# include <poll.h>
+# include <pthread.h>
+# include <pthread.h>
+# include <pwd.h>
+# include <signal.h>
+# include <stdint.h>
+# include <stdio.h>
 # include <string.h>
 # include <syscall.h>
-# include <sys/sysinfo.h>
-# include <sys/ipc.h>
-# include <sys/shm.h>
-# include <link.h>
-# include <stdint.h>
-# include <inttypes.h>
+# include <unistd.h>
 # include <sys/ioctl.h>
-# include <linux/elf-em.h>
+# include <sys/ipc.h>
+# include <sys/mman.h>
+# include <sys/resource.h>
+# include <sys/select.h>
+# include <sys/shm.h>
+# include <sys/socket.h>
+# include <sys/stat.h>
+# include <sys/stat.h>
+# include <sys/sysinfo.h>
+# include <sys/time.h>
+# include <sys/times.h>
+# include <sys/types.h>
+# include <sys/utsname.h>
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -1743,7 +1744,14 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
                                 int ebuflen) {
+  // JDK-8295159: Protect floating-point environment.
+  fenv_t curr_fenv;
+  int rtn = fegetenv(&curr_fenv);
+  assert(rtn == 0, "must be.");
   void * result = ::dlopen(filename, RTLD_LAZY);
+  rtn = fesetenv(&curr_fenv);
+  assert(rtn == 0, "must be.");
+
   if (result == NULL) {
     const char* error_report = ::dlerror();
     if (error_report == NULL) {
