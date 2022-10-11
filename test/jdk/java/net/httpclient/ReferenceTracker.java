@@ -72,6 +72,10 @@ public class ReferenceTracker {
         return TRACKERS.stream().anyMatch(t -> t.getOutstandingOperations() > 0);
     }
 
+    public boolean hasOutstandingSubscribers() {
+        return TRACKERS.stream().anyMatch(t -> t.getOutstandingSubscribers() > 0);
+    }
+
     public long getOutstandingOperationsCount() {
         return TRACKERS.stream()
                 .map(Tracker::getOutstandingOperations)
@@ -87,8 +91,10 @@ public class ReferenceTracker {
     }
 
     public AssertionError check(long graceDelayMs) {
+        Predicate<Tracker> hasHttpOperations = (t) -> t.getOutstandingHttpOperations() > 0;
+        Predicate<Tracker> hasSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
         return check(graceDelayMs,
-                (t) -> t.getOutstandingHttpOperations() > 0,
+                hasHttpOperations.or(hasSubscribers),
                 "outstanding operations", true);
     }
 
@@ -243,6 +249,7 @@ public class ReferenceTracker {
             warning.append("\n\tPending HTTP/2 streams: " + tracker.getOutstandingHttp2Streams());
             warning.append("\n\tPending WebSocket operations: " + tracker.getOutstandingWebSocketOperations());
             warning.append("\n\tPending TCP connections: " + tracker.getOutstandingTcpConnections());
+            warning.append("\n\tPending Subscribers: " + tracker.getOutstandingSubscribers());
             warning.append("\n\tTotal pending operations: " + tracker.getOutstandingOperations());
             warning.append("\n\tFacade referenced: " + tracker.isFacadeReferenced());
             warning.append("\n\tSelector alive: " + tracker.isSelectorAlive());
@@ -267,8 +274,11 @@ public class ReferenceTracker {
         Predicate<Tracker> isAlive = Tracker::isSelectorAlive;
         Predicate<Tracker> hasPendingRequests = (t) -> t.getOutstandingHttpRequests() > 0;
         Predicate<Tracker> hasPendingConnections = (t) -> t.getOutstandingTcpConnections() > 0;
+        Predicate<Tracker> hasPendingSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
         AssertionError failed = check(graceDelayMs,
-                isAlive.or(hasPendingRequests).or(hasPendingConnections),
+                isAlive.or(hasPendingRequests)
+                        .or(hasPendingConnections)
+                        .or(hasPendingSubscribers),
                 "outstanding unclosed resources", true);
         return failed;
     }

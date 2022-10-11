@@ -29,6 +29,7 @@ import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.ByteBuffer;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
@@ -61,10 +62,26 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     final BodySubscriber<T> userSubscriber;
     final AtomicBoolean completed = new AtomicBoolean();
     final AtomicBoolean subscribed = new AtomicBoolean();
-    volatile Subscription subscription;
+    volatile SubscriptionWrapper subscription;
     volatile Throwable withError;
     public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber) {
         this.userSubscriber = userSubscriber;
+    }
+
+    class SubscriptionWrapper implements Subscription {
+        final Subscription subscription;
+        SubscriptionWrapper(Subscription s) {
+            this.subscription = Objects.requireNonNull(s);
+        }
+        @Override
+        public void request(long n) {
+            subscription.request(n);
+        }
+
+        @Override
+        public void cancel() {
+            HttpBodySubscriberWrapper.this.cancel(subscription);
+        }
     }
 
     final long id() { return id; }
@@ -95,6 +112,10 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
             // and closing the connection.
             userSubscriber.onError(t);
         }
+    }
+
+    protected void cancel(Subscription subscription) {
+        subscription.cancel();
     }
 
     /**
@@ -137,12 +158,12 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        this.subscription = subscription;
         // race condition with propagateError: we need to wait until
         // subscription is finished before calling onError;
         synchronized (this) {
             if (subscribed.compareAndSet(false, true)) {
-                userSubscriber.onSubscribe(subscription);
+                SubscriptionWrapper wrapped = new SubscriptionWrapper(subscription);
+                userSubscriber.onSubscribe(this.subscription = wrapped);
             } else {
                 // could be already subscribed and completed
                 // if an unexpected error occurred before the actual
@@ -157,7 +178,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     public void onNext(List<ByteBuffer> item) {
         if (completed.get()) {
             if (subscription != null) {
-                subscription.cancel();
+                subscription.subscription.cancel();
             }
         } else {
             userSubscriber.onNext(item);
