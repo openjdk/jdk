@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,18 +432,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         public void mouseClicked(MouseEvent e) {
             if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
                 int index = list.locationToIndex(e.getPoint());
-
-                /*
-                 * Check if current directory is at root and user clicks on
-                 * '../' (index = 1) to move to prevoius directory then don't
-                 * process the event.
-                 * It is not possible to walk past root directory.
-                 */
-                File currentDirectory = getFileChooser().getCurrentDirectory();
-                if (currentDirectory.getParentFile() == null && index == 1) {
-                    return;
-                }
-
                 if (index >= 0) {
                     File f = (File) list.getModel().getElementAt(index);
                     try {
@@ -991,6 +979,25 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             } else {
                 v.sort(Comparator.comparing(fsv::getSystemDisplayName));
             }
+        }
+
+        @Override
+        public Vector<File> getDirectories() {
+            Vector<File> files = super.getDirectories();
+
+            /*
+             * Delete the "/.." file entry from file chooser directory list in
+             * GTK LAF if current directory is root and files vector contains
+             * "/.." entry.
+             *
+             * It is not possible to go beyond root directory.
+             */
+            File crntDir = getFileChooser().getCurrentDirectory();
+            if (crntDir != null && crntDir.getParentFile() == null &&
+                files.contains(new File("/.."))) {
+                    files.removeElementAt(0);
+            }
+            return files;
         }
     }
 

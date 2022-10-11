@@ -24,61 +24,36 @@
 /*
  * @test
  * @bug 6777156
- * @key headful
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @requires (os.family == "linux")
- * @summary Verifies if user is not able to select "../" beyond root file system
- * @run main TestFileChooserDirectorySelection
+ * @summary Verifies if user is not able to select "../" beyond
+ * root file system.
+ * @run main/manual TestFileChooserDirectorySelection
  */
 
-import java.io.File;
-import java.awt.event.InputEvent;
-import java.awt.Point;
-import java.awt.Robot;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-public class TestFileChooserDirectorySelection  {
+public class TestFileChooserDirectorySelection {
     private static JFrame frame;
-    private static JFileChooser fileChooser;
-    private static Robot robot;
+    private static final String INSTRUCTIONS =
+            "Double click on the \"../\" entry from directory list.\n\n" +
+            "Repeat the same process till the current directory is root " +
+            "i.e \" / \" .\n\n" +
+            "If \" ../ \" option is not available at root directory" +
+            ", press Pass else Fail.";
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        robot = new Robot();
-        robot.setAutoDelay(100);
+        PassFailJFrame passFailJFrame = new PassFailJFrame(
+                "JFileChooser Test Instructions", INSTRUCTIONS, 5, 8, 35);
         try {
-            SwingUtilities.invokeAndWait(() -> {
-                createAndShowUI();
-            });
-
-            robot.waitForIdle();
-            robot.delay(1000);
-            Point pt = frame.getLocationOnScreen();
-            int i = 0;
-            boolean passed = false;
-            File crntDir = fileChooser.getCurrentDirectory();
-            File prevDir = null;
-            while (true) {
-                prevDir = crntDir;
-                doubleClickMouse(pt);
-                crntDir = fileChooser.getCurrentDirectory();
-                robot.delay(1000);
-                // getParentFile() returns null for root directory
-                if (prevDir == crntDir && crntDir.getParentFile() == null) {
-                    passed = true;
-                    break;
-                } else if (++i > 5) {
-                    break;
-                }
-            }
-            robot.delay(1000);
-            if (!passed)
-                throw new RuntimeException("User is able to select ../ " +
-                        "beyond root directory");
-            else
-                System.out.println("passed");
+            SwingUtilities.invokeAndWait(
+                    TestFileChooserDirectorySelection::createAndShowUI);
+            passFailJFrame.awaitAndCheck();
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
@@ -87,24 +62,16 @@ public class TestFileChooserDirectorySelection  {
             });
         }
     }
-
     private static void createAndShowUI() {
         frame = new JFrame("Test File Chooser Directory Selection");
-        fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setControlButtonsAreShown(false);
+        PassFailJFrame.addTestWindow(frame);
+        PassFailJFrame.positionTestWindow(
+                frame, PassFailJFrame.Position.HORIZONTAL);
         frame.add(fileChooser);
-        frame.setSize(500,500);
-        frame.setLocationRelativeTo(null);
+        frame.setSize(500, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
-    }
-
-    private static void doubleClickMouse(Point p) {
-        robot.mouseMove(p.x+75, p.y+frame.getHeight()/2 - 90);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(100);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(1000);
     }
 }
