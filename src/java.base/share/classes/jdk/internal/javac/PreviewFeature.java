@@ -30,7 +30,7 @@ import java.lang.annotation.*;
 /**
  * Indicates the API declaration in question is associated with a
  * <em>preview feature</em>. See JEP 12: "Preview Language and VM
- * Features" (http://openjdk.java.net/jeps/12).
+ * Features" (https://openjdk.org/jeps/12).
  *
  * Note this internal annotation is handled specially by the javac compiler.
  * To work properly with {@code --release older-release}, it requires special

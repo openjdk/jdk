@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,24 @@
  * questions.
  */
 
-/* @test
- * @bug 4170614
- * @summary Test internal hashCode() and equals() functions
- * @library patch-src
- * @build java.base/java.text.Bug4170614Test
- * @run main java.base/java.text.Bug4170614Test
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static java.nio.file.StandardOpenOption.*;
+
+/**
+ * Common library for various test file utility functions.
  */
+public final class FileChannelUtils {
+
+    public static Path createSparseTempFile(String prefix, String suffix) throws IOException {
+        Path file = Files.createTempFile(prefix, suffix);
+        Files.delete(file); // need CREATE_NEW to make the file sparse
+
+        FileChannel fc = FileChannel.open(file, CREATE_NEW, SPARSE, WRITE);
+        fc.close();
+        return file;
+    }
+}

@@ -94,8 +94,7 @@ protected:
     clean_card                  = (CardValue)-1,
 
     dirty_card                  =  0,
-    last_card                   =  1,
-    CT_MR_BS_last_reserved      =  2
+    CT_MR_BS_last_reserved      =  1
   };
 
   // a word's worth (row) of clean card values
