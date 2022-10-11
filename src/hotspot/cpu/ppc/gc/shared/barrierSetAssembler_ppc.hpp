@@ -52,9 +52,9 @@ public:
   virtual void resolve_jobject(MacroAssembler* masm, Register value,
                                Register tmp1, Register tmp2,
                                MacroAssembler::PreservationLevel preservation_level);
-  virtual void resolve_local_jobject(MacroAssembler* masm, Register value,
-                                     Register tmp1, Register tmp2,
-                                     MacroAssembler::PreservationLevel preservation_level);
+  virtual void resolve_global_jobject(MacroAssembler* masm, Register value,
+                                      Register tmp1, Register tmp2,
+                                      MacroAssembler::PreservationLevel preservation_level);
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);

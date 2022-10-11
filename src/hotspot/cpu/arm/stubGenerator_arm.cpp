@@ -3005,7 +3005,7 @@ class StubGenerator: public StubCodeGenerator {
     __ reset_last_Java_frame(Rtemp);
 
     // R0 is jobject handle result, unpack and process it through a barrier.
-    __ resolve_local_jobject(R0, Rtemp, R1);
+    __ resolve_global_jobject(R0, Rtemp, R1);
 
     __ raw_pop(R1, R2, LR);
     __ ret();

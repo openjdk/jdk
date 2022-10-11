@@ -4575,7 +4575,7 @@ class StubGenerator: public StubCodeGenerator {
     address calls_return_pc = __ last_calls_return_pc();
     __ reset_last_Java_frame();
     // The handle is dereferenced through a load barrier.
-    __ resolve_local_jobject(R3_RET, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
+    __ resolve_global_jobject(R3_RET, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
     __ pop_frame();
     __ ld(tmp1, _abi0(lr), R1_SP);
     __ mtlr(tmp1);

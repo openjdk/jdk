@@ -3799,7 +3799,7 @@ class StubGenerator: public StubCodeGenerator {
 
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    __ resolve_local_jobject(x10, t0, t1);
+    __ resolve_global_jobject(x10, t0, t1);
   }
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
