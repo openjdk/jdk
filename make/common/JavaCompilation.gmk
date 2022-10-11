@@ -403,6 +403,7 @@ define SetupJavaCompilationBody
     $1_COMPILE_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch
     $1_FILELIST := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch.filelist
     $1_MODFILELIST := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch.modfiles
+    $1_MODFILELIST_FIXED := $$($1_MODFILELIST).fixed
 
     $1_API_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi
     $1_API_INTERNAL := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_internalapi
@@ -469,15 +470,21 @@ define SetupJavaCompilationBody
 		$$(eval $1_MODFILES := $$?)
 		$$(eval $$(call ListPathsSafely, $1_MODFILES, $$($1_MODFILELIST)))
 
+    # Convert the paths in the MODFILELIST file to Windows-style paths
+    # on Windows. This is needed because javac operates on Windows-style paths
+    # when running on Windows. On other platforms this just copies the MODFILELIST file.
+    $$($1_MODFILELIST_FIXED): $$($1_MODFILELIST)
+		$$(call FixPathFile, $$($1_MODFILELIST), $$($1_MODFILELIST_FIXED))
+
     # Do the actual compilation
     $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_FILELIST) $$($1_DEPENDS) \
         $$($1_VARDEPS_FILE) $$($1_EXTRA_DEPS) $$($1_JAVAC_SERVER_CONFIG) \
-        $$($1_MODFILELIST)
+        $$($1_MODFILELIST_FIXED)
 		$$(call MakeDir, $$(@D))
 		$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
 		    $$($1_JAVAC_CMD) $$($1_FLAGS) \
 		        $$($1_API_DIGEST_FLAGS) \
-		        -XDmodifiedInputs=$$($1_MODFILELIST) \
+		        -XDmodifiedInputs=$$($1_MODFILELIST_FIXED) \
 		        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_FILELIST)) && \
 		$(TOUCH) $$@
 

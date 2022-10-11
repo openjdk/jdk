@@ -323,8 +323,9 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // first instruction with a jump. For this action to be legal we
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
+  IncompressibleRegion ir(this);  // keep the nop as 4 bytes for patching.
   assert_alignment(pc());
-  nop();
+  nop();  // 4 bytes
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {

@@ -125,10 +125,6 @@ public final class SecurityConstants {
         new RuntimePermission("getClassLoader");
 
     // java.lang.Thread
-    public static final RuntimePermission STOP_THREAD_PERMISSION =
-       new RuntimePermission("stopThread");
-
-    // java.lang.Thread
     public static final RuntimePermission GET_STACK_TRACE_PERMISSION =
        new RuntimePermission("getStackTrace");
 
