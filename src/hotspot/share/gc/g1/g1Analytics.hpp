@@ -139,10 +139,9 @@ public:
 
   double predict_concurrent_refine_rate_ms() const;
   double predict_dirtied_cards_rate_ms() const;
-  double predict_young_card_merge_to_scan_ratio() const;
 
-  double predict_mixed_card_merge_to_scan_ratio() const;
-
+  // Predict how many of the given remembered set of length rs_length will add to
+  // the number of total cards scanned.
   size_t predict_scan_card_num(size_t rs_length, bool for_young_gc) const;
 
   double predict_card_merge_time_ms(size_t card_num, bool for_young_gc) const;
