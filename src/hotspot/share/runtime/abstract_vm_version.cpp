@@ -89,7 +89,7 @@ int Abstract_VM_Version::_vm_major_version = VERSION_FEATURE;
 int Abstract_VM_Version::_vm_minor_version = VERSION_INTERIM;
 int Abstract_VM_Version::_vm_security_version = VERSION_UPDATE;
 int Abstract_VM_Version::_vm_patch_version = VERSION_PATCH;
-#if IS_EMPTY_INT_DEFINE(VERSION_BUILD)
+#if (IS_EMPTY_INT_DEFINE(VERSION_BUILD) == 1)
 int Abstract_VM_Version::_vm_build_number = 0;
 #else
 int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
