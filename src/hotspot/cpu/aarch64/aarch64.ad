@@ -460,6 +460,7 @@ alloc_class chunk1(
 );
 
 alloc_class chunk2 (
+    // Governing predicates for load/store and arithmetic
     P0,
     P1,
     P2,
@@ -467,8 +468,8 @@ alloc_class chunk2 (
     P4,
     P5,
     P6,
-    P7,
 
+    // Extra predicates
     P8,
     P9,
     P10,
@@ -477,6 +478,9 @@ alloc_class chunk2 (
     P13,
     P14,
     P15,
+
+    // Preserved for all-true predicate
+    P7,
 );
 
 alloc_class chunk3(RFLAGS);
@@ -5538,6 +5542,7 @@ operand pRegGov()
 %{
   constraint(ALLOC_IN_RC(gov_pr));
   match(RegVectMask);
+  match(pReg);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
