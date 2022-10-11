@@ -223,7 +223,7 @@ public class BufferedInputStream extends FilterInputStream {
      */
     private void fill() throws IOException {
         byte[] buffer = getBufIfOpen();
-        if (markpos < 0)
+        if (markpos == -1)
             pos = 0;            /* no mark: throw away the buffer */
         else if (pos >= buffer.length) { /* no room left in buffer */
             if (markpos > 0) {  /* can throw away early part of the buffer */
@@ -306,7 +306,7 @@ public class BufferedInputStream extends FilterInputStream {
                if there is no mark/reset activity, do not bother to copy the
                bytes into the local buffer.  In this way buffered streams will
                cascade harmlessly. */
-            if (len >= getBufIfOpen().length && markpos < 0) {
+            if (len >= getBufIfOpen().length && markpos == -1) {
                 return getInIfOpen().read(b, off, len);
             }
             fill();
@@ -427,7 +427,7 @@ public class BufferedInputStream extends FilterInputStream {
 
         if (avail <= 0) {
             // If no mark position set then don't keep in buffer
-            if (markpos <0)
+            if (markpos == -1)
                 return getInIfOpen().skip(n);
 
             // Fill in buffer to save bytes for reset
