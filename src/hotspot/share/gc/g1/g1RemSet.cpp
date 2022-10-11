@@ -538,7 +538,7 @@ class G1RemSetSamplingTask : public G1ServiceTask {
       g1cs->iterate(&cl);
 
       if (cl.is_complete()) {
-        policy->revise_young_list_target_length_if_necessary(cl.sampled_rs_length());
+        policy->revise_young_list_target_length(cl.sampled_rs_length());
       }
     }
     update_vtime_accum(vtime.duration());

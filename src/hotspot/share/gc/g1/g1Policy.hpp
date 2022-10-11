@@ -104,8 +104,6 @@ class G1Policy: public CHeapObj<mtGC> {
 
   size_t _rs_length;
 
-  size_t _rs_length_prediction;
-
   size_t _pending_cards_at_gc_start;
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
@@ -232,9 +230,6 @@ private:
   // the maximum number of regions to use in that case.
   uint calculate_young_max_length(uint target_young_length) const;
 
-  void update_rs_length_prediction();
-  void update_rs_length_prediction(size_t prediction);
-
   size_t predict_bytes_to_copy(HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
 
@@ -295,7 +290,7 @@ public:
   // Check the current value of the young list RSet length and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length_if_necessary(size_t rs_length);
+  void revise_young_list_target_length(size_t rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
