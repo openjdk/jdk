@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
@@ -37,7 +36,6 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
@@ -57,6 +55,8 @@ public final class PopupMenuLocation {
             "Long-long-long-long-long-long-long text in the item-";
     private static volatile boolean action = false;
     private static Robot robot;
+    private static Frame frame;
+    private static Rectangle currentScreenBounds;
 
 
     public static void main(final String[] args) throws Exception {
@@ -67,29 +67,31 @@ public final class PopupMenuLocation {
         GraphicsDevice[] sds = ge.getScreenDevices();
         for (GraphicsDevice sd : sds) {
             GraphicsConfiguration gc = sd.getDefaultConfiguration();
-            Rectangle bounds = gc.getBounds();
-            Point point = new Point(bounds.x, bounds.y);
+            currentScreenBounds = gc.getBounds();
+            Point point = new Point(currentScreenBounds.x, currentScreenBounds.y);
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
-            while (point.y < bounds.y + bounds.height - insets.bottom - SIZE) {
-                while (point.x
-                        < bounds.x + bounds.width - insets.right - SIZE) {
+            while (point.y < currentScreenBounds.y + currentScreenBounds.height - insets.bottom - SIZE) {
+                while (point.x <
+                           currentScreenBounds.x + currentScreenBounds.width - insets.right - SIZE) {
                     test(point);
-                    point.translate(bounds.width / 5, 0);
+                    point.translate(currentScreenBounds.width / 5, 0);
+                   }
+                   point.setLocation(currentScreenBounds.x, point.y + currentScreenBounds.height / 5);
                 }
-                point.setLocation(bounds.x, point.y + bounds.height / 5);
             }
         }
-    }
 
     private static void test(final Point tmp) throws Exception {
+        frame = new Frame();
         PopupMenu pm = new PopupMenu();
         IntStream.rangeClosed(1, 6).forEach(i -> pm.add(TEXT + i));
         pm.addActionListener(e -> {
             action = true;
             System.out.println(" Got action event " + e);
         });
-        Frame frame = new Frame();
+
         try {
+            frame.setUndecorated(true);
             frame.setAlwaysOnTop(true);
             frame.setLayout(new FlowLayout());
             frame.add(pm);
@@ -97,6 +99,7 @@ public final class PopupMenuLocation {
             frame.setSize(SIZE, SIZE);
             frame.setVisible(true);
             frame.setLocation(tmp.x, tmp.y);
+
             frame.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     show(e);
@@ -108,6 +111,7 @@ public final class PopupMenuLocation {
 
                 private void show(MouseEvent e) {
                     if (e.isPopupTrigger()) {
+                        System.out.println("Going to show popup "+pm+" on "+frame);
                         pm.show(frame, 0, 50);
                     }
                 }
@@ -120,14 +124,13 @@ public final class PopupMenuLocation {
 
     private static void openPopup(final Frame frame) throws Exception {
         robot.waitForIdle();
-        final AtomicReference<Point> pointObj = new AtomicReference<>();
-        SwingUtilities.invokeAndWait(() -> pointObj.set(frame.getLocationOnScreen()));
-        Point pt = pointObj.get();
+        Point pt = frame.getLocationOnScreen();
         int x = pt.x + frame.getWidth() / 2;
         int y = pt.y + 50;
         robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+        robot.waitForIdle();
          y = y+50;
         robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -136,18 +139,18 @@ public final class PopupMenuLocation {
         if (!action) {
             captureScreen();
             throw new RuntimeException(
-                    "Failed, Not received the PopupMenu ActionEvent yet");
+                    "Failed, Not received the PopupMenu ActionEvent yet on " +
+                    "frame= "+frame+", isFocused = "+frame.isFocused());
         }
         action = false;
     }
 
     private static void captureScreen() {
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         try {
-            ImageIO.write(robot.createScreenCapture(
-                    new Rectangle(0, 0, screenSize.width, screenSize.height)),
-                          "png", new File("screen1.png"));
-        } catch (IOException ignore) {
+            ImageIO.write(robot.createScreenCapture(currentScreenBounds), "png",
+                          new File("screen1.png"));
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
         action = false;
     }
