@@ -123,7 +123,8 @@ public class GetXSpace {
         long available() { return available; }
         long free() { return total - used; }
         boolean woomFree(long freeSpace) {
-            return ((freeSpace >= (available / 10)) && (freeSpace <= (available* 10)));
+            return ((freeSpace >= (available / 10)) &&
+                    (freeSpace <= (available * 10)));
         }
         public String toString() {
             return String.format("%s (%d/%d/%d)", name, total, used, available);
