@@ -3152,12 +3152,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
 #ifdef ZERO
   // Zero always runs in interpreted mode
   set_mode_flags(_int);
-
-  // Zero runs without compilers. Do not let compiler selection code
-  // to force it into Serial GC, let the GC ergonomics decide.
-  if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-    FLAG_SET_ERGO(NeverActAsServerClassMachine, false);
-  }
 #endif
 
   // eventually fix up InitialTenuringThreshold if only MaxTenuringThreshold is set
