@@ -50,7 +50,6 @@ static void fill_call_trace_given_top(JavaThread* thd,
   for (; count < depth && !st.at_end(); st.next(), count++) {
     if (st.at_error()) {
       trace->num_frames = st.state();
-      printf("error: %d at count %d\n", st.state(), count);
       return;
     }
     if (st.is_java_frame()) {
