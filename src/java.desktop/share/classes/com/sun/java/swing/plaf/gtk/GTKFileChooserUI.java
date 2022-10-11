@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -979,6 +979,26 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             } else {
                 v.sort(Comparator.comparing(fsv::getSystemDisplayName));
             }
+        }
+
+        @Override
+        public Vector<File> getDirectories() {
+            Vector<File> files = super.getDirectories();
+
+            /*
+             * Delete the "/.." file entry from file chooser directory list in
+             * GTK LAF if current directory is root and files vector contains
+             * "/.." entry.
+             *
+             * It is not possible to go beyond root directory.
+             */
+            File crntDir = getFileChooser().getCurrentDirectory();
+            FileSystemView fsv = getFileChooser().getFileSystemView();
+            if (crntDir != null && fsv.isFileSystemRoot(crntDir) &&
+                files.contains(new File("/.."))) {
+                    files.removeElementAt(0);
+            }
+            return files;
         }
     }
 

@@ -218,10 +218,7 @@ inline typename FreeListType::NodePtr JfrMemorySpace<Client, RetrievalPolicy, Fr
   }
   NodePtr node = new (allocation) Node();
   assert(node != NULL, "invariant");
-  if (!node->initialize(sizeof(Node), aligned_size_bytes)) {
-    JfrCHeapObj::free(node, aligned_size_bytes + sizeof(Node));
-    return NULL;
-  }
+  node->initialize(sizeof(Node), aligned_size_bytes);
   return node;
 }
 
