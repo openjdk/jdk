@@ -36,6 +36,7 @@ import javax.swing.filechooser.FileView;
 /*
  * @test
  * @bug 6616245
+ * @key headful
  * @requires (os.family == "windows" | os.family == "linux")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
