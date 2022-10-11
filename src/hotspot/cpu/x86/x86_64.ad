@@ -321,7 +321,9 @@ reg_class int_rdi_reg(RDI);
 // definitions necessary in the rest of the architecture description
 
 source_hpp %{
-  #include CPU_HEADER(peephole)
+
+#include "peephole_x86_64.hpp"
+
 %}
 
 // Register masks

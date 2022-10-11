@@ -25,7 +25,7 @@
 
 #ifdef COMPILER2
 
-#include "peephole_x86.hpp"
+#include "peephole_x86_64.hpp"
 
 // This function transforms the shapes
 // mov d, s1; add d, s2 into
