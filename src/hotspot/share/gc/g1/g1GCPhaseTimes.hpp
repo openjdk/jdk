@@ -89,7 +89,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
     ClearRetainedRegionBitmaps,
-    CLDClearClaimedMarks,
     ResetMarkingState,
     NoteStartOfMark,
     GCParPhasesSentinel

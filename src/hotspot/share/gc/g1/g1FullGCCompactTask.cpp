@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -115,6 +116,15 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
 
   hr->reset_compacted_after_full_gc(_collector->compaction_top(hr));
 }
+
+G1FullGCCompactTask::G1FullGCCompactTask(G1FullCollector* collector) :
+  G1FullGCTask("G1 Compact Task", collector),
+  _collector(collector),
+  _claimer(collector->workers()) {
+  // Need cleared claim bits for the next concurrent marking.
+  ClassLoaderDataGraph::clear_claimed_marks();
+}
+
 
 void G1FullGCCompactTask::work(uint worker_id) {
   Ticks start = Ticks::now();
