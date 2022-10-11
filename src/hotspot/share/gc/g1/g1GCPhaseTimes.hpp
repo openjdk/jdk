@@ -390,7 +390,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   }
 
   double cur_collection_par_time_ms() {
-    return _cur_collection_initial_evac_time_ms + _cur_optional_evac_time_ms;
+    return _cur_collection_initial_evac_time_ms +
+           _cur_optional_evac_time_ms +
+           _cur_merge_heap_roots_time_ms +
+           _cur_optional_merge_heap_roots_time_ms;
   }
 
   double cur_expand_heap_time_ms() {
