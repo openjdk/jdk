@@ -310,8 +310,6 @@ void LIR_Assembler::osr_entry() {
   { assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
     int monitor_offset = BytesPerWord * method()->max_locals() +
       (BasicObjectLock::size() * BytesPerWord) * (number_of_locks - 1);
-    // SharedRuntime::OSR_migration_begin() packs BasicObjectLocks in
-    // the OSR buffer using a single word entries for the oop.
     for (int i = 0; i < number_of_locks; i++) {
       int slot_offset = monitor_offset - (i * BytesPerWord);
 #ifdef ASSERT
