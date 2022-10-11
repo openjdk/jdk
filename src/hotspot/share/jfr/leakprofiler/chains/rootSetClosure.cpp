@@ -55,7 +55,11 @@ void RootSetClosure<Delegate>::do_oop(oop* ref) {
 
 template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
-  fatal("Unexpected to have narrowOops in roots");
+  assert(ref != NULL, "invariant");
+  assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
+  if (!CompressedOops::is_null(*ref)) {
+    _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
+  }
 }
 
 class RootSetClosureMarkScope : public MarkScope {};
@@ -70,12 +74,18 @@ public:
   void do_oop(oop* ref) {
     assert(ref != NULL, "invariant");
     assert(is_aligned(ref, HeapWordSize), "invariant");
-    if (*ref != NULL) {
+    if (*ref != nullptr) {
       _delegate->do_root(UnifiedOopRef::encode_non_barriered(ref));
     }
   }
 
-  void do_oop(narrowOop* p) { fatal("Unexpected to have narrowOops in roots"); }
+  void do_oop(narrowOop* ref) {
+    assert(ref != NULL, "invariant");
+    assert(is_aligned(ref, HeapWordSize), "invariant");
+    if (!CompressedOops::is_null(*ref)) {
+      _delegate->do_root(UnifiedOopRef::encode_non_barriered(ref));
+    }
+  }
 };
 
 template <typename Delegate>

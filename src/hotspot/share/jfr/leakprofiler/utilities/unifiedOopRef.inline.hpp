@@ -32,7 +32,7 @@
 
 template <typename T>
 inline T UnifiedOopRef::addr() const {
-  return reinterpret_cast<T>(_value & ~tag_mask);
+  return reinterpret_cast<T>(UnifiedOopRef::addr<uintptr_t>());
 }
 
 // Visual Studio 2019 and earlier have a problem with reinterpret_cast
@@ -42,19 +42,19 @@ inline T UnifiedOopRef::addr() const {
 // this specialization provides a workaround.
 template<>
 inline uintptr_t UnifiedOopRef::addr<uintptr_t>() const {
-  return (_value & ~tag_mask);
+  return (_value & ~tag_mask) LP64_ONLY(>> 1);
 }
 
 inline bool UnifiedOopRef::is_narrow() const {
-  return (_value & tag_mask) == narrow_tag;
+  return (_value & narrow_tag) != 0;
 }
 
 inline bool UnifiedOopRef::is_native() const {
-  return (_value & tag_mask) == native_tag;
+  return (_value & native_tag) != 0;
 }
 
 inline bool UnifiedOopRef::is_non_barriered() const {
-  return (_value & tag_mask) == non_barriered_tag;
+  return (_value & non_barriered_tag) != 0;
 }
 
 inline bool UnifiedOopRef::is_null() const {
@@ -64,14 +64,25 @@ inline bool UnifiedOopRef::is_null() const {
 template <typename T>
 inline UnifiedOopRef create_with_tag(T ref, uintptr_t tag) {
   assert(ref != NULL, "invariant");
-  assert((reinterpret_cast<uintptr_t>(ref) & UnifiedOopRef::tag_mask) == 0, "Unexpected low-order bits");
-  UnifiedOopRef result = { reinterpret_cast<uintptr_t>(ref) | tag };
+  assert(((reinterpret_cast<uintptr_t>(ref) LP64_ONLY(<< 1)) & UnifiedOopRef::tag_mask) == 0, "Unexpected low-order bits");
+  LP64_ONLY(assert(((reinterpret_cast<uintptr_t>(ref)) & (1ull << 63)) == 0, "Unexpected high-order bit"));
+  UnifiedOopRef result = { (reinterpret_cast<uintptr_t>(ref) LP64_ONLY(<< 1)) | tag };
   assert(result.addr<T>() == ref, "sanity");
   return result;
 }
 
+inline UnifiedOopRef UnifiedOopRef::encode_in_native(const narrowOop* ref) {
+  NOT_LP64(ShouldNotReachHere());
+  return create_with_tag(ref, native_tag | narrow_tag);
+}
+
 inline UnifiedOopRef UnifiedOopRef::encode_in_native(const oop* ref) {
   return create_with_tag(ref, native_tag);
+}
+
+inline UnifiedOopRef UnifiedOopRef::encode_non_barriered(const narrowOop* ref) {
+  NOT_LP64(ShouldNotReachHere());
+  return create_with_tag(ref, non_barriered_tag | narrow_tag);
 }
 
 inline UnifiedOopRef UnifiedOopRef::encode_non_barriered(const oop* ref) {
@@ -79,11 +90,12 @@ inline UnifiedOopRef UnifiedOopRef::encode_non_barriered(const oop* ref) {
 }
 
 inline UnifiedOopRef UnifiedOopRef::encode_in_heap(const narrowOop* ref) {
+  NOT_LP64(ShouldNotReachHere());
   return create_with_tag(ref, narrow_tag);
 }
 
 inline UnifiedOopRef UnifiedOopRef::encode_in_heap(const oop* ref) {
-  return create_with_tag(ref, heap_tag);
+  return create_with_tag(ref, 0);
 }
 
 inline UnifiedOopRef UnifiedOopRef::encode_null() {
@@ -93,13 +105,26 @@ inline UnifiedOopRef UnifiedOopRef::encode_null() {
 
 inline oop UnifiedOopRef::dereference() const {
   if (is_non_barriered()) {
-    return *addr<oop*>();
+    if (is_narrow()) {
+      NOT_LP64(ShouldNotReachHere());
+      return RawAccess<>::oop_load(addr<narrowOop*>());
+    } else {
+      return *addr<oop*>();
+    }
   } else if (is_native()) {
-    return NativeAccess<AS_NO_KEEPALIVE>::oop_load(addr<oop*>());
-  } else if (is_narrow()) {
-    return HeapAccess<AS_NO_KEEPALIVE>::oop_load(addr<narrowOop*>());
+    if (is_narrow()) {
+      NOT_LP64(ShouldNotReachHere());
+      return NativeAccess<AS_NO_KEEPALIVE>::oop_load(addr<narrowOop*>());
+    } else {
+      return NativeAccess<AS_NO_KEEPALIVE>::oop_load(addr<oop*>());
+    }
   } else {
-    return HeapAccess<AS_NO_KEEPALIVE>::oop_load(addr<oop*>());
+    if (is_narrow()) {
+      NOT_LP64(ShouldNotReachHere());
+      return HeapAccess<AS_NO_KEEPALIVE>::oop_load(addr<narrowOop*>());
+    } else {
+      return HeapAccess<AS_NO_KEEPALIVE>::oop_load(addr<oop*>());
+    }
   }
 }
 

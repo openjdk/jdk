@@ -29,11 +29,14 @@
 #include "utilities/globalDefinitions.hpp"
 
 struct UnifiedOopRef {
-  static const uintptr_t tag_mask          = 0b11;
-  static const uintptr_t heap_tag          = 0b00;
-  static const uintptr_t narrow_tag        = 0b01;
-  static const uintptr_t native_tag        = 0b10;
-  static const uintptr_t non_barriered_tag = 0b11;
+  static const uintptr_t tag_mask          = LP64_ONLY(0b111) NOT_LP64(0b011);
+  static const uintptr_t native_tag        = 0b001;
+  static const uintptr_t non_barriered_tag = 0b010;
+  static const uintptr_t narrow_tag        = LP64_ONLY(0b100) NOT_LP64(0);
+  STATIC_ASSERT((native_tag & non_barriered_tag) == 0);
+  STATIC_ASSERT((native_tag & narrow_tag) == 0);
+  STATIC_ASSERT((non_barriered_tag & narrow_tag) == 0);
+  STATIC_ASSERT((native_tag | non_barriered_tag | narrow_tag) == tag_mask);
 
   uintptr_t _value;
 
@@ -47,10 +50,12 @@ struct UnifiedOopRef {
 
   oop dereference() const;
 
+  static UnifiedOopRef encode_in_native(const narrowOop* ref);
   static UnifiedOopRef encode_in_native(const oop* ref);
+  static UnifiedOopRef encode_non_barriered(const narrowOop* ref);
   static UnifiedOopRef encode_non_barriered(const oop* ref);
-  static UnifiedOopRef encode_in_heap(const oop* ref);
   static UnifiedOopRef encode_in_heap(const narrowOop* ref);
+  static UnifiedOopRef encode_in_heap(const oop* ref);
   static UnifiedOopRef encode_null();
 };
 
