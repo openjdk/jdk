@@ -64,8 +64,7 @@ using MacroAssembler::null_check;
   // unlocking
   // hdr     : contents destroyed
   // obj     : must point to the object to lock, contents preserved
-  // disp_hdr: must be r0 & must point to the displaced header location, contents destroyed
-  void unlock_object(Register swap, Register obj, Register lock, Label& slow_case);
+  void unlock_object(Register swap, Register obj, Label& slow_case);
 
   void initialize_object(
     Register obj,                      // result: pointer to object after successful allocation
