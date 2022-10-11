@@ -79,6 +79,7 @@ public class FileViewNPETest {
         frame = new JFrame("JFileChooser File View NPE test");
         passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 13, 40);
         jfc = new JFileChooser();
+
         String userHome = System.getProperty("user.home");
         String docs = userHome + File.separator + "Documents";
         String path = (new File(docs).exists()) ? docs : userHome;
