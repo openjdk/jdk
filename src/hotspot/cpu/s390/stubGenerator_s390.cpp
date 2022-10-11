@@ -2864,9 +2864,9 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
-    // Save caller's sp & return_pc
+    // Save caller's sp, return_pc in frame large enough for vm call
     __ save_return_pc();
-    __ push_frame(frame::z_abi_16_size);
+    __ push_frame_abi160(0);
 
     // Prep arg for VM call
     // Since we call address* -> int and not address -> int, we must provide an extra level of indirection.
@@ -2874,9 +2874,7 @@ class StubGenerator: public StubCodeGenerator {
     __ z_la(Z_ARG1, _z_abi(return_pc), Z_R0, Z_SP);
 
     // Call BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
-    __ push_frame_abi160(0);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
-    __ pop_frame();
 
     // Restore caller's sp & return_pc
     __ pop_frame();

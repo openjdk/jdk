@@ -83,8 +83,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
     // Load jump addr:
-    // __ z_larl(Z_R1_scratch, StubRoutines::zarch::nmethod_entry_barrier()); // 6 bytes
-    __ load_const(Z_R1_scratch, StubRoutines::zarch::nmethod_entry_barrier()); // 6 bytes
+    __ load_const(Z_R1_scratch, (uint64_t)StubRoutines::zarch::nmethod_entry_barrier()); // 2*6 bytes
 
     // Load value from current java object:
     __ z_lg(tmp, in_bytes(bs_nm->thread_disarmed_offset()), Z_thread); // 6 bytes
