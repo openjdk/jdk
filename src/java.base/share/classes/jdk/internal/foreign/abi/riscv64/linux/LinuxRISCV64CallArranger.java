@@ -60,16 +60,9 @@ public class LinuxRISCV64CallArranger {
             x30  // ret buf addr reg
     );
 
-    // Make registers as prototype, create new register with same index and name but different type.
-    // In fact, registers with the same index are the same registers.
-    // The field type of VMStorage can encode width information.
+    // Make registers as prototype, create vmstorages with same index with registers.
     static Map.Entry<Integer, VMStorage[]> buildStorageEntry(int storageClass, VMStorage[][] storagePrototypes) {
-        int idx = switch (regTag(storageClass)){
-            case RegTypes.INTEGER -> 0;
-            case RegTypes.FLOAT -> 1;
-            default -> throw new IllegalStateException("Unexpected value: " + regTag(storageClass));
-        };
-        VMStorage[] prototypes = storagePrototypes[idx];
+        VMStorage[] prototypes = storagePrototypes[storageClass >> 8];
         VMStorage[] result = new VMStorage[prototypes.length];
         for (int i = 0; i < prototypes.length; i++) {
             result[i] = new VMStorage(storageClass, prototypes[i].index(), prototypes[i].name());
@@ -77,7 +70,7 @@ public class LinuxRISCV64CallArranger {
         return Map.entry(storageClass, result);
     }
 
-    // Registers be used for input arguments.
+    // Code below will not declare new registers.
     static final Map<Integer, VMStorage[]> inputStorage = Map.ofEntries(
             buildStorageEntry(StorageClasses.INTEGER_8, CLinux.inputStorage),
             buildStorageEntry(StorageClasses.INTEGER_16, CLinux.inputStorage),
@@ -87,22 +80,10 @@ public class LinuxRISCV64CallArranger {
             buildStorageEntry(StorageClasses.FLOAT_64, CLinux.inputStorage)
     );
 
-    static Map<Integer, VMStorage[]> outputStorage = Map.ofEntries(
-            buildStorageEntry(StorageClasses.INTEGER_8, CLinux.outputStorage),
-            buildStorageEntry(StorageClasses.INTEGER_16, CLinux.outputStorage),
-            buildStorageEntry(StorageClasses.INTEGER_32, CLinux.outputStorage),
-            buildStorageEntry(StorageClasses.INTEGER_64, CLinux.outputStorage),
-            buildStorageEntry(StorageClasses.FLOAT_32, CLinux.outputStorage),
-            buildStorageEntry(StorageClasses.FLOAT_64, CLinux.outputStorage)
-    );
+    static Map<Integer, VMStorage[]> outputStorage = inputStorage;
 
-    static int regTag(int storageClass) {
-        return switch (storageClass) {
-            case StorageClasses.FLOAT_32, StorageClasses.FLOAT_64 -> RegTypes.FLOAT;
-            case StorageClasses.INTEGER_8, StorageClasses.INTEGER_16,
-                    StorageClasses.INTEGER_32, StorageClasses.INTEGER_64 -> RegTypes.INTEGER;
-            default -> -1;
-        };
+    static int regType(int storageClass) {
+        return (storageClass >> 8) << 8;
     }
 
     public static class Bindings {
@@ -212,7 +193,7 @@ public class LinuxRISCV64CallArranger {
             if (storage.isPresent()) return storage.get();
             // If storageClass is RegTypes.FLOAT, and no floating-point register is available,
             // try to allocate an integer register.
-            if (regTag(storageClass) == RegTypes.FLOAT) {
+            if (regType(storageClass) == RegTypes.FLOAT) {
                 storage = regAlloc(StorageClasses.toIntegerClass(storageClass));
                 if (storage.isPresent()) return storage.get();
             }
@@ -306,7 +287,7 @@ public class LinuxRISCV64CallArranger {
                     while (offset < layout.byteSize()) {
                         final long copy = Math.min(layout.byteSize() - offset, 8);
                         VMStorage storage = locations[locIndex++];
-                        boolean useFloat = regTag(storage.type()) == RegTypes.FLOAT;
+                        boolean useFloat = regType(storage.type()) == RegTypes.FLOAT;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         if (offset + copy < layout.byteSize()) {
                             bindings.dup();
@@ -408,7 +389,7 @@ public class LinuxRISCV64CallArranger {
                     while (offset < layout.byteSize()) {
                         final long copy = Math.min(layout.byteSize() - offset, 8);
                         VMStorage storage = locations[locIndex++];
-                        boolean useFloat = regTag(storage.type()) == RegTypes.FLOAT;
+                        boolean useFloat = regType(storage.type()) == RegTypes.FLOAT;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         bindings.dup().vmLoad(storage, type)
                                 .bufferStore(offset, type);

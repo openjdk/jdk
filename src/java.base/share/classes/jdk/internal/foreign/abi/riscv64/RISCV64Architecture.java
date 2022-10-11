@@ -49,8 +49,8 @@ public class RISCV64Architecture implements Architecture {
     // that will fail to perform sign extension.
     //
     // However, there is not any mechanism to pass width massage into makeUpcallStub.
-    // To achieve the aim, we can encode width information into RegType by defining
-    // more grained RegType, that is StorageClass, they can be considered as subtype of RegType.
+    // To achieve the aim, we can encode width information into VMStorage by defining
+    // more fine-grained StorageClasses.
     //
     // Enumeration values of below two interfaces must consistent with riscv64 backend.
     public interface RegTypes {
@@ -59,6 +59,12 @@ public class RISCV64Architecture implements Architecture {
         int STACK = 2 << 8;
     }
 
+    // StorageClasses may look different from its counterpart in aarch64 and x86.
+    // Upper 16 bits is unused. Lower 16 bits is spilt 2 parts, the first part is regtype, the second part is width.
+    // regtype will determine what type of register will be allocated to the StorageClass, and width information will
+    // determine how riscv backend transfer data between memory and allocated register.
+    // | unused | RegType | width |
+    //  16 bits   8 bits    8 bits
     public interface StorageClasses {
         int INTEGER_8 = RegTypes.INTEGER | 8;
         int INTEGER_16 = RegTypes.INTEGER | 16;
@@ -90,6 +96,7 @@ public class RISCV64Architecture implements Architecture {
         }
     }
 
+    // When declare registers, we will use RegTypes instead of StorageClass as in aarch64 and x86.
     public static final VMStorage x0 = integerRegister(0, "zr");
     public static final VMStorage x1 = integerRegister(1, "ra");
     public static final VMStorage x2 = integerRegister(2, "sp");

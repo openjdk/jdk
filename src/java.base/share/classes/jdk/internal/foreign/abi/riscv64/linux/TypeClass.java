@@ -31,11 +31,11 @@ import java.util.List;
 
 public enum TypeClass {
     /*
-     * STRUCT_REFERENCE: Struct and its width > 16B, it will be replaced by reference to it.
+     * STRUCT_REFERENCE: Struct and its width > 16B, it will be replaced by its reference.
      *     The reference shall be passed by integer register when a register is available,
      *     otherwise the reference will be passed by stack.
      *
-     * STRUCT_FA: Struct contains one or two floating-point fields and its width <= 16B
+     * STRUCT_FA: Struct contains one or two floating-point fields and its width <= 16B.
      *     Should be passed by one or two float-pointing argument registers, if registers available,
      *     otherwise be passed by stack.
      *
