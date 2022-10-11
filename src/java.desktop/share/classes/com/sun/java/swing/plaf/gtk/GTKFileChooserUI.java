@@ -993,7 +993,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
              * It is not possible to go beyond root directory.
              */
             File crntDir = getFileChooser().getCurrentDirectory();
-            if (crntDir != null && crntDir.getParentFile() == null &&
+            FileSystemView fsv = getFileChooser().getFileSystemView();
+            if (crntDir != null && fsv.isFileSystemRoot(crntDir) &&
                 files.contains(new File("/.."))) {
                     files.removeElementAt(0);
             }
