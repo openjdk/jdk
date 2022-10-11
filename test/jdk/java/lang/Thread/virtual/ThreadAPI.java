@@ -754,7 +754,7 @@ public class ThreadAPI {
 
     /**
      * Test platform thread invoking timed-Thread.join on a thread that is parking
-     * and unparking.
+     * and unparking while pinned.
      */
     @Test
     public void testJoin33() throws Exception {
@@ -775,11 +775,18 @@ public class ThreadAPI {
 
     /**
      * Test virtual thread invoking timed-Thread.join on a thread that is parking
-     * and unparking.
+     * and unparking while pinned.
      */
     @Test
     public void testJoin34() throws Exception {
-        VThreadRunner.run(this::testJoin33);
+        // need at least two carrier threads due to pinning
+        int previousParallelism = VThreadRunner.ensureParallelism(2);
+        try {
+            VThreadRunner.run(this::testJoin33);
+        } finally {
+            // restore
+            VThreadRunner.setParallelism(previousParallelism);
+        }
     }
 
     /**
