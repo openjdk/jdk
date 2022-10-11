@@ -32,6 +32,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 /**
  * @test
@@ -71,6 +74,7 @@ public class UserInfoTest {
         return http2TestServer;
     }
 
+    @Test
     public void main() throws Exception {
         SSLContext sslContext = new SimpleSSLContext().get();
         Http2TestServer server = createServer(sslContext);
@@ -85,10 +89,11 @@ public class UserInfoTest {
                 .build();
 
         URI uri = URIBuilder.newBuilder()
+                .scheme("https")
                 .userInfo("user")
                 .loopback()
                 .port(port)
-                .buildUnchecked();
+                .build();
 
         HttpRequest request = HttpRequest
                 .newBuilder(uri)
@@ -98,9 +103,7 @@ public class UserInfoTest {
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() != 200) {
-                throw new RuntimeException("Test Failed : " + response.uri().getAuthority());
-            }
+            assertEquals(200, response.statusCode(), "Test Failed : " + response.uri().getAuthority());
         } finally {
             server.stop();
         }
