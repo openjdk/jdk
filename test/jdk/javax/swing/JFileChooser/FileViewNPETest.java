@@ -36,7 +36,6 @@ import javax.swing.filechooser.FileView;
 /*
  * @test
  * @bug 6616245
- * @key headful
  * @requires (os.family == "windows" | os.family == "linux")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -73,11 +72,12 @@ public class FileViewNPETest {
                  for example the user's folder or a folder above it.
                  (The folder will not be opened since it's non-traversable).
                 3. Select the Documents folder again.
-                4. If NullPointerException does not occurs in the step 3,
-                 click Pass, otherwise the Test Fails.
+                4. If NullPointerException does not occur in the step 3,
+                 click Pass, otherwise the test fails automatically.
                 """;
         frame = new JFrame("JFileChooser File View NPE test");
-        passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 13, 40);
+        passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS,
+                5L, 13, 40);
         jfc = new JFileChooser();
 
         String userHome = System.getProperty("user.home");
