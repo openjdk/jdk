@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * A tree node for an "enhanced" {@code for} loop statement.
  *
@@ -47,7 +49,10 @@ public interface EnhancedForLoopTree extends StatementTree {
      * <li> local variable declarations and
      * <li> record patterns
      * </ul>
+     *
+     * @since 20
      */
+    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
     public enum DeclarationKind {
         /** enum constant for local variable declarations */
         VARDECL,
@@ -57,8 +62,16 @@ public interface EnhancedForLoopTree extends StatementTree {
 
     /**
      * Returns the control variable for the loop.
-     * @return the control variable
+     * @return the control variable, or {@code null} if this enhanced for uses a pattern
      */
+    Tree getVariable();
+
+    /**
+     * Returns the control variable or pattern for the loop.
+     * @return the control variable or pattern
+     * @since 20
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
     Tree getVariableOrRecordPattern();
 
     /**
@@ -76,6 +89,8 @@ public interface EnhancedForLoopTree extends StatementTree {
     /**
      * Returns the kind of the declaration of the enhanced for.
      * @return the kind of the declaration
+     * @since 20
      */
-    EnhancedForLoopTree.DeclarationKind getDeclarationKind();
+    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
+    DeclarationKind getDeclarationKind();
 }
