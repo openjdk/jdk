@@ -61,26 +61,33 @@ class NativeMethodBarrier: public NativeInstruction {
       guard_addr->set_offset(value);
     }
 
-    void verify() const {
-      int offset = 0;
-      const address start = get_barrier_start_address();
+    #ifdef ASSERT
+      void verify() const {
+        int offset = 0;
+        const address start = get_barrier_start_address();
 
-      assert(Assembler::is_equal(start[offset],  IIHF_ZOPC, RIL_MASK), "check load_const (1/2)");
-      offset += Assembler::instr_len(IIHF_ZOPC);
-      assert(Assembler::is_equal(start[offset],  IILF_ZOPC, RIL_MASK), "check load_const (2/2)");
-      offset += Assembler::instr_len(IILF_ZOPC);
-      assert(Assembler::is_equal(start[offset], LG_ZOPC, RIL_MASK), "check LG");
-      offset += Assembler::instr_len(LG_ZOPC);
-      assert(Assembler::is_equal(start[offset], CFI_ZOPC, RIL_MASK), "check CFI");
-      get_patchable_instruction_handle()->verify();
-      offset += Assembler::instr_len(CFI_ZOPC);
-      assert(Assembler::is_equal(start[offset], LARL_ZOPC, RIL_MASK), "check LARL");
-      offset += Assembler::instr_len(LARL_ZOPC);
-      assert(Assembler::is_equal(start[offset], BCR_ZOPC, RIL_MASK), "check BCR");
-      offset += Assembler::instr_len((unsigned long)BCR_ZOPC);
+        assert(Assembler::is_equal(start[offset],  IIHF_ZOPC, RIL_MASK), "check load_const (1/2)");
+        offset += Assembler::instr_len(&start[offset]);
 
-      assert(offset == BARRIER_TOTAL_LENGTH, "check offset == barrier length constant");
-    }
+        assert(Assembler::is_equal(start[offset],  IILF_ZOPC, RIL_MASK), "check load_const (2/2)");
+        offset += Assembler::instr_len(&start[offset]);
+
+        assert(Assembler::is_equal(start[offset], LG_ZOPC, RIL_MASK), "check LG");
+        offset += Assembler::instr_len(&start[offset]);
+
+        assert(Assembler::is_equal(start[offset], CFI_ZOPC, RIL_MASK), "check CFI");
+        get_patchable_instruction_handle()->verify();
+        offset += Assembler::instr_len(&start[offset]);
+
+        assert(Assembler::is_equal(start[offset], LARL_ZOPC, RIL_MASK), "check LARL");
+        offset += Assembler::instr_len(&start[offset]);
+
+        assert(Assembler::is_equal(start[offset], BCR_ZOPC, RIL_MASK), "check BCR");
+        offset += Assembler::instr_len(&start[offset]);
+
+        assert(offset == BARRIER_TOTAL_LENGTH, "check offset == barrier length constant");
+      }
+    #endif
 
 };
 

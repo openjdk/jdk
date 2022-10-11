@@ -837,18 +837,12 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
   st->print_cr("push_frame %d", (int)-framesize);
   st->print("\t");
-
-  // TODO: Check this!
-  // if (C->stub_function() == NULL) {
-  //   st->print("nmethod entry barrier\n\t");
-  // }
 }
 #endif
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-  // Register nmethod_tmp = Z_R3;
 
   __ verify_thread();
 
@@ -896,12 +890,6 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
-
-  // TODO: Check this!
-  // if (C->stub_function() == NULL) {
-  //   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  //   bs->nmethod_entry_barrier(&_masm, nmethod_tmp);
-  // }
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {

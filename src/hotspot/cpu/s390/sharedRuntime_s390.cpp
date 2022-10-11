@@ -1543,7 +1543,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 #endif
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(masm, Z_R3);
+  bs->nmethod_entry_barrier(masm, Z_R0_scratch);
 
   wrapper_FrameDone = __ offset();
 

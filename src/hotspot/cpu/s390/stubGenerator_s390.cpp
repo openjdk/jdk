@@ -2886,7 +2886,7 @@ class StubGenerator: public StubCodeGenerator {
     // if (return val != 0)
     // return to caller
     __ z_ltr(Z_R2, Z_R2);
-    __ z_bcr(Assembler::bcondNotEqual, Z_R14);
+    __ z_bcr(Assembler::bcondNotZero, Z_R14);
 
     // O.W. call indicates deoptimization required
     // Get handle to wrong-method-stub for s390

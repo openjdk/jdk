@@ -76,7 +76,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   push_frame(frame_size_in_bytes);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this, Z_R3);
+  bs->nmethod_entry_barrier(this, Z_R0_scratch);
 }
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
