@@ -34,8 +34,8 @@
 // Result:
 // Loading libfast-math.so
 // Exception in thread "main" java.lang.AssertionError: TEST FAILED: 0.0
-// 	at compiler.floatingpoint.TestDenormalFloat.testFloats(TestDenormalFloat.java:47)
-// 	at compiler.floatingpoint.TestDenormalFloat.main(TestDenormalFloat.java:57)
+//      at compiler.floatingpoint.TestDenormalFloat.testFloats(TestDenormalFloat.java:47)
+//      at compiler.floatingpoint.TestDenormalFloat.main(TestDenormalFloat.java:57)
 
 
 package compiler.floatingpoint;
