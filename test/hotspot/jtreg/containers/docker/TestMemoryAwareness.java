@@ -63,10 +63,11 @@ public class TestMemoryAwareness {
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
-            testMemoryLimit("100m", "104857600");
-            testMemoryLimit("500m", "524288000");
-            testMemoryLimit("1g", "1073741824");
-            testMemoryLimit("4g", "4294967296");
+            testMemoryLimit("100m", "104857600", false);
+            testMemoryLimit("500m", "524288000", false);
+            testMemoryLimit("1g", "1073741824", false);
+            testMemoryLimit("4g", "4294967296", false);
+            testMemoryLimit("100m", "104857600", true /* additional cgroup mount */);
 
             testMemorySoftLimit("500m", "524288000");
             testMemorySoftLimit("1g", "1073741824");
@@ -86,6 +87,11 @@ public class TestMemoryAwareness {
                 "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
                 "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
             );
+            testOperatingSystemMXBeanAwareness(
+                "100M", Integer.toString(((int) Math.pow(2, 20)) * 100),
+                "200M", Integer.toString(((int) Math.pow(2, 20)) * (200 - 100)),
+                true /* additional cgroup fs mounts */
+            );
             final String hostMaxMem = getHostMaxMemory();
             testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
             testMetricsIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
@@ -98,13 +104,17 @@ public class TestMemoryAwareness {
     }
 
 
-    private static void testMemoryLimit(String valueToSet, String expectedTraceValue)
+    private static void testMemoryLimit(String valueToSet, String expectedTraceValue, boolean addCgmounts)
             throws Exception {
 
         Common.logNewTestCase("memory limit: " + valueToSet);
 
         DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--memory", valueToSet);
+
+        if (addCgmounts) {
+            opts = opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroups-in:ro");
+        }
 
         Common.run(opts)
             .shouldMatch("Memory Limit is:.*" + expectedTraceValue);
@@ -165,6 +175,12 @@ public class TestMemoryAwareness {
 
     private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String expectedMemory,
             String swapAllocation, String expectedSwap) throws Exception {
+        testOperatingSystemMXBeanAwareness(memoryAllocation, expectedMemory, swapAllocation, expectedSwap, false);
+    }
+
+    private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String expectedMemory,
+            String swapAllocation, String expectedSwap, boolean addCgroupMounts) throws Exception {
+
         Common.logNewTestCase("Check OperatingSystemMXBean");
 
         DockerRunOptions opts = Common.newOpts(imageName, "CheckOperatingSystemMXBean")
@@ -176,6 +192,10 @@ public class TestMemoryAwareness {
             // diagnostics
             .addJavaOpts("--add-exports")
             .addJavaOpts("java.base/jdk.internal.platform=ALL-UNNAMED");
+        if (addCgroupMounts) {
+            // Extra cgroup mount should be ignored by product code
+            opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
+        }
 
         OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
         out.shouldHaveExitValue(0)

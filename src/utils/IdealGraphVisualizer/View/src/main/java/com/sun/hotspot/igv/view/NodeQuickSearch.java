@@ -121,7 +121,7 @@ public class NodeQuickSearch implements SearchProvider {
                             final EditorTopComponent comp = EditorTopComponent.getActive();
                             if (comp != null) {
                                 if (theGraph != null) {
-                                    comp.getDiagramModel().selectGraph(theGraph);
+                                    comp.getModel().selectGraph(theGraph);
                                 }
                                 comp.setSelectedNodes(set);
                                 comp.requestActive();
@@ -150,7 +150,7 @@ public class NodeQuickSearch implements SearchProvider {
                                 final Set<InputNode> tmpSet = new HashSet<>();
                                 tmpSet.add(n);
                                 if (theGraph != null) {
-                                    comp.getDiagramModel().selectGraph(theGraph);
+                                    comp.getModel().selectGraph(theGraph);
                                 }
                                 comp.setSelectedNodes(tmpSet);
                                 comp.requestActive();

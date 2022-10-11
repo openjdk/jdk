@@ -97,7 +97,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // assuming both the stack pointer and page_size have their least
   // significant 2 bits cleared and page_size is a power of 2
   sub(hdr, hdr, sp);
-  li(t0, aligned_mask - os::vm_page_size());
+  mv(t0, aligned_mask - os::vm_page_size());
   andr(hdr, hdr, t0);
   // for recursive locking, the result is zero => save it in the displaced header
   // location (NULL in the displaced hdr location indicates recursive locking)
@@ -323,8 +323,9 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // first instruction with a jump. For this action to be legal we
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
-
-  nop();
+  IncompressibleRegion ir(this);  // keep the nop as 4 bytes for patching.
+  assert_alignment(pc());
+  nop();  // 4 bytes
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {

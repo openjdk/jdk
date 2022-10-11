@@ -2493,13 +2493,19 @@ bool LibraryCallKit::inline_vector_convert() {
     if (is_mask && is_floating_point_type(elem_bt_from)) {
       new_elem_bt_from = elem_bt_from == T_FLOAT ? T_INT : T_LONG;
     }
+    if (is_mask && is_floating_point_type(elem_bt_to)) {
+      new_elem_bt_to = elem_bt_to == T_FLOAT ? T_INT : T_LONG;
+    }
     int cast_vopc = VectorCastNode::opcode(new_elem_bt_from, !is_ucast);
-    // Make sure that cast is implemented to particular type/size combination.
-    if (!arch_supports_vector(cast_vopc, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
+
+    // Make sure that vector cast is implemented to particular type/size combination.
+    bool no_vec_cast_check = is_mask &&
+                             ((src_type->isa_vectmask() && dst_type->isa_vectmask()) ||
+                              type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to));
+    if (!no_vec_cast_check && !arch_supports_vector(cast_vopc, num_elem_to, new_elem_bt_to, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s ismask=%d",
-                      cast_vopc,
-                      num_elem_to, type2name(elem_bt_to), is_mask);
+                      cast_vopc, num_elem_to, type2name(new_elem_bt_to), is_mask);
       }
       return false;
     }
@@ -2524,8 +2530,8 @@ bool LibraryCallKit::inline_vector_convert() {
       // Now ensure that the destination gets properly resized to needed size.
       op = gvn().transform(new VectorReinterpretNode(op, op->bottom_type()->is_vect(), dst_type));
     } else if (num_elem_from > num_elem_to) {
-      // Since number elements from input is larger than output, simply reduce size of input (we are supposed to
-      // drop top elements anyway).
+      // Since number of elements from input is larger than output, simply reduce size of input
+      // (we are supposed to drop top elements anyway).
       int num_elem_for_resize = num_elem_to;
 
       // It is possible that arch does not support this intermediate vector size
@@ -2541,12 +2547,10 @@ bool LibraryCallKit::inline_vector_convert() {
         return false;
       }
 
-      op = gvn().transform(new VectorReinterpretNode(op,
-                                                     src_type,
-                                                     TypeVect::make(elem_bt_from,
-                                                                    num_elem_for_resize)));
+      const TypeVect* resize_type = TypeVect::make(elem_bt_from, num_elem_for_resize);
+      op = gvn().transform(new VectorReinterpretNode(op, src_type, resize_type));
       op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to));
-    } else {
+    } else { // num_elem_from == num_elem_to
       if (is_mask) {
         if ((dst_type->isa_vectmask() && src_type->isa_vectmask()) ||
             (type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to))) {

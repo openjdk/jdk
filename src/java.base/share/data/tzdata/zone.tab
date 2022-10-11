@@ -153,7 +153,7 @@ CA	+690650-1050310	America/Cambridge_Bay	Mountain - NU (west)
 CA	+6227-11421	America/Yellowknife	Mountain - NT (central)
 CA	+682059-1334300	America/Inuvik	Mountain - NT (west)
 CA	+4906-11631	America/Creston	MST - BC (Creston)
-CA	+5946-12014	America/Dawson_Creek	MST - BC (Dawson Cr, Ft St John)
+CA	+5546-12014	America/Dawson_Creek	MST - BC (Dawson Cr, Ft St John)
 CA	+5848-12242	America/Fort_Nelson	MST - BC (Ft Nelson)
 CA	+6043-13503	America/Whitehorse	MST - Yukon (east)
 CA	+6404-13925	America/Dawson	MST - Yukon (west)
@@ -423,9 +423,7 @@ TT	+1039-06131	America/Port_of_Spain
 TV	-0831+17913	Pacific/Funafuti
 TW	+2503+12130	Asia/Taipei
 TZ	-0648+03917	Africa/Dar_es_Salaam
-UA	+5026+03031	Europe/Kiev	Ukraine (most areas)
-UA	+4837+02218	Europe/Uzhgorod	Transcarpathia
-UA	+4750+03510	Europe/Zaporozhye	Zaporozhye and east Lugansk
+UA	+5026+03031	Europe/Kyiv	Ukraine (most areas)
 UG	+0019+03225	Africa/Kampala
 UM	+2813-17722	Pacific/Midway	Midway Islands
 UM	+1917+16637	Pacific/Wake	Wake Island

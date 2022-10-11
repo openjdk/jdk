@@ -71,10 +71,10 @@ import sun.java2d.cmm.PCMM;
  * color space (e.g. {@code TYPE_RGB}, {@code TYPE_CMYK}, etc.), but the
  * specific color values of the output data will be undefined.
  * <p>
- * The details of this class are not important for simple applets, which draw in
- * a default color space or manipulate and display imported images with a known
- * color space. At most, such applets would need to get one of the default color
- * spaces via {@link ColorSpace#getInstance}.
+ * The details of this class are not important for simple applications, which
+ * draw in a default color space or manipulate and display imported images with
+ * a known color space. At most, such applications would need to get one of the
+ * default color spaces via {@link ColorSpace#getInstance}.
  *
  * @see ColorSpace
  * @see ICC_Profile

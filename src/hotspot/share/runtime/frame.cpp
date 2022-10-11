@@ -217,7 +217,7 @@ address frame::raw_pc() const {
 // Change the pc in a frame object. This does not change the actual pc in
 // actual frame. To do that use patch_pc.
 //
-void frame::set_pc(address   newpc ) {
+void frame::set_pc(address newpc) {
 #ifdef ASSERT
   if (_cb != NULL && _cb->is_nmethod()) {
     assert(!((nmethod*)_cb)->is_deopt_pc(_pc), "invariant violation");
@@ -229,21 +229,6 @@ void frame::set_pc(address   newpc ) {
   _pc = newpc;
   _cb = CodeCache::find_blob(_pc);
 
-}
-
-void frame::set_pc_preserve_deopt(address newpc) {
-  set_pc_preserve_deopt(newpc, CodeCache::find_blob(newpc));
-}
-
-void frame::set_pc_preserve_deopt(address newpc, CodeBlob* cb) {
-#ifdef ASSERT
-  if (_cb != NULL && _cb->is_nmethod()) {
-    assert(!((nmethod*)_cb)->is_deopt_pc(_pc), "invariant violation");
-  }
-#endif // ASSERT
-
-  _pc = newpc;
-  _cb = cb;
 }
 
 // type testers

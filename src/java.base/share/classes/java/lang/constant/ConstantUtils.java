@@ -59,6 +59,23 @@ class ConstantUtils {
     }
 
     /**
+      * Validates the correctness of an internal class name.
+      * In particular checks for the presence of invalid characters in the name.
+      *
+      * @param name the class name
+      * @return the class name passed if valid
+      * @throws IllegalArgumentException if the class name is invalid
+      */
+     static String validateInternalClassName(String name) {
+         for (int i=0; i<name.length(); i++) {
+             char ch = name.charAt(i);
+             if (ch == ';' || ch == '[' || ch == '.')
+                 throw new IllegalArgumentException("Invalid class name: " + name);
+         }
+         return name;
+     }
+
+    /**
      * Validates a member name
      *
      * @param name the name of the member
@@ -120,6 +137,7 @@ class ConstantUtils {
     static List<String> parseMethodDescriptor(String descriptor) {
         int cur = 0, end = descriptor.length();
         ArrayList<String> ptypes = new ArrayList<>();
+        ptypes.add(null); //placeholder for return type
 
         if (cur >= end || descriptor.charAt(cur) != '(')
             throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
@@ -139,7 +157,7 @@ class ConstantUtils {
         int rLen = skipOverFieldSignature(descriptor, cur, end, true);
         if (rLen == 0 || cur + rLen != end)
             throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ptypes.add(0, descriptor.substring(cur, cur + rLen));
+        ptypes.set(0, descriptor.substring(cur, cur + rLen));
         return ptypes;
     }
 
@@ -186,16 +204,27 @@ class ConstantUtils {
                 case JVM_SIGNATURE_DOUBLE:
                     return index - start + 1;
                 case JVM_SIGNATURE_CLASS:
-                    // Skip leading 'L' and ignore first appearance of ';'
-                    index++;
-                    int indexOfSemi = descriptor.indexOf(';', index);
-                    if (indexOfSemi != -1) {
-                        String unqualifiedName = descriptor.substring(index, indexOfSemi);
-                        boolean legal = verifyUnqualifiedClassName(unqualifiedName);
-                        if (!legal) {
-                            return 0;
+                    // state variable for detection of illegal states, such as:
+                    // empty unqualified name, '//', leading '/', or trailing '/'
+                    boolean legal = false;
+                    while (++index < end) {
+                        switch (descriptor.charAt(index)) {
+                            case ';' -> {
+                                // illegal state on parser exit indicates empty unqualified name or trailing '/'
+                                return legal ? index - start + 1 : 0;
+                            }
+                            case '.', '[' -> {
+                                // do not permit '.' or '['
+                                return 0;
+                            }
+                            case '/' -> {
+                                // illegal state when received '/' indicates '//' or leading '/'
+                                if (!legal) return 0;
+                                legal = false;
+                            }
+                            default ->
+                                legal = true;
                         }
-                        return index - start + unqualifiedName.length() + 1;
                     }
                     return 0;
                 case JVM_SIGNATURE_ARRAY:
@@ -213,26 +242,5 @@ class ConstantUtils {
             }
         }
         return 0;
-    }
-
-    static boolean verifyUnqualifiedClassName(String name) {
-        for (int index = 0; index < name.length(); index++) {
-            char ch = name.charAt(index);
-            if (ch < 128) {
-                if (ch == '.' || ch == ';' || ch == '[' ) {
-                    return false;   // do not permit '.', ';', or '['
-                }
-                if (ch == '/') {
-                    // check for '//' or leading or trailing '/' which are not legal
-                    // unqualified name must not be empty
-                    if (index == 0 || index + 1 >= name.length() || name.charAt(index + 1) == '/') {
-                        return false;
-                    }
-                }
-            } else {
-                index ++;
-            }
-        }
-        return true;
     }
 }

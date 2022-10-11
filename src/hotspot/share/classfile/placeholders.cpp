@@ -29,12 +29,13 @@
 #include "logging/logTag.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/symbolHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/resourceHash.hpp"
 
 class PlaceholderKey {
-  Symbol* _name;
+  SymbolHandle _name;
   ClassLoaderData* _loader_data;
  public:
   PlaceholderKey(Symbol* name, ClassLoaderData* l) : _name(name), _loader_data(l) {}
@@ -204,8 +205,6 @@ PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
   PlaceholderEntry entry;
   entry.set_supername(supername);
   PlaceholderKey key(class_name, loader_data);
-  // Since we're storing this key in the hashtable, we need to increment the refcount.
-  class_name->increment_refcount();
   bool created;
   PlaceholderEntry* table_copy = _placeholders.put_if_absent(key, entry, &created);
   assert(created, "better be absent");
@@ -218,8 +217,6 @@ void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
 
   PlaceholderKey key(class_name, loader_data);
   _placeholders.remove(key);
-  // Decrement the refcount in key, since it's no longer in the table.
-  class_name->decrement_refcount();
 }
 
 

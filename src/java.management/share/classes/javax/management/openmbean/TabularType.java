@@ -26,16 +26,9 @@
 
 package javax.management.openmbean;
 
-
-// java import
-//
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-
-// jmx import
-//
 
 
 /**
@@ -139,7 +132,7 @@ public class TabularType extends OpenType<TabularData> {
         // modifs to the array referenced by the indexNames parameter
         // have no impact)
         //
-        List<String> tmpList = new ArrayList<String>(indexNames.length + 1);
+        List<String> tmpList = new ArrayList<>(indexNames.length + 1);
         for (int i=0; i<indexNames.length; i++) {
             tmpList.add(indexNames[i]);
         }

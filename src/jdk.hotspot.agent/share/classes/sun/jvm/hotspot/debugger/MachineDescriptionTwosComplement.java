@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,8 @@ public abstract class MachineDescriptionTwosComplement {
     return tableLookup(sizeInBytes, signedMinValues);
   }
 
-  // Nearly all of the supported machines are not LP64 */
+  // Historically, most supported machines were not LP64.
+  // 64-bit machines have however become more popular.
   public boolean isLP64() {
     return false;
   }

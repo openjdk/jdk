@@ -728,6 +728,8 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                              SwingUtilities2.getSystemMnemonicKeyMask())
                   });
 
+        table.put("PasswordField.echoChar", '*');
+
         // enabled antialiasing depending on desktop settings
         flushUnreferenced();
         SwingUtilities2.putAATextInfo(useLAFConditions(), table);
@@ -1000,6 +1002,9 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                 SynthStyle style = context.getStyle();
                 int state = context.getComponentState();
 
+                if (style == null) {
+                    return;
+                }
                 // Get the current background color.
                 Color currBG = style.getColor(context, ColorType.BACKGROUND);
 

@@ -61,6 +61,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -94,6 +95,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -552,6 +554,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
 
+  if (UseSystemMemoryBarrier) {
+    if (!SystemMemoryBarrier::initialize()) {
+      vm_shutdown_during_initialization("Failed to initialize the requested system memory barrier synchronization.");
+      return JNI_EINVAL;
+    }
+    log_debug(os)("Using experimental system memory barrier synchronization");
+  }
+
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
   ObjectSynchronizer::initialize();
@@ -637,6 +647,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   LogConfiguration::post_initialize();
   Metaspace::post_initialize();
+  MutexLocker::post_initialize();
 
   HOTSPOT_VM_INIT_END();
 
@@ -1156,6 +1167,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_9) return JNI_TRUE;
   if (version == JNI_VERSION_10) return JNI_TRUE;
   if (version == JNI_VERSION_19) return JNI_TRUE;
+  if (version == JNI_VERSION_20) return JNI_TRUE;
   return JNI_FALSE;
 }
 

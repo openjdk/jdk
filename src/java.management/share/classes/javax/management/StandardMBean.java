@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -759,7 +759,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
             desc = descriptors.get(desc);
         } else {
             Descriptor d = info.getDescriptor();
-            Map<String,Object> fields = new HashMap<String,Object>();
+            Map<String,Object> fields = new HashMap<>();
             for (String fieldName : d.getFieldNames()) {
                 if (fieldName.equals("immutableInfo")) {
                     // Replace immutableInfo as the underlying MBean/MXBean
@@ -1145,7 +1145,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * is immutable.
      */
     private static final Map<Class<?>, Boolean> mbeanInfoSafeMap =
-        new WeakHashMap<Class<?>, Boolean>();
+        new WeakHashMap<>();
 
     /**
      * Return true if {@code subclass} is known to preserve the immutability

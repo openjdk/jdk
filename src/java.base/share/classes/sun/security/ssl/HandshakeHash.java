@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,12 +49,11 @@ final class HandshakeHash {
     // fix the negotiated protocol version and cipher suite
     void determine(ProtocolVersion protocolVersion,
             CipherSuite cipherSuite) {
-        if (!(transcriptHash instanceof CacheOnlyHash)) {
+        if (!(transcriptHash instanceof CacheOnlyHash coh)) {
             throw new IllegalStateException(
                     "Not expected instance of transcript hash");
         }
 
-        CacheOnlyHash coh = (CacheOnlyHash)transcriptHash;
         if (protocolVersion.useTLS13PlusSpec()) {
             transcriptHash = new T13HandshakeHash(cipherSuite);
         } else if (protocolVersion.useTLS12PlusSpec()) {

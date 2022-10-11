@@ -131,6 +131,11 @@ class oopDesc;
 #define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
 #define SIZE_FORMAT              "%"          PRIuPTR
 #define SIZE_FORMAT_X            "0x%"        PRIxPTR
+#ifdef _LP64
+#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
+#else
+#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
+#endif
 #define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
 
 #define INTX_FORMAT              "%"          PRIdPTR
@@ -781,10 +786,7 @@ extern int type2size[T_CONFLICT+1];         // Map BasicType to result stack ele
 extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a char*
 extern BasicType name2type(const char* name);
 
-inline const char* type2name(BasicType t) {
-  assert((uint)t < T_CONFLICT + 1, "invalid type");
-  return type2name_tab[t];
-}
+const char* type2name(BasicType t);
 
 inline jlong max_signed_integer(BasicType bt) {
   if (bt == T_INT) {

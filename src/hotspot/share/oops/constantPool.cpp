@@ -2268,12 +2268,12 @@ void ConstantPool::print_on(outputStream* st) const {
     st->cr();
   }
   if (pool_holder() != NULL) {
-    st->print_cr(" - holder: " INTPTR_FORMAT, p2i(pool_holder()));
+    st->print_cr(" - holder: " PTR_FORMAT, p2i(pool_holder()));
   }
-  st->print_cr(" - cache: " INTPTR_FORMAT, p2i(cache()));
-  st->print_cr(" - resolved_references: " INTPTR_FORMAT, p2i(resolved_references_or_null()));
-  st->print_cr(" - reference_map: " INTPTR_FORMAT, p2i(reference_map()));
-  st->print_cr(" - resolved_klasses: " INTPTR_FORMAT, p2i(resolved_klasses()));
+  st->print_cr(" - cache: " PTR_FORMAT, p2i(cache()));
+  st->print_cr(" - resolved_references: " PTR_FORMAT, p2i(resolved_references_or_null()));
+  st->print_cr(" - reference_map: " PTR_FORMAT, p2i(reference_map()));
+  st->print_cr(" - resolved_klasses: " PTR_FORMAT, p2i(resolved_klasses()));
   st->print_cr(" - cp length: %d", length());
 
   for (int index = 1; index < length(); index++) {      // Index 0 is unused

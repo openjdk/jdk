@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.port = -1;
         this.localSupportedSignAlgs = Collections.emptySet();
         this.serverNameIndication = null;
-        this.requestedServerNames = Collections.<SNIServerName>emptyList();
+        this.requestedServerNames = Collections.emptyList();
         this.useExtendedMasterSecret = false;
         this.creationTime = System.currentTimeMillis();
         this.identificationProtocol = null;
@@ -404,7 +404,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // List of SNIServerName
         int len = Short.toUnsignedInt(buf.getShort());
         if (len == 0) {
-            this.requestedServerNames = Collections.<SNIServerName>emptyList();
+            this.requestedServerNames = Collections.emptyList();
         } else {
             requestedServerNames = new ArrayList<>();
             while (len > 0) {
@@ -440,7 +440,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // Get Peer host & port
         i = Byte.toUnsignedInt(buf.get());
         if (i == 0) {
-            this.host = new String();
+            this.host = "";
         } else {
             b = new byte[i];
             buf.get(b, 0, i);
@@ -1002,8 +1002,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             return true;
         }
 
-        if (obj instanceof SSLSessionImpl) {
-            SSLSessionImpl sess = (SSLSessionImpl) obj;
+        if (obj instanceof SSLSessionImpl sess) {
             return (sessionId != null) && (sessionId.equals(
                         sess.getSessionId()));
         }
@@ -1371,8 +1370,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
 
             if (maximumPacketSize > 0) {
-                return (maximumPacketSize > packetSize) ?
-                        maximumPacketSize : packetSize;
+                return Math.max(maximumPacketSize, packetSize);
             }
 
             if (packetSize != 0) {
@@ -1408,8 +1406,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
 
             if (negotiatedMaxFragLen > 0) {
-                return (negotiatedMaxFragLen > fragmentSize) ?
-                        negotiatedMaxFragLen : fragmentSize;
+                return Math.max(negotiatedMaxFragLen, fragmentSize);
             }
 
             if (fragmentSize != 0) {

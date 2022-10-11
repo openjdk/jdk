@@ -713,11 +713,11 @@ int InlineTree::count() const {
   return result;
 }
 
-void InlineTree::dump_replay_data(outputStream* out) {
-  out->print(" %d %d %d ", inline_level(), caller_bci(), _late_inline);
+void InlineTree::dump_replay_data(outputStream* out, int depth_adjust) {
+  out->print(" %d %d %d ", inline_level() + depth_adjust, caller_bci(), _late_inline);
   method()->dump_name_as_ascii(out);
   for (int i = 0 ; i < _subtrees.length(); i++) {
-    _subtrees.at(i)->dump_replay_data(out);
+    _subtrees.at(i)->dump_replay_data(out, depth_adjust);
   }
 }
 

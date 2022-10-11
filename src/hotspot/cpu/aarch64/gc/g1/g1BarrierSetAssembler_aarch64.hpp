@@ -45,7 +45,8 @@ protected:
                             Register obj,
                             Register pre_val,
                             Register thread,
-                            Register tmp,
+                            Register tmp1,
+                            Register tmp2,
                             bool tosca_live,
                             bool expand_call);
 
@@ -53,7 +54,7 @@ protected:
                              Register store_addr,
                              Register new_val,
                              Register thread,
-                             Register tmp,
+                             Register tmp1,
                              Register tmp2);
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
@@ -69,7 +70,7 @@ public:
 #endif
 
   void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-               Register dst, Address src, Register tmp1, Register tmp_thread);
+               Register dst, Address src, Register tmp1, Register tmp2);
 };
 
 #endif // CPU_AARCH64_GC_G1_G1BARRIERSETASSEMBLER_AARCH64_HPP

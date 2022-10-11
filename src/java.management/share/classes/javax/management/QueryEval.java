@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.management;
 
-// java import
 import java.io.Serializable;
 
 /**
@@ -39,7 +38,7 @@ public abstract class QueryEval implements Serializable {
     private static final long serialVersionUID = 2675899265640874796L;
 
     private static ThreadLocal<MBeanServer> server =
-        new InheritableThreadLocal<MBeanServer>();
+        new InheritableThreadLocal<>();
 
     /**
      * Constructor for subclasses to call.

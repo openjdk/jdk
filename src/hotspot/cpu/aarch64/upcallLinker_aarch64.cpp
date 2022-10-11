@@ -225,7 +225,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   __ block_comment("{ receiver ");
   __ movptr(shuffle_reg, (intptr_t)receiver);
-  __ resolve_jobject(shuffle_reg, rthread, rscratch2);
+  __ resolve_jobject(shuffle_reg, rscratch1, rscratch2);
   __ mov(j_rarg0, shuffle_reg);
   __ block_comment("} receiver ");
 
