@@ -280,9 +280,9 @@ public class LingeredApp {
                 }
             }
 
-            long epoch = epoch();
-            if (epoch - here > timeout) {
-                throw new IOException("Timeout: app not started or crashed in " + timeout + "ms");
+            long timeTaken = epoch() - here;
+            if (timeTaken > timeout) {
+                throw new IOException("Timeout: app not started or crashed in " + timeTaken + "ms");
             }
 
             // Live process should touch lock file every second
@@ -461,7 +461,7 @@ public class LingeredApp {
             throw ex;
         } finally {
             long t2 = System.currentTimeMillis();
-            System.out.println("Starting LingeredApp took " + (t2 - t1) + "ms");
+            System.out.println("LingeredApp startup took " + (t2 - t1) + "ms");
             checkForDumps();
         }
     }
