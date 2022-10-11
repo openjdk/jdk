@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.SimpleEvent;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -82,6 +84,27 @@ public class TestRecordingCopy {
         runningCopy.stop();
         runningCopy.close();
         stoppedCopy.close();
+
+        testMemoryCopy();
+    }
+
+    private static void testMemoryCopy() throws Exception {
+        try (Recording memory = new Recording()) {
+            memory.setToDisk(false);
+            memory.enable(SimpleEvent.class);
+            memory.start();
+
+            Recording unstopped = memory.copy(false);
+            unstopped.dump(Paths.get("unstopped-memory.jfr"));
+
+            Recording stopped = memory.copy(true);
+            try {
+                stopped.dump(Paths.get("stopped-memory.jfr"));
+                throw new Exception("Should not be able to dump stopped in memory recording");
+            } catch (IOException ioe) {
+                // As expected
+            }
+        }
     }
 
     /**

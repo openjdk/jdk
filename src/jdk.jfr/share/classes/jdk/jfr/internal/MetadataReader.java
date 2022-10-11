@@ -81,6 +81,7 @@ final class MetadataReader {
         buildEvenTypes();
         Element time = root.elements("region").get(0);
         descriptor.gmtOffset = time.attribute(MetadataDescriptor.ATTRIBUTE_GMT_OFFSET, 1);
+        descriptor.dst = time.attribute(MetadataDescriptor.ATTRIBUTE_DST, 0L);
         descriptor.locale = time.attribute(MetadataDescriptor.ATTRIBUTE_LOCALE, "");
         descriptor.root = root;
         if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE)) {
