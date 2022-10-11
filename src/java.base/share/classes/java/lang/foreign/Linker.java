@@ -291,7 +291,9 @@ public sealed interface Linker permits AbstractLinker {
     /**
      * A linker option that can be used to indicate additional linking requirements to the linker,
      * besides what is described by a function descriptor.
+     * @since 20
      */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     sealed interface Option
             permits LinkerOptions.FirstVariadicArg {
 
