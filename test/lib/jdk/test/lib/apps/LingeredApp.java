@@ -450,13 +450,16 @@ public class LingeredApp {
             theApp.runAppExactJvmOpts(jvmOpts);
             theApp.waitAppReadyOrCrashed();
         } catch (Exception ex) {
-            boolean alive = theApp.getProcess().isAlive();
+            boolean alive = theApp.getProcess() != null && theApp.getProcess().isAlive();
             System.out.println("LingeredApp failed to start or failed to crash. isAlive=" + alive + ": " + ex);
             // stopApp in case it is still alive, may be able to get output:
-            theApp.stopApp();
-            //if (!alive) {
-            //    theApp.finishApp(); // Cannot call getOutput() if still alive
-            //}
+            if (alive) {
+                theApp.stopApp();
+            }
+            alive = theApp.getProcess() != null && theApp.getProcess().isAlive();
+            if (!alive) {
+                theApp.finishApp(); // Calls getOutput(), fails if still alive
+            }
             theApp.deleteLock();
             throw ex;
         } finally {
