@@ -34,7 +34,7 @@ import jdk.internal.javac.PreviewFeature;
  * @implSpec
  * Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
- * @since 19
+ * @since 20
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface StructLayout extends GroupLayout permits StructLayoutImpl {
