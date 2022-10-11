@@ -41,7 +41,7 @@ import org.w3c.dom.NodeList;
  * @run testng/othervm xpath.XPathExpFollowingTest
  * @summary Tests for XPath following/following-sibling axis specifier.
  */
-public class XPathExpFollowingTest extends  XPathTestBase {
+public class XPathExpFollowingTest extends XPathTestBase {
     /*
      * DataProvider: provides XPath Axis following expressions and equivalent xpath expression.
      */
@@ -62,6 +62,9 @@ public class XPathExpFollowingTest extends  XPathTestBase {
                                 " | /Customers/foo:Customer/descendant-or-self::*"},
                 {"/Customers/foo:Customer/foo:Address/following::*",
                         "/Customers/foo:Customer/foo:Age | /Customers/foo:Customer/foo:ClubMember"},
+                {"/Customers/Customer[@id = 'x1']/*[following::Street]", "/Customers/Customer[@id = 'x1']/*"},
+                {"/Customers/foo:Customer/*[following::foo:Name]", "/None"},
+                {"/Customers/foo:Customer/*[not(following::foo:Name)]", "/Customers/foo:Customer/*"},
                 {"/Customers/following-sibling::*", "/None"},
                 {"/Customers/Customer/following-sibling::Customer",
                         "/Customers/Customer[@id != 'x1']"},
@@ -78,7 +81,12 @@ public class XPathExpFollowingTest extends  XPathTestBase {
                 {"/Customers/Customer[@id='x1']/following-sibling::*",
                         "/Customers/Customer[@id != 'x1'] | /Customers/foo:Customer"},
                 {"/Customers/foo:Customer/foo:Address/following-sibling::*",
-                        "/Customers/foo:Customer/foo:Age | /Customers/foo:Customer/foo:ClubMember"}
+                        "/Customers/foo:Customer/foo:Age | /Customers/foo:Customer/foo:ClubMember"},
+                {"/Customers/Customer[@id = 'x1']/*[following-sibling::Street]", "/None"},
+                {"/Customers/foo:Customer/*[following-sibling::foo:Address]", "/Customers/foo:Customer/foo:Name |" +
+                        "/Customers/foo:Customer/foo:Phone | /Customers/foo:Customer/foo:Email"},
+                {"/Customers/foo:Customer/*[not(following-sibling::foo:Address)]", "/Customers/foo:Customer/foo:Age | " +
+                        "/Customers/foo:Customer/foo:ClubMember | /Customers/foo:Customer/foo:Address"}
         };
     }
 
@@ -96,6 +104,8 @@ public class XPathExpFollowingTest extends  XPathTestBase {
                 {"/Customers/Customer/Address/following::*", 32},
                 {"/Customers/foo:Customer/foo:Address/following::*", 2},
                 {"/Customers/foo:Customer/foo:Name/following::*", 8},
+                {"/Customers/foo:Customer/*[following::foo:Name]", 0},
+                {"/Customers/foo:Customer/*[not(following::foo:Name)]", 6},
                 {"/Customers/following-sibling::*", 0},
                 {"/Customers/Customer/following-sibling::*", 3},
                 {"/Customers/Customer/following-sibling::Customer", 2},
@@ -103,7 +113,10 @@ public class XPathExpFollowingTest extends  XPathTestBase {
                 {"/Customers/Customer[@id='x1']/Name/following-sibling::*", 5},
                 {"/Customers/Customer/Address/following-sibling::*", 6},
                 {"/Customers/Customer[@id='x1']/Address/following-sibling::*", 2},
-                {"/Customers/foo:Customer/foo:Address/following-sibling::*", 2}
+                {"/Customers/foo:Customer/foo:Address/following-sibling::*", 2},
+                {"/Customers/Customer[@id = 'x1']/*[following-sibling::Street]", 0},
+                {"/Customers/foo:Customer/*[following-sibling::foo:Address]", 3},
+                {"/Customers/foo:Customer/*[not(following-sibling::foo:Address)]", 3}
         };
     }
 

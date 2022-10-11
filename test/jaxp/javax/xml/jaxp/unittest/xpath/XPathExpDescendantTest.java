@@ -74,7 +74,12 @@ public class XPathExpDescendantTest extends XPathTestBase {
                 {"/Customers/Customer[@id='x1']/descendant-or-self::*",
                         "/Customers/Customer[@id='x1'] | /Customers/Customer[@id = 'x1']//*"},
                 {"/Customers/foo:Customer/foo:Address/descendant-or-self::*",
-                        "/Customers/foo:Customer/foo:Address | /Customers/foo:Customer/foo:Address//*"}
+                        "/Customers/foo:Customer/foo:Address | /Customers/foo:Customer/foo:Address//*"},
+                {"/Customers/Customer/*[descendant::Street]", "/Customers/Customer/Address"},
+                {"/Customers/Customer/*[not(descendant::Street)]", "/Customers/Customer/*[name() != \"Address\"]"},
+                {"/Customers/Customer/*[descendant-or-self::Street]", "/Customers/Customer/Address"},
+                {"/Customers/Customer/*[not(descendant-or-self::Street)]",
+                        "/Customers/Customer/*[name() != \"Address\"]"}
         };
     }
 
@@ -97,7 +102,9 @@ public class XPathExpDescendantTest extends XPathTestBase {
                 {"/Customers/Customer[@id='x1']/descendant-or-self::Address", 1},
                 {"/Customers/Customer[@id='x1']/Address/descendant-or-self::Address", 1},
                 {"/Customers/Customer[@id='x1']/descendant-or-self::*", 10},
-                {"/Customers/foo:Customer/foo:Address/descendant-or-self::*", 4}
+                {"/Customers/foo:Customer/foo:Address/descendant-or-self::*", 4},
+                {"/Customers/*[descendant::Name]", 3},
+                {"/Customers/foo:Customer/*[descendant-or-self::foo:Street]", 1}
         };
     }
 
