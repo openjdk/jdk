@@ -26,6 +26,7 @@
 package sun.net.www;
 
 import java.util.Iterator;
+import java.util.OptionalInt;
 
 /* This is useful for the nightmare of parsing multi-part HTTP/RFC822 headers
  * sensibly:
@@ -246,6 +247,19 @@ public class HeaderParser {
             return Default;
         }
     }
+
+    public OptionalInt findInt(String k) {
+        try {
+            String s = findValue(k);
+            if (s == null) {
+                return OptionalInt.empty();
+            }
+            return OptionalInt.of(Integer.parseInt(s));
+        } catch (Throwable t) {
+            return OptionalInt.empty();
+        }
+    }
+
     /*
     public static void main(String[] a) throws Exception {
         System.out.print("enter line to parse> ");
