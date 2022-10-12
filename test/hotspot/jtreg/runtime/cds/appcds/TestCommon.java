@@ -752,26 +752,30 @@ public class TestCommon extends CDSTestUtils {
     }
 
     public static void linesMustMatch(String a[], String b[]) {
-        int max = Math.max(a.length, b.length);
-        for (int i = 0; i < max; i++) {
+        int limit = Math.min(a.length, b.length);
+
+        // Check the lines that are in both a[] and b[]
+        for (int i = 0; i < limit; i++) {
             if (!a[i].equals(b[i])) {
                 System.out.println("a:" + i + " " + a[i]);
                 System.out.println("b:" + i + " " + b[i]);
-                throw new RuntimeException("Output mismatch on line :" + i
-                                           + ", a=" + a[i]
+                throw new RuntimeException("Output mismatch on line " + i
+                                           + ": a=" + a[i]
                                            + ", b=" + b[i]);
             }
         }
+
+        // Report the first line that is in one array but not in the other
         if (a.length > b.length) {
-            throw new RuntimeException("Output mismatch on line :" + max
-                                       + ", a=" + a[max]
+            throw new RuntimeException("Output mismatch on line " + limit
+                                       + ": a=" + a[limit]
                                        + ", b=<none>");
 
         }
         if (a.length < b.length) {
-            throw new RuntimeException("Output mismatch on line :" + max
-                                       + ", a=<none>"
-                                       + ", b=" + b[max]);
+            throw new RuntimeException("Output mismatch on line " + limit
+                                       + ": a=<none>"
+                                       + ", b=" + b[limit]);
         }
     }
 }
