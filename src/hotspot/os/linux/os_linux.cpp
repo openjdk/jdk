@@ -1750,7 +1750,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
   assert(rtn == 0, "must be.");
   void * result = ::dlopen(filename, RTLD_LAZY);
   rtn = fesetenv(&curr_fenv);
-  assert(rtn == 0, "must be.");
+  assert(rtn == 0, "fesetenv must succeed");
 
   if (result == NULL) {
     const char* error_report = ::dlerror();
