@@ -100,7 +100,7 @@ Generally speaking to write a good test, one should create a model of
 the system under tests, a model of possible bugs (or bugs which one
 wants to find) and design tests using those models.
 
-### Nearness 
+### Nearness
 
 Prefer having checks inside test code.
 
@@ -156,7 +156,7 @@ that the distance between compared values is not more than 4 ULPs,
 there is also `EXPECT_NEAR(v1, v2, eps)` which checks that the absolute
 value of the difference between `v1` and `v2` is not greater than `eps`.
 
-### C string comparison 
+### C string comparison
 
 Use string special macros for C strings comparisons.
 
@@ -229,7 +229,7 @@ test failure analysis. For example, class `Foo` - test group `Foo`,
 compiler logging subsystem - test group `CompilerLogging`, G1 GC — test
 group `G1GC`, and so forth.
 
-### Filename 
+### Filename
 
 A test file must have `test_` prefix and `.cpp` suffix.
 
@@ -283,7 +283,7 @@ Fixture classes should be named after tested classes, subsystems, etc
 (follow [Test group names rule](#test-group-names)) and have
 `Test` suffix to prevent class name conflicts.
 
-### Friend classes 
+### Friend classes
 
 All test purpose friends should have either `Test` or `Testable` suffix.
 
@@ -303,7 +303,7 @@ the same way it is done in hotspot.
 
 ## Miscellaneous
 
-### Hotspot style 
+### Hotspot style
 
 Abide the norms and rules accepted in Hotspot style guide.
 
@@ -392,7 +392,7 @@ In long-term, we expect jtreg to support GoogleTest tests as first
 class citizens, that is to say, jtreg will parse @requires comments
 and filter out inapplicable tests.
 
-### Flag restoring 
+### Flag restoring
 
 Restore changed flags.
 
@@ -404,7 +404,7 @@ require to use a test fixture class, which sometimes is too wordy. The
 simpler facilities like `FLAG_GUARD` macro or `*FlagSetting` classes could
 be used in such cases to restore/set values.
 
-Caveats: 
+Caveats:
 
 * Changing a flag’s value could break the invariants between flags' values and hence could lead to unexpected/unsupported JVM state.
 
