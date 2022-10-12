@@ -143,11 +143,12 @@ public class TestKeyMaterial extends PKCS11Test {
                                 "SunTlsKeyMaterial", provider);
                     SecretKey masterKey =
                         new SecretKeySpec(master, "TlsMasterSecret");
+                    // prfHashLength and prfBlockSize are ignored by PKCS11 provider
                     TlsKeyMaterialParameterSpec spec =
                         new TlsKeyMaterialParameterSpec(masterKey, major, minor,
                         clientRandom, serverRandom, cipherAlgorithm,
                         keyLength, expandedKeyLength, ivLength, macLength,
-                        hashAlgorithm, -1, -1);
+                        hashAlgorithm, -1 /*ignored*/, -1 /*ignored*/);
 
                     try {
                         kg.init(spec);
