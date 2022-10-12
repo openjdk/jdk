@@ -449,10 +449,6 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             if (shouldClear) {
                 clear(i);
             }
-            // Integer overlfow
-            if (i + 1 < i) {
-                break;
-            }
         }
         fireValueChanged();
     }
@@ -498,6 +494,9 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             return;
         }
 
+        if (index0 == Integer.MAX_VALUE || index1 == Integer.MAX_VALUE) {
+            throw new IndexOutOfBoundsException("index == Integer.MAX_VALUE");
+        }
         if (getSelectionMode() == SINGLE_SELECTION) {
             index0 = index1;
         }
@@ -692,25 +691,25 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * that (as always) index0 need not be &lt;= index1.
      *
      * @throws IndexOutOfBoundsException if either index is negative
+     *         or equal to Integer.MAX_VALUE
      */
     public void removeIndexInterval(int index0, int index1)
     {
+        if (index0 < 0 || index1 < 0) {
+            throw new IndexOutOfBoundsException("index is negative");
+        }
+        if (index0 == Integer.MAX_VALUE || index1 == Integer.MAX_VALUE) {
+            throw new IndexOutOfBoundsException("index is equal to MAX_VALUE");
+        }
         int rmMinIndex = Math.min(index0, index1);
         int rmMaxIndex = Math.max(index0, index1);
-        int gapLength = ((rmMaxIndex - rmMinIndex) + 1) > (rmMaxIndex - rmMinIndex)
-                ? ((rmMaxIndex - rmMinIndex) + 1) : (rmMaxIndex - rmMinIndex);
+        int gapLength = (rmMaxIndex - rmMinIndex) + 1;
 
         /* Shift the entire bitset to the left to close the index0, index1
          * gap.
          */
         for(int i = rmMinIndex; i <= maxIndex; i++) {
-
-            if ((i + gapLength) >= gapLength) {
-                setState(i, value.get(i + gapLength));
-            } else {
-                setState(i, value.get(gapLength));
-                break;
-            }
+            setState(i, value.get(i + gapLength));
         }
 
         int leadIndex = this.leadIndex;

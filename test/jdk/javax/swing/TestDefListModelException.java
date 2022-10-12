@@ -36,15 +36,31 @@ public class TestDefListModelException {
     }
 
     private static void test1() {
+        boolean passed = false;
         DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
         selectionModel.setSelectionInterval(0, 1);
-        selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
+        try {
+            selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
+        } catch (IndexOutOfBoundsException e) {
+            passed = true;
+        }
+        if (!passed) {
+            throw new RuntimeException("IOOBE not thrown");
+        }
     }
 
     private static void test2() {
+        boolean passed = false;
         DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
-        selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
+        try {
+            selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
+        } catch (IndexOutOfBoundsException e) {
+            passed = true;
+        }
+        if (!passed) {
+            throw new RuntimeException("IOOBE not thrown");
+        }
+        selectionModel.removeIndexInterval(0, 1);
     }
 }
 
