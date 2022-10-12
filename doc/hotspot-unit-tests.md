@@ -194,7 +194,7 @@ very bad practice. They just pollute output, so it becomes harder to
 find useful information. In order not print information till it is
 really needed, one should consider saving it to a temporary buffer and
 pass to an assert.
-<https://hg.openjdk.java.net/jdk/jdk/file/tip/test/hotspot/gtest/gc/shared/test_memset_with_concurrent_readers.cpp>
+<https://git.openjdk.org/jdk/blob/master/test/hotspot/gtest/gc/shared/test_memset_with_concurrent_readers.cpp>
 has a good example how to do that.
 
 ### Failures propagation
@@ -383,7 +383,7 @@ upcoming releases.
 For now, if a test depends on flags values, it should have `if
 (!<flag>) { return }` guards in the very beginning and `@requires`
 comment similar to jtreg `@requires` directive right before test macros.
-<https://hg.openjdk.java.net/jdk/jdk/file/tip/test/hotspot/gtest/gc/g1/test_g1IHOPControl.cpp>
+<https://git.openjdk.org/jdk/blob/master/test/hotspot/gtest/gc/g1/test_g1IHOPControl.cpp>
 ha an example of this temporary workaround.  It is important to follow
 that pattern as it allows us to easily find all such tests and update
 them as soon as there is an implementation of flag passing facility.
