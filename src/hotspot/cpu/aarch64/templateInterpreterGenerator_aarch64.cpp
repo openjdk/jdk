@@ -1978,15 +1978,13 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  Register rscratch3 = r10;
-  __ mov(rscratch3, (address) &BytecodeCounter::_counter_value);
-  __ atomic_addw(noreg, 1, rscratch3);
+  __ mov(r10, (address) &BytecodeCounter::_counter_value);
+  __ atomic_addw(noreg, 1, r10);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
-  Register rscratch3 = r10;
-  __ mov(rscratch3, (address) &BytecodeHistogram::_counters[t->bytecode()]);
-  __ atomic_addw(noreg, 1, rscratch3);
+  __ mov(r10, (address) &BytecodeHistogram::_counters[t->bytecode()]);
+  __ atomic_addw(noreg, 1, r10);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
