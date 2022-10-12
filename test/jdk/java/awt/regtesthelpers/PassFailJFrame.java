@@ -35,6 +35,7 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
@@ -241,16 +242,7 @@ public class PassFailJFrame {
             buttonsPanel.add(createCapturePanel());
         }
 
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                super.windowClosing(e);
-                testFailedReason = FAILURE_REASON
-                                   + "User closed the instruction Frame";
-                failed = true;
-                latch.countDown();
-            }
-        });
+        frame.addWindowListener(windowClosingHandler);
 
         frame.add(buttonsPanel, BorderLayout.SOUTH);
         frame.pack();
@@ -283,6 +275,20 @@ public class PassFailJFrame {
 
         return text;
     }
+
+    private static final class WindowClosingHandler extends WindowAdapter {
+        @Override
+        public void windowClosing(WindowEvent e) {
+            testFailedReason = FAILURE_REASON
+                               + "User closed the instruction Frame";
+            failed = true;
+            latch.countDown();
+        }
+    }
+
+    private static final WindowListener windowClosingHandler =
+            new WindowClosingHandler();
+
 
     private static JComponent createCapturePanel() {
         JComboBox<CaptureType> screenShortType = new JComboBox<>(CaptureType.values());
