@@ -341,7 +341,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
 
     Address target(stub->slow_path());
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ jalr(x1, t0, offset);
     });

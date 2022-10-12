@@ -309,7 +309,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
     beqz(t0, ok);
     RuntimeAddress target(StubRoutines::forward_exception_entry());
     relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       la_patchable(t0, target, offset);
       jalr(x0, t0, offset);
     });
@@ -387,7 +387,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   // call indirectly to solve generation ordering problem
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     la_patchable(t1, target, offset);
     ld(t1, Address(t1, offset));
   });
@@ -429,7 +429,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   // call indirectly to solve generation ordering problem
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     la_patchable(t1, target, offset);
     ld(t1, Address(t1, offset));
   });
@@ -1352,7 +1352,7 @@ void MacroAssembler::reinit_heapbase() {
     } else {
       ExternalAddress target(CompressedOops::ptrs_base_addr());
       relocate(target.rspec(), [&] {
-        int offset;
+        int32_t offset;
         la_patchable(xheapbase, target, offset);
         ld(xheapbase, Address(xheapbase, offset));
       });
@@ -1712,7 +1712,7 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
   _masm = masm;
   ExternalAddress target((address)flag_addr);
   _masm->relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     _masm->la_patchable(t0, target, offset);
     _masm->lbu(t0, Address(t0, offset));
   });
@@ -2463,7 +2463,7 @@ void MacroAssembler::far_jump(Address entry, Register tmp) {
     // We can use auipc + jalr here because we know that the total size of
     // the code cache cannot exceed 2Gb.
     relocate(entry.rspec(), [&] {
-      int offset;
+      int32_t offset;
       la_patchable(tmp, entry, offset);
       jalr(x0, tmp, offset);
     });
@@ -2484,7 +2484,7 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
     // We can use auipc + jalr here because we know that the total size of
     // the code cache cannot exceed 2Gb.
     relocate(entry.rspec(), [&] {
-      int offset;
+      int32_t offset;
       la_patchable(tmp, entry, offset);
       jalr(x1, tmp, offset); // link
     });
@@ -2764,7 +2764,7 @@ void MacroAssembler::reserved_stack_check() {
     mv(c_rarg0, xthread);
     RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
     relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       la_patchable(t0, target, offset);
       jalr(x1, t0, offset);
     });
@@ -2775,7 +2775,7 @@ void MacroAssembler::reserved_stack_check() {
     // called by our caller.
     target = RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry());
     relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       la_patchable(t0, target, offset);
       jalr(x0, t0, offset);
     });
@@ -2996,7 +2996,7 @@ void MacroAssembler::decrementw(const Address dst, int32_t value) {
 void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
   assert_different_registers(src1, t0);
   relocate(src2.rspec(), [&] {
-    int offset;
+    int32_t offset;
     la_patchable(t0, src2, offset);
     ld(t0, Address(t0, offset));
   });
@@ -4189,7 +4189,7 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
     far_call(target);
   } else {
     relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       la_patchable(tmp, target, offset);
       jalr(x1, tmp, offset);
     });

@@ -341,7 +341,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ mv(c_rarg1, ra);
   RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite));
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(t0, target, offset);
     __ jalr(x1, t0, offset);
   });
@@ -1292,7 +1292,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   {
     ExternalAddress target((address)&DTraceMethodProbes);
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ lbu(t0, Address(t0, offset));
     });
@@ -1498,7 +1498,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   {
     ExternalAddress target((address)&DTraceMethodProbes);
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ lbu(t0, Address(t0, offset));
     });
@@ -1634,7 +1634,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #endif
     RuntimeAddress target(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ jalr(x1, t0, offset);
     });
@@ -1811,7 +1811,7 @@ void SharedRuntime::generate_deopt_blob() {
     __ orrw(c_rarg2, zr, xcpool); // exec mode
     RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ jalr(x1, t0, offset);
     });
@@ -1908,7 +1908,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ mv(c_rarg1, xcpool);
   RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info));
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(t0, target, offset);
     __ jalr(x1, t0, offset);
   });
@@ -2055,7 +2055,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ mv(c_rarg1, xcpool); // second arg: exec_mode
   target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(t0, target, offset);
     __ jalr(x1, t0, offset);
   });
@@ -2150,7 +2150,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ mvw(c_rarg2, (unsigned)Deoptimization::Unpack_uncommon_trap);
   RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(t0, target, offset);
     __ jalr(x1, t0, offset);
   });
@@ -2277,7 +2277,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ mvw(c_rarg1, (unsigned)Deoptimization::Unpack_uncommon_trap);
   target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(t0, target, offset);
     __ jalr(x1, t0, offset);
   });
@@ -2351,7 +2351,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ mv(c_rarg0, xthread);
   RuntimeAddress target(call_ptr);
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(t0, target, offset);
     __ jalr(x1, t0, offset);
   });
@@ -2464,7 +2464,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
     __ mv(c_rarg0, xthread);
     RuntimeAddress target(destination);
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ jalr(x1, t0, offset);
     });
@@ -2598,7 +2598,7 @@ void OptoRuntime::generate_exception_blob() {
   __ mv(c_rarg0, xthread);
   RuntimeAddress target(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C));
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(t0, target, offset);
     __ jalr(x1, t0, offset);
   });

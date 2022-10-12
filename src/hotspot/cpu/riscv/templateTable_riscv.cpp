@@ -2265,7 +2265,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     assert_different_registers(cache, index, x10);
     ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ lwu(x10, Address(t0, offset));
     });
@@ -2484,7 +2484,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     assert_different_registers(cache, index, x10);
     ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ lwu(x10, Address(t0, offset));
     });
@@ -2786,7 +2786,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     Label L2;
     ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ lwu(c_rarg3, Address(t0, offset));
     });
@@ -2925,7 +2925,7 @@ void TemplateTable::fast_accessfield(TosState state) {
     Label L1;
     ExternalAddress target((address)JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ lwu(x12, Address(t0, offset));
     });

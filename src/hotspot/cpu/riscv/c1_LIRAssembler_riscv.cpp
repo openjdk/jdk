@@ -1410,7 +1410,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   int pc_for_athrow_offset = __ offset();
   InternalAddress pc_for_athrow(__ pc());
   __ relocate(pc_for_athrow.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(exceptionPC->as_register(), pc_for_athrow, offset);
     __ addi(exceptionPC->as_register(), exceptionPC->as_register(), offset);
   });
@@ -1843,7 +1843,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   } else {
     RuntimeAddress target(dest);
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ jalr(x1, t0, offset);
     });

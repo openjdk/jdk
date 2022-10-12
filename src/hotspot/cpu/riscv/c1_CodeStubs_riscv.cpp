@@ -104,7 +104,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   }
   RuntimeAddress target(Runtime1::entry_for(stub_id));
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(ra, target, offset);
     __ jalr(ra, ra, offset);
   });

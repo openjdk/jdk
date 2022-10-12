@@ -937,7 +937,7 @@ private:
     } else {
       InternalAddress target(const_addr.target());
       relocate(target.rspec(), [&] {
-        int offset;
+        int32_t offset;
         la_patchable(dest, target, offset);
         ld(dest, Address(dest, offset));
       });

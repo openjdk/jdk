@@ -75,7 +75,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   Address target(SafepointSynchronize::safepoint_counter_addr());
   __ relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(rcounter_addr, target, offset);
     __ addi(rcounter_addr, rcounter_addr, offset);
   });
@@ -95,7 +95,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     // take the fast path.
     ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(result, target, offset);
       __ lwu(result, Address(result, offset));
     });
@@ -175,7 +175,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     __ enter();
     ExternalAddress target(slow_case_addr);
     __ relocate(target.rspec(), [&] {
-      int offset;
+      int32_t offset;
       __ la_patchable(t0, target, offset);
       __ jalr(x1, t0, offset);
     });

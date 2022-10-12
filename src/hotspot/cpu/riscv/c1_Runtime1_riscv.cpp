@@ -69,7 +69,7 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
   // do the call
   RuntimeAddress target(entry);
   relocate(target.rspec(), [&] {
-    int offset;
+    int32_t offset;
     la_patchable(t0, target, offset);
     jalr(x1, t0, offset);
   });
@@ -572,7 +572,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   // do the call
   RuntimeAddress addr(target);
   __ relocate(addr.rspec(), [&] {
-    int offset;
+    int32_t offset;
     __ la_patchable(t0, addr, offset);
     __ jalr(x1, t0, offset);
   });
