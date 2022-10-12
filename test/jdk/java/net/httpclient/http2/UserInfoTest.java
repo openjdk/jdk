@@ -23,6 +23,10 @@
 
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -32,7 +36,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -47,18 +50,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @run junit UserInfoTest
  */
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class UserInfoTest {
+
+    Http2TestServer server;
+    int port;
+    SSLContext sslContext;
+
+    @BeforeAll
+    void before() throws Exception {
+        sslContext = new SimpleSSLContext().get();
+        server = createServer(sslContext);
+        port = server.getAddress().getPort();
+        server.start();
+    }
+
+    @AfterAll
+    void after() throws Exception {
+        server.close();
+    }
 
     static class Http2TestHandler implements Http2Handler {
         @Override
         public void handle(Http2TestExchange e) throws IOException {
-            InputStream is = e.getRequestBody();
-            StringBuilder sb = new StringBuilder();
-            for (int ch; (ch = is.read()) != -1; ) {
-                sb.append((char) ch);
-            }
-            is.readAllBytes();
-            is.close();
             if (e.getRequestURI().getAuthority().contains("user@")) {
                 e.sendResponseHeaders(500, -1);
             } else {
@@ -75,13 +89,7 @@ public class UserInfoTest {
     }
 
     @Test
-    public void main() throws Exception {
-        SSLContext sslContext = new SimpleSSLContext().get();
-        Http2TestServer server = createServer(sslContext);
-        int port = server.getAddress().getPort();
-
-        server.start();
-
+    public void testAuthorityHeader() throws Exception {
         HttpClient client = HttpClient
                 .newBuilder()
                 .proxy(HttpClient.Builder.NO_PROXY)
@@ -100,12 +108,8 @@ public class UserInfoTest {
                 .GET()
                 .build();
 
-        try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            assertEquals(200, response.statusCode(), "Test Failed : " + response.uri().getAuthority());
-        } finally {
-            server.stop();
-        }
+        assertEquals(200, response.statusCode(), "Test Failed : " + response.uri().getAuthority());
     }
 }
