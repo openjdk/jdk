@@ -50,7 +50,7 @@ public class UIBuilder {
         private JButton fail;
 
         /**
-         * Contruct a new DialogBuilder object.
+         * Construct a new DialogBuilder object.
          */
         public DialogBuilder() {
             dialog = new JDialog(new JFrame());
