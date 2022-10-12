@@ -1619,17 +1619,9 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
         if (is_vector_mask) {
+          // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
-          if (in_vt->length_in_bytes() == out_vt->length_in_bytes() &&
-              Matcher::match_rule_supported_vector(Op_VectorMaskCast, out_vt->length(), out_vt->element_basic_type())) {
-            // Apply "VectorUnbox (VectorBox vmask) ==> VectorMaskCast (vmask)"
-            // directly. This could avoid the transformation ordering issue from
-            // "VectorStoreMask (VectorLoadMask vmask) => vmask".
-            return new VectorMaskCastNode(value, vmask_type);
-          }
-          // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
-          value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
-          return new VectorLoadMaskNode(value, vmask_type);
+          return new VectorMaskCastNode(value, vmask_type);
         } else if (is_vector_shuffle) {
           if (!is_shuffle_to_vector()) {
             // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
@@ -1720,48 +1712,6 @@ Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-Node* VectorMaskCastNode::makeCastNode(PhaseGVN* phase, Node* src, const TypeVect* dst_type) {
-  const TypeVect* src_type = src->bottom_type()->is_vect();
-  assert(src_type->length() == dst_type->length(), "");
-
-  int num_elem = src_type->length();
-  BasicType elem_bt_from = src_type->element_basic_type();
-  BasicType elem_bt_to = dst_type->element_basic_type();
-
-  if (dst_type->isa_vectmask() == NULL && src_type->isa_vectmask() == NULL &&
-      type2aelembytes(elem_bt_from) != type2aelembytes(elem_bt_to)) {
-
-    Node* op = src;
-    BasicType new_elem_bt_from = elem_bt_from;
-    BasicType new_elem_bt_to = elem_bt_to;
-    if (is_floating_point_type(elem_bt_from)) {
-      new_elem_bt_from =  elem_bt_from == T_FLOAT ? T_INT : T_LONG;
-    }
-    if (is_floating_point_type(elem_bt_to)) {
-      new_elem_bt_to = elem_bt_to == T_FLOAT ? T_INT : T_LONG;
-    }
-
-    // Special handling for casting operation involving floating point types.
-    // Case A) F -> X :=  F -> VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2X
-    // Case B) X -> F :=  X -> VectorCastX2[I/L] -> VectorMaskCast ([I/L]->F [NOP])
-    // Case C) F -> F :=  VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2[L/I] -> VectotMaskCast (L/I->F [NOP])
-
-    if (new_elem_bt_from != elem_bt_from) {
-      const TypeVect* new_src_type = TypeVect::makemask(new_elem_bt_from, num_elem);
-      op = phase->transform(new VectorMaskCastNode(op, new_src_type));
-    }
-
-    op = phase->transform(VectorCastNode::make(VectorCastNode::opcode(new_elem_bt_from), op, new_elem_bt_to, num_elem));
-
-    if (new_elem_bt_to != elem_bt_to) {
-      op = phase->transform(new VectorMaskCastNode(op, dst_type));
-    }
-    return op;
-  } else {
-    return new VectorMaskCastNode(src, dst_type);
-  }
-}
-
 Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeVect* dst_type = bottom_type()->is_vect();
   if (in(1)->Opcode() == Op_AndL &&
@@ -1782,7 +1732,7 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
      if (src_type->length() == dst_type->length() &&
          ((src_type->isa_vectmask() == NULL && dst_type->isa_vectmask() == NULL) ||
           (src_type->isa_vectmask() && dst_type->isa_vectmask()))) {
-       return VectorMaskCastNode::makeCastNode(phase, src, dst_type);
+       return new VectorMaskCastNode(src, dst_type);
      }
   }
   return NULL;
