@@ -307,8 +307,12 @@ void MacroAssembler::call_VM_base(Register oop_result,
     ld(t0, Address(java_thread, in_bytes(Thread::pending_exception_offset())));
     Label ok;
     beqz(t0, ok);
-    la_patchable(t0, RuntimeAddress(StubRoutines::forward_exception_entry()), [&] (int32_t off) {
-    jalr(x0, t0, off);});
+    RuntimeAddress target(StubRoutines::forward_exception_entry());
+    relocate(target.rspec(), [&] {
+      int offset;
+      la_patchable(t0, target, offset);
+      jalr(x0, t0, offset);
+    });
     bind(ok);
   }
 
@@ -381,8 +385,11 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   movptr(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
-  la_patchable(t1, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()), [&] (int32_t off) {
-    ld(t1, Address(t1, off));
+  ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
+  relocate(target.rspec(), [&] {
+    int offset;
+    la_patchable(t1, target, offset);
+    ld(t1, Address(t1, offset));
   });
   jalr(t1);
 
@@ -420,8 +427,11 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   movptr(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
-  la_patchable(t1, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()), [&] (int32_t off) {
-    ld(t1, Address(t1, off));
+  ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
+  relocate(target.rspec(), [&] {
+    int offset;
+    la_patchable(t1, target, offset);
+    ld(t1, Address(t1, offset));
   });
   jalr(t1);
 
@@ -1340,8 +1350,11 @@ void MacroAssembler::reinit_heapbase() {
     if (Universe::is_fully_initialized()) {
       mv(xheapbase, CompressedOops::ptrs_base());
     } else {
-      la_patchable(xheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()), [&] (int32_t off) {
-        ld(xheapbase, Address(xheapbase, off));
+      ExternalAddress target(CompressedOops::ptrs_base_addr());
+      relocate(target.rspec(), [&] {
+        int offset;
+        la_patchable(xheapbase, target, offset);
+        ld(xheapbase, Address(xheapbase, offset));
       });
     }
   }
@@ -1697,8 +1710,11 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value) {
   int32_t offset = 0;
   _masm = masm;
-  _masm->la_patchable(t0, ExternalAddress((address)flag_addr), [&] (int32_t off) {
-    _masm->lbu(t0, Address(t0, off));
+  ExternalAddress target((address)flag_addr);
+  _masm->relocate(target.rspec(), [&] {
+    int offset;
+    _masm->la_patchable(t0, target, offset);
+    _masm->lbu(t0, Address(t0, offset));
   });
   _masm->beqz(t0, _label);
 }
@@ -2446,8 +2462,11 @@ void MacroAssembler::far_jump(Address entry, Register tmp) {
   if (far_branches()) {
     // We can use auipc + jalr here because we know that the total size of
     // the code cache cannot exceed 2Gb.
-    la_patchable(tmp, entry, [&] (int32_t off) {
-    jalr(x0, tmp, off);});
+    relocate(entry.rspec(), [&] {
+      int offset;
+      la_patchable(tmp, entry, offset);
+      jalr(x0, tmp, offset);
+    });
   } else {
     j(entry);
   }
@@ -2464,8 +2483,11 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
   if (far_branches()) {
     // We can use auipc + jalr here because we know that the total size of
     // the code cache cannot exceed 2Gb.
-    la_patchable(tmp, entry, [&] (int32_t off) {
-    jalr(x1, tmp, off);}); // link
+    relocate(entry.rspec(), [&] {
+      int offset;
+      la_patchable(tmp, entry, offset);
+      jalr(x1, tmp, offset); // link
+    });
   } else {
     jal(entry); // link
   }
@@ -2740,15 +2762,23 @@ void MacroAssembler::reserved_stack_check() {
 
     enter();   // RA and FP are live.
     mv(c_rarg0, xthread);
-    la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone)), [&] (int32_t off) {
-    jalr(x1, t0, off);});
+    RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
+    relocate(target.rspec(), [&] {
+      int offset;
+      la_patchable(t0, target, offset);
+      jalr(x1, t0, offset);
+    });
     leave();
 
     // We have already removed our own frame.
     // throw_delayed_StackOverflowError will think that it's been
     // called by our caller.
-    la_patchable(t0, RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()), [&] (int32_t off) {
-    jalr(x0, t0, off);});
+    target = RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry());
+    relocate(target.rspec(), [&] {
+      int offset;
+      la_patchable(t0, target, offset);
+      jalr(x0, t0, offset);
+    });
     should_not_reach_here();
 
     bind(no_reserved_zone_enabling);
@@ -2965,8 +2995,10 @@ void MacroAssembler::decrementw(const Address dst, int32_t value) {
 
 void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
   assert_different_registers(src1, t0);
-  la_patchable(t0, src2, [&] (int32_t off) {
-    ld(t0, Address(t0, off));
+  relocate(src2.rspec(), [&] {
+    int offset;
+    la_patchable(t0, src2, offset);
+    ld(t0, Address(t0, offset));
   });
   beq(src1, t0, equal);
 }
@@ -4152,10 +4184,14 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 
 void MacroAssembler::rt_call(address dest, Register tmp) {
   CodeBlob *cb = CodeCache::find_blob(dest);
+  RuntimeAddress target(dest);
   if (cb) {
-    far_call(RuntimeAddress(dest));
+    far_call(target);
   } else {
-    la_patchable(tmp, RuntimeAddress(dest), [&] (int32_t off) {
-    jalr(x1, tmp, off);});
+    relocate(target.rspec(), [&] {
+      int offset;
+      la_patchable(tmp, target, offset);
+      jalr(x1, tmp, offset);
+    });
   }
 }

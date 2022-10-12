@@ -182,8 +182,11 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
-  la_patchable(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()), [&] (int32_t off) {
-    addi(xdispatch, xdispatch, off);
+  ExternalAddress target((address)Interpreter::dispatch_table());
+  relocate(target.rspec(), [&] {
+    int offset;
+    la_patchable(xdispatch, target, offset);
+    addi(xdispatch, xdispatch, offset);
   });
 }
 

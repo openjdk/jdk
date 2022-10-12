@@ -73,8 +73,11 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   MacroAssembler* masm = new MacroAssembler(&cbuf);
   address fast_entry = __ pc();
 
-  __ la_patchable(rcounter_addr, SafepointSynchronize::safepoint_counter_addr(), [&] (int32_t off) {
-    __ addi(rcounter_addr, rcounter_addr, off);
+  Address target(SafepointSynchronize::safepoint_counter_addr());
+  __ relocate(target.rspec(), [&] {
+    int offset;
+    __ la_patchable(rcounter_addr, target, offset);
+    __ addi(rcounter_addr, rcounter_addr, offset);
   });
 
   Label slow;
@@ -90,10 +93,11 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
     // Check to see if a field access watch has been set before we
     // take the fast path.
-    __ la_patchable(result,
-                    ExternalAddress((address) JvmtiExport::get_field_access_count_addr()),
-                    [&] (int32_t off) {
-      __ lwu(result, Address(result, off));
+    ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int offset;
+      __ la_patchable(result, target, offset);
+      __ lwu(result, Address(result, offset));
     });
     __ bnez(result, slow);
 
@@ -169,8 +173,12 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   {
     __ enter();
-    __ la_patchable(t0, ExternalAddress(slow_case_addr), [&] (int32_t off) {
-    __ jalr(x1, t0, off);});
+    ExternalAddress target(slow_case_addr);
+    __ relocate(target.rspec(), [&] {
+      int offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
     __ leave();
     __ ret();
   }

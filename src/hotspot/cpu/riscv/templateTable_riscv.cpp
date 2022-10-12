@@ -2263,8 +2263,11 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     // take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    __ la_patchable(t0, ExternalAddress((address) JvmtiExport::get_field_access_count_addr()), [&] (int32_t off) {
-      __ lwu(x10, Address(t0, off));
+    ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int offset;
+      __ la_patchable(t0, target, offset);
+      __ lwu(x10, Address(t0, offset));
     });
 
     __ beqz(x10, L1);
@@ -2479,8 +2482,11 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     // we take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    __ la_patchable(t0, ExternalAddress((address)JvmtiExport::get_field_modification_count_addr()), [&] (int32_t off) {
-      __ lwu(x10, Address(t0, off));
+    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int offset;
+      __ la_patchable(t0, target, offset);
+      __ lwu(x10, Address(t0, offset));
     });
     __ beqz(x10, L1);
 
@@ -2778,8 +2784,11 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // Check to see if a field modification watch has been set before
     // we take the time to call into the VM.
     Label L2;
-    __ la_patchable(t0, ExternalAddress((address)JvmtiExport::get_field_modification_count_addr()), [&] (int32_t off) {
-      __ lwu(c_rarg3, Address(t0, off));
+    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int offset;
+      __ la_patchable(t0, target, offset);
+      __ lwu(c_rarg3, Address(t0, offset));
     });
     __ beqz(c_rarg3, L2);
     __ pop_ptr(x9);                  // copy the object pointer from tos
@@ -2914,8 +2923,11 @@ void TemplateTable::fast_accessfield(TosState state) {
     // Check to see if a field access watch has been set before we
     // take the time to call into the VM.
     Label L1;
-    __ la_patchable(t0, ExternalAddress((address)JvmtiExport::get_field_access_count_addr()), [&] (int32_t off) {
-      __ lwu(x12, Address(t0, off));
+    ExternalAddress target((address)JvmtiExport::get_field_access_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int offset;
+      __ la_patchable(t0, target, offset);
+      __ lwu(x12, Address(t0, offset));
     });
     __ beqz(x12, L1);
     // access constant pool cache entry

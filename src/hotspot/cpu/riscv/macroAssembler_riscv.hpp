@@ -636,17 +636,8 @@ public:
     sd(zr, Address(t0));
   }
 
-private:
-  void la_patchable(Register reg1, const Address &dest, int32_t &offset);
 public:
-  template <typename Callback>
-  void la_patchable(Register reg1, const Address &dest, Callback do_offset) {
-    relocate(dest.rspec(), [&] {
-      int32_t off;
-      la_patchable(reg1, dest, off);
-      do_offset(off);
-    });
-  }
+  void la_patchable(Register reg1, const Address &dest, int32_t &offset);
 
   virtual void _call_Unimplemented(address call_site) {
     mv(t1, call_site);
@@ -945,8 +936,11 @@ private:
     if (NearCpool) {
       ld(dest, const_addr);
     } else {
-      la_patchable(dest, InternalAddress(const_addr.target()), [&] (int32_t off) {
-        ld(dest, Address(dest, off));
+      InternalAddress target(const_addr.target());
+      relocate(target.rspec(), [&] {
+        int offset;
+        la_patchable(dest, target, offset);
+        ld(dest, Address(dest, offset));
       });
     }
   }

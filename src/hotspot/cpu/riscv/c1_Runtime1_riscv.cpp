@@ -67,8 +67,12 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
   set_last_Java_frame(sp, fp, retaddr, t0);
 
   // do the call
-  la_patchable(t0, RuntimeAddress(entry), [&] (int32_t off) {
-  jalr(x1, t0, off);});
+  RuntimeAddress target(entry);
+  relocate(target.rspec(), [&] {
+    int offset;
+    la_patchable(t0, target, offset);
+    jalr(x1, t0, offset);
+  });
   bind(retaddr);
   int call_offset = offset();
   // verify callee-saved register
@@ -566,8 +570,12 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   Label retaddr;
   __ set_last_Java_frame(sp, fp, retaddr, t0);
   // do the call
-  __ la_patchable(t0, RuntimeAddress(target), [&] (int32_t off) {
-  __ jalr(x1, t0, off);});
+  RuntimeAddress addr(target);
+  __ relocate(addr.rspec(), [&] {
+    int offset;
+    __ la_patchable(t0, addr, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
   OopMapSet* oop_maps = new OopMapSet();
   assert_cond(oop_maps != NULL);
