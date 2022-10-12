@@ -103,7 +103,6 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
     String https2URI;
 
     static final long SERVER_LATENCY = 75;
-    static final int MAX_CLIENT_DELAY = 75;
     static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
@@ -220,7 +219,6 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             }
         }
         assert i == uris.length * 2;
-        // assert i == uris.length ;
         return result;
     }
 
