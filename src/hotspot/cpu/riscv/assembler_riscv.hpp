@@ -2156,14 +2156,14 @@ public:
     AbstractAssembler::relocate(rtype, format);
   }
   template <typename Callback>
-  void relocate(relocInfo::relocType rtype, Callback emit_insts, int format = 0) {
-    AbstractAssembler::relocate(rtype, format);
+  void relocate(RelocationHolder const& rspec, Callback emit_insts, int format = 0) {
+    AbstractAssembler::relocate(rspec, format);
     IncompressibleRegion ir(this);  // relocations
     emit_insts();
   }
   template <typename Callback>
-  void relocate(RelocationHolder const& rspec, Callback emit_insts, int format = 0) {
-    AbstractAssembler::relocate(rspec, format);
+  void relocate(relocInfo::relocType rtype, Callback emit_insts, int format = 0) {
+    AbstractAssembler::relocate(rtype, format);
     IncompressibleRegion ir(this);  // relocations
     emit_insts();
   }
