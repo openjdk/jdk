@@ -25,6 +25,8 @@
 
 package java.io;
 
+import java.util.Objects;
+
 import jdk.internal.misc.InternalLock;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
@@ -583,4 +585,31 @@ public class BufferedInputStream extends FilterInputStream {
             // Else retry in case a new buf was CASed in fill()
         }
     }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        if (lock != null) {
+            lock.lock();
+            try {
+                return implTransferTo(out);
+            } finally {
+                lock.unlock();
+            }
+        } else {
+            synchronized (this) {
+                return implTransferTo(out);
+            }
+        }
+    }
+
+    private long implTransferTo(OutputStream out) throws IOException {
+        if (getClass() == BufferedInputStream.class
+                && ((count - pos) <= 0) && (markpos == -1)) {
+            return getInIfOpen().transferTo(out);
+        } else {
+            return super.transferTo(out);
+        }
+    }
+
 }

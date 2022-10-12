@@ -154,7 +154,9 @@ public class Depend implements Plugin {
             if (internalAPIPath == null) {
                 throw new IllegalStateException("Expected internalAPIPath to be set using -XDinternalAPIPath=<internal-API-path>");
             }
-            Set<String> modified = new HashSet<>(Files.readAllLines(Paths.get(modifiedInputs)));
+            Set<Path> modified = Files.readAllLines(Paths.get(modifiedInputs)).stream()
+                                                                              .map(Paths::get)
+                                                                              .collect(Collectors.toSet());
             Path internalAPIDigestFile = Paths.get(internalAPIPath);
             JavaCompiler compiler = JavaCompiler.instance(context);
             Class<?> initialFileParserIntf = Class.forName("com.sun.tools.javac.main.JavaCompiler$InitialFileParserIntf");
@@ -255,7 +257,7 @@ public class Depend implements Plugin {
     }
 
     private com.sun.tools.javac.util.List<JCCompilationUnit> doFilteredParse(
-            JavaCompiler compiler, Iterable<JavaFileObject> fileObjects, Set<String> modified,
+            JavaCompiler compiler, Iterable<JavaFileObject> fileObjects, Set<Path> modified,
             Path internalAPIDigestFile, AtomicBoolean noApiChange,
             boolean debug) {
         Map<String, String> internalAPI = new LinkedHashMap<>();
@@ -272,10 +274,11 @@ public class Depend implements Plugin {
         }
         Map<JavaFileObject, JCCompilationUnit> files2CUT = new IdentityHashMap<>();
         boolean fullRecompile = modified.stream()
+                                        .map(Path::toString)
                                         .anyMatch(f -> !StringUtils.toLowerCase(f).endsWith(".java"));
         ListBuffer<JCCompilationUnit> result = new ListBuffer<>();
         for (JavaFileObject jfo : fileObjects) {
-            if (modified.contains(jfo.getName())) {
+            if (modified.contains(Path.of(jfo.getName()))) {
                 JCCompilationUnit parsed = compiler.parse(jfo);
                 files2CUT.put(jfo, parsed);
                 String currentSignature = treeDigest(parsed);
@@ -289,7 +292,7 @@ public class Depend implements Plugin {
 
         if (fullRecompile) {
             for (JavaFileObject jfo : fileObjects) {
-                if (!modified.contains(jfo.getName())) {
+                if (!modified.contains(Path.of(jfo.getName()))) {
                     JCCompilationUnit parsed = files2CUT.get(jfo);
                     if (parsed == null) {
                         parsed = compiler.parse(jfo);
@@ -320,6 +323,7 @@ public class Depend implements Plugin {
                          .findAny()
                          .orElseGet(() -> "unknown");
             String nonJavaModifiedFiles = modified.stream()
+                                                  .map(Path::toString)
                                                   .filter(f -> !StringUtils.toLowerCase(f)
                                                                            .endsWith(".java"))
                                                   .collect(Collectors.joining(", "));
@@ -879,13 +883,13 @@ public class Depend implements Plugin {
     private class FilteredInitialFileParser implements InvocationHandler {
 
         private final JavaCompiler compiler;
-        private final Set<String> modified;
+        private final Set<Path> modified;
         private final Path internalAPIDigestFile;
         private final AtomicBoolean noApiChange;
         private final boolean debug;
 
         public FilteredInitialFileParser(JavaCompiler compiler,
-                                         Set<String> modified,
+                                         Set<Path> modified,
                                          Path internalAPIDigestFile,
                                          AtomicBoolean noApiChange,
                                          boolean debug) {

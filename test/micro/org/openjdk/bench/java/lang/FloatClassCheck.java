@@ -106,4 +106,27 @@ public class FloatClassCheck {
         }
     }
 
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsFiniteStore() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            storeOutputs[i] = Float.isFinite(inputs[i]);
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsFiniteCMov() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            cmovOutputs[i] = Float.isFinite(inputs[i]) ? 9 : 7;
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsFiniteBranch() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            cmovOutputs[i] = Float.isFinite(inputs[i]) ? call() : 7;
+        }
+    }
 }
