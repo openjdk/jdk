@@ -266,9 +266,6 @@ JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, job
 JNIEXPORT void JNICALL
 JVM_StartThread(JNIEnv *env, jobject thread);
 
-JNIEXPORT void JNICALL
-JVM_StopThread(JNIEnv *env, jobject thread, jobject exception);
-
 JNIEXPORT jboolean JNICALL
 JVM_IsThreadAlive(JNIEnv *env, jobject thread);
 
@@ -1152,6 +1149,9 @@ JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboolean last_unmoun
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboolean last_unmount);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);
 
 /*
  * Core reflection support.
