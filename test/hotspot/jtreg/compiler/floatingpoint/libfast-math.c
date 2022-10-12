@@ -22,4 +22,12 @@
  */
 
 // This file is intentionally left blank.
+//
+// It exists only to be linked with -ffast-math. See GCC bug 55522:
+//
+// "When used at link-time, [ GCC with -ffast-math ] may include
+// libraries or startup files that change the default FPU control word
+// or other similar optimizations."
+//
+// This breaks Java's floating point arithmetic.
 
