@@ -728,6 +728,8 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                              SwingUtilities2.getSystemMnemonicKeyMask())
                   });
 
+        table.put("PasswordField.echoChar", '*');
+
         // enabled antialiasing depending on desktop settings
         flushUnreferenced();
         SwingUtilities2.putAATextInfo(useLAFConditions(), table);

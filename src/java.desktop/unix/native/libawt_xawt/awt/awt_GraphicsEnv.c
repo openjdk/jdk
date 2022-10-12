@@ -383,7 +383,7 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
          */
         screenDataPtr->defaultConfig = makeDefaultConfig(env, screen);
         if (screenDataPtr->defaultConfig == NULL) {
-            return;
+            goto cleanup;
         }
     }
 
@@ -572,6 +572,9 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 
 cleanup:
     if (success != JNI_TRUE) {
+        for (i = 0; i < nConfig; i++) {
+            free(graphicsConfigs[i]);
+        }
         free(graphicsConfigs);
     }
     if (n8p != 0)

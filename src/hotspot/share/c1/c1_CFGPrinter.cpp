@@ -65,7 +65,7 @@ CFGPrinterOutput::CFGPrinterOutput(Compilation* compilation)
   char file_name[O_BUFLEN];
   jio_snprintf(file_name, sizeof(file_name), "output_tid" UINTX_FORMAT "_pid%u.cfg",
                os::current_thread_id(), os::current_process_id());
-  _output = new(ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, "at");
+  _output = new(mtCompiler) fileStream(file_name, "at");
 }
 
 void CFGPrinterOutput::inc_indent() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,8 +324,11 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         }
 
         if (!canEncodeImage(compressionType, colorModel, sampleModel)) {
-            throw new IOException("Image can not be encoded with compression type "
-                                  + BMPCompressionTypes.getName(compressionType));
+            throw new
+            IOException("Image can not be encoded with compression type "
+                        + BMPCompressionTypes.getName(compressionType)
+                        + " and " + colorModel.getPixelSize()
+                        + " bits per pixel");
         }
 
         byte[] r = null, g = null, b = null, a = null;
@@ -1452,8 +1455,11 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         if (!spi.canEncodeImage(imgType)) {
             return false;
         }
-        int biType = imgType.getBufferedImageType();
         int bpp = imgType.getColorModel().getPixelSize();
+        if (bpp != 0 && bpp != 1 && bpp != 4 && bpp != 8 &&
+            bpp != 15 && bpp != 16 && bpp != 24 && bpp != 32) {
+            return false;
+        }
         if (compressionType == BI_RLE4 && bpp != 4) {
             // only 4bpp images can be encoded as BI_RLE4
             return false;

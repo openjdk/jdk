@@ -57,8 +57,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
      * @param filename the file to be generated
      */
     public DeprecatedListWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, PageMode.DEPRECATED, "deprecated elements",
-              configuration.contents.deprecatedAPI, "doclet.Window_Deprecated_List");
+        super(configuration, filename, configuration.deprecatedAPIListBuilder);
     }
 
     /**
@@ -73,13 +72,14 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
             DocPath filename = DocPaths.DEPRECATED_LIST;
             DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
-            depr.generateSummaryListFile(configuration.deprecatedAPIListBuilder);
+            depr.generateSummaryListFile(PageMode.DEPRECATED, "deprecated elements",
+                    configuration.contents.deprecatedAPI, "doclet.Window_Deprecated_List");
         }
     }
 
     @Override
-    protected void addExtraSection(DeprecatedAPIListBuilder list, Content content) {
-        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+    protected void addContentSelectors(Content target) {
+        List<String> releases = builder.releases;
         if (releases.size() > 1) {
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes, contents.getContent(
                     "doclet.Deprecated_API_Checkbox_Label"));
@@ -87,9 +87,13 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
                 // Table column ids are 1-based
                 tabs.add(Text.of(" ")).add(getReleaseCheckbox(releases.get(i), i + 1));
             }
-            content.add(tabs);
+            target.add(tabs);
         }
-        addSummaryAPI(list.getForRemoval(), HtmlIds.FOR_REMOVAL,
+    }
+
+    @Override
+    protected void addExtraSection(Content content) {
+        addSummaryAPI(builder.getForRemoval(), HtmlIds.FOR_REMOVAL,
                 TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
     }
 
@@ -111,8 +115,8 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     }
 
     @Override
-    protected void addExtraIndexLink(DeprecatedAPIListBuilder list, Content target) {
-        if (!list.getForRemoval().isEmpty()) {
+    protected void addExtraIndexLink(Content target) {
+        if (!builder.getForRemoval().isEmpty()) {
             addIndexLink(HtmlIds.FOR_REMOVAL, "doclet.Terminally_Deprecated", target);
         }
     }
@@ -129,7 +133,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
 
     @Override
     protected void addTableTabs(Table table, String headingKey) {
-        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        List<String> releases = builder.releases;
         if (!releases.isEmpty()) {
             table.setGridStyle(HtmlStyle.threeColumnReleaseSummary);
         }
@@ -149,7 +153,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
 
     @Override
     protected Content getExtraContent(Element element) {
-        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        List<String> releases = builder.releases;
         if (releases.isEmpty()) {
             return null;
         }
@@ -160,7 +164,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
 
     @Override
     protected TableHeader getTableHeader(String headerKey) {
-        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        List<String> releases = builder.releases;
         if (releases.isEmpty()) {
             return super.getTableHeader(headerKey);
         }
@@ -173,7 +177,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
 
     @Override
     protected HtmlStyle[] getColumnStyles() {
-        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        List<String> releases = builder.releases;
         if (releases.isEmpty()) {
             return super.getColumnStyles();
         }
