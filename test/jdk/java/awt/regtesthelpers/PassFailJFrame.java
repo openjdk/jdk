@@ -51,6 +51,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -58,6 +59,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
@@ -81,8 +85,11 @@ public class PassFailJFrame {
     private static volatile boolean failed;
     private static volatile boolean timeout;
     private static volatile String testFailedReason;
+
     private static final AtomicInteger imgCounter = new AtomicInteger(0);
+
     private static JFrame frame;
+
     private static Robot robot;
 
     public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
@@ -168,8 +175,7 @@ public class PassFailJFrame {
                           boolean enableScreenCapture) throws InterruptedException,
             InvocationTargetException {
         if (isEventDispatchThread()) {
-            createUI(title, instructions, testTimeOut, rows, columns,
-                    enableScreenCapture);
+            createUI(title, instructions, testTimeOut, rows, columns, enableScreenCapture);
         } else {
             invokeAndWait(() -> createUI(title, instructions, testTimeOut,
                     rows, columns, enableScreenCapture));
@@ -187,9 +193,29 @@ public class PassFailJFrame {
                                  boolean enableScreenCapture) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
-        JTextArea instructionsText = new JTextArea(instructions, rows, columns);
-        instructionsText.setEditable(false);
-        instructionsText.setLineWrap(true);
+
+        boolean isHTML = instructions.startsWith("<html>");
+        JTextComponent text =
+                isHTML ? new JEditorPane("text/html", instructions)
+                       : new JTextArea(instructions, rows, columns);
+        if (isHTML) {
+            text.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES,
+                                               Boolean.TRUE);
+            // Set preferred size as if it were JTextArea
+            text.setPreferredSize(
+                    new JTextArea(rows, columns).getPreferredSize());
+
+            HTMLEditorKit kit = (HTMLEditorKit) ((JEditorPane) text).getEditorKit();
+            StyleSheet styles = kit.getStyleSheet();
+            // Reduce the default margins
+            styles.addRule("ol, ul { margin-left-ltr: 20; margin-left-rtl: 20 }");
+            // Make the size of code blocks the same as other text
+            styles.addRule("code { font-size: inherit }");
+        } else {
+            ((JTextArea) text).setLineWrap(true);
+            ((JTextArea) text).setWrapStyleWord(true);
+        }
+        text.setEditable(false);
 
         long tTimeout = TimeUnit.MINUTES.toMillis(testTimeOut);
 
@@ -210,7 +236,7 @@ public class PassFailJFrame {
         });
         timer.start();
         frame.add(testTimeoutLabel, BorderLayout.NORTH);
-        frame.add(new JScrollPane(instructionsText), BorderLayout.CENTER);
+        frame.add(new JScrollPane(text), BorderLayout.CENTER);
 
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
