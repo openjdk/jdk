@@ -79,38 +79,38 @@
 #include "utilities/vmError.hpp"
 
 // put OS-includes here
-# include <dlfcn.h>
+# include <sys/types.h>
+# include <sys/mman.h>
+# include <sys/stat.h>
+# include <sys/select.h>
+# include <pthread.h>
+# include <signal.h>
 # include <endian.h>
 # include <errno.h>
-# include <fcntl.h>
 # include <fenv.h>
-# include <inttypes.h>
-# include <link.h>
-# include <linux/elf-em.h>
-# include <poll.h>
-# include <pthread.h>
-# include <pthread.h>
-# include <pwd.h>
-# include <signal.h>
-# include <stdint.h>
+# include <dlfcn.h>
 # include <stdio.h>
-# include <string.h>
-# include <syscall.h>
 # include <unistd.h>
-# include <sys/ioctl.h>
-# include <sys/ipc.h>
-# include <sys/mman.h>
 # include <sys/resource.h>
-# include <sys/select.h>
-# include <sys/shm.h>
-# include <sys/socket.h>
+# include <pthread.h>
 # include <sys/stat.h>
-# include <sys/stat.h>
-# include <sys/sysinfo.h>
 # include <sys/time.h>
 # include <sys/times.h>
-# include <sys/types.h>
 # include <sys/utsname.h>
+# include <sys/socket.h>
+# include <pwd.h>
+# include <poll.h>
+# include <fcntl.h>
+# include <string.h>
+# include <syscall.h>
+# include <sys/sysinfo.h>
+# include <sys/ipc.h>
+# include <sys/shm.h>
+# include <link.h>
+# include <stdint.h>
+# include <inttypes.h>
+# include <sys/ioctl.h>
+# include <linux/elf-em.h>
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -1744,7 +1744,14 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
                                 int ebuflen) {
-  // JDK-8295159: Protect floating-point environment.
+  // Save and restore the floating-point environment around dlopen().
+  // There are known cases where global library initialization sets
+  // FPU flags that affect computation accuracy, for example, enabling
+  // Flush-To-Zero and Denormals-Are-Zero. Do not let those libraries
+  // break Java arithmetic. Unfortunately, this might affect libraries
+  // that might depend on these FPU features for performance and/or
+  // numerical "accuracy", but we need to protect Java semantics first
+  // and foremost. See JDK-8295159.
   fenv_t curr_fenv;
   int rtn = fegetenv(&curr_fenv);
   assert(rtn == 0, "fegetnv must succeed");

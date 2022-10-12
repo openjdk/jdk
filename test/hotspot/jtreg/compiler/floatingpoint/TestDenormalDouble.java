@@ -25,7 +25,7 @@
  * @test
  * @bug 8295159
  * @summary DSO created with -ffast-math breaks Java floating-point arithmetic
- * @run main compiler.floatingpoint.TestDenormalDouble
+ * @run main/othervm/native compiler.floatingpoint.TestDenormalDouble
  */
 
 package compiler.floatingpoint;
@@ -47,6 +47,7 @@ public class TestDenormalDouble {
 
     public static void main(String[] args) {
         testDoubles();
+        System.out.println("Loading libfast-math.so");
         loadLibrary("fast-math");
         testDoubles();
         System.out.println("Test passed.");
