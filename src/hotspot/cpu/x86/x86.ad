@@ -1480,6 +1480,7 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorUCastB2X:
     case Op_VectorUCastS2X:
     case Op_VectorUCastI2X:
+    case Op_VectorMaskCast:
       if (UseAVX < 1) { // enabled for AVX only
         return false;
       }
@@ -1857,6 +1858,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_VectorLoadMask:
+    case Op_VectorMaskCast:
       if (size_in_bits == 256 && UseAVX < 2) {
         return false; // Implementation limitation
       }
@@ -8413,7 +8415,6 @@ instruct vstoreMask_evex(vec dst, kReg mask, immI size) %{
 %}
 
 instruct vmaskcast_evex(kReg dst) %{
-  predicate(Matcher::vector_length(n) == Matcher::vector_length(n->in(1)));
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vector_mask_cast $dst" %}
@@ -8424,8 +8425,7 @@ instruct vmaskcast_evex(kReg dst) %{
 %}
 
 instruct vmaskcast(vec dst) %{
-  predicate((Matcher::vector_length(n) == Matcher::vector_length(n->in(1))) &&
-            (Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1))));
+  predicate(Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vector_mask_cast $dst" %}
@@ -8433,6 +8433,19 @@ instruct vmaskcast(vec dst) %{
     // empty
   %}
   ins_pipe(empty);
+%}
+
+instruct vmaskcast_avx(vec dst, vec src) %{
+  predicate(Matcher::vector_length_in_bytes(n) != Matcher::vector_length_in_bytes(n->in(1)));
+  match(Set dst (VectorMaskCast src));
+  format %{ "vector_mask_cast $dst, $src" %}
+  ins_encode %{
+    int vlen = Matcher::vector_length(this);
+    BasicType src_bt = Matcher::vector_element_basic_type(this, $src);
+    BasicType dst_bt = Matcher::vector_element_basic_type(this);
+    __ vector_mask_cast($dst$$XMMRegister, $src$$XMMRegister, dst_bt, src_bt, vlen);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 //-------------------------------- Load Iota Indices ----------------------------------
