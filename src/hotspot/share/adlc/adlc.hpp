@@ -46,10 +46,6 @@ using namespace std;
 
 #define strdup _strdup
 
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#endif
-
 #ifndef _INTPTR_T_DEFINED
 #ifdef _WIN64
 typedef __int64 intptr_t;
