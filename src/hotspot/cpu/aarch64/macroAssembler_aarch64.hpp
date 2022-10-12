@@ -110,13 +110,6 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
   void rt_call(address dest, Register tmp = rscratch1);
 
-  // Helper functions for statistics gathering.
-  // Unconditional atomic increment.
-  void atomic_incw(Register counter_addr, Register tmp, Register tmp2);
-  void atomic_incw(Address counter_addr, Register tmp1, Register tmp2, Register tmp3) {
-    lea(tmp1, counter_addr);
-    atomic_incw(tmp1, tmp2, tmp3);
-  }
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
@@ -1068,6 +1061,12 @@ public:
   void atomic_addw(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addal(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addalw(Register prev, RegisterOrConstant incr, Register addr);
+
+  // Atomic bitwise OR on word in memory addr with operand op.
+  // Note-1: the value in memory addr can be optionally shifted.
+  // Note-2: the final computation result is stored in register result as well.
+  void atomic_orrw(Register addr, Register op, Register result, Register tmp,
+                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);

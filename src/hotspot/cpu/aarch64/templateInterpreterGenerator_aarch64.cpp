@@ -1999,13 +1999,10 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   __ mov(index_addr, (address) &BytecodePairHistogram::_index);
   __ mov(rscratch1,
          ((int)t->bytecode()) << BytecodePairHistogram::log2_number_of_codes);
-  __ prfm(Address(index_addr), PSTL1STRM);
-  __ bind(L);
-  __ ldxrw(rscratch2, index_addr);
-  __ orrw(index, rscratch1, rscratch2, Assembler::LSR,
-          BytecodePairHistogram::log2_number_of_codes);
-  __ stxrw(rscratch2, index, index_addr);
-  __ cbnzw(rscratch2, L);  // retry to load _index
+  __ atomic_orrw(index_addr, rscratch1, index,
+                 /* tmp */ rscratch2,
+                 /* kind */ Assembler::LSR,
+                 /* shift */ BytecodePairHistogram::log2_number_of_codes);
 
   // Bump bucket contents:
   //   _counters[_index] ++;

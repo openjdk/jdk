@@ -1890,24 +1890,6 @@ Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_of
   return Address(Rd);
 }
 
-void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register tmp2) {
-  if (UseLSE) {
-    mov(tmp, 1);
-    ldadd(Assembler::word, tmp, zr, counter_addr);
-    return;
-  }
-  Label retry_load;
-  prfm(Address(counter_addr), PSTL1STRM);
-  bind(retry_load);
-  // flush and load exclusive from the memory location
-  ldxrw(tmp, counter_addr);
-  addw(tmp, tmp, 1);
-  // if we store+flush with no intervening write tmp will be zero
-  stxrw(tmp2, tmp, counter_addr);
-  cbnzw(tmp2, retry_load);
-}
-
-
 int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
                                     bool want_remainder, Register scratch)
 {
@@ -2789,6 +2771,20 @@ ATOMIC_OP(addal, ldaxr, add, sub, ldaddal, stlxr, Assembler::xword)
 ATOMIC_OP(addalw, ldaxrw, addw, subw, ldaddal, stlxrw, Assembler::word)
 
 #undef ATOMIC_OP
+
+// Atomic bitwise OR on word in memory addr with operand op.
+// Note-1: the value in memory addr can be optionally shifted.
+// Note-2: the final computation result is stored in register result as well.
+void MacroAssembler::atomic_orrw(Register addr, Register op, Register result, Register tmp,
+                                 enum shift_kind kind, unsigned shift) {
+  Label retry_load;
+  prfm(Address(addr), PSTL1STRM);
+  bind(retry_load);
+  ldxrw(result, addr);
+  orrw(result, op, result, kind, shift);
+  stxrw(tmp, result, addr);
+  cbnzw(tmp, retry_load);
+}
 
 #define ATOMIC_XCHG(OP, AOP, LDXR, STXR, sz)                            \
 void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { \
