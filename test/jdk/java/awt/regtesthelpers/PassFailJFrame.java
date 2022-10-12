@@ -194,27 +194,9 @@ public class PassFailJFrame {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
 
-        boolean isHTML = instructions.startsWith("<html>");
-        JTextComponent text =
-                isHTML ? new JEditorPane("text/html", instructions)
-                       : new JTextArea(instructions, rows, columns);
-        if (isHTML) {
-            text.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES,
-                                               Boolean.TRUE);
-            // Set preferred size as if it were JTextArea
-            text.setPreferredSize(
-                    new JTextArea(rows, columns).getPreferredSize());
-
-            HTMLEditorKit kit = (HTMLEditorKit) ((JEditorPane) text).getEditorKit();
-            StyleSheet styles = kit.getStyleSheet();
-            // Reduce the default margins
-            styles.addRule("ol, ul { margin-left-ltr: 20; margin-left-rtl: 20 }");
-            // Make the size of code blocks the same as other text
-            styles.addRule("code { font-size: inherit }");
-        } else {
-            ((JTextArea) text).setLineWrap(true);
-            ((JTextArea) text).setWrapStyleWord(true);
-        }
+        JTextComponent text = instructions.startsWith("<html>")
+                              ? configureHTML(instructions, rows, columns)
+                              : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
 
         long tTimeout = TimeUnit.MINUTES.toMillis(testTimeOut);
@@ -273,6 +255,32 @@ public class PassFailJFrame {
         frame.pack();
         frame.setLocationRelativeTo(null);
         windowList.add(frame);
+    }
+
+    private static JTextComponent configurePlainText(String instructions,
+                                                     int rows, int columns) {
+        JTextArea text = new JTextArea(instructions, rows, columns);
+        text.setLineWrap(true);
+        text.setWrapStyleWord(true);
+        return text;
+    }
+
+    private static JTextComponent configureHTML(String instructions,
+                                                int rows, int columns) {
+        JEditorPane text = new JEditorPane("text/html", instructions);
+        text.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES,
+                               Boolean.TRUE);
+        // Set preferred size as if it were JTextArea
+        text.setPreferredSize(new JTextArea(rows, columns).getPreferredSize());
+
+        HTMLEditorKit kit = (HTMLEditorKit) text.getEditorKit();
+        StyleSheet styles = kit.getStyleSheet();
+        // Reduce the default margins
+        styles.addRule("ol, ul { margin-left-ltr: 20; margin-left-rtl: 20 }");
+        // Make the size of code blocks the same as other text
+        styles.addRule("code { font-size: inherit }");
+
+        return text;
     }
 
     private static JComponent createCapturePanel() {
