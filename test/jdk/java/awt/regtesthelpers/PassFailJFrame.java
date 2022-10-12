@@ -59,6 +59,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
@@ -173,21 +174,51 @@ public class PassFailJFrame {
      */
     public PassFailJFrame(String title, String instructions, long testTimeOut,
                           int rows, int columns,
-                          boolean enableScreenCapture) throws InterruptedException,
-            InvocationTargetException {
-        if (isEventDispatchThread()) {
-            createUI(title, instructions, testTimeOut, rows, columns,
-                     enableScreenCapture);
-        } else {
-            invokeAndWait(() -> createUI(title, instructions, testTimeOut,
-                    rows, columns, enableScreenCapture));
-        }
+                          boolean enableScreenCapture)
+            throws InterruptedException, InvocationTargetException {
+        invokeOnEDT(() -> createUI(title, instructions,
+                                   testTimeOut,
+                                   rows, columns,
+                                   enableScreenCapture));
     }
 
     private PassFailJFrame(Builder builder) throws InterruptedException,
             InvocationTargetException {
         this(builder.title, builder.instructions, builder.testTimeOut,
-                builder.rows, builder.columns, builder.screenCapture);
+             builder.rows, builder.columns, builder.screenCapture);
+
+        if (builder.windowCreator != null) {
+            invokeOnEDT(() ->
+                    builder.testWindow = builder.windowCreator.createTestUI());
+        }
+
+        if (builder.testWindow != null) {
+            addTestWindow(builder.testWindow);
+            builder.testWindow.addWindowListener(windowClosingHandler);
+            positionTestWindow(builder.testWindow, builder.position);
+
+            invokeOnEDT(() -> windowList.forEach(w -> w.setVisible(true)));
+        }
+    }
+
+    /**
+     * Performs an operation on EDT. If called on EDT, invokes {@code run}
+     * directly, otherwise wraps into {@code invokeAndWait}.
+     *
+     * @param doRun an operation to run on EDT
+     * @throws InterruptedException if we're interrupted while waiting for
+     *              the event dispatching thread to finish executing
+     *              {@code doRun.run()}
+     * @throws InvocationTargetException if an exception is thrown while
+     *              running {@code doRun}
+     */
+    private static void invokeOnEDT(Runnable doRun)
+            throws InterruptedException, InvocationTargetException {
+        if (SwingUtilities.isEventDispatchThread()) {
+            doRun.run();
+        } else {
+            SwingUtilities.invokeAndWait(doRun);
+        }
     }
 
     private static void createUI(String title, String instructions,
@@ -275,6 +306,11 @@ public class PassFailJFrame {
 
         return text;
     }
+
+    @FunctionalInterface
+    public interface WindowCreator {
+        Window createTestUI();
+    };
 
     private static final class WindowClosingHandler extends WindowAdapter {
         @Override
@@ -619,7 +655,11 @@ public class PassFailJFrame {
         private long testTimeOut;
         private int rows;
         private int columns;
-        private boolean screenCapture = false;
+        private boolean screenCapture;
+
+        private Window testWindow;
+        private WindowCreator windowCreator;
+        public Position position;
 
         public Builder title(String title) {
             this.title = title;
@@ -651,6 +691,27 @@ public class PassFailJFrame {
             return this;
         }
 
+        public Builder testUI(Window window) {
+            if (windowCreator != null && window != null) {
+                throw new IllegalStateException("windowCreator is already set");
+            }
+            this.testWindow = window;
+            return this;
+        }
+
+        public Builder testUI(WindowCreator windowCreator) {
+            if (testWindow != null && windowCreator != null) {
+                throw new IllegalStateException("testWindow is already set");
+            }
+            this.windowCreator = windowCreator;
+            return this;
+        }
+
+        public Builder position(Position position) {
+            this.position = position;
+            return this;
+        }
+
         public PassFailJFrame build() throws InterruptedException,
                 InvocationTargetException {
             validate();
@@ -678,6 +739,16 @@ public class PassFailJFrame {
             if (this.columns == 0) {
                 this.columns = COLUMNS;
             }
+
+            if (position == null
+                && (testWindow != null || windowCreator != null)) {
+
+                position = Position.HORIZONTAL;
+            }
         }
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 }
