@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.ExceptionRequest.notifyCaught;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class notifycaught001a {
 
     //====================================================== test program
 
-    static Thread1notifycaught001a thread1 = null;
+    static Thread thread1 = null;
 
     //------------------------------------------------------ common section
 
@@ -98,7 +97,7 @@ public class notifycaught001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1notifycaught001a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1notifycaught001a("thread1"));
                             log1("new notifycaught001a().run1(thread1);");
                             new notifycaught001a().run1(thread1);
 
@@ -160,22 +159,19 @@ class TestClass11 extends TestClass10{
     }
 }
 
-class Thread1notifycaught001a extends Thread {
-
-    String tName = null;
+class Thread1notifycaught001a extends NamedTask {
 
     public Thread1notifycaught001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        notifycaught001a.log1("  'run': enter  :: threadName == " + tName);
+        notifycaught001a.log1("  'run': enter  :: threadName == " + getName());
         try {
             (new TestClass11()).m11();
         } catch ( NullPointerException e) {
         }
-        notifycaught001a.log1("  'run': exit   :: threadName == " + tName);
+        notifycaught001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

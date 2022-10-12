@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,20 +36,16 @@
 #include <Mswsock.h>
 #pragma comment(lib, "Mswsock.lib")
 
-static jfieldID chan_fd; /* id for jobject 'fd' in java.io.FileChannel */
-
 /**************************************************************
- * static method to store field ID's in initializers
- * and retrieve the allocation granularity
+ * static method to retrieve the allocation granularity
  */
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
+Java_sun_nio_ch_FileChannelImpl_allocationGranularity0(JNIEnv *env, jclass clazz)
 {
     SYSTEM_INFO si;
     jint align;
     GetSystemInfo(&si);
     align = si.dwAllocationGranularity;
-    chan_fd = (*env)->GetFieldID(env, clazz, "fd", "Ljava/io/FileDescriptor;");
     return align;
 }
 
@@ -59,7 +55,7 @@ Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
  */
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this, jobject fdo,
                                      jint prot, jlong off, jlong len, jboolean map_sync)
 {
     void *mapAddress = 0;
@@ -68,7 +64,6 @@ Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this,
     jlong maxSize = off + len;
     jint lowLen = (jint)(maxSize);
     jint highLen = (jint)(maxSize >> 32);
-    jobject fdo = (*env)->GetObjectField(env, this, chan_fd);
     HANDLE fileHandle = (HANDLE)(handleval(env, fdo));
     HANDLE mapping;
     DWORD mapAccess = FILE_MAP_READ;
@@ -110,7 +105,7 @@ Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this,
         mapAccess,           /* Read and write access */
         highOffset,          /* High word of offset */
         lowOffset,           /* Low word of offset */
-        (DWORD)len);         /* Number of bytes to map */
+        (SIZE_T)len);        /* Number of bytes to map */
     mapError = GetLastError();
 
     result = CloseHandle(mapping);
@@ -145,19 +140,22 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
     return 0;
 }
 
+// Integer.MAX_VALUE - 1 is the maximum transfer size for TransmitFile()
+#define MAX_TRANSMIT_SIZE (java_lang_Integer_MAX_VALUE - 1)
+
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFD,
                                             jlong position, jlong count,
-                                            jobject dstFD)
+                                            jobject dstFD, jboolean append)
 {
     const int PACKET_SIZE = 524288;
 
     LARGE_INTEGER where;
     HANDLE src = (HANDLE)(handleval(env, srcFD));
     SOCKET dst = (SOCKET)(fdval(env, dstFD));
-    DWORD chunkSize = (count > java_lang_Integer_MAX_VALUE) ?
-        java_lang_Integer_MAX_VALUE : (DWORD)count;
+    DWORD chunkSize = (count > MAX_TRANSMIT_SIZE) ?
+        MAX_TRANSMIT_SIZE : (DWORD)count;
     BOOL result;
 
     where.QuadPart = position;
@@ -188,4 +186,19 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
         return IOS_THROWN;
     }
     return chunkSize;
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_FileChannelImpl_transferFrom0(JNIEnv *env, jobject this,
+                                              jobject srcFDO, jobject dstFDO,
+                                              jlong position, jlong count,
+                                              jboolean append)
+{
+    return IOS_UNSUPPORTED;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
+{
+    return MAX_TRANSMIT_SIZE;
 }

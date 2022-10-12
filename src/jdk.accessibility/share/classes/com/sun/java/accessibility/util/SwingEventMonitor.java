@@ -63,7 +63,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * This can only be publicly modified by calling the add or
      * remove listener methods in this class.
      */
-    static protected final EventListenerList listenerList = new EventListenerList();
+    protected static final EventListenerList listenerList = new EventListenerList();
 
     /**
      * The actual listener that is installed on the component instances.
@@ -71,7 +71,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * occurs.  By doing things this way, the actual number of listeners
      * installed on a component instance is drastically reduced.
      */
-    static private final SwingEventListener swingListener = new SwingEventListener();
+    private static final SwingEventListener swingListener = new SwingEventListener();
 
     /**
      * Constructs a {@code SwingEventMonitor}.
@@ -88,7 +88,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeAncestorListener
      */
-    static public void addAncestorListener(AncestorListener l) {
+    public static void addAncestorListener(AncestorListener l) {
         if (listenerList.getListenerCount(AncestorListener.class) == 0) {
             swingListener.installListeners(EventID.ANCESTOR);
         }
@@ -102,7 +102,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addAncestorListener
      */
-    static public void removeAncestorListener(AncestorListener l) {
+    public static void removeAncestorListener(AncestorListener l) {
         listenerList.remove(AncestorListener.class, l);
         if (listenerList.getListenerCount(AncestorListener.class) == 0) {
             swingListener.removeListeners(EventID.ANCESTOR);
@@ -119,7 +119,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeCaretListener
      */
-    static public void addCaretListener(CaretListener l) {
+    public static void addCaretListener(CaretListener l) {
         if (listenerList.getListenerCount(CaretListener.class) == 0) {
             swingListener.installListeners(EventID.CARET);
         }
@@ -133,7 +133,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addCaretListener
      */
-    static public void removeCaretListener(CaretListener l) {
+    public static void removeCaretListener(CaretListener l) {
         listenerList.remove(CaretListener.class, l);
         if (listenerList.getListenerCount(CaretListener.class) == 0) {
             swingListener.removeListeners(EventID.CARET);
@@ -151,7 +151,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeCellEditorListener
      */
-    static public void addCellEditorListener(CellEditorListener l) {
+    public static void addCellEditorListener(CellEditorListener l) {
         if (listenerList.getListenerCount(CellEditorListener.class) == 0) {
             swingListener.installListeners(EventID.CELLEDITOR);
         }
@@ -165,7 +165,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addCellEditorListener
      */
-    static public void removeCellEditorListener(CellEditorListener l) {
+    public static void removeCellEditorListener(CellEditorListener l) {
         listenerList.remove(CellEditorListener.class, l);
         if (listenerList.getListenerCount(CellEditorListener.class) == 0) {
             swingListener.removeListeners(EventID.CELLEDITOR);
@@ -182,7 +182,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeChangeListener
      */
-    static public void addChangeListener(ChangeListener l) {
+    public static void addChangeListener(ChangeListener l) {
         if (listenerList.getListenerCount(ChangeListener.class) == 0) {
             swingListener.installListeners(EventID.CHANGE);
         }
@@ -196,7 +196,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addChangeListener
      */
-    static public void removeChangeListener(ChangeListener l) {
+    public static void removeChangeListener(ChangeListener l) {
         listenerList.remove(ChangeListener.class, l);
         if (listenerList.getListenerCount(ChangeListener.class) == 0) {
             swingListener.removeListeners(EventID.CHANGE);
@@ -213,7 +213,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeColumnModelListener
      */
-    static public void addColumnModelListener(TableColumnModelListener l) {
+    public static void addColumnModelListener(TableColumnModelListener l) {
         if (listenerList.getListenerCount(TableColumnModelListener.class) == 0) {
             swingListener.installListeners(EventID.COLUMNMODEL);
         }
@@ -227,7 +227,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addColumnModelListener
      */
-    static public void removeColumnModelListener(TableColumnModelListener l) {
+    public static void removeColumnModelListener(TableColumnModelListener l) {
         listenerList.remove(TableColumnModelListener.class, l);
         if (listenerList.getListenerCount(TableColumnModelListener.class) == 0) {
             swingListener.removeListeners(EventID.COLUMNMODEL);
@@ -244,7 +244,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeDocumentListener
      */
-    static public void addDocumentListener(DocumentListener l) {
+    public static void addDocumentListener(DocumentListener l) {
         if (listenerList.getListenerCount(DocumentListener.class) == 0) {
             swingListener.installListeners(EventID.DOCUMENT);
         }
@@ -258,7 +258,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addDocumentListener
      */
-    static public void removeDocumentListener(DocumentListener l) {
+    public static void removeDocumentListener(DocumentListener l) {
         listenerList.remove(DocumentListener.class, l);
         if (listenerList.getListenerCount(DocumentListener.class) == 0) {
             swingListener.removeListeners(EventID.DOCUMENT);
@@ -275,7 +275,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeListDataListener
      */
-    static public void addListDataListener(ListDataListener l) {
+    public static void addListDataListener(ListDataListener l) {
         if (listenerList.getListenerCount(ListDataListener.class) == 0) {
             swingListener.installListeners(EventID.LISTDATA);
         }
@@ -289,7 +289,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addListDataListener
      */
-    static public void removeListDataListener(ListDataListener l) {
+    public static void removeListDataListener(ListDataListener l) {
         listenerList.remove(ListDataListener.class, l);
         if (listenerList.getListenerCount(ListDataListener.class) == 0) {
             swingListener.removeListeners(EventID.LISTDATA);
@@ -306,7 +306,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeListSelectionListener
      */
-    static public void addListSelectionListener(ListSelectionListener l) {
+    public static void addListSelectionListener(ListSelectionListener l) {
         if (listenerList.getListenerCount(ListSelectionListener.class) == 0) {
             swingListener.installListeners(EventID.LISTSELECTION);
         }
@@ -320,7 +320,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addListSelectionListener
      */
-    static public void removeListSelectionListener(ListSelectionListener l) {
+    public static void removeListSelectionListener(ListSelectionListener l) {
         listenerList.remove(ListSelectionListener.class, l);
         if (listenerList.getListenerCount(ListSelectionListener.class) == 0) {
             swingListener.removeListeners(EventID.LISTSELECTION);
@@ -337,7 +337,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeMenuListener
      */
-    static public void addMenuListener(MenuListener l) {
+    public static void addMenuListener(MenuListener l) {
         if (listenerList.getListenerCount(MenuListener.class) == 0) {
             swingListener.installListeners(EventID.MENU);
         }
@@ -351,7 +351,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addMenuListener
      */
-    static public void removeMenuListener(MenuListener l) {
+    public static void removeMenuListener(MenuListener l) {
         listenerList.remove(MenuListener.class, l);
         if (listenerList.getListenerCount(MenuListener.class) == 0) {
             swingListener.removeListeners(EventID.MENU);
@@ -368,7 +368,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removePopupMenuListener
      */
-    static public void addPopupMenuListener(PopupMenuListener l) {
+    public static void addPopupMenuListener(PopupMenuListener l) {
         if (listenerList.getListenerCount(PopupMenuListener.class) == 0) {
             swingListener.installListeners(EventID.POPUPMENU);
         }
@@ -382,7 +382,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addPopupMenuListener
      */
-    static public void removePopupMenuListener(PopupMenuListener l) {
+    public static void removePopupMenuListener(PopupMenuListener l) {
         listenerList.remove(PopupMenuListener.class, l);
         if (listenerList.getListenerCount(PopupMenuListener.class) == 0) {
             swingListener.removeListeners(EventID.POPUPMENU);
@@ -399,7 +399,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeTableModelListener
      */
-    static public void addTableModelListener(TableModelListener l) {
+    public static void addTableModelListener(TableModelListener l) {
         if (listenerList.getListenerCount(TableModelListener.class) == 0) {
             swingListener.installListeners(EventID.TABLEMODEL);
         }
@@ -413,7 +413,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addTableModelListener
      */
-    static public void removeTableModelListener(TableModelListener l) {
+    public static void removeTableModelListener(TableModelListener l) {
         listenerList.remove(TableModelListener.class, l);
         if (listenerList.getListenerCount(TableModelListener.class) == 0) {
             swingListener.removeListeners(EventID.TABLEMODEL);
@@ -430,7 +430,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeTreeExpansionListener
      */
-    static public void addTreeExpansionListener(TreeExpansionListener l) {
+    public static void addTreeExpansionListener(TreeExpansionListener l) {
         if (listenerList.getListenerCount(TreeExpansionListener.class) == 0) {
             swingListener.installListeners(EventID.TREEEXPANSION);
         }
@@ -444,7 +444,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addTreeExpansionListener
      */
-    static public void removeTreeExpansionListener(TreeExpansionListener l) {
+    public static void removeTreeExpansionListener(TreeExpansionListener l) {
         listenerList.remove(TreeExpansionListener.class, l);
         if (listenerList.getListenerCount(TreeExpansionListener.class) == 0) {
             swingListener.removeListeners(EventID.TREEEXPANSION);
@@ -461,7 +461,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeTreeModelListener
      */
-    static public void addTreeModelListener(TreeModelListener l) {
+    public static void addTreeModelListener(TreeModelListener l) {
         if (listenerList.getListenerCount(TreeModelListener.class) == 0) {
             swingListener.installListeners(EventID.TREEMODEL);
         }
@@ -475,7 +475,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addTreeModelListener
      */
-    static public void removeTreeModelListener(TreeModelListener l) {
+    public static void removeTreeModelListener(TreeModelListener l) {
         listenerList.remove(TreeModelListener.class, l);
         if (listenerList.getListenerCount(TreeModelListener.class) == 0) {
             swingListener.removeListeners(EventID.TREEMODEL);
@@ -492,7 +492,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeTreeSelectionListener
      */
-    static public void addTreeSelectionListener(TreeSelectionListener l) {
+    public static void addTreeSelectionListener(TreeSelectionListener l) {
         if (listenerList.getListenerCount(TreeSelectionListener.class) == 0) {
             swingListener.installListeners(EventID.TREESELECTION);
         }
@@ -505,7 +505,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @see #addTreeSelectionListener
      * @param l the listener to remove
      */
-    static public void removeTreeSelectionListener(TreeSelectionListener l) {
+    public static void removeTreeSelectionListener(TreeSelectionListener l) {
         listenerList.remove(TreeSelectionListener.class, l);
         if (listenerList.getListenerCount(TreeSelectionListener.class) == 0) {
             swingListener.removeListeners(EventID.TREESELECTION);
@@ -522,7 +522,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeUndoableEditListener
      */
-    static public void addUndoableEditListener(UndoableEditListener l) {
+    public static void addUndoableEditListener(UndoableEditListener l) {
         if (listenerList.getListenerCount(UndoableEditListener.class) == 0) {
             swingListener.installListeners(EventID.UNDOABLEEDIT);
         }
@@ -536,7 +536,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addUndoableEditListener
      */
-    static public void removeUndoableEditListener(UndoableEditListener l) {
+    public static void removeUndoableEditListener(UndoableEditListener l) {
         listenerList.remove(UndoableEditListener.class, l);
         if (listenerList.getListenerCount(UndoableEditListener.class) == 0) {
             swingListener.removeListeners(EventID.UNDOABLEEDIT);
@@ -553,7 +553,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeInternalFrameListener
      */
-    static public void addInternalFrameListener(InternalFrameListener l) {
+    public static void addInternalFrameListener(InternalFrameListener l) {
         if (listenerList.getListenerCount(InternalFrameListener.class) == 0) {
             swingListener.installListeners(EventID.INTERNALFRAME);
         }
@@ -567,7 +567,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addInternalFrameListener
      */
-    static public void removeInternalFrameListener(InternalFrameListener l) {
+    public static void removeInternalFrameListener(InternalFrameListener l) {
         listenerList.remove(InternalFrameListener.class, l);
         if (listenerList.getListenerCount(InternalFrameListener.class) == 0) {
             swingListener.removeListeners(EventID.INTERNALFRAME);
@@ -584,7 +584,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removePropertyChangeListener
      */
-    static public void addPropertyChangeListener(PropertyChangeListener l) {
+    public static void addPropertyChangeListener(PropertyChangeListener l) {
         if (listenerList.getListenerCount(PropertyChangeListener.class) == 0) {
             swingListener.installListeners(EventID.PROPERTYCHANGE);
         }
@@ -597,7 +597,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @see #addPropertyChangeListener
      * @param l the listener to remove
      */
-    static public void removePropertyChangeListener(PropertyChangeListener l) {
+    public static void removePropertyChangeListener(PropertyChangeListener l) {
         listenerList.remove(PropertyChangeListener.class, l);
         if (listenerList.getListenerCount(PropertyChangeListener.class) == 0) {
             swingListener.removeListeners(EventID.PROPERTYCHANGE);
@@ -614,7 +614,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to add
      * @see #removeVetoableChangeListener
      */
-    static public void addVetoableChangeListener(VetoableChangeListener l) {
+    public static void addVetoableChangeListener(VetoableChangeListener l) {
         if (listenerList.getListenerCount(VetoableChangeListener.class) == 0) {
             swingListener.installListeners(EventID.VETOABLECHANGE);
         }
@@ -628,7 +628,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * @param l the listener to remove
      * @see #addVetoableChangeListener
      */
-    static public void removeVetoableChangeListener(VetoableChangeListener l) {
+    public static void removeVetoableChangeListener(VetoableChangeListener l) {
         listenerList.remove(VetoableChangeListener.class, l);
         if (listenerList.getListenerCount(VetoableChangeListener.class) == 0) {
             swingListener.removeListeners(EventID.VETOABLECHANGE);

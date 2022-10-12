@@ -26,7 +26,7 @@
 
 #include "gc/z/zMarkStack.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
 

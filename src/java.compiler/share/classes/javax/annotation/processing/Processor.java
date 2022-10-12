@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,9 +198,6 @@ import javax.lang.model.SourceVersion;
  * to extend {@link AbstractProcessor} rather than implementing this
  * interface directly.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface Processor {
@@ -322,15 +319,16 @@ public interface Processor {
     void init(ProcessingEnvironment processingEnv);
 
     /**
-     * Processes a set of annotation interfaces on type elements
-     * originating from the prior round and returns whether or not
-     * these annotation interfaces are claimed by this processor.  If {@code
-     * true} is returned, the annotation interfaces are claimed and subsequent
-     * processors will not be asked to process them; if {@code false}
-     * is returned, the annotation interfaces are unclaimed and subsequent
-     * processors may be asked to process them.  A processor may
-     * always return the same boolean value or may vary the result
-     * based on its own chosen criteria.
+     * Processes a set of annotation interfaces on {@linkplain
+     * RoundEnvironment#getRootElements() root elements} originating
+     * from the prior round and returns whether or not these
+     * annotation interfaces are claimed by this processor.  If {@code
+     * true} is returned, the annotation interfaces are claimed and
+     * subsequent processors will not be asked to process them; if
+     * {@code false} is returned, the annotation interfaces are
+     * unclaimed and subsequent processors may be asked to process
+     * them.  A processor may always return the same boolean value or
+     * may vary the result based on its own chosen criteria.
      *
      * <p>The input set will be empty if the processor supports {@code
      * "*"} and the root elements have no annotations.  A {@code

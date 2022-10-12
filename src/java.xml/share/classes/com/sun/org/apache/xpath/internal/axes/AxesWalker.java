@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -463,6 +463,7 @@ public class AxesWalker extends PredicatedNodeTest
    * from multiple documents.
    * Never, ever, access this value without going through getDTM(int node).
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private DTM m_dtm;
 
   /**
@@ -587,5 +588,6 @@ public class AxesWalker extends PredicatedNodeTest
   protected int m_axis = -1;
 
   /** The DTM inner traversal class, that corresponds to the super axis. */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   protected DTMAxisTraverser m_traverser;
 }

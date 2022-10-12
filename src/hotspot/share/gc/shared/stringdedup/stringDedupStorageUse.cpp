@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"

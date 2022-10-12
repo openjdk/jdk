@@ -39,7 +39,7 @@ import sun.jvm.hotspot.utilities.Observer;
 
     <P> Garbage collection is performed using mark-compact. </P> */
 
-public class TenuredGeneration extends CardGeneration {
+public class TenuredGeneration extends Generation {
   private static AddressField theSpaceField;
 
   static {

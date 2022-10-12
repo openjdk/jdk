@@ -214,7 +214,7 @@ public class AnnotatedMemoryPanel extends JPanel {
       ((Graphics2D) g).setStroke(stroke);
     }
 
-    Stack<AnnoX> drawStack = new Stack<>();
+    ArrayDeque<AnnoX> drawStack = new ArrayDeque<>();
 
     layoutAnnotations(va, g, curTextX, startAddr, lineHeight);
 
@@ -222,7 +222,7 @@ public class AnnotatedMemoryPanel extends JPanel {
       Annotation anno   = iter.next();
       Interval interval = anno.getInterval();
 
-      if (!drawStack.empty()) {
+      if (!drawStack.isEmpty()) {
         // See whether we can pop any items off the stack
         boolean shouldContinue = true;
         do {
@@ -230,7 +230,7 @@ public class AnnotatedMemoryPanel extends JPanel {
           if (annoX.highBound.lessThanOrEqual((Address) interval.getLowEndpoint())) {
             curLineX = annoX.lineX;
             drawStack.pop();
-            shouldContinue = !drawStack.empty();
+            shouldContinue = !drawStack.isEmpty();
           } else {
             shouldContinue = false;
           }

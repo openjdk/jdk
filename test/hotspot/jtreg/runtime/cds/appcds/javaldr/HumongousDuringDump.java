@@ -26,7 +26,7 @@
  * @test
  * @summary Test how CDS dumping handles the existence of humongous G1 regions.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.jvmti
  * @run driver/timeout=240 HumongousDuringDump
  */

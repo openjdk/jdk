@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,13 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/support/jfrThreadId.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
@@ -58,7 +58,7 @@
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/sweeper.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
@@ -429,7 +429,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
     JavaThread* const jt = iter.next();
     assert(jt != NULL, "invariant");
     allocated.append(jt->cooked_allocated_bytes());
-    thread_ids.append(JFR_THREAD_ID(jt));
+    thread_ids.append(JFR_JVM_THREAD_ID(jt));
   }
 
   // Write allocation statistics to buffer.
@@ -472,10 +472,14 @@ TRACE_REQUEST_FUNC(JavaThreadStatistics) {
 }
 
 TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
+#if INCLUDE_MANAGEMENT
   EventClassLoadingStatistics event;
   event.set_loadedClassCount(ClassLoadingService::loaded_class_count());
   event.set_unloadedClassCount(ClassLoadingService::unloaded_class_count());
   event.commit();
+#else
+  log_debug(jfr, system)("Unable to generate requestable event ClassLoadingStatistics. The required jvm feature 'management' is missing.");
+#endif
 }
 
 class JfrClassLoaderStatsClosure : public ClassLoaderStatsClosure {
@@ -547,21 +551,6 @@ TRACE_REQUEST_FUNC(StringTableStatistics) {
   emit_table_statistics<EventStringTableStatistics>(statistics);
 }
 
-TRACE_REQUEST_FUNC(PlaceholderTableStatistics) {
-  TableStatistics statistics = SystemDictionary::placeholders_statistics();
-  emit_table_statistics<EventPlaceholderTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(LoaderConstraintsTableStatistics) {
-  TableStatistics statistics = SystemDictionary::loader_constraints_statistics();
-  emit_table_statistics<EventLoaderConstraintsTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(ProtectionDomainCacheTableStatistics) {
-  TableStatistics statistics = SystemDictionary::protection_domain_cache_statistics();
-  emit_table_statistics<EventProtectionDomainCacheTableStatistics>(statistics);
-}
-
 TRACE_REQUEST_FUNC(CompilerStatistics) {
   EventCompilerStatistics event;
   event.set_compileCount(CompileBroker::get_total_compile_count());
@@ -587,7 +576,8 @@ TRACE_REQUEST_FUNC(CompilerConfiguration) {
 
 TRACE_REQUEST_FUNC(CodeCacheStatistics) {
   // Emit stats for all available code heaps
-  for (int bt = 0; bt < CodeBlobType::NumTypes; ++bt) {
+  for (int bt_index = 0; bt_index < static_cast<int>(CodeBlobType::NumTypes); ++bt_index) {
+    const CodeBlobType bt = static_cast<CodeBlobType>(bt_index);
     if (CodeCache::heap_available(bt)) {
       EventCodeCacheStatistics event;
       event.set_codeBlobType((u1)bt);
@@ -617,30 +607,19 @@ TRACE_REQUEST_FUNC(CodeCacheConfiguration) {
   event.commit();
 }
 
-TRACE_REQUEST_FUNC(CodeSweeperStatistics) {
-  EventCodeSweeperStatistics event;
-  event.set_sweepCount(NMethodSweeper::traversal_count());
-  event.set_methodReclaimedCount(NMethodSweeper::total_nof_methods_reclaimed());
-  event.set_totalSweepTime(NMethodSweeper::total_time_sweeping());
-  event.set_peakFractionTime(NMethodSweeper::peak_sweep_fraction_time());
-  event.set_peakSweepTime(NMethodSweeper::peak_sweep_time());
-  event.commit();
-}
-
-TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
-  EventCodeSweeperConfiguration event;
-  event.set_sweeperEnabled(MethodFlushing);
-  event.set_flushingEnabled(UseCodeCacheFlushing);
-  event.set_sweepThreshold(NMethodSweeper::sweep_threshold_bytes());
-  event.commit();
-}
-
-
 TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
     VM_ShenandoahSendHeapRegionInfoEvents op;
     VMThread::execute(&op);
   }
+#endif
+}
+
+TRACE_REQUEST_FUNC(FinalizerStatistics) {
+#if INCLUDE_MANAGEMENT
+  JfrFinalizerStatisticsEvent::generate_events();
+#else
+  log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
 }

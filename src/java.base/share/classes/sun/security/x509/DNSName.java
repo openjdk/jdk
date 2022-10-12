@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class DNSName implements GeneralNameInterface {
                 if (alphaDigits.indexOf(name.charAt(startIndex)) < 0) {
                     // Checking to make sure the wildcard only appears in the first component,
                     // and it has to be at least 3-char long with the form of *.[alphaDigit]
-                    if ((name.length() < 3) || (name.indexOf('*', 0) != 0) ||
+                    if ((name.length() < 3) || (name.indexOf('*') != 0) ||
                         (name.charAt(startIndex+1) != '.') ||
                         (alphaDigits.indexOf(name.charAt(startIndex+2)) < 0))
                         throw new IOException("DNSName components must begin with a letter, digit, "

@@ -26,7 +26,8 @@
  * @test
  * @summary Regression test for JDK-8098821
  * @bug 8098821
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
+ * @requires vm.gc == null
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver SysDictCrash
  */

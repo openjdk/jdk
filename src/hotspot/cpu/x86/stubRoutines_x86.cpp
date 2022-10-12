@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "crc32c.h"
 
@@ -48,6 +48,7 @@ address StubRoutines::x86::_vector_int_to_byte_mask = NULL;
 address StubRoutines::x86::_vector_int_to_short_mask = NULL;
 address StubRoutines::x86::_vector_all_bits_set = NULL;
 address StubRoutines::x86::_vector_byte_shuffle_mask = NULL;
+address StubRoutines::x86::_vector_int_mask_cmp_bits = NULL;
 address StubRoutines::x86::_vector_short_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_int_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_long_shuffle_mask = NULL;
@@ -58,6 +59,12 @@ address StubRoutines::x86::_vector_double_sign_flip = NULL;
 address StubRoutines::x86::_vector_byte_perm_mask = NULL;
 address StubRoutines::x86::_vector_long_sign_mask = NULL;
 address StubRoutines::x86::_vector_iota_indices = NULL;
+address StubRoutines::x86::_vector_reverse_bit_lut = NULL;
+address StubRoutines::x86::_vector_reverse_byte_perm_mask_long = NULL;
+address StubRoutines::x86::_vector_reverse_byte_perm_mask_int = NULL;
+address StubRoutines::x86::_vector_reverse_byte_perm_mask_short = NULL;
+address StubRoutines::x86::_vector_popcount_lut = NULL;
+address StubRoutines::x86::_vector_count_leading_zeros_lut = NULL;
 address StubRoutines::x86::_vector_32_bit_mask = NULL;
 address StubRoutines::x86::_vector_64_bit_mask = NULL;
 #ifdef _LP64
@@ -80,31 +87,9 @@ address StubRoutines::x86::_join_0_1_base64 = NULL;
 address StubRoutines::x86::_join_1_2_base64 = NULL;
 address StubRoutines::x86::_join_2_3_base64 = NULL;
 address StubRoutines::x86::_decoding_table_base64 = NULL;
+address StubRoutines::x86::_ghash_poly512_addr = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
-
-//tables common for sin and cos
-address StubRoutines::x86::_ONEHALF_adr = NULL;
-address StubRoutines::x86::_P_2_adr = NULL;
-address StubRoutines::x86::_SC_4_adr = NULL;
-address StubRoutines::x86::_Ctable_adr = NULL;
-address StubRoutines::x86::_SC_2_adr = NULL;
-address StubRoutines::x86::_SC_3_adr = NULL;
-address StubRoutines::x86::_SC_1_adr = NULL;
-address StubRoutines::x86::_PI_INV_TABLE_adr = NULL;
-address StubRoutines::x86::_PI_4_adr = NULL;
-address StubRoutines::x86::_PI32INV_adr = NULL;
-address StubRoutines::x86::_SIGN_MASK_adr = NULL;
-address StubRoutines::x86::_P_1_adr = NULL;
-address StubRoutines::x86::_P_3_adr = NULL;
-address StubRoutines::x86::_NEG_ZERO_adr = NULL;
-
-//tables common for sincos and tancot
-address StubRoutines::x86::_L_2il0floatpacket_0_adr = NULL;
-address StubRoutines::x86::_Pi4Inv_adr = NULL;
-address StubRoutines::x86::_Pi4x3_adr = NULL;
-address StubRoutines::x86::_Pi4x4_adr = NULL;
-address StubRoutines::x86::_ones_adr = NULL;
 
 uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {
@@ -219,6 +204,23 @@ juint StubRoutines::x86::_crc_table_avx512[] =
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL
 };
 
+juint StubRoutines::x86::_crc32c_table_avx512[] =
+{
+    0xb9e02b86UL, 0x00000000UL, 0xdcb17aa4UL, 0x00000000UL,
+    0x493c7d27UL, 0x00000000UL, 0xc1068c50UL, 0x0000000eUL,
+    0x06e38d70UL, 0x00000002UL, 0x6992cea2UL, 0x00000000UL,
+    0x493c7d27UL, 0x00000000UL, 0xdd45aab8UL, 0x00000000UL,
+    0xdea713f0UL, 0x00000000UL, 0x05ec76f0UL, 0x00000001UL,
+    0x47db8317UL, 0x00000000UL, 0x2ad91c30UL, 0x00000000UL,
+    0x0715ce53UL, 0x00000000UL, 0xc49f4f67UL, 0x00000000UL,
+    0x39d3b296UL, 0x00000000UL, 0x083a6eecUL, 0x00000000UL,
+    0x9e4addf8UL, 0x00000000UL, 0x740eef02UL, 0x00000000UL,
+    0xddc0152bUL, 0x00000000UL, 0x1c291d04UL, 0x00000000UL,
+    0xba4fc28eUL, 0x00000000UL, 0x3da6d0cbUL, 0x00000000UL,
+    0x493c7d27UL, 0x00000000UL, 0xc1068c50UL, 0x0000000eUL,
+    0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL
+};
+
 juint StubRoutines::x86::_crc_by128_masks_avx512[] =
 {
     0xffffffffUL, 0xffffffffUL, 0x00000000UL, 0x00000000UL,
@@ -231,25 +233,6 @@ juint StubRoutines::x86::_shuf_table_crc32_avx512[] =
     0x83828100UL, 0x87868584UL, 0x8b8a8988UL, 0x8f8e8d8cUL,
     0x03020100UL, 0x07060504UL, 0x0b0a0908UL, 0x000e0d0cUL
 };
-
-juint StubRoutines::x86::_adler32_ascale_table[] =
-{
-    0x00000000UL, 0x00000001UL, 0x00000002UL, 0x00000003UL,
-    0x00000004UL, 0x00000005UL, 0x00000006UL, 0x00000007UL
-};
-
-juint StubRoutines::x86::_adler32_shuf0_table[] =
-{
-    0xFFFFFF00UL, 0xFFFFFF01UL, 0xFFFFFF02UL, 0xFFFFFF03UL,
-    0xFFFFFF04UL, 0xFFFFFF05UL, 0xFFFFFF06UL, 0xFFFFFF07UL
-};
-
-juint StubRoutines::x86::_adler32_shuf1_table[] =
-{
-    0xFFFFFF08UL, 0xFFFFFF09, 0xFFFFFF0AUL, 0xFFFFFF0BUL,
-    0xFFFFFF0CUL, 0xFFFFFF0D, 0xFFFFFF0EUL, 0xFFFFFF0FUL
-};
-
 #endif // _LP64
 
 #define D 32

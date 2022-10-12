@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,7 @@ public class TestGetElement extends AbstractProcessor {
         Messager m = processingEnv.getMessager();
         int EXPECT = 1;
         if (nelems != EXPECT) {
-            m.printMessage(Diagnostic.Kind.ERROR,
-                    "Unexpected number of elements found: " + nelems + " expected: " + EXPECT);
+            m.printError("Unexpected number of elements found: " + nelems + " expected: " + EXPECT);
         }
         return true;
     }
@@ -177,13 +176,13 @@ public class TestGetElement extends AbstractProcessor {
 
             Messager m = processingEnv.getMessager();
             if (e == null) {
-                m.printMessage(Diagnostic.Kind.ERROR, "Null element found for " + text);
+                m.printError("Null element found for " + text);
                 return 0;
             }
 
             if (last && !e.getSimpleName().contentEquals("last")) {
-                m.printMessage(Diagnostic.Kind.ERROR, "Unexpected name in last test: "
-                        + e.getSimpleName() + ", expected: last");
+                m.printError("Unexpected name in last test: "
+                             + e.getSimpleName() + ", expected: last");
             }
 
             return 1;

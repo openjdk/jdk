@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,43 +43,43 @@ import org.testng.annotations.Test;
 public class TestCompactNumber {
 
     private static final NumberFormat FORMAT_DZ_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("dz"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("dz"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_EN_US_SHORT = NumberFormat
             .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_EN_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("en"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.ENGLISH, NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_HI_IN_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("hi", "IN"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("hi", "IN"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_JA_JP_SHORT = NumberFormat
             .getCompactNumberInstance(Locale.JAPAN, NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_IT_SHORT = NumberFormat
-            .getCompactNumberInstance(new Locale("it"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.ITALIAN, NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_CA_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("ca"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("ca"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_AS_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("as"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("as"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_BRX_SHORT = NumberFormat
-            .getCompactNumberInstance(new Locale("brx"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.of("brx"), NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_SW_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("sw"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("sw"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_SE_SHORT = NumberFormat
-            .getCompactNumberInstance(new Locale("se"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.of("se"), NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_DE_LONG = NumberFormat
             .getCompactNumberInstance(Locale.GERMAN, NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_SL_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("sl"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("sl"), NumberFormat.Style.LONG);
 
     @DataProvider(name = "format")
     Object[][] compactFormatData() {

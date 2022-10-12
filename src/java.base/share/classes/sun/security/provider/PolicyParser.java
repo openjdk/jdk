@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,9 +202,7 @@ public class PolicyParser {
                 DomainEntry de = parseDomainEntry();
                 if (de != null) {
                     String domainName = de.getName();
-                    if (!domainEntries.containsKey(domainName)) {
-                        domainEntries.put(domainName, de);
-                    } else {
+                    if (domainEntries.putIfAbsent(domainName, de) != null) {
                         LocalizedMessage localizedMsg = new LocalizedMessage(
                             "duplicate.keystore.domain.name");
                         Object[] source = {domainName};
@@ -733,8 +731,7 @@ public class PolicyParser {
         switch (lookahead) {
         case StreamTokenizer.TT_NUMBER:
             throw new ParsingException(st.lineno(), expect,
-                LocalizedMessage.getNonlocalized("number.") +
-                    String.valueOf(st.nval));
+                LocalizedMessage.getNonlocalized("number.") + st.nval);
         case StreamTokenizer.TT_EOF:
             LocalizedMessage localizedMsg = new LocalizedMessage
                 ("expected.expect.read.end.of.file.");
@@ -826,8 +823,7 @@ public class PolicyParser {
             switch (lookahead) {
             case StreamTokenizer.TT_NUMBER:
                 throw new ParsingException(st.lineno(), ";",
-                        LocalizedMessage.getNonlocalized("number.") +
-                            String.valueOf(st.nval));
+                        LocalizedMessage.getNonlocalized("number.") + st.nval);
             case StreamTokenizer.TT_EOF:
                 throw new ParsingException(LocalizedMessage.getNonlocalized
                         ("expected.read.end.of.file."));

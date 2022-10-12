@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,12 @@ package gc.stringdedup;
  * Common code for string deduplication tests
  */
 
+import com.sun.management.GarbageCollectionNotificationInfo;
 import java.lang.reflect.*;
+import java.lang.management.*;
 import java.util.*;
+import javax.management.*;
+import javax.management.openmbean.*;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import sun.misc.*;
@@ -89,26 +93,63 @@ class TestStringDeduplicationTools {
         }
     }
 
+    private static volatile int gcCount;
+    private static NotificationListener listener = new NotificationListener() {
+        @Override
+        public void handleNotification(Notification n, Object o) {
+            if (n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
+                GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
+                // Shenandoah and Z GC also report GC pauses, skip them
+                if (info.getGcName().startsWith("Shenandoah") || info.getGcName().startsWith("ZGC")) {
+                    if ("end of GC cycle".equals(info.getGcAction())) {
+                        gcCount++;
+                    }
+                } else {
+                    gcCount++;
+                }
+            }
+        }
+    };
+
+    private static void registerGCListener() {
+        for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+            ((NotificationEmitter)bean).addNotificationListener(listener, null, null);
+        }
+    }
+
+    private static void unregisterGCListener() {
+        for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+            try {
+                ((NotificationEmitter) bean).removeNotificationListener(listener, null, null);
+            } catch (Exception e) {
+            }
+        }
+    }
+
     private static void doYoungGc(int numberOfTimes) {
-        // Provoke at least numberOfTimes young GCs
         final int objectSize = 128;
-        final int maxObjectInYoung = (Xmn * MB) / objectSize;
         List<List<String>> newStrings = new ArrayList<List<String>>();
-        for (int i = 0; i < numberOfTimes; i++) {
+
+        // Provoke at least numberOfTimes young GCs
+        gcCount = 0;
+        registerGCListener();
+        while (gcCount < numberOfTimes) {
+            int currentCount = gcCount;
             // Create some more strings for every collection, to ensure
             // there will be deduplication work that will be reported.
             newStrings.add(createStrings(SmallNumberOfStrings, SmallNumberOfStrings));
-            System.out.println("Begin: Young GC " + (i + 1) + "/" + numberOfTimes);
-            for (int j = 0; j < maxObjectInYoung + 1; j++) {
+            System.out.println("Begin: Young GC " + (currentCount + 1) + "/" + numberOfTimes);
+            while (currentCount == gcCount) {
                 dummy = new byte[objectSize];
             }
-            System.out.println("End: Young GC " + (i + 1) + "/" + numberOfTimes);
+            System.out.println("End: Young GC " + (currentCount + 1) + "/" + numberOfTimes);
         }
+        unregisterGCListener();
     }
 
     private static void forceDeduplication(int ageThreshold, String gcType) {
         // Force deduplication to happen by either causing a FullGC or a YoungGC.
-        // We do several collections to also provoke a situation where the the
+        // We do several collections to also provoke a situation where the
         // deduplication thread needs to yield while processing the queue. This
         // also tests that the references in the deduplication queue are adjusted
         // accordingly.

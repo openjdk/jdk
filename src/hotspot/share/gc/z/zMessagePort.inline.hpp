@@ -66,10 +66,7 @@ public:
 
 template <typename T>
 inline ZMessagePort<T>::ZMessagePort() :
-    _monitor(Monitor::leaf,
-             "ZMessagePort",
-             Monitor::_allow_vm_block_flag,
-             Monitor::_safepoint_check_never),
+    _monitor(Monitor::nosafepoint, "ZMessagePort_lock"),
     _has_message(false),
     _seqnum(0),
     _queue() {}

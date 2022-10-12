@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum platform_dependent_constants {
-  code_size1 = 20000 LP64_ONLY(+10000),         // simply increase if too small (assembler will crash if too small)
-  code_size2 = 35300 LP64_ONLY(+25000)          // simply increase if too small (assembler will crash if too small)
+  code_size1 = 20000 LP64_ONLY(+10000),                    // simply increase if too small (assembler will crash if too small)
+  code_size2 = 35300 LP64_ONLY(+35000) WINDOWS_ONLY(+2048) // simply increase if too small (assembler will crash if too small)
 };
 
 class x86 {
@@ -137,10 +137,8 @@ class x86 {
 #ifdef _LP64
   static juint    _crc_by128_masks_avx512[];
   static juint    _crc_table_avx512[];
+  static juint    _crc32c_table_avx512[];
   static juint    _shuf_table_crc32_avx512[];
-  static juint    _adler32_shuf0_table[];
-  static juint    _adler32_shuf1_table[];
-  static juint    _adler32_ascale_table[];
 #endif // _LP64
   // table for CRC32C
   static juint* _crc32c_table;
@@ -165,6 +163,7 @@ class x86 {
   static address _vector_double_sign_flip;
   static address _vector_long_sign_mask;
   static address _vector_all_bits_set;
+  static address _vector_int_mask_cmp_bits;
   static address _vector_byte_perm_mask;
   static address _vector_int_to_byte_mask;
   static address _vector_int_to_short_mask;
@@ -175,6 +174,12 @@ class x86 {
   static address _vector_short_shuffle_mask;
   static address _vector_long_shuffle_mask;
   static address _vector_iota_indices;
+  static address _vector_popcount_lut;
+  static address _vector_count_leading_zeros_lut;
+  static address _vector_reverse_bit_lut;
+  static address _vector_reverse_byte_perm_mask_long;
+  static address _vector_reverse_byte_perm_mask_int;
+  static address _vector_reverse_byte_perm_mask_short;
 #ifdef _LP64
   static juint _k256_W[];
   static address _k256_W_adr;
@@ -198,51 +203,10 @@ class x86 {
   static address _join_1_2_base64;
   static address _join_2_3_base64;
   static address _decoding_table_base64;
+  static address _ghash_poly512_addr;
 #endif
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
-
-  //tables common for LIBM sin and cos
-  static juint _ONEHALF[];
-  static address _ONEHALF_adr;
-  static juint _P_2[];
-  static address _P_2_adr;
-  static juint _SC_4[];
-  static address _SC_4_adr;
-  static juint _Ctable[];
-  static address _Ctable_adr;
-  static juint _SC_2[];
-  static address _SC_2_adr;
-  static juint _SC_3[];
-  static address _SC_3_adr;
-  static juint _SC_1[];
-  static address _SC_1_adr;
-  static juint _PI_INV_TABLE[];
-  static address _PI_INV_TABLE_adr;
-  static juint _PI_4[];
-  static address _PI_4_adr;
-  static juint _PI32INV[];
-  static address _PI32INV_adr;
-  static juint _SIGN_MASK[];
-  static address _SIGN_MASK_adr;
-  static juint _P_1[];
-  static address _P_1_adr;
-  static juint _P_3[];
-  static address _P_3_adr;
-  static juint _NEG_ZERO[];
-  static address _NEG_ZERO_adr;
-
-  //tables common for LIBM sincos and tancot
-  static juint _L_2il0floatpacket_0[];
-  static address _L_2il0floatpacket_0_adr;
-  static juint _Pi4Inv[];
-  static address _Pi4Inv_adr;
-  static juint _Pi4x3[];
-  static address _Pi4x3_adr;
-  static juint _Pi4x4[];
-  static address _Pi4x4_adr;
-  static juint _ones[];
-  static address _ones_adr;
 
  public:
   static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
@@ -254,6 +218,8 @@ class x86 {
   static address crc_by128_masks_avx512_addr()  { return (address)_crc_by128_masks_avx512; }
   static address shuf_table_crc32_avx512_addr()  { return (address)_shuf_table_crc32_avx512; }
   static address crc_table_avx512_addr()  { return (address)_crc_table_avx512; }
+  static address crc32c_table_avx512_addr()  { return (address)_crc32c_table_avx512; }
+  static address ghash_polynomial512_addr() { return _ghash_poly512_addr; }
 #endif // _LP64
   static address ghash_long_swap_mask_addr() { return _ghash_long_swap_mask_addr; }
   static address ghash_byte_swap_mask_addr() { return _ghash_byte_swap_mask_addr; }
@@ -285,6 +251,10 @@ class x86 {
 
   static address vector_all_bits_set() {
     return _vector_all_bits_set;
+  }
+
+  static address vector_int_mask_cmp_bits() {
+    return _vector_int_mask_cmp_bits;
   }
 
   static address vector_byte_perm_mask() {
@@ -331,6 +301,29 @@ class x86 {
     return _vector_iota_indices;
   }
 
+  static address vector_count_leading_zeros_lut() {
+    return _vector_count_leading_zeros_lut;
+  }
+
+  static address vector_reverse_bit_lut() {
+    return _vector_reverse_bit_lut;
+  }
+
+  static address vector_reverse_byte_perm_mask_long() {
+    return _vector_reverse_byte_perm_mask_long;
+  }
+
+  static address vector_reverse_byte_perm_mask_int() {
+    return _vector_reverse_byte_perm_mask_int;
+  }
+
+  static address vector_reverse_byte_perm_mask_short() {
+    return _vector_reverse_byte_perm_mask_short;
+  }
+
+  static address vector_popcount_lut() {
+    return _vector_popcount_lut;
+  }
 #ifdef _LP64
   static address k256_W_addr()    { return _k256_W_adr; }
   static address k512_W_addr()    { return _k512_W_addr; }
@@ -353,26 +346,6 @@ class x86 {
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
-  static address _ONEHALF_addr()      { return _ONEHALF_adr; }
-  static address _P_2_addr()      { return _P_2_adr; }
-  static address _SC_4_addr()      { return _SC_4_adr; }
-  static address _Ctable_addr()      { return _Ctable_adr; }
-  static address _SC_2_addr()      { return _SC_2_adr; }
-  static address _SC_3_addr()      { return _SC_3_adr; }
-  static address _SC_1_addr()      { return _SC_1_adr; }
-  static address _PI_INV_TABLE_addr()      { return _PI_INV_TABLE_adr; }
-  static address _PI_4_addr()      { return _PI_4_adr; }
-  static address _PI32INV_addr()      { return _PI32INV_adr; }
-  static address _SIGN_MASK_addr()      { return _SIGN_MASK_adr; }
-  static address _P_1_addr()      { return _P_1_adr; }
-  static address _P_3_addr()      { return _P_3_adr; }
-  static address _NEG_ZERO_addr()      { return _NEG_ZERO_adr; }
-  static address _L_2il0floatpacket_0_addr()      { return _L_2il0floatpacket_0_adr; }
-  static address _Pi4Inv_addr()      { return _Pi4Inv_adr; }
-  static address _Pi4x3_addr()      { return _Pi4x3_adr; }
-  static address _Pi4x4_addr()      { return _Pi4x4_adr; }
-  static address _ones_addr()      { return _ones_adr; }
-
 };
 
 #endif // CPU_X86_STUBROUTINES_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          jdk.httpserver
  *          jdk.compiler
  *          jdk.zipfs
- * @run main/othervm Basic
+ * @run main/othervm -Djdk.net.URLClassPath.enableJarIndex=true Basic
  */
 
 import java.io.IOException;
@@ -264,11 +264,11 @@ public class Basic {
         debug("HttpServer: " + httpServer);
 
         if (!expectbDotJar && httpServer.bDotJar > 0) {
-            debug("Unexpeced request sent to the httpserver for b.jar");
+            debug("Unexpected request sent to the httpserver for b.jar");
             return false;
         }
         if (!expectcDotJar && httpServer.cDotJar > 0) {
-            debug("Unexpeced request sent to the httpserver for c.jar");
+            debug("Unexpected request sent to the httpserver for c.jar");
             return false;
         }
 
@@ -304,11 +304,11 @@ public class Basic {
         debug("HttpServer: " + httpServer);
 
         if (!expectbDotJar && httpServer.bDotJar > 0) {
-            debug("Unexpeced request sent to the httpserver for b.jar");
+            debug("Unexpected request sent to the httpserver for b.jar");
             return false;
         }
         if (!expectcDotJar && httpServer.cDotJar > 0) {
-            debug("Unexpeced request sent to the httpserver for c.jar");
+            debug("Unexpected request sent to the httpserver for c.jar");
             return false;
         }
 

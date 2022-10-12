@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.graph;
 
+import java.awt.Dimension;
 import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.layout.Cluster;
 import java.awt.Rectangle;
@@ -55,9 +56,15 @@ public class Block implements Cluster {
     public Set<? extends Cluster> getSuccessors() {
         Set<Block> succs = new HashSet<Block>();
         for (InputBlock b : inputBlock.getSuccessors()) {
-            succs.add(diagram.getBlock(b));
+            if (diagram.hasBlock(b)) {
+                succs.add(diagram.getBlock(b));
+            }
         }
         return succs;
+    }
+
+    public Dimension getNodeOffset() {
+        return new Dimension(0, -Figure.getVerticalOffset());
     }
 
     public void setBounds(Rectangle r) {

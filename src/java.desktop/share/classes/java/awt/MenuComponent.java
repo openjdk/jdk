@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public abstract class MenuComponent implements java.io.Serializable {
 
     /**
      * Creates a {@code MenuComponent}.
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *    {@code GraphicsEnvironment.isHeadless}
      *    returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -373,8 +373,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         Toolkit.getDefaultToolkit().notifyAWTEventListeners(e);
 
         if (newEventsOnly ||
-            (parent != null && parent instanceof MenuComponent &&
-             ((MenuComponent)parent).newEventsOnly)) {
+            (parent instanceof MenuComponent mc && mc.newEventsOnly)) {
             if (eventEnabled(e)) {
                 processEvent(e);
             } else if (e instanceof ActionEvent && parent != null) {
@@ -448,7 +447,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
-     * @serial
+     *
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     @SuppressWarnings("removal")
@@ -743,7 +742,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         /**
          * Gets the {@code Font} of this object.
          *
-         * @return the {@code Font},if supported, for the object;
+         * @return the {@code Font}, if supported, for the object;
          *     otherwise, {@code null}
          */
         public Font getFont() {

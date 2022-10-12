@@ -24,7 +24,7 @@
 /**
  * This class implements the LDAPv3 Authorization Identity request control
  * as defined in
- * <a href="http://tools.ietf.org/html/rfc3829">RFC 3829</a>.
+ * <a href="https://tools.ietf.org/html/rfc3829">RFC 3829</a>.
  */
 
 package org.example.authz;

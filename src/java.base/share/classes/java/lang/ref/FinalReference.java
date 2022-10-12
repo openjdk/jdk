@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.lang.ref;
 /**
  * Final references, used to implement finalization
  */
-class FinalReference<T> extends Reference<T> {
+sealed class FinalReference<T> extends Reference<T> permits Finalizer {
 
     public FinalReference(T referent, ReferenceQueue<? super T> q) {
         super(referent, q);

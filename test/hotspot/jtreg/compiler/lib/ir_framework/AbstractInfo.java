@@ -56,7 +56,7 @@ abstract public class AbstractInfo {
      *
      * @return the random object.
      */
-    public Random getRandom() {
+    public static Random getRandom() {
         return RANDOM;
     }
 

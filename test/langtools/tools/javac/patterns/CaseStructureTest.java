@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8269146
+ * @bug 8269146 8290709
  * @summary Check compilation outcomes for various combinations of case label element.
  * @library /tools/lib /tools/javac/lib
  * @modules
@@ -94,8 +94,8 @@ public class CaseStructureTest extends ComboInstance<CaseStructureTest> {
 
         task.generate(result -> {
             boolean shouldPass = true;
-            long patternCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.TYPE_PATTERN || l == CaseLabel.GUARDED_PATTERN || l == CaseLabel.PARENTHESIZED_PATTERN).count();
-            long typePatternCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.TYPE_PATTERN).count();
+            long patternCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.TYPE_PATTERN || l == CaseLabel.PARENTHESIZED_PATTERN).count();
+            long typePatternCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.TYPE_PATTERN || l == CaseLabel.PARENTHESIZED_PATTERN).count();
             long constantCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.CONSTANT).count();
             long nullCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.NULL).count();
             long defaultCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.DEFAULT).count();
@@ -120,16 +120,6 @@ public class CaseStructureTest extends ComboInstance<CaseStructureTest> {
             if (patternCases > 0 && defaultCases > 0) {
                 shouldPass &= false;
             }
-            if (!asCaseLabelElements) {
-                //as an edge case, `case <total-pattern>: case null:` is prohibited:
-                boolean seenPattern = false;
-                for (CaseLabel label : caseLabels) {
-                    switch (label) {
-                        case NULL: if (seenPattern) shouldPass = false; break;
-                        case GUARDED_PATTERN, PARENTHESIZED_PATTERN, TYPE_PATTERN: seenPattern = true; break;
-                    }
-                }
-            }
             if (!(shouldPass ^ result.hasErrors())) {
                 throw new AssertionError("Unexpected result: shouldPass=" + shouldPass + ", actual: " + !result.hasErrors() + ", info: " + result.compilationInfo());
             }
@@ -140,7 +130,6 @@ public class CaseStructureTest extends ComboInstance<CaseStructureTest> {
         NONE(""),
         TYPE_PATTERN("Integer i"),
         PARENTHESIZED_PATTERN("(Integer i)"),
-        GUARDED_PATTERN("Integer i && i > 0"),
         CONSTANT("1"),
         NULL("null"),
         DEFAULT("default");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ import com.sun.tools.javac.util.Options;
  * For each combination of options, a separate task/context is created and kept, as most option
  * values are cached inside components themselves.
  * <p>
- * When the compilation redefines sensitive classes (e.g. classes in the the java.* packages), the
+ * When the compilation redefines sensitive classes (e.g. classes in the java.* packages), the
  * task/context is not reused.
  * <p>
  * When the task is reused, then packages that were already listed won't be listed again.

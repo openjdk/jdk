@@ -46,7 +46,7 @@ class MethodLivenessResult : public ResourceBitMap {
   {}
 
   void set_is_valid() { _is_valid = true; }
-  bool is_valid() { return _is_valid; }
+  bool is_valid() const { return _is_valid; }
 };
 
 class MethodLiveness : public ResourceObj {

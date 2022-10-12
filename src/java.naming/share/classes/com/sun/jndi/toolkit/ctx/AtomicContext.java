@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +256,7 @@ public abstract class AtomicContext extends ComponentContext {
             Object ret = null;
             if (resolve_to_penultimate_context(name, cont)) {
                 ret = a_lookup(name.toString(), cont);
-                if (ret != null && ret instanceof LinkRef) {
+                if (ret instanceof LinkRef) {
                     cont.setContinue(ret, name, this);
                     ret = null;
                 }
@@ -348,7 +348,7 @@ public abstract class AtomicContext extends ComponentContext {
                 Object ret = null;
                 if (resolve_to_penultimate_context_nns(name, cont)) {
                     ret = a_resolveIntermediate_nns(name.toString(), cont);
-                    if (ret != null && ret instanceof LinkRef) {
+                    if (ret instanceof LinkRef) {
                         cont.setContinue(ret, name, this);
                         ret = null;
                     }
@@ -368,7 +368,7 @@ public abstract class AtomicContext extends ComponentContext {
                 Object ret = null;
                 if (resolve_to_penultimate_context_nns(name, cont)) {
                     ret = a_lookup_nns(name.toString(), cont);
-                    if (ret != null && ret instanceof LinkRef) {
+                    if (ret instanceof LinkRef) {
                         cont.setContinue(ret, name, this);
                         ret = null;
                     }

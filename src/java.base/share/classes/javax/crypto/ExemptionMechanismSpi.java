@@ -33,7 +33,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>ExemptionMechanism</code> class.
+ * for the {@code ExemptionMechanism} class.
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation
  * of a particular exemption mechanism.
@@ -54,7 +54,7 @@ public abstract class ExemptionMechanismSpi {
      * Returns the length in bytes that an output buffer would need to be in
      * order to hold the result of the next
      * {@link #engineGenExemptionBlob(byte[], int) engineGenExemptionBlob}
-     * operation, given the input length <code>inputLen</code> (in bytes).
+     * operation, given the input length {@code inputLen} (in bytes).
      *
      * <p>The actual output length of the next
      * {@link #engineGenExemptionBlob(byte[], int) engineGenExemptionBlob}
@@ -70,11 +70,11 @@ public abstract class ExemptionMechanismSpi {
      * Initializes this exemption mechanism with a key.
      *
      * <p>If this exemption mechanism requires any algorithm parameters
-     * that cannot be derived from the given <code>key</code>, the underlying
+     * that cannot be derived from the given {@code key}, the underlying
      * exemption mechanism implementation is supposed to generate the required
      * parameters itself (using provider-specific default values); in the case
      * that algorithm parameters must be specified by the caller, an
-     * <code>InvalidKeyException</code> is raised.
+     * {@code InvalidKeyException} is raised.
      *
      * @param key the key for this exemption mechanism
      *
@@ -91,11 +91,11 @@ public abstract class ExemptionMechanismSpi {
      * parameters.
      *
      * <p>If this exemption mechanism requires any algorithm parameters and
-     * <code>params</code> is null, the underlying exemption mechanism
+     * {@code params} is null, the underlying exemption mechanism
      * implementation is supposed to generate the required parameters
      * itself (using provider-specific default values); in the case that
      * algorithm parameters must be specified by the caller, an
-     * <code>InvalidAlgorithmParameterException</code> is raised.
+     * {@code InvalidAlgorithmParameterException} is raised.
      *
      * @param key the key for this exemption mechanism
      * @param params the algorithm parameters
@@ -116,11 +116,11 @@ public abstract class ExemptionMechanismSpi {
      * parameters.
      *
      * <p>If this exemption mechanism requires any algorithm parameters
-     * and <code>params</code> is null, the underlying exemption mechanism
+     * and {@code params} is null, the underlying exemption mechanism
      * implementation is supposed to generate the required parameters
      * itself (using provider-specific default values); in the case that
      * algorithm parameters must be specified by the caller, an
-     * <code>InvalidAlgorithmParameterException</code> is raised.
+     * {@code InvalidAlgorithmParameterException} is raised.
      *
      * @param key the key for this exemption mechanism
      * @param params the algorithm parameters
@@ -149,20 +149,20 @@ public abstract class ExemptionMechanismSpi {
 
     /**
      * Generates the exemption mechanism key blob, and stores the result in
-     * the <code>output</code> buffer, starting at <code>outputOffset</code>
+     * the {@code output} buffer, starting at {@code outputOffset}
      * inclusive.
      *
-     * <p>If the <code>output</code> buffer is too small to hold the result,
-     * a <code>ShortBufferException</code> is thrown. In this case, repeat this
+     * <p>If the {@code output} buffer is too small to hold the result,
+     * a {@code ShortBufferException} is thrown. In this case, repeat this
      * call with a larger output buffer. Use
      * {@link #engineGetOutputSize(int) engineGetOutputSize} to determine
      * how big the output buffer should be.
      *
      * @param output the buffer for the result
-     * @param outputOffset the offset in <code>output</code> where the result
+     * @param outputOffset the offset in {@code output} where the result
      * is stored
      *
-     * @return the number of bytes stored in <code>output</code>
+     * @return the number of bytes stored in {@code output}
      *
      * @exception ShortBufferException if the given output buffer is too small
      * to hold the result.

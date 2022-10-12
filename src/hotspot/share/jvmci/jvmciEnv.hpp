@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 
 #include "classfile/javaClasses.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/thread.hpp"
 
 class CompileTask;
 class JVMCIObject;
@@ -36,7 +36,6 @@ class JVMCIObjectArray;
 class JVMCIPrimitiveArray;
 class JVMCICompiler;
 class JVMCIRuntime;
-class nmethodLocker;
 
 #define JVMCI_EXCEPTION_CONTEXT \
   JavaThread* thread = JavaThread::current(); \
@@ -147,7 +146,6 @@ class JVMCICompileState : public ResourceObj {
   void inc_compilation_ticks();
 };
 
-
 // This class is a top level wrapper around interactions between HotSpot
 // and the JVMCI Java code.  It supports both a HotSpot heap based
 // runtime with HotSpot oop based accessors as well as a shared library
@@ -158,7 +156,7 @@ class JVMCIEnv : public ResourceObj {
   friend class JNIAccessMark;
 
   // Initializes the _env, _mode and _runtime fields.
-  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env);
+  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool attach_OOME_is_fatal = true);
 
   void init(JavaThread* thread, bool is_hotspot, const char* file, int line);
 
@@ -170,12 +168,17 @@ class JVMCIEnv : public ResourceObj {
   bool        _throw_to_caller;  // Propagate an exception raised in this env to the caller?
   const char*            _file;  // The file and ...
   int                    _line;  // ... line where this JNIEnv was created
+  bool    _attach_threw_OOME;    // Failed to attach thread due to OutOfMemoryError, the JVMCIEnv is invalid
 
-  // Translates an exception on the HotSpot heap to an exception on
-  // the shared library heap. The translation includes the stack and
-  // causes of `throwable`. The translated exception is pending in the
-  // shared library thread upon returning.
-  void translate_hotspot_exception_to_jni_exception(JavaThread* THREAD, const Handle& throwable);
+  // Translates an exception on the HotSpot heap (i.e., hotspot_env) to an exception on
+  // the shared library heap (i.e., jni_env). The translation includes the stack and cause(s) of `throwable`.
+  // The translated exception is pending in jni_env upon returning.
+  static void translate_to_jni_exception(JavaThread* THREAD, const Handle& throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
+
+  // Translates an exception on the shared library heap (i.e., jni_env) to an exception on
+  // the HotSpot heap (i.e., hotspot_env). The translation includes the stack and cause(s) of `throwable`.
+  // The translated exception is pending in hotspot_env upon returning.
+  static void translate_from_jni_exception(JavaThread* THREAD, jthrowable throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
 public:
   // Opens a JVMCIEnv scope for a Java to VM call (e.g., via CompilerToVM).
@@ -225,6 +228,11 @@ public:
   jboolean has_pending_exception();
   void clear_pending_exception();
 
+  // If this env has a pending exception, it is translated to be a pending
+  // exception in `peer_env` and is cleared from this env. Returns true
+  // if a pending exception was transferred, false otherwise.
+  jboolean transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env);
+
   // Prints an exception and stack trace of a pending exception.
   void describe_pending_exception(bool clear);
 
@@ -242,7 +250,7 @@ public:
   jint get_int_at(JVMCIPrimitiveArray array, int index);
   void put_int_at(JVMCIPrimitiveArray array, int index, jint value);
 
-  long get_long_at(JVMCIPrimitiveArray array, int index);
+  jlong get_long_at(JVMCIPrimitiveArray array, int index);
   void put_long_at(JVMCIPrimitiveArray array, int index, jlong value);
 
   void copy_bytes_to(JVMCIPrimitiveArray src, jbyte* dest, int offset, jsize length);
@@ -288,6 +296,8 @@ public:
   JVMCIPrimitiveArray wrap(jbyteArray obj)    { return (JVMCIPrimitiveArray) wrap((jobject) obj); }
   JVMCIPrimitiveArray wrap(jlongArray obj)    { return (JVMCIPrimitiveArray) wrap((jobject) obj); }
 
+  nmethod* lookup_nmethod(address code, jlong compile_id_snapshot);
+
  private:
   JVMCIObject wrap(oop obj)                  { assert(is_hotspot(), "must be"); return wrap(JNIHandles::make_local(obj)); }
   JVMCIObjectArray wrap(objArrayOop obj)     { assert(is_hotspot(), "must be"); return (JVMCIObjectArray) wrap(JNIHandles::make_local(obj)); }
@@ -307,10 +317,16 @@ public:
 
   JVMCIObject call_HotSpotJVMCIRuntime_callToString(JVMCIObject object, JVMCI_TRAPS);
 
-  JVMCIObject call_JavaConstant_forPrimitive(JVMCIObject kind, jlong value, JVMCI_TRAPS);
+  JVMCIObject call_JavaConstant_forPrimitive(jchar type_char, jlong value, JVMCI_TRAPS);
 
   jboolean call_HotSpotJVMCIRuntime_isGCSupported(JVMCIObject runtime, jint gcIdentifier);
 
+  void call_HotSpotJVMCIRuntime_postTranslation(JVMCIObject object, JVMCI_TRAPS);
+
+  // Converts the JavaKind.typeChar value in `ch` to a BasicType
+  BasicType typeCharToBasicType(jchar ch, JVMCI_TRAPS);
+
+  // Converts the JavaKind value in `kind` to a BasicType
   BasicType kindToBasicType(JVMCIObject kind, JVMCI_TRAPS);
 
 #define DO_THROW(name) \
@@ -330,27 +346,19 @@ public:
 
   void fthrow_error(const char* file, int line, const char* format, ...) ATTRIBUTE_PRINTF(4, 5);
 
-  // Given an instance of HotSpotInstalledCode return the corresponding CodeBlob*.  The
-  // nmethodLocker is required to keep the CodeBlob alive in the case where it's an nmethod.
-  CodeBlob* get_code_blob(JVMCIObject code, nmethodLocker& locker);
+  // Given an instance of HotSpotInstalledCode return the corresponding CodeBlob*.
+  CodeBlob* get_code_blob(JVMCIObject code);
 
-  // Given an instance of HotSpotInstalledCode return the corresponding nmethod.  The
-  // nmethodLocker is required to keep the nmethod alive.
-  nmethod* get_nmethod(JVMCIObject code, nmethodLocker& locker);
-
-  MethodData* asMethodData(jlong metaspaceMethodData) {
-    return (MethodData*) (address) metaspaceMethodData;
-  }
+  // Given an instance of HotSpotInstalledCode return the corresponding nmethod.
+  nmethod* get_nmethod(JVMCIObject code);
 
   const char* klass_name(JVMCIObject object);
 
   // Unpack an instance of HotSpotResolvedJavaMethodImpl into the original Method*
   Method* asMethod(JVMCIObject jvmci_method);
-  Method* asMethod(jobject jvmci_method) { return asMethod(wrap(jvmci_method)); }
 
   // Unpack an instance of HotSpotResolvedObjectTypeImpl into the original Klass*
   Klass* asKlass(JVMCIObject jvmci_type);
-  Klass* asKlass(jobject jvmci_type)  { return asKlass(wrap(jvmci_type)); }
 
   JVMCIObject get_jvmci_method(const methodHandle& method, JVMCI_TRAPS);
 
@@ -381,10 +389,13 @@ public:
   JVMCIObject new_HotSpotStackFrameReference(JVMCI_TRAPS);
   JVMCIObject new_JVMCIError(JVMCI_TRAPS);
 
-  jlong make_handle(const Handle& obj);
-  oop resolve_handle(jlong objectHandle);
+  // Makes a handle to a HotSpot heap object. These handles are
+  // individually reclaimed by JVMCIRuntime::destroy_oop_handle and
+  // bulk reclaimed by JVMCIRuntime::release_and_clear_globals.
+  jlong make_oop_handle(const Handle& obj);
+  oop resolve_oop_handle(jlong oopHandle);
 
-  // These are analagous to the JNI routines
+  // These are analogous to the JNI routines
   JVMCIObject make_local(JVMCIObject object);
   void destroy_local(JVMCIObject object);
 
@@ -402,9 +413,11 @@ public:
   // Destroys a JNI global handle created by JVMCIEnv::make_global.
   void destroy_global(JVMCIObject object);
 
-  // Deoptimizes the nmethod (if any) in the HotSpotNmethod.address
-  // field of mirror. The field is subsequently zeroed.
-  void invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS);
+  // Updates the nmethod (if any) in the HotSpotNmethod.address
+  // field of `mirror` to prevent it from being called.
+  // If `deoptimize` is true, the nmethod is immediately deoptimized.
+  // The HotSpotNmethod.address field is zero upon returning.
+  void invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimze, JVMCI_TRAPS);
 
   void initialize_installed_code(JVMCIObject installed_code, CodeBlob* cb, JVMCI_TRAPS);
 

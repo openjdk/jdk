@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,10 +132,10 @@ public class DefaultLookup {
                              int defaultValue) {
         Object iValue = get(c, ui, key);
 
-        if (iValue == null || !(iValue instanceof Number)) {
-            return defaultValue;
+        if (iValue instanceof Number number) {
+            return number.intValue();
         }
-        return ((Number)iValue).intValue();
+        return defaultValue;
     }
 
     public static int getInt(JComponent c, ComponentUI ui, String key) {
@@ -146,10 +146,10 @@ public class DefaultLookup {
                                    Insets defaultValue) {
         Object iValue = get(c, ui, key);
 
-        if (iValue == null || !(iValue instanceof Insets)) {
-            return defaultValue;
+        if (iValue instanceof Insets insets) {
+            return insets;
         }
-        return (Insets)iValue;
+        return defaultValue;
     }
 
     public static Insets getInsets(JComponent c, ComponentUI ui, String key) {
@@ -160,10 +160,10 @@ public class DefaultLookup {
                                      boolean defaultValue) {
         Object iValue = get(c, ui, key);
 
-        if (iValue == null || !(iValue instanceof Boolean)) {
-            return defaultValue;
+        if (iValue instanceof Boolean b) {
+            return b;
         }
-        return ((Boolean)iValue).booleanValue();
+        return defaultValue;
     }
 
     public static boolean getBoolean(JComponent c, ComponentUI ui, String key) {
@@ -174,10 +174,10 @@ public class DefaultLookup {
                                  Color defaultValue) {
         Object iValue = get(c, ui, key);
 
-        if (iValue == null || !(iValue instanceof Color)) {
-            return defaultValue;
+        if (iValue instanceof Color color) {
+            return color;
         }
-        return (Color)iValue;
+        return defaultValue;
     }
 
     public static Color getColor(JComponent c, ComponentUI ui, String key) {
@@ -187,10 +187,10 @@ public class DefaultLookup {
     public static Icon getIcon(JComponent c, ComponentUI ui, String key,
             Icon defaultValue) {
         Object iValue = get(c, ui, key);
-        if (iValue == null || !(iValue instanceof Icon)) {
-            return defaultValue;
+        if (iValue instanceof Icon icon) {
+            return icon;
         }
-        return (Icon)iValue;
+        return defaultValue;
     }
 
     public static Icon getIcon(JComponent c, ComponentUI ui, String key) {
@@ -200,10 +200,10 @@ public class DefaultLookup {
     public static Border getBorder(JComponent c, ComponentUI ui, String key,
             Border defaultValue) {
         Object iValue = get(c, ui, key);
-        if (iValue == null || !(iValue instanceof Border)) {
-            return defaultValue;
+        if (iValue instanceof Border border) {
+            return border;
         }
-        return (Border)iValue;
+        return defaultValue;
     }
 
     public static Border getBorder(JComponent c, ComponentUI ui, String key) {

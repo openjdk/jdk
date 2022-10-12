@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public:
     ShouldNotReachHere();
     return false;
   }
+  bool get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_pc_after_call);
 
 private:
   ElfFile*         get_elf_file(const char* filepath);

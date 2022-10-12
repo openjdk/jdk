@@ -41,7 +41,7 @@ private:
 public:
   G1EdenRegions() : _length(0), _used_bytes(0), _regions_on_node() { }
 
-  virtual uint add(HeapRegion* hr) {
+  uint add(HeapRegion* hr) {
     assert(!hr->is_eden(), "should not already be set");
     _length++;
     return _regions_on_node.add(hr);

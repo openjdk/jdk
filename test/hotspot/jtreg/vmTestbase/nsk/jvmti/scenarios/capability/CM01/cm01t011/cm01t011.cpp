@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,52 +338,52 @@ static int checkLocalVariableFunctions() {
         if (strcmp(local_variable_table[i].name, "o") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalObject\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->GetLocalObject(thread, 1, local_variable_table[i].slot, &object_value)))
+                    jvmti->GetLocalObject(thread, 2, local_variable_table[i].slot, &object_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalObject\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetLocalObject(thread, 1, local_variable_table[i].slot, object_value)))
+                    jvmti->SetLocalObject(thread, 2, local_variable_table[i].slot, object_value)))
                 return NSK_FALSE;
         } else if (strcmp(local_variable_table[i].name, "i") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalInt\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->GetLocalInt(thread, 1, local_variable_table[i].slot, &int_value)))
+                    jvmti->GetLocalInt(thread, 2, local_variable_table[i].slot, &int_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalInt\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetLocalInt(thread, 1, local_variable_table[i].slot, int_value)))
+                    jvmti->SetLocalInt(thread, 2, local_variable_table[i].slot, int_value)))
                 return NSK_FALSE;
         } else if (strcmp(local_variable_table[i].name, "l") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalLong\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->GetLocalLong(thread, 1, local_variable_table[i].slot, &long_value)))
+                    jvmti->GetLocalLong(thread, 2, local_variable_table[i].slot, &long_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalLong\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetLocalLong(thread, 1, local_variable_table[i].slot, long_value)))
+                    jvmti->SetLocalLong(thread, 2, local_variable_table[i].slot, long_value)))
                 return NSK_FALSE;
         } else if (strcmp(local_variable_table[i].name, "f") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalFloat\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->GetLocalFloat(thread, 1, local_variable_table[i].slot, &float_value)))
+                    jvmti->GetLocalFloat(thread, 2, local_variable_table[i].slot, &float_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalFloat\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetLocalFloat(thread, 1, local_variable_table[i].slot, float_value)))
+                    jvmti->SetLocalFloat(thread, 2, local_variable_table[i].slot, float_value)))
                 return NSK_FALSE;
         } else if (strcmp(local_variable_table[i].name, "d") == 0) {
             NSK_DISPLAY0("Checking positive: GetLocalDouble\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->GetLocalDouble(thread, 1, local_variable_table[i].slot, &double_value)))
+                    jvmti->GetLocalDouble(thread, 2, local_variable_table[i].slot, &double_value)))
                 return NSK_FALSE;
 
             NSK_DISPLAY0("Checking positive: SetLocalDouble\n");
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetLocalDouble(thread, 1, local_variable_table[i].slot, double_value)))
+                    jvmti->SetLocalDouble(thread, 2, local_variable_table[i].slot, double_value)))
                 return NSK_FALSE;
         }
     }

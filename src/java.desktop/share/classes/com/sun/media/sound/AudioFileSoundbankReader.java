@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,10 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
     @Override
     public Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException {
-        try {
-            AudioInputStream ais = AudioSystem.getAudioInputStream(url);
+        try (AudioInputStream ais = AudioSystem.getAudioInputStream(url)) {
             Soundbank sbk = getSoundbank(ais);
-            ais.close();
             return sbk;
-        } catch (UnsupportedAudioFileException e) {
-            return null;
-        } catch (IOException e) {
+        } catch (UnsupportedAudioFileException | IOException e) {
             return null;
         }
     }
@@ -69,8 +65,7 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
             Soundbank sbk = getSoundbank(ais);
             if (sbk != null)
                 return sbk;
-        } catch (UnsupportedAudioFileException e) {
-        } catch (IOException e) {
+        } catch (UnsupportedAudioFileException | IOException e) {
         }
         stream.reset();
         return null;
@@ -78,12 +73,26 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
 
     public Soundbank getSoundbank(AudioInputStream ais)
             throws InvalidMidiDataException, IOException {
+        int MEGABYTE = 1048576;
+        int DEFAULT_BUFFER_SIZE = 65536;
+        int MAX_FRAME_SIZE = 1024;
         try {
             byte[] buffer;
-            if (ais.getFrameLength() == -1) {
+            int frameSize = ais.getFormat().getFrameSize();
+            if (frameSize <= 0 || frameSize > MAX_FRAME_SIZE) {
+                throw new InvalidMidiDataException("Formats with frame size "
+                        + frameSize + " are not supported");
+            }
+
+            long totalSize = ais.getFrameLength() * frameSize;
+            if (totalSize >= Integer.MAX_VALUE - 2) {
+                throw new InvalidMidiDataException(
+                        "Can not allocate enough memory to read audio data.");
+            }
+
+            if (ais.getFrameLength() == -1 || totalSize > MEGABYTE) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] buff = new byte[1024
-                        - (1024 % ais.getFormat().getFrameSize())];
+                byte[] buff = new byte[DEFAULT_BUFFER_SIZE - (DEFAULT_BUFFER_SIZE % frameSize)];
                 int ret;
                 while ((ret = ais.read(buff)) != -1) {
                     baos.write(buff, 0, ret);
@@ -91,8 +100,7 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
                 ais.close();
                 buffer = baos.toByteArray();
             } else {
-                buffer = new byte[(int) (ais.getFrameLength()
-                                    * ais.getFormat().getFrameSize())];
+                buffer = new byte[(int) totalSize];
                 new DataInputStream(ais).readFully(buffer);
             }
             ModelByteBufferWavetable osc = new ModelByteBufferWavetable(
@@ -125,9 +133,7 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
             ins.add(performer);
             sbk.addInstrument(ins);
             return sbk;
-        } catch (UnsupportedAudioFileException e1) {
-            return null;
-        } catch (IOException e) {
+        } catch (UnsupportedAudioFileException | IOException e) {
             return null;
         }
     }

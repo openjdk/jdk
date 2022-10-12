@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_STRINGUTILS_HPP
 #define SHARE_UTILITIES_STRINGUTILS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class StringUtils : AllStatic {
 public:
@@ -40,6 +40,15 @@ public:
 
   // Compute string similarity based on Dice's coefficient
   static double similarity(const char* str1, size_t len1, const char* str2, size_t len2);
+
+  // Find needle in haystack, case insensitive.
+  // Custom implementation of strcasestr, as it is not available on windows.
+  static const char* strstr_nocase(const char* haystack, const char* needle);
+
+  // Check if str matches the star_pattern.
+  // eg. str "_abc____def__" would match pattern "abc*def".
+  // The matching is case insensitive.
+  static bool is_star_match(const char* star_pattern, const char* str);
 };
 
 #endif // SHARE_UTILITIES_STRINGUTILS_HPP

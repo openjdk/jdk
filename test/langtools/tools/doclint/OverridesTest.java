@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,36 +59,43 @@ abstract class C1 {
      * @return an int
      */
     int m(int p) throws Exception;
+    /** . */ C1() { }
 }
 
 /** An implementing class. */
 class C2 implements I1 {
     int m(int  p) throws Exception { return p; }
+    /** . */ C2() { }
 }
 
 /** An extending class. */
 class C3 extends C1 {
     int m(int  p) throws Exception { return p; }
+    /** . */ C3() { }
 }
 
 /** An extending and implementing class. */
 class C4 extends C1 implements I1 {
     int m(int  p) throws Exception { return p; }
+    /** . */ C4() { }
 }
 
 /** An implementing class using inheritdoc. */
 class C5 implements I1 {
     /** {@inheritDoc} */
     int m(int  p) throws Exception { return p; }
+    /** . */ C5() { }
 }
 
 /** An implementing class with incomplete documentation. */
 class C6 implements I1 {
     /** Overriding method */
     int m(int  p) throws Exception { return p; }
+    /** . */ C6() { }
 }
 
 /** A class implementing an inherited interface. */
 class C7 implements I2 {
     int m(int  p) throws Exception { return p; }
+    /** . */ C7() { }
 }

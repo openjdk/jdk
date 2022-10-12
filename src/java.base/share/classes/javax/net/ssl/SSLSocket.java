@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ import java.util.function.BiFunction;
  * <P> The ApplicationProtocol {@code String} values returned by the methods
  * in this class are in the network byte representation sent by the peer.
  * The bytes could be directly compared, or converted to its Unicode
- * {code String} format for comparison.
+ * {@code String} format for comparison.
  *
  * <blockquote><pre>
  *     String networkString = sslSocket.getHandshakeApplicationProtocol();
@@ -174,17 +174,19 @@ import java.util.function.BiFunction;
  * @apiNote
  * When the connection is no longer needed, the client and server
  * applications should each close both sides of their respective connection.
- * For {@code SSLSocket} objects, for example, an application can call
- * {@link Socket#shutdownOutput()} or {@link java.io.OutputStream#close()}
- * for output stream close and call {@link Socket#shutdownInput()} or
- * {@link java.io.InputStream#close()} for input stream close.  Note that
- * in some cases, closing the input stream may depend on the peer's output
- * stream being closed first.  If the connection is not closed in an orderly
- * manner (for example {@link Socket#shutdownInput()} is called before the
- * peer's write closure notification has been received), exceptions may
- * be raised to indicate that an error has occurred.  Once an
- * {@code SSLSocket} is closed, it is not reusable: a new {@code SSLSocket}
- * must be created.
+ * This can be done either in one shot by calling {@link Socket#close()},
+ * or by closing each side individually using
+ * {@link Socket#shutdownOutput()} / {@link Socket#shutdownInput()} which is
+ * useful for protocol versions that can support half-closed connections.
+ *
+ * <P> Note that in some cases, closing the input stream may depend on the
+ * peer's output stream being closed first.  If the connection is not closed
+ * in an orderly manner (for example {@link Socket#shutdownInput()} is called
+ * before the peer's write closure notification has been received), exceptions
+ * may be raised to indicate that an error has occurred.
+ *
+ * <P> Once an {@code SSLSocket} is closed, it is not reusable: a new
+ * {@code SSLSocket} must be created.
  *
  * @see java.net.Socket
  * @see SSLServerSocket
@@ -327,9 +329,9 @@ public abstract class SSLSocket extends Socket
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification, and may also include other cipher
+     * suites that the provider supports.
      *
      * @return an array of cipher suite names
      * @see #getEnabledCipherSuites()
@@ -353,9 +355,9 @@ public abstract class SSLSocket extends Socket
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification, and may also include other cipher
+     * suites that the provider supports.
      *
      * @return an array of cipher suite names
      * @see #getSupportedCipherSuites()
@@ -375,10 +377,10 @@ public abstract class SSLSocket extends Socket
      * Note that the standard list of cipher suite names may be found in the
      * <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list or might not
-     * use the recommended name for a certain cipher suite.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification. Providers may support cipher suite
+     * names not found in this list or might not use the recommended name
+     * for a certain cipher suite.
      * <P>
      * See {@link #getEnabledCipherSuites()} for more information
      * on why a specific ciphersuite may never be used on a connection.
@@ -390,7 +392,7 @@ public abstract class SSLSocket extends Socket
      * @see #getSupportedCipherSuites()
      * @see #getEnabledCipherSuites()
      */
-    public abstract void setEnabledCipherSuites(String suites []);
+    public abstract void setEnabledCipherSuites(String[] suites);
 
 
     /**
@@ -431,12 +433,12 @@ public abstract class SSLSocket extends Socket
      *            when the protocols parameter is null.
      * @see #getEnabledProtocols()
      */
-    public abstract void setEnabledProtocols(String protocols[]);
+    public abstract void setEnabledProtocols(String[] protocols);
 
 
     /**
      * Returns the SSL Session in use by this connection.  These can
-     * be long lived, and frequently correspond to an entire login session
+     * be long-lived, and frequently correspond to an entire login session
      * for some user.  The session specifies a particular cipher suite
      * which is being actively used by all connections in that session,
      * as well as the identities of the session's client and server.
@@ -742,10 +744,8 @@ public abstract class SSLSocket extends Socket
         }
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else if (params.getWantClientAuth()) {
-            setWantClientAuth(true);
         } else {
-            setWantClientAuth(false);
+            setWantClientAuth(params.getWantClientAuth());
         }
     }
 

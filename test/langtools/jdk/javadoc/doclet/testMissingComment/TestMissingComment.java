@@ -49,11 +49,13 @@ public class TestMissingComment extends JavadocTester {
     public void testClass(Path base) throws Exception {
         test(base.resolve("class"), """
                     // no doc comment
-                    public class C { }
+                    public class C {
+                        /** . */ C() { }
+                    }
                     """,
                 """
                     testClass/class/src/C.java:2: warning: no comment
-                    public class C { }
+                    public class C {
                            ^
                     """);
     }
@@ -65,6 +67,7 @@ public class TestMissingComment extends JavadocTester {
                     public class C {
                         // no doc comment
                         public void m() { }
+                        /** . */ C() { }
                     }
                     """,
                 """
@@ -81,6 +84,7 @@ public class TestMissingComment extends JavadocTester {
                     public class C {
                         // no doc comment
                         public int f;
+                        /** . */ C() { }
                     }
                     """,
                 """
@@ -96,12 +100,15 @@ public class TestMissingComment extends JavadocTester {
                     /** Class comment. */
                     public class C {
                         // no doc comment
-                        public class Nested { }
+                        public class Nested {
+                            /** . */ Nested() { }
+                        }
+                        /** . */ C() { }
                     }
                     """,
                 """
                     testNested/nest/src/C.java:4: warning: no comment
-                        public class Nested { }
+                        public class Nested {
                                ^
                     """);
     }

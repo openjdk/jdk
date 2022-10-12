@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,16 @@
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compilationLog.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
-#include "compiler/oopMap.hpp"
+#include "compiler/oopMap.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
@@ -51,9 +55,11 @@
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
@@ -66,7 +72,7 @@
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/sweeper.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -421,13 +427,14 @@ int nmethod::total_size() const {
     nul_chk_table_size();
 }
 
-address* nmethod::orig_pc_addr(const frame* fr) {
-  return (address*) ((address)fr->unextended_sp() + _orig_pc_offset);
-}
-
 const char* nmethod::compile_kind() const {
   if (is_osr_method())     return "osr";
-  if (method() != NULL && is_native_method())  return "c2n";
+  if (method() != NULL && is_native_method()) {
+    if (method()->is_continuation_native_intrinsic()) {
+      return "cnt";
+    }
+    return "c2n";
+  }
   return NULL;
 }
 
@@ -435,14 +442,7 @@ const char* nmethod::compile_kind() const {
 void nmethod::init_defaults() {
   _state                      = not_installed;
   _has_flushed_dependencies   = 0;
-  _lock_count                 = 0;
-  _stack_traversal_mark       = 0;
   _load_reported              = false; // jvmti state
-  _unload_reported            = false;
-
-#ifdef ASSERT
-  _oops_are_stale             = false;
-#endif
 
   _oops_do_mark_link       = NULL;
   _osr_link                = NULL;
@@ -459,17 +459,21 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   int frame_size,
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
-  OopMapSet* oop_maps) {
+  OopMapSet* oop_maps,
+  int exception_handler) {
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
+  int native_nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    int native_nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
 
     CodeOffsets offsets;
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
     offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
+    if (exception_handler != -1) {
+      offsets.set_value(CodeOffsets::Exceptions, exception_handler);
+    }
     nm = new (native_nmethod_size, CompLevel_none)
     nmethod(method(), compiler_none, native_nmethod_size,
             compile_id, &offsets,
@@ -501,8 +505,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level,
-  const GrowableArrayView<RuntimeStub*>& native_invokers
+  CompLevel comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -516,22 +519,22 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
-  { MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 #if INCLUDE_JVMCI
-    int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
+  int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
 #endif
-    int nmethod_size =
-      CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
-      + adjust_pcs_size(debug_info->pcs_size())
-      + align_up((int)dependencies->size_in_bytes(), oopSize)
-      + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize)
-      + align_up(handler_table->size_in_bytes()    , oopSize)
-      + align_up(nul_chk_table->size_in_bytes()    , oopSize)
+  int nmethod_size =
+    CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
+    + adjust_pcs_size(debug_info->pcs_size())
+    + align_up((int)dependencies->size_in_bytes(), oopSize)
+    + align_up(handler_table->size_in_bytes()    , oopSize)
+    + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
-      + align_up(speculations_len                  , oopSize)
-      + align_up(jvmci_data_size                   , oopSize)
+    + align_up(speculations_len                  , oopSize)
+    + align_up(jvmci_data_size                   , oopSize)
 #endif
-      + align_up(debug_info->data_size()           , oopSize);
+    + align_up(debug_info->data_size()           , oopSize);
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     nm = new (nmethod_size, comp_level)
     nmethod(method(), compiler->type(), nmethod_size, compile_id, entry_bci, offsets,
@@ -540,8 +543,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
             handler_table,
             nul_chk_table,
             compiler,
-            comp_level,
-            native_invokers
+            comp_level
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -602,10 +604,11 @@ nmethod::nmethod(
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
-  : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
-  _is_unloading_state(0),
+  : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
+  _unlinked_next(NULL),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
-  _native_basic_lock_sp_offset(basic_lock_sp_offset)
+  _native_basic_lock_sp_offset(basic_lock_sp_offset),
+  _is_unloading_state(0)
 {
   {
     int scopes_data_offset   = 0;
@@ -616,21 +619,22 @@ nmethod::nmethod(
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults();
+    _comp_level              = CompLevel_none;
     _entry_bci               = InvocationEntryBci;
     // We have no exception handler or deopt handler make the
     // values something that will never match a pc like the nmethod vtable entry
     _exception_offset        = 0;
     _orig_pc_offset          = 0;
+    _gc_epoch                = CodeCache::gc_epoch();
 
     _consts_offset           = data_offset();
-    _stub_offset             = data_offset();
+    _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
     _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset         + align_up(code_buffer->total_oop_size(), oopSize);
-    scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
+    _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);
+    scopes_data_offset       = _metadata_offset      + align_up(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
-    _native_invokers_offset     = _dependencies_offset;
-    _handler_table_offset    = _native_invokers_offset;
+    _handler_table_offset    = _dependencies_offset;
     _nul_chk_table_offset    = _handler_table_offset;
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;
@@ -640,13 +644,13 @@ nmethod::nmethod(
     _nmethod_end_offset      = _nul_chk_table_offset;
 #endif
     _compile_id              = compile_id;
-    _comp_level              = CompLevel_none;
     _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
     _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = NULL;
     _exception_cache         = NULL;
     _pc_desc_container.reset_to(NULL);
-    _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
+
+    _exception_offset        = code_offset()         + offsets->value(CodeOffsets::Exceptions);
 
     _scopes_data_begin = (address) this + scopes_data_offset;
     _deopt_handler_begin = (address) this + deoptimize_offset;
@@ -661,6 +665,8 @@ nmethod::nmethod(
     debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);
+
+    finalize_relocations();
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -726,18 +732,18 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level,
-  const GrowableArrayView<RuntimeStub*>& native_invokers
+  CompLevel comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
   int jvmci_data_size
 #endif
   )
-  : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
-  _is_unloading_state(0),
+  : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
+  _unlinked_next(NULL),
   _native_receiver_sp_offset(in_ByteSize(-1)),
-  _native_basic_lock_sp_offset(in_ByteSize(-1))
+  _native_basic_lock_sp_offset(in_ByteSize(-1)),
+  _is_unloading_state(0)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
@@ -752,7 +758,7 @@ nmethod::nmethod(
     _compile_id              = compile_id;
     _comp_level              = comp_level;
     _orig_pc_offset          = orig_pc_offset;
-    _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
+    _gc_epoch                = CodeCache::gc_epoch();
 
     // Section offsets
     _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
@@ -804,8 +810,7 @@ nmethod::nmethod(
 
     _scopes_pcs_offset       = scopes_data_offset    + align_up(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
-    _native_invokers_offset  = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
-    _handler_table_offset    = _native_invokers_offset + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize);
+    _handler_table_offset    = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
     _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -827,16 +832,14 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
     dependencies->copy_to(this);
-    if (native_invokers.is_nonempty()) { // can not get address of zero-length array
-      // Copy native stubs
-      memcpy(native_invokers_begin(), native_invokers.adr_at(0), native_invokers.data_size_in_bytes());
-    }
     clear_unloading_state();
 
     Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);
+
+    finalize_relocations();
 
     // Copy contents of ExceptionHandlerTable to nmethod
     handler_table->copy_to(this);
@@ -928,7 +931,7 @@ void nmethod::print_on(outputStream* st, const char* msg) const {
   }
 }
 
-void nmethod::maybe_print_nmethod(DirectiveSet* directive) {
+void nmethod::maybe_print_nmethod(const DirectiveSet* directive) {
   bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
   if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
     print_nmethod(printnmethods);
@@ -936,8 +939,6 @@ void nmethod::maybe_print_nmethod(DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
-  run_nmethod_entry_barrier(); // ensure all embedded OOPs are valid before printing
-
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != NULL) {
     xtty->begin_head("print_nmethod");
@@ -993,10 +994,6 @@ void nmethod::print_nmethod(bool printmethod) {
     }
     if (printmethod || PrintDependencies || CompilerOracle::has_option(mh, CompileCommand::PrintDependencies)) {
       print_dependencies();
-      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-    }
-    if (printmethod && native_invokers_begin() < native_invokers_end()) {
-      print_native_invokers();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintExceptionHandlers) {
@@ -1059,12 +1056,6 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::free_native_invokers() {
-  for (RuntimeStub** it = native_invokers_begin(); it < native_invokers_end(); it++) {
-    CodeCache::free(*it);
-  }
-}
-
 void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
   // re-patch all oop-bearing instructions, just in case some oops moved
   RelocIterator iter(this, begin, end);
@@ -1084,6 +1075,83 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
   }
 }
 
+static void install_post_call_nop_displacement(nmethod* nm, address pc) {
+  NativePostCallNop* nop = nativePostCallNop_at((address) pc);
+  intptr_t cbaddr = (intptr_t) nm;
+  intptr_t offset = ((intptr_t) pc) - cbaddr;
+
+  int oopmap_slot = nm->oop_maps()->find_slot_for_offset((intptr_t) pc - (intptr_t) nm->code_begin());
+  if (oopmap_slot < 0) { // this can happen at asynchronous (non-safepoint) stackwalks
+    log_debug(codecache)("failed to find oopmap for cb: " INTPTR_FORMAT " offset: %d", cbaddr, (int) offset);
+  } else if (((oopmap_slot & 0xff) == oopmap_slot) && ((offset & 0xffffff) == offset)) {
+    jint value = (oopmap_slot << 24) | (jint) offset;
+    nop->patch(value);
+  } else {
+    log_debug(codecache)("failed to encode %d %d", oopmap_slot, (int) offset);
+  }
+}
+
+void nmethod::finalize_relocations() {
+  NoSafepointVerifier nsv;
+
+  // Make sure that post call nops fill in nmethod offsets eagerly so
+  // we don't have to race with deoptimization
+  RelocIterator iter(this);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::post_call_nop_type) {
+      post_call_nop_Relocation* const reloc = iter.post_call_nop_reloc();
+      address pc = reloc->addr();
+      install_post_call_nop_displacement(this, pc);
+    }
+  }
+}
+
+void nmethod::make_deoptimized() {
+  if (!Continuations::enabled()) {
+    return;
+  }
+
+  assert(method() == NULL || can_be_deoptimized(), "");
+
+  CompiledICLocker ml(this);
+  assert(CompiledICLocker::is_safe(this), "mt unsafe call");
+  ResourceMark rm;
+  RelocIterator iter(this, oops_reloc_begin());
+
+  while (iter.next()) {
+
+    switch (iter.type()) {
+      case relocInfo::virtual_call_type:
+      case relocInfo::opt_virtual_call_type: {
+        CompiledIC *ic = CompiledIC_at(&iter);
+        address pc = ic->end_of_call();
+        NativePostCallNop* nop = nativePostCallNop_at(pc);
+        if (nop != NULL) {
+          nop->make_deopt();
+        }
+        assert(NativeDeoptInstruction::is_deopt_at(pc), "check");
+        break;
+      }
+      case relocInfo::static_call_type: {
+        CompiledStaticCall *csc = compiledStaticCall_at(iter.reloc());
+        address pc = csc->end_of_call();
+        NativePostCallNop* nop = nativePostCallNop_at(pc);
+        //tty->print_cr(" - static pc %p", pc);
+        if (nop != NULL) {
+          nop->make_deopt();
+        }
+        // We can't assert here, there are some calls to stubs / runtime
+        // that have reloc data and doesn't have a post call NOP.
+        //assert(NativeDeoptInstruction::is_deopt_at(pc), "check");
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  // Don't deopt this again.
+  mark_deoptimized();
+}
 
 void nmethod::verify_clean_inline_caches() {
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
@@ -1095,12 +1163,11 @@ void nmethod::verify_clean_inline_caches() {
       case relocInfo::virtual_call_type:
       case relocInfo::opt_virtual_call_type: {
         CompiledIC *ic = CompiledIC_at(&iter);
-        // Ok, to lookup references to zombies here
-        CodeBlob *cb = CodeCache::find_blob_unsafe(ic->ic_destination());
+        CodeBlob *cb = CodeCache::find_blob(ic->ic_destination());
         assert(cb != NULL, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
         if( nm != NULL ) {
-          // Verify that inline caches pointing to both zombie and not_entrant methods are clean
+          // Verify that inline caches pointing to bad nmethods are clean
           if (!nm->is_in_use() || (nm->method()->code() != nm)) {
             assert(ic->is_clean(), "IC should be clean");
           }
@@ -1109,11 +1176,11 @@ void nmethod::verify_clean_inline_caches() {
       }
       case relocInfo::static_call_type: {
         CompiledStaticCall *csc = compiledStaticCall_at(iter.reloc());
-        CodeBlob *cb = CodeCache::find_blob_unsafe(csc->destination());
+        CodeBlob *cb = CodeCache::find_blob(csc->destination());
         assert(cb != NULL, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
         if( nm != NULL ) {
-          // Verify that inline caches pointing to both zombie and not_entrant methods are clean
+          // Verify that inline caches pointing to bad nmethods are clean
           if (!nm->is_in_use() || (nm->method()->code() != nm)) {
             assert(csc->is_clean(), "IC should be clean");
           }
@@ -1126,34 +1193,14 @@ void nmethod::verify_clean_inline_caches() {
   }
 }
 
-// This is a private interface with the sweeper.
-void nmethod::mark_as_seen_on_stack() {
-  assert(is_alive(), "Must be an alive method");
-  // Set the traversal mark to ensure that the sweeper does 2
-  // cleaning passes before moving to zombie.
-  set_stack_traversal_mark(NMethodSweeper::traversal_count());
+void nmethod::mark_as_maybe_on_stack() {
+  Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
-// Tell if a non-entrant method can be converted to a zombie (i.e.,
-// there are no activations on the stack, not in use by the VM,
-// and not in use by the ServiceThread)
-bool nmethod::can_convert_to_zombie() {
-  // Note that this is called when the sweeper has observed the nmethod to be
-  // not_entrant. However, with concurrent code cache unloading, the state
-  // might have moved on to unloaded if it is_unloading(), due to racing
-  // concurrent GC threads.
-  assert(is_not_entrant() || is_unloading() ||
-         !Thread::current()->is_Code_cache_sweeper_thread(),
-         "must be a non-entrant method if called from sweeper");
-
-  // Since the nmethod sweeper only does partial sweep the sweeper's traversal
-  // count can be greater than the stack traversal count before it hits the
-  // nmethod for the second time.
-  // If an is_unloading() nmethod is still not_entrant, then it is not safe to
-  // convert it to zombie due to GC unloading interactions. However, if it
-  // has become unloaded, then it is okay to convert such nmethods to zombie.
-  return stack_traversal_mark() + 1 < NMethodSweeper::traversal_count() &&
-         !is_locked_by_vm() && (!is_unloading() || is_unloaded());
+bool nmethod::is_maybe_on_stack() {
+  // If the condition below is true, it means that the nmethod was found to
+  // be alive the previous completed marking cycle.
+  return Atomic::load(&_gc_epoch) >= CodeCache::previous_completed_gc_marking_cycle();
 }
 
 void nmethod::inc_decompile_count() {
@@ -1169,114 +1216,14 @@ void nmethod::inc_decompile_count() {
 
 bool nmethod::try_transition(int new_state_int) {
   signed char new_state = new_state_int;
-#ifdef ASSERT
-  if (new_state != unloaded) {
-    assert_lock_strong(CompiledMethod_lock);
+  assert_lock_strong(CompiledMethod_lock);
+  signed char old_state = _state;
+  if (old_state >= new_state) {
+    // Ensure monotonicity of transitions.
+    return false;
   }
-#endif
-  for (;;) {
-    signed char old_state = Atomic::load(&_state);
-    if (old_state >= new_state) {
-      // Ensure monotonicity of transitions.
-      return false;
-    }
-    if (Atomic::cmpxchg(&_state, old_state, new_state) == old_state) {
-      return true;
-    }
-  }
-}
-
-void nmethod::make_unloaded() {
-  post_compiled_method_unload();
-
-  // This nmethod is being unloaded, make sure that dependencies
-  // recorded in instanceKlasses get flushed.
-  // Since this work is being done during a GC, defer deleting dependencies from the
-  // InstanceKlass.
-  assert(Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread(),
-         "should only be called during gc");
-  flush_dependencies(/*delete_immediately*/false);
-
-  // Break cycle between nmethod & method
-  LogTarget(Trace, class, unload, nmethod) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("making nmethod " INTPTR_FORMAT
-             " unloadable, Method*(" INTPTR_FORMAT
-             ") ",
-             p2i(this), p2i(_method));
-     ls.cr();
-  }
-  // Unlink the osr method, so we do not look this up again
-  if (is_osr_method()) {
-    // Invalidate the osr nmethod only once. Note that with concurrent
-    // code cache unloading, OSR nmethods are invalidated before they
-    // are made unloaded. Therefore, this becomes a no-op then.
-    if (is_in_use()) {
-      invalidate_osr_method();
-    }
-#ifdef ASSERT
-    if (method() != NULL) {
-      // Make sure osr nmethod is invalidated, i.e. not on the list
-      bool found = method()->method_holder()->remove_osr_nmethod(this);
-      assert(!found, "osr nmethod should have been invalidated");
-    }
-#endif
-  }
-
-  // If _method is already NULL the Method* is about to be unloaded,
-  // so we don't have to break the cycle. Note that it is possible to
-  // have the Method* live here, in case we unload the nmethod because
-  // it is pointing to some oop (other than the Method*) being unloaded.
-  if (_method != NULL) {
-    _method->unlink_code(this);
-  }
-
-  // Make the class unloaded - i.e., change state and notify sweeper
-  assert(SafepointSynchronize::is_at_safepoint() || Thread::current()->is_ConcurrentGC_thread(),
-         "must be at safepoint");
-
-  {
-    // Clear ICStubs and release any CompiledICHolders.
-    CompiledICLocker ml(this);
-    clear_ic_callsites();
-  }
-
-  // Unregister must be done before the state change
-  {
-    MutexLocker ml(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock,
-                     Mutex::_no_safepoint_check_flag);
-    Universe::heap()->unregister_nmethod(this);
-  }
-
-  // Clear the method of this dead nmethod
-  set_method(NULL);
-
-  // Log the unloading.
-  log_state_change();
-
-  // The Method* is gone at this point
-  assert(_method == NULL, "Tautology");
-
-  set_osr_link(NULL);
-  NMethodSweeper::report_state_change(this);
-
-  bool transition_success = try_transition(unloaded);
-
-  // It is an important invariant that there exists no race between
-  // the sweeper and GC thread competing for making the same nmethod
-  // zombie and unloaded respectively. This is ensured by
-  // can_convert_to_zombie() returning false for any is_unloading()
-  // nmethod, informing the sweeper not to step on any GC toes.
-  assert(transition_success, "Invalid nmethod transition to unloaded");
-
-#if INCLUDE_JVMCI
-  // Clear the link between this nmethod and a HotSpotNmethod mirror
-  JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
-  if (nmethod_data != NULL) {
-    nmethod_data->invalidate_nmethod_mirror(this);
-  }
-#endif
+  Atomic::store(&_state, new_state);
+  return true;
 }
 
 void nmethod::invalidate_osr_method() {
@@ -1291,24 +1238,17 @@ void nmethod::log_state_change() const {
   if (LogCompilation) {
     if (xtty != NULL) {
       ttyLocker ttyl;  // keep the following output all in one block
-      if (_state == unloaded) {
-        xtty->begin_elem("make_unloaded thread='" UINTX_FORMAT "'",
-                         os::current_thread_id());
-      } else {
-        xtty->begin_elem("make_not_entrant thread='" UINTX_FORMAT "'%s",
-                         os::current_thread_id(),
-                         (_state == zombie ? " zombie='1'" : ""));
-      }
+      xtty->begin_elem("make_not_entrant thread='" UINTX_FORMAT "'",
+                       os::current_thread_id());
       log_identity(xtty);
       xtty->stamp();
       xtty->end_elem();
     }
   }
 
-  const char *state_msg = _state == zombie ? "made zombie" : "made not entrant";
-  CompileTask::print_ul(this, state_msg);
-  if (PrintCompilation && _state != unloaded) {
-    print_on(tty, state_msg);
+  CompileTask::print_ul(this, "made not entrant");
+  if (PrintCompilation) {
+    print_on(tty, "made not entrant");
   }
 }
 
@@ -1318,13 +1258,18 @@ void nmethod::unlink_from_method() {
   }
 }
 
-/**
- * Common functionality for both make_not_entrant and make_zombie
- */
-bool nmethod::make_not_entrant_or_zombie(int state) {
-  assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
+// Invalidate code
+bool nmethod::make_not_entrant() {
+  // This can be called while the system is already at a safepoint which is ok
+  NoSafepointVerifier nsv;
 
-  if (Atomic::load(&_state) >= state) {
+  if (is_unloading()) {
+    // If the nmethod is unloading, then it is already not entrant through
+    // the nmethod entry barriers. No need to do anything; GC will unload it.
+    return false;
+  }
+
+  if (Atomic::load(&_state) == not_entrant) {
     // Avoid taking the lock if already in required state.
     // This is safe from races because the state is an end-state,
     // which the nmethod cannot back out of once entered.
@@ -1332,78 +1277,44 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     return false;
   }
 
-  // Make sure the nmethod is not flushed.
-  nmethodLocker nml(this);
-  // This can be called while the system is already at a safepoint which is ok
-  NoSafepointVerifier nsv;
-
-  // during patching, depending on the nmethod state we must notify the GC that
-  // code has been unloaded, unregistering it. We cannot do this right while
-  // holding the CompiledMethod_lock because we need to use the CodeCache_lock. This
-  // would be prone to deadlocks.
-  // This flag is used to remember whether we need to later lock and unregister.
-  bool nmethod_needs_unregister = false;
-
   {
     // Enter critical section.  Does not block for safepoint.
     MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
 
-    // This logic is equivalent to the logic below for patching the
-    // verified entry point of regular methods. We check that the
-    // nmethod is in use to ensure that it is invalidated only once.
-    if (is_osr_method() && is_in_use()) {
-      // this effectively makes the osr nmethod not entrant
-      invalidate_osr_method();
-    }
-
-    if (Atomic::load(&_state) >= state) {
+    if (Atomic::load(&_state) == not_entrant) {
       // another thread already performed this transition so nothing
       // to do, but return false to indicate this.
       return false;
     }
 
-    // The caller can be calling the method statically or through an inline
-    // cache call.
-    if (!is_osr_method() && !is_not_entrant()) {
+    if (is_osr_method()) {
+      // This logic is equivalent to the logic below for patching the
+      // verified entry point of regular methods.
+      // this effectively makes the osr nmethod not entrant
+      invalidate_osr_method();
+    } else {
+      // The caller can be calling the method statically or through an inline
+      // cache call.
       NativeJump::patch_verified_entry(entry_point(), verified_entry_point(),
-                  SharedRuntime::get_handle_wrong_method_stub());
+                                       SharedRuntime::get_handle_wrong_method_stub());
     }
 
-    if (is_in_use() && update_recompile_counts()) {
-      // It's a true state change, so mark the method as decompiled.
-      // Do it only for transition from alive.
+    if (update_recompile_counts()) {
+      // Mark the method as decompiled.
       inc_decompile_count();
     }
 
-    // If the state is becoming a zombie, signal to unregister the nmethod with
-    // the heap.
-    // This nmethod may have already been unloaded during a full GC.
-    if ((state == zombie) && !is_unloaded()) {
-      nmethod_needs_unregister = true;
-    }
-
-    // Must happen before state change. Otherwise we have a race condition in
-    // nmethod::can_convert_to_zombie(). I.e., a method can immediately
-    // transition its state from 'not_entrant' to 'zombie' without having to wait
-    // for stack scanning.
-    if (state == not_entrant) {
-      mark_as_seen_on_stack();
-      OrderAccess::storestore(); // _stack_traversal_mark and _state
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm == nullptr || !bs_nm->supports_entry_barrier(this)) {
+      // If nmethod entry barriers are not supported, we won't mark
+      // nmethods as on-stack when they become on-stack. So we
+      // degrade to a less accurate flushing strategy, for now.
+      mark_as_maybe_on_stack();
     }
 
     // Change state
-    if (!try_transition(state)) {
-      // If the transition fails, it is due to another thread making the nmethod more
-      // dead. In particular, one thread might be making the nmethod unloaded concurrently.
-      // If so, having patched in the jump in the verified entry unnecessarily is fine.
-      // The nmethod is no longer possible to call by Java threads.
-      // Incrementing the decompile count is also fine as the caller of make_not_entrant()
-      // had a valid reason to deoptimize the nmethod.
-      // Marking the nmethod as seen on stack also has no effect, as the nmethod is now
-      // !is_alive(), and the seen on stack value is only used to convert not_entrant
-      // nmethods to zombie in can_convert_to_zombie().
-      return false;
-    }
+    bool success = try_transition(not_entrant);
+    assert(success, "Transition can't fail");
 
     // Log the transition once
     log_state_change();
@@ -1429,96 +1340,69 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
   }
 #endif
 
-  // When the nmethod becomes zombie it is no longer alive so the
-  // dependencies must be flushed.  nmethods in the not_entrant
-  // state will be flushed later when the transition to zombie
-  // happens or they get unloaded.
-  if (state == zombie) {
-    {
-      // Flushing dependencies must be done before any possible
-      // safepoint can sneak in, otherwise the oops used by the
-      // dependency logic could have become stale.
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      if (nmethod_needs_unregister) {
-        Universe::heap()->unregister_nmethod(this);
-      }
-      flush_dependencies(/*delete_immediately*/true);
-    }
-
-#if INCLUDE_JVMCI
-    // Now that the nmethod has been unregistered, it's
-    // safe to clear the HotSpotNmethod mirror oop.
-    if (nmethod_data != NULL) {
-      nmethod_data->clear_nmethod_mirror(this);
-    }
-#endif
-
-    // Clear ICStubs to prevent back patching stubs of zombie or flushed
-    // nmethods during the next safepoint (see ICStub::finalize), as well
-    // as to free up CompiledICHolder resources.
-    {
-      CompiledICLocker ml(this);
-      clear_ic_callsites();
-    }
-
-    // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload
-    // event and it hasn't already been reported for this nmethod then
-    // report it now. The event may have been reported earlier if the GC
-    // marked it for unloading). JvmtiDeferredEventQueue support means
-    // we no longer go to a safepoint here.
-    post_compiled_method_unload();
-
-#ifdef ASSERT
-    // It's no longer safe to access the oops section since zombie
-    // nmethods aren't scanned for GC.
-    _oops_are_stale = true;
-#endif
-     // the Method may be reclaimed by class unloading now that the
-     // nmethod is in zombie state
-    set_method(NULL);
-  } else {
-    assert(state == not_entrant, "other cases may need to be handled differently");
-  }
-
-  if (TraceCreateZombies && state == zombie) {
-    ResourceMark m;
-    tty->print_cr("nmethod <" INTPTR_FORMAT "> %s code made %s", p2i(this), this->method() ? this->method()->name_and_sig_as_C_string() : "null", (state == not_entrant) ? "not entrant" : "zombie");
-  }
-
-  NMethodSweeper::report_state_change(this);
   return true;
 }
 
+// For concurrent GCs, there must be a handshake between unlink and flush
+void nmethod::unlink() {
+  if (_unlinked_next != NULL) {
+    // Already unlinked. It can be invoked twice because concurrent code cache
+    // unloading might need to restart when inline cache cleaning fails due to
+    // running out of ICStubs, which can only be refilled at safepoints
+    return;
+  }
+
+  flush_dependencies();
+
+  // unlink_from_method will take the CompiledMethod_lock.
+  // In this case we don't strictly need it when unlinking nmethods from
+  // the Method, because it is only concurrently unlinked by
+  // the entry barrier, which acquires the per nmethod lock.
+  unlink_from_method();
+  clear_ic_callsites();
+
+  if (is_osr_method()) {
+    invalidate_osr_method();
+  }
+
+#if INCLUDE_JVMCI
+  // Clear the link between this nmethod and a HotSpotNmethod mirror
+  JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
+  if (nmethod_data != NULL) {
+    nmethod_data->invalidate_nmethod_mirror(this);
+  }
+#endif
+
+  // Post before flushing as jmethodID is being used
+  post_compiled_method_unload();
+
+  // Register for flushing when it is safe. For concurrent class unloading,
+  // that would be after the unloading handshake, and for STW class unloading
+  // that would be when getting back to the VM thread.
+  CodeCache::register_unlinked(this);
+}
+
 void nmethod::flush() {
-  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  // Note that there are no valid oops in the nmethod anymore.
-  assert(!is_osr_method() || is_unloaded() || is_zombie(),
-         "osr nmethod must be unloaded or zombie before flushing");
-  assert(is_zombie() || is_osr_method(), "must be a zombie method");
-  assert (!is_locked_by_vm(), "locked methods shouldn't be flushed");
-  assert_locked_or_safepoint(CodeCache_lock);
+  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
-  Events::log(JavaThread::current(), "flushing nmethod " INTPTR_FORMAT, p2i(this));
-  if (PrintMethodFlushing) {
-    tty->print_cr("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
-                  "/Free CodeCache:" SIZE_FORMAT "Kb",
-                  is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
-                  CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
-  }
+  Events::log(Thread::current(), "flushing nmethod " INTPTR_FORMAT, p2i(this));
+  log_debug(codecache)("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
+                       "/Free CodeCache:" SIZE_FORMAT "Kb",
+                       is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
+                       CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
 
   // We need to deallocate any ExceptionCache data.
   // Note that we do not need to grab the nmethod lock for this, it
   // better be thread safe if we're disposing of it!
   ExceptionCache* ec = exception_cache();
-  set_exception_cache(NULL);
   while(ec != NULL) {
     ExceptionCache* next = ec->next();
     delete ec;
     ec = next;
   }
 
-  Universe::heap()->flush_nmethod(this);
+  Universe::heap()->unregister_nmethod(this);
   CodeCache::unregister_old_nmethod(this);
 
   CodeBlob::flush();
@@ -1541,51 +1425,44 @@ oop nmethod::oop_at_phantom(int index) const {
 
 //
 // Notify all classes this nmethod is dependent on that it is no
-// longer dependent. This should only be called in two situations.
-// First, when a nmethod transitions to a zombie all dependents need
-// to be clear.  Since zombification happens at a safepoint there's no
-// synchronization issues.  The second place is a little more tricky.
-// During phase 1 of mark sweep class unloading may happen and as a
-// result some nmethods may get unloaded.  In this case the flushing
-// of dependencies must happen during phase 1 since after GC any
-// dependencies in the unloaded nmethod won't be updated, so
-// traversing the dependency information in unsafe.  In that case this
-// function is called with a boolean argument and this function only
-// notifies instanceKlasses that are reachable
+// longer dependent.
 
-void nmethod::flush_dependencies(bool delete_immediately) {
-  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread();)
-  assert(called_by_gc != delete_immediately,
-  "delete_immediately is false if and only if we are called during GC");
+void nmethod::flush_dependencies() {
   if (!has_flushed_dependencies()) {
     set_has_flushed_dependencies();
     for (Dependencies::DepStream deps(this); deps.next(); ) {
       if (deps.type() == Dependencies::call_site_target_value) {
         // CallSite dependencies are managed on per-CallSite instance basis.
         oop call_site = deps.argument_oop(0);
-        if (delete_immediately) {
-          assert_locked_or_safepoint(CodeCache_lock);
-          MethodHandles::remove_dependent_nmethod(call_site, this);
-        } else {
-          MethodHandles::clean_dependency_context(call_site);
-        }
+        MethodHandles::clean_dependency_context(call_site);
       } else {
         Klass* klass = deps.context_type();
         if (klass == NULL) {
           continue;  // ignore things like evol_method
         }
-        // During GC delete_immediately is false, and liveness
-        // of dependee determines class that needs to be updated.
-        if (delete_immediately) {
-          assert_locked_or_safepoint(CodeCache_lock);
-          InstanceKlass::cast(klass)->remove_dependent_nmethod(this);
-        } else if (klass->is_loader_alive()) {
-          // The GC may clean dependency contexts concurrently and in parallel.
-          InstanceKlass::cast(klass)->clean_dependency_context();
-        }
+        // During GC liveness of dependee determines class that needs to be updated.
+        // The GC may clean dependency contexts concurrently and in parallel.
+        InstanceKlass::cast(klass)->clean_dependency_context();
       }
     }
   }
+}
+
+void nmethod::post_compiled_method(CompileTask* task) {
+  task->mark_success();
+  task->set_nm_content_size(content_size());
+  task->set_nm_insts_size(insts_size());
+  task->set_nm_total_size(total_size());
+
+  // JVMTI -- compiled method notification (must be done outside lock)
+  post_compiled_method_load_event();
+
+  if (CompilationLog::log() != NULL) {
+    CompilationLog::log()->log_nmethod(JavaThread::current(), this);
+  }
+
+  const DirectiveSet* directive = task->directive();
+  maybe_print_nmethod(directive);
 }
 
 // ------------------------------------------------------------------
@@ -1593,25 +1470,6 @@ void nmethod::flush_dependencies(bool delete_immediately) {
 // new method for install_code() path
 // Transfer information from compilation to jvmti
 void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
-
-  // Don't post this nmethod load event if it is already dying
-  // because the sweeper might already be deleting this nmethod.
-  {
-    MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-    // When the nmethod is acquired from the CodeCache iterator, it can racingly become zombie
-    // before this code is called. Filter them out here under the CompiledMethod_lock.
-    if (!is_alive()) {
-      return;
-    }
-    // As for is_alive() nmethods, we also don't want them to racingly become zombie once we
-    // release this lock, so we check that this is not going to be the case.
-    if (is_not_entrant() && can_convert_to_zombie()) {
-      return;
-    }
-    // Ensure the sweeper can't collect this nmethod until it become "active" with JvmtiThreadState::nmethods_do.
-    mark_as_seen_on_stack();
-  }
-
   // This is a bad time for a safepoint.  We don't want
   // this nmethod to get unloaded while we're queueing the event.
   NoSafepointVerifier nsv;
@@ -1646,37 +1504,19 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
 }
 
 void nmethod::post_compiled_method_unload() {
-  if (unload_reported()) {
-    // During unloading we transition to unloaded and then to zombie
-    // and the unloading is reported during the first transition.
-    return;
-  }
-
-  assert(_method != NULL && !is_unloaded(), "just checking");
+  assert(_method != NULL, "just checking");
   DTRACE_METHOD_UNLOAD_PROBE(method());
 
   // If a JVMTI agent has enabled the CompiledMethodUnload event then
-  // post the event. Sometime later this nmethod will be made a zombie
-  // by the sweeper but the Method* will not be valid at that point.
-  // The jmethodID is a weak reference to the Method* so if
-  // it's being unloaded there's no way to look it up since the weak
-  // ref will have been cleared.
+  // post the event. The Method* will not be valid when this is freed.
 
   // Don't bother posting the unload if the load event wasn't posted.
   if (load_reported() && JvmtiExport::should_post_compiled_method_unload()) {
-    assert(!unload_reported(), "already unloaded");
     JvmtiDeferredEvent event =
       JvmtiDeferredEvent::compiled_method_unload_event(
           method()->jmethod_id(), insts_begin());
     ServiceThread::enqueue_deferred_event(&event);
   }
-
-  // The JVMTI CompiledMethodUnload event can be enabled or disabled at
-  // any time. As the nmethod is being unloaded now we mark it has
-  // having the unload event reported - this will ensure that we don't
-  // attempt to report the event in the unlikely scenario where the
-  // event is enabled at the time the nmethod is made a zombie.
-  set_unload_reported();
 }
 
 // Iterate over metadata calling this function.   Used by RedefineClasses
@@ -1726,8 +1566,40 @@ void nmethod::metadata_do(MetadataClosure* f) {
   if (_method != NULL) f->do_metadata(_method);
 }
 
+// Heuristic for nuking nmethods even though their oops are live.
+// Main purpose is to reduce code cache pressure and get rid of
+// nmethods that don't seem to be all that relevant any longer.
+bool nmethod::is_cold() {
+  if (!MethodFlushing || is_native_method() || is_not_installed()) {
+    // No heuristic unloading at all
+    return false;
+  }
+
+  if (!is_maybe_on_stack() && is_not_entrant()) {
+    // Not entrant nmethods that are not on any stack can just
+    // be removed
+    return true;
+  }
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm == nullptr || !bs_nm->supports_entry_barrier(this)) {
+    // On platforms that don't support nmethod entry barriers, we can't
+    // trust the temporal aspect of the gc epochs. So we can't detect
+    // cold nmethods on such platforms.
+    return false;
+  }
+
+  if (!UseCodeCacheFlushing) {
+    // Bail out if we don't heuristically remove nmethods
+    return false;
+  }
+
+  // Other code can be phased out more gradually after N GCs
+  return CodeCache::previous_completed_gc_marking_cycle() > _gc_epoch + 2 * CodeCache::cold_gc_count();
+}
+
 // The _is_unloading_state encodes a tuple comprising the unloading cycle
-// and the result of IsUnloadingBehaviour::is_unloading() fpr that cycle.
+// and the result of IsUnloadingBehaviour::is_unloading() for that cycle.
 // This is the bit layout of the _is_unloading_state byte: 00000CCU
 // CC refers to the cycle, which has 2 bits, and U refers to the result of
 // IsUnloadingBehaviour::is_unloading() for that unloading cycle.
@@ -1778,40 +1650,11 @@ bool nmethod::is_unloading() {
     return false;
   }
 
-  // The IsUnloadingBehaviour is responsible for checking if there are any dead
-  // oops in the CompiledMethod, by calling oops_do on it.
+  // The IsUnloadingBehaviour is responsible for calculating if the nmethod
+  // should be unloaded. This can be either because there is a dead oop,
+  // or because is_cold() heuristically determines it is time to unload.
   state_unloading_cycle = current_cycle;
-
-  if (is_zombie()) {
-    // Zombies without calculated unloading epoch are never unloading due to GC.
-
-    // There are no races where a previously observed is_unloading() nmethod
-    // suddenly becomes not is_unloading() due to here being observed as zombie.
-
-    // With STW unloading, all is_alive() && is_unloading() nmethods are unlinked
-    // and unloaded in the safepoint. That makes races where an nmethod is first
-    // observed as is_alive() && is_unloading() and subsequently observed as
-    // is_zombie() impossible.
-
-    // With concurrent unloading, all references to is_unloading() nmethods are
-    // first unlinked (e.g. IC caches and dependency contexts). Then a global
-    // handshake operation is performed with all JavaThreads before finally
-    // unloading the nmethods. The sweeper never converts is_alive() && is_unloading()
-    // nmethods to zombies; it waits for them to become is_unloaded(). So before
-    // the global handshake, it is impossible for is_unloading() nmethods to
-    // racingly become is_zombie(). And is_unloading() is calculated for all is_alive()
-    // nmethods before taking that global handshake, meaning that it will never
-    // be recalculated after the handshake.
-
-    // After that global handshake, is_unloading() nmethods are only observable
-    // to the iterators, and they will never trigger recomputation of the cached
-    // is_unloading_state, and hence may not suffer from such races.
-
-    state_is_unloading = false;
-  } else {
-    state_is_unloading = IsUnloadingBehaviour::current()->is_unloading(this);
-  }
-
+  state_is_unloading = IsUnloadingBehaviour::is_unloading(this);
   state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
 
   RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
@@ -1827,25 +1670,22 @@ void nmethod::clear_unloading_state() {
 
 // This is called at the end of the strong tracing/marking phase of a
 // GC to unload an nmethod if it contains otherwise unreachable
-// oops.
-
+// oops or is heuristically found to be not important.
 void nmethod::do_unloading(bool unloading_occurred) {
   // Make sure the oop's ready to receive visitors
-  assert(!is_zombie() && !is_unloaded(),
-         "should not call follow on zombie or unloaded nmethod");
-
   if (is_unloading()) {
-    make_unloaded();
+    unlink();
   } else {
     guarantee(unload_nmethod_caches(unloading_occurred),
               "Should not need transition stubs");
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      bs_nm->disarm(this);
+    }
   }
 }
 
 void nmethod::oops_do(OopClosure* f, bool allow_dead) {
-  // make sure the oops ready to receive visitors
-  assert(allow_dead || is_alive(), "should not call follow on dead nmethod");
-
   // Prevent extra code cache walk for platforms that don't have immediate oops.
   if (relocInfo::mustIterateImmediateOopsInCode()) {
     RelocIterator iter(this, oops_reloc_begin());
@@ -1871,6 +1711,20 @@ void nmethod::oops_do(OopClosure* f, bool allow_dead) {
     if (*p == Universe::non_oop_word())  continue;  // skip non-oops
     f->do_oop(p);
   }
+}
+
+void nmethod::follow_nmethod(OopIterateClosure* cl) {
+  // Process oops in the nmethod
+  oops_do(cl);
+
+  // CodeCache unloading support
+  mark_as_maybe_on_stack();
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(this);
+
+  // There's an assumption made that this function is not used by GCs that
+  // relocate objects, and therefore we don't call fix_oop_relocations.
 }
 
 nmethod* volatile nmethod::_oops_do_mark_nmethods;
@@ -2236,7 +2090,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
 
   // Iterate over live nmethods and check dependencies of all nmethods that are not
   // marked for deoptimization. A particular dependency is only checked once.
-  NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
+  NMethodIterator iter(NMethodIterator::only_not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Only notify for live nmethods
@@ -2290,50 +2144,10 @@ bool nmethod::is_dependent_on_method(Method* dependee) {
   return false;
 }
 
-
-bool nmethod::is_patchable_at(address instr_addr) {
-  assert(insts_contains(instr_addr), "wrong nmethod used");
-  if (is_zombie()) {
-    // a zombie may never be patched
-    return false;
-  }
-  return true;
-}
-
-
 void nmethod_init() {
   // make sure you didn't forget to adjust the filler fields
   assert(sizeof(nmethod) % oopSize == 0, "nmethod size must be multiple of a word");
 }
-
-
-//-------------------------------------------------------------------------------------------
-
-
-// QQQ might we make this work from a frame??
-nmethodLocker::nmethodLocker(address pc) {
-  CodeBlob* cb = CodeCache::find_blob(pc);
-  guarantee(cb != NULL && cb->is_compiled(), "bad pc for a nmethod found");
-  _nm = cb->as_compiled_method();
-  lock_nmethod(_nm);
-}
-
-// Only JvmtiDeferredEvent::compiled_method_unload_event()
-// should pass zombie_ok == true.
-void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
-  if (cm == NULL)  return;
-  nmethod* nm = cm->as_nmethod();
-  Atomic::inc(&nm->_lock_count);
-  assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method: %p", nm);
-}
-
-void nmethodLocker::unlock_nmethod(CompiledMethod* cm) {
-  if (cm == NULL)  return;
-  nmethod* nm = cm->as_nmethod();
-  Atomic::dec(&nm->_lock_count);
-  assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
-}
-
 
 // -----------------------------------------------------------------------------
 // Verification
@@ -2370,11 +2184,7 @@ class VerifyMetadataClosure: public MetadataClosure {
 
 
 void nmethod::verify() {
-
-  // Hmm. OSR methods can be deopted but not marked as zombie or not_entrant
-  // seems odd.
-
-  if (is_zombie() || is_not_entrant() || is_unloaded())
+  if (is_not_entrant())
     return;
 
   // Make sure all the entry points are correctly aligned for patching.
@@ -2522,7 +2332,7 @@ void nmethod::print(outputStream* st) const {
     st->print("(n/a) ");
   }
 
-  print_on(tty, NULL);
+  print_on(st, NULL);
 
   if (WizardMode) {
     st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
@@ -2708,14 +2518,6 @@ void nmethod::print_pcs_on(outputStream* st) {
   }
 }
 
-void nmethod::print_native_invokers() {
-  ResourceMark m;       // in case methods get printed via debugger
-  tty->print_cr("Native invokers:");
-  for (RuntimeStub** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
-    (*itt)->print_on(tty);
-  }
-}
-
 void nmethod::print_handler_table() {
   ExceptionHandlerTable(this).print(code_begin());
 }
@@ -2873,6 +2675,9 @@ void nmethod::decode2(outputStream* ost) const {
                                                                   AbstractDisassembler::show_block_comment());
 #endif
 
+  // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
+
   st->cr();
   this->print(st);
   st->cr();
@@ -2882,7 +2687,10 @@ void nmethod::decode2(outputStream* ost) const {
   //---<  Print real disassembly  >---
   //----------------------------------
   if (! use_compressed_format) {
+    st->print_cr("[Disassembly]");
     Disassembler::decode(const_cast<nmethod*>(this), st);
+    st->bol();
+    st->print_cr("[/Disassembly]");
     return;
   }
 #endif
@@ -2890,7 +2698,7 @@ void nmethod::decode2(outputStream* ost) const {
 #if defined(SUPPORT_ABSTRACT_ASSEMBLY)
 
   // Compressed undisassembled disassembly format.
-  // The following stati are defined/supported:
+  // The following status values are defined/supported:
   //   = 0 - currently at bol() position, nothing printed yet on current line.
   //   = 1 - currently at position after print_location().
   //   > 1 - in the midst of printing instruction stream bytes.
@@ -3117,7 +2925,7 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
   return have_one ? "other" : NULL;
 }
 
-// Return a the last scope in (begin..end]
+// Return the last scope in (begin..end]
 ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   PcDesc* p = pc_desc_near(begin+1);
   if (p != NULL && p->real_pc(this) <= end) {
@@ -3437,7 +3245,7 @@ public:
   }
 
   virtual void verify_resolve_call(address dest) const {
-    CodeBlob* db = CodeCache::find_blob_unsafe(dest);
+    CodeBlob* db = CodeCache::find_blob(dest);
     assert(db != NULL && !db->is_adapter_blob(), "must use stub!");
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -80,6 +80,7 @@ import javax.imageio.*;
 import javax.swing.*;
 
 import static java.awt.RenderingHints.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * FontPanel.java
@@ -643,7 +644,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                 break;
               case DRAW_BYTES:
                 try {
-                    byte[] lineBytes = line.getBytes( "ISO-8859-1" );
+                    byte[] lineBytes = line.getBytes(ISO_8859_1);
                     g2.drawBytes( lineBytes, 0, lineBytes.length, 0, 0 );
                 }
                 catch ( Exception e ) {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,20 +55,21 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.WindowConstants;
 
 public class RenderPerfTest {
     private static HashSet<String> ignoredTests = new HashSet<>();
 
     static {
-        ignoredTests.add("testWiredBoxAA");
+       // add ignored tests here
+       // ignoredTests.add("testMyIgnoredTest");
     }
 
     private final static int N = 1000;
@@ -76,12 +78,14 @@ public class RenderPerfTest {
     private final static float R = 25;
     private final static int BW = 50;
     private final static int BH = 50;
-    private final static int COUNT = 300;
-    private final static int DELAY = 10;
-    private final static int RESOLUTION = 5;
-    private final static int COLOR_TOLERANCE = 10;
-    private final static int MAX_MEASURE_TIME = 5000;
+    private final static int COUNT = 600;
+    private final static int CYCLE_DELAY = 3;
+    private final static int MAX_FRAME_CYCLES = 3000/CYCLE_DELAY;
 
+    private final static int COLOR_TOLERANCE = 10;
+    private final static int MAX_MEASURE_CYCLES = 6000/CYCLE_DELAY;
+
+    private final static Color[] marker = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.MAGENTA};
 
     interface Configurable {
         void configure(Graphics2D g2d);
@@ -276,6 +280,7 @@ public class RenderPerfTest {
         @Override
         public void render(Graphics2D g2d, int id, float[] x, float[] y, float[] vx, float[] vy) {
             setPaint(g2d, id);
+            if (id % 100 != 0) return;
             Font font = new Font("LucidaGrande", Font.PLAIN, 32);
             g2d.setFont(font);
             g2d.drawString("The quick brown fox jumps over the lazy dog",
@@ -599,24 +604,24 @@ public class RenderPerfTest {
 
     static class PerfMeter {
         private String name;
-        private int frame = 0;
+
 
         private JPanel panel;
 
-        private long time;
         private double execTime = 0;
-        private Color expColor = Color.RED;
-        AtomicBoolean waiting = new AtomicBoolean(false);
+        private AtomicInteger markerIdx = new AtomicInteger(0);
+        private int renderedMarkerIdx = -1;
+        private AtomicLong markerPaintTime = new AtomicLong(0);
+
         private double fps;
+        private int skippedFrame = 0;
 
         PerfMeter(String name) {
             this.name = name;
         }
 
         PerfMeter exec(final Renderable renderable) throws Exception {
-            final CountDownLatch latch = new CountDownLatch(COUNT);
             final CountDownLatch latchFrame = new CountDownLatch(1);
-            final long endTime = System.currentTimeMillis() + MAX_MEASURE_TIME;
 
             final JFrame f = new JFrame();
             f.addWindowListener(new WindowAdapter() {
@@ -630,22 +635,27 @@ public class RenderPerfTest {
                 @Override
                 public void run() {
 
-                    panel = new JPanel()
-                    {
+                    panel = new JPanel() {
                         @Override
                         protected void paintComponent(Graphics g) {
-
                             super.paintComponent(g);
-                            time = System.nanoTime();
+                            int idx = markerIdx.get();
+                            if (idx != renderedMarkerIdx) {
+                                markerPaintTime.set(System.nanoTime());
+                            }
+
                             Graphics2D g2d = (Graphics2D) g.create();
                             renderable.setup(g2d);
                             renderable.render(g2d);
-                            g2d.setColor(expColor);
-                            g.fillRect(0, 0, BW, BH);
+                            g2d.setClip(null);
+                            g2d.setPaintMode();
+                            g2d.setColor(marker[idx]);
+                            g2d.fillRect(0, 0, BW, BH);
+                            renderedMarkerIdx = idx;
                         }
                     };
 
-                    panel.setPreferredSize(new Dimension((int)(WIDTH + BW), (int)(HEIGHT + BH)));
+                    panel.setPreferredSize(new Dimension((int) (WIDTH + BW), (int) (HEIGHT + BH)));
                     panel.setBackground(Color.BLACK);
                     f.add(panel);
                     f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -653,51 +663,51 @@ public class RenderPerfTest {
                     f.setVisible(true);
                 }
             });
+
             Robot robot = new Robot();
+            int cycle = 0;
+            int frame = 0;
+            long paintTime = 0;
+            int maxFrameCycle = -1;
+            while (frame < COUNT) {
+                long t;
+                if ((t = markerPaintTime.getAndSet(0)) > 0) {
+                    paintTime = t;
+                    maxFrameCycle = cycle + MAX_FRAME_CYCLES;
+                }
 
-            Timer timer = new Timer(DELAY, e -> {
-
-                if (waiting.compareAndSet(false, true)) {
+                if (paintTime > 0) {
                     Color c = robot.getPixelColor(
                             panel.getTopLevelAncestor().getX() + panel.getTopLevelAncestor().getInsets().left + BW / 2,
                             panel.getTopLevelAncestor().getY() + panel.getTopLevelAncestor().getInsets().top + BW / 2);
-                    if (isAlmostEqual(c, Color.BLUE)) {
-                        expColor = Color.RED;
-                    } else {
-                        expColor = Color.BLUE;
-                    }
-                    renderable.update();
-                    panel.getParent().repaint();
 
-                } else {
-                    while (!isAlmostEqual(
-                            robot.getPixelColor(
-                                    panel.getTopLevelAncestor().getX() + panel.getTopLevelAncestor().getInsets().left + BW/2,
-                                    panel.getTopLevelAncestor().getY() + panel.getTopLevelAncestor().getInsets().top + BH/2),
-                            expColor))
-                    {
-                        try {
-                            Thread.sleep(RESOLUTION);
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        }
+                    if (isAlmostEqual(c, marker[markerIdx.get()])) {
+                        execTime += System.nanoTime() - paintTime;
+                        frame++;
+                        paintTime = 0;
+                        maxFrameCycle = -1;
+                        markerIdx.accumulateAndGet(marker.length, (x, y) -> (x + 1) % y);
+                        renderable.update();
+                        panel.getParent().repaint();
+                    } else if (cycle >= maxFrameCycle) {
+                        skippedFrame++;
+                        paintTime = 0;
+                        maxFrameCycle = -1;
+                        markerIdx.accumulateAndGet(marker.length, (x, y) -> (x + 1) % y);
+                        panel.getParent().repaint();
                     }
-                    time = System.nanoTime() - time;
-                    execTime += time;
-                    frame++;
-                    waiting.set(false);
                 }
-
-                if (System.currentTimeMillis() < endTime) {
-                    latch.countDown();
-                } else {
-                    while(latch.getCount() > 0) latch.countDown();
+                try {
+                    Thread.sleep(CYCLE_DELAY);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
                 }
-            });
-            timer.start();
-            latch.await();
+                if (cycle >= MAX_MEASURE_CYCLES) {
+                    break;
+                }
+                cycle++;
+            }
             SwingUtilities.invokeAndWait(() -> {
-                timer.stop();
                 f.setVisible(false);
                 f.dispose();
             });
@@ -713,12 +723,15 @@ public class RenderPerfTest {
         }
 
         private void report() {
+            if (skippedFrame > 0) {
+                System.err.println(skippedFrame + " frame(s) skipped");
+            }
             System.err.println(name + " : " + String.format("%.2f FPS", fps));
         }
 
         private boolean isAlmostEqual(Color c1, Color c2) {
-            return Math.abs(c1.getRed() - c2.getRed()) < COLOR_TOLERANCE ||
-                    Math.abs(c1.getGreen() - c2.getGreen()) < COLOR_TOLERANCE ||
+            return Math.abs(c1.getRed() - c2.getRed()) < COLOR_TOLERANCE &&
+                    Math.abs(c1.getGreen() - c2.getGreen()) < COLOR_TOLERANCE &&
                     Math.abs(c1.getBlue() - c2.getBlue()) < COLOR_TOLERANCE;
 
         }

@@ -79,7 +79,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
     return NULL;
   }
   jmm_interface->GetDiagnosticCommandArgumentsInfo(env, command,
-                                                   dcmd_arg_info_array);
+                                                   dcmd_arg_info_array, num_arg);
   dcmdArgInfoCls = (*env)->FindClass(env,
                                      "com/sun/management/internal/DiagnosticCommandArgumentInfo");
   POP_EXCEPTION_CHECK_AND_FREE(0, dcmd_arg_info_array);

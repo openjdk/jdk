@@ -62,6 +62,7 @@ public class SetCwd {
     @Test
     public void testRuntimeExecWithString() throws Exception {
         String cmd = String.join(" ", CMD_ARRAY);
+        @SuppressWarnings("deprecation")
         Process process = Runtime.getRuntime().exec(cmd, null,
                 new File(TEST_CLASSES));
         verifyProcessOutput(process);

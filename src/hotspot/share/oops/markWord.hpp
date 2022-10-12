@@ -73,10 +73,13 @@ class markWord {
  public:
   explicit markWord(uintptr_t value) : _value(value) {}
 
-  markWord() { /* uninitialized */}
+  markWord() = default;         // Doesn't initialize _value.
 
   // It is critical for performance that this class be trivially
   // destructable, copyable, and assignable.
+  ~markWord() = default;
+  markWord(const markWord&) = default;
+  markWord& operator=(const markWord&) = default;
 
   static markWord from_pointer(void* ptr) {
     return markWord((uintptr_t)ptr);
@@ -159,12 +162,6 @@ class markWord {
     return (!is_unlocked() || !has_no_hash());
   }
 
-  // Should this header (including its age bits) be preserved in the
-  // case of a promotion failure during scavenge?
-  bool must_be_preserved_for_promotion_failure(const oopDesc* obj) const {
-    return (!is_unlocked() || !has_no_hash());
-  }
-
   // WARNING: The following routines are used EXCLUSIVELY by
   // synchronization functions. They are not really gc safe.
   // They must get updated if markWord layout get changed.
@@ -179,7 +176,7 @@ class markWord {
     return (BasicLock*) value();
   }
   bool has_monitor() const {
-    return ((value() & monitor_value) != 0);
+    return ((value() & lock_mask_in_place) == monitor_value);
   }
   ObjectMonitor* monitor() const {
     assert(has_monitor(), "check");

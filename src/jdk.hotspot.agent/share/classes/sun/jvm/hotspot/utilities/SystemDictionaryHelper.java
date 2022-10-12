@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,7 @@ package sun.jvm.hotspot.utilities;
 import java.util.*;
 import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.utilities.Observable;
-import sun.jvm.hotspot.utilities.Observer;
 
 public class SystemDictionaryHelper {
    static {
@@ -65,9 +62,7 @@ public class SystemDictionaryHelper {
                         }
                      });
 
-      Object[] tmpArray = tmp.toArray();
-      klasses = new InstanceKlass[tmpArray.length];
-      System.arraycopy(tmpArray, 0, klasses, 0, tmpArray.length);
+      klasses = tmp.toArray(new InstanceKlass[0]);
       Arrays.sort(klasses, new Comparator<>() {
                           public int compare(InstanceKlass k1, InstanceKlass k2) {
                              Symbol s1 = k1.getName();
@@ -86,14 +81,12 @@ public class SystemDictionaryHelper {
       Vector<InstanceKlass> tmp = new Vector<>();
       for (int i = 0; i < tmpKlasses.length; i++) {
          String name = tmpKlasses[i].getName().asString();
-         if (name.indexOf(namePart) != -1) {
+         if (name.contains(namePart)) {
             tmp.add(tmpKlasses[i]);
          }
       }
 
-      Object[] tmpArray = tmp.toArray();
-      InstanceKlass[] searchResult = new InstanceKlass[tmpArray.length];
-      System.arraycopy(tmpArray, 0, searchResult, 0, tmpArray.length);
+      InstanceKlass[] searchResult = tmp.toArray(new InstanceKlass[0]);
       return searchResult;
    }
 
@@ -105,8 +98,8 @@ public class SystemDictionaryHelper {
 
       // check whether we have a class of given name
       Klass klass = cldg.find(className);
-      if (klass != null && klass instanceof InstanceKlass) {
-         return (InstanceKlass) klass;
+      if (klass instanceof InstanceKlass ik) {
+         return ik;
       } else {
         // no match ..
         return null;

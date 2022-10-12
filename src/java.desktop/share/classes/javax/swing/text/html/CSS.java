@@ -35,9 +35,9 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -763,13 +763,13 @@ public class CSS implements Serializable {
 
         if (size != null) {
             if (size.startsWith("+")) {
-                relSize = Integer.valueOf(size.substring(1)).intValue();
+                relSize = Integer.parseInt(size.substring(1));
                 setBaseFontSize(baseFontSize + relSize);
             } else if (size.startsWith("-")) {
-                relSize = -Integer.valueOf(size.substring(1)).intValue();
+                relSize = -Integer.parseInt(size.substring(1));
                 setBaseFontSize(baseFontSize + relSize);
             } else {
-                setBaseFontSize(Integer.valueOf(size).intValue());
+                setBaseFontSize(Integer.parseInt(size));
             }
         }
     }
@@ -890,8 +890,8 @@ public class CSS implements Serializable {
                               (CSS.Attribute.VERTICAL_ALIGN);
         if ((vAlignV != null)) {
             String vAlign = vAlignV.toString();
-            if ((vAlign.indexOf("sup") >= 0) ||
-                (vAlign.indexOf("sub") >= 0)) {
+            if ((vAlign.contains("sup")) ||
+                (vAlign.contains("sub"))) {
                 size -= 2;
             }
         }
@@ -907,7 +907,7 @@ public class CSS implements Serializable {
             style |= Font.BOLD;
         }
         Object fs = a.getAttribute(CSS.Attribute.FONT_STYLE);
-        if ((fs != null) && (fs.toString().indexOf("italic") >= 0)) {
+        if ((fs != null) && (fs.toString().contains("italic"))) {
             style |= Font.ITALIC;
         }
         if (family.equalsIgnoreCase("monospace")) {
@@ -961,13 +961,13 @@ public class CSS implements Serializable {
         ss = getStyleSheet(ss);
         if (size != null) {
             if (size.startsWith("+")) {
-                relSize = Integer.valueOf(size.substring(1)).intValue();
+                relSize = Integer.parseInt(size.substring(1));
                 return getPointSize(baseFontSize + relSize, ss);
             } else if (size.startsWith("-")) {
-                relSize = -Integer.valueOf(size.substring(1)).intValue();
+                relSize = -Integer.parseInt(size.substring(1));
                 return getPointSize(baseFontSize + relSize, ss);
             } else {
-                absSize = Integer.valueOf(size).intValue();
+                absSize = Integer.parseInt(size);
                 return getPointSize(absSize, ss);
             }
         }
@@ -1546,7 +1546,7 @@ public class CSS implements Serializable {
     static String[] parseStrings(String value) {
         int         current, last;
         int         length = (value == null) ? 0 : value.length();
-        Vector<String> temp = new Vector<String>(4);
+        ArrayList<String> temp = new ArrayList<String>(4);
 
         current = 0;
         while (current < length) {
@@ -1569,12 +1569,11 @@ public class CSS implements Serializable {
                 current++;
             }
             if (last != current) {
-                temp.addElement(value.substring(last, current));
+                temp.add(value.substring(last, current));
             }
             current++;
         }
-        String[] retValue = new String[temp.size()];
-        temp.copyInto(retValue);
+        String[] retValue = temp.toArray(new String[0]);
         return retValue;
     }
 
@@ -1609,8 +1608,8 @@ public class CSS implements Serializable {
             if (key instanceof HTML.Tag) {
                 HTML.Tag tag = (HTML.Tag)key;
                 Object o = htmlAttrSet.getAttribute(tag);
-                if (o != null && o instanceof AttributeSet) {
-                    translateAttributes(tag, (AttributeSet)o, cssAttrSet);
+                if (o instanceof AttributeSet as) {
+                    translateAttributes(tag, as, cssAttrSet);
                 }
             } else if (key instanceof CSS.Attribute) {
                 cssAttrSet.addAttribute(key, htmlAttrSet.getAttribute(key));
@@ -1965,12 +1964,12 @@ public class CSS implements Serializable {
          */
         Object toStyleConstants(StyleConstants key, View v) {
             if (key == StyleConstants.Italic) {
-                if (svalue.indexOf("italic") >= 0) {
+                if (svalue.contains("italic")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Underline) {
-                if (svalue.indexOf("underline") >= 0) {
+                if (svalue.contains("underline")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
@@ -1984,17 +1983,17 @@ public class CSS implements Serializable {
                 }
                 return StyleConstants.ALIGN_LEFT;
             } else if (key == StyleConstants.StrikeThrough) {
-                if (svalue.indexOf("line-through") >= 0) {
+                if (svalue.contains("line-through")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Superscript) {
-                if (svalue.indexOf("super") >= 0) {
+                if (svalue.contains("super")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
             } else if (key == StyleConstants.Subscript) {
-                if (svalue.indexOf("sub") >= 0) {
+                if (svalue.contains("sub")) {
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
@@ -2004,23 +2003,23 @@ public class CSS implements Serializable {
 
         // Used by ViewAttributeSet
         boolean isItalic() {
-            return (svalue.indexOf("italic") != -1);
+            return (svalue.contains("italic"));
         }
 
         boolean isStrike() {
-            return (svalue.indexOf("line-through") != -1);
+            return (svalue.contains("line-through"));
         }
 
         boolean isUnderline() {
-            return (svalue.indexOf("underline") != -1);
+            return (svalue.contains("underline"));
         }
 
         boolean isSub() {
-            return (svalue.indexOf("sub") != -1);
+            return (svalue.contains("sub"));
         }
 
         boolean isSup() {
-            return (svalue.indexOf("sup") != -1);
+            return (svalue.contains("sup"));
         }
     }
 
@@ -2137,11 +2136,11 @@ public class CSS implements Serializable {
                  */
                 int baseFontSize = getBaseFontSize();
                 if (value.charAt(0) == '+') {
-                    int relSize = Integer.valueOf(value.substring(1)).intValue();
+                    int relSize = Integer.parseInt(value.substring(1));
                     fs.value = baseFontSize + relSize;
                     fs.index = true;
                 } else if (value.charAt(0) == '-') {
-                    int relSize = -Integer.valueOf(value.substring(1)).intValue();
+                    int relSize = -Integer.parseInt(value.substring(1));
                     fs.value = baseFontSize + relSize;
                     fs.index = true;
                 } else {
@@ -2533,7 +2532,7 @@ public class CSS implements Serializable {
             LengthValue lv;
             try {
                 // Assume pixels
-                float absolute = Float.valueOf(value).floatValue();
+                float absolute = Float.parseFloat(value);
                 lv = new LengthValue();
                 lv.span = absolute;
             } catch (NumberFormatException nfe) {

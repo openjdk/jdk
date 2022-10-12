@@ -47,15 +47,15 @@ final class ResourcePoolConfiguration {
 
         // drop hashes
         ModuleDescriptor.Builder builder = ModuleDescriptor.newModule(md.name());
-        md.requires().stream()
+        md.requires()
           .forEach(builder::requires);
-        md.exports().stream()
+        md.exports()
           .forEach(builder::exports);
-        md.opens().stream()
+        md.opens()
           .forEach(builder::opens);
-        md.uses().stream()
+        md.uses()
           .forEach(builder::uses);
-        md.provides().stream()
+        md.provides()
           .forEach(builder::provides);
         builder.packages(md.packages());
 

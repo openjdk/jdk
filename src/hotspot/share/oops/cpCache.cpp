@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/codeCache.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -47,6 +50,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
@@ -58,24 +62,6 @@ void ConstantPoolCacheEntry::initialize_entry(int index) {
   _f1 = NULL;
   _f2 = _flags = 0;
   assert(constant_pool_index() == index, "");
-}
-
-void ConstantPoolCacheEntry::verify_just_initialized(bool f2_used) {
-  assert((_indices & (~cp_index_mask)) == 0, "sanity");
-  assert(_f1 == NULL, "sanity");
-  assert(_flags == 0, "sanity");
-  if (!f2_used) {
-    assert(_f2 == 0, "sanity");
-  }
-}
-
-void ConstantPoolCacheEntry::reinitialize(bool f2_used) {
-  _indices &= cp_index_mask;
-  _f1 = NULL;
-  _flags = 0;
-  if (!f2_used) {
-    _f2 = 0;
-  }
 }
 
 int ConstantPoolCacheEntry::make_flags(TosState state,
@@ -265,7 +251,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
     }
     if (invoke_code == Bytecodes::_invokestatic) {
       assert(method->method_holder()->is_initialized() ||
-             method->method_holder()->is_reentrant_initialization(Thread::current()),
+             method->method_holder()->is_init_thread(Thread::current()),
              "invalid class initialization state for invoke_static");
 
       if (!VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
@@ -372,15 +358,9 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // A losing writer waits on the lock until the winner writes f1 and leaves
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
+  // Lock fields to write
+  MutexLocker ml(cpool->pool_holder()->init_monitor());
 
-  JavaThread* current = JavaThread::current();
-  objArrayHandle resolved_references(current, cpool->resolved_references());
-  // Use the resolved_references() lock for this cpCache entry.
-  // resolved_references are created for all classes with Invokedynamic, MethodHandle
-  // or MethodType constant pool cache entries.
-  assert(resolved_references() != NULL,
-         "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, current);
   if (!is_f1_null()) {
     return;
   }
@@ -452,6 +432,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index();
+    objArrayOop resolved_references = cpool->resolved_references();
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
     assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
     resolved_references->obj_at_put(appendix_index, appendix());
@@ -479,14 +460,7 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
          "No LinkageError exception");
 
-  // Use the resolved_references() lock for this cpCache entry.
-  // resolved_references are created for all classes with Invokedynamic, MethodHandle
-  // or MethodType constant pool cache entries.
-  JavaThread* current = THREAD;
-  objArrayHandle resolved_references(current, cpool->resolved_references());
-  assert(resolved_references() != NULL,
-         "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, current);
+  MutexLocker ml(THREAD, cpool->pool_holder()->init_monitor());
 
   // if f1 is not null or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError
@@ -705,67 +679,35 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
   }
 }
 
-void ConstantPoolCache::verify_just_initialized() {
-  DEBUG_ONLY(walk_entries_for_initialization(/*check_only = */ true));
+// Record the GC marking cycle when redefined vs. when found in the loom stack chunks.
+void ConstantPoolCache::record_gc_epoch() {
+  _gc_epoch = CodeCache::gc_epoch();
+}
+
+#if INCLUDE_CDS
+void ConstantPoolCache::save_for_archive(TRAPS) {
+  ClassLoaderData* loader_data = constant_pool()->pool_holder()->class_loader_data();
+  _initial_entries = MetadataFactory::new_array<ConstantPoolCacheEntry>(loader_data, length(), CHECK);
+  for (int i = 0; i < length(); i++) {
+    _initial_entries->at_put(i, *entry_at(i));
+  }
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
-  walk_entries_for_initialization(/*check_only = */ false);
-}
-
-void ConstantPoolCache::walk_entries_for_initialization(bool check_only) {
   Arguments::assert_is_dumping_archive();
-  // When dumping the archive, we want to clean up the ConstantPoolCache
-  // to remove any effect of linking due to the execution of Java code --
-  // each ConstantPoolCacheEntry will have the same contents as if
-  // ConstantPoolCache::initialize has just returned:
-  //
-  // - We keep the ConstantPoolCache::constant_pool_index() bits for all entries.
-  // - We keep the "f2" field for entries used by invokedynamic and invokehandle
-  // - All other bits in the entries are cleared to zero.
-  ResourceMark rm;
-
-  InstanceKlass* ik = constant_pool()->pool_holder();
-  bool* f2_used = NEW_RESOURCE_ARRAY(bool, length());
-  memset(f2_used, 0, sizeof(bool) * length());
-
-  Thread* current = Thread::current();
-
-  // Find all the slots that we need to preserve f2
-  for (int i = 0; i < ik->methods()->length(); i++) {
-    Method* m = ik->methods()->at(i);
-    RawBytecodeStream bcs(methodHandle(current, m));
-    while (!bcs.is_last_bytecode()) {
-      Bytecodes::Code opcode = bcs.raw_next();
-      switch (opcode) {
-      case Bytecodes::_invokedynamic: {
-          int index = Bytes::get_native_u4(bcs.bcp() + 1);
-          int cp_cache_index = constant_pool()->invokedynamic_cp_cache_index(index);
-          f2_used[cp_cache_index] = 1;
-        }
-        break;
-      case Bytecodes::_invokehandle: {
-          int cp_cache_index = Bytes::get_native_u2(bcs.bcp() + 1);
-          f2_used[cp_cache_index] = 1;
-        }
-        break;
-      default:
-        break;
-      }
-    }
+  // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
+  // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
+  // still pointing to the array allocated inside save_for_archive().
+  assert(_initial_entries != NULL, "archived cpcache must have been initialized");
+  assert(!ArchiveBuilder::current()->is_in_buffer_space(_initial_entries), "must be");
+  for (int i=0; i<length(); i++) {
+    // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
+    // has finished.
+    *entry_at(i) = _initial_entries->at(i);
   }
-
-  if (check_only) {
-    DEBUG_ONLY(
-      for (int i=0; i<length(); i++) {
-        entry_at(i)->verify_just_initialized(f2_used[i]);
-      })
-  } else {
-    for (int i=0; i<length(); i++) {
-      entry_at(i)->reinitialize(f2_used[i]);
-    }
-  }
+  _initial_entries = NULL;
 }
+#endif // INCLUDE_CDS
 
 void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   assert(!is_shared(), "shared caches are not deallocated");
@@ -773,6 +715,13 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(NULL);
+#if INCLUDE_CDS
+  if (_initial_entries != NULL) {
+    Arguments::assert_is_dumping_archive();
+    MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
+    _initial_entries = NULL;
+  }
+#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

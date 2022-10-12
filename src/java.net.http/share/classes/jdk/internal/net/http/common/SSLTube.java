@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public class SSLTube implements FlowTube {
     // The DelegateWrapper wraps a subscribed {@code Flow.Subscriber} and
     // tracks the subscriber's state. In particular it makes sure that
     // onComplete/onError are not called before onSubscribed.
-    final static class DelegateWrapper implements FlowTube.TubeSubscriber {
+    static final class DelegateWrapper implements FlowTube.TubeSubscriber {
         private final FlowTube.TubeSubscriber delegate;
         private final Logger debug;
         volatile boolean subscribedCalled;
@@ -592,9 +592,7 @@ public class SSLTube implements FlowTube {
                     engine.isOutboundDone(),
                     handshakeFailed);
 
-        SSLHandshakeException e = new SSLHandshakeException(handshakeFailed);
-        if (t != null) e.initCause(t);
-        return e;
+        return new SSLHandshakeException(handshakeFailed, t);
     }
 
     @Override

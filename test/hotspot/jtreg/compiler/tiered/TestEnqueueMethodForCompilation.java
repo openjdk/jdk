@@ -26,8 +26,8 @@
  * @summary If TieredCompilation is disabled, TieredStopAtLevel should have no effect.
  * @requires vm.flavor == "server"
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:TieredStopAtLevel=1 -XX:-TieredCompilation
  *                   compiler.tiered.TestEnqueueMethodForCompilation
@@ -47,7 +47,7 @@ package compiler.tiered;
 import java.lang.reflect.Method;
 import compiler.whitebox.CompilerWhiteBoxTest;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestEnqueueMethodForCompilation {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();

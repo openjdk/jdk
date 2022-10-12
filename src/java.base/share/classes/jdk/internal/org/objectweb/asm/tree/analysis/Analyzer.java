@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree.analysis;
 
 import java.util.ArrayList;
@@ -124,7 +125,8 @@ public class Analyzer<V extends Value> implements Opcodes {
       * Analyzes the given method.
       *
       * @param owner the internal name of the class to which 'method' belongs.
-      * @param method the method to be analyzed.
+      * @param method the method to be analyzed. The maxStack and maxLocals fields must have correct
+      *     values.
       * @return the symbolic state of the execution stack frame at each bytecode instruction of the
       *     method. The size of the returned array is equal to the number of instructions (and labels)
       *     of the method. A given frame is {@literal null} if and only if the corresponding
@@ -282,17 +284,17 @@ public class Analyzer<V extends Value> implements Opcodes {
                     } else if (insnOpcode != ATHROW && (insnOpcode < IRETURN || insnOpcode > RETURN)) {
                         if (subroutine != null) {
                             if (insnNode instanceof VarInsnNode) {
-                                int var = ((VarInsnNode) insnNode).var;
-                                subroutine.localsUsed[var] = true;
+                                int varIndex = ((VarInsnNode) insnNode).var;
+                                subroutine.localsUsed[varIndex] = true;
                                 if (insnOpcode == LLOAD
                                         || insnOpcode == DLOAD
                                         || insnOpcode == LSTORE
                                         || insnOpcode == DSTORE) {
-                                    subroutine.localsUsed[var + 1] = true;
+                                    subroutine.localsUsed[varIndex + 1] = true;
                                 }
                             } else if (insnNode instanceof IincInsnNode) {
-                                int var = ((IincInsnNode) insnNode).var;
-                                subroutine.localsUsed[var] = true;
+                                int varIndex = ((IincInsnNode) insnNode).var;
+                                subroutine.localsUsed[varIndex] = true;
                             }
                         }
                         merge(insnIndex + 1, currentFrame, subroutine);
@@ -328,6 +330,74 @@ public class Analyzer<V extends Value> implements Opcodes {
         }
 
         return frames;
+    }
+
+    /**
+      * Analyzes the given method and computes and sets its maximum stack size and maximum number of
+      * local variables.
+      *
+      * @param owner the internal name of the class to which 'method' belongs.
+      * @param method the method to be analyzed.
+      * @return the symbolic state of the execution stack frame at each bytecode instruction of the
+      *     method. The size of the returned array is equal to the number of instructions (and labels)
+      *     of the method. A given frame is {@literal null} if and only if the corresponding
+      *     instruction cannot be reached (dead code).
+      * @throws AnalyzerException if a problem occurs during the analysis.
+      */
+    public Frame<V>[] analyzeAndComputeMaxs(final String owner, final MethodNode method)
+            throws AnalyzerException {
+        method.maxLocals = computeMaxLocals(method);
+        method.maxStack = -1;
+        analyze(owner, method);
+        method.maxStack = computeMaxStack(frames);
+        return frames;
+    }
+
+    /**
+      * Computes and returns the maximum number of local variables used in the given method.
+      *
+      * @param method a method.
+      * @return the maximum number of local variables used in the given method.
+      */
+    private static int computeMaxLocals(final MethodNode method) {
+        int maxLocals = Type.getArgumentsAndReturnSizes(method.desc) >> 2;
+        for (AbstractInsnNode insnNode : method.instructions) {
+            if (insnNode instanceof VarInsnNode) {
+                int local = ((VarInsnNode) insnNode).var;
+                int size =
+                        (insnNode.getOpcode() == Opcodes.LLOAD
+                                        || insnNode.getOpcode() == Opcodes.DLOAD
+                                        || insnNode.getOpcode() == Opcodes.LSTORE
+                                        || insnNode.getOpcode() == Opcodes.DSTORE)
+                                ? 2
+                                : 1;
+                maxLocals = Math.max(maxLocals, local + size);
+            } else if (insnNode instanceof IincInsnNode) {
+                int local = ((IincInsnNode) insnNode).var;
+                maxLocals = Math.max(maxLocals, local + 1);
+            }
+        }
+        return maxLocals;
+    }
+
+    /**
+      * Computes and returns the maximum stack size of a method, given its stack map frames.
+      *
+      * @param frames the stack map frames of a method.
+      * @return the maximum stack size of the given method.
+      */
+    private static int computeMaxStack(final Frame<?>[] frames) {
+        int maxStack = 0;
+        for (Frame<?> frame : frames) {
+            if (frame != null) {
+                int stackSize = 0;
+                for (int i = 0; i < frame.getStackSize(); ++i) {
+                    stackSize += frame.getStack(i).getSize();
+                }
+                maxStack = Math.max(maxStack, stackSize);
+            }
+        }
+        return maxStack;
     }
 
     /**
@@ -632,3 +702,4 @@ public class Analyzer<V extends Value> implements Opcodes {
         }
     }
 }
+

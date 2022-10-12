@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -60,6 +60,9 @@ void VM_Version::get_os_cpu_info() {
   assert(cpu_has("hw.optional.neon"), "should be");
   _features = CPU_FP | CPU_ASIMD;
 
+  // All Apple-darwin Arm processors have AES and PMULL.
+  _features |= CPU_AES | CPU_PMULL;
+
   // Only few features are available via sysctl, see line 614
   // https://opensource.apple.com/source/xnu/xnu-6153.141.1/bsd/kern/kern_mib.c.auto.html
   if (cpu_has("hw.optional.armv8_crc32"))     _features |= CPU_CRC32;
@@ -71,7 +74,7 @@ void VM_Version::get_os_cpu_info() {
   if (sysctl(hw_conf_cache_line, 2, &cache_line_size, &sysctllen, NULL, 0)) {
     cache_line_size = 16;
   }
-  _icache_line_size = 16; // minimal line lenght CCSIDR_EL1 can hold
+  _icache_line_size = 16; // minimal line length CCSIDR_EL1 can hold
   _dcache_line_size = cache_line_size;
 
   uint64_t dczid_el0;
@@ -88,6 +91,7 @@ void VM_Version::get_os_cpu_info() {
   if (sysctlbyname("hw.cpufamily", &family, &sysctllen, NULL, 0)) {
     family = 0;
   }
+
   _model = family;
   _cpu = CPU_APPLE;
 }

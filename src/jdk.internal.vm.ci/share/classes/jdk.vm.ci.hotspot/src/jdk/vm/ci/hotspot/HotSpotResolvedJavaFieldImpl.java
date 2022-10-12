@@ -179,7 +179,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     private boolean hasAnnotations() {
         if (!isInternal()) {
             HotSpotVMConfig config = config();
-            final long metaspaceAnnotations = UNSAFE.getAddress(holder.getMetaspaceKlass() + config.instanceKlassAnnotationsOffset);
+            final long metaspaceAnnotations = UNSAFE.getAddress(holder.getKlassPointer() + config.instanceKlassAnnotationsOffset);
             if (metaspaceAnnotations != 0) {
                 long fieldsAnnotations = UNSAFE.getAddress(metaspaceAnnotations + config.annotationsFieldAnnotationsOffset);
                 if (fieldsAnnotations != 0) {

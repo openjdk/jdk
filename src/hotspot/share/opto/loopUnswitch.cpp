@@ -213,11 +213,11 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
 
   // Hardwire the control paths in the loops into if(true) and if(false)
   _igvn.rehash_node_delayed(unswitch_iff);
-  dominated_by(proj_true, unswitch_iff, false, false);
+  dominated_by(proj_true->as_IfProj(), unswitch_iff, false, false);
 
   IfNode* unswitch_iff_clone = old_new[unswitch_iff->_idx]->as_If();
   _igvn.rehash_node_delayed(unswitch_iff_clone);
-  dominated_by(proj_false, unswitch_iff_clone, false, false);
+  dominated_by(proj_false->as_IfProj(), unswitch_iff_clone, false, false);
 
   // Reoptimize loops
   loop->record_for_igvn();

@@ -1,0 +1,6 @@
+SerialMethodThrows.java:187:22: compiler.warn.serial.method.unexpected.exception: writeObject, SerialMethodThrows.CustomException
+SerialMethodThrows.java:196:24: compiler.warn.serial.method.unexpected.exception: writeReplace, SerialMethodThrows.CustomException
+SerialMethodThrows.java:201:22: compiler.warn.serial.method.unexpected.exception: readObject, SerialMethodThrows.CustomException
+SerialMethodThrows.java:210:22: compiler.warn.serial.method.unexpected.exception: readObjectNoData, SerialMethodThrows.CustomException
+SerialMethodThrows.java:213:24: compiler.warn.serial.method.unexpected.exception: readResolve, SerialMethodThrows.CustomException
+5 warnings

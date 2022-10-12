@@ -29,8 +29,8 @@
 #include "memory/allocation.inline.hpp"
 #include "misc_aix.hpp"
 #include "porting_aix.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -62,7 +62,7 @@ typedef unsigned long stackslot_t;
 typedef stackslot_t* stackptr_t;
 typedef unsigned int* codeptr_t;
 
-// Unfortunately, the interface of dladdr makes the implementator
+// Unfortunately, the interface of dladdr makes the implementer
 // responsible for maintaining memory for function name/library
 // name. I guess this is because most OS's keep those values as part
 // of the mapped executable image ready to use. On AIX, this doesn't
@@ -324,7 +324,7 @@ int dladdr(void* addr, Dl_info* info) {
   trcVerbose("dladdr(%p)...", p);
 
   // Note: input address may be a function. I accept both a pointer to
-  // the entry of a function and a pointer to the function decriptor.
+  // the entry of a function and a pointer to the function descriptor.
   // (see ppc64 ABI)
   found = LoadedLibraries::find_for_text_address(p, &lm);
   if (found) {
@@ -545,7 +545,7 @@ static void print_stackframe(outputStream* st, stackptr_t sp, char* buf,
   // retrieve lrsave. That is the only info I need to get the function/displacement
 
   codeptr_t lrsave = (codeptr_t) *(sp2);
-  st->print (PTR64_FORMAT " - " PTR64_FORMAT " ", sp2, lrsave);
+  st->print (PTR_FORMAT " - " PTR_FORMAT " ", p2i(sp2), p2i(lrsave));
 
   if (lrsave != NULL) {
     print_info_for_pc(st, lrsave, buf, buf_size, demangle);
@@ -677,7 +677,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   //      |            |
   //      |------------|   <-- cur_sp, current stack ptr
   //      |            |
-  //      |  unsused   |
+  //      |  unused    |
   //      |    stack   |
   //      |            |
   //      .            .
@@ -702,8 +702,8 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
     stack_size = stackbounds.size;
   }
 
-  st->print_cr("------ current frame:");
-  st->print("iar:  " PTR64_FORMAT " ", p2i(cur_iar));
+  st->print_cr("Native frame:");
+  st->print("iar:  " PTR_FORMAT " ", p2i(cur_iar));
   print_info_for_pc(st, cur_iar, buf, buf_size, demangle);
   st->cr();
 
@@ -716,7 +716,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   // Print out lr too, which may be interesting if we did jump to some bogus location;
   // in those cases the new frame is not built up yet and the caller location is only
   // preserved via lr register.
-  st->print("lr:   " PTR64_FORMAT " ", p2i(cur_lr));
+  st->print("lr:   " PTR_FORMAT " ", p2i(cur_lr));
   print_info_for_pc(st, cur_lr, buf, buf_size, demangle);
   st->cr();
 
@@ -727,7 +727,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   }
 
   // Check and print sp.
-  st->print("sp:   " PTR64_FORMAT " ", p2i(cur_sp));
+  st->print("sp:   " PTR_FORMAT " ", p2i(cur_sp));
   if (!is_valid_stackpointer(cur_sp, stack_base, stack_size)) {
     st->print("(invalid) ");
     goto cleanup;
@@ -737,7 +737,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   st->cr();
 
   // Check and print rtoc.
-  st->print("rtoc: "  PTR64_FORMAT " ", p2i(cur_rtoc));
+  st->print("rtoc: "  PTR_FORMAT " ", p2i(cur_rtoc));
   if (cur_rtoc == NULL || cur_rtoc == (codeptr_t)-1 ||
       !os::is_readable_pointer(cur_rtoc)) {
     st->print("(invalid)");
@@ -788,7 +788,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
       st->print_cr("trying to recover and find backchain...");
       sp = try_find_backchain(sp_last, stack_base, stack_size);
       if (sp) {
-        st->print_cr("found something which looks like a backchain at " PTR64_FORMAT ", after 0x%x bytes... ",
+        st->print_cr("found something which looks like a backchain at " PTR_FORMAT ", after 0x%x bytes... ",
             p2i(sp), PTRDIFF_BYTES(sp, sp_last));
       } else {
         st->print_cr("did not find a backchain, giving up.");
@@ -888,7 +888,3 @@ bool AixMisc::query_stack_bounds_for_current_thread(stackbounds_t* out) {
   return true;
 
 }
-
-
-
-

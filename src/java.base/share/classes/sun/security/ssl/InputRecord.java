@@ -122,7 +122,7 @@ abstract class InputRecord implements Record, Closeable {
          * Since MAC's doFinal() is called for every SSL/TLS packet, it's
          * not necessary to do the same with MAC's.
          */
-        readCipher.dispose();
+        this.readCipher.dispose();
 
         this.readCipher = readCipher;
     }

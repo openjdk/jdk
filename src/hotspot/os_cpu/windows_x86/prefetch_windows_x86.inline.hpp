@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "runtime/prefetch.hpp"
 
-inline void Prefetch::read (void *loc, intx interval) {}
+inline void Prefetch::read (const void *loc, intx interval) {}
 inline void Prefetch::write(void *loc, intx interval) {}
 
 #endif // OS_CPU_WINDOWS_X86_PREFETCH_WINDOWS_X86_INLINE_HPP

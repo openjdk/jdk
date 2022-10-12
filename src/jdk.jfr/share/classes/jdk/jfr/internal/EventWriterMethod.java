@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@ package jdk.jfr.internal;
 
 import jdk.internal.org.objectweb.asm.commons.Method;
 import jdk.jfr.internal.EventInstrumentation.FieldInfo;
+import jdk.jfr.internal.event.EventConfiguration;
 
 public enum EventWriterMethod {
 
-    BEGIN_EVENT("(" + jdk.internal.org.objectweb.asm.Type.getType(PlatformEventType.class).getDescriptor() + ")Z", "???", "beginEvent"),
+    BEGIN_EVENT("(" + jdk.internal.org.objectweb.asm.Type.getType(EventConfiguration.class).getDescriptor() + "J)Z", "???", "beginEvent"),
     END_EVENT("()Z", "???", "endEvent"),
     PUT_BYTE("(B)V", "byte", "putByte"),
     PUT_SHORT("(S)V", "short", "putShort"),
@@ -42,12 +43,12 @@ public enum EventWriterMethod {
     PUT_BOOLEAN("(Z)V", "boolean", "putBoolean"),
     PUT_THREAD("(Ljava/lang/Thread;)V", Type.THREAD.getName(), "putThread"),
     PUT_CLASS("(Ljava/lang/Class;)V", Type.CLASS.getName(), "putClass"),
-    PUT_STRING("(Ljava/lang/String;Ljdk/jfr/internal/StringPool;)V", Type.STRING.getName(), "putString"),
+    PUT_STRING("(Ljava/lang/String;)V", Type.STRING.getName(), "putString"),
     PUT_EVENT_THREAD("()V", Type.THREAD.getName(), "putEventThread"),
     PUT_STACK_TRACE("()V", Type.TYPES_PREFIX + "StackTrace", "putStackTrace");
 
-    private final Method asmMethod;
-    private final String typeDescriptor;
+    final Method asmMethod;
+    final String typeDescriptor;
 
     EventWriterMethod(String paramSignature, String typeName, String methodName) {
         this.typeDescriptor = ASMToolkit.getDescriptor(typeName);
@@ -68,14 +69,14 @@ public enum EventWriterMethod {
      */
     public static EventWriterMethod lookupMethod(FieldInfo v) {
         // event thread
-        if (v.fieldName.equals(EventInstrumentation.FIELD_EVENT_THREAD)) {
+        if (v.fieldName().equals(EventInstrumentation.FIELD_EVENT_THREAD)) {
             return EventWriterMethod.PUT_EVENT_THREAD;
         }
         for (EventWriterMethod m : EventWriterMethod.values()) {
-            if (v.fieldDescriptor.equals(m.typeDescriptor)) {
+            if (v.fieldDescriptor().equals(m.typeDescriptor)) {
                 return m;
             }
         }
-        throw new Error("Unknown type " + v.fieldDescriptor);
+        throw new Error("Unknown type " + v.fieldDescriptor());
     }
 }

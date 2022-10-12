@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -47,6 +47,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/y/ GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -147,11 +148,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>dd-MMM-y</pattern>
+							<datetimeSkeleton>yMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/yy</pattern>
+							<datetimeSkeleton>yyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -224,21 +227,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>dd-MMM-y G</pattern>
+							<datetimeSkeleton>GyMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/y/ GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -285,29 +292,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
-					<pattern type="1000" count="one" draft="contributed">0T</pattern>
-					<pattern type="1000" count="other" draft="contributed">0T</pattern>
-					<pattern type="10000" count="one" draft="contributed">00T</pattern>
-					<pattern type="10000" count="other" draft="contributed">00T</pattern>
-					<pattern type="100000" count="one" draft="contributed">0L</pattern>
-					<pattern type="100000" count="other" draft="contributed">0L</pattern>
-					<pattern type="1000000" count="one" draft="contributed">00L</pattern>
-					<pattern type="1000000" count="other" draft="contributed">00L</pattern>
-					<pattern type="10000000" count="one" draft="contributed">0Cr</pattern>
-					<pattern type="10000000" count="other" draft="contributed">0Cr</pattern>
-					<pattern type="100000000" count="one" draft="contributed">00Cr</pattern>
-					<pattern type="100000000" count="other" draft="contributed">00Cr</pattern>
-					<pattern type="1000000000" count="one" draft="contributed">000Cr</pattern>
-					<pattern type="1000000000" count="other" draft="contributed">000Cr</pattern>
-					<pattern type="10000000000" count="one" draft="contributed">0TCr</pattern>
-					<pattern type="10000000000" count="other" draft="contributed">0TCr</pattern>
-					<pattern type="100000000000" count="one" draft="contributed">00TCr</pattern>
-					<pattern type="100000000000" count="other" draft="contributed">00TCr</pattern>
-					<pattern type="1000000000000" count="one" draft="contributed">0LCr</pattern>
-					<pattern type="1000000000000" count="other" draft="contributed">0LCr</pattern>
-					<pattern type="10000000000000" count="one" draft="contributed">00LCr</pattern>
-					<pattern type="10000000000000" count="other" draft="contributed">00LCr</pattern>
-					<pattern type="100000000000000" count="one" draft="contributed">000LCr</pattern>
+					<pattern type="1000" count="one">0T</pattern>
+					<pattern type="1000" count="other">0T</pattern>
+					<pattern type="10000" count="one">00T</pattern>
+					<pattern type="10000" count="other">00T</pattern>
+					<pattern type="100000" count="one">0L</pattern>
+					<pattern type="100000" count="other">0L</pattern>
+					<pattern type="1000000" count="one">00L</pattern>
+					<pattern type="1000000" count="other">00L</pattern>
+					<pattern type="10000000" count="one">0Cr</pattern>
+					<pattern type="10000000" count="other">0Cr</pattern>
+					<pattern type="100000000" count="one">00Cr</pattern>
+					<pattern type="100000000" count="other">00Cr</pattern>
+					<pattern type="1000000000" count="one">000Cr</pattern>
+					<pattern type="1000000000" count="other">000Cr</pattern>
+					<pattern type="10000000000" count="one">0TCr</pattern>
+					<pattern type="10000000000" count="other">0TCr</pattern>
+					<pattern type="100000000000" count="one">00TCr</pattern>
+					<pattern type="100000000000" count="other">00TCr</pattern>
+					<pattern type="1000000000000" count="one">0LCr</pattern>
+					<pattern type="1000000000000" count="other">0LCr</pattern>
+					<pattern type="10000000000000" count="one">00LCr</pattern>
+					<pattern type="10000000000000" count="other">00LCr</pattern>
+					<pattern type="100000000000000" count="one">000LCr</pattern>
+					<pattern type="100000000000000" count="other">000LCr</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -332,24 +340,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="10000" count="other">¤00T</pattern>
 					<pattern type="100000" count="one">¤0L</pattern>
 					<pattern type="100000" count="other">¤0L</pattern>
-					<pattern type="1000000" count="one" draft="contributed">¤00L</pattern>
-					<pattern type="1000000" count="other" draft="contributed">¤00L</pattern>
+					<pattern type="1000000" count="one">¤00L</pattern>
+					<pattern type="1000000" count="other">¤00L</pattern>
 					<pattern type="10000000" count="one">¤0Cr</pattern>
 					<pattern type="10000000" count="other">¤0Cr</pattern>
 					<pattern type="100000000" count="one">¤00Cr</pattern>
 					<pattern type="100000000" count="other">¤00Cr</pattern>
-					<pattern type="1000000000" count="one" draft="contributed">¤000Cr</pattern>
-					<pattern type="1000000000" count="other" draft="contributed">¤000Cr</pattern>
+					<pattern type="1000000000" count="one">¤000Cr</pattern>
+					<pattern type="1000000000" count="other">¤000Cr</pattern>
 					<pattern type="10000000000" count="one">¤0TCr</pattern>
 					<pattern type="10000000000" count="other">¤0TCr</pattern>
 					<pattern type="100000000000" count="one">¤00TCr</pattern>
 					<pattern type="100000000000" count="other">¤00TCr</pattern>
-					<pattern type="1000000000000" count="one" draft="contributed">¤0LCr</pattern>
-					<pattern type="1000000000000" count="other" draft="contributed">¤0LCr</pattern>
-					<pattern type="10000000000000" count="one" draft="contributed">¤00LCr</pattern>
-					<pattern type="10000000000000" count="other" draft="contributed">¤00LCr</pattern>
-					<pattern type="100000000000000" count="one" draft="contributed">¤000LCr</pattern>
-					<pattern type="100000000000000" count="other" draft="contributed">¤000LCr</pattern>
+					<pattern type="1000000000000" count="one">¤0LCr</pattern>
+					<pattern type="1000000000000" count="other">¤0LCr</pattern>
+					<pattern type="10000000000000" count="one">¤00LCr</pattern>
+					<pattern type="10000000000000" count="other">¤00LCr</pattern>
+					<pattern type="100000000000000" count="one">¤000LCr</pattern>
+					<pattern type="100000000000000" count="other">¤000LCr</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -358,14 +366,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>$</symbol>
 			</currency>
 			<currency type="VEF">
-				<displayName draft="contributed">Venezuelan Bolívar</displayName>
-				<displayName count="one" draft="contributed">Venezuelan bolívar</displayName>
-				<displayName count="other" draft="contributed">Venezuelan bolívars</displayName>
+				<displayName>Venezuelan Bolívar</displayName>
+				<displayName count="one">Venezuelan bolívar</displayName>
+				<displayName count="other">Venezuelan bolívars</displayName>
 			</currency>
 			<currency type="VES">
-				<displayName draft="contributed">VES</displayName>
-				<displayName count="one" draft="contributed">VES</displayName>
-				<displayName count="other" draft="contributed">VES</displayName>
+				<displayName>VES</displayName>
+				<displayName count="one">VES</displayName>
+				<displayName count="other">VES</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,9 +117,8 @@ class ForwardState implements State {
         sb.append("State [");
         sb.append("\n  issuerDN of last cert: ").append(issuerDN);
         sb.append("\n  traversedCACerts: ").append(traversedCACerts);
-        sb.append("\n  init: ").append(String.valueOf(init));
-        sb.append("\n  keyParamsNeeded: ").append
-                 (String.valueOf(keyParamsNeededFlag));
+        sb.append("\n  init: ").append(init);
+        sb.append("\n  keyParamsNeeded: ").append(keyParamsNeededFlag);
         sb.append("\n  subjectNamesTraversed: \n").append
                  (subjectNamesTraversed);
         sb.append("]\n");

@@ -90,6 +90,8 @@ public class AquaKeyBindings {
         "alt KP_LEFT", DefaultEditorKit.previousWordAction,
         "alt RIGHT", DefaultEditorKit.nextWordAction,
         "alt KP_RIGHT", DefaultEditorKit.nextWordAction,
+        "alt UP", DefaultEditorKit.beginLineUpAction,
+        "alt DOWN", DefaultEditorKit.endLineDownAction,
         "shift alt LEFT", DefaultEditorKit.selectionPreviousWordAction,
         "shift alt KP_LEFT", DefaultEditorKit.selectionPreviousWordAction,
         "shift alt RIGHT", DefaultEditorKit.selectionNextWordAction,
@@ -379,7 +381,8 @@ public class AquaKeyBindings {
             "ENTER", "selectNextRowCell",
             "shift ENTER", "selectPreviousRowCell",
             "alt TAB", "focusHeader",
-            "alt shift TAB", "focusHeader"
+            "alt shift TAB", "focusHeader",
+            "F8", "focusHeader"
         }));
     }
 

@@ -1,0 +1,142 @@
+
+<!-- ######################################################### -->
+
+
+<!--  ICIR Specific elements                                    -->
+<!ATTLIST special xmlns:icir CDATA #IMPLIED>
+
+<!-- ######################################################### -->
+
+<!-- ICIR Country and Language Info  -->
+<!ELEMENT icir:ibmid ( #PCDATA )>
+
+<!-- ######################################################### -->
+
+<!-- Weights and Measurements section   -->
+<!ELEMENT icir:altMeasurementSystem ( #PCDATA )>
+
+<!-- ######################################################### -->
+
+<!-- Calendar section   -->
+<!ELEMENT icir:calendarLayout ( #PCDATA )>
+<!ELEMENT icir:firstWorkDayOfWeek ( #PCDATA )>
+<!ELEMENT icir:weekendDayOne ( #PCDATA )>
+<!ELEMENT icir:weekendDayTwo ( #PCDATA )>
+<!ELEMENT icir:weekendDayThree ( #PCDATA )>
+<!ELEMENT icir:firstMonthOfYear ( #PCDATA )>
+
+
+<!-- ######################################################### -->
+
+<!-- Timezones section   -->
+<!ELEMENT icir:representativeCity ( latinScript?, nativeLanguage? )>
+<!ELEMENT latinScript ( #PCDATA )>
+<!ELEMENT nativeLanguage ( #PCDATA )>
+
+<!ELEMENT icir:gmtOffset ( #PCDATA )>
+<!ELEMENT icir:dstOffsetFromStandardTime ( #PCDATA )>
+
+<!ELEMENT icir:DST (icir:dstByDecree | icir:dstRules)>
+
+<!ELEMENT icir:dstByDecree (icir:decreeYear)>
+<!ELEMENT icir:decreeYear ( #PCDATA )>
+
+<!ELEMENT icir:dstRules (icir:dstStartMonth, icir:dstStartDateInMonth, icir:dstStartWeekOfMonth, icir:dstStartDayOfWeek, icir:dstEndMonth, icir:dstEndDateInMonth, icir:dstEndWeekOfMonth, icir:dstEndDayOfWeek)>
+<!ELEMENT icir:dstStartMonth ( #PCDATA )>
+<!ELEMENT icir:dstStartDateInMonth ( #PCDATA )>
+<!ELEMENT icir:dstStartWeekOfMonth ( #PCDATA )>
+<!ELEMENT icir:dstStartDayOfWeek ( #PCDATA )>
+<!ELEMENT icir:dstEndMonth ( #PCDATA )>
+<!ELEMENT icir:dstEndDateInMonth ( #PCDATA )>
+<!ELEMENT icir:dstEndWeekOfMonth ( #PCDATA )>
+<!ELEMENT icir:dstEndDayOfWeek ( #PCDATA )>
+
+<!ELEMENT icir:fullTimezoneNameEnglish ( #PCDATA )>
+<!ELEMENT icir:fullDSTNameEnglish ( #PCDATA )>
+<!ELEMENT icir:abbTimezoneNameEnglish ( #PCDATA )>
+<!ELEMENT icir:abbDSTNameEnglish ( #PCDATA )>
+
+<!-- ######################################################### -->
+
+<!-- Numeric section   -->
+
+<!ELEMENT icir:numericGrouping ( #PCDATA )>
+<!ELEMENT icir:numericDigitsAfterDecimal ( #PCDATA )>
+
+<!-- ######################################################### -->
+
+<!-- Currency section   -->
+
+<!ELEMENT icir:regionalCurrencyPattern ( #PCDATA )>
+<!ELEMENT icir:numericCurrencyCode ( #PCDATA )>
+<!ELEMENT icir:currencyCodeForEUCheques ( #PCDATA )>
+
+<!ELEMENT icir:currencyFullName (single?, plural?)>
+
+<!ELEMENT single (latinScript?, nativeLanguage?)>
+
+<!ELEMENT plural (latinScript?, nativeLanguage?)>
+
+<!ELEMENT icir:currencySubunitName (single?, plural?)>
+
+<!ELEMENT icir:currencyPositiveSign ( #PCDATA )>
+<!ELEMENT icir:currencyNegativeSign ( #PCDATA )>
+<!ELEMENT icir:digitsAfterDecimal ( #PCDATA )>
+<!ELEMENT icir:currencyGrouping ( #PCDATA )>
+<!ELEMENT icir:leadingZeros ( #PCDATA )>
+<!ELEMENT icir:fieldLength ( #PCDATA )>
+<!ELEMENT icir:paddingCharacter ( #PCDATA )>
+
+<!ELEMENT icir:regionalCurrency (icir:currencyFullName?, icir:currencySubunitName?, icir:currencyPositiveSign?, icir:currencyNegativeSign?, icir:digitsAfterDecimal?, icir:currencyGrouping?, icir:leadingZeros?, icir:fieldLength?, icir:paddingCharacter?, icir:decimalSeparator?, icir:thousandsSeparator?)>
+<!ELEMENT icir:decimalSeparator ( #PCDATA )>
+<!ELEMENT icir:thousandsSeparator ( #PCDATA )>
+
+
+<!-- ######################################################### -->
+
+<!-- Telephone section   -->
+
+<!ELEMENT icir:telephone (icir:intlAccessCode?, icir:phoneITUCode?, icir:phoneFormat?)>
+<!ELEMENT icir:intlAccessCode ( #PCDATA )>
+<!ELEMENT icir:phoneITUCode ( #PCDATA )>
+<!ELEMENT icir:phoneFormat ( #PCDATA )>
+
+
+<!-- ######################################################### -->
+
+<!-- Holiday section   -->
+
+<!ELEMENT icir:holidayInformation ( fixedHolidays?, variableHolidays?)>
+<!ELEMENT fixedHolidays (holidayMonth* )>
+<!ELEMENT variableHolidays (holidayMonth* )>
+<!ELEMENT holidayMonth ( latinScript?, nativeLanguage?) >
+<!ATTLIST holidayMonth type ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 ) #REQUIRED >
+
+
+<!-- ######################################################### -->
+
+<!-- Cardinal Points   -->
+
+<!ELEMENT icir:cardinalPoints (north?, south?, east?, west?)>
+<!ELEMENT north ( #PCDATA )>
+<!ELEMENT south ( #PCDATA )>
+<!ELEMENT east ( #PCDATA )>
+<!ELEMENT west ( #PCDATA )>
+
+<!-- ######################################################### -->
+
+<!-- Character Sets and Code Pages   -->
+
+<!ELEMENT icir:CCSIDandKeyboard (iso?, ccsid?, keyboard?)>
+
+<!ELEMENT iso ( #PCDATA )>
+
+<!ELEMENT ccsid (ebcdic?, ibmpc?, aix?, windows?)>
+<!ELEMENT ebcdic ( #PCDATA )> 
+<!ELEMENT ibmpc ( #PCDATA )>
+<!ELEMENT aix ( #PCDATA )>
+<!ELEMENT windows ( #PCDATA )>
+
+<!ELEMENT keyboard (ibmG?, ibm1A?)>
+<!ELEMENT ibmG ( #PCDATA )>
+<!ELEMENT ibm1A ( #PCDATA )>

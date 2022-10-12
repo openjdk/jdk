@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -67,8 +67,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ca">katalan</language>
 			<language type="ccp">chakmera</language>
 			<language type="ce">txetxenera</language>
-			<language type="ceb">cebuera</language>
-			<language type="cgg">chigera</language>
+			<language type="ceb">cebuanoera</language>
+			<language type="cgg">chiga</language>
 			<language type="ch">chamorrera</language>
 			<language type="chk">chuukera</language>
 			<language type="chm">mariera</language>
@@ -91,13 +91,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="de_CH">Suitzako aleman garai</language>
 			<language type="dgr">dogribera</language>
 			<language type="dje">zarma</language>
+			<language type="doi">dogria</language>
 			<language type="dsb">behe-sorabiera</language>
 			<language type="dua">dualera</language>
 			<language type="dv">divehiera</language>
 			<language type="dyo">fonyi jolera</language>
 			<language type="dz">dzongkha</language>
 			<language type="dzg">dazaga</language>
-			<language type="ebu">embua</language>
+			<language type="ebu">embuera</language>
 			<language type="ee">eweera</language>
 			<language type="efi">efikera</language>
 			<language type="eka">akajuka</language>
@@ -128,7 +129,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fr">frantses</language>
 			<language type="fr_CA">Kanadako frantses</language>
 			<language type="fr_CH">Suitzako frantses</language>
-			<language type="fur">friuliera</language>
+			<language type="frc">cajun frantsesa</language>
+			<language type="fur">fruilera</language>
 			<language type="fy">frisiera</language>
 			<language type="ga">irlandera</language>
 			<language type="gaa">ga</language>
@@ -186,6 +188,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">Cabo Verdeko kreolera</language>
 			<language type="kfo">koroa</language>
 			<language type="kg">kikongoa</language>
+			<language type="kgp">kaingang</language>
 			<language type="kha">kashia</language>
 			<language type="khq">koyra chiini</language>
 			<language type="ki">kikuyuera</language>
@@ -219,11 +222,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lag">langiera</language>
 			<language type="lb">luxenburgera</language>
 			<language type="lez">lezgiera</language>
-			<language type="lg">gandera</language>
+			<language type="lg">luganda</language>
 			<language type="li">limburgera</language>
+			<language type="lij">liguriera</language>
 			<language type="lkt">lakotera</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laosera</language>
+			<language type="lou">Louisianako kreolera</language>
 			<language type="loz">loziera</language>
 			<language type="lrc">iparraldeko lurera</language>
 			<language type="lt">lituaniera</language>
@@ -312,6 +317,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="quc">quicheera</language>
 			<language type="rap">rapa nui</language>
 			<language type="rar">rarotongera</language>
+			<language type="rhg">rohingyera</language>
 			<language type="rm">erretorromaniera</language>
 			<language type="rn">rundiera</language>
 			<language type="ro">errumaniera</language>
@@ -373,7 +379,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ti">tigrinyera</language>
 			<language type="tig">tigrea</language>
 			<language type="tk">turkmenera</language>
-			<language type="tl">tagalog</language>
+			<language type="tl">tagaloa</language>
 			<language type="tlh">klingonera</language>
 			<language type="tn">tswanera</language>
 			<language type="to">tongera</language>
@@ -428,47 +434,178 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">zazera</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">adlam</script>
+			<script type="Aghb">Kaukasoko albaniera</script>
+			<script type="Ahom">ahomera</script>
 			<script type="Arab">arabiarra</script>
 			<script type="Arab" alt="variant">persiar-arabiarra</script>
+			<script type="Aran">nastaliq</script>
+			<script type="Armi">aramiera inperiarra</script>
 			<script type="Armn">armeniarra</script>
+			<script type="Avst">avestera</script>
+			<script type="Bali">baliera</script>
+			<script type="Bamu">bamum</script>
+			<script type="Bass">bassa vah</script>
+			<script type="Batk">batak</script>
 			<script type="Beng">bengalarra</script>
+			<script type="Bhks">bhaiksuki</script>
 			<script type="Bopo">bopomofoa</script>
+			<script type="Brah">brahmiera</script>
 			<script type="Brai">braillea</script>
+			<script type="Bugi">buginera</script>
+			<script type="Buhd">buhid</script>
+			<script type="Cakm">txakma</script>
+			<script type="Cans">Kanadiako aborigenen silabiko bateratua</script>
+			<script type="Cari">kariera</script>
+			<script type="Cham">txamera</script>
+			<script type="Cher">txerokiera</script>
+			<script type="Chrs">korasmiera</script>
+			<script type="Copt">koptikera</script>
+			<script type="Cpmn">zipro-minoera</script>
+			<script type="Cprt">ziprera</script>
 			<script type="Cyrl">zirilikoa</script>
 			<script type="Deva">devanagaria</script>
+			<script type="Diak">dives akuru</script>
+			<script type="Dogr">dogrera</script>
+			<script type="Dsrt">deseret</script>
+			<script type="Dupl">duployiar takigrafia</script>
+			<script type="Egyp">egiptoar hieroglifikoak</script>
+			<script type="Elba">elbasanera</script>
+			<script type="Elym">elimaikera</script>
 			<script type="Ethi">etiopiarra</script>
 			<script type="Geor">georgiarra</script>
+			<script type="Glag">glagolitikera</script>
+			<script type="Gong">gunjala gondi</script>
+			<script type="Gonm">masaram gondiera</script>
+			<script type="Goth">gotikoa</script>
+			<script type="Gran">grantha</script>
 			<script type="Grek">grekoa</script>
 			<script type="Gujr">gujaratarra</script>
 			<script type="Guru">gurmukhia</script>
 			<script type="Hanb">hänera</script>
 			<script type="Hang">hangula</script>
 			<script type="Hani">idazkera txinatarra</script>
+			<script type="Hano">hanunuera</script>
 			<script type="Hans">sinplifikatua</script>
 			<script type="Hans" alt="stand-alone">idazkera txinatar sinplifikatua</script>
 			<script type="Hant">tradizionala</script>
 			<script type="Hant" alt="stand-alone">idazkera txinatar tradizionala</script>
+			<script type="Hatr">hatreoera</script>
 			<script type="Hebr">hebrearra</script>
 			<script type="Hira">hiragana</script>
+			<script type="Hluw">hieroglifiko anatoliarrak</script>
+			<script type="Hmng">pahawh hmongera</script>
+			<script type="Hmnp">nyiakeng puachue hmong</script>
 			<script type="Hrkt">silabario japoniarrak</script>
+			<script type="Hung">hungariera zaharra</script>
+			<script type="Ital">italiera zaharra</script>
 			<script type="Jamo">jamo-bihurketa</script>
+			<script type="Java">javaniera</script>
 			<script type="Jpan">japoniarra</script>
+			<script type="Kali">kayah li</script>
 			<script type="Kana">katakana</script>
+			<script type="Khar">kharoshthi</script>
 			<script type="Khmr">khemerarra</script>
+			<script type="Khoj">khojkiera</script>
+			<script type="Kits">khitanerako script txikiak</script>
 			<script type="Knda">kanadarra</script>
 			<script type="Kore">korearra</script>
+			<script type="Kthi">kaithiera</script>
+			<script type="Lana">lannera</script>
 			<script type="Laoo">laosarra</script>
 			<script type="Latn">latinoa</script>
+			<script type="Lepc">leptxa</script>
+			<script type="Limb">linbuera</script>
+			<script type="Lina">A linearra</script>
+			<script type="Linb">B linearra</script>
+			<script type="Lisu">fraserera</script>
+			<script type="Lyci">liziera</script>
+			<script type="Lydi">lidiera</script>
+			<script type="Mahj">mahajaniera</script>
+			<script type="Maka">makasarrera</script>
+			<script type="Mand">mandaera</script>
+			<script type="Mani">manikeoa</script>
+			<script type="Marc">martxenera</script>
+			<script type="Medf">medefaidrinera</script>
+			<script type="Mend">mende</script>
+			<script type="Merc">meroitiar etzana</script>
+			<script type="Mero">meroitirra</script>
 			<script type="Mlym">malayalamarra</script>
+			<script type="Modi">modiera</script>
 			<script type="Mong">mongoliarra</script>
+			<script type="Mroo">mroera</script>
+			<script type="Mtei">meitei mayekera</script>
+			<script type="Mult">multaniera</script>
 			<script type="Mymr">birmaniarra</script>
+			<script type="Nand">nandinagariera</script>
+			<script type="Narb">iparraldeko arabiera zaharra</script>
+			<script type="Nbat">nabatera</script>
+			<script type="Newa">newaera</script>
+			<script type="Nkoo">n’ko</script>
+			<script type="Nshu">nushuera</script>
+			<script type="Ogam">oghamera</script>
+			<script type="Olck">ol txikiera</script>
+			<script type="Orkh">orkhonera</script>
 			<script type="Orya">oriyarra</script>
+			<script type="Osge">osagera</script>
+			<script type="Osma">osmaiera</script>
+			<script type="Ougr">uigurrera zaharra</script>
+			<script type="Palm">palmiera</script>
+			<script type="Pauc">pau cin hau</script>
+			<script type="Perm">permiera zaharra</script>
+			<script type="Phag">phags-pa</script>
+			<script type="Phli">pahlavi inskripzioak</script>
+			<script type="Phlp">Pahlavi salmo-liburua</script>
+			<script type="Phnx">feniziera</script>
+			<script type="Plrd">polardera fonetikoa</script>
+			<script type="Prti">Partiera inskripzioak</script>
+			<script type="Qaag">zauagiera</script>
+			<script type="Rjng">Rejang</script>
+			<script type="Rohg">hanifiera</script>
+			<script type="Runr">errunikoa</script>
+			<script type="Samr">samariera</script>
+			<script type="Sarb">hegoaldeko arabiera zaharra</script>
+			<script type="Saur">saurashtra</script>
+			<script type="Sgnw">zeinu-idazketa</script>
+			<script type="Shaw">shaviera</script>
+			<script type="Shrd">sharada</script>
+			<script type="Sidd">siddham</script>
+			<script type="Sind">khudawadi</script>
 			<script type="Sinh">sinhala</script>
+			<script type="Sogd">sogdiera</script>
+			<script type="Sogo">sogdiera zaharra</script>
+			<script type="Sora">sora sompeng</script>
+			<script type="Soyo">soyomboera</script>
+			<script type="Sund">sudanera</script>
+			<script type="Sylo">syloti nagriera</script>
+			<script type="Syrc">siriera</script>
+			<script type="Tagb">tagbanwa</script>
+			<script type="Takr">takriera</script>
+			<script type="Tale">tai le</script>
+			<script type="Talu">tai lue berria</script>
 			<script type="Taml">tamilarra</script>
+			<script type="Tang">tangutera</script>
+			<script type="Tavt">tai viet</script>
 			<script type="Telu">teluguarra</script>
+			<script type="Tfng">tifinagera</script>
+			<script type="Tglg">tagaloa</script>
 			<script type="Thaa">thaana</script>
 			<script type="Thai">thailandiarra</script>
 			<script type="Tibt">tibetarra</script>
+			<script type="Tirh">tirhuta</script>
+			<script type="Tnsa">tangsa</script>
+			<script type="Toto">totoera</script>
+			<script type="Ugar">ugaritiera</script>
+			<script type="Vaii">vaiera</script>
+			<script type="Vith">vithkuqi</script>
+			<script type="Wara">varang kshiti</script>
+			<script type="Wcho">wanchoera</script>
+			<script type="Xpeo">pertsiera zaharra</script>
+			<script type="Xsux">sumero-akadiera kuneiformea</script>
+			<script type="Yezi">yezidiera</script>
+			<script type="Yiii">yiera</script>
+			<script type="Zanb">zanabazar koadroa</script>
+			<script type="Zinh">heredatua</script>
 			<script type="Zmth">matematikako notazioa</script>
 			<script type="Zsye">emotikonoa</script>
 			<script type="Zsym">ikurrak</script>
@@ -783,11 +920,67 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZZ">Eskualde ezezaguna</territory>
 		</territories>
 		<variants>
-			<variant type="POLYTON">POLITON</variant>
-			<variant type="REVISED">BERRIKUSIA</variant>
-			<variant type="SAAHO">SAHO</variant>
-			<variant type="SCOTLAND">ESKOZIAR INGELESA</variant>
-			<variant type="VALENCIA">VALENTZIERA</variant>
+			<variant type="1901">ortografia aleman tradizionala</variant>
+			<variant type="1994">Resiako ortografia estandarizatua</variant>
+			<variant type="1996">1996ko ortografia alemana</variant>
+			<variant type="1606NICT">frantses ertain amaieratik 1606ra</variant>
+			<variant type="1694ACAD">frantses moderno goiztiarra</variant>
+			<variant type="1959ACAD">akademikoa</variant>
+			<variant type="ABL1943">1943ko ortografia-formulazioa</variant>
+			<variant type="AKUAPEM">AKUAPIMERA</variant>
+			<variant type="ALALC97">ALA-LC erromanizazioa, 1997ko edizioa</variant>
+			<variant type="ALUKU">Aluku dialektoa</variant>
+			<variant type="AO1990">1990eko portugesaren ortografia-hitzarmena</variant>
+			<variant type="ARANES">ARANERA</variant>
+			<variant type="ASANTE">ASANTEERA</variant>
+			<variant type="BAKU1926">Turkieraren latindar alfabeto bateratua</variant>
+			<variant type="BALANKA">Aniieraren balanka dialektoa</variant>
+			<variant type="BARLA">Caboverdeeraren barlavento dialekto taldea</variant>
+			<variant type="BISCAYAN">Mendebaldeko euskara</variant>
+			<variant type="BISKE">San Giorgio / Bila dialektoa</variant>
+			<variant type="BOHORIC">Bohoric alfabetoa</variant>
+			<variant type="BOONT">Boontling</variant>
+			<variant type="COLB1945">1945eko Portugal eta Barasilgo ortografia-hitzarmena</variant>
+			<variant type="DAJNKO">Dajnko alfabetoa</variant>
+			<variant type="EKAVSK">Serbiera ekavierako ahoskerarekin</variant>
+			<variant type="EMODENG">Ingeles moderno goiztiarra</variant>
+			<variant type="FONIPA">IPA ahoskera</variant>
+			<variant type="FONUPA">UPa ahoskera</variant>
+			<variant type="GASCON">GASKOI</variant>
+			<variant type="HEPBURN">Hepburn erromanizazioa</variant>
+			<variant type="IJEKAVSK">Serbiera ijekavieraren ahoskerarekin</variant>
+			<variant type="KKCOR">Ortografia arrunta</variant>
+			<variant type="KSCOR">Ortografia estandarra</variant>
+			<variant type="LIPAW">Resiako lipovaz dialektoa</variant>
+			<variant type="METELKO">Metelko alfabetoa</variant>
+			<variant type="MONOTON">Tonu bakarra</variant>
+			<variant type="NDYUKA">Ndyuka dialektoa</variant>
+			<variant type="NEDIS">Natisoneko dialektoa</variant>
+			<variant type="NEWFOUND">TERNUA</variant>
+			<variant type="NJIVA">Gniva/Njiva dialektoa</variant>
+			<variant type="NULIK">Volapuk modernoa</variant>
+			<variant type="OSOJS">Oseacco/Osojane dialektoa</variant>
+			<variant type="OXENDICT">Oxfordeko ingeles-hiztegiko ortografia</variant>
+			<variant type="PAMAKA">Pamaka dialektoa</variant>
+			<variant type="PINYIN">Pinyin erromanizazioa</variant>
+			<variant type="POLYTON">Tonu anitza</variant>
+			<variant type="POSIX">Ordenagailua</variant>
+			<variant type="REVISED">Ortografia berrikusia</variant>
+			<variant type="RIGIK">Volapuk klasikoa</variant>
+			<variant type="ROZAJ">Resiera</variant>
+			<variant type="SAAHO">Saho</variant>
+			<variant type="SCOTLAND">Eskoziar ingeles estandarra</variant>
+			<variant type="SCOUSE">Scouse</variant>
+			<variant type="SIMPLE">SOILA</variant>
+			<variant type="SOLBA">Stolvizza/Solbica dialektoa</variant>
+			<variant type="SOTAV">Caboverdeerako sotavento dialekto taldea</variant>
+			<variant type="SPANGLIS">SPANGLISH</variant>
+			<variant type="TARASK">Taraskievica ortografia</variant>
+			<variant type="UCCOR">Ortografia bateratua</variant>
+			<variant type="UCRCOR">Ortografia berrikusi bateratua</variant>
+			<variant type="UNIFON">Alfabeto fonetiko unifonoa</variant>
+			<variant type="VALENCIA">Valentziera</variant>
+			<variant type="WADEGILE">Wade-Giles erromanizazioa</variant>
 		</variants>
 		<keys>
 			<key type="calendar">Egutegia</key>
@@ -820,7 +1013,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Hebrear egutegia</type>
 			<type key="calendar" type="indian">Indiar egutegia</type>
 			<type key="calendar" type="islamic">Islamiar egutegia</type>
-			<type key="calendar" type="islamic-civil">Islamiar egutegi zibila</type>
+			<type key="calendar" type="islamic-civil">Islamiar egutegia (taula-formakoa, garai zibilekoa)</type>
+			<type key="calendar" type="islamic-rgsa">Islamiar egutegia (Saudi Arabia, ikuspegiak)</type>
+			<type key="calendar" type="islamic-tbla">Islamiar egutegia (taula-formakoa, gai astronomikokoa)</type>
+			<type key="calendar" type="islamic-umalqura">Islamiar egutegia (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 egutegia</type>
 			<type key="calendar" type="japanese">Japoniar egutegia</type>
 			<type key="calendar" type="persian">Egutegi persiarra</type>
@@ -837,8 +1033,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseLevel" type="no">Ordenatu maiuskulak eta minuskulak bereizi gabe</type>
 			<type key="colCaseLevel" type="yes">Ordenatu maiuskulak eta minuskulak bereizita</type>
 			<type key="collation" type="big5han">Txinera tradizionalaren alfabetoa-Big5</type>
+			<type key="collation" type="compat">Aurreko hurrenkera, bateragarria izateko</type>
 			<type key="collation" type="dictionary">Hurrenkera alfabetikoa</type>
 			<type key="collation" type="ducet">Unicode hurrenkera lehenetsia</type>
+			<type key="collation" type="emoji">Emojien hurrenkera</type>
+			<type key="collation" type="eor">Europako ordenatzeko arauak</type>
 			<type key="collation" type="gb2312han">Txinera sinplifikatuaren alfabetoa -GB2312</type>
 			<type key="collation" type="phonebook">Telefonoen zerrenda</type>
 			<type key="collation" type="phonetic">Ordenatzeko irizpide fonetikoa</type>
@@ -850,6 +1049,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="stroke">Tarteen araberako hurrenkera</type>
 			<type key="collation" type="traditional">Tradizionala</type>
 			<type key="collation" type="unihan">Radical trazuen hurrenkera</type>
+			<type key="collation" type="zhuyin">Zhuyin hurrenkera</type>
 			<type key="colNormalization" type="no">Ordenatu arauak kontuan hartu gabe</type>
 			<type key="colNormalization" type="yes">Ordenatu Unicode arauen arabera</type>
 			<type key="colNumeric" type="no">Ordenatu digituak banaka</type>
@@ -874,16 +1074,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="metric">Sistema metrikoa</type>
 			<type key="ms" type="uksystem">Neurketa-sistema inperiala</type>
 			<type key="ms" type="ussystem">Neurketa-sistema anglosaxoia</type>
+			<type key="numbers" type="ahom">Ahom digituak</type>
 			<type key="numbers" type="arab">Digitu arabiar-hindikoak</type>
 			<type key="numbers" type="arabext">Digitu arabiar-hindiko hedatuak</type>
 			<type key="numbers" type="armn">Zenbaki armeniarrak</type>
 			<type key="numbers" type="armnlow">Zenbaki armeniarrak minuskulaz</type>
+			<type key="numbers" type="bali">Digitu balitarrak</type>
 			<type key="numbers" type="beng">Digitu bengalarrak</type>
+			<type key="numbers" type="brah">Brahmi digituak</type>
+			<type key="numbers" type="cakm">Txakma digituak</type>
+			<type key="numbers" type="cham">Txam digituak</type>
+			<type key="numbers" type="cyrl">Zenbaki zirilikoak</type>
 			<type key="numbers" type="deva">Digitu devanagariak</type>
+			<type key="numbers" type="diak">Dives Akuru digituak</type>
 			<type key="numbers" type="ethi">Zenbaki etiopiarrak</type>
 			<type key="numbers" type="finance">Finantza-zenbakiak</type>
 			<type key="numbers" type="fullwide">Zabalera osoko digituak</type>
 			<type key="numbers" type="geor">Zenbaki georgiarrak</type>
+			<type key="numbers" type="gong">Gunjala Gondi digituak</type>
+			<type key="numbers" type="gonm">Masaram Gondi digituak</type>
 			<type key="numbers" type="grek">Zenbaki grekoak</type>
 			<type key="numbers" type="greklow">Zenbaki grekoak minuskulaz</type>
 			<type key="numbers" type="gujr">Digitu gujaratarrak</type>
@@ -894,26 +1103,59 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">Zenbaki txinatar tradizionalak</type>
 			<type key="numbers" type="hantfin">Finantzetarako zenbaki txinatar tradizionalak</type>
 			<type key="numbers" type="hebr">Zenbaki hebrearrak</type>
+			<type key="numbers" type="hmng">Pahawh Hmong digituak</type>
+			<type key="numbers" type="hmnp">Nyiakeng Puachue Hmong digituak</type>
+			<type key="numbers" type="java">Digitu javatarrak</type>
 			<type key="numbers" type="jpan">Zenbaki japoniarrak</type>
 			<type key="numbers" type="jpanfin">Finantzetarako zenbaki japoniarrak</type>
+			<type key="numbers" type="kali">Kayah Li digituak</type>
 			<type key="numbers" type="khmr">Digitu khemerarrak</type>
 			<type key="numbers" type="knda">Digitu kannadarrak</type>
+			<type key="numbers" type="lana">Tai Tham Hora digituak</type>
+			<type key="numbers" type="lanatham">Tai Tham Tham digituak</type>
 			<type key="numbers" type="laoo">Digitu laostarrak</type>
 			<type key="numbers" type="latn">Digitu mendebaldarrak</type>
+			<type key="numbers" type="lepc">Digitu leptxatarrak</type>
+			<type key="numbers" type="limb">Digitu limbutarrak</type>
+			<type key="numbers" type="mathbold">Digitu matematiko lodiak</type>
+			<type key="numbers" type="mathdbl">Marra bikoitzeko digitu matematikoak</type>
+			<type key="numbers" type="mathmono">Zuriune bakarreko digitu matematikoak</type>
+			<type key="numbers" type="mathsanb">Sans-Serif Bold digitu matematikoak</type>
+			<type key="numbers" type="mathsans">Sans-Serif digitu matematikoak</type>
 			<type key="numbers" type="mlym">Digitu malayalamarrak</type>
+			<type key="numbers" type="modi">Modi digituak</type>
 			<type key="numbers" type="mong">Digitu mongoliarrak</type>
+			<type key="numbers" type="mroo">Mro digituak</type>
+			<type key="numbers" type="mtei">Meetei Mayek digituak</type>
 			<type key="numbers" type="mymr">Digitu birmaniarrak</type>
+			<type key="numbers" type="mymrshan">Shan digitu birmaniarrak</type>
+			<type key="numbers" type="mymrtlng">Tai Laing digitu birmaniarrak</type>
 			<type key="numbers" type="native">Zenbaki-sistema</type>
+			<type key="numbers" type="nkoo">N’Ko digituak</type>
+			<type key="numbers" type="olck">Ol Chiki digituak</type>
 			<type key="numbers" type="orya">Digitu oriyarrak</type>
+			<type key="numbers" type="osma">Digitu osmanyarrak</type>
+			<type key="numbers" type="rohg">Hanifi digitu rohingyak</type>
 			<type key="numbers" type="roman">Zenbaki erromatarrak</type>
 			<type key="numbers" type="romanlow">Zenbaki erromatarrak minuskulaz</type>
+			<type key="numbers" type="saur">Digitu saurashtrarrak</type>
+			<type key="numbers" type="shrd">Digitu sharadarrak</type>
+			<type key="numbers" type="sind">Digitu khudawadiarrak</type>
+			<type key="numbers" type="sinh">Sinhala Lith digituak</type>
+			<type key="numbers" type="sora">Sora Sompeng digituak</type>
+			<type key="numbers" type="sund">Digitu sundadarrak</type>
+			<type key="numbers" type="takr">Digitu takriarrak</type>
+			<type key="numbers" type="talu">Digitu tai lue berriak</type>
 			<type key="numbers" type="taml">Zenbaki tamilar tradizionalak</type>
 			<type key="numbers" type="tamldec">Digitu tamilarrak</type>
 			<type key="numbers" type="telu">Digitu teluguarrak</type>
 			<type key="numbers" type="thai">Digitu thailandiarrak</type>
 			<type key="numbers" type="tibt">Digitu tibetarrak</type>
+			<type key="numbers" type="tirh">Tirhuta digituak</type>
 			<type key="numbers" type="traditional">Zenbaki tradizionalak</type>
 			<type key="numbers" type="vaii">Vai digituak</type>
+			<type key="numbers" type="wara">Warang Citi digituak</type>
+			<type key="numbers" type="wcho">Wancho digituak</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Sistema metrikoa</measurementSystemName>
@@ -960,21 +1202,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G. 'aroko' y. 'urteko' MMMM d, EEEE</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G. 'aroko' y. 'urteko' MMMM d</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G. 'aroko' y('e')'ko' MMM d</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG y-MM-dd</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1013,6 +1259,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G. 'aroko' y. 'urtea'</dateFormatItem>
+						<dateFormatItem id="GyMd">y-MM-dd (GGGGG)</dateFormatItem>
 						<dateFormatItem id="GyMMM">G. 'aroko' y('e')'ko' MMMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G. 'aroko' y('e')'ko' MMMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G. 'aroko' y('e')'ko' MMMM d, EEEE</dateFormatItem>
@@ -1085,23 +1332,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">:h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
@@ -1471,26 +1718,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="1">K.o.</era>
 						<era type="1" alt="variant">G.a.</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">a</era>
+						<era type="1">o</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y('e')'ko' MMMM'ren' d('a'), EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y('e')'ko' MMMM'ren' d('a')</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y('e')'ko' MMM d('a')</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>yy/M/d</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1498,21 +1753,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss (zzzz)</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss (z)</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1792,6 +2051,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-short">
 				<displayName>hiruhil.</displayName>
+				<relative type="-1">aurreko hiruhil.</relative>
+				<relative type="0">hiruhil. hau</relative>
+				<relative type="1">hurrengo hiruhil.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} hiruhileko barru</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hiruhileko barru</relativeTimePattern>
@@ -1803,6 +2065,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-narrow">
 				<displayName>hiruhil.</displayName>
+				<relative type="-1">aurreko hiruhil.</relative>
+				<relative type="0">hiruhil. hau</relative>
+				<relative type="1">hurrengo hiruhil.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} hiruhileko barru</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hiruhileko barru</relativeTimePattern>
@@ -2361,7 +2626,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>{0} aldeko ordua</regionFormat>
 			<regionFormat type="daylight">{0} (udako ordua)</regionFormat>
-			<regionFormat type="standard">{0}(e)ko ordu estandarra</regionFormat>
+			<regionFormat type="standard">{0} aldeko ordu estandarra</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Santa Isabel</exemplarCity>
@@ -3524,6 +3789,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>HST</generic>
+					<standard>HST</standard>
+					<daylight>HDT</daylight>
+				</short>
 				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
@@ -3658,6 +3928,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>Harare</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Acreko ordua</generic>
+					<standard>Acreko ordu estandarra</standard>
+					<daylight>Acreko udako ordua</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Afganistango ordua</standard>
@@ -3691,6 +3968,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Alaskako ordu estandarra</standard>
 					<daylight>Alaskako udako ordua</daylight>
 				</long>
+				<short>
+					<generic draft="contributed">AKT</generic>
+					<standard draft="contributed">AKST</standard>
+					<daylight draft="contributed">AKDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Almaty">
+				<long>
+					<generic>Almatyko ordua</generic>
+					<standard>Almatyko ordu estandarra</standard>
+					<daylight>Almatyko udako ordua</daylight>
+				</long>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
@@ -3705,6 +3994,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Ipar Amerikako erdialdeko ordu estandarra</standard>
 					<daylight>Ipar Amerikako erdialdeko udako ordua</daylight>
 				</long>
+				<short>
+					<generic draft="contributed">CT</generic>
+					<standard draft="contributed">CST</standard>
+					<daylight draft="contributed">CDT</daylight>
+				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -3712,6 +4006,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Ipar Amerikako ekialdeko ordu estandarra</standard>
 					<daylight>Ipar Amerikako ekialdeko udako ordua</daylight>
 				</long>
+				<short>
+					<generic draft="contributed">ET</generic>
+					<standard draft="contributed">EST</standard>
+					<daylight draft="contributed">EDT</daylight>
+				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -3719,6 +4018,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Ipar Amerikako mendialdeko ordu estandarra</standard>
 					<daylight>Ipar Amerikako mendialdeko udako ordua</daylight>
 				</long>
+				<short>
+					<generic draft="contributed">MT</generic>
+					<standard draft="contributed">MST</standard>
+					<daylight draft="contributed">MDT</daylight>
+				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -3726,6 +4030,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Ipar Amerikako Pazifikoko ordu estandarra</standard>
 					<daylight>Ipar Amerikako Pazifikoko udako ordua</daylight>
 				</long>
+				<short>
+					<generic draft="contributed">PT</generic>
+					<standard draft="contributed">PST</standard>
+					<daylight draft="contributed">PDT</daylight>
+				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -3739,6 +4048,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Apiako ordua</generic>
 					<standard>Apiako ordu estandarra</standard>
 					<daylight>Apiako udako ordua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtau">
+				<long>
+					<generic>Aktauko ordua</generic>
+					<standard>Aktauko ordu estandarra</standard>
+					<daylight>Aktauko udako ordua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtobe">
+				<long>
+					<generic>Aktobeko ordua</generic>
+					<standard>Aktobeko ordu estandarra</standard>
+					<daylight>Aktobeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3775,6 +4098,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Ipar Amerikako Atlantikoko ordu estandarra</standard>
 					<daylight>Ipar Amerikako Atlantikoko udako ordua</daylight>
 				</long>
+				<short>
+					<generic draft="contributed">AT</generic>
+					<standard draft="contributed">AST</standard>
+					<daylight draft="contributed">ADT</daylight>
+				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -3852,6 +4180,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Cabo Verdeko ordua</generic>
 					<standard>Cabo Verdeko ordu estandarra</standard>
 					<daylight>Cabo Verdeko udako ordua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Casey">
+				<long>
+					<standard>Caseyko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Chamorro">
@@ -4054,6 +4387,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Groenlandiako mendebaldeko udako ordua</daylight>
 				</long>
 			</metazone>
+			<metazone type="Guam">
+				<long>
+					<standard>Guameko ordu estandarra</standard>
+				</long>
+			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Golkoko ordu estandarra</standard>
@@ -4070,6 +4408,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Hawaii-Aleutiar uharteetako ordu estandarra</standard>
 					<daylight>Hawaii-Aleutiar uharteetako udako ordua</daylight>
 				</long>
+				<short>
+					<generic draft="contributed">HAT</generic>
+					<standard draft="contributed">HAST</standard>
+					<daylight draft="contributed">HADT</daylight>
+				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -4323,6 +4666,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Fernando de Noronhako udako ordua</daylight>
 				</long>
 			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard>Ipar Mariana uharteetako ordua</standard>
+				</long>
+			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Novosibirskeko ordua</generic>
@@ -4400,6 +4748,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Pyongyang">
 				<long>
 					<standard>Piongiangeko ordua</standard>
+				</long>
+			</metazone>
+			<metazone type="Qyzylorda">
+				<long>
+					<generic>Kyzylordako ordua</generic>
+					<standard>Kyzylordako ordu estandarra</standard>
+					<daylight>Kyzylordako udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -4578,6 +4933,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Jekaterinburgeko udako ordua</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Yukongo ordua</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -4605,7 +4965,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -4720,17 +5080,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="ADP">
+				<displayName>pezeta andorratarra</displayName>
+				<displayName count="one">pezeta andorratar</displayName>
+				<displayName count="other">pezeta andorratar</displayName>
+			</currency>
 			<currency type="AED">
 				<displayName>Arabiar Emirerri Batuetako dirhama</displayName>
 				<displayName count="one">Arabiar Emirerri Batuetako dirham</displayName>
 				<displayName count="other">Arabiar Emirerri Batuetako dirham</displayName>
 				<symbol>AED</symbol>
 			</currency>
+			<currency type="AFA">
+				<displayName>afghani afgandarra (1927–2002)</displayName>
+				<displayName count="one">afghani afgandar (1927–2002)</displayName>
+				<displayName count="other">afghani afgandar (1927–2002)</displayName>
+			</currency>
 			<currency type="AFN">
 				<displayName>afgani afganiarra</displayName>
 				<displayName count="one">afgani afganiar</displayName>
 				<displayName count="other">afgani afganiar</displayName>
 				<symbol>AFN</symbol>
+			</currency>
+			<currency type="ALK">
+				<displayName>lek albaniarra (1946–1965)</displayName>
+				<displayName count="one">lek albaniar (1946–1965)</displayName>
+				<displayName count="other">lek albaniar (1946–1965)</displayName>
 			</currency>
 			<currency type="ALL">
 				<displayName>lek albaniarra</displayName>
@@ -4745,9 +5120,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
-				<displayName>Holandarren Antilletako florina</displayName>
-				<displayName count="one">Holandarren Antilletako florin</displayName>
-				<displayName count="other">Holandarren Antilletako florin</displayName>
+				<displayName>florin antillarra</displayName>
+				<displayName count="one">florin antillar</displayName>
+				<displayName count="other">florin antillar</displayName>
 				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
@@ -4757,12 +5132,56 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>AOA</symbol>
 				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
+			<currency type="AOK">
+				<displayName>kwanza angolarra (1977–1991)</displayName>
+				<displayName count="one">kwanza angolar (1977–1991)</displayName>
+				<displayName count="other">kwanza angolar (1977–1991)</displayName>
+			</currency>
+			<currency type="AON">
+				<displayName>kwanza angolar berria (1990–2000)</displayName>
+				<displayName count="one">kwanza angolar berri (1990–2000)</displayName>
+				<displayName count="other">kwanza angolar berri (1990–2000)</displayName>
+			</currency>
+			<currency type="AOR">
+				<displayName>kwanza angolar birdoitua (1995–1999)</displayName>
+				<displayName count="one">kwanza angolar birdoitu (1995–1999)</displayName>
+				<displayName count="other">kwanza angolar birdoitu (1995–1999)</displayName>
+			</currency>
+			<currency type="ARA">
+				<displayName>austral argentinarra</displayName>
+				<displayName count="one">austral argentinar</displayName>
+				<displayName count="other">austral argentinar</displayName>
+				<symbol draft="contributed">ARA</symbol>
+			</currency>
+			<currency type="ARL">
+				<displayName>peso ley argentinarra (1970–1983)</displayName>
+				<displayName count="one">peso ley argentinar (1970–1983)</displayName>
+				<displayName count="other">peso ley argentinar (1970–1983)</displayName>
+				<symbol draft="contributed">ARL</symbol>
+			</currency>
+			<currency type="ARM">
+				<displayName>peso argentinarra (1981–1970)</displayName>
+				<displayName count="one">peso argentinar (1981–1970)</displayName>
+				<displayName count="other">peso argentinar (1981–1970)</displayName>
+				<symbol draft="contributed">ARM</symbol>
+			</currency>
+			<currency type="ARP">
+				<displayName>peso argentinarra (1983–1985)</displayName>
+				<displayName count="one">peso argentinar (1983–1985)</displayName>
+				<displayName count="other">peso argentinar (1983–1985)</displayName>
+				<symbol draft="contributed">ARP</symbol>
+			</currency>
 			<currency type="ARS">
 				<displayName>peso argentinarra</displayName>
 				<displayName count="one">peso argentinar</displayName>
 				<displayName count="other">peso argentinar</displayName>
 				<symbol>ARS</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="ATS">
+				<displayName>txelin austriarra</displayName>
+				<displayName count="one">txelin austriar</displayName>
+				<displayName count="other">txelin austriar</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>dolar australiarra</displayName>
@@ -4777,11 +5196,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">florin arubar</displayName>
 				<symbol>AWG</symbol>
 			</currency>
+			<currency type="AZM">
+				<displayName>manat azerbaijandarra (1993–2006)</displayName>
+				<displayName count="one">manat azerbaijandar (1993–2006)</displayName>
+				<displayName count="other">manat azerbaijandar (1993–2006)</displayName>
+			</currency>
 			<currency type="AZN">
 				<displayName>manat azerbaijandarra</displayName>
 				<displayName count="one">manat azerbaijandar</displayName>
 				<displayName count="other">manat azerbaijandar</displayName>
 				<symbol>AZN</symbol>
+			</currency>
+			<currency type="BAD">
+				<displayName>dinar bosnia-herzegovinarra (1992–1994)</displayName>
+				<displayName count="one">dinar bosnia-herzegovinar (1992–1994)</displayName>
+				<displayName count="other">dinar bosnia-herzegovinar (1992–1994)</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName>marko bihurgarri bosniarra</displayName>
@@ -4789,6 +5218,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">marko bihurgarri bosniar</displayName>
 				<symbol>BAM</symbol>
 				<symbol alt="narrow" draft="contributed">KM</symbol>
+			</currency>
+			<currency type="BAN">
+				<displayName>dinar bosnia-herzegovinar berria (1994–1997)</displayName>
+				<displayName count="one">dinar bosnia-herzegovinar berri (1994–1997)</displayName>
+				<displayName count="other">dinar bosnia-herzegovinar berri (1994–1997)</displayName>
 			</currency>
 			<currency type="BBD">
 				<displayName>dolar barbadostarra</displayName>
@@ -4804,11 +5238,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>BDT</symbol>
 				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
+			<currency type="BEC">
+				<displayName>franko belgikarra (bihurgarria)</displayName>
+				<displayName count="one">franko belgikar (bihurgarria)</displayName>
+				<displayName count="other">franko belgikar (bihurgarria)</displayName>
+			</currency>
+			<currency type="BEF">
+				<displayName>franko belgikarra</displayName>
+				<displayName count="one">franko belgikar</displayName>
+				<displayName count="other">franko belgikar</displayName>
+			</currency>
+			<currency type="BEL">
+				<displayName>franko belgikarra (finantzarioa)</displayName>
+				<displayName count="one">franko belgikar (finantzarioa)</displayName>
+				<displayName count="other">franko belgikar (finantzarioa)</displayName>
+			</currency>
+			<currency type="BGL">
+				<displayName>Lev bulgariar indartsua</displayName>
+				<displayName count="one">Lev bulgariar indartsu</displayName>
+				<displayName count="other">Lev bulgariar indartsu</displayName>
+			</currency>
+			<currency type="BGM">
+				<displayName>Lev bulgariar sozialista</displayName>
+				<displayName count="one">Lev bulgariar sozialista</displayName>
+				<displayName count="other">Lev bulgariar sozialista</displayName>
+			</currency>
 			<currency type="BGN">
 				<displayName>lev bulgariarra</displayName>
 				<displayName count="one">lev bulgariar</displayName>
 				<displayName count="other">lev bulgariar</displayName>
 				<symbol>BGN</symbol>
+			</currency>
+			<currency type="BGO">
+				<displayName>Lev bulgariarra (1879–1952)</displayName>
+				<displayName count="one">Lev bulgariar (1879–1952)</displayName>
+				<displayName count="other">Lev bulgariar (1879–1952)</displayName>
 			</currency>
 			<currency type="BHD">
 				<displayName>dinar bahraindarra</displayName>
@@ -4843,12 +5307,66 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>BOB</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
+			<currency type="BOL">
+				<displayName>boliviano boliviarra (1863–1963)</displayName>
+				<displayName count="one">boliviano boliviar (1863–1963)</displayName>
+				<displayName count="other">boliviano boliviar (1863–1963)</displayName>
+				<symbol draft="contributed">BOL</symbol>
+			</currency>
+			<currency type="BOP">
+				<displayName>peso boliviarra</displayName>
+				<displayName count="one">peso boliviar</displayName>
+				<displayName count="other">peso boliviar</displayName>
+				<symbol draft="contributed">BOP</symbol>
+			</currency>
+			<currency type="BOV">
+				<displayName>mvdol boliviarra</displayName>
+				<displayName count="one">mvdol boliviar</displayName>
+				<displayName count="other">mvdol boliviar</displayName>
+				<symbol draft="contributed">BOV</symbol>
+			</currency>
+			<currency type="BRB">
+				<displayName>cruzeiro brasildar berria (1967–1986)</displayName>
+				<displayName count="one">cruzeiro brasildar berri (1967–1986)</displayName>
+				<displayName count="other">cruzeiro brasildar berri (1967–1986)</displayName>
+				<symbol draft="contributed">BRB</symbol>
+			</currency>
+			<currency type="BRC">
+				<displayName>cruzado brasildarra (1986–1989)</displayName>
+				<displayName count="one">cruzado brasildar (1986–1989)</displayName>
+				<displayName count="other">cruzado brasildar (1986–1989)</displayName>
+				<symbol draft="contributed">BRC</symbol>
+			</currency>
+			<currency type="BRE">
+				<displayName>cruzeiro brasildarra (1990–1993)</displayName>
+				<displayName count="one">cruzeiro brasildar (1990–1993)</displayName>
+				<displayName count="other">cruzeiro brasildar (1990–1993)</displayName>
+				<symbol draft="contributed">BRE</symbol>
+			</currency>
 			<currency type="BRL">
 				<displayName>erreal brasildarra</displayName>
 				<displayName count="one">erreal brasildar</displayName>
 				<displayName count="other">erreal brasildar</displayName>
 				<symbol>R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
+			</currency>
+			<currency type="BRN">
+				<displayName>cruzado brasildar berria (1989–1990)</displayName>
+				<displayName count="one">cruzado brasildar berri (1989–1990)</displayName>
+				<displayName count="other">cruzado brasildar berri (1989–1990)</displayName>
+				<symbol draft="contributed">BRN</symbol>
+			</currency>
+			<currency type="BRR">
+				<displayName>cruzeiro brasildar berria (1993–1994)</displayName>
+				<displayName count="one">cruzeiro brasildar berri (1993–1994)</displayName>
+				<displayName count="other">cruzeiro brasildar berri (1993–1994)</displayName>
+				<symbol draft="contributed">BRR</symbol>
+			</currency>
+			<currency type="BRZ">
+				<displayName>cruzeiro brasildarra (1942–1967)</displayName>
+				<displayName count="one">cruzeiro brasildar (1942–1967)</displayName>
+				<displayName count="other">cruzeiro brasildar (1942–1967)</displayName>
+				<symbol draft="contributed">BRZ</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>dolar bahamarra</displayName>
@@ -4863,12 +5381,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">ngultrum bhutandar</displayName>
 				<symbol>BTN</symbol>
 			</currency>
+			<currency type="BUK">
+				<displayName>kyat birmaniarra</displayName>
+				<displayName count="one">kyat birmaniar</displayName>
+				<displayName count="other">kyat birmaniar</displayName>
+			</currency>
 			<currency type="BWP">
 				<displayName>pula botswanarra</displayName>
 				<displayName count="one">pula botswanar</displayName>
 				<displayName count="other">pula botswanar</displayName>
 				<symbol>BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
+			</currency>
+			<currency type="BYB">
+				<displayName>errublo bielorrusiarra (1994–1999)</displayName>
+				<displayName count="one">errublo bielorrusiar (1994–1999)</displayName>
+				<displayName count="other">errublo bielorrusiar (1994–1999)</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName>errublo bielorrusiarra</displayName>
@@ -4903,11 +5431,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">franko kongoar</displayName>
 				<symbol>CDF</symbol>
 			</currency>
+			<currency type="CHE">
+				<displayName>WIR euroa</displayName>
+				<displayName count="one">WIR euro</displayName>
+				<displayName count="other">WIR euro</displayName>
+			</currency>
 			<currency type="CHF">
 				<displayName>franko suitzarra</displayName>
 				<displayName count="one">franko suitzar</displayName>
 				<displayName count="other">franko suitzar</displayName>
 				<symbol>CHF</symbol>
+			</currency>
+			<currency type="CHW">
+				<displayName>WIR frankoa</displayName>
+				<displayName count="one">WIR franko</displayName>
+				<displayName count="other">WIR franko</displayName>
+			</currency>
+			<currency type="CLE">
+				<displayName>ezkutu txiletarra</displayName>
+				<displayName count="one">ezkutu txiletar</displayName>
+				<displayName count="other">ezkutu txiletar</displayName>
+				<symbol draft="contributed">CLE</symbol>
+			</currency>
+			<currency type="CLF">
+				<displayName>kontu-unitate txiletarra (UF)</displayName>
+				<displayName count="one">kontu-unitate txiletar (UF)</displayName>
+				<displayName count="other">kontu-unitate txiletar (UF)</displayName>
+				<symbol draft="contributed">CLF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>peso txiletarra</displayName>
@@ -4920,7 +5470,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>yuan txinatarra (itsasoz haraindikoa)</displayName>
 				<displayName count="one">yuan txinatar (itsasoz haraindikoa)</displayName>
 				<displayName count="other">yuan txinatar (itsasoz haraindikoa)</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
+			</currency>
+			<currency type="CNX">
+				<displayName>Txinako Herri Bankuaren dolarra</displayName>
+				<displayName count="one">Txinako Herri Bankuaren dolar</displayName>
+				<displayName count="other">Txinako Herri Bankuaren dolar</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>yuan txinatarra</displayName>
@@ -4936,12 +5491,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>COP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="COU">
+				<displayName>erreal kolonbiarraren balio-unitatea</displayName>
+				<displayName count="one">erreal kolonbiarraren balio-unitate</displayName>
+				<displayName count="other">erreal kolonbiarraren balio-unitate</displayName>
+				<symbol draft="contributed">COU</symbol>
+			</currency>
 			<currency type="CRC">
-				<displayName>Costa Ricako colona</displayName>
-				<displayName count="one">Costa Ricako colon</displayName>
-				<displayName count="other">Costa Ricako colon</displayName>
+				<displayName>colon costarricarra</displayName>
+				<displayName count="one">colon costarricar</displayName>
+				<displayName count="other">colon costarricar</displayName>
 				<symbol>CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
+			</currency>
+			<currency type="CSD">
+				<displayName>dinar serbiarra (2002–2006)</displayName>
+				<displayName count="one">dinar serbiar (2002–2006)</displayName>
+				<displayName count="other">dinar serbiar (2002–2006)</displayName>
+			</currency>
+			<currency type="CSK">
+				<displayName>Txekoslovakiako koroa indartsua</displayName>
+				<displayName count="one">Txekoslovakiako koroa indartsu</displayName>
+				<displayName count="other">Txekoslovakiako koroa indartsu</displayName>
 			</currency>
 			<currency type="CUC">
 				<displayName>peso bihurgarri kubatarra</displayName>
@@ -4963,12 +5534,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">ezkutu caboverdetar</displayName>
 				<symbol>CVE</symbol>
 			</currency>
+			<currency type="CYP">
+				<displayName>libera zipretarra</displayName>
+				<displayName count="one">libera zipretar</displayName>
+				<displayName count="other">libera zipretar</displayName>
+			</currency>
 			<currency type="CZK">
 				<displayName>koroa txekiarra</displayName>
 				<displayName count="one">koroa txekiar</displayName>
 				<displayName count="other">koroa txekiar</displayName>
 				<symbol>CZK</symbol>
 				<symbol alt="narrow" draft="contributed">Kč</symbol>
+			</currency>
+			<currency type="DDM">
+				<displayName>Ekialdeko Alemaniako markoa</displayName>
+				<displayName count="one">Ekialdeko Alemaniako marko</displayName>
+				<displayName count="other">Ekialdeko Alemaniako marko</displayName>
+			</currency>
+			<currency type="DEM">
+				<displayName>marko alemana</displayName>
+				<displayName count="one">marko aleman</displayName>
+				<displayName count="other">marko aleman</displayName>
 			</currency>
 			<currency type="DJF">
 				<displayName>franko djibutiarra</displayName>
@@ -4996,6 +5582,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">dinar aljeriar</displayName>
 				<symbol>DZD</symbol>
 			</currency>
+			<currency type="ECS">
+				<displayName>sukre ekuadortarra</displayName>
+				<displayName count="one">sukre ekuadortar</displayName>
+				<displayName count="other">sukre ekuadortar</displayName>
+				<symbol draft="contributed">ECS</symbol>
+			</currency>
+			<currency type="ECV">
+				<displayName>balio-unitate konstante ekuadortarra</displayName>
+				<displayName count="one">balio-unitate konstante ekuadortar</displayName>
+				<displayName count="other">balio-unitate konstante ekuadortar</displayName>
+				<symbol draft="contributed">ECV</symbol>
+			</currency>
+			<currency type="EEK">
+				<displayName>kroon estoniarra</displayName>
+				<displayName count="one">kroon estoniar</displayName>
+				<displayName count="other">kroon estoniar</displayName>
+				<symbol draft="contributed">EEK</symbol>
+			</currency>
 			<currency type="EGP">
 				<displayName>libera egiptoarra</displayName>
 				<displayName count="one">libera egiptoar</displayName>
@@ -5009,8 +5613,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">nakfa eritrear</displayName>
 				<symbol>ERN</symbol>
 			</currency>
+			<currency type="ESA">
+				<displayName>pezeta espainiarra (A kontua)</displayName>
+				<displayName count="one">pezeta espainiar (A kontua)</displayName>
+				<displayName count="other">pezeta espainiar (A kontua)</displayName>
+			</currency>
+			<currency type="ESB">
+				<displayName>pezeta espainiarra (kontu bihurgarria)</displayName>
+				<displayName count="one">pezeta espainiar (kontu bihurgarria)</displayName>
+				<displayName count="other">pezeta espainiar (kontu bihurgarria)</displayName>
+			</currency>
 			<currency type="ESP">
 				<pattern>¤ #,##0.00</pattern>
+				<displayName>pezeta espainiarra</displayName>
+				<displayName count="one">pezeta espainiar</displayName>
+				<displayName count="other">pezeta espainiar</displayName>
 				<symbol>₧</symbol>
 				<decimal>,</decimal>
 				<group>.</group>
@@ -5028,6 +5645,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
+			<currency type="FIM">
+				<displayName>markka finlandiarra</displayName>
+				<displayName count="one">markka finlandiar</displayName>
+				<displayName count="other">markka finlandiar</displayName>
+				<symbol draft="contributed">FIM</symbol>
+			</currency>
 			<currency type="FJD">
 				<displayName>dolar fijiarra</displayName>
 				<displayName count="one">dolar fijiar</displayName>
@@ -5042,6 +5665,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>FKP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
+			<currency type="FRF">
+				<displayName>libera frantsesa</displayName>
+				<displayName count="one">libera frantses</displayName>
+				<displayName count="other">libera frantses</displayName>
+			</currency>
 			<currency type="GBP">
 				<displayName>libera esterlina</displayName>
 				<displayName count="one">libera esterlina</displayName>
@@ -5049,12 +5677,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
+			<currency type="GEK">
+				<displayName>kupon larit georgiarra</displayName>
+				<displayName count="one">kupon larit georgiar</displayName>
+				<displayName count="other">kupon larit georgiar</displayName>
+			</currency>
 			<currency type="GEL">
 				<displayName>lari georgiarra</displayName>
 				<displayName count="one">lari georgiar</displayName>
 				<displayName count="other">lari georgiar</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow" draft="contributed">₾</symbol>
+			</currency>
+			<currency type="GHC">
+				<displayName>cedi ghanatarra (1979–2007)</displayName>
+				<displayName count="one">cedi ghanatar (1979–2007)</displayName>
+				<displayName count="other">cedi ghanatar (1979–2007)</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName>cedi ghanatarra</displayName>
@@ -5070,9 +5708,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
-				<displayName>dalasi ganbiarra</displayName>
-				<displayName count="one">dalasi ganbiar</displayName>
-				<displayName count="other">dalasi ganbiar</displayName>
+				<displayName>dalasi gambiarra</displayName>
+				<displayName count="one">dalasi gambiar</displayName>
+				<displayName count="other">dalasi gambiar</displayName>
 				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
@@ -5082,12 +5720,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>GNF</symbol>
 				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
+			<currency type="GNS">
+				<displayName>syli ginearra</displayName>
+				<displayName count="one">syli ginear</displayName>
+				<displayName count="other">syli ginear</displayName>
+			</currency>
+			<currency type="GQE">
+				<displayName>ekwele ekuatoreginearra</displayName>
+				<displayName count="one">ekwele ekuatoreginear</displayName>
+				<displayName count="other">ekwele ekuatoreginear</displayName>
+			</currency>
+			<currency type="GRD">
+				<displayName>drakma greziarra</displayName>
+				<displayName count="one">drakma greziar</displayName>
+				<displayName count="other">drakma greziar</displayName>
+			</currency>
 			<currency type="GTQ">
 				<displayName>ketzal guatemalarra</displayName>
 				<displayName count="one">ketzal guatemalar</displayName>
 				<displayName count="other">ketzal guatemalar</displayName>
 				<symbol>GTQ</symbol>
 				<symbol alt="narrow" draft="contributed">Q</symbol>
+			</currency>
+			<currency type="GWE">
+				<displayName>Gineako ezkutu portugesa</displayName>
+				<displayName count="one">Gineako ezkutu portuges</displayName>
+				<displayName count="other">Gineako ezkutu portuges</displayName>
+			</currency>
+			<currency type="GWP">
+				<displayName>peso gineabissautarra</displayName>
+				<displayName count="one">peso gineabissautar</displayName>
+				<displayName count="other">peso gineabissautar</displayName>
 			</currency>
 			<currency type="GYD">
 				<displayName>dolar guyanarra</displayName>
@@ -5110,6 +5773,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>HNL</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
+			<currency type="HRD">
+				<displayName>dinar kroaziarra</displayName>
+				<displayName count="one">dinar kroaziar</displayName>
+				<displayName count="other">dinar kroaziar</displayName>
+			</currency>
 			<currency type="HRK">
 				<displayName>kuna kroaziarra</displayName>
 				<displayName count="one">kuna kroaziar</displayName>
@@ -5124,9 +5792,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
-				<displayName>florin hungariarra</displayName>
-				<displayName count="one">florin hungariar</displayName>
-				<displayName count="other">florin hungariar</displayName>
+				<displayName>forint hungariarra</displayName>
+				<displayName count="one">forint hungariar</displayName>
+				<displayName count="other">forint hungariar</displayName>
 				<symbol>HUF</symbol>
 				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
@@ -5136,6 +5804,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">errupia indonesiar</displayName>
 				<symbol>IDR</symbol>
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
+			</currency>
+			<currency type="IEP">
+				<displayName>libera irlandarra</displayName>
+				<displayName count="one">libera irlandar</displayName>
+				<displayName count="other">libera irlandar</displayName>
+				<symbol draft="contributed">IEP</symbol>
+			</currency>
+			<currency type="ILP">
+				<displayName>libera israeldarra</displayName>
+				<displayName count="one">libera israeldar</displayName>
+				<displayName count="other">libera israeldar</displayName>
+			</currency>
+			<currency type="ILR">
+				<displayName>shekel israeldarra (1980–1985)</displayName>
+				<displayName count="one">shekel israeldar (1980–1985)</displayName>
+				<displayName count="other">shekel israeldar (1980–1985)</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName>shekel israeldar berria</displayName>
@@ -5163,12 +5847,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">rial irandar</displayName>
 				<symbol>IRR</symbol>
 			</currency>
+			<currency type="ISJ">
+				<displayName>koroa islandiarra (1918–1981)</displayName>
+				<displayName count="one">koroa islandiar (1918–1981)</displayName>
+				<displayName count="other">koroa islandiar (1918–1981)</displayName>
+				<symbol draft="contributed">ISJ</symbol>
+			</currency>
 			<currency type="ISK">
 				<displayName>koroa islandiarra</displayName>
 				<displayName count="one">koroa islandiar</displayName>
 				<displayName count="other">koroa islandiar</displayName>
 				<symbol>ISK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
+			</currency>
+			<currency type="ITL">
+				<displayName>lira italiarra</displayName>
+				<displayName count="one">lira italiar</displayName>
+				<displayName count="other">lira italiar</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>dolar jamaikarra</displayName>
@@ -5222,6 +5917,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">won iparkorear</displayName>
 				<symbol>KPW</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
+			</currency>
+			<currency type="KRH">
+				<displayName>hwan hegokorearra (1953–1962)</displayName>
+				<displayName count="one">hwan hegokorear (1953–1962)</displayName>
+				<displayName count="other">hwan hegokorear (1953–1962)</displayName>
+			</currency>
+			<currency type="KRO">
+				<displayName>won hegokorearra (1945–1953)</displayName>
+				<displayName count="one">won hegokorear (1945–1953)</displayName>
+				<displayName count="other">won hegokorear (1945–1953)</displayName>
 			</currency>
 			<currency type="KRW">
 				<displayName>won hegokorearra</displayName>
@@ -5279,7 +5984,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
-				<displayName>Lesothoko lotia</displayName>
+				<displayName>loti lesothoarra</displayName>
+				<displayName count="one">loti lesothoar</displayName>
+				<displayName count="other">loti lesothoar</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>Lituaniako litasa</displayName>
@@ -5287,11 +5994,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">Lituaniako litas</displayName>
 				<symbol>LTL</symbol>
 			</currency>
+			<currency type="LTT">
+				<displayName>Lituaniako talonasa</displayName>
+				<displayName count="one">Lituaniako talonas</displayName>
+				<displayName count="other">Lituaniako talonas</displayName>
+				<symbol draft="contributed">LTT</symbol>
+			</currency>
+			<currency type="LUC">
+				<displayName>Luxenburgoko franko bihurgarria</displayName>
+				<displayName count="one">Luxenburgoko franko bihurgarri</displayName>
+				<displayName count="other">Luxenburgoko franko bihurgarri</displayName>
+			</currency>
+			<currency type="LUF">
+				<displayName>Luxenburgoko frankoa</displayName>
+				<displayName count="one">Luxenburgoko franko</displayName>
+				<displayName count="other">Luxenburgoko franko</displayName>
+			</currency>
+			<currency type="LUL">
+				<displayName>Luxenburgoko finantza-frankoa</displayName>
+				<displayName count="one">Luxenburgoko finantza-franko</displayName>
+				<displayName count="other">Luxenburgoko finantza-franko</displayName>
+			</currency>
 			<currency type="LVL">
 				<displayName>Letoniako latsa</displayName>
 				<displayName count="one">Letoniako lats</displayName>
 				<displayName count="other">Letoniako lats</displayName>
 				<symbol>LVL</symbol>
+			</currency>
+			<currency type="LVR">
+				<displayName>Letoniako errubloa</displayName>
+				<displayName count="one">Letoniako errublo</displayName>
+				<displayName count="other">Letoniako errublo</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>dinar libiarra</displayName>
@@ -5304,6 +6037,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dirham marokoar</displayName>
 				<displayName count="other">dirham marokoar</displayName>
 				<symbol>MAD</symbol>
+			</currency>
+			<currency type="MAF">
+				<displayName>franko marokoarra</displayName>
+				<displayName count="one">franko marokoar</displayName>
+				<displayName count="other">franko marokoar</displayName>
+			</currency>
+			<currency type="MCF">
+				<displayName>Monakoko frankoa</displayName>
+				<displayName count="one">Monakoko franko</displayName>
+				<displayName count="other">Monakoko franko</displayName>
+			</currency>
+			<currency type="MDC">
+				<displayName>kupoi moldaviarra</displayName>
+				<displayName count="one">kupoi moldaviar</displayName>
+				<displayName count="other">kupoi moldaviar</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName>leu moldaviarra</displayName>
@@ -5318,11 +6066,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>MGA</symbol>
 				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
+			<currency type="MGF">
+				<displayName>franko malagasiarra</displayName>
+				<displayName count="one">franko malagasiar</displayName>
+				<displayName count="other">franko malagasiar</displayName>
+			</currency>
 			<currency type="MKD">
 				<displayName>dinar mazedoniarra</displayName>
 				<displayName count="one">dinar mazedoniar</displayName>
 				<displayName count="other">dinar mazedoniar</displayName>
 				<symbol>MKD</symbol>
+			</currency>
+			<currency type="MKN">
+				<displayName>dinar mazedoniarra (1992–1993)</displayName>
+				<displayName count="one">dinar mazedoniar (1992–1993)</displayName>
+				<displayName count="other">dinar mazedoniar (1992–1993)</displayName>
+			</currency>
+			<currency type="MLF">
+				<displayName>franko maliarra</displayName>
+				<displayName count="one">franko maliar</displayName>
+				<displayName count="other">franko maliar</displayName>
 			</currency>
 			<currency type="MMK">
 				<displayName>kyat myanmartarra</displayName>
@@ -5354,7 +6117,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>uguiya mauritaniarra</displayName>
 				<displayName count="one">uguiya mauritaniar</displayName>
 				<displayName count="other">uguiya mauritaniar</displayName>
-				<symbol draft="contributed">MRU</symbol>
+				<symbol>MRU</symbol>
+			</currency>
+			<currency type="MTL">
+				<displayName>lira maltarra</displayName>
+				<displayName count="one">lira maltar</displayName>
+				<displayName count="other">lira maltar</displayName>
+			</currency>
+			<currency type="MTP">
+				<displayName>libera maltar</displayName>
+				<displayName count="one">libera maltar</displayName>
+				<displayName count="other">libera maltar</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName>errupia mauriziarra</displayName>
@@ -5362,6 +6135,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">errupia mauriziar</displayName>
 				<symbol>MUR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
+			</currency>
+			<currency type="MVP">
+				<displayName>errupia maldivarra (1947–1981)</displayName>
+				<displayName count="one">errupia maldivar (1947–1981)</displayName>
+				<displayName count="other">errupia maldivar (1947–1981)</displayName>
 			</currency>
 			<currency type="MVR">
 				<displayName>rufiyaa maldivarra</displayName>
@@ -5382,12 +6160,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>MX$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="MXP">
+				<displayName>Zilar-peso amerikarra (1861–1992)</displayName>
+				<displayName count="one">Zilar-peso amerikar (1861–1992)</displayName>
+				<displayName count="other">Zilar-peso amerikar (1861–1992)</displayName>
+				<symbol draft="contributed">MXP</symbol>
+			</currency>
+			<currency type="MXV">
+				<displayName>Inbertsio-unitate mexikarra</displayName>
+				<displayName count="one">Inbertsio-unitate mexikar</displayName>
+				<displayName count="other">Inbertsio-unitate mexikar</displayName>
+				<symbol draft="contributed">MXV</symbol>
+			</currency>
 			<currency type="MYR">
 				<displayName>ringgit malaysiarra</displayName>
 				<displayName count="one">ringgit malaysiar</displayName>
 				<displayName count="other">ringgit malaysiar</displayName>
 				<symbol>MYR</symbol>
 				<symbol alt="narrow" draft="contributed">RM</symbol>
+			</currency>
+			<currency type="MZE">
+				<displayName>ezkutu mozambiketarra</displayName>
+				<displayName count="one">ezkutu mozambiketar</displayName>
+				<displayName count="other">ezkutu mozambiketar</displayName>
+			</currency>
+			<currency type="MZM">
+				<displayName>metikal mozambiketarra</displayName>
+				<displayName count="one">metikal mozambiketar</displayName>
+				<displayName count="other">metikal mozambiketar</displayName>
 			</currency>
 			<currency type="MZN">
 				<displayName>metical mozambiketarra</displayName>
@@ -5409,12 +6209,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>NGN</symbol>
 				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
+			<currency type="NIC">
+				<displayName>kordoba nikaraguar (1988–1991)</displayName>
+				<displayName count="one">kordoba nikaraguar (1988–1991)</displayName>
+				<displayName count="other">kordoba nikaraguar (1988–1991)</displayName>
+				<symbol draft="contributed">NIC</symbol>
+			</currency>
 			<currency type="NIO">
 				<displayName>cordoba nikaraguarra</displayName>
 				<displayName count="one">cordoba nikaraguar</displayName>
 				<displayName count="other">cordoba nikaraguar</displayName>
 				<symbol>NIO</symbol>
 				<symbol alt="narrow" draft="contributed">C$</symbol>
+			</currency>
+			<currency type="NLG">
+				<displayName>gilder herbeheretarra</displayName>
+				<displayName count="one">gilder herbeheretar</displayName>
+				<displayName count="other">gilder herbeheretar</displayName>
 			</currency>
 			<currency type="NOK">
 				<displayName>koroa norvegiarra</displayName>
@@ -5449,11 +6260,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">balboa panamar</displayName>
 				<symbol>PAB</symbol>
 			</currency>
+			<currency type="PEI">
+				<displayName>inti perutarra</displayName>
+				<displayName count="one">inti perutar</displayName>
+				<displayName count="other">inti perutar</displayName>
+				<symbol draft="contributed">PEI</symbol>
+			</currency>
 			<currency type="PEN">
 				<displayName>sol perutarra</displayName>
 				<displayName count="one">sol perutar</displayName>
 				<displayName count="other">sol perutar</displayName>
 				<symbol>PEN</symbol>
+			</currency>
+			<currency type="PES">
+				<displayName>sol perutarra (1863–1965)</displayName>
+				<displayName count="one">sol perutar (1863–1965)</displayName>
+				<displayName count="other">sol perutar (1863–1965)</displayName>
+				<symbol draft="contributed">PES</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>kina gineaberriarra</displayName>
@@ -5482,6 +6305,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>PLN</symbol>
 				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
+			<currency type="PLZ">
+				<displayName>zloty poloniarra (1950–1995)</displayName>
+				<displayName count="one">zloty poloniar (PLZ)</displayName>
+				<displayName count="other">zloty poloniar (PLZ)</displayName>
+			</currency>
+			<currency type="PTE">
+				<displayName>ezkutu portugesa</displayName>
+				<displayName count="one">ezkutu portuges</displayName>
+				<displayName count="other">ezkutu portuges</displayName>
+			</currency>
 			<currency type="PYG">
 				<displayName>guarani paraguaitarra</displayName>
 				<displayName count="one">guarani paraguaitar</displayName>
@@ -5494,6 +6327,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">riyal qatartar</displayName>
 				<displayName count="other">riyal qatartar</displayName>
 				<symbol>QAR</symbol>
+			</currency>
+			<currency type="RHD">
+				<displayName>dolar rhodesiarra</displayName>
+				<displayName count="one">dolar rhodesiar</displayName>
+				<displayName count="other">dolar rhodesiar</displayName>
+			</currency>
+			<currency type="ROL">
+				<displayName>leu errumaniarra (1952–2006)</displayName>
+				<displayName count="one">leu errumaniar (1952–2006)</displayName>
+				<displayName count="other">leu errumaniar (1952–2006)</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName>leu errumaniarra</displayName>
@@ -5513,6 +6356,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">errublo errusiar</displayName>
 				<symbol>RUB</symbol>
 				<symbol alt="narrow" draft="contributed">₽</symbol>
+			</currency>
+			<currency type="RUR">
+				<displayName>errublo errusiarra (1991–1998)</displayName>
+				<displayName count="one">errublo errusiar (1991–1998)</displayName>
+				<displayName count="other">errublo errusiar (1991–1998)</displayName>
 			</currency>
 			<currency type="RWF">
 				<displayName>franko ruandarra</displayName>
@@ -5540,11 +6388,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">errupia seychelletar</displayName>
 				<symbol>SCR</symbol>
 			</currency>
+			<currency type="SDD">
+				<displayName>dinar sudandarra (1992–2007)</displayName>
+				<displayName count="one">dinar sudandar (1992–2007)</displayName>
+				<displayName count="other">dinar sudandar (1992–2007)</displayName>
+			</currency>
 			<currency type="SDG">
 				<displayName>libera sudandarra</displayName>
 				<displayName count="one">libera sudandar</displayName>
 				<displayName count="other">libera sudandar</displayName>
 				<symbol>SDG</symbol>
+			</currency>
+			<currency type="SDP">
+				<displayName>libera sudandarra (1957–1998)</displayName>
+				<displayName count="one">libera sudandar (1957–1998)</displayName>
+				<displayName count="other">libera sudandar (1957–1998)</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>koroa suediarra</displayName>
@@ -5567,6 +6425,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>SHP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
+			<currency type="SIT">
+				<displayName>tolar esloveniarra</displayName>
+				<displayName count="one">tolar esloveniar</displayName>
+				<displayName count="other">tolar esloveniar</displayName>
+			</currency>
+			<currency type="SKK">
+				<displayName>koroa eslovakiarra</displayName>
+				<displayName count="one">koroa eslovakiar</displayName>
+				<displayName count="other">koroa eslovakiar</displayName>
+			</currency>
 			<currency type="SLL">
 				<displayName>leone sierraleonarra</displayName>
 				<displayName count="one">leone sierraleonar</displayName>
@@ -5586,6 +6454,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>SRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="SRG">
+				<displayName>gilder surinamdarra</displayName>
+				<displayName count="one">gilder surinamdar</displayName>
+				<displayName count="other">gilder surinamdar</displayName>
+				<symbol draft="contributed">SRG</symbol>
+			</currency>
 			<currency type="SSP">
 				<displayName>libera hegosudandarra</displayName>
 				<displayName count="one">libera hegosudandar</displayName>
@@ -5603,8 +6477,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dobra saotometarra</displayName>
 				<displayName count="one">dobra saotometar</displayName>
 				<displayName count="other">dobra saotometar</displayName>
-				<symbol draft="contributed">STN</symbol>
+				<symbol>STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
+			</currency>
+			<currency type="SUR">
+				<displayName>errublo sovietarra</displayName>
+				<displayName count="one">errublo sovietar</displayName>
+				<displayName count="other">errublo sovietar</displayName>
+			</currency>
+			<currency type="SVC">
+				<displayName>kolon salvadortarra</displayName>
+				<displayName count="one">kolon salvadortar</displayName>
+				<displayName count="other">kolon salvadortar</displayName>
+				<symbol draft="contributed">SVC</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>libera siriarra</displayName>
@@ -5626,11 +6511,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>฿</symbol>
 				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
+			<currency type="TJR">
+				<displayName>errublo tajikistandarra</displayName>
+				<displayName count="one">errublo tajikistandar</displayName>
+				<displayName count="other">errublo tajikistandar</displayName>
+			</currency>
 			<currency type="TJS">
 				<displayName>somoni tajikistandarra</displayName>
 				<displayName count="one">somoni tajikistandar</displayName>
 				<displayName count="other">somoni tajikistandar</displayName>
 				<symbol>TJS</symbol>
+			</currency>
+			<currency type="TMM">
+				<displayName>manat turkmenistandarra (1993–2009)</displayName>
+				<displayName count="one">manat turkmenistandar (1993–2009)</displayName>
+				<displayName count="other">manat turkmenistandar (1993–2009)</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName>manat turkmenistandarra</displayName>
@@ -5651,6 +6546,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>TOP</symbol>
 				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
+			<currency type="TPE">
+				<displayName>ezkutu timortarra</displayName>
+				<displayName count="one">ezkutu timortar</displayName>
+				<displayName count="other">ezkutu timortar</displayName>
+			</currency>
+			<currency type="TRL">
+				<displayName>lira turkiarra (1922–2005)</displayName>
+				<displayName count="one">lira turkiar (1922–2005)</displayName>
+				<displayName count="other">lira turkiar (1922–2005)</displayName>
+			</currency>
 			<currency type="TRY">
 				<displayName>lira turkiarra</displayName>
 				<displayName count="one">lira turkiar</displayName>
@@ -5660,9 +6565,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
-				<displayName>Trinidad eta Tobagoko dolarra</displayName>
-				<displayName count="one">Trinidad eta Tobagoko dolar</displayName>
-				<displayName count="other">Trinidad eta Tobagoko dolar</displayName>
+				<displayName>dolar trinitatearra</displayName>
+				<displayName count="one">dolar trinitatear</displayName>
+				<displayName count="other">dolar trinitatear</displayName>
 				<symbol>TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -5686,6 +6591,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
+			<currency type="UAK">
+				<displayName>karbovanets ukrainarra</displayName>
+				<displayName count="one">karbovanets ukrainar</displayName>
+				<displayName count="other">karbovanets ukrainar</displayName>
+			</currency>
+			<currency type="UGS">
+				<displayName>txelin ugandarra (1966–1987)</displayName>
+				<displayName count="one">txelin ugandar (1966–1987)</displayName>
+				<displayName count="other">txelin ugandar (1966–1987)</displayName>
+			</currency>
 			<currency type="UGX">
 				<displayName>txelin ugandarra</displayName>
 				<displayName count="one">txelin ugandar</displayName>
@@ -5699,6 +6614,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="USN">
+				<displayName>dolar estatubatuar (Hurrengo eguna)</displayName>
+				<displayName count="one">dolar estatubatuar (hurrengo eguna)</displayName>
+				<displayName count="other">dolar estatubatuar (hurrengo eguna)</displayName>
+				<symbol draft="contributed">USN</symbol>
+			</currency>
+			<currency type="USS">
+				<displayName>dolar estatubatuar (Egun berean)</displayName>
+				<displayName count="one">dolar estatubatuar (egun berean)</displayName>
+				<displayName count="other">dolar estatubatuar (egun berean)</displayName>
+				<symbol draft="contributed">USS</symbol>
+			</currency>
+			<currency type="UYI">
+				<displayName>peso uruguaitarra (unitate indexatuak)</displayName>
+				<displayName count="one">peso uruguaitar (unitate indexatuak)</displayName>
+				<displayName count="other">peso uruguaitar (unitate indexatuak)</displayName>
+				<symbol draft="contributed">UYI</symbol>
+			</currency>
+			<currency type="UYP">
+				<displayName>peso uruguaitarra (1975–1993)</displayName>
+				<displayName count="one">peso uruguaitar (1975–1993)</displayName>
+				<displayName count="other">peso uruguaitar (1975–1993)</displayName>
+				<symbol draft="contributed">UYP</symbol>
+			</currency>
 			<currency type="UYU">
 				<displayName>peso uruguaitarra</displayName>
 				<displayName count="one">peso uruguaitar</displayName>
@@ -5706,11 +6645,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>UYU</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="UYW">
+				<displayName>soldata nominalaren indize-unitate uruguaitarra</displayName>
+				<displayName count="one">soldata nominalaren indize-unitate uruguaitar</displayName>
+				<displayName count="other">soldata nominalaren indize-unitate uruguaitar</displayName>
+				<symbol draft="contributed">UYW</symbol>
+			</currency>
 			<currency type="UZS">
 				<displayName>sum uzbekistandarra</displayName>
 				<displayName count="one">sum uzbekistandar</displayName>
 				<displayName count="other">sum uzbekistandar</displayName>
 				<symbol>UZS</symbol>
+			</currency>
+			<currency type="VEB">
+				<displayName>Venezuelako bolivarra (1871–2008)</displayName>
+				<displayName count="one">Venezuelako bolivar (1871–2008)</displayName>
+				<displayName count="other">Venezuelako bolivar (1871–2008)</displayName>
+				<symbol draft="contributed">VEB</symbol>
 			</currency>
 			<currency type="VEF">
 				<displayName>Venezuelako bolivarra (2008–2018)</displayName>
@@ -5723,7 +6674,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>bolivar venezuelarra</displayName>
 				<displayName count="one">bolivar venezuelar</displayName>
 				<displayName count="other">bolivar venezuelar</displayName>
-				<symbol draft="contributed">VES</symbol>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>dong vietnamdarra</displayName>
@@ -5731,6 +6682,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">dong vietnamdar</displayName>
 				<symbol>₫</symbol>
 				<symbol alt="narrow" draft="contributed">₫</symbol>
+			</currency>
+			<currency type="VNN">
+				<displayName>dong vietnamdar (1978–1985)</displayName>
+				<displayName count="one">dong vietnamdar (1978–1985)</displayName>
+				<displayName count="other">dong vietnamdar (1978–1985)</displayName>
 			</currency>
 			<currency type="VUV">
 				<displayName>vatu vanuatuarra</displayName>
@@ -5750,12 +6706,62 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">Afrika erdialdeko CFA franko</displayName>
 				<symbol>FCFA</symbol>
 			</currency>
+			<currency type="XAG">
+				<displayName>zilarra</displayName>
+				<displayName count="one">zilarrezko troy ontza</displayName>
+				<displayName count="other">zilarrezko troy ontza</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName>urrea</displayName>
+				<displayName count="one">urrezko troy ontza</displayName>
+				<displayName count="other">urrezko troy ontza</displayName>
+			</currency>
+			<currency type="XBA">
+				<displayName>Europako unitate konposatua</displayName>
+				<displayName count="one">Europako unitate konposatu</displayName>
+				<displayName count="other">Europako unitate konposatu</displayName>
+			</currency>
+			<currency type="XBB">
+				<displayName>Europako moneta-unitatea</displayName>
+				<displayName count="one">Europako moneta-unitate</displayName>
+				<displayName count="other">Europako moneta-unitate</displayName>
+			</currency>
+			<currency type="XBC">
+				<displayName>Europako kontu-unitatea (XBC)</displayName>
+				<displayName count="one">Europako kontu-unitate (XBC)</displayName>
+				<displayName count="other">Europako kontu-unitate (XBC)</displayName>
+			</currency>
+			<currency type="XBD">
+				<displayName>Europako kontu-unitatea (XBD)</displayName>
+				<displayName count="one">Europako kontu-unitate (XBD)</displayName>
+				<displayName count="other">Europako kontu-unitate (XBD)</displayName>
+			</currency>
 			<currency type="XCD">
-				<displayName>Karibe ekialdeko dolarra</displayName>
-				<displayName count="one">Karibe ekialdeko dolar</displayName>
-				<displayName count="other">Karibe ekialdeko dolar</displayName>
+				<displayName>dolar ekikaribearra</displayName>
+				<displayName count="one">dolar ekikaribear</displayName>
+				<displayName count="other">dolar ekikaribear</displayName>
 				<symbol>EC$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="XDR">
+				<displayName>igorpen-eskubide berezia</displayName>
+				<displayName count="one">igorpen-eskubide berezi</displayName>
+				<displayName count="other">igorpen-eskubide berezi</displayName>
+			</currency>
+			<currency type="XEU">
+				<displayName>Europako dibisa-unitatea</displayName>
+				<displayName count="one">Europako dibisa-unitate</displayName>
+				<displayName count="other">Europako dibisa-unitate</displayName>
+			</currency>
+			<currency type="XFO">
+				<displayName>urrezko libera frantsesa</displayName>
+				<displayName count="one">urrezko libera frantses</displayName>
+				<displayName count="other">urrezko libera frantses</displayName>
+			</currency>
+			<currency type="XFU">
+				<displayName>UIC libera frantsesa</displayName>
+				<displayName count="one">UIC libera frantses</displayName>
+				<displayName count="other">UIC libera frantses</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Afrika mendebaldeko CFA frankoa</displayName>
@@ -5763,22 +6769,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">Afrika mendebaldeko CFA franko</displayName>
 				<symbol>F CFA</symbol>
 			</currency>
+			<currency type="XPD">
+				<displayName>paladioa</displayName>
+				<displayName count="one">paladiozko troy ontza</displayName>
+				<displayName count="other">paladiozko troy ontza</displayName>
+			</currency>
 			<currency type="XPF">
 				<displayName>CFP frankoa</displayName>
 				<displayName count="one">CFP franko</displayName>
 				<displayName count="other">CFP franko</displayName>
 				<symbol>CFPF</symbol>
 			</currency>
+			<currency type="XPT">
+				<displayName>platinozko troy ontza</displayName>
+				<displayName count="one">platinozko troy ontza</displayName>
+				<displayName count="other">platinozko troy ontza</displayName>
+			</currency>
+			<currency type="XRE">
+				<displayName>RINET funtsak</displayName>
+				<displayName count="one">RINET funtsen unitate</displayName>
+				<displayName count="other">RINET funtsen unitate</displayName>
+			</currency>
+			<currency type="XSU">
+				<displayName>sucrea</displayName>
+				<displayName count="one">sucre</displayName>
+				<displayName count="other">sucre</displayName>
+			</currency>
+			<currency type="XTS">
+				<displayName>aztertzeko dibisa-unitatea</displayName>
+				<displayName count="one">aztertzeko dibisa-unitate</displayName>
+				<displayName count="other">aztertzeko dibisa-unitate</displayName>
+			</currency>
+			<currency type="XUA">
+				<displayName>ADB kontu-unitatea</displayName>
+				<displayName count="one">ADB kontu-unitate</displayName>
+				<displayName count="other">ADB kontu-unitate</displayName>
+			</currency>
 			<currency type="XXX">
 				<displayName>moneta ezezaguna</displayName>
 				<displayName count="one">(moneta ezezaguna)</displayName>
 				<displayName count="other">(moneta ezezaguna)</displayName>
+			</currency>
+			<currency type="YDD">
+				<displayName>dinar yemendarra</displayName>
+				<displayName count="one">dinar yemendar</displayName>
+				<displayName count="other">dinar yemendar</displayName>
 			</currency>
 			<currency type="YER">
 				<displayName>rial yemendarra</displayName>
 				<displayName count="one">rial yemendar</displayName>
 				<displayName count="other">rial yemendar</displayName>
 				<symbol>YER</symbol>
+			</currency>
+			<currency type="YUD">
+				<displayName>dinar yugoslaviar indartsua (1966–1990)</displayName>
+				<displayName count="one">dinar yugoslaviar indartsu (1966–1990)</displayName>
+				<displayName count="other">dinar yugoslaviar indartsu (1966–1990)</displayName>
+			</currency>
+			<currency type="YUM">
+				<displayName>dinar yugoslaviar berria (1994–2002)</displayName>
+				<displayName count="one">dinar yugoslaviar berri (1994–2002)</displayName>
+				<displayName count="other">dinar yugoslaviar berri (1994–2002)</displayName>
+			</currency>
+			<currency type="YUN">
+				<displayName>dinar yugoslaviar bihurgarria (1990–1992)</displayName>
+				<displayName count="one">dinar yugoslaviar bihurgarri (1990–1992)</displayName>
+				<displayName count="other">dinar yugoslaviar bihurgarri (1990–1992)</displayName>
+			</currency>
+			<currency type="YUR">
+				<displayName>dinar yugoslaviar erreformatua (1992–1993)</displayName>
+				<displayName count="one">dinar yugoslaviar erreformatu (1992–1993)</displayName>
+				<displayName count="other">dinar yugoslaviar erreformatu (1992–1993)</displayName>
+			</currency>
+			<currency type="ZAL">
+				<displayName>rand hegoafrikarra (finantzarioa)</displayName>
+				<displayName count="one">rand hegoafrikar (finantzarioa)</displayName>
+				<displayName count="other">rand hegoafrikar (finantzarioa)</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName>rand hegoafrikarra</displayName>
@@ -5796,6 +6862,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">kwacha zambiar</displayName>
 				<symbol>ZMW</symbol>
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
+			</currency>
+			<currency type="ZRN">
+				<displayName>zaire berri zairetarra (1993–1998)</displayName>
+				<displayName count="one">zaire berri zairetar (1993–1998)</displayName>
+				<displayName count="other">zaire berri zairetar (1993–1998)</displayName>
+			</currency>
+			<currency type="ZRZ">
+				<displayName>zaire zairetarra (1971–1993)</displayName>
+				<displayName count="one">zaire zairetar (1971–1993)</displayName>
+				<displayName count="other">zaire zairetar (1971–1993)</displayName>
+			</currency>
+			<currency type="ZWD">
+				<displayName>dolar zimbabwetarra (1980–2008)</displayName>
+				<displayName count="one">dolar zimbabwetar (1980–2008)</displayName>
+				<displayName count="other">dolar zimbabwetar (1980–2008)</displayName>
+			</currency>
+			<currency type="ZWL">
+				<displayName>dolar zimbabwetarra (2009)</displayName>
+				<displayName count="one">dolar zimbabwetar (2009)</displayName>
+				<displayName count="other">dolar zimbabwetar (2009)</displayName>
+			</currency>
+			<currency type="ZWR">
+				<displayName>dolar zimbabwetarra (2008)</displayName>
+				<displayName count="one">dolar zimbabwetar (2008)</displayName>
+				<displayName count="other">dolar zimbabwetar (2008)</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -6011,6 +7102,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>milimole litro bakoitzeko</displayName>
 				<unitPattern count="one">{0} milimole litro bakoitzeko</unitPattern>
 				<unitPattern count="other">{0} milimole litro bakoitzeko</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName draft="provisional">elementua</displayName>
+				<unitPattern count="one">{0} elementu</unitPattern>
+				<unitPattern count="other">{0} elementu</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>zati milioi bakoitzeko</displayName>
@@ -6433,9 +7529,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} eguzki-argitasun</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName>tonak</displayName>
-				<unitPattern count="one">{0} tona</unitPattern>
-				<unitPattern count="other">{0} tona</unitPattern>
+				<displayName>tona metrikoak</displayName>
+				<unitPattern count="one">{0} tona metriko</unitPattern>
+				<unitPattern count="other">{0} tona metriko</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kilogramoak</displayName>
@@ -6949,10 +8045,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>elementua</displayName>
+				<unitPattern count="one">{0} elementu</unitPattern>
+				<unitPattern count="other">{0} elementu</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>zati/milioi</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
-				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
@@ -7050,8 +8149,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-decade">
 				<displayName>hamarkada</displayName>
-				<unitPattern count="one">{0} hamarkada</unitPattern>
-				<unitPattern count="other">{0} hamarkada</unitPattern>
+				<unitPattern count="one">{0} hamark.</unitPattern>
+				<unitPattern count="other">{0} hamark.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>urte</displayName>
@@ -7228,8 +8327,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>puntua</displayName>
-				<unitPattern count="one" draft="provisional">{0} puntu</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} ptu</unitPattern>
+				<unitPattern count="one">{0} puntu</unitPattern>
+				<unitPattern count="other">{0} ptu</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -7827,6 +8926,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<unitPattern count="one" draft="provisional">{0} m/gUK</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} m/gUK</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<unitPattern count="one">{0}m.</unitPattern>
+				<unitPattern count="other">{0}m.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>hamark.</displayName>
+				<unitPattern count="one">{0} hamark.</unitPattern>
+				<unitPattern count="other">{0} hamark.</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>urte</displayName>
 				<unitPattern count="one">{0} u.</unitPattern>
@@ -7866,6 +8978,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ms</displayName>
 				<unitPattern count="one">{0} ms</unitPattern>
 				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therms</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="one" draft="provisional">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kWh/100 km</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -7921,6 +9041,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} g</unitPattern>
 				<unitPattern count="other">{0} g</unitPattern>
 			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="one">{0}tn</unitPattern>
+				<unitPattern count="other">{0}tn</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<unitPattern count="one">{0} lb</unitPattern>
 				<unitPattern count="other">{0} lb</unitPattern>
@@ -7928,6 +9052,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-ounce">
 				<unitPattern count="one">{0} oz</unitPattern>
 				<unitPattern count="other">{0} oz</unitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<unitPattern count="one">{0} oz t</unitPattern>
+				<unitPattern count="other">{0} oz t</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one">{0} kW</unitPattern>
@@ -7949,6 +9085,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mb</unitPattern>
 				<unitPattern count="other">{0} mb</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
@@ -7966,6 +9106,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mph</unitPattern>
 				<unitPattern count="other">{0} mph</unitPattern>
 			</unit>
+			<unit type="speed-knot">
+				<unitPattern count="one">{0}kn</unitPattern>
+				<unitPattern count="other">{0}kn</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 				<unitPattern count="one">{0} °C</unitPattern>
@@ -7974,6 +9118,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="one">{0}°F</unitPattern>
 				<unitPattern count="other">{0}°F</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="one">{0} km³</unitPattern>
@@ -7987,6 +9135,50 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>litro</displayName>
 				<unitPattern count="one">{0} l</unitPattern>
 				<unitPattern count="other">{0} l</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<unitPattern count="one">{0}mpt</unitPattern>
+				<unitPattern count="other">{0}mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<unitPattern count="one">{0}mc</unitPattern>
+				<unitPattern count="other">{0}mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<unitPattern count="one">{0}ac ft</unitPattern>
+				<unitPattern count="other">{0}ac ft</unitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<unitPattern count="one">{0}qt</unitPattern>
+				<unitPattern count="other">{0}qt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<unitPattern count="one">{0}c</unitPattern>
+				<unitPattern count="other">{0}c</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<unitPattern count="one">{0}fl oz</unitPattern>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0}fl oz Im</unitPattern>
+				<unitPattern count="other">{0}fl oz Im</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<unitPattern count="one">{0}tbsp</unitPattern>
+				<unitPattern count="other">{0}tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<unitPattern count="one">{0}tsp</unitPattern>
+				<unitPattern count="other">{0}tsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<unitPattern count="one">{0}dsp</unitPattern>
+				<unitPattern count="other">{0}dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0}dsp-Imp</unitPattern>
+				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>norabidea</displayName>

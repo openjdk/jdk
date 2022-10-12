@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,11 @@ class JarVerifier {
     /** collect -DIGEST-MANIFEST values for deny list */
     private List<Object> manifestDigests;
 
-    public JarVerifier(String name, byte rawBytes[]) {
+    /* A cache mapping code signers to the algorithms used to digest jar
+       entries, and whether or not the algorithms are permitted. */
+    private Map<CodeSigner[], Map<String, Boolean>> signersToAlgs;
+
+    public JarVerifier(String name, byte[] rawBytes) {
         manifestName = name;
         manifestRawBytes = rawBytes;
         sigFileSigners = new Hashtable<>();
@@ -105,6 +109,7 @@ class JarVerifier {
         pendingBlocks = new ArrayList<>();
         baos = new ByteArrayOutputStream();
         manifestDigests = new ArrayList<>();
+        signersToAlgs = new HashMap<>();
     }
 
     /**
@@ -194,8 +199,6 @@ class JarVerifier {
 
         // don't compute the digest for this entry
         mev.setEntry(null, je);
-
-        return;
     }
 
     /**
@@ -244,7 +247,8 @@ class JarVerifier {
         if (!parsingBlockOrSF) {
             JarEntry je = mev.getEntry();
             if ((je != null) && (je.signers == null)) {
-                je.signers = mev.verify(verifiedSigners, sigFileSigners);
+                je.signers = mev.verify(verifiedSigners, sigFileSigners,
+                                        signersToAlgs);
                 je.certs = mapSignersToCertArray(je.signers);
             }
         } else {
@@ -424,8 +428,8 @@ class JarVerifier {
         manDig = null;
         // MANIFEST.MF is always treated as signed and verified,
         // move its signers from sigFileSigners to verifiedSigners.
-        if (sigFileSigners.containsKey(manifestName)) {
-            CodeSigner[] codeSigners = sigFileSigners.remove(manifestName);
+        CodeSigner[] codeSigners = sigFileSigners.remove(manifestName);
+        if (codeSigners != null) {
             verifiedSigners.put(manifestName, codeSigners);
         }
     }
@@ -444,7 +448,7 @@ class JarVerifier {
         {
             this.is = Objects.requireNonNull(is);
             this.jv = jv;
-            this.mev = new ManifestEntryVerifier(man);
+            this.mev = new ManifestEntryVerifier(man, jv.manifestName);
             this.jv.beginEntry(je, mev);
             this.numLeft = je.getSize();
             if (this.numLeft == 0)
@@ -466,7 +470,7 @@ class JarVerifier {
             }
         }
 
-        public int read(byte b[], int off, int len) throws IOException {
+        public int read(byte[] b, int off, int len) throws IOException {
             ensureOpen();
             if ((numLeft > 0) && (numLeft < len)) {
                 len = (int)numLeft;
@@ -666,7 +670,7 @@ class JarVerifier {
              * only about the asserted signatures. Verification of
              * signature validity happens via the JarEntry apis.
              */
-            signerMap = new HashMap<>(verifiedSigners.size() + sigFileSigners.size());
+            signerMap = HashMap.newHashMap(verifiedSigners.size() + sigFileSigners.size());
             signerMap.putAll(verifiedSigners);
             signerMap.putAll(sigFileSigners);
         }
@@ -831,7 +835,6 @@ class JarVerifier {
     private List<CodeSigner[]> jarCodeSigners;
 
     private synchronized List<CodeSigner[]> getJarCodeSigners() {
-        CodeSigner[] signers;
         if (jarCodeSigners == null) {
             HashSet<CodeSigner[]> set = new HashSet<>();
             set.addAll(signerMap().values());
@@ -855,8 +858,6 @@ class JarVerifier {
     }
 
     public CodeSource getCodeSource(URL url, JarFile jar, JarEntry je) {
-        CodeSigner[] signers;
-
         return mapSignersToCodeSource(url, getCodeSigners(jar, je));
     }
 

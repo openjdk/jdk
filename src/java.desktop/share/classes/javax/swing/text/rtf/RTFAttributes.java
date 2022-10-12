@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class RTFAttributes
     static RTFAttribute[] attributes;
 
     static {
-        Vector<RTFAttribute> a = new Vector<RTFAttribute>();
+        ArrayList<RTFAttribute> a = new ArrayList<RTFAttribute>();
         int CHR = RTFAttribute.D_CHARACTER;
         int PGF = RTFAttribute.D_PARAGRAPH;
         int SEC = RTFAttribute.D_SECTION;
@@ -45,90 +45,87 @@ class RTFAttributes
         Boolean True = Boolean.valueOf(true);
         Boolean False = Boolean.valueOf(false);
 
-        a.addElement(new BooleanAttribute(CHR, StyleConstants.Italic, "i"));
-        a.addElement(new BooleanAttribute(CHR, StyleConstants.Bold, "b"));
-        a.addElement(new BooleanAttribute(CHR, StyleConstants.Underline, "ul"));
-        a.addElement(NumericAttribute.NewTwips(PGF, StyleConstants.LeftIndent, "li",
+        a.add(new BooleanAttribute(CHR, StyleConstants.Italic, "i"));
+        a.add(new BooleanAttribute(CHR, StyleConstants.Bold, "b"));
+        a.add(new BooleanAttribute(CHR, StyleConstants.Underline, "ul"));
+        a.add(NumericAttribute.NewTwips(PGF, StyleConstants.LeftIndent, "li",
                                         0f, 0));
-        a.addElement(NumericAttribute.NewTwips(PGF, StyleConstants.RightIndent, "ri",
+        a.add(NumericAttribute.NewTwips(PGF, StyleConstants.RightIndent, "ri",
                                         0f, 0));
-        a.addElement(NumericAttribute.NewTwips(PGF, StyleConstants.FirstLineIndent, "fi",
+        a.add(NumericAttribute.NewTwips(PGF, StyleConstants.FirstLineIndent, "fi",
                                         0f, 0));
 
-        a.addElement(new AssertiveAttribute(PGF, StyleConstants.Alignment,
+        a.add(new AssertiveAttribute(PGF, StyleConstants.Alignment,
                                             "ql", StyleConstants.ALIGN_LEFT));
-        a.addElement(new AssertiveAttribute(PGF, StyleConstants.Alignment,
+        a.add(new AssertiveAttribute(PGF, StyleConstants.Alignment,
                                             "qr", StyleConstants.ALIGN_RIGHT));
-        a.addElement(new AssertiveAttribute(PGF, StyleConstants.Alignment,
+        a.add(new AssertiveAttribute(PGF, StyleConstants.Alignment,
                                             "qc", StyleConstants.ALIGN_CENTER));
-        a.addElement(new AssertiveAttribute(PGF, StyleConstants.Alignment,
+        a.add(new AssertiveAttribute(PGF, StyleConstants.Alignment,
                                             "qj", StyleConstants.ALIGN_JUSTIFIED));
-        a.addElement(NumericAttribute.NewTwips(PGF, StyleConstants.SpaceAbove,
+        a.add(NumericAttribute.NewTwips(PGF, StyleConstants.SpaceAbove,
                                         "sa", 0));
-        a.addElement(NumericAttribute.NewTwips(PGF, StyleConstants.SpaceBelow,
+        a.add(NumericAttribute.NewTwips(PGF, StyleConstants.SpaceBelow,
                                         "sb", 0));
 
-        a.addElement(new AssertiveAttribute(PST, RTFReader.TabAlignmentKey,
+        a.add(new AssertiveAttribute(PST, RTFReader.TabAlignmentKey,
                                             "tqr", TabStop.ALIGN_RIGHT));
-        a.addElement(new AssertiveAttribute(PST, RTFReader.TabAlignmentKey,
+        a.add(new AssertiveAttribute(PST, RTFReader.TabAlignmentKey,
                                             "tqc", TabStop.ALIGN_CENTER));
-        a.addElement(new AssertiveAttribute(PST, RTFReader.TabAlignmentKey,
+        a.add(new AssertiveAttribute(PST, RTFReader.TabAlignmentKey,
                                             "tqdec", TabStop.ALIGN_DECIMAL));
 
 
-        a.addElement(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
+        a.add(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
                                             "tldot", TabStop.LEAD_DOTS));
-        a.addElement(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
+        a.add(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
                                             "tlhyph", TabStop.LEAD_HYPHENS));
-        a.addElement(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
+        a.add(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
                                             "tlul", TabStop.LEAD_UNDERLINE));
-        a.addElement(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
+        a.add(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
                                             "tlth", TabStop.LEAD_THICKLINE));
-        a.addElement(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
+        a.add(new AssertiveAttribute(PST, RTFReader.TabLeaderKey,
                                             "tleq", TabStop.LEAD_EQUALS));
 
         /* The following aren't actually recognized by Swing */
-        a.addElement(new BooleanAttribute(CHR, Constants.Caps,      "caps"));
-        a.addElement(new BooleanAttribute(CHR, Constants.Outline,   "outl"));
-        a.addElement(new BooleanAttribute(CHR, Constants.SmallCaps, "scaps"));
-        a.addElement(new BooleanAttribute(CHR, Constants.Shadow,    "shad"));
-        a.addElement(new BooleanAttribute(CHR, Constants.Hidden,    "v"));
-        a.addElement(new BooleanAttribute(CHR, Constants.Strikethrough,
+        a.add(new BooleanAttribute(CHR, Constants.Caps,      "caps"));
+        a.add(new BooleanAttribute(CHR, Constants.Outline,   "outl"));
+        a.add(new BooleanAttribute(CHR, Constants.SmallCaps, "scaps"));
+        a.add(new BooleanAttribute(CHR, Constants.Shadow,    "shad"));
+        a.add(new BooleanAttribute(CHR, Constants.Hidden,    "v"));
+        a.add(new BooleanAttribute(CHR, Constants.Strikethrough,
                                                "strike"));
-        a.addElement(new BooleanAttribute(CHR, Constants.Deleted,
+        a.add(new BooleanAttribute(CHR, Constants.Deleted,
                                                "deleted"));
 
 
 
-        a.addElement(new AssertiveAttribute(DOC, "saveformat", "defformat", "RTF"));
-        a.addElement(new AssertiveAttribute(DOC, "landscape", "landscape"));
+        a.add(new AssertiveAttribute(DOC, "saveformat", "defformat", "RTF"));
+        a.add(new AssertiveAttribute(DOC, "landscape", "landscape"));
 
-        a.addElement(NumericAttribute.NewTwips(DOC, Constants.PaperWidth,
+        a.add(NumericAttribute.NewTwips(DOC, Constants.PaperWidth,
                                                "paperw", 12240));
-        a.addElement(NumericAttribute.NewTwips(DOC, Constants.PaperHeight,
+        a.add(NumericAttribute.NewTwips(DOC, Constants.PaperHeight,
                                                "paperh", 15840));
-        a.addElement(NumericAttribute.NewTwips(DOC, Constants.MarginLeft,
+        a.add(NumericAttribute.NewTwips(DOC, Constants.MarginLeft,
                                                "margl",  1800));
-        a.addElement(NumericAttribute.NewTwips(DOC, Constants.MarginRight,
+        a.add(NumericAttribute.NewTwips(DOC, Constants.MarginRight,
                                                "margr",  1800));
-        a.addElement(NumericAttribute.NewTwips(DOC, Constants.MarginTop,
+        a.add(NumericAttribute.NewTwips(DOC, Constants.MarginTop,
                                                "margt",  1440));
-        a.addElement(NumericAttribute.NewTwips(DOC, Constants.MarginBottom,
+        a.add(NumericAttribute.NewTwips(DOC, Constants.MarginBottom,
                                                "margb",  1440));
-        a.addElement(NumericAttribute.NewTwips(DOC, Constants.GutterWidth,
+        a.add(NumericAttribute.NewTwips(DOC, Constants.GutterWidth,
                                                "gutter", 0));
 
-        a.addElement(new AssertiveAttribute(PGF, Constants.WidowControl,
+        a.add(new AssertiveAttribute(PGF, Constants.WidowControl,
                                             "nowidctlpar", False));
-        a.addElement(new AssertiveAttribute(PGF, Constants.WidowControl,
+        a.add(new AssertiveAttribute(PGF, Constants.WidowControl,
                                             "widctlpar", True));
-        a.addElement(new AssertiveAttribute(DOC, Constants.WidowControl,
+        a.add(new AssertiveAttribute(DOC, Constants.WidowControl,
                                             "widowctrl", True));
 
-
-        RTFAttribute[] attrs = new RTFAttribute[a.size()];
-        a.copyInto(attrs);
-        attributes = attrs;
+        attributes = a.toArray(new RTFAttribute[0]);
     }
 
     static Dictionary<String, RTFAttribute> attributesByKeyword()

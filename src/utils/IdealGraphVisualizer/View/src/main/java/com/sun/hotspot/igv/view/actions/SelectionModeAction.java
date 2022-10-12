@@ -31,27 +31,28 @@ import org.openide.util.ImageUtilities;
 
 public class SelectionModeAction extends AbstractAction {
 
+    private boolean state;
+
+    public static final String STATE = "state";
+
     public SelectionModeAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(SELECTED_KEY, false);
         putValue(Action.SHORT_DESCRIPTION, "Selection mode");
+        state = false;
+        putValue(STATE, false);
     }
 
-    public boolean isSelected() {
-        return (Boolean)getValue(SELECTED_KEY);
+    @Override
+    public void actionPerformed(ActionEvent ev) {
+        setState(!state);
     }
 
-    public void setSelected(boolean b) {
-        if (isSelected() != b) {
-            this.putValue(SELECTED_KEY, b);
-        }
+    public void setState(boolean b) {
+        this.putValue(STATE, b);
+        this.state = b;
     }
 
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/selection_mode.png";
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
     }
 }

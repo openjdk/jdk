@@ -32,7 +32,7 @@ package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
 import sun.security.util.*;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.io.IOException;
 import java.math.BigInteger;
 
@@ -133,26 +133,25 @@ public class EncAPRepPart {
      * @exception IOException if an I/O error occurs while reading encoded data.
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
-        Vector<DerValue> v = new Vector<>();
+        ArrayList<DerValue> v = new ArrayList<>();
         DerOutputStream temp = new DerOutputStream();
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x00), ctime.asn1Encode()));
         temp.putInteger(BigInteger.valueOf(cusec));
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x01), temp.toByteArray()));
         if (subKey != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
                     true, (byte) 0x02), subKey.asn1Encode()));
         }
         if (seqNumber != null) {
             temp = new DerOutputStream();
             // encode as an unsigned integer (UInt32)
             temp.putInteger(BigInteger.valueOf(seqNumber.longValue()));
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT,
                     true, (byte) 0x03), temp.toByteArray()));
         }
-        DerValue[] der = new DerValue[v.size()];
-        v.copyInto(der);
+        DerValue[] der = v.toArray(new DerValue[0]);
         temp = new DerOutputStream();
         temp.putSequence(der);
         DerOutputStream out = new DerOutputStream();

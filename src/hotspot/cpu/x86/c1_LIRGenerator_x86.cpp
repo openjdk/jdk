@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,6 @@ LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
 // i486 instructions can inline constants
 bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
   if (type == T_SHORT || type == T_CHAR) {
-    // there is no immediate move of word values in asembler_i486.?pp
     return false;
   }
   Constant* c = v->as_Constant();
@@ -192,8 +191,32 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   LIR_Address* addr;
   if (index_opr->is_constant()) {
     int elem_size = type2aelembytes(type);
-    addr = new LIR_Address(array_opr,
-                           offset_in_bytes + (intx)(index_opr->as_jint()) * elem_size, type);
+#ifdef _LP64
+    jint index = index_opr->as_jint();
+    jlong disp = offset_in_bytes + (jlong)(index) * elem_size;
+    if (disp > max_jint) {
+      // Displacement overflow. Cannot directly use instruction with 32-bit displacement for 64-bit addresses.
+      // Convert array index to long to do array offset computation with 64-bit values.
+      index_opr = new_register(T_LONG);
+      __ move(LIR_OprFact::longConst(index), index_opr);
+      addr = new LIR_Address(array_opr, index_opr, LIR_Address::scale(type), offset_in_bytes, type);
+    } else {
+      addr = new LIR_Address(array_opr, (intx)disp, type);
+    }
+#else
+    // A displacement overflow can also occur for x86 but that is not a problem due to the 32-bit address range!
+    // Let's assume an array 'a' and an access with displacement 'disp'. When disp overflows, then "a + disp" will
+    // always be negative (i.e. underflows the 32-bit address range):
+    // Let N = 2^32: a + signed_overflow(disp) = a + disp - N.
+    // "a + disp" is always smaller than N. If an index was chosen which would point to an address beyond N, then
+    // range checks would catch that and throw an exception. Thus, a + disp < 0 holds which means that it always
+    // underflows the 32-bit address range:
+    // unsigned_underflow(a + signed_overflow(disp)) = unsigned_underflow(a + disp - N)
+    //                                              = (a + disp - N) + N = a + disp
+    // This shows that we still end up at the correct address with a displacement overflow due to the 32-bit address
+    // range limitation. This overflow only needs to be handled if addresses can be larger as on 64-bit platforms.
+    addr = new LIR_Address(array_opr, offset_in_bytes + (intx)(index_opr->as_jint()) * elem_size, type);
+#endif // _LP64
   } else {
 #ifdef _LP64
     if (index_opr->type() == T_INT) {
@@ -211,12 +234,12 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 }
 
 
-LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
-  LIR_Opr r = NULL;
+LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
+  LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
   } else if (type == T_INT) {
-    r = LIR_OprFact::intConst(x);
+    r = LIR_OprFact::intConst(checked_cast<jint>(x));
   } else {
     ShouldNotReachHere();
   }
@@ -313,7 +336,6 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
 }
 
-
 // _ineg, _lneg, _fneg, _dneg
 void LIRGenerator::do_NegateOp(NegateOp* x) {
   LIRItem value(x->x(), this);
@@ -338,7 +360,6 @@ void LIRGenerator::do_NegateOp(NegateOp* x) {
 
   set_result(x, round_item(reg));
 }
-
 
 // for  _fadd, _fmul, _fsub, _fdiv, _frem
 //      _dadd, _dmul, _dsub, _ddiv, _drem
@@ -813,9 +834,15 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
 #endif
 
   switch(x->id()) {
-    case vmIntrinsics::_dabs:   __ abs  (calc_input, calc_result, tmp); break;
-    case vmIntrinsics::_dsqrt:  __ sqrt (calc_input, calc_result, LIR_OprFact::illegalOpr); break;
-    default:                    ShouldNotReachHere();
+    case vmIntrinsics::_dabs:
+      __ abs(calc_input, calc_result, tmp);
+      break;
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict:
+      __ sqrt(calc_input, calc_result, LIR_OprFact::illegalOpr);
+      break;
+    default:
+      ShouldNotReachHere();
   }
 
   if (use_fpu) {

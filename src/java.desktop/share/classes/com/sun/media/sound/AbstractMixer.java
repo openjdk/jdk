@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.media.sound;
 
+import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.sound.sampled.Control;
@@ -138,18 +139,18 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     public final Line.Info[] getSourceLineInfo(Line.Info info) {
 
         int i;
-        Vector<Line.Info> vec = new Vector<>();
+        ArrayList<Line.Info> vec = new ArrayList<>();
 
         for (i = 0; i < sourceLineInfo.length; i++) {
 
             if (info.matches(sourceLineInfo[i])) {
-                vec.addElement(sourceLineInfo[i]);
+                vec.add(sourceLineInfo[i]);
             }
         }
 
         Line.Info[] returnedArray = new Line.Info[vec.size()];
         for (i = 0; i < returnedArray.length; i++) {
-            returnedArray[i] = vec.elementAt(i);
+            returnedArray[i] = vec.get(i);
         }
 
         return returnedArray;
@@ -159,18 +160,18 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     public final Line.Info[] getTargetLineInfo(Line.Info info) {
 
         int i;
-        Vector<Line.Info> vec = new Vector<>();
+        ArrayList<Line.Info> vec = new ArrayList<>();
 
         for (i = 0; i < targetLineInfo.length; i++) {
 
             if (info.matches(targetLineInfo[i])) {
-                vec.addElement(targetLineInfo[i]);
+                vec.add(targetLineInfo[i]);
             }
         }
 
         Line.Info[] returnedArray = new Line.Info[vec.size()];
         for (i = 0; i < returnedArray.length; i++) {
-            returnedArray[i] = vec.elementAt(i);
+            returnedArray[i] = vec.get(i);
         }
 
         return returnedArray;

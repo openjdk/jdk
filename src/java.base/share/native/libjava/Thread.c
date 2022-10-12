@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,6 @@
  * questions.
  */
 
-/*-
- *      Stuff for dealing with threads.
- *      originally in threadruntime.c, Sun Sep 22 12:09:39 1991
- */
-
 #include "jni.h"
 #include "jvm.h"
 
@@ -43,18 +38,24 @@
 static JNINativeMethod methods[] = {
     {"start0",           "()V",        (void *)&JVM_StartThread},
     {"stop0",            "(" OBJ ")V", (void *)&JVM_StopThread},
-    {"isAlive",          "()Z",        (void *)&JVM_IsThreadAlive},
+    {"isAlive0",         "()Z",        (void *)&JVM_IsThreadAlive},
     {"suspend0",         "()V",        (void *)&JVM_SuspendThread},
     {"resume0",          "()V",        (void *)&JVM_ResumeThread},
     {"setPriority0",     "(I)V",       (void *)&JVM_SetThreadPriority},
-    {"yield",            "()V",        (void *)&JVM_Yield},
-    {"sleep",            "(J)V",       (void *)&JVM_Sleep},
+    {"yield0",           "()V",        (void *)&JVM_Yield},
+    {"sleep0",           "(J)V",       (void *)&JVM_Sleep},
+    {"currentCarrierThread", "()" THD, (void *)&JVM_CurrentCarrierThread},
     {"currentThread",    "()" THD,     (void *)&JVM_CurrentThread},
+    {"setCurrentThread", "(" THD ")V", (void *)&JVM_SetCurrentThread},
     {"interrupt0",       "()V",        (void *)&JVM_Interrupt},
     {"holdsLock",        "(" OBJ ")Z", (void *)&JVM_HoldsLock},
-    {"getThreads",        "()[" THD,   (void *)&JVM_GetAllThreads},
+    {"getThreads",       "()[" THD,    (void *)&JVM_GetAllThreads},
     {"dumpThreads",      "([" THD ")[[" STE, (void *)&JVM_DumpThreads},
+    {"getStackTrace0",   "()" OBJ,     (void *)&JVM_GetStackTrace},
     {"setNativeName",    "(" STR ")V", (void *)&JVM_SetNativeThreadName},
+    {"extentLocalCache",  "()[" OBJ,    (void *)&JVM_ExtentLocalCache},
+    {"setExtentLocalCache", "([" OBJ ")V",(void *)&JVM_SetExtentLocalCache},
+    {"getNextThreadIdOffset", "()J",     (void *)&JVM_GetNextThreadIdOffset}
 };
 
 #undef THD

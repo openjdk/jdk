@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,15 +42,15 @@ import sun.jvm.hotspot.types.TypeDataBase;
 
 public class G1HeapRegionTable extends VMObject {
     // HeapRegion** _base;
-    static private AddressField baseField;
+    private static AddressField baseField;
     // uint _length;
-    static private CIntegerField lengthField;
+    private static CIntegerField lengthField;
     // HeapRegion** _biased_base
-    static private AddressField biasedBaseField;
+    private static AddressField biasedBaseField;
     // size_t _bias
-    static private CIntegerField biasField;
+    private static CIntegerField biasField;
     // uint _shift_by
-    static private CIntegerField shiftByField;
+    private static CIntegerField shiftByField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -60,7 +60,7 @@ public class G1HeapRegionTable extends VMObject {
             });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("G1HeapRegionTable");
 
         baseField = type.getAddressField("_base");

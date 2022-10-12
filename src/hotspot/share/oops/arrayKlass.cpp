@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,23 +83,23 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
   return super()->uncached_lookup_method(name, signature, OverpassLookupMode::skip, private_mode);
 }
 
-ArrayKlass::ArrayKlass(Symbol* name, KlassID id) :
-  Klass(id),
+ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
+  Klass(kind),
   _dimension(1),
   _higher_dimension(NULL),
   _lower_dimension(NULL) {
-    // Arrays don't add any new methods, so their vtable is the same size as
-    // the vtable of klass Object.
-    set_vtable_length(Universe::base_vtable_size());
-    set_name(name);
-    set_super(Universe::is_bootstrapping() ? NULL : vmClasses::Object_klass());
-    set_layout_helper(Klass::_lh_neutral_value);
-    set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
-    JFR_ONLY(INIT_ID(this);)
+  // Arrays don't add any new methods, so their vtable is the same size as
+  // the vtable of klass Object.
+  set_vtable_length(Universe::base_vtable_size());
+  set_name(name);
+  set_super(Universe::is_bootstrapping() ? NULL : vmClasses::Object_klass());
+  set_layout_helper(Klass::_lh_neutral_value);
+  set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
+  JFR_ONLY(INIT_ID(this);)
 }
 
 
-// Initialization of vtables and mirror object is done separatly from base_create_array_klass,
+// Initialization of vtables and mirror object is done separately from base_create_array_klass,
 // since a GC can happen. At this point all instance variables of the ArrayKlass must be setup.
 void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module_entry, TRAPS) {
   k->initialize_supers(super_klass, NULL, CHECK);
@@ -126,31 +126,13 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
 
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_ARRAY), CHECK_NULL);
-  int size = objArrayOopDesc::object_size(length);
+  size_t size = objArrayOopDesc::object_size(length);
   Klass* k = array_klass(n+dimension(), CHECK_NULL);
   ArrayKlass* ak = ArrayKlass::cast(k);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
   // initialization to NULL not necessary, area already cleared
   return o;
-}
-
-void ArrayKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
-  Klass* k = this;
-  // Iterate over this array klass and all higher dimensions
-  while (k != NULL) {
-    f(k, CHECK);
-    k = ArrayKlass::cast(k)->higher_dimension();
-  }
-}
-
-void ArrayKlass::array_klasses_do(void f(Klass* k)) {
-  Klass* k = this;
-  // Iterate over this array klass and all higher dimensions
-  while (k != NULL) {
-    f(k);
-    k = ArrayKlass::cast(k)->higher_dimension();
-  }
 }
 
 jint ArrayKlass::compute_modifier_flags() const {
@@ -174,6 +156,7 @@ void ArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push((Klass**)&_lower_dimension);
 }
 
+#if INCLUDE_CDS
 void ArrayKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
   if (_higher_dimension != NULL) {
@@ -200,6 +183,7 @@ void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle p
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }
 }
+#endif // INCLUDE_CDS
 
 // Printing
 

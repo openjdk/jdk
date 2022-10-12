@@ -57,7 +57,6 @@ compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
 compiler.misc.bad.requires.flag                         # bad class file
 compiler.misc.bad.type.annotation.value
-compiler.misc.base.membership                           # UNUSED
 compiler.misc.class.file.not.found                      # ClassReader
 compiler.misc.class.file.wrong.class
 compiler.misc.exception.message                         # uncommon completion failure based on a string
@@ -66,6 +65,7 @@ compiler.misc.fatal.err.cant.locate.field               # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
 compiler.misc.fatal.err.cant.close                      # JavaCompiler
 compiler.misc.feature.not.supported.in.source.plural    # cannot happen (for now)
+compiler.misc.feature.default.methods                   # just preserved for testing (for now)
 compiler.misc.file.does.not.contain.package
 compiler.misc.illegal.start.of.class.file
 compiler.misc.inferred.do.not.conform.to.lower.bounds   # cannot happen?
@@ -206,3 +206,4 @@ compiler.warn.source.target.conflict
 compiler.warn.target.default.source.conflict
 compiler.err.preview.not.latest
 compiler.err.preview.without.source.or.release
+compiler.misc.illegal.signature                               # the compiler can now detect more non-denotable types before class writing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.tools.jdi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -294,6 +293,17 @@ class EventRequestManagerImpl extends MirrorImpl
             }
             filters.add(JDWP.EventRequest.Set.Modifier.ThreadOnly
                                       .create((ThreadReferenceImpl)thread));
+        }
+    }
+
+    abstract class ThreadLifecycleEventRequestImpl extends ThreadVisibleEventRequestImpl {
+        public synchronized void addPlatformThreadsOnlyFilter() {
+            if (isEnabled() || deleted) {
+                throw invalidState();
+            }
+            if (vm.mayCreateVirtualThreads()) {
+                filters.add(JDWP.EventRequest.Set.Modifier.PlatformThreadsOnly.create());
+            }
         }
     }
 
@@ -611,9 +621,7 @@ class EventRequestManagerImpl extends MirrorImpl
              * Make sure this isn't a duplicate
              */
             List<StepRequest> requests = stepRequests();
-            Iterator<StepRequest> iter = requests.iterator();
-            while (iter.hasNext()) {
-                StepRequest request = iter.next();
+            for (StepRequest request : requests) {
                 if ((request != this) &&
                         request.isEnabled() &&
                         request.thread().equals(thread)) {
@@ -648,7 +656,7 @@ class EventRequestManagerImpl extends MirrorImpl
         }
     }
 
-    class ThreadDeathRequestImpl extends ThreadVisibleEventRequestImpl
+    class ThreadDeathRequestImpl extends ThreadLifecycleEventRequestImpl
                                  implements ThreadDeathRequest {
         ThreadDeathRequestImpl() {
             requestList().add(this);
@@ -663,7 +671,7 @@ class EventRequestManagerImpl extends MirrorImpl
         }
     }
 
-    class ThreadStartRequestImpl extends ThreadVisibleEventRequestImpl
+    class ThreadStartRequestImpl extends ThreadLifecycleEventRequestImpl
                                  implements ThreadStartRequest {
         ThreadStartRequestImpl() {
             requestList().add(this);
@@ -880,9 +888,8 @@ class EventRequestManagerImpl extends MirrorImpl
     public void deleteEventRequests(List<? extends EventRequest> eventRequests) {
         validateMirrors(eventRequests);
         // copy the eventRequests to avoid ConcurrentModificationException
-        Iterator<? extends EventRequest> iter = (new ArrayList<>(eventRequests)).iterator();
-        while (iter.hasNext()) {
-            ((EventRequestImpl)iter.next()).delete();
+        for (EventRequest eventRequest : new ArrayList<>(eventRequests)) {
+            ((EventRequestImpl)eventRequest).delete();
         }
     }
 
@@ -969,9 +976,8 @@ class EventRequestManagerImpl extends MirrorImpl
     EventRequest request(int eventCmd, int requestId) {
         List<? extends EventRequest> rl = requestList(eventCmd);
         synchronized(rl) {   // Refer Collections.synchronizedList javadoc.
-            Iterator<? extends EventRequest> itr = rl.iterator();
-            while (itr.hasNext()){
-                EventRequestImpl er = (EventRequestImpl)itr.next();
+            for (EventRequest eventRequest : rl) {
+                EventRequestImpl er = (EventRequestImpl)eventRequest;
                 if (er.id == requestId)
                     return er;
             }

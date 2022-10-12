@@ -42,7 +42,7 @@ import sun.security.util.*;
  *
  * <p>
  * The extension is defined in Section 5.2.6 of
- * <a href="http://tools.ietf.org/html/rfc5280">Internet X.509 PKI
+ * <a href="https://tools.ietf.org/html/rfc5280">Internet X.509 PKI
  * Certificate and Certificate Revocation List (CRL) Profile</a>.
  *
  * <p>

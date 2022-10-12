@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@ package jdk.jshell.execution;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Packetize an OutputStream, dividing it into named channels.
@@ -40,12 +41,8 @@ class MultiplexingOutputStream extends OutputStream {
     private final OutputStream delegate;
 
     MultiplexingOutputStream(String name, OutputStream delegate) {
-        try {
-            this.name = name.getBytes("UTF-8");
-            this.delegate = delegate;
-        } catch (UnsupportedEncodingException ex) {
-            throw new IllegalStateException(ex); //should not happen
-        }
+        this.name = name.getBytes(UTF_8);
+        this.delegate = delegate;
     }
 
     @Override

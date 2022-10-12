@@ -99,13 +99,13 @@
 class ciReplay {
   CI_PACKAGE_ACCESS
 
-#ifndef PRODUCT
  private:
   static int replay_impl(TRAPS);
 
  public:
   // Replay specified compilation and exit VM.
   static void replay(TRAPS);
+  static bool no_replay_state();
   // Load inlining decisions from file and use them
   // during compilation of specified method.
   static void* load_inline_data(ciMethod* method, int entry_bci, int comp_level);
@@ -114,14 +114,26 @@ class ciReplay {
   // replay file when replaying compiles.
   static void initialize(ciMethodData* method);
   static void initialize(ciMethod* method);
+  static void initialize(ciInstanceKlass* ciKlass, InstanceKlass* ik);
 
+  static bool is_klass_unresolved(const InstanceKlass* klass);
   static bool is_loaded(Method* method);
 
   static bool should_not_inline(ciMethod* method);
-  static bool should_inline(void* data, ciMethod* method, int bci, int inline_depth);
+  static bool should_inline(void* data, ciMethod* method, int bci, int inline_depth, bool& should_delay);
   static bool should_not_inline(void* data, ciMethod* method, int bci, int inline_depth);
 
-#endif
+ public:
+  static oop obj_field(oop obj, Symbol* name);
+  static oop obj_field(oop obj, const char *name);
+
 };
+
+// Replay file format version history
+// 0: legacy (no version number)
+// 1: first instanceKlass sets protection domain (8275868)
+//    replace current_mileage with invocation_count (8276095)
+// 2: incremental inlining support (8254108)
+#define REPLAY_VERSION 2 // current version, bump up for incompatible changes
 
 #endif // SHARE_CI_CIREPLAY_HPP

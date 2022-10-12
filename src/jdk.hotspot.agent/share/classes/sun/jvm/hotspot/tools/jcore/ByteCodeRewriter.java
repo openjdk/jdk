@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,9 @@ package sun.jvm.hotspot.tools.jcore;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.utilities.*;
-import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.AccessControlContext;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 
 public class ByteCodeRewriter
 {
@@ -92,7 +88,7 @@ public class ByteCodeRewriter
        case 2: cpCacheIndex = method.getBytecodeByteArg(bci); break;
        case 3: cpCacheIndex = method.getBytecodeShortArg(bci); break;
        case 5:
-           if (fmt.indexOf("__") >= 0)
+           if (fmt.contains("__"))
                cpCacheIndex = method.getBytecodeShortArg(bci);
            else
                cpCacheIndex = method.getBytecodeIntArg(bci);
@@ -102,15 +98,15 @@ public class ByteCodeRewriter
 
        if (cpCache == null) {
           return (short) cpCacheIndex;
-       } else if (fmt.indexOf("JJJJ") >= 0) {
+       } else if (fmt.contains("JJJJ")) {
           // Invokedynamic require special handling
           cpCacheIndex = ~cpCacheIndex;
           cpCacheIndex = bytes.swapInt(cpCacheIndex);
           return (short) cpCache.getEntryAt(cpCacheIndex).getConstantPoolIndex();
-       } else if (fmt.indexOf("JJ") >= 0) {
+       } else if (fmt.contains("JJ")) {
           // change byte-ordering and go via cache
           return (short) cpCache.getEntryAt((int) (0xFFFF & bytes.swapShort((short)cpCacheIndex))).getConstantPoolIndex();
-       } else if (fmt.indexOf("j") >= 0) {
+       } else if (fmt.contains("j")) {
           // go via cache
           return (short) cpCache.getEntryAt((int) (0xFF & cpCacheIndex)).getConstantPoolIndex();
        } else {
@@ -118,7 +114,7 @@ public class ByteCodeRewriter
        }
     }
 
-    static private void writeShort(byte[] buf, int index, short value) {
+    private static void writeShort(byte[] buf, int index, short value) {
         buf[index] = (byte) ((value >> 8) & 0x00FF);
         buf[index + 1] = (byte) (value & 0x00FF);
     }

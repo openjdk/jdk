@@ -362,11 +362,14 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
     default:
       ShouldNotReachHere();
   }
-  st->print("|BTE " INTPTR_FORMAT_W(12) ", " INTPTR_FORMAT_W(12) ", " INTPTR_FORMAT_W(12),
+
+#define SHR_PTR_FORMAT "%12" PRIxPTR
+
+  st->print("|BTE " SHR_PTR_FORMAT  ", " SHR_PTR_FORMAT ", " SHR_PTR_FORMAT,
             p2i(bottom()), p2i(top()), p2i(end()));
-  st->print("|TAMS " INTPTR_FORMAT_W(12),
+  st->print("|TAMS " SHR_PTR_FORMAT,
             p2i(ShenandoahHeap::heap()->marking_context()->top_at_mark_start(const_cast<ShenandoahHeapRegion*>(this))));
-  st->print("|UWM " INTPTR_FORMAT_W(12),
+  st->print("|UWM " SHR_PTR_FORMAT,
             p2i(_update_watermark));
   st->print("|U " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
   st->print("|T " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
@@ -375,6 +378,8 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|L " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
   st->print("|CP " SIZE_FORMAT_W(3), pin_count());
   st->cr();
+
+#undef SHR_PTR_FORMAT
 }
 
 void ShenandoahHeapRegion::oop_iterate(OopIterateClosure* blk) {

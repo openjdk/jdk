@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,27 +33,38 @@
  * @run main RepaintTest
  */
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Frame;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.TextField;
+import java.awt.Toolkit;
 import java.awt.event.*;
 import javax.swing.JFrame;
 import javax.swing.JButton;
 import javax.swing.JTextField;
 import javax.swing.JPanel;
-import java.io.*;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.PixelGrabber;
+import java.io.File;
 
 public class RepaintTest {
-    private static int delay = 150;
+    private static final int delay = 150;
 
     private Frame frame;
     private Container panel1, panel2;
     private Component button;
     private Component textField;
     private ExtendedRobot robot;
-    private Object buttonLock = new Object();
+    private final Object buttonLock = new Object();
     private boolean passed = true;
     private boolean buttonClicked = false;
-    private int MAX_TOLERANCE_LEVEL = 10;
+    private final int MAX_TOLERANCE_LEVEL = 10;
 
     public static void main(String[] args) {
         RepaintTest test = new RepaintTest();
@@ -81,25 +92,6 @@ public class RepaintTest {
         }
     }
 
-    /**
-     * Do screen capture and save it as image
-     */
-    private static void captureScreenAndSave() {
-
-        try {
-            Robot robot = new Robot();
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            Rectangle rectangle = new Rectangle(0, 0, screenSize.width, screenSize.height);
-            System.out.println("About to screen capture - " + rectangle);
-            BufferedImage image = robot.createScreenCapture(rectangle);
-            javax.imageio.ImageIO.write(image, "jpg", new File("ScreenImage.jpg"));
-            robot.delay(3000);
-        } catch (Throwable t) {
-            System.out.println("WARNING: Exception thrown while screen capture!");
-            t.printStackTrace();
-        }
-    }
-
     private void initializeGUI(boolean swingControl) {
         frame = swingControl ? new JFrame() : new Frame();
         frame.setLayout(new BorderLayout());
@@ -115,10 +107,10 @@ public class RepaintTest {
         panel2.add(textField);
         frame.add(panel2, BorderLayout.SOUTH);
         frame.add(panel1, BorderLayout.NORTH);
+        frame.setLocationRelativeTo(null);
 
         frame.setBackground(Color.green);
         frame.setVisible(true);
-        frame.toFront();
     }
     private Component createButton(boolean swingControl, String txt) {
         if(swingControl) {
@@ -136,7 +128,7 @@ public class RepaintTest {
                 }
             });
             return jbtn;
-        }else {
+        } else {
             Button btn = new Button(txt);
             btn.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -175,10 +167,9 @@ public class RepaintTest {
 
         robot.mouseMove(button.getLocationOnScreen().x + button.getSize().width / 2,
                         button.getLocationOnScreen().y + button.getSize().height / 2);
+
+        robot.click();
         robot.waitForIdle(delay);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle(delay);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
         if (! buttonClicked) {
             synchronized (buttonLock) {
@@ -230,7 +221,6 @@ public class RepaintTest {
             Toolkit.getDefaultToolkit().getSystemEventQueue().invokeAndWait(new Runnable() {
                 public void run() {
                     frame.setExtendedState(Frame.NORMAL);
-                    frame.toFront();
                 }
             });
         } catch (Exception e) {

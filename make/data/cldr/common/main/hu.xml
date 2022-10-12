@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -209,7 +209,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="he">héber</language>
 			<language type="hi">hindi</language>
 			<language type="hil">ilokano</language>
-			<language type="hit">hittite</language>
+			<language type="hit">hettita</language>
 			<language type="hmn">hmong</language>
 			<language type="ho">hiri motu</language>
 			<language type="hr">horvát</language>
@@ -295,6 +295,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezg</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburgi</language>
+			<language type="lij" draft="contributed">ligur</language>
 			<language type="lkt">lakota</language>
 			<language type="ln">lingala</language>
 			<language type="lo">lao</language>
@@ -413,6 +414,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="raj">radzsasztáni</language>
 			<language type="rap">rapanui</language>
 			<language type="rar">rarotongai</language>
+			<language type="rhg">rohingja</language>
 			<language type="rm">rétoromán</language>
 			<language type="rn">kirundi</language>
 			<language type="ro">román</language>
@@ -1229,23 +1231,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\--/]</parseLenient>
+			<parseLenient sample=":">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£">[£₤]</parseLenient>
+			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1332,6 +1334,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
+				<cyclicNameSets>
+					<cyclicNameSet type="solarTerms">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="wide">
+								<cyclicName type="2" draft="contributed">esővíz</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+				</cyclicNameSets>
 			</calendar>
 			<calendar type="coptic">
 				<months>
@@ -1517,21 +1528,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y. MMMM d., EEEE</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y. MMMM d.</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y. MMM d.</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG y. M. d.</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1570,6 +1585,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y.</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y/MM/dd</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y. MMM d.</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y. MMM d., E</dateFormatItem>
@@ -2010,21 +2026,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y. MMMM d., EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y. MMMM d.</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y. MMM d.</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y. MM. dd.</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2032,21 +2052,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>H:mm:ss zzzz</pattern>
+							<datetimeSkeleton>Hmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>H:mm:ss z</pattern>
+							<datetimeSkeleton>Hmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>H:mm:ss</pattern>
+							<datetimeSkeleton>Hmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>H:mm</pattern>
+							<datetimeSkeleton>Hmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -2085,6 +2109,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y.</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y. MM. dd.</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y. MMM d.</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y. MMM d., E</dateFormatItem>
@@ -2449,21 +2474,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y. MMMM d., EEEE</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y. MMMM d.</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y.MM.dd.</pattern>
+							<datetimeSkeleton>GyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG y.MM.dd.</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -5502,32 +5531,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>jekatyerinburgi nyári idő</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>yukoni idő</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
+			<native>latn</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group> </group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
+			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -5651,7 +5685,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>EAE-dirham</displayName>
 				<displayName count="one">EAE-dirham</displayName>
 				<displayName count="other">EAE-dirham</displayName>
-				<symbol draft="contributed">AED</symbol>
+				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>afgán afghani (1927–2002)</displayName>
@@ -5662,7 +5696,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>afgán afghani</displayName>
 				<displayName count="one">afgán afghani</displayName>
 				<displayName count="other">afgán afghani</displayName>
-				<symbol draft="contributed">AFN</symbol>
+				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALK">
 				<displayName draft="contributed">albán lek (1946–1965)</displayName>
@@ -5673,26 +5707,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>albán lek</displayName>
 				<displayName count="one">albán lek</displayName>
 				<displayName count="other">albán lek</displayName>
-				<symbol draft="contributed">ALL</symbol>
+				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>örmény dram</displayName>
 				<displayName count="one">örmény dram</displayName>
 				<displayName count="other">örmény dram</displayName>
-				<symbol draft="contributed">AMD</symbol>
+				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>holland antilláki forint</displayName>
 				<displayName count="one">holland antilláki forint</displayName>
 				<displayName count="other">holland antilláki forint</displayName>
-				<symbol draft="contributed">ANG</symbol>
+				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>angolai kwanza</displayName>
 				<displayName count="one">angolai kwanza</displayName>
 				<displayName count="other">angolai kwanza</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
+				<symbol>AOA</symbol>
+				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>Angolai kwanza (1977–1990)</displayName>
@@ -5723,8 +5757,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>argentin peso</displayName>
 				<displayName count="one">argentin peso</displayName>
 				<displayName count="other">argentin peso</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>ARS</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>Osztrák schilling</displayName>
@@ -5736,13 +5770,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ausztrál dollár</displayName>
 				<displayName count="other">ausztrál dollár</displayName>
 				<symbol>AUD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>arubai florin</displayName>
 				<displayName count="one">arubai florin</displayName>
 				<displayName count="other">arubai florin</displayName>
-				<symbol draft="contributed">AWG</symbol>
+				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>azerbajdzsáni manat (1993–2006)</displayName>
@@ -5753,7 +5787,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>azerbajdzsáni manat</displayName>
 				<displayName count="one">azerbajdzsáni manat</displayName>
 				<displayName count="other">azerbajdzsáni manat</displayName>
-				<symbol draft="contributed">AZN</symbol>
+				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>Bosznia-hercegovinai dínár (1992–1994)</displayName>
@@ -5764,8 +5798,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>bosznia-hercegovinai konvertibilis márka</displayName>
 				<displayName count="one">bosznia-hercegovinai konvertibilis márka</displayName>
 				<displayName count="other">bosznia-hercegovinai konvertibilis márka</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
+				<symbol>BAM</symbol>
+				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName draft="contributed">bosznia-hercegovinai új dínár (1994–1997)</displayName>
@@ -5776,15 +5810,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>barbadosi dollár</displayName>
 				<displayName count="one">barbadosi dollár</displayName>
 				<displayName count="other">barbadosi dollár</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>bangladesi taka</displayName>
 				<displayName count="one">bangladesi taka</displayName>
 				<displayName count="other">bangladesi taka</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
+				<symbol>BDT</symbol>
+				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>Belga frank (konvertibilis)</displayName>
@@ -5815,7 +5849,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>bolgár új leva</displayName>
 				<displayName count="one">bolgár új leva</displayName>
 				<displayName count="other">bolgár új leva</displayName>
-				<symbol draft="contributed">BGN</symbol>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName draft="contributed">bolgár leva (1879–1952)</displayName>
@@ -5826,34 +5860,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>bahreini dinár</displayName>
 				<displayName count="one">bahreini dinár</displayName>
 				<displayName count="other">bahreini dinár</displayName>
-				<symbol draft="contributed">BHD</symbol>
+				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>burundi frank</displayName>
 				<displayName count="one">burundi frank</displayName>
 				<displayName count="other">burundi frank</displayName>
-				<symbol draft="contributed">BIF</symbol>
+				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>bermudai dollár</displayName>
 				<displayName count="one">bermudai dollár</displayName>
 				<displayName count="other">bermudai dollár</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>brunei dollár</displayName>
 				<displayName count="one">brunei dollár</displayName>
 				<displayName count="other">brunei dollár</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BND</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>bolíviai boliviano</displayName>
 				<displayName count="one">bolíviai boliviano</displayName>
 				<displayName count="other">bolíviai boliviano</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>BOB</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>Bolíviai peso</displayName>
@@ -5885,7 +5919,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">brazil real</displayName>
 				<displayName count="other">brazil real</displayName>
 				<symbol>BRL</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>Brazil cruzado novo (1989–1990)</displayName>
@@ -5901,14 +5935,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>bahamai dollár</displayName>
 				<displayName count="one">bahamai dollár</displayName>
 				<displayName count="other">bahamai dollár</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BSD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>bhutáni ngultrum</displayName>
 				<displayName count="one">bhutáni ngultrum</displayName>
 				<displayName count="other">bhutáni ngultrum</displayName>
-				<symbol draft="contributed">BTN</symbol>
+				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>Burmai kyat</displayName>
@@ -5919,8 +5953,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>botswanai pula</displayName>
 				<displayName count="one">botswanai pula</displayName>
 				<displayName count="other">botswanai pula</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
+				<symbol>BWP</symbol>
+				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>Fehérorosz új rubel (1994–1999)</displayName>
@@ -5931,34 +5965,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>belarusz rubel</displayName>
 				<displayName count="one">belarusz rubel</displayName>
 				<displayName count="other">belarusz rubel</displayName>
-				<symbol draft="contributed">BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
+				<symbol>BYN</symbol>
+				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>fehérorosz rubel (2000–2016)</displayName>
 				<displayName count="one">fehérorosz rubel (2000–2016)</displayName>
 				<displayName count="other">fehérorosz rubel (2000–2016)</displayName>
-				<symbol draft="contributed">BYR</symbol>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>belize-i dollár</displayName>
 				<displayName count="one">belize-i dollár</displayName>
 				<displayName count="other">belize-i dollár</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BZD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>kanadai dollár</displayName>
 				<displayName count="one">kanadai dollár</displayName>
 				<displayName count="other">kanadai dollár</displayName>
 				<symbol>CAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>kongói frank</displayName>
 				<displayName count="one">kongói frank</displayName>
 				<displayName count="other">kongói frank</displayName>
-				<symbol draft="contributed">CDF</symbol>
+				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>WIR euro</displayName>
@@ -5967,7 +6001,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>svájci frank</displayName>
 				<displayName count="one">svájci frank</displayName>
 				<displayName count="other">svájci frank</displayName>
-				<symbol draft="contributed">CHF</symbol>
+				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>WIR frank</displayName>
@@ -5979,28 +6013,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>chilei peso</displayName>
 				<displayName count="one">chilei peso</displayName>
 				<displayName count="other">chilei peso</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CLP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>kínai jüan (offshore)</displayName>
 				<displayName count="one">kínai jüan (offshore)</displayName>
 				<displayName count="other">kínai jüan (offshore)</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>kínai jüan</displayName>
 				<displayName count="one">kínai jüan</displayName>
 				<displayName count="other">kínai jüan</displayName>
 				<symbol>CNY</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>kolumbiai peso</displayName>
 				<displayName count="one">kolumbiai peso</displayName>
 				<displayName count="other">kolumbiai peso</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>COP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>Unidad de Valor Real</displayName>
@@ -6009,8 +6043,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Costa Rica-i colon</displayName>
 				<displayName count="one">Costa Rica-i colon</displayName>
 				<displayName count="other">Costa Rica-i colon</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
+				<symbol>CRC</symbol>
+				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>szerb dinár</displayName>
@@ -6026,21 +6060,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kubai konvertibilis peso</displayName>
 				<displayName count="one">kubai konvertibilis peso</displayName>
 				<displayName count="other">kubai konvertibilis peso</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUC</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>kubai peso</displayName>
 				<displayName count="one">kubai peso</displayName>
 				<displayName count="other">kubai peso</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Zöld-foki escudo</displayName>
 				<displayName count="one">Zöld-foki escudo</displayName>
 				<displayName count="other">Zöld-foki escudo</displayName>
-				<symbol draft="contributed">CVE</symbol>
+				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>Ciprusi font</displayName>
@@ -6049,8 +6083,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>cseh korona</displayName>
 				<displayName count="one">cseh korona</displayName>
 				<displayName count="other">cseh korona</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
+				<symbol>CZK</symbol>
+				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>Kelet-Német márka</displayName>
@@ -6062,27 +6096,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dzsibuti frank</displayName>
 				<displayName count="one">dzsibuti frank</displayName>
 				<displayName count="other">dzsibuti frank</displayName>
-				<symbol draft="contributed">DJF</symbol>
+				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>dán korona</displayName>
 				<displayName count="one">dán korona</displayName>
 				<displayName count="other">dán korona</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>DKK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>dominikai peso</displayName>
 				<displayName count="one">dominikai peso</displayName>
 				<displayName count="other">dominikai peso</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>DOP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>algériai dínár</displayName>
 				<displayName count="one">algériai dínár</displayName>
 				<displayName count="other">algériai dínár</displayName>
-				<symbol draft="contributed">DZD</symbol>
+				<symbol>DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>Ecuadori sucre</displayName>
@@ -6097,14 +6131,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>egyiptomi font</displayName>
 				<displayName count="one">egyiptomi font</displayName>
 				<displayName count="other">egyiptomi font</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol>EGP</symbol>
+				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>eritreai nakfa</displayName>
 				<displayName count="one">eritreai nakfa</displayName>
 				<displayName count="other">eritreai nakfa</displayName>
-				<symbol draft="contributed">ERN</symbol>
+				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>spanyol peseta (A–kontó)</displayName>
@@ -6123,14 +6157,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>etiópiai birr</displayName>
 				<displayName count="one">etiópiai birr</displayName>
 				<displayName count="other">etiópiai birr</displayName>
-				<symbol draft="contributed">ETB</symbol>
+				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>euró</displayName>
 				<displayName count="one">euró</displayName>
 				<displayName count="other">euró</displayName>
 				<symbol>EUR</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>Finn markka</displayName>
@@ -6139,15 +6173,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>fidzsi dollár</displayName>
 				<displayName count="one">fidzsi dollár</displayName>
 				<displayName count="other">fidzsi dollár</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>FJD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>falkland-szigeteki font</displayName>
 				<displayName count="one">falkland-szigeteki font</displayName>
 				<displayName count="other">falkland-szigeteki font</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>FKP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>Francia frank</displayName>
@@ -6157,7 +6191,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">angol font</displayName>
 				<displayName count="other">angol font</displayName>
 				<symbol>GBP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>Grúz kupon larit</displayName>
@@ -6166,9 +6200,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>grúz lari</displayName>
 				<displayName count="one">grúz lari</displayName>
 				<displayName count="other">grúz lari</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
+				<symbol>GEL</symbol>
+				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ghánai cedi (1979–2007)</displayName>
@@ -6177,27 +6210,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ghánai cedi</displayName>
 				<displayName count="one">ghánai cedi</displayName>
 				<displayName count="other">ghánai cedi</displayName>
-				<symbol draft="contributed">GHS</symbol>
+				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>gibraltári font</displayName>
 				<displayName count="one">gibraltári font</displayName>
 				<displayName count="other">gibraltári font</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>GIP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>gambiai dalasi</displayName>
 				<displayName count="one">gambiai dalasi</displayName>
 				<displayName count="other">gambiai dalasi</displayName>
-				<symbol draft="contributed">GMD</symbol>
+				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>guineai frank</displayName>
 				<displayName count="one">guineai frank</displayName>
 				<displayName count="other">guineai frank</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol>GNF</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>Guineai syli</displayName>
@@ -6216,8 +6249,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>guatemalai quetzal</displayName>
 				<displayName count="one">guatemalai quetzal</displayName>
 				<displayName count="other">guatemalai quetzal</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
+				<symbol>GTQ</symbol>
+				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>Portugál guinea escudo</displayName>
@@ -6229,22 +6262,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>guyanai dollár</displayName>
 				<displayName count="one">guyanai dollár</displayName>
 				<displayName count="other">guyanai dollár</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>GYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>hongkongi dollár</displayName>
 				<displayName count="one">hongkongi dollár</displayName>
 				<displayName count="other">hongkongi dollár</displayName>
 				<symbol>HKD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>hodurasi lempira</displayName>
 				<displayName count="one">hodurasi lempira</displayName>
 				<displayName count="other">hodurasi lempira</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol>HNL</symbol>
+				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>Horvát dínár</displayName>
@@ -6255,28 +6288,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>horvát kuna</displayName>
 				<displayName count="one">horvát kuna</displayName>
 				<displayName count="other">horvát kuna</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
+				<symbol>HRK</symbol>
+				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>haiti gourde</displayName>
 				<displayName count="one">haiti gourde</displayName>
 				<displayName count="other">haiti gourde</displayName>
-				<symbol draft="contributed">HTG</symbol>
+				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>magyar forint</displayName>
 				<displayName count="one">magyar forint</displayName>
 				<displayName count="other">magyar forint</displayName>
 				<symbol>Ft</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
+				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>indonéz rúpia</displayName>
 				<displayName count="one">indonéz rúpia</displayName>
 				<displayName count="other">indonéz rúpia</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
+				<symbol>IDR</symbol>
+				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>Ír font</displayName>
@@ -6289,33 +6322,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">izraeli új sékel</displayName>
 				<displayName count="other">izraeli új sékel</displayName>
 				<symbol>ILS</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
+				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>indiai rúpia</displayName>
 				<displayName count="one">indiai rúpia</displayName>
 				<displayName count="other">indiai rúpia</displayName>
 				<symbol>INR</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>iraki dínár</displayName>
 				<displayName count="one">iraki dínár</displayName>
 				<displayName count="other">iraki dínár</displayName>
-				<symbol draft="contributed">IQD</symbol>
+				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>iráni rial</displayName>
 				<displayName count="one">iráni rial</displayName>
 				<displayName count="other">iráni rial</displayName>
-				<symbol draft="contributed">IRR</symbol>
+				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>izlandi korona</displayName>
 				<displayName count="one">izlandi korona</displayName>
 				<displayName count="other">izlandi korona</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>ISK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>Olasz líra</displayName>
@@ -6326,118 +6359,120 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>jamaicai dollár</displayName>
 				<displayName count="one">jamaicai dollár</displayName>
 				<displayName count="other">jamaicai dollár</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>JMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>jordániai dínár</displayName>
 				<displayName count="one">jordániai dínár</displayName>
 				<displayName count="other">jordániai dínár</displayName>
-				<symbol draft="contributed">JOD</symbol>
+				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>japán jen</displayName>
 				<displayName count="one">japán jen</displayName>
 				<displayName count="other">japán jen</displayName>
 				<symbol>¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>kenyai shilling</displayName>
 				<displayName count="one">kenyai shilling</displayName>
 				<displayName count="other">kenyai shilling</displayName>
-				<symbol draft="contributed">KES</symbol>
+				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>kirgizisztáni szom</displayName>
 				<displayName count="one">kirgizisztáni szom</displayName>
 				<displayName count="other">kirgizisztáni szom</displayName>
-				<symbol draft="contributed">KGS</symbol>
+				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>kambodzsai riel</displayName>
 				<displayName count="one">kambodzsai riel</displayName>
 				<displayName count="other">kambodzsai riel</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
+				<symbol>KHR</symbol>
+				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>comorei frank</displayName>
 				<displayName count="one">comorei frank</displayName>
 				<displayName count="other">comorei frank</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
+				<symbol>KMF</symbol>
+				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>észak-koreai won</displayName>
 				<displayName count="one">észak-koreai won</displayName>
 				<displayName count="other">észak-koreai won</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>KPW</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>dél-koreai won</displayName>
 				<displayName count="one">dél-koreai won</displayName>
 				<displayName count="other">dél-koreai won</displayName>
 				<symbol>KRW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>kuvaiti dínár</displayName>
 				<displayName count="one">kuvaiti dínár</displayName>
 				<displayName count="other">kuvaiti dínár</displayName>
-				<symbol draft="contributed">KWD</symbol>
+				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>kajmán-szigeteki dollár</displayName>
 				<displayName count="one">kajmán-szigeteki dollár</displayName>
 				<displayName count="other">kajmán-szigeteki dollár</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>KYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>kazahsztáni tenge</displayName>
 				<displayName count="one">kazahsztáni tenge</displayName>
 				<displayName count="other">kazahsztáni tenge</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
+				<symbol>KZT</symbol>
+				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>laoszi kip</displayName>
 				<displayName count="one">laoszi kip</displayName>
 				<displayName count="other">laoszi kip</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
+				<symbol>LAK</symbol>
+				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>libanoni font</displayName>
 				<displayName count="one">libanoni font</displayName>
 				<displayName count="other">libanoni font</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
+				<symbol>LBP</symbol>
+				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Srí Lanka-i rúpia</displayName>
 				<displayName count="one">Srí Lanka-i rúpia</displayName>
 				<displayName count="other">Srí Lanka-i rúpia</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>LKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>libériai dollár</displayName>
 				<displayName count="one">libériai dollár</displayName>
 				<displayName count="other">libériai dollár</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>LRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
-				<displayName>Lesothoi loti</displayName>
+				<displayName>lesothoi loti</displayName>
+				<displayName count="one">lesothoi loti</displayName>
+				<displayName count="other">lesothoi loti</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>litvániai litas</displayName>
 				<displayName count="one">litvániai litas</displayName>
 				<displayName count="other">litvániai litas</displayName>
-				<symbol draft="contributed">LTL</symbol>
+				<symbol>LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName>Litvániai talonas</displayName>
@@ -6455,7 +6490,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lett lats</displayName>
 				<displayName count="one">lett lats</displayName>
 				<displayName count="other">lett lats</displayName>
-				<symbol draft="contributed">LVL</symbol>
+				<symbol>LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>Lett rubel</displayName>
@@ -6464,13 +6499,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>líbiai dínár</displayName>
 				<displayName count="one">líbiai dínár</displayName>
 				<displayName count="other">líbiai dínár</displayName>
-				<symbol draft="contributed">LYD</symbol>
+				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>marokkói dirham</displayName>
 				<displayName count="one">marokkói dirham</displayName>
 				<displayName count="other">marokkói dirham</displayName>
-				<symbol draft="contributed">MAD</symbol>
+				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>Marokkói frank</displayName>
@@ -6484,14 +6519,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>moldován lei</displayName>
 				<displayName count="one">moldován lei</displayName>
 				<displayName count="other">moldován lei</displayName>
-				<symbol draft="contributed">MDL</symbol>
+				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>madagaszkári ariary</displayName>
 				<displayName count="one">madagaszkári ariary</displayName>
 				<displayName count="other">madagaszkári ariary</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
+				<symbol>MGA</symbol>
+				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>Madagaszkári frank</displayName>
@@ -6500,7 +6535,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>macedon dínár</displayName>
 				<displayName count="one">macedon dínár</displayName>
 				<displayName count="other">macedon dínár</displayName>
-				<symbol draft="contributed">MKD</symbol>
+				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName draft="contributed">macedón dénár (1992–1993)</displayName>
@@ -6514,21 +6549,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mianmari kyat</displayName>
 				<displayName count="one">mianmari kyat</displayName>
 				<displayName count="other">mianmari kyat</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
+				<symbol>MMK</symbol>
+				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>mongóliai tugrik</displayName>
 				<displayName count="one">mongóliai tugrik</displayName>
 				<displayName count="other">mongóliai tugrik</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
+				<symbol>MNT</symbol>
+				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>makaói pataca</displayName>
 				<displayName count="one">makaói pataca</displayName>
 				<displayName count="other">makaói pataca</displayName>
-				<symbol draft="contributed">MOP</symbol>
+				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>mauritániai ouguiya (1973–2017)</displayName>
@@ -6555,27 +6590,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mauritiusi rúpia</displayName>
 				<displayName count="one">mauritiusi rúpia</displayName>
 				<displayName count="other">mauritiusi rúpia</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>MUR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>maldív-szigeteki rufiyaa</displayName>
 				<displayName count="one">maldív-szigeteki rufiyaa</displayName>
 				<displayName count="other">maldív-szigeteki rufiyaa</displayName>
-				<symbol draft="contributed">MVR</symbol>
+				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>malawi kwacha</displayName>
 				<displayName count="one">malawi kwacha</displayName>
 				<displayName count="other">malawi kwacha</displayName>
-				<symbol draft="contributed">MWK</symbol>
+				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>mexikói peso</displayName>
 				<displayName count="one">mexikói peso</displayName>
 				<displayName count="other">mexikói peso</displayName>
 				<symbol>MXN</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>Mexikói ezüst peso (1861–1992)</displayName>
@@ -6587,8 +6622,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>malajziai ringgit</displayName>
 				<displayName count="one">malajziai ringgit</displayName>
 				<displayName count="other">malajziai ringgit</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
+				<symbol>MYR</symbol>
+				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>Mozambik escudo</displayName>
@@ -6600,21 +6635,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mozambiki metikális</displayName>
 				<displayName count="one">mozambiki metikális</displayName>
 				<displayName count="other">mozambiki metikális</displayName>
-				<symbol draft="contributed">MZN</symbol>
+				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>namíbiai dollár</displayName>
 				<displayName count="one">namíbiai dollár</displayName>
 				<displayName count="other">namíbiai dollár</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NAD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>nigériai naira</displayName>
 				<displayName count="one">nigériai naira</displayName>
 				<displayName count="other">nigériai naira</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol>NGN</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>Nikaraguai cordoba</displayName>
@@ -6623,8 +6658,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>nicaraguai córdoba</displayName>
 				<displayName count="one">nicaraguai córdoba</displayName>
 				<displayName count="other">nicaraguai córdoba</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
+				<symbol>NIO</symbol>
+				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>Holland forint</displayName>
@@ -6633,34 +6668,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>norvég korona</displayName>
 				<displayName count="one">norvég korona</displayName>
 				<displayName count="other">norvég korona</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>NOK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>nepáli rúpia</displayName>
 				<displayName count="one">nepáli rúpia</displayName>
 				<displayName count="other">nepáli rúpia</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>NPR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>új-zélandi dollár</displayName>
 				<displayName count="one">új-zélandi dollár</displayName>
 				<displayName count="other">új-zélandi dollár</displayName>
 				<symbol>NZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>ománi rial</displayName>
 				<displayName count="one">ománi rial</displayName>
 				<displayName count="other">ománi rial</displayName>
-				<symbol draft="contributed">OMR</symbol>
+				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>panamai balboa</displayName>
 				<displayName count="one">panamai balboa</displayName>
 				<displayName count="other">panamai balboa</displayName>
-				<symbol draft="contributed">PAB</symbol>
+				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>perui inti</displayName>
@@ -6669,7 +6704,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>perui sol</displayName>
 				<displayName count="one">perui sol</displayName>
 				<displayName count="other">perui sol</displayName>
-				<symbol draft="contributed">PEN</symbol>
+				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>perui sol (1863–1965)</displayName>
@@ -6678,28 +6713,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>pápua új-guineai kina</displayName>
 				<displayName count="one">pápua új-guineai kina</displayName>
 				<displayName count="other">pápua új-guineai kina</displayName>
-				<symbol draft="contributed">PGK</symbol>
+				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>fülöp-szigeteki peso</displayName>
 				<displayName count="one">fülöp-szigeteki peso</displayName>
 				<displayName count="other">fülöp-szigeteki peso</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
+				<symbol>PHP</symbol>
+				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>pakisztáni rúpia</displayName>
 				<displayName count="one">pakisztáni rúpia</displayName>
 				<displayName count="other">pakisztáni rúpia</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>PKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>lengyel zloty</displayName>
 				<displayName count="one">lengyel zloty</displayName>
 				<displayName count="other">lengyel zloty</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
+				<symbol>PLN</symbol>
+				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>Lengyel zloty (1950–1995)</displayName>
@@ -6715,14 +6750,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>paraguayi guarani</displayName>
 				<displayName count="one">paraguayi guarani</displayName>
 				<displayName count="other">paraguayi guarani</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
+				<symbol>PYG</symbol>
+				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>katari rial</displayName>
 				<displayName count="one">katari rial</displayName>
 				<displayName count="other">katari rial</displayName>
-				<symbol draft="contributed">QAR</symbol>
+				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>rhodéziai dollár</displayName>
@@ -6738,21 +6773,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>román lej</displayName>
 				<displayName count="one">román lej</displayName>
 				<displayName count="other">román lej</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
+				<symbol>RON</symbol>
+				<symbol alt="narrow">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>szerb dínár</displayName>
 				<displayName count="one">szerb dínár</displayName>
 				<displayName count="other">szerb dínár</displayName>
-				<symbol draft="contributed">RSD</symbol>
+				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>orosz rubel</displayName>
 				<displayName count="one">orosz rubel</displayName>
 				<displayName count="other">orosz rubel</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<symbol>RUB</symbol>
+				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>orosz rubel (1991–1998)</displayName>
@@ -6763,27 +6798,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ruandai frank</displayName>
 				<displayName count="one">ruandai frank</displayName>
 				<displayName count="other">ruandai frank</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
+				<symbol>RWF</symbol>
+				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>szaúdi riyal</displayName>
 				<displayName count="one">szaúdi riyal</displayName>
 				<displayName count="other">szaúdi riyal</displayName>
-				<symbol draft="contributed">SAR</symbol>
+				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>salamon-szigeteki dollár</displayName>
 				<displayName count="one">salamon-szigeteki dollár</displayName>
 				<displayName count="other">salamon-szigeteki dollár</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>seychelle-szigeteki rúpia</displayName>
 				<displayName count="one">seychelle-szigeteki rúpia</displayName>
 				<displayName count="other">seychelle-szigeteki rúpia</displayName>
-				<symbol draft="contributed">SCR</symbol>
+				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>Szudáni dínár (1992–2007)</displayName>
@@ -6794,7 +6829,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>szudáni font</displayName>
 				<displayName count="one">szudáni font</displayName>
 				<displayName count="other">szudáni font</displayName>
-				<symbol draft="contributed">SDG</symbol>
+				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>Szudáni font (1957–1998)</displayName>
@@ -6805,22 +6840,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>svéd korona</displayName>
 				<displayName count="one">svéd korona</displayName>
 				<displayName count="other">svéd korona</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>SEK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>szingapúri dollár</displayName>
 				<displayName count="one">szingapúri dollár</displayName>
 				<displayName count="other">szingapúri dollár</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SGD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>Szent Ilona-i font</displayName>
 				<displayName count="one">Szent Ilona-i font</displayName>
 				<displayName count="other">Szent Ilona-i font</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SHP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>Szlovén tolar</displayName>
@@ -6836,20 +6871,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Sierra Leone-i leone</displayName>
 				<displayName count="one">Sierra Leone-i leone</displayName>
 				<displayName count="other">Sierra Leone-i leone</displayName>
-				<symbol draft="contributed">SLL</symbol>
+				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>szomáli shilling</displayName>
 				<displayName count="one">szomáli shilling</displayName>
 				<displayName count="other">szomáli shilling</displayName>
-				<symbol draft="contributed">SOS</symbol>
+				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>suriname-i dollár</displayName>
 				<displayName count="one">suriname-i dollár</displayName>
 				<displayName count="other">suriname-i dollár</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>Suriname-i gulden</displayName>
@@ -6858,21 +6893,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dél-szudáni font</displayName>
 				<displayName count="one">dél-szudáni font</displayName>
 				<displayName count="other">dél-szudáni font</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SSP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>São Tomé és Príncipe-i dobra (1977–2017)</displayName>
 				<displayName count="one">São Tomé és Príncipe-i dobra (1977–2017)</displayName>
 				<displayName count="other">São Tomé és Príncipe-i dobra (1977–2017)</displayName>
-				<symbol draft="contributed">STD</symbol>
+				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>São Tomé és Príncipe-i dobra</displayName>
 				<displayName count="one">São Tomé és Príncipe-i dobra</displayName>
 				<displayName count="other">São Tomé és Príncipe-i dobra</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
+				<symbol>STN</symbol>
+				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>Szovjet rubel</displayName>
@@ -6886,21 +6921,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>szíriai font</displayName>
 				<displayName count="one">szíriai font</displayName>
 				<displayName count="other">szíriai font</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SYP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>szvázi lilangeni</displayName>
 				<displayName count="one">szvázi lilangeni</displayName>
 				<displayName count="other">szvázi lilangeni</displayName>
-				<symbol draft="contributed">SZL</symbol>
+				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>thai baht</displayName>
 				<displayName count="one">thai baht</displayName>
 				<displayName count="other">thai baht</displayName>
-				<symbol draft="contributed">THB</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
+				<symbol>THB</symbol>
+				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>Tádzsikisztáni rubel</displayName>
@@ -6909,7 +6944,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>tádzsikisztáni somoni</displayName>
 				<displayName count="one">tádzsikisztáni somoni</displayName>
 				<displayName count="other">tádzsikisztáni somoni</displayName>
-				<symbol draft="contributed">TJS</symbol>
+				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>türkmenisztáni manat (1993–2009)</displayName>
@@ -6920,20 +6955,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>türkmenisztáni manat</displayName>
 				<displayName count="one">türkmenisztáni manat</displayName>
 				<displayName count="other">türkmenisztáni manat</displayName>
-				<symbol draft="contributed">TMT</symbol>
+				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>tunéziai dínár</displayName>
 				<displayName count="one">tunéziai dínár</displayName>
 				<displayName count="other">tunéziai dínár</displayName>
-				<symbol draft="contributed">TND</symbol>
+				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>tongai paanga</displayName>
 				<displayName count="one">tongai paanga</displayName>
 				<displayName count="other">tongai paanga</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
+				<symbol>TOP</symbol>
+				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>Timori escudo</displayName>
@@ -6949,36 +6984,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>török líra</displayName>
 				<displayName count="one">török líra</displayName>
 				<displayName count="other">török líra</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
+				<symbol>TRY</symbol>
+				<symbol alt="narrow">₺</symbol>
+				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>Trinidad és Tobago-i dollár</displayName>
 				<displayName count="one">Trinidad és Tobago-i dollár</displayName>
 				<displayName count="other">Trinidad és Tobago-i dollár</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>TTD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>tajvani új dollár</displayName>
 				<displayName count="one">tajvani új dollár</displayName>
 				<displayName count="other">tajvani új dollár</displayName>
 				<symbol>TWD</symbol>
-				<symbol alt="narrow" draft="contributed">NT$</symbol>
+				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>tanzániai shilling</displayName>
 				<displayName count="one">tanzániai shilling</displayName>
 				<displayName count="other">tanzániai shilling</displayName>
-				<symbol draft="contributed">TZS</symbol>
+				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>ukrán hrivnya</displayName>
 				<displayName count="one">ukrán hrivnya</displayName>
 				<displayName count="other">ukrán hrivnya</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
+				<symbol>UAH</symbol>
+				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>Ukrán karbovanec</displayName>
@@ -6994,14 +7029,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ugandai shilling</displayName>
 				<displayName count="one">ugandai shilling</displayName>
 				<displayName count="other">ugandai shilling</displayName>
-				<symbol draft="contributed">UGX</symbol>
+				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>USA-dollár</displayName>
 				<displayName count="one">USA-dollár</displayName>
 				<displayName count="other">USA-dollár</displayName>
 				<symbol>USD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>USA dollár (következő napi)</displayName>
@@ -7023,14 +7058,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>uruguay-i peso</displayName>
 				<displayName count="one">uruguayi peso</displayName>
 				<displayName count="other">uruguayi peso</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>UYU</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>üzbegisztáni szum</displayName>
 				<displayName count="one">üzbegisztáni szum</displayName>
 				<displayName count="other">üzbegisztáni szum</displayName>
-				<symbol draft="contributed">UZS</symbol>
+				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>Venezuelai bolivar (1871–2008)</displayName>
@@ -7041,21 +7076,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>venezuelai bolivar (2008–2018)</displayName>
 				<displayName count="one">venezuelai bolivar (2008–2018)</displayName>
 				<displayName count="other">venezuelai bolivar (2008–2018)</displayName>
-				<symbol draft="contributed">VEF</symbol>
+				<symbol>VEF</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>venezuelai bolivar</displayName>
 				<displayName count="one">venezuelai bolivar</displayName>
 				<displayName count="other">venezuelai bolivar</displayName>
-				<symbol draft="contributed">VES</symbol>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>vietnámi dong</displayName>
 				<displayName count="one">vietnámi dong</displayName>
 				<displayName count="other">vietnámi dong</displayName>
 				<symbol>VND</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
+				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName draft="contributed">vietnámi dong (1978–1985)</displayName>
@@ -7066,19 +7101,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>vanuatui vatu</displayName>
 				<displayName count="one">vanuatui vatu</displayName>
 				<displayName count="other">vanuatui vatu</displayName>
-				<symbol draft="contributed">VUV</symbol>
+				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>nyugat-szamoai tala</displayName>
 				<displayName count="one">nyugat-szamoai tala</displayName>
 				<displayName count="other">nyugat-szamoai tala</displayName>
-				<symbol draft="contributed">WST</symbol>
+				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>CFA frank BEAC</displayName>
 				<displayName count="one">CFA frank BEAC</displayName>
 				<displayName count="other">CFA frank BEAC</displayName>
-				<symbol draft="contributed">FCFA</symbol>
+				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>Ezüst</displayName>
@@ -7111,7 +7146,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kelet-karibi dollár</displayName>
 				<displayName count="other">kelet-karibi dollár</displayName>
 				<symbol>XCD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>Special Drawing Rights</displayName>
@@ -7142,7 +7177,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>csendes-óceáni valutaközösségi frank</displayName>
 				<displayName count="one">csendes-óceáni valutaközösségi frank</displayName>
 				<displayName count="other">csendes-óceáni valutaközösségi frank</displayName>
-				<symbol draft="contributed">CFPF</symbol>
+				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>platina</displayName>
@@ -7167,7 +7202,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>jemeni rial</displayName>
 				<displayName count="one">jemeni rial</displayName>
 				<displayName count="other">jemeni rial</displayName>
-				<symbol draft="contributed">YER</symbol>
+				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>Jugoszláv kemény dínár</displayName>
@@ -7196,8 +7231,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dél-afrikai rand</displayName>
 				<displayName count="one">dél-afrikai rand</displayName>
 				<displayName count="other">dél-afrikai rand</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
+				<symbol>ZAR</symbol>
+				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Zambiai kwacha (1968–2012)</displayName>
@@ -7207,8 +7242,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>zambiai kwacha</displayName>
 				<displayName count="one">zambiai kwacha</displayName>
 				<displayName count="other">zambiai kwacha</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
+				<symbol>ZMW</symbol>
+				<symbol alt="narrow">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>Zairei új zaire</displayName>
@@ -7241,6 +7276,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="other">A kosár tartalma: {0} X. Megveszi őket?</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">Az {0}. lehetőségnél forduljon jobbra.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">A {0}. lehetőségnél forduljon jobbra.</ordinalMinimalPairs>
+			<caseMinimalPairs case="accusative">{0} évet</caseMinimalPairs>
+			<caseMinimalPairs case="instrumental">{0} évvel</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">{0} év</caseMinimalPairs>
+			<caseMinimalPairs case="terminative">{0} évig</caseMinimalPairs>
+			<caseMinimalPairs case="translative">{0} évvé</caseMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -7343,59 +7383,147 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="acceleration-g-force">
 				<displayName>g gyorsulás</displayName>
 				<unitPattern count="one">{0} g gyorsulás</unitPattern>
+				<unitPattern count="one" case="accusative">{0} g gyorsulást</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} g gyorsulással</unitPattern>
+				<unitPattern count="one" case="terminative">{0} g gyorsulásig</unitPattern>
+				<unitPattern count="one" case="translative">{0} g gyorsulássá</unitPattern>
 				<unitPattern count="other">{0} g gyorsulás</unitPattern>
+				<unitPattern count="other" case="accusative">{0} g gyorsulást</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} g gyorsulással</unitPattern>
+				<unitPattern count="other" case="terminative">{0} g gyorsulásig</unitPattern>
+				<unitPattern count="other" case="translative">{0} g gyorsulássá</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>méter per másodpercnégyzet</displayName>
 				<unitPattern count="one">{0} méter per másodpercnégyzet</unitPattern>
+				<unitPattern count="one" case="accusative">{0} méter per másodpercnégyzetet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} méter per másodpercnégyzettel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} méter per másodpercnégyzetig</unitPattern>
+				<unitPattern count="one" case="translative">{0} méter per másodpercnégyzetté</unitPattern>
 				<unitPattern count="other">{0} méter per másodpercnégyzet</unitPattern>
+				<unitPattern count="other" case="accusative">{0} méter per másodpercnégyzetet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} méter per másodpercnégyzettel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} méter per másodpercnégyzetig</unitPattern>
+				<unitPattern count="other" case="translative">{0} méter per másodpercnégyzetté</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>fordulat</displayName>
 				<unitPattern count="one">{0} fordulat</unitPattern>
+				<unitPattern count="one" case="accusative">{0} fordulatot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} fordulattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} fordulatig</unitPattern>
+				<unitPattern count="one" case="translative">{0} fordulattá</unitPattern>
 				<unitPattern count="other">{0} fordulat</unitPattern>
+				<unitPattern count="other" case="accusative">{0} fordulatot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} fordulattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} fordulatig</unitPattern>
+				<unitPattern count="other" case="translative">{0} fordulattá</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>radián</displayName>
 				<unitPattern count="one">{0} radián</unitPattern>
+				<unitPattern count="one" case="accusative">{0} radiánt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} radiánnal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} radiánig</unitPattern>
+				<unitPattern count="one" case="translative">{0} radiánná</unitPattern>
 				<unitPattern count="other">{0} radián</unitPattern>
+				<unitPattern count="other" case="accusative">{0} radiánt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} radiánnal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} radiánig</unitPattern>
+				<unitPattern count="other" case="translative">{0} radiánná</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>fok</displayName>
 				<unitPattern count="one">{0} fok</unitPattern>
+				<unitPattern count="one" case="accusative">{0} fokot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} fokkal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} fokig</unitPattern>
+				<unitPattern count="one" case="translative">{0} fokká</unitPattern>
 				<unitPattern count="other">{0} fok</unitPattern>
+				<unitPattern count="other" case="accusative">{0} fokot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} fokkal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} fokig</unitPattern>
+				<unitPattern count="other" case="translative">{0} fokká</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<displayName>ívperc</displayName>
 				<unitPattern count="one">{0} ívperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ívpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ívperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ívpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ívperccé</unitPattern>
 				<unitPattern count="other">{0} ívperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ívpercet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ívperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ívpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ívperccé</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName>ívmásodperc</displayName>
 				<unitPattern count="one">{0} ívmásodperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ívmásodpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ívmásodperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ívmásodpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ívmásodperccé</unitPattern>
 				<unitPattern count="other">{0} ívmásodperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ívmásodpercet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ívmásodperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ívmásodpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ívmásodperccé</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>négyzetkilométer</displayName>
 				<unitPattern count="one">{0} négyzetkilométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} négyzetkilométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} négyzetkilométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} négyzetkilométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} négyzetkilométerré</unitPattern>
 				<unitPattern count="other">{0} négyzetkilométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} négyzetkilométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} négyzetkilométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} négyzetkilométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} négyzetkilométerré</unitPattern>
 				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektár</displayName>
 				<unitPattern count="one">{0} hektár</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektárt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektárral</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hektárig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hektárrá</unitPattern>
 				<unitPattern count="other">{0} hektár</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektárt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hektárral</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hektárig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hektárrá</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>négyzetméter</displayName>
 				<unitPattern count="one">{0} négyzetméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} négyzetmétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} négyzetméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} négyzetméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} négyzetméterré</unitPattern>
 				<unitPattern count="other">{0} négyzetméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} négyzetmétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} négyzetméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} négyzetméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} négyzetméterré</unitPattern>
 				<perUnitPattern>{0}/négyzetméter</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>négyzetcentiméter</displayName>
 				<unitPattern count="one">{0} négyzetcentiméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} négyzetcentimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} négyzetcentiméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} négyzetcentiméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} négyzetcentiméterré</unitPattern>
 				<unitPattern count="other">{0} négyzetcentiméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} négyzetcentimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} négyzetcentiméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} négyzetcentiméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} négyzetcentiméterré</unitPattern>
 				<perUnitPattern>{0}/négyzetcentiméter</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -7428,7 +7556,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-karat">
 				<displayName>karát</displayName>
 				<unitPattern count="one">{0} karát</unitPattern>
+				<unitPattern count="one" case="accusative">{0} karátot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} karáttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} karátig</unitPattern>
+				<unitPattern count="one" case="translative">{0} karáttá</unitPattern>
 				<unitPattern count="other">{0} karát</unitPattern>
+				<unitPattern count="other" case="accusative">{0} karátot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} karáttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} karátig</unitPattern>
+				<unitPattern count="other" case="translative">{0} karáttá</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>milligramm/deciliter</displayName>
@@ -7438,42 +7574,118 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimól/liter</displayName>
 				<unitPattern count="one">{0} millimól/liter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millimól/litert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} millimól/literrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} millimól/literig</unitPattern>
+				<unitPattern count="one" case="translative">{0} millimól/literré</unitPattern>
 				<unitPattern count="other">{0} millimól/liter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millimól/litert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} millimól/literrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} millimól/literig</unitPattern>
+				<unitPattern count="other" case="translative">{0} millimól/literré</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<unitPattern count="one">{0} item</unitPattern>
+				<unitPattern count="one" case="accusative">{0} itemet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} itemmel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} itemig</unitPattern>
+				<unitPattern count="one" case="translative">{0} itemmé</unitPattern>
+				<unitPattern count="other">{0} item</unitPattern>
+				<unitPattern count="other" case="accusative">{0} itemet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} itemmel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} itemig</unitPattern>
+				<unitPattern count="other" case="translative">{0} itemmé</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>részecske/millió</displayName>
 				<unitPattern count="one">{0} részecske/millió</unitPattern>
+				<unitPattern count="one" case="accusative">{0} részecske/milliót</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} részecske/millióval</unitPattern>
+				<unitPattern count="one" case="terminative">{0} részecske/millióig</unitPattern>
+				<unitPattern count="one" case="translative">{0} részecske/millióvá</unitPattern>
 				<unitPattern count="other">{0} részecske/millió</unitPattern>
+				<unitPattern count="other" case="accusative">{0} részecske/milliót</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} részecske/millióval</unitPattern>
+				<unitPattern count="other" case="terminative">{0} részecske/millióig</unitPattern>
+				<unitPattern count="other" case="translative">{0} részecske/millióvá</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>százalék</displayName>
 				<unitPattern count="one">{0} százalék</unitPattern>
+				<unitPattern count="one" case="accusative">{0} százalékot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} százalékkal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} százalékig</unitPattern>
+				<unitPattern count="one" case="translative">{0} százalékká</unitPattern>
 				<unitPattern count="other">{0} százalék</unitPattern>
+				<unitPattern count="other" case="accusative">{0} százalékot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} százalékkal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} százalékig</unitPattern>
+				<unitPattern count="other" case="translative">{0} százalékká</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>ezrelék</displayName>
 				<unitPattern count="one">{0} ezrelék</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ezreléket</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ezrelékkel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ezrelékig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ezrelékké</unitPattern>
 				<unitPattern count="other">{0} ezrelék</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ezreléket</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ezrelékkel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ezrelékig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ezrelékké</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>tízezrelék</displayName>
 				<unitPattern count="one">{0} tízezrelék</unitPattern>
+				<unitPattern count="one" case="accusative">{0} tízezreléket</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} tízezrelékkel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} tízezrelékig</unitPattern>
+				<unitPattern count="one" case="translative">{0} tízezrelékké</unitPattern>
 				<unitPattern count="other">{0} tízezrelék</unitPattern>
+				<unitPattern count="other" case="accusative">{0} tízezreléket</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} tízezrelékkel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} tízezrelékig</unitPattern>
+				<unitPattern count="other" case="translative">{0} tízezrelékké</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mól</displayName>
 				<unitPattern count="one">{0} mól</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mólt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} móllal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} mólig</unitPattern>
+				<unitPattern count="one" case="translative">{0} móllá</unitPattern>
 				<unitPattern count="other">{0} mól</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mólt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} móllal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} mólig</unitPattern>
+				<unitPattern count="other" case="translative">{0} móllá</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liter per kilométer</displayName>
 				<unitPattern count="one">{0} liter per kilométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} liter per kilométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} liter per kilométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} liter per kilométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} liter per kilométerré</unitPattern>
 				<unitPattern count="other">{0} liter per kilométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} liter per kilométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} liter per kilométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} liter per kilométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} liter per kilométerré</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>liter/100 km</displayName>
 				<unitPattern count="one">{0} liter/100 km</unitPattern>
+				<unitPattern count="one" case="accusative">{0} liter/100 km-t</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} liter/100 km-rel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} liter/100 km-ig</unitPattern>
+				<unitPattern count="one" case="translative">{0} liter/100 km-ré</unitPattern>
 				<unitPattern count="other">{0} liter/100 km</unitPattern>
+				<unitPattern count="other" case="accusative">{0} liter/100 km-t</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} liter/100 km-rel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} liter/100 km-ig</unitPattern>
+				<unitPattern count="other" case="translative">{0} liter/100 km-ré</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mérföld per gallon</displayName>
@@ -7488,144 +7700,372 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="digital-petabyte">
 				<displayName>petabájt</displayName>
 				<unitPattern count="one">{0} petabájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} petabájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} petabájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} petabájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} petabájttá</unitPattern>
 				<unitPattern count="other">{0} petabájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} petabájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} petabájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} petabájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} petabájttá</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabájt</displayName>
 				<unitPattern count="one">{0} terabájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} terabájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} terabájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} terabájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} terabájttá</unitPattern>
 				<unitPattern count="other">{0} terabájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} terabájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} terabájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} terabájttá</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>terabit</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} terabitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} terabittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} terabitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} terabitté</unitPattern>
 				<unitPattern count="other">{0} terabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} terabittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} terabitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} terabitté</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>gigabájt</displayName>
 				<unitPattern count="one">{0} gigabájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigabájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigabájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} gigabájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} gigabájttá</unitPattern>
 				<unitPattern count="other">{0} gigabájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigabájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gigabájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} gigabájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} gigabájttá</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>gigabit</displayName>
 				<unitPattern count="one">{0} gigabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigabitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigabittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} gigabitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} gigabitté</unitPattern>
 				<unitPattern count="other">{0} gigabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigabitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gigabittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} gigabitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} gigabitté</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>megabájt</displayName>
 				<unitPattern count="one">{0} megabájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megabájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megabájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megabájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megabájttá</unitPattern>
 				<unitPattern count="other">{0} megabájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megabájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megabájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megabájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megabájttá</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>megabit</displayName>
 				<unitPattern count="one">{0} megabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megabitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megabittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megabitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megabitté</unitPattern>
 				<unitPattern count="other">{0} megabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megabitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megabittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megabitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megabitté</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kilobájt</displayName>
 				<unitPattern count="one">{0} kilobájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilobájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilobájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilobájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilobájttá</unitPattern>
 				<unitPattern count="other">{0} kilobájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilobájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilobájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilobájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilobájttá</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kilobit</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilobitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilobittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilobitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilobitté</unitPattern>
 				<unitPattern count="other">{0} kilobit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilobitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilobittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilobitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilobitté</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>bájt</displayName>
 				<unitPattern count="one">{0} bájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} bájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} bájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} bájttá</unitPattern>
 				<unitPattern count="other">{0} bájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} bájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} bájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} bájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} bájttá</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>bit</displayName>
 				<unitPattern count="one">{0} bit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} bittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} bitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} bitté</unitPattern>
 				<unitPattern count="other">{0} bit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} bitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} bittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} bitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} bitté</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>évszázad</displayName>
 				<unitPattern count="one">{0} évszázad</unitPattern>
+				<unitPattern count="one" case="accusative">{0} évszázadot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} évszázaddal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} évszázadig</unitPattern>
+				<unitPattern count="one" case="translative">{0} évszázaddá</unitPattern>
 				<unitPattern count="other">{0} évszázad</unitPattern>
+				<unitPattern count="other" case="accusative">{0} évszázadot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} évszázaddal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} évszázadig</unitPattern>
+				<unitPattern count="other" case="translative">{0} évszázaddá</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>évtized</displayName>
 				<unitPattern count="one">{0} évtized</unitPattern>
+				<unitPattern count="one" case="accusative">{0} évtizedet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} évtizeddel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} évtizedig</unitPattern>
+				<unitPattern count="one" case="translative">{0} évtizeddé</unitPattern>
 				<unitPattern count="other">{0} évtized</unitPattern>
+				<unitPattern count="other" case="accusative">{0} évtizedet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} évtizeddel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} évtizedig</unitPattern>
+				<unitPattern count="other" case="translative">{0} évtizeddé</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>év</displayName>
 				<unitPattern count="one">{0} év</unitPattern>
+				<unitPattern count="one" case="accusative">{0} évet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} évvel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} évig</unitPattern>
+				<unitPattern count="one" case="translative">{0} évvé</unitPattern>
 				<unitPattern count="other">{0} év</unitPattern>
+				<unitPattern count="other" case="accusative">{0} évet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} évvel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} évig</unitPattern>
+				<unitPattern count="other" case="translative">{0} évvé</unitPattern>
 				<perUnitPattern>{0}/év</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>hónap</displayName>
 				<unitPattern count="one">{0} hónap</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hónapot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hónappal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hónapig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hónappá</unitPattern>
 				<unitPattern count="other">{0} hónap</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hónapot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hónappal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hónapig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hónappá</unitPattern>
 				<perUnitPattern>{0}/hónap</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>hét</displayName>
 				<unitPattern count="one">{0} hét</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hetet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} héttel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hétig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hétté</unitPattern>
 				<unitPattern count="other">{0} hét</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hetet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} héttel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hétig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hétté</unitPattern>
 				<perUnitPattern>{0}/hét</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>nap</displayName>
 				<unitPattern count="one">{0} nap</unitPattern>
+				<unitPattern count="one" case="accusative">{0} napot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nappal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} napig</unitPattern>
+				<unitPattern count="one" case="translative">{0} nappá</unitPattern>
 				<unitPattern count="other">{0} nap</unitPattern>
+				<unitPattern count="other" case="accusative">{0} napot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nappal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} napig</unitPattern>
+				<unitPattern count="other" case="translative">{0} nappá</unitPattern>
 				<perUnitPattern>{0}/nap</perUnitPattern>
+			</unit>
+			<unit type="duration-day-person">
+				<unitPattern count="one">{0} nap</unitPattern>
+				<unitPattern count="one" case="accusative">{0} napot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nappal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} napig</unitPattern>
+				<unitPattern count="one" case="translative">{0} nappá</unitPattern>
+				<unitPattern count="other">{0} nap</unitPattern>
+				<unitPattern count="other" case="accusative">{0} napot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nappal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} napig</unitPattern>
+				<unitPattern count="other" case="translative">{0} nappá</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>óra</displayName>
 				<unitPattern count="one">{0} óra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} órát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} órával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} óráig</unitPattern>
+				<unitPattern count="one" case="translative">{0} órává</unitPattern>
 				<unitPattern count="other">{0} óra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} órát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} órával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} óráig</unitPattern>
+				<unitPattern count="other" case="translative">{0} órává</unitPattern>
 				<perUnitPattern>{0}/óra</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>perc</displayName>
 				<unitPattern count="one">{0} perc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} percet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} perccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} percig</unitPattern>
+				<unitPattern count="one" case="translative">{0} perccé</unitPattern>
 				<unitPattern count="other">{0} perc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} percet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} perccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} percig</unitPattern>
+				<unitPattern count="other" case="translative">{0} perccé</unitPattern>
 				<perUnitPattern>{0}/perc</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>másodperc</displayName>
 				<unitPattern count="one">{0} másodperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} másodpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} másodperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} másodpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} másodperccé</unitPattern>
 				<unitPattern count="other">{0} másodperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} másodpercet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} másodperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} másodpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} másodperccé</unitPattern>
 				<perUnitPattern>{0}/másodperc</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ezredmásodperc</displayName>
 				<unitPattern count="one">{0} ezredmásodperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ezredmásodpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ezredmásodperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ezredmásodpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ezredmásodperccé</unitPattern>
 				<unitPattern count="other">{0} ezredmásodperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ezredmásodpercig</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ezredmásodperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ezredmásodpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ezredmásodperccé</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>mikroszekundum</displayName>
 				<unitPattern count="one">{0} mikroszekundum</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikroszekundumot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikroszekundummal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} mikroszekundumig</unitPattern>
+				<unitPattern count="one" case="translative">{0} mikroszekundummá</unitPattern>
 				<unitPattern count="other">{0} mikroszekundum</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikroszekundumot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mikroszekundummal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} mikroszekundumig</unitPattern>
+				<unitPattern count="other" case="translative">{0} mikroszekundummá</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>nanoszekundum</displayName>
 				<unitPattern count="one">{0} nanoszekundum</unitPattern>
+				<unitPattern count="one" case="accusative">{0} nanoszekundumot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nanoszekundummal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} nanoszekundumig</unitPattern>
+				<unitPattern count="one" case="translative">{0} nanoszekundummá</unitPattern>
 				<unitPattern count="other">{0} nanoszekundum</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nanoszekundumot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nanoszekundummal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} nanoszekundumig</unitPattern>
+				<unitPattern count="other" case="translative">{0} nanoszekundummá</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>amper</displayName>
 				<unitPattern count="one">{0} amper</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ampert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} amperrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} amperig</unitPattern>
+				<unitPattern count="one" case="translative">{0} amperré</unitPattern>
 				<unitPattern count="other">{0} amper</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ampert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} amperrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} amperig</unitPattern>
+				<unitPattern count="other" case="translative">{0} amperré</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>milliamper</displayName>
 				<unitPattern count="one">{0} milliamper</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milliampert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milliamperrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milliamperig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milliamperré</unitPattern>
 				<unitPattern count="other">{0} milliamper</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milliampert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milliamperrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milliamperig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milliamperré</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>ohm</displayName>
 				<unitPattern count="one">{0} ohm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ohmot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ohmmal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ohmig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ohmmá</unitPattern>
 				<unitPattern count="other">{0} ohm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ohmot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ohmmal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ohmig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ohmmá</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>volt</displayName>
 				<unitPattern count="one">{0} volt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} voltot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} volttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} voltig</unitPattern>
+				<unitPattern count="one" case="translative">{0} volttá</unitPattern>
 				<unitPattern count="other">{0} volt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} voltot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} volttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} voltig</unitPattern>
+				<unitPattern count="other" case="translative">{0} volttá</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>kilokalória</displayName>
@@ -7635,7 +8075,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-calorie">
 				<displayName>kalória</displayName>
 				<unitPattern count="one">{0} kalória</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kalóriát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kalóriával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kalóriáig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kalóriává</unitPattern>
 				<unitPattern count="other">{0} kalória</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kalóriát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kalóriával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kalóriáig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kalóriává</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>kalória</displayName>
@@ -7645,17 +8093,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
 				<unitPattern count="one">{0} kilojoule</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilojoule-t</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilojoule-lal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilojoule-ig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilojoule-lá</unitPattern>
 				<unitPattern count="other">{0} kilojoule</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilojoule-t</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilojoule-lal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilojoule-ig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilojoule-lá</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>joule</displayName>
 				<unitPattern count="one">{0} joule</unitPattern>
+				<unitPattern count="one" case="accusative">{0} joule-t</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} joule-lal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} joule-ig</unitPattern>
+				<unitPattern count="one" case="translative">{0} joule-lá</unitPattern>
 				<unitPattern count="other">{0} joule</unitPattern>
+				<unitPattern count="other" case="accusative">{0} joule-t</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} joule-lal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} joule-ig</unitPattern>
+				<unitPattern count="other" case="translative">{0} joule-lá</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kilowattóra</displayName>
 				<unitPattern count="one">{0} kilowattóra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilowattórát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilowattórával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilowattóráig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilowattórává</unitPattern>
 				<unitPattern count="other">{0} kilowattóra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilowattórát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilowattórával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilowattóráig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilowattórává</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elektronvolt</displayName>
@@ -7680,47 +8152,132 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="force-newton">
 				<displayName>newton</displayName>
 				<unitPattern count="one">{0} newton</unitPattern>
+				<unitPattern count="one" case="accusative">{0} newtont</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} newtonnal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} newtonig</unitPattern>
+				<unitPattern count="one" case="translative">{0} newtonná</unitPattern>
 				<unitPattern count="other">{0} newton</unitPattern>
+				<unitPattern count="other" case="accusative">{0} newtont</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} newtonnal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} newtonig</unitPattern>
+				<unitPattern count="other" case="translative">{0} newtonná</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100 km</displayName>
+				<unitPattern count="one">{0} kWh/100 km</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kWh/100 km-t</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kWh/100 km-rel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kWh/100 km-ig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kWh/100 km-ré</unitPattern>
+				<unitPattern count="other">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kWh/100 km-t</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kWh/100 km-rel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kWh/100 km-ig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kWh/100 km-ré</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>gigahertz</displayName>
 				<unitPattern count="one">{0} gigahertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigahertzet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigahertzcel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} gigahertzig</unitPattern>
+				<unitPattern count="one" case="translative">{0} gigahertzcé</unitPattern>
 				<unitPattern count="other">{0} gigahertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigahertzet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gigahertzcel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} gigahertzig</unitPattern>
+				<unitPattern count="other" case="translative">{0} gigahertzcé</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
 				<displayName>megahertz</displayName>
 				<unitPattern count="one">{0} megahertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megahertzet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megahertzcel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megahertzig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megahertzcé</unitPattern>
 				<unitPattern count="other">{0} megahertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megahertzet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megahertzcel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megahertzig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megahertzcé</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
 				<displayName>kilohertz</displayName>
 				<unitPattern count="one">{0} kilohertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilohertzet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilohertzcel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilohertzig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilohertzcé</unitPattern>
 				<unitPattern count="other">{0} kilohertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilohertzet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilohertzcel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilohertzig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilohertzcé</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<displayName>hertz</displayName>
 				<unitPattern count="one">{0} hertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hertzet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hertzcel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hertzig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hertzcé</unitPattern>
 				<unitPattern count="other">{0} hertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hertzet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hertzcel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hertzig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hertzcé</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<displayName>nyomdai em</displayName>
 				<unitPattern count="one">{0} kvirt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kvirtet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kvirttel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kvirtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kvirtté</unitPattern>
 				<unitPattern count="other">{0} kvirt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kvirtet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kvirttel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kvirtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kvirtté</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>képpont</displayName>
 				<unitPattern count="one">{0} képpont</unitPattern>
+				<unitPattern count="one" case="accusative">{0} képpontot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} képponttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} képpontig</unitPattern>
+				<unitPattern count="one" case="translative">{0} képponttá</unitPattern>
 				<unitPattern count="other">{0} képpont</unitPattern>
+				<unitPattern count="other" case="accusative">{0} képpontot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} képponttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} képpontig</unitPattern>
+				<unitPattern count="other" case="translative">{0} képponttá</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>millió képpont</displayName>
 				<unitPattern count="one">{0} millió képpont</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millió képpontot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} millió képponttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} millió képpontig</unitPattern>
+				<unitPattern count="one" case="translative">{0} millió képponttá</unitPattern>
 				<unitPattern count="other">{0} millió képpont</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millió képpontot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} millió képponttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} millió képpontig</unitPattern>
+				<unitPattern count="other" case="translative">{0} millió képponttá</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>képpont per centiméter</displayName>
 				<unitPattern count="one">{0} képpont per centiméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} képpont per centimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} képpont per centiméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} képpont per centiméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} képpont per centiméterré</unitPattern>
 				<unitPattern count="other">{0} képpont per centiméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} képpont per centimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} képpont per centiméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} képpont per centiméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} képpont per centiméterré</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>képpont per hüvelyk</displayName>
@@ -7750,45 +8307,109 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-kilometer">
 				<displayName>kilométer</displayName>
 				<unitPattern count="one">{0} kilométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilométerré</unitPattern>
 				<unitPattern count="other">{0} kilométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilométerré</unitPattern>
 				<perUnitPattern>{0}/kilométer</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>méter</displayName>
 				<unitPattern count="one">{0} méter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} métert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} méterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} méterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} méterré</unitPattern>
 				<unitPattern count="other">{0} méter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} métert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} méterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} méterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} méterré</unitPattern>
 				<perUnitPattern>{0}/méter</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>deciméter</displayName>
 				<unitPattern count="one">{0} deciméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} decimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} deciméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} deciméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} deciméterré</unitPattern>
 				<unitPattern count="other">{0} deciméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} decimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} deciméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} deciméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} deciméterré</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>centiméter</displayName>
 				<unitPattern count="one">{0} centiméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} centimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} centiméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} centiméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} centiméterré</unitPattern>
 				<unitPattern count="other">{0} centiméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} centimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} centiméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} centiméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} centiméterré</unitPattern>
 				<perUnitPattern>{0}/centimeter</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>milliméter</displayName>
 				<unitPattern count="one">{0} milliméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milliméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milliméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milliméterré</unitPattern>
 				<unitPattern count="other">{0} milliméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milliméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milliméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milliméterré</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>mikrométer</displayName>
 				<unitPattern count="one">{0} mikrométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikrométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} mikrométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} mikrométerré</unitPattern>
 				<unitPattern count="other">{0} mikrométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikrométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mikrométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} mikrométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} mikrométerré</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nanométer</displayName>
 				<unitPattern count="one">{0} nanométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} nanométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nanométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} nanométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} nanométerré</unitPattern>
 				<unitPattern count="other">{0} nanométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nanométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nanométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} nanométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} nanométerré</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>pikométer</displayName>
 				<unitPattern count="one">{0} pikométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} pikométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} pikométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} pikométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} pikométerré</unitPattern>
 				<unitPattern count="other">{0} pikométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} pikométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} pikométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} pikométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} pikométerré</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mérföld</displayName>
@@ -7845,7 +8466,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-mile-scandinavian">
 				<displayName>svéd mérföld</displayName>
 				<unitPattern count="one">{0} svéd mérföld</unitPattern>
+				<unitPattern count="one" case="accusative">{0} svéd mérföldet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} svéd mérfölddel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} svéd mérföldig</unitPattern>
+				<unitPattern count="one" case="translative">{0} svéd mérfölddé</unitPattern>
 				<unitPattern count="other">{0} svéd mérföld</unitPattern>
+				<unitPattern count="other" case="accusative">{0} svéd mérföldet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} svéd mérfölddel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} svéd mérföldig</unitPattern>
+				<unitPattern count="other" case="translative">{0} svéd mérfölddé</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>pont</displayName>
@@ -7860,17 +8489,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
+				<unitPattern count="one" case="accusative">{0} luxot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} luxszal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} luxig</unitPattern>
+				<unitPattern count="one" case="translative">{0} luxszá</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
+				<unitPattern count="other" case="accusative">{0} luxot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} luxszal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} luxig</unitPattern>
+				<unitPattern count="other" case="translative">{0} luxszá</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<displayName>kandela</displayName>
 				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kandelát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kandelával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kandeláig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kandelává</unitPattern>
 				<unitPattern count="other">{0} kandela</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kandelát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kandelával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kandeláig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kandelává</unitPattern>
 			</unit>
 			<unit type="light-lumen">
 				<displayName>lumen</displayName>
 				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="one" case="accusative">{0} lument</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} lumennel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} lumenig</unitPattern>
+				<unitPattern count="one" case="translative">{0} lumenné</unitPattern>
 				<unitPattern count="other">{0} lumen</unitPattern>
+				<unitPattern count="other" case="accusative">{0} lument</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} lumennel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} lumenig</unitPattern>
+				<unitPattern count="other" case="translative">{0} lumenné</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>Nap-fényerő</displayName>
@@ -7880,29 +8533,69 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-metric-ton">
 				<displayName>metrikus tonna</displayName>
 				<unitPattern count="one">{0} metrikus tonna</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metrikus tonnát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metrikus tonnával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} metrikus tonnáig</unitPattern>
+				<unitPattern count="one" case="translative">{0} metrikus tonnává</unitPattern>
 				<unitPattern count="other">{0} metrikus tonna</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrikus tonnát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} metrikus tonnával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} metrikus tonnáig</unitPattern>
+				<unitPattern count="other" case="translative">{0} metrikus tonnává</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kilogramm</displayName>
 				<unitPattern count="one">{0} kilogramm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilogrammot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilogrammal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilogrammig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilogrammá</unitPattern>
 				<unitPattern count="other">{0} kilogramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilogrammot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilogrammal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilogrammig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilogrammá</unitPattern>
 				<perUnitPattern>{0}/kilogramm</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>gramm</displayName>
 				<unitPattern count="one">{0} gramm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} grammot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} grammal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} grammig</unitPattern>
+				<unitPattern count="one" case="translative">{0} grammá</unitPattern>
 				<unitPattern count="other">{0} gramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} grammot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} grammal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} grammig</unitPattern>
+				<unitPattern count="other" case="translative">{0} grammá</unitPattern>
 				<perUnitPattern>{0}/gramm</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>milligramm</displayName>
 				<unitPattern count="one">{0} milligramm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milligrammot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milligrammal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milligrammig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milligrammá</unitPattern>
 				<unitPattern count="other">{0} milligramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milligrammot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milligrammal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milligrammig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milligrammá</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
 				<displayName>mikrogramm</displayName>
 				<unitPattern count="one">{0} mikrogramm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrogrammot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikrogrammal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} mikrogrammig</unitPattern>
+				<unitPattern count="one" case="translative">{0} mikrogrammá</unitPattern>
 				<unitPattern count="other">{0} mikrogramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikrogrammot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mikrogrammal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} mikrogrammig</unitPattern>
+				<unitPattern count="other" case="translative">{0} mikrogrammá</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>amerikai tonna</displayName>
@@ -7934,7 +8627,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-carat">
 				<displayName>karát</displayName>
 				<unitPattern count="one">{0} karát</unitPattern>
+				<unitPattern count="one" case="accusative">{0} karátot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} karáttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} karátig</unitPattern>
+				<unitPattern count="one" case="translative">{0} karáttá</unitPattern>
 				<unitPattern count="other">{0} karát</unitPattern>
+				<unitPattern count="other" case="accusative">{0} karátot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} karáttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} karátig</unitPattern>
+				<unitPattern count="other" case="translative">{0} karáttá</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>dalton</displayName>
@@ -7959,27 +8660,67 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-gigawatt">
 				<displayName>gigawatt</displayName>
 				<unitPattern count="one">{0} gigawatt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigawattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigawattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} gigawattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} gigawattá</unitPattern>
 				<unitPattern count="other">{0} gigawatt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigawattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gigawattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} gigawattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} gigawattá</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName>megawatt</displayName>
 				<unitPattern count="one">{0} megawatt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megawattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megawattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megawattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megawattá</unitPattern>
 				<unitPattern count="other">{0} megawatt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megawattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megawattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megawattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megawattá</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName>kilowatt</displayName>
 				<unitPattern count="one">{0} kilowatt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilowattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilowattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilowattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilowattá</unitPattern>
 				<unitPattern count="other">{0} kilowatt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilowattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilowattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilowattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilowattá</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>watt</displayName>
 				<unitPattern count="one">{0} watt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} wattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} wattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} wattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} wattá</unitPattern>
 				<unitPattern count="other">{0} watt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} wattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} wattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} wattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} wattá</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>milliwatt</displayName>
 				<unitPattern count="one">{0} milliwatt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milliwattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milliwattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milliwattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milliwattá</unitPattern>
 				<unitPattern count="other">{0} milliwatt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milliwattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milliwattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milliwattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milliwattá</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>lóerő</displayName>
@@ -8001,45 +8742,121 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} higanyhüvelyk</unitPattern>
 				<unitPattern count="other">{0} higanyhüvelyk</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bart</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} barral</unitPattern>
+				<unitPattern count="one" case="terminative">{0} barig</unitPattern>
+				<unitPattern count="one" case="translative">{0} barrá</unitPattern>
+				<unitPattern count="other">{0} bar</unitPattern>
+				<unitPattern count="other" case="accusative">{0} bart</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} barral</unitPattern>
+				<unitPattern count="other" case="terminative">{0} barig</unitPattern>
+				<unitPattern count="other" case="translative">{0} barrá</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>millibar</displayName>
 				<unitPattern count="one">{0} millibar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millibart</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} millibarral</unitPattern>
+				<unitPattern count="one" case="terminative">{0} millibarig</unitPattern>
+				<unitPattern count="one" case="translative">{0} millibarrá</unitPattern>
 				<unitPattern count="other">{0} millibar</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millibart</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} millibarral</unitPattern>
+				<unitPattern count="other" case="terminative">{0} millibarig</unitPattern>
+				<unitPattern count="other" case="translative">{0} millibarrá</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<displayName>atmoszféra</displayName>
 				<unitPattern count="one">{0} atmoszféra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} atmoszférát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} atmoszférával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} atmoszféráig</unitPattern>
+				<unitPattern count="one" case="translative">{0} atmoszférává</unitPattern>
 				<unitPattern count="other">{0} atmoszféra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} atmoszférát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} atmoszférával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} atmoszféráig</unitPattern>
+				<unitPattern count="other" case="translative">{0} atmoszférává</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>pascal</displayName>
 				<unitPattern count="one">{0} pascal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} pascalt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} pascallal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} pascalig</unitPattern>
+				<unitPattern count="one" case="translative">{0} pascallá</unitPattern>
 				<unitPattern count="other">{0} pascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} pascalt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} pascallal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} pascalig</unitPattern>
+				<unitPattern count="other" case="translative">{0} pascallá</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hektopascal</displayName>
 				<unitPattern count="one">{0} hektopascal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektopascalt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektopascallal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hektopascalig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hektopascallá</unitPattern>
 				<unitPattern count="other">{0} hektopascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektopascalt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hektopascallal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hektopascalig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hektopascallá</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kilopascal</displayName>
 				<unitPattern count="one">{0} kilopascal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilopascalt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilopascallal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilopascalig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilopascallá</unitPattern>
 				<unitPattern count="other">{0} kilopascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilopascalt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilopascallal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilopascalig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilopascallá</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<displayName>megapascal</displayName>
 				<unitPattern count="one">{0} megapascal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megapascalt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megapascallal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megapascalig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megapascallá</unitPattern>
 				<unitPattern count="other">{0} megapascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megapascalt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megapascallal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megapascalig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megapascallá</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilométer per óra</displayName>
 				<unitPattern count="one">{0} kilométer per óra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilométer per órát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilométer per órával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilométer per óráig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilométer per órává</unitPattern>
 				<unitPattern count="other">{0} kilométer per óra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilométer per órát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilométer per órával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilométer per óráig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilométer per órává</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>méter per másodperc</displayName>
 				<unitPattern count="one">{0} méter per másodperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} méter per másodpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} méter per másodperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} méter per másodpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} méter per másodperccé</unitPattern>
 				<unitPattern count="other">{0} méter per másodperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} méter per másodpercet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} méter per másodperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} méter per másodpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} méter per másodperccé</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>mérföld per óra</displayName>
@@ -8053,13 +8870,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
+				<unitPattern count="one">{0} fok</unitPattern>
+				<unitPattern count="one" case="accusative">{0} fokot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} fokkal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} fokig</unitPattern>
+				<unitPattern count="one" case="translative">{0} fokká</unitPattern>
+				<unitPattern count="other">{0} fok</unitPattern>
+				<unitPattern count="other" case="accusative">{0} fokot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} fokkal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} fokig</unitPattern>
+				<unitPattern count="other" case="translative">{0} fokká</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>Celsius-fok</displayName>
 				<unitPattern count="one">{0} Celsius-fok</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Celsius-fokot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} Celsius-fokkal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} Celsius-fokig</unitPattern>
+				<unitPattern count="one" case="translative">{0} Celsius-fokká</unitPattern>
 				<unitPattern count="other">{0} Celsius-fok</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Celsius-fokot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} Celsius-fokkal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} Celsius-fokig</unitPattern>
+				<unitPattern count="other" case="translative">{0} Celsius-fokká</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>Fahrenheit-fok</displayName>
@@ -8069,7 +8902,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<displayName>kelvin</displayName>
 				<unitPattern count="one">{0} kelvin</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kelvint</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kelvinnel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kelvinig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kelvinné</unitPattern>
 				<unitPattern count="other">{0} kelvin</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kelvint</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kelvinnel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kelvinig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kelvinné</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>fontláb</displayName>
@@ -8079,23 +8920,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="torque-newton-meter">
 				<displayName>newtonméter</displayName>
 				<unitPattern count="one">{0} newtonméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} newtonmétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} newtonméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} newtonméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} newtonméterré</unitPattern>
 				<unitPattern count="other">{0} newtonméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} newtonmétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} newtonméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} newtonméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} newtonméterré</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>köbkilométer</displayName>
 				<unitPattern count="one">{0} köbkilométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} köbkilométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} köbkilométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} köbkilométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} köbkilométerré</unitPattern>
 				<unitPattern count="other">{0} köbkilométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} köbkilométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} köbkilométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} köbkilométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} köbkilométerré</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>köbméter</displayName>
 				<unitPattern count="one">{0} köbméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} köbmétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} köbméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} köbméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} köbméterré</unitPattern>
 				<unitPattern count="other">{0} köbméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} köbmétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} köbméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} köbméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} köbméterré</unitPattern>
 				<perUnitPattern>{0}/köbméter</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>köbcentiméter</displayName>
 				<unitPattern count="one">{0} köbcentiméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} köbcentimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} köbcentiméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} köbcentiméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} köbcentiméterré</unitPattern>
 				<unitPattern count="other">{0} köbcentiméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} köbcentimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} köbcentiméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} köbcentiméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} köbcentiméterré</unitPattern>
 				<perUnitPattern>{0}/köbcentiméter</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -8121,43 +8994,107 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-megaliter">
 				<displayName>megaliter</displayName>
 				<unitPattern count="one">{0} megaliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megalitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megaliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megaliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megaliterré</unitPattern>
 				<unitPattern count="other">{0} megaliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megalitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megaliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megaliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megaliterré</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>hektoliter</displayName>
 				<unitPattern count="one">{0} hektoliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektolitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektoliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hektoliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hektoliterré</unitPattern>
 				<unitPattern count="other">{0} hektoliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektolitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hektoliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hektoliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hektoliterré</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>liter</displayName>
 				<unitPattern count="one">{0} liter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} litert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} literrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} literig</unitPattern>
+				<unitPattern count="one" case="translative">{0} literré</unitPattern>
 				<unitPattern count="other">{0} liter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} litert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} literrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} literig</unitPattern>
+				<unitPattern count="other" case="translative">{0} literré</unitPattern>
 				<perUnitPattern>{0}/liter</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>deciliter</displayName>
 				<unitPattern count="one">{0} deciliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} decilitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} deciliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} deciliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} deciliterré</unitPattern>
 				<unitPattern count="other">{0} deciliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} decilitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} deciliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} deciliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} deciliterré</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<displayName>centiliter</displayName>
 				<unitPattern count="one">{0} centiliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} centilitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} centiliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} centiliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} centiliterré</unitPattern>
 				<unitPattern count="other">{0} centiliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} centilitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} centiliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} centiliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} centiliterré</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<displayName>milliliter</displayName>
 				<unitPattern count="one">{0} milliliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millilitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milliliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milliliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milliliterré</unitPattern>
 				<unitPattern count="other">{0} milliliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millilitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milliliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milliliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milliliterré</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>metrikus pint</displayName>
 				<unitPattern count="one">{0} metrikus pint</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metrikus pintet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metrikus pinttel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} metrikus pintig</unitPattern>
+				<unitPattern count="one" case="translative">{0} metrikus pintté</unitPattern>
 				<unitPattern count="other">{0} metrikus pint</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrikus pintet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} metrikus pinttel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} metrikus pintig</unitPattern>
+				<unitPattern count="other" case="translative">{0} metrikus pintté</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>bögre</displayName>
 				<unitPattern count="one">{0} bögre</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bögrét</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} bögrével</unitPattern>
+				<unitPattern count="one" case="terminative">{0} bögréig</unitPattern>
+				<unitPattern count="one" case="translative">{0} bögrévé</unitPattern>
 				<unitPattern count="other">{0} bögre</unitPattern>
+				<unitPattern count="other" case="accusative">{0} bögrét</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} bögrével</unitPattern>
+				<unitPattern count="other" case="terminative">{0} bögréig</unitPattern>
+				<unitPattern count="other" case="translative">{0} bögrévé</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>hold-láb</displayName>
@@ -8525,7 +9462,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/nap</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>h</displayName>
+				<displayName>ó</displayName>
 				<unitPattern count="one">{0} ó</unitPattern>
 				<unitPattern count="other">{0} ó</unitPattern>
 				<perUnitPattern>{0}/ó</perUnitPattern>
@@ -8537,10 +9474,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/p</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>s</displayName>
-				<unitPattern count="one">{0} s</unitPattern>
-				<unitPattern count="other">{0} s</unitPattern>
-				<perUnitPattern>{0}/s</perUnitPattern>
+				<displayName>mp</displayName>
+				<unitPattern count="one">{0} mp</unitPattern>
+				<unitPattern count="other">{0} mp</unitPattern>
+				<perUnitPattern>{0}/mp</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
@@ -8611,6 +9548,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>USA therm</displayName>
 				<unitPattern count="one">{0} USA therm</unitPattern>
 				<unitPattern count="other">{0} USA therm</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100 km</displayName>
+				<unitPattern count="one">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other">{0} kWh/100 km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -9155,8 +10097,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<unitPattern count="one" draft="contributed">{0} G</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} G</unitPattern>
+				<unitPattern count="one">{0} G</unitPattern>
+				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="one">{0}°</unitPattern>
@@ -9194,13 +10136,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ft²</unitPattern>
 				<unitPattern count="other">{0} ft²</unitPattern>
 			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/l</displayName>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName draft="contributed">‰</displayName>
+				<displayName>‰</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
@@ -9208,8 +10156,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<unitPattern count="one" draft="contributed">{0} B</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} B</unitPattern>
+				<unitPattern count="one">{0} B</unitPattern>
+				<unitPattern count="other">{0} B</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>sz.</displayName>
@@ -9240,25 +10188,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-hour">
 				<displayName>ó</displayName>
 				<unitPattern count="one">{0} ó</unitPattern>
-				<unitPattern count="other">{0} h</unitPattern>
-				<perUnitPattern>{0}/h</perUnitPattern>
+				<unitPattern count="other">{0} ó</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>p</displayName>
 				<unitPattern count="one">{0} p</unitPattern>
 				<unitPattern count="other">{0} p</unitPattern>
-				<perUnitPattern>{0}/min</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>s</displayName>
-				<unitPattern count="one">{0} s</unitPattern>
-				<unitPattern count="other">{0} s</unitPattern>
-				<perUnitPattern>{0}/s</perUnitPattern>
+				<displayName>mp</displayName>
+				<unitPattern count="one">{0} mp</unitPattern>
+				<unitPattern count="other">{0} mp</unitPattern>
+				<perUnitPattern>{0}/mp</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
 				<unitPattern count="one">{0} ms</unitPattern>
 				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100 km</displayName>
+				<unitPattern count="one">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other">{0} kWh/100 km</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -9270,18 +10221,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
-				<perUnitPattern draft="contributed">{0}/m</perUnitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName draft="contributed">dm</displayName>
-				<unitPattern count="one" draft="contributed">{0} dm</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} dm</unitPattern>
+				<displayName>dm</displayName>
+				<unitPattern count="one">{0} dm</unitPattern>
+				<unitPattern count="other">{0} dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
 				<unitPattern count="one">{0} cm</unitPattern>
 				<unitPattern count="other">{0} cm</unitPattern>
-				<perUnitPattern draft="contributed">{0}/cm</perUnitPattern>
+				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
@@ -9293,23 +10244,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="contributed">mf</displayName>
+				<displayName>mf</displayName>
 				<unitPattern count="one">{0} mf</unitPattern>
 				<unitPattern count="other">{0} mf</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName draft="contributed">yd</displayName>
+				<displayName>yd</displayName>
 				<unitPattern count="one">{0} yd</unitPattern>
 				<unitPattern count="other">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="contributed">láb</displayName>
+				<displayName>láb</displayName>
 				<unitPattern count="one">{0} láb</unitPattern>
 				<unitPattern count="other">{0} láb</unitPattern>
-				<perUnitPattern draft="contributed">{0}/láb</perUnitPattern>
+				<perUnitPattern>{0}/láb</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="contributed">hüvelyk</displayName>
+				<displayName>hüvelyk</displayName>
 				<unitPattern count="one">{0} hüvelyk</unitPattern>
 				<unitPattern count="other">{0} hüvelyk</unitPattern>
 				<perUnitPattern draft="contributed">{0}/in</perUnitPattern>
@@ -9322,6 +10273,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">mil</displayName>
 				<unitPattern count="one" draft="contributed">{0} mil</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mil</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
@@ -9428,8 +10382,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} km³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
-				<unitPattern count="one" draft="contributed">{0} mi³</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mi³</unitPattern>
+				<unitPattern count="one">{0} mi³</unitPattern>
+				<unitPattern count="other">{0} mi³</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>l</displayName>

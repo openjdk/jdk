@@ -5182,6 +5182,16 @@ public class Collections {
             return element;
         }
 
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+            int n = this.n;
+            E element = this.element;
+            for (int i = 0; i < n; i++) {
+                action.accept(element);
+            }
+        }
+
         public Object[] toArray() {
             final Object[] a = new Object[n];
             if (element != null)
@@ -5593,7 +5603,7 @@ public class Collections {
      * Adds all of the specified elements to the specified collection.
      * Elements to be added may be specified individually or as an array.
      * The behaviour of this convenience method is similar to that of
-     * {@code cc.addAll(Collections.unmodifiableList(Arrays.asList(elements)))}.
+     * {@code c.addAll(Collections.unmodifiableList(Arrays.asList(elements)))}.
      *
      * <p>When elements are specified individually, this method provides a
      * convenient way to add a few elements to an existing collection:

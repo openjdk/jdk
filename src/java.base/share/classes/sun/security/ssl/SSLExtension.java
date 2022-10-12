@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -768,7 +768,7 @@ enum SSLExtension implements SSLStringizer {
             // of the certificate_authorities extension is 2^16 bytes.  The
             // maximum TLS record size is 2^14 bytes.  If the handshake
             // message is bigger than maximum TLS record size, it should be
-            // splitted into several records.  In fact, some server
+            // split into several records.  In fact, some server
             // implementations do not allow ClientHello messages bigger than
             // the maximum TLS record size and will immediately abort the
             // connection with a fatal alert.  Therefore, if the client trusts

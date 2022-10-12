@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@ public final class OperationTrackers {
     public interface Tracker {
         // The total number of outstanding operations
         long getOutstandingOperations();
+        // The number of outstandanding requests: this is
+        // the number of CF returned by send/sendAsync which
+        // have not been completed.
+        long getOutstandingHttpRequests();
         // The number of outstanding HTTP/1.1 operations.
         // A single HTTP/1.1 request may increment this counter
         // multiple times, so the value returned will be >= to
@@ -53,11 +57,16 @@ public final class OperationTrackers {
         long getOutstandingHttp2Streams();
         // The number of active WebSockets
         long getOutstandingWebSocketOperations();
+        // number of TCP connections still opened
+        long getOutstandingTcpConnections();
         // Whether the facade returned to the
         // user is still referenced
         boolean isFacadeReferenced();
+        // whether the Selector Manager thread is still running
+        boolean isSelectorAlive();
         // The name of the object being tracked.
         String getName();
+
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,11 @@ public class AssociationChange extends AssociationChangeNotification
     implements SctpNotification
 {
     /* static final ints so that they can be referenced from native */
-    @Native private final static int SCTP_COMM_UP = 1;
-    @Native private final static int SCTP_COMM_LOST = 2;
-    @Native private final static int SCTP_RESTART = 3;
-    @Native private final static int SCTP_SHUTDOWN = 4;
-    @Native private final static int SCTP_CANT_START = 5;
+    @Native private static final int SCTP_COMM_UP = 1;
+    @Native private static final int SCTP_COMM_LOST = 2;
+    @Native private static final int SCTP_RESTART = 3;
+    @Native private static final int SCTP_SHUTDOWN = 4;
+    @Native private static final int SCTP_CANT_START = 5;
 
     private Association association;
 

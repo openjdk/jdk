@@ -76,16 +76,10 @@ final class ConstructKeys {
                                                    encodedKeyAlgorithm +
                                                    "algorithm");
             } catch (InvalidKeySpecException ikse2) {
-                InvalidKeyException ike =
-                    new InvalidKeyException("Cannot construct public key");
-                ike.initCause(ikse2);
-                throw ike;
+                throw new InvalidKeyException("Cannot construct public key", ikse2);
             }
         } catch (InvalidKeySpecException ikse) {
-            InvalidKeyException ike =
-                new InvalidKeyException("Cannot construct public key");
-            ike.initCause(ikse);
-            throw ike;
+            throw new InvalidKeyException("Cannot construct public key", ikse);
         }
 
         return key;
@@ -116,16 +110,10 @@ final class ConstructKeys {
                                                    encodedKeyAlgorithm +
                                                    "algorithm");
             } catch (InvalidKeySpecException ikse2) {
-                InvalidKeyException ike =
-                    new InvalidKeyException("Cannot construct private key");
-                ike.initCause(ikse2);
-                throw ike;
+                throw new InvalidKeyException("Cannot construct private key", ikse2);
             }
         } catch (InvalidKeySpecException ikse) {
-            InvalidKeyException ike =
-                new InvalidKeyException("Cannot construct private key");
-            ike.initCause(ikse);
-            throw ike;
+            throw new InvalidKeyException("Cannot construct private key", ikse);
         } finally {
             SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(keySpec);
             if (keyBytes != encodedKey) {

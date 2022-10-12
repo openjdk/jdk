@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,16 +42,14 @@ import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
 import java.util.*;
 import java.util.Set;
-import static javax.tools.Diagnostic.Kind.*;
 
 public class T6341534 extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv)  {
-        messager.printMessage(NOTE,
-                              String.valueOf(eltUtils.getPackageElement("no.such.package")));
+        messager.printNote(String.valueOf(eltUtils.getPackageElement("no.such.package")));
         PackageElement dir = eltUtils.getPackageElement("dir");
-        messager.printMessage(NOTE, dir.getQualifiedName().toString());
+        messager.printNote(dir.getQualifiedName().toString());
         for (Element e : dir.getEnclosedElements())
-            messager.printMessage(NOTE, e.toString());
+            messager.printNote(e.toString());
         return true;
     }
 }

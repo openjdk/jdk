@@ -26,7 +26,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test HandshakeTimeoutTest
@@ -35,7 +35,7 @@ import sun.hotspot.WhiteBox;
  * @requires vm.debug
  * @library /testlibrary /test/lib
  * @build HandshakeTimeoutTest
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver HandshakeTimeoutTest
  */
 

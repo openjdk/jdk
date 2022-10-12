@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -72,7 +73,10 @@ class decode_env {
   bool          _print_help;
   bool          _helpPrinted;
   static bool   _optionsParsed;
-  NOT_PRODUCT(const CodeStrings* _strings;)
+#ifndef PRODUCT
+  const AsmRemarks* _remarks; // Used with start/end range to provide code remarks.
+  ptrdiff_t         _disp;    // Adjustment to offset -> remark mapping.
+#endif
 
   enum {
     tabspacing = 8
@@ -206,9 +210,10 @@ class decode_env {
   decode_env(nmethod*    code, outputStream* output);
   // Constructor for a 'decode_env' to decode an arbitrary
   // piece of memory, hopefully containing code.
-  decode_env(address start, address end, outputStream* output, const CodeStrings* strings = NULL);
+  decode_env(address start, address end, outputStream* output
+             NOT_PRODUCT(COMMA const AsmRemarks* remarks = NULL COMMA ptrdiff_t disp = 0));
 
-  // Add 'original_start' argument which is the the original address
+  // Add 'original_start' argument which is the original address
   // the instructions were located at (if this is not equal to 'start').
   address decode_instructions(address start, address end, address original_start = NULL);
 
@@ -263,7 +268,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           _cached_src_lines = new (ResourceObj::C_HEAP, mtCode)GrowableArray<const char*>(0, mtCode);
         }
 
-        if ((fp = fopen(file, "r")) == NULL) {
+        if ((fp = os::fopen(file, "r")) == NULL) {
           _cached_src = NULL;
           return;
         }
@@ -324,11 +329,11 @@ decode_env::decode_env(CodeBlob* code, outputStream* output) :
   _print_file_name(false),
   _print_help(false),
   _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings(NULL)) {
-
+  NOT_PRODUCT(COMMA _remarks(nullptr))
+  NOT_PRODUCT(COMMA _disp(0))
+{
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
-
 }
 
 decode_env::decode_env(nmethod* code, outputStream* output) :
@@ -346,15 +351,17 @@ decode_env::decode_env(nmethod* code, outputStream* output) :
   _print_file_name(false),
   _print_help(false),
   _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings(NULL))  {
-
+  NOT_PRODUCT(COMMA _remarks(nullptr))
+  NOT_PRODUCT(COMMA _disp(0))
+{
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
 }
 
 // Constructor for a 'decode_env' to decode a memory range [start, end)
 // of unknown origin, assuming it contains code.
-decode_env::decode_env(address start, address end, outputStream* output, const CodeStrings* c) :
+decode_env::decode_env(address start, address end, outputStream* output
+                       NOT_PRODUCT(COMMA const AsmRemarks* remarks COMMA ptrdiff_t disp)) :
   _output(output ? output : tty),
   _codeBlob(NULL),
   _nm(NULL),
@@ -369,8 +376,9 @@ decode_env::decode_env(address start, address end, outputStream* output, const C
   _print_file_name(false),
   _print_help(false),
   _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings(c))  {
-
+  NOT_PRODUCT(COMMA _remarks(remarks))
+  NOT_PRODUCT(COMMA _disp(disp))
+{
   assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
@@ -637,15 +645,15 @@ void decode_env::print_insn_labels() {
     //---<  Block comments for nmethod  >---
     // Outputs a bol() before and a cr() after, but only if a comment is printed.
     // Prints nmethod_section_label as well.
-    if (_nm != NULL) {
+    if (_nm != nullptr) {
       _nm->print_block_comment(st, p);
     }
-    if (_codeBlob != NULL) {
+    else if (_codeBlob != nullptr) {
       _codeBlob->print_block_comment(st, p);
     }
 #ifndef PRODUCT
-    if (_strings != NULL) {
-      _strings->print_block_comment(st, (intptr_t)(p - _start));
+    else if (_remarks != nullptr) {
+      _remarks->print((p - _start) + _disp, st);
     }
 #endif
   }
@@ -688,7 +696,7 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   return (int)(cnt1 - cnt0);
 }
 
-// The 'original_start' argument holds the the original address where
+// The 'original_start' argument holds the original address where
 // the instructions were located in the originating system. If zero (NULL)
 // is passed in, there is no original address.
 address decode_env::decode_instructions(address start, address end, address original_start /* = 0*/) {
@@ -830,6 +838,8 @@ bool Disassembler::load_library(outputStream* st) {
   if (_library != NULL) {
     _decode_instructions_virtual = CAST_TO_FN_PTR(Disassembler::decode_func_virtual,
                                           os::dll_lookup(_library, decode_instructions_virtual_name));
+  } else {
+    log_warning(os)("Loading hsdis library failed");
   }
   _tried_to_load_library = true;
   _library_usable        = _decode_instructions_virtual != NULL;
@@ -865,7 +875,7 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   if (cb->is_nmethod()) {
     // If we  have an nmethod at hand,
     // call the specialized decoder directly.
-    decode((nmethod*)cb, st);
+    ((nmethod*)cb)->decode2(st);
     return;
   }
 
@@ -908,7 +918,8 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
 }
 
 // Decode a range, given as [start address, end address)
-void Disassembler::decode(address start, address end, outputStream* st, const CodeStrings* c) {
+void Disassembler::decode(address start, address end, outputStream* st
+                          NOT_PRODUCT(COMMA const AsmRemarks* remarks COMMA ptrdiff_t disp)) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   //---<  Test memory before decoding  >---
   if (!os::is_readable_range(start, end)) {
@@ -921,22 +932,9 @@ void Disassembler::decode(address start, address end, outputStream* st, const Co
 
   if (is_abstract()) {
     AbstractDisassembler::decode_abstract(start, end, st, Assembler::instr_maxlen());
-    return;
-  }
-
-// Don't do that fancy stuff. If we just have two addresses, live with it
-// and treat the memory contents as "amorphic" piece of code.
-#if 0
-  CodeBlob* cb = CodeCache::find_blob_unsafe(start);
-  if (cb != NULL) {
-    // If we  have an CodeBlob at hand,
-    // call the specialized decoder directly.
-    decode(cb, st, c);
-  } else
-#endif
-  {
+  } else {
     // This seems to be just a chunk of memory.
-    decode_env env(start, end, st, c);
+    decode_env env(start, end, st NOT_PRODUCT(COMMA remarks COMMA disp));
     env.output()->print_cr("--------------------------------------------------------------------------------");
     env.decode_instructions(start, end);
     env.output()->print_cr("--------------------------------------------------------------------------------");

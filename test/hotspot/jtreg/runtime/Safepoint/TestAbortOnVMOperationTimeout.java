@@ -28,6 +28,7 @@ import jdk.test.lib.process.*;
  * @test TestAbortOnVMOperationTimeout
  * @bug 8181143 8269523
  * @summary Check abort on VM timeout is working
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

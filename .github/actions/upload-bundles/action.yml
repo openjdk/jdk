@@ -1,0 +1,77 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Upload bundles'
+description: 'Upload resulting JDK bundles'
+inputs:
+  platform:
+    description: 'Platform name'
+    required: true
+  debug-suffix:
+    description: 'File name suffix denoting debug level, possibly empty'
+    required: false
+
+runs:
+  using: composite
+  steps:
+
+    - name: 'Determine bundle names'
+      id: bundles
+      run: |
+        # Rename bundles to consistent names
+        jdk_bundle_zip="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.zip 2> /dev/null || true)"
+        jdk_bundle_tar_gz="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
+        symbols_bundle="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}-symbols.tar.gz 2> /dev/null || true)"
+        tests_bundle="$(ls build/*/bundles/jdk-*_bin-tests${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
+
+        mkdir bundles
+
+        if [[ "$jdk_bundle_zip" != "" ]]; then
+          mv "$jdk_bundle_zip" "bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip"
+        fi
+        if [[ "$jdk_bundle_tar_gz" != "" ]]; then
+          mv "$jdk_bundle_tar_gz" "bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
+        fi
+        if [[ "$symbols_bundle" != "" ]]; then
+          mv "$symbols_bundle" "bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
+        fi
+        if [[ "$tests_bundle" != "" ]]; then
+          mv "$tests_bundle" "bundles/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
+        fi
+
+        if [[ "$jdk_bundle_zip$jdk_bundle_tar_gz$symbols_bundle$tests_bundle" != "" ]]; then
+          echo '::set-output name=bundles-found::true'
+        else
+          echo '::set-output name=bundles-found::false'
+        fi
+      shell: bash
+
+    - name: 'Upload bundles artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
+        path: bundles
+        retention-days: 1
+      if: steps.bundles.outputs.bundles-found == 'true'

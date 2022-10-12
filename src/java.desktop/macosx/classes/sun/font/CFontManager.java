@@ -33,8 +33,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.plaf.FontUIResource;
 
@@ -45,6 +47,7 @@ import sun.lwawt.macosx.*;
 
 public final class CFontManager extends SunFontManager {
     private static Hashtable<String, Font2D> genericFonts = new Hashtable<String, Font2D>();
+    private final Map<String, Font2D> fallbackFonts = new ConcurrentHashMap<>();
 
     @Override
     protected FontConfiguration createFontConfiguration() {
@@ -225,7 +228,7 @@ public final class CFontManager extends SunFontManager {
             String defaultFallback = "Lucida Grande";
 
             setupLogicalFonts("Dialog", defaultFont, defaultFallback);
-            setupLogicalFonts("Serif", "Times", "Times");
+            setupLogicalFonts("Serif", "Times", "Times New Roman");
             setupLogicalFonts("SansSerif", defaultFont, defaultFallback);
             setupLogicalFonts("Monospaced", "Menlo", "Courier");
             setupLogicalFonts("DialogInput", defaultFont, defaultFallback);
@@ -251,7 +254,13 @@ public final class CFontManager extends SunFontManager {
         family = getFontFamily(realName, fallbackName);
         if (family != null) return family;
 
-        System.err.println("Warning: the fonts \"" + realName + "\" and \"" + fallbackName + "\" are not available for the Java logical font \"" + logicalName + "\", which may have unexpected appearance or behavior. Re-enable the \""+ realName +"\" font to remove this warning.");
+        if (FontUtilities.debugFonts()) {
+            FontUtilities.logSevere(
+                "The fonts \"" + realName + "\" and \"" + fallbackName +
+                "\" are not available for the Java logical font \"" + logicalName +
+                "\", which may have unexpected appearance or behavior. Re-enable the \""+
+                realName +"\" font to remove this warning.");
+        }
         return null;
     }
 
@@ -261,7 +270,12 @@ public final class CFontManager extends SunFontManager {
 
         family = FontFamily.getFamily(fallbackName);
         if (family != null){
-            System.err.println("Warning: the font \"" + realName + "\" is not available, so \"" + fallbackName + "\" has been substituted, but may have unexpected appearance or behavor. Re-enable the \""+ realName +"\" font to remove this warning.");
+            if (FontUtilities.debugFonts()) {
+                FontUtilities.logWarning(
+                    "The font \"" + realName + "\" is not available, so \"" + fallbackName +
+                    "\" has been substituted, but may have unexpected appearance or behavor. Re-enable the \"" +
+                    realName +"\" font to remove this warning.");
+             }
             return family;
         }
 
@@ -272,9 +286,9 @@ public final class CFontManager extends SunFontManager {
         if (realFamily == null) return false;
 
         Font2D realFont = realFamily.getFontWithExactStyleMatch(style);
-        if (realFont == null || !(realFont instanceof CFont)) return false;
+        if (!(realFont instanceof CFont cFont)) return false;
 
-        CFont newFont = new CFont((CFont)realFont, logicalFamilyName);
+        CFont newFont = new CFont(cFont, logicalFamilyName);
         registerGenericFont(newFont, true);
 
         return true;
@@ -310,4 +324,17 @@ public final class CFontManager extends SunFontManager {
     @Override
     protected void populateFontFileNameMap(HashMap<String, String> fontToFileMap, HashMap<String, String> fontToFamilyNameMap,
             HashMap<String, ArrayList<String>> familyToFontListMap, Locale locale) {}
+
+    Font2D getOrCreateFallbackFont(String fontName) {
+        Font2D font2D = findFont2D(fontName, Font.PLAIN, FontManager.NO_FALLBACK);
+        if (font2D != null || fontName.startsWith(".")) {
+            return font2D;
+        } else {
+            // macOS doesn't list some system fonts in [NSFontManager availableFontFamilies] output,
+            // so they are not registered in font manager as part of 'loadNativeFonts'.
+            // These fonts are present in [NSFontManager availableFonts] output though,
+            // and can be accessed in the same way as other system fonts.
+            return fallbackFonts.computeIfAbsent(fontName, name -> new CFont(name, null));
+        }
+    }
 }

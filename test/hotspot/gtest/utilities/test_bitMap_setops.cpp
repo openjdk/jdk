@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/os.hpp" // malloc
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
@@ -45,11 +46,11 @@ private:
 public:
   BitMapMemory(idx_t bits) :
     _words(BitMap::calc_size_in_words(bits)),
-    _memory(static_cast<bm_word_t*>(malloc(_words * sizeof(bm_word_t))))
+    _memory(static_cast<bm_word_t*>(os::malloc(_words * sizeof(bm_word_t), mtTest)))
   { }
 
   ~BitMapMemory() {
-    free(_memory);
+    os::free(_memory);
   }
 
   BitMapView make_view(idx_t bits, bm_word_t value) {

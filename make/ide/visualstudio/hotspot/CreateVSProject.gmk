@@ -33,7 +33,7 @@ include Execute.gmk
 
 ifeq ($(call isTargetOs, windows), true)
   # The next part is a bit hacky. We include the CompileJvm.gmk to be
-  # able to extact flags, but we do not wish to execute the rules.
+  # able to extract flags, but we do not wish to execute the rules.
 
   # Use server as base for defines and includes
   JVM_VARIANT=server

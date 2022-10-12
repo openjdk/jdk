@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ class SocketConnection extends Connection {
          * Check that the byte array contains the complete packet
          */
         if (len > b.length) {
-            throw new IllegalArgumentException("length mis-match");
+            throw new IllegalArgumentException("length mismatch");
         }
 
         synchronized (sendLock) {

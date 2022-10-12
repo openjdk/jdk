@@ -92,7 +92,7 @@ public interface InputMethodContext extends InputMethodRequests {
      * @param attachToInputContext whether this window should share the input context
      *              that corresponds to this input method context
      * @return a window with special characteristics for use by input methods
-     * @exception HeadlessException if {@code GraphicsEnvironment.isHeadless}
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless}
      *            returns {@code true}
      */
     public Window createInputMethodWindow(String title, boolean attachToInputContext);
@@ -124,7 +124,7 @@ public interface InputMethodContext extends InputMethodRequests {
      * @param attachToInputContext whether this window should share the input context
      *              that corresponds to this input method context
      * @return a JFrame with special characteristics for use by input methods
-     * @exception HeadlessException if {@code GraphicsEnvironment.isHeadless}
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless}
      *            returns {@code true}
      *
      * @since 1.4

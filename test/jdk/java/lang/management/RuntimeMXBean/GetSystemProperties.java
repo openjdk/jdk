@@ -40,7 +40,7 @@ public class GetSystemProperties {
 
     // system properties to be omitted
     private static final String KEY3   = "test.property.key3";
-    private static final Long VALUE3   = new Long(0);;
+    private static final Long VALUE3   = new Long(0);
 
     private static final Object KEY4   = new Object();
     private static final String VALUE4 = "test.property.value4";

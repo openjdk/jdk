@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -94,7 +94,9 @@ public final class Utils {
         if (id.startsWith("xpointer(id(")) {
             int i1 = id.indexOf('\'');
             int i2 = id.indexOf('\'', i1+1);
-            id = id.substring(i1+1, i2);
+            if (i1 >= 0 && i2 >= 0) {
+                id = id.substring(i1 + 1, i2);
+            }
         }
         return id;
     }
@@ -114,7 +116,7 @@ public final class Utils {
     }
 
     private static boolean getBoolean(XMLCryptoContext xc, String name) {
-        Boolean value = (Boolean)xc.getProperty(name);
+        Boolean value = (Boolean) xc.getProperty(name);
         return value != null && value;
     }
 }

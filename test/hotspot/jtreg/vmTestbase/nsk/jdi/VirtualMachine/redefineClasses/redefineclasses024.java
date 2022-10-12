@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.io.*;
  * The test against the method <code>com.sun.jdi.VirtualMachine.redefineClasses()</code>
  * and checks up the following assertion:                                       <br>
  *   "If <code>canUnrestrictedlyRedefineClasses()</code> is <code>false</code> attempting
- *    to change a a class hierarchy will throw <code>UnsupportedOperationException</code>
+ *    to change a class hierarchy will throw <code>UnsupportedOperationException</code>
  *    exception."
  *
  * The test consists of the following files:                                <br>

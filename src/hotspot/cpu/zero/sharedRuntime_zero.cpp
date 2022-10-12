@@ -73,8 +73,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 int compile_id,
                                                 BasicType *sig_bt,
                                                 VMRegPair *regs,
-                                                BasicType ret_type,
-                                                address critical_entry) {
+                                                BasicType ret_type) {
   ShouldNotCallThis();
   return NULL;
 }

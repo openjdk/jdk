@@ -679,7 +679,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      *          <code><em>Foo</em>Listener</code>s on this component,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code>
+     * @throws ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *
@@ -1174,10 +1174,9 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
         sb.append(getClass().getName() + " " + hashCode() + " [ ");
         for(int counter = 0; counter < selCount; counter++) {
             if(rows != null)
-                sb.append(selection[counter].toString() + "@" +
-                          Integer.toString(rows[counter])+ " ");
+                sb.append(selection[counter] + "@" + rows[counter] + " ");
             else
-                sb.append(selection[counter].toString() + " ");
+                sb.append(selection[counter] + " ");
         }
         sb.append("]");
         return sb.toString();
@@ -1188,7 +1187,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      * This method does not duplicate
      * selection listeners and property listeners.
      *
-     * @exception CloneNotSupportedException never thrown by instances of
+     * @throws CloneNotSupportedException never thrown by instances of
      *                                       this class
      */
     public Object clone() throws CloneNotSupportedException {
@@ -1218,7 +1217,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
 
         s.defaultWriteObject();
         // Save the rowMapper, if it implements Serializable
-        if(rowMapper != null && rowMapper instanceof Serializable) {
+        if (rowMapper instanceof Serializable) {
             tValues = new Object[2];
             tValues[0] = "rowMapper";
             tValues[1] = rowMapper;

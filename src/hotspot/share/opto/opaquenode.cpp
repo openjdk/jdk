@@ -60,25 +60,6 @@ bool Opaque2Node::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
-Node* Opaque4Node::Identity(PhaseGVN* phase) {
-  if (phase->C->post_loop_opts_phase()) {
-    // With Opaque4 nodes, the expectation is that the test of input 1
-    // is always equal to the constant value of input 2. So we can
-    // remove the Opaque4 and replace it by input 2. In debug builds,
-    // leave the non constant test in instead to sanity check that it
-    // never fails (if it does, that subgraph was constructed so, at
-    // runtime, a Halt node is executed).
-#ifdef ASSERT
-    return this->in(1);
-#else
-    return this->in(2);
-#endif
-  } else {
-    phase->C->record_for_post_loop_opts_igvn(this);
-  }
-  return this;
-}
-
 const Type* Opaque4Node::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }

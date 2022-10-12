@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.security.ec;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyRep;
-import java.security.PublicKey;
 import java.security.interfaces.XECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
@@ -43,6 +42,7 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
     private static final long serialVersionUID = 1L;
 
     private final BigInteger u;
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final NamedParameterSpec paramSpec;
 
     XDHPublicKeyImpl(XECParameters params, BigInteger u)
@@ -75,7 +75,7 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
         // clear the extra bits
         int bitsMod8 = params.getBits() % 8;
         if (bitsMod8 != 0) {
-            int mask = (1 << bitsMod8) - 1;
+            byte mask = (byte) ((1 << bitsMod8) - 1);
             u_arr[0] &= mask;
         }
 

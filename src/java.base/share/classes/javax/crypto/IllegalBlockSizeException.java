@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ public class IllegalBlockSizeException
     private static final long serialVersionUID = -1965144811953540392L;
 
     /**
-     * Constructs an IllegalBlockSizeException with no detail message.
-     * A detail message is a String that describes this particular
+     * Constructs an {@code IllegalBlockSizeException} with no detail message.
+     * A detail message is a {@code String}  that describes this particular
      * exception.
      */
     public IllegalBlockSizeException() {
@@ -50,7 +50,7 @@ public class IllegalBlockSizeException
     }
 
     /**
-     * Constructs an IllegalBlockSizeException with the specified
+     * Constructs an {@code IllegalBlockSizeException} with the specified
      * detail message.
      *
      * @param msg the detail message.

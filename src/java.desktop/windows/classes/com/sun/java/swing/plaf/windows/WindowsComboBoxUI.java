@@ -593,7 +593,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         private static final Border NULL_BORDER = new EmptyBorder(0, 0, 0, 0);
 
         // Create own version of DashedBorder with more space on left side
-        private class WindowsComboBoxDashedBorder extends DashedBorder {
+        private static class WindowsComboBoxDashedBorder extends DashedBorder {
 
             public WindowsComboBoxDashedBorder(Color color, int thickness) {
                 super(color, thickness);

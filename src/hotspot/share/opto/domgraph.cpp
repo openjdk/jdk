@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,7 +526,7 @@ int NTarjan::DFS( NTarjan *ntarjan, VectorSet &visited, PhaseIdealLoop *pil, uin
       w->_semi = dfsnum;               // Node to DFS map
       w->_label = w;                   // DFS to vertex map
       w->_ancestor = NULL;             // Fast LINK & EVAL setup
-      w->_child = &ntarjan[0];         // Sentinal
+      w->_child = &ntarjan[0];         // Sentinel
       w->_size = 1;
       w->_bucket = NULL;
 

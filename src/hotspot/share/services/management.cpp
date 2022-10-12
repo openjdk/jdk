@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,13 @@
 #include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
+#include "services/finalizerService.hpp"
 #include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
@@ -94,6 +96,7 @@ void management_init() {
   ThreadService::init();
   RuntimeService::init();
   ClassLoadingService::init();
+  FinalizerService::init();
 #else
   ThreadService::init();
 #endif // INCLUDE_MANAGEMENT
@@ -206,6 +209,15 @@ InstanceKlass* Management::initialize_klass(Klass* k, TRAPS) {
   return ik;
 }
 
+
+void Management::record_vm_init_completed() {
+  // Initialize the timestamp to get the current time
+  _vm_init_done_time->set_value(os::javaTimeMillis());
+
+  // Update the timestamp to the vm init done time
+  _stamp.update();
+}
+
 void Management::record_vm_startup_time(jlong begin, jlong duration) {
   // if the performance counter is not initialized,
   // then vm initialization failed; simply return.
@@ -214,6 +226,14 @@ void Management::record_vm_startup_time(jlong begin, jlong duration) {
   _begin_vm_creation_time->set_value(begin);
   _end_vm_creation_time->set_value(begin + duration);
   PerfMemory::set_accessible(true);
+}
+
+jlong Management::begin_vm_creation_time() {
+  return _begin_vm_creation_time->get_value();
+}
+
+jlong Management::vm_init_done_time() {
+  return _vm_init_done_time->get_value();
 }
 
 jlong Management::timestamp() {
@@ -1996,7 +2016,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
 JVM_END
 
 JVM_ENTRY(void, jmm_GetDiagnosticCommandArgumentsInfo(JNIEnv *env,
-          jstring command, dcmdArgInfo* infoArray))
+          jstring command, dcmdArgInfo* infoArray, jint count))
   ResourceMark rm(THREAD);
   oop cmd = JNIHandles::resolve_external_guard(command);
   if (cmd == NULL) {
@@ -2020,10 +2040,12 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandArgumentsInfo(JNIEnv *env,
   }
   DCmdMark mark(dcmd);
   GrowableArray<DCmdArgumentInfo*>* array = dcmd->argument_info_array();
-  if (array->length() == 0) {
-    return;
+  const int num_args = array->length();
+  if (num_args != count) {
+    assert(false, "jmm_GetDiagnosticCommandArgumentsInfo count mismatch (%d vs %d)", count, num_args);
+    THROW_MSG(vmSymbols::java_lang_InternalError(), "jmm_GetDiagnosticCommandArgumentsInfo count mismatch");
   }
-  for (int i = 0; i < array->length(); i++) {
+  for (int i = 0; i < num_args; i++) {
     infoArray[i].name = array->at(i)->name();
     infoArray[i].description = array->at(i)->description();
     infoArray[i].type = array->at(i)->type();
@@ -2148,7 +2170,10 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTimeWithKind(JNIEnv *env, jlong thread_id, jboo
     ThreadsListHandle tlh;
     java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
     if (java_thread != NULL) {
-      return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
+      oop thread_obj = java_thread->threadObj();
+      if (thread_obj != NULL && !thread_obj->is_a(vmClasses::BasicVirtualThread_klass())) {
+        return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
+      }
     }
   }
   return -1;

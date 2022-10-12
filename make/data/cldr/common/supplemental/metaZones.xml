@@ -197,7 +197,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Anchorage">
 				<usesMetazone to="1983-10-30 11:00" mzone="Alaska_Hawaii"/>
-				<usesMetazone to="1983-11-30 09:00" from="1983-10-30 11:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Anguilla">
@@ -358,9 +357,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1996-01-01 03:00" mzone="GMT"/>
 			</timezone>
 			<timezone type="America/Dawson">
-				<usesMetazone to="1973-10-28 09:00" mzone="Yukon"/>
 				<usesMetazone to="2020-11-01 07:00" from="1973-10-28 09:00" mzone="America_Pacific"/>
-				<usesMetazone from="2020-11-01 07:00" mzone="America_Mountain"/>
+				<usesMetazone from="2020-11-01 07:00" mzone="Yukon"/>
 			</timezone>
 			<timezone type="America/Dawson_Creek">
 				<usesMetazone to="1972-08-30 09:00" mzone="America_Pacific"/>
@@ -489,9 +487,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Juneau">
 				<usesMetazone to="1980-04-27 10:00" mzone="America_Pacific"/>
-				<usesMetazone to="1980-10-26 10:00" from="1980-04-27 10:00" mzone="Yukon"/>
 				<usesMetazone to="1983-10-30 09:00" from="1980-10-26 10:00" mzone="America_Pacific"/>
-				<usesMetazone to="1983-11-30 09:00" from="1983-10-30 09:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Kentucky/Monticello">
@@ -598,7 +594,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Nome">
 				<usesMetazone to="1983-10-30 12:00" mzone="Bering"/>
-				<usesMetazone to="1983-11-30 09:00" from="1983-10-30 12:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Noronha">
@@ -702,7 +697,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Sitka">
 				<usesMetazone to="1983-10-30 09:00" mzone="America_Pacific"/>
-				<usesMetazone to="1983-11-30 09:00" from="1983-10-30 09:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/St_Barthelemy">
@@ -750,13 +744,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Whitehorse">
 				<usesMetazone to="2020-11-01 07:00" mzone="America_Pacific"/>
-				<usesMetazone from="2020-11-01 07:00" mzone="America_Mountain"/>
+				<usesMetazone from="2020-11-01 07:00" mzone="Yukon"/>
 			</timezone>
 			<timezone type="America/Winnipeg">
 				<usesMetazone mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Yakutat">
-				<usesMetazone to="1983-11-30 09:00" mzone="Yukon"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
 			</timezone>
 			<timezone type="America/Yellowknife">
@@ -1897,8 +1890,169 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Yakutsk" territory="001" type="Asia/Yakutsk"/>
 			<mapZone other="Yekaterinburg" territory="001" type="Asia/Yekaterinburg"/>
 			<mapZone other="Yerevan" territory="001" type="Asia/Yerevan"/>
-			<mapZone other="Yukon" territory="001" type="America/Yakutat"/>
+			<mapZone other="Yukon" territory="001" type="America/Whitehorse"/>
 		</mapTimezones>
+
+		<metazoneIds>
+			<metazoneId shortId="acre" longId="Acre" />
+			<metazoneId shortId="afgh" longId="Afghanistan" />
+			<metazoneId shortId="afce" longId="Africa_Central" />
+			<metazoneId shortId="afea" longId="Africa_Eastern" />
+			<metazoneId shortId="afso" longId="Africa_Southern" />
+			<metazoneId shortId="afwe" longId="Africa_Western" />
+			<metazoneId shortId="alas" longId="Alaska" />
+			<metazoneId shortId="alam" longId="Almaty" />
+			<metazoneId shortId="amaz" longId="Amazon" />
+			<metazoneId shortId="amce" longId="America_Central" />
+			<metazoneId shortId="amea" longId="America_Eastern" />
+			<metazoneId shortId="ammo" longId="America_Mountain" />
+			<metazoneId shortId="ampa" longId="America_Pacific" />
+			<metazoneId shortId="anad" longId="Anadyr" />
+			<metazoneId shortId="apia" longId="Apia" />
+			<metazoneId shortId="aqta" longId="Aqtau" />
+			<metazoneId shortId="aqto" longId="Aqtobe" />
+			<metazoneId shortId="arab" longId="Arabian" />
+			<metazoneId shortId="arge" longId="Argentina" />
+			<metazoneId shortId="arwe" longId="Argentina_Western" />
+			<metazoneId shortId="arme" longId="Armenia" />
+			<metazoneId shortId="atla" longId="Atlantic" />
+			<metazoneId shortId="auce" longId="Australia_Central" />
+			<metazoneId shortId="aucw" longId="Australia_CentralWestern" />
+			<metazoneId shortId="auea" longId="Australia_Eastern" />
+			<metazoneId shortId="auwe" longId="Australia_Western" />
+			<metazoneId shortId="azer" longId="Azerbaijan" />
+			<metazoneId shortId="azor" longId="Azores" />
+			<metazoneId shortId="bang" longId="Bangladesh" />
+			<metazoneId shortId="bhut" longId="Bhutan" />
+			<metazoneId shortId="boli" longId="Bolivia" />
+			<metazoneId shortId="bras" longId="Brasilia" />
+			<metazoneId shortId="brun" longId="Brunei" />
+			<metazoneId shortId="cave" longId="Cape_Verde" />
+			<metazoneId shortId="case" longId="Casey" />
+			<metazoneId shortId="cham" longId="Chamorro" />
+			<metazoneId shortId="chat" longId="Chatham" />
+			<metazoneId shortId="chil" longId="Chile" />
+			<metazoneId shortId="chin" longId="China" />
+			<metazoneId shortId="choi" longId="Choibalsan" />
+			<metazoneId shortId="chri" longId="Christmas" />
+			<metazoneId shortId="coco" longId="Cocos" />
+			<metazoneId shortId="colo" longId="Colombia" />
+			<metazoneId shortId="cook" longId="Cook" />
+			<metazoneId shortId="cuba" longId="Cuba" />
+			<metazoneId shortId="davi" longId="Davis" />
+			<metazoneId shortId="dumo" longId="DumontDUrville" />
+			<metazoneId shortId="eati" longId="East_Timor" />
+			<metazoneId shortId="east" longId="Easter" />
+			<metazoneId shortId="ecua" longId="Ecuador" />
+			<metazoneId shortId="euce" longId="Europe_Central" />
+			<metazoneId shortId="euea" longId="Europe_Eastern" />
+			<metazoneId shortId="eufe" longId="Europe_Further_Eastern" />
+			<metazoneId shortId="euwe" longId="Europe_Western" />
+			<metazoneId shortId="falk" longId="Falkland" />
+			<metazoneId shortId="fiji" longId="Fiji" />
+			<metazoneId shortId="frgu" longId="French_Guiana" />
+			<metazoneId shortId="frso" longId="French_Southern" />
+			<metazoneId shortId="gala" longId="Galapagos" />
+			<metazoneId shortId="gamb" longId="Gambier" />
+			<metazoneId shortId="geor" longId="Georgia" />
+			<metazoneId shortId="giis" longId="Gilbert_Islands" />
+			<metazoneId shortId="mgmt" longId="GMT" />
+			<metazoneId shortId="grea" longId="Greenland_Eastern" />
+			<metazoneId shortId="grwe" longId="Greenland_Western" />
+			<metazoneId shortId="guam" longId="Guam" />
+			<metazoneId shortId="gulf" longId="Gulf" />
+			<metazoneId shortId="guya" longId="Guyana" />
+			<metazoneId shortId="haal" longId="Hawaii_Aleutian" />
+			<metazoneId shortId="hoko" longId="Hong_Kong" />
+			<metazoneId shortId="hovd" longId="Hovd" />
+			<metazoneId shortId="indi" longId="India" />
+			<metazoneId shortId="inoc" longId="Indian_Ocean" />
+			<metazoneId shortId="indo" longId="Indochina" />
+			<metazoneId shortId="ince" longId="Indonesia_Central" />
+			<metazoneId shortId="inea" longId="Indonesia_Eastern" />
+			<metazoneId shortId="inwe" longId="Indonesia_Western" />
+			<metazoneId shortId="iran" longId="Iran" />
+			<metazoneId shortId="irku" longId="Irkutsk" />
+			<metazoneId shortId="isra" longId="Israel" />
+			<metazoneId shortId="japa" longId="Japan" />
+			<metazoneId shortId="kamc" longId="Kamchatka" />
+			<metazoneId shortId="kaea" longId="Kazakhstan_Eastern" />
+			<metazoneId shortId="kawe" longId="Kazakhstan_Western" />
+			<metazoneId shortId="kore" longId="Korea" />
+			<metazoneId shortId="kosr" longId="Kosrae" />
+			<metazoneId shortId="kras" longId="Krasnoyarsk" />
+			<metazoneId shortId="kyrg" longId="Kyrgystan" />
+			<metazoneId shortId="lank" longId="Lanka" />
+			<metazoneId shortId="liis" longId="Line_Islands" />
+			<metazoneId shortId="loho" longId="Lord_Howe" />
+			<metazoneId shortId="maca" longId="Macau" />
+			<metazoneId shortId="macq" longId="Macquarie" />
+			<metazoneId shortId="maga" longId="Magadan" />
+			<metazoneId shortId="mala" longId="Malaysia" />
+			<metazoneId shortId="mald" longId="Maldives" />
+			<metazoneId shortId="marq" longId="Marquesas" />
+			<metazoneId shortId="mais" longId="Marshall_Islands" />
+			<metazoneId shortId="maur" longId="Mauritius" />
+			<metazoneId shortId="maws" longId="Mawson" />
+			<metazoneId shortId="meno" longId="Mexico_Northwest" />
+			<metazoneId shortId="mepa" longId="Mexico_Pacific" />
+			<metazoneId shortId="mong" longId="Mongolia" />
+			<metazoneId shortId="mosc" longId="Moscow" />
+			<metazoneId shortId="myan" longId="Myanmar" />
+			<metazoneId shortId="naur" longId="Nauru" />
+			<metazoneId shortId="nepa" longId="Nepal" />
+			<metazoneId shortId="neca" longId="New_Caledonia" />
+			<metazoneId shortId="neze" longId="New_Zealand" />
+			<metazoneId shortId="newf" longId="Newfoundland" />
+			<metazoneId shortId="niue" longId="Niue" />
+			<metazoneId shortId="norf" longId="Norfolk" />
+			<metazoneId shortId="noro" longId="Noronha" />
+			<metazoneId shortId="noma" longId="North_Mariana" />
+			<metazoneId shortId="novo" longId="Novosibirsk" />
+			<metazoneId shortId="omsk" longId="Omsk" />
+			<metazoneId shortId="paki" longId="Pakistan" />
+			<metazoneId shortId="pala" longId="Palau" />
+			<metazoneId shortId="pang" longId="Papua_New_Guinea" />
+			<metazoneId shortId="para" longId="Paraguay" />
+			<metazoneId shortId="peru" longId="Peru" />
+			<metazoneId shortId="phil" longId="Philippines" />
+			<metazoneId shortId="phis" longId="Phoenix_Islands" />
+			<metazoneId shortId="pimi" longId="Pierre_Miquelon" />
+			<metazoneId shortId="pitc" longId="Pitcairn" />
+			<metazoneId shortId="pona" longId="Ponape" />
+			<metazoneId shortId="pyon" longId="Pyongyang" />
+			<metazoneId shortId="qyzy" longId="Qyzylorda" />
+			<metazoneId shortId="reun" longId="Reunion" />
+			<metazoneId shortId="roth" longId="Rothera" />
+			<metazoneId shortId="sakh" longId="Sakhalin" />
+			<metazoneId shortId="sama" longId="Samara" />
+			<metazoneId shortId="samo" longId="Samoa" />
+			<metazoneId shortId="seyc" longId="Seychelles" />
+			<metazoneId shortId="sing" longId="Singapore" />
+			<metazoneId shortId="solo" longId="Solomon" />
+			<metazoneId shortId="soge" longId="South_Georgia" />
+			<metazoneId shortId="suri" longId="Suriname" />
+			<metazoneId shortId="syow" longId="Syowa" />
+			<metazoneId shortId="tahi" longId="Tahiti" />
+			<metazoneId shortId="taip" longId="Taipei" />
+			<metazoneId shortId="taji" longId="Tajikistan" />
+			<metazoneId shortId="toke" longId="Tokelau" />
+			<metazoneId shortId="tong" longId="Tonga" />
+			<metazoneId shortId="truk" longId="Truk" />
+			<metazoneId shortId="turk" longId="Turkmenistan" />
+			<metazoneId shortId="tuva" longId="Tuvalu" />
+			<metazoneId shortId="urug" longId="Uruguay" />
+			<metazoneId shortId="uzbe" longId="Uzbekistan" />
+			<metazoneId shortId="vanu" longId="Vanuatu" />
+			<metazoneId shortId="vene" longId="Venezuela" />
+			<metazoneId shortId="vlad" longId="Vladivostok" />
+			<metazoneId shortId="volg" longId="Volgograd" />
+			<metazoneId shortId="vost" longId="Vostok" />
+			<metazoneId shortId="wake" longId="Wake" />
+			<metazoneId shortId="wall" longId="Wallis" />
+			<metazoneId shortId="yaku" longId="Yakutsk" />
+			<metazoneId shortId="yeka" longId="Yekaterinburg" />
+		</metazoneIds>
 	</metaZones>
 
 	<primaryZones>

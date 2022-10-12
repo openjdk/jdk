@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class PStack extends Tool {
          try {
             DeadlockDetector.print(out);
          } catch (Exception exp) {
-            out.println("can't print deadlock information: " + exp.getMessage());
+            out.println("can't print deadlock information: " + exp);
          }
 
          List<ThreadProxy> l = cdbg.getThreadList();
@@ -234,8 +234,7 @@ public class PStack extends Tool {
             // after printing stack trace.
             exp.printStackTrace();
          }
-         JavaVFrame[] jvframes = new JavaVFrame[tmp.size()];
-         System.arraycopy(tmp.toArray(), 0, jvframes, 0, jvframes.length);
+         JavaVFrame[] jvframes = tmp.toArray(new JavaVFrame[0]);
          jframeCache.put(cur.getThreadProxy(), jvframes);
          proxyToThread.put(cur.getThreadProxy(), cur);
       }
@@ -286,8 +285,7 @@ public class PStack extends Tool {
             names.add(sb.toString());
          }
       }
-      String[] res = new String[names.size()];
-      System.arraycopy(names.toArray(), 0, res, 0, res.length);
+      String[] res = names.toArray(new String[0]);
       return res;
    }
 

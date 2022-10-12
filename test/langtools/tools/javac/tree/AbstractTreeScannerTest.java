@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,10 +200,11 @@ public abstract class AbstractTreeScannerTest {
     }
 
     /**
-     *  Report an error for a specific tree node.
-     *  @param file the source file for the tree
-     *  @param t    the tree node
-     *  @param label an indication of the error
+     * Report an error for a specific tree node.
+     *
+     * @param file the source file for the tree
+     * @param tree the tree node
+     * @param msg  an indication of the error
      */
     void error(JavaFileObject file, Tree tree, String msg) {
         JCTree t = (JCTree) tree;
@@ -211,15 +212,17 @@ public abstract class AbstractTreeScannerTest {
     }
 
     /**
-     *  Report an error for a specific tree node.
-     *  @param file the source file for the tree
-     *  @param t    the tree node
-     *  @param label an indication of the error
+     * Report an error for a specific tree node.
+     *
+     * @param file    the source file for the tree
+     * @param comment the top level doc tree node
+     * @param tree    the tree node
+     * @param msg     an indication of the error
      */
     void error(JavaFileObject file, DocCommentTree comment, DocTree tree, String msg) {
         DCDocComment dc = (DCDocComment) comment;
         DCTree t = (DCTree) tree;
-        error(file.getName() + ":" + getLine(file, t.getSourcePosition(dc)) + ": " + msg + " " + trim(t, 64));
+        error(file.getName() + ":" + getLine(file, dc.getSourcePosition(t.pos)) + ": " + msg + " " + trim(t, 64));
     }
 
     /**

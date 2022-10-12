@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @requires vm.jvmci
- * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:open
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
+ *          java.base/jdk.internal.misc
  * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @run testng/othervm
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
@@ -41,6 +42,9 @@ import java.lang.reflect.Method;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import jdk.internal.misc.Unsafe;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+
 public class TestTranslatedException {
     @SuppressWarnings("serial")
     public static class Untranslatable extends RuntimeException {
@@ -56,7 +60,7 @@ public class TestTranslatedException {
         Class<?> translatedExceptionClass = Class.forName("jdk.vm.ci.hotspot.TranslatedException");
 
         Method encode = translatedExceptionClass.getDeclaredMethod("encodeThrowable", Throwable.class);
-        Method decode = translatedExceptionClass.getDeclaredMethod("decodeThrowable", String.class);
+        Method decode = translatedExceptionClass.getDeclaredMethod("decodeThrowable", byte[].class);
         encode.setAccessible(true);
         decode.setAccessible(true);
 
@@ -64,9 +68,48 @@ public class TestTranslatedException {
         for (int i = 0; i < 10; i++) {
             throwable = new ExceptionInInitializerError(new InvocationTargetException(new RuntimeException(String.valueOf(i), throwable), "invoke"));
         }
-        String encoding = (String) encode.invoke(null, throwable);
+        byte[] encoding = (byte[]) encode.invoke(null, throwable);
         Throwable decoded = (Throwable) decode.invoke(null, encoding);
         assertThrowableEquals(throwable, decoded);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void encodeDecodeTest2() throws Exception {
+        Unsafe unsafe = Unsafe.getUnsafe();
+        int bufferSize = 512;
+        long buffer = 0L;
+        while (true) {
+            buffer = unsafe.allocateMemory(bufferSize);
+            try {
+                Throwable throwable = new ExceptionInInitializerError(new InvocationTargetException(new Untranslatable("test exception", new NullPointerException()), "invoke"));
+                for (int i = 0; i < 10; i++) {
+                    throwable = new ExceptionInInitializerError(new InvocationTargetException(new RuntimeException(String.valueOf(i), throwable), "invoke"));
+                }
+
+                Method encode = HotSpotJVMCIRuntime.class.getDeclaredMethod("encodeThrowable", Throwable.class, long.class, int.class);
+                Method decode = HotSpotJVMCIRuntime.class.getDeclaredMethod("decodeAndThrowThrowable", long.class);
+                encode.setAccessible(true);
+                decode.setAccessible(true);
+
+                int res = (Integer) encode.invoke(null, throwable, buffer, bufferSize);
+
+                if (res < 0) {
+                    bufferSize = -res;
+                } else {
+                    try {
+                        decode.invoke(null, buffer);
+                        throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
+                    } catch (InvocationTargetException e) {
+                        Throwable decoded = e.getCause();
+                        assertThrowableEquals(throwable, decoded);
+                    }
+                    return;
+                }
+            } finally {
+                unsafe.freeMemory(buffer);
+            }
+        }
     }
 
     private static void assertThrowableEquals(Throwable original, Throwable decoded) {

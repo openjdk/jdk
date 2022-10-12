@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@
  *                      64-bit  precision       2
  *                      113-bit precision       3
  *              The actual value is the sum of them. Thus for 113-bit
- *              precison, one may have to do something like:
+ *              precision, one may have to do something like:
  *
  *              long double t,w,r_head, r_tail;
  *              t = (long double)y[2] + (long double)y[1];

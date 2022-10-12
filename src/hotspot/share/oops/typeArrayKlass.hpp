@@ -36,7 +36,7 @@ class TypeArrayKlass : public ArrayKlass {
   friend class VMStructs;
 
  public:
-  static const KlassID ID = TypeArrayKlassID;
+  static const KlassKind Kind = TypeArrayKlassKind;
 
  private:
   jint _max_length;            // maximum number of elements allowed in an array
@@ -61,7 +61,7 @@ class TypeArrayKlass : public ArrayKlass {
     return create_klass(type, external_name(type), THREAD);
   }
 
-  int oop_size(oop obj) const;
+  size_t oop_size(oop obj) const;
 
   // Allocation
   typeArrayOop allocate_common(int length, bool do_zero, TRAPS);

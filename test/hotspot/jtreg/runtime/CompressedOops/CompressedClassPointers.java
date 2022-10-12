@@ -26,6 +26,7 @@
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
  * @requires vm.bits == 64 & !vm.graal.enabled
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -223,8 +224,8 @@ public class CompressedClassPointers {
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base: 0x0000000000000000");
-        if (!Platform.isAArch64()) {
-            // Currently relax this test for Aarch64.
+        if (!Platform.isAArch64() && !Platform.isPPC()) {
+            // Currently relax this test for Aarch64 and ppc.
             output.shouldContain("Narrow klass shift: 0");
         }
         output.shouldHaveExitValue(0);
@@ -243,8 +244,8 @@ public class CompressedClassPointers {
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base: 0x0000000000000000");
-        if (!Platform.isAArch64()) {
-            // Currently relax this test for Aarch64.
+        if (!Platform.isAArch64() && !Platform.isPPC()) {
+            // Currently relax this test for Aarch64 and ppc.
             output.shouldContain("Narrow klass shift: 0");
         }
         output.shouldHaveExitValue(0);

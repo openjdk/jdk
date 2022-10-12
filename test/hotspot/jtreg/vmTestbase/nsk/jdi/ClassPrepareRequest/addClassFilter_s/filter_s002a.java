@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.ClassPrepareRequest.addClassFilter_s;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class filter_s002a {
 
     //====================================================== test program
 
-    static Thread1filter_s002a thread1 = null;
+    static Thread thread1 = null;
 
     //------------------------------------------------------ common section
 
@@ -96,7 +95,7 @@ public class filter_s002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1filter_s002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1filter_s002a("thread1"));
                             break;
 
     //-------------------------------------------------    standard end section
@@ -142,7 +141,7 @@ public class filter_s002a {
 }
 
 
-class Thread1filter_s002a extends Thread {
+class Thread1filter_s002a extends NamedTask {
 
     class TestClass10{
         int var10 = 0;
@@ -151,18 +150,14 @@ class Thread1filter_s002a extends Thread {
         int var11 = 0;
     }
 
-
-    String tName = null;
-
     public Thread1filter_s002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s002a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s002a.log1("  'run': enter  :: threadName == " + getName());
         TestClass11 obj1 = new TestClass11();
-        filter_s002a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

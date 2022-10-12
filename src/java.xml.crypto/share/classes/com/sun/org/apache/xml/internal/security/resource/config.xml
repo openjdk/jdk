@@ -96,8 +96,6 @@
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA512" />
                           
-      <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#ripemd160-rsa-MGF1"
-                          JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSARIPEMD160MGF1" />
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA1MGF1" />
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha224-rsa-MGF1"

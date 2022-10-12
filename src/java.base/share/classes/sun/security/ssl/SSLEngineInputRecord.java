@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,8 +242,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
         } catch (BadPaddingException bpe) {
             throw bpe;
         } catch (GeneralSecurityException gse) {
-            throw (SSLProtocolException)(new SSLProtocolException(
-                    "Unexpected exception")).initCause(gse);
+            throw new SSLProtocolException("Unexpected exception", gse);
         } finally {
             // consume a complete record
             packet.limit(srcLim);
@@ -358,7 +357,6 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
         // The packet should be a complete record.
         //
         int srcPos = packet.position();
-        int srcLim = packet.limit();
 
         byte firstByte = packet.get(srcPos);
         byte thirdByte = packet.get(srcPos + 2);

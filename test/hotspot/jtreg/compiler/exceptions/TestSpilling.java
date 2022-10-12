@@ -25,6 +25,7 @@ package compiler.exceptions;
 
 /**
  * @test
+ * @key stress randomness
  * @bug 8263227
  * @summary Tests that users of return values from exception-throwing method
  *          calls are not duplicated in the call's exception path. The second

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -102,7 +102,7 @@ class SimulatedOperandStack: CHeapObj<mtInternal> {
   // written, we don't know any more whether it was written as the
   // corresponding parameter, or whether another local has been
   // mapped to the slot. So we don't want to print 'parameter<i>' any
-  // more, but 'local<i>'. Similary for 'this'.
+  // more, but 'local<i>'. Similarly for 'this'.
   // Therefore, during the analysis, we mark a bit for local slots that
   // get written and propagate this information.
   // We only run the analysis for 64 slots. If a method has more
@@ -152,7 +152,7 @@ class SimulatedOperandStack: CHeapObj<mtInternal> {
 //
 // It analyses the bytecode to assemble Java-like message text
 // to give precise information where in a larger expression the
-// exception occured.
+// exception occurred.
 //
 // To assemble this message text, it is needed to know how
 // operand stack slot entries were pushed on the operand stack.
@@ -183,7 +183,7 @@ class ExceptionMessageBuilder : public StackObj {
 
   static const int _max_cause_detail = 5;
 
-  // Merges the stack the the given bci with the given stack. If there
+  // Merges the stack at the given bci with the given stack. If there
   // is no stack at the bci, we just put the given stack there. This
   // method doesn't takes ownership of the stack.
   void merge(int bci, SimulatedOperandStack* stack);
@@ -1029,7 +1029,6 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       break;
 
     case Bytecodes::_arraylength:
-      // The return type of arraylength is wrong in the bytecodes table (T_VOID).
       stack->pop(1);
       stack->push(bci, T_INT);
       break;
@@ -1150,7 +1149,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
         int name_index = cp->name_ref_index_at(name_and_type_index);
         Symbol* name = cp->symbol_at(name_index);
 
-        // Assume the the call of a constructor can never cause a NullPointerException
+        // Assume the call of a constructor can never cause a NullPointerException
         // (which is true in Java). This is mainly used to avoid generating wrong
         // messages for NullPointerExceptions created explicitly by new in Java code.
         if (name != vmSymbols::object_initializer_name()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,9 @@ public class LayoutGraph {
         outputPorts = new HashMap<>(links.size());
 
         for (Link l : links) {
+            if (l.getFrom() == null || l.getTo() == null) {
+                continue;
+            }
             Port p = l.getFrom();
             Port p2 = l.getTo();
             Vertex v1 = p.getVertex();
@@ -194,5 +197,10 @@ public class LayoutGraph {
         }
 
         return clusters;
+    }
+
+    @Override
+    public String toString() {
+        return "LayoutGraph(" + vertices + ", " + links + ", " + getClusters() + ")";
     }
 }

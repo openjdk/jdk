@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public interface GSSCredential extends Cloneable{
      * for both context initiation and acceptance.
      *
      */
-    public static final int INITIATE_AND_ACCEPT = 0;
+    int INITIATE_AND_ACCEPT = 0;
 
 
     /**
@@ -106,7 +106,7 @@ public interface GSSCredential extends Cloneable{
      * for context initiation only.
      *
      */
-    public static final int INITIATE_ONLY = 1;
+    int INITIATE_ONLY = 1;
 
 
     /**
@@ -114,21 +114,21 @@ public interface GSSCredential extends Cloneable{
      * for context acceptance only.
      *
      */
-    public static final int ACCEPT_ONLY = 2;
+    int ACCEPT_ONLY = 2;
 
 
     /**
      * A lifetime constant representing the default credential lifetime. This
      * value it set to 0.
      */
-    public static final int DEFAULT_LIFETIME = 0;
+    int DEFAULT_LIFETIME = 0;
 
     /**
      * A lifetime constant representing indefinite credential lifetime.
      * This value must is set to the maximum integer value in Java -
      * {@link java.lang.Integer#MAX_VALUE Integer.MAX_VALUE}.
      */
-    public static final int INDEFINITE_LIFETIME = Integer.MAX_VALUE;
+    int INDEFINITE_LIFETIME = Integer.MAX_VALUE;
 
     /**
      * Releases any sensitive information that the GSSCredential object may
@@ -140,7 +140,7 @@ public interface GSSCredential extends Cloneable{
      * major error codes:
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void dispose() throws GSSException;
+    void dispose() throws GSSException;
 
     /**
      *  Retrieves the name of the entity that the credential asserts.
@@ -151,7 +151,7 @@ public interface GSSCredential extends Cloneable{
      * major error codes:
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public GSSName getName() throws GSSException;
+    GSSName getName() throws GSSException;
 
     /**
      * Retrieves a Mechanism Name of the entity that the credential
@@ -169,11 +169,11 @@ public interface GSSCredential extends Cloneable{
      *         {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public GSSName getName(Oid mech) throws GSSException;
+    GSSName getName(Oid mech) throws GSSException;
 
     /**
      * Returns the remaining lifetime in seconds for a credential.  The
-     * remaining lifetime is the minimum lifetime amongst all of the underlying
+     * remaining lifetime is the minimum lifetime amongst all the underlying
      * mechanism specific credential elements.
      *
      * @return the minimum remaining lifetime in seconds for this
@@ -189,7 +189,7 @@ public interface GSSCredential extends Cloneable{
      * major error codes:
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public int getRemainingLifetime() throws GSSException;
+    int getRemainingLifetime() throws GSSException;
 
     /**
      * Returns the lifetime in seconds for the credential to remain capable
@@ -211,7 +211,7 @@ public interface GSSCredential extends Cloneable{
      *         {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public int getRemainingInitLifetime(Oid mech) throws GSSException;
+    int getRemainingInitLifetime(Oid mech) throws GSSException;
 
     /**
      * Returns the lifetime in seconds for the credential to remain capable
@@ -233,7 +233,7 @@ public interface GSSCredential extends Cloneable{
      *         {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public int getRemainingAcceptLifetime(Oid mech) throws GSSException;
+    int getRemainingAcceptLifetime(Oid mech) throws GSSException;
 
     /**
      * Returns the credential usage mode. In other words, it
@@ -250,7 +250,7 @@ public interface GSSCredential extends Cloneable{
      * major error codes:
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public int getUsage() throws GSSException;
+    int getUsage() throws GSSException;
 
     /**
      * Returns the credential usage mode for a specific mechanism. In other
@@ -269,7 +269,7 @@ public interface GSSCredential extends Cloneable{
      *         {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public int getUsage(Oid mech) throws GSSException;
+    int getUsage(Oid mech) throws GSSException;
 
     /**
      * Returns a list of mechanisms supported by this credential. It does
@@ -285,7 +285,7 @@ public interface GSSCredential extends Cloneable{
      * major error codes:
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public Oid[] getMechs() throws GSSException;
+    Oid[] getMechs() throws GSSException;
 
     /**
      * Adds a mechanism specific credential-element to an existing
@@ -346,8 +346,8 @@ public interface GSSCredential extends Cloneable{
      *                                  GSSException.CREDENTIALS_EXPIRED},
      *         {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void add(GSSName name, int initLifetime, int acceptLifetime,
-                    Oid mech, int usage) throws GSSException;
+    void add(GSSName name, int initLifetime, int acceptLifetime,
+             Oid mech, int usage) throws GSSException;
 
     /**
      * Tests if this GSSCredential asserts the same entity as the supplied
@@ -358,13 +358,13 @@ public interface GSSCredential extends Cloneable{
      * entity; {@code false} otherwise.
      * @param another another GSSCredential for comparison to this one
      */
-    public boolean equals(Object another);
+    boolean equals(Object another);
 
     /**
      * Returns a hashcode value for this GSSCredential.
      *
      * @return a hashCode value
      */
-    public int hashCode();
+    int hashCode();
 
 }

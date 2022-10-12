@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_java_lang_StackTraceElement_initStackTraceElement
 }
 
 JNIEXPORT void JNICALL Java_java_lang_StackTraceElement_initStackTraceElements
-  (JNIEnv *env, jobject dummy, jobjectArray elements, jobject throwable)
+  (JNIEnv *env, jobject dummy, jobjectArray elements, jobject backtrace, jint depth)
 {
-    JVM_InitStackTraceElementArray(env, elements, throwable);
+    JVM_InitStackTraceElementArray(env, elements, backtrace, depth);
 }

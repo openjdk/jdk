@@ -206,7 +206,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
 
         // In some italic cases the standard Mac cascade list is missing Arabic.
         listOfString.add("GeezaPro");
-        FontManager fm = FontManagerFactory.getInstance();
+        CFontManager fm = (CFontManager) FontManagerFactory.getInstance();
         int numFonts = 1 + listOfString.size();
         PhysicalFont[] fonts = new PhysicalFont[numFonts];
         fonts[0] = this;
@@ -222,7 +222,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
                 // Don't know why we get the weird name above .. replace.
                 s = "AppleSymbols";
             }
-            Font2D f2d = fm.findFont2D(s, Font.PLAIN, FontManager.NO_FALLBACK);
+            Font2D f2d = fm.getOrCreateFallbackFont(s);
             if (f2d == null || f2d == this) {
                 continue;
             }
@@ -247,7 +247,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         return compFont;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected synchronized void finalize() {
         if (nativeFontPtr != 0) {
             disposeNativeFont(nativeFontPtr);

@@ -79,7 +79,7 @@ public interface TableColumnModel
      *
      * @param   columnIndex                     the index of column to be moved
      * @param   newIndex                        index of the column's new location
-     * @exception IllegalArgumentException      if <code>columnIndex</code> or
+     * @throws IllegalArgumentException      if <code>columnIndex</code> or
      *                                          <code>newIndex</code>
      *                                          are not in the valid range
      */
@@ -119,7 +119,7 @@ public interface TableColumnModel
      * @param           columnIdentifier        the identifier object
      * @return          the index of the first table column
      *                  whose identifier is equal to <code>identifier</code>
-     * @exception IllegalArgumentException      if <code>identifier</code>
+     * @throws IllegalArgumentException      if <code>identifier</code>
      *                          is <code>null</code>, or no
      *                          <code>TableColumn</code> has this
      *                          <code>identifier</code>

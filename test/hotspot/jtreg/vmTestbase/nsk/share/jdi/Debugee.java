@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,6 +250,9 @@ abstract public class Debugee extends DebugeeProcess {
             ThreadReference thread = (ThreadReference) li.next();
             if (thread.name().equals(name))
                 return thread;
+        }
+        if ("Virtual".equals(System.getProperty("main.wrapper"))) {
+            return null;
         }
         throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }

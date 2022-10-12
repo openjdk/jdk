@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class AdjacencyList {
 
         // Each time this method is called, we're examining a new list
         // from the global list. So, we have to start by getting the list
-        // that contains the set of Vertexes we're considering.
+        // that contains the set of vertices we're considering.
         List<Vertex> l = theList.get(index);
 
         // we're interested in the case where all indexes are -1...

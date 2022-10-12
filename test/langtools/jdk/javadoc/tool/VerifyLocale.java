@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8035473 8149565
+ * @bug 8035473 8149565 8273745
  * @summary Verify that init method works correctly.
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
@@ -31,6 +31,7 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -47,6 +48,8 @@ import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.DocletEnvironment;
 
 public class VerifyLocale implements Doclet {
+    // These static values are shared between the main method and the
+    // Doclet instance indirectly created from the main method.
     static String language;
     static String country;
     static String variant;
@@ -64,21 +67,39 @@ public class VerifyLocale implements Doclet {
         int skipCount = 0;
         int testCount = 0;
 
-        for (Locale loc : Locale.getAvailableLocales()) {
+        var languages = new HashSet<>();
+        var countries = new HashSet<>();
+        var variants = new HashSet<>();
 
+        for (Locale loc : Locale.getAvailableLocales()) {
             language = loc.getLanguage();
             country = loc.getCountry();
             variant = loc.getVariant();
-            System.err.printf("test locale: %s [%s,%s,%s] %s%n",
-                loc, language, country, variant, loc.toLanguageTag());
 
-            // skip locales for which the round-trip fails
+            // skip locales for which the round-trip fails (e.g. no_NO_NY : nn_NO)
             if (!loc.equals(Locale.forLanguageTag(loc.toLanguageTag()))) {
-                System.err.println("skipped " + loc + "!");
+                System.err.println("skipped " + loc
+                        + " (language tag round trip: "
+                        + loc.toLanguageTag()
+                        + ": " + Locale.forLanguageTag(loc.toLanguageTag()) + ")");
                 System.err.println();
                 skipCount++;
                 continue;
             }
+
+            // to reduce the potentially large number of locales to be tested, skip
+            // those for which we have already seen any of the language, country or variant.
+            if (!languages.add(language)
+                    & !countries.add(country)
+                    & !variants.add(variant)) {
+                System.err.println("skipped " + loc + " (duplicate part)");
+                System.err.println();
+                skipCount++;
+                continue;
+            }
+
+            System.err.printf("test locale: %s [%s,%s,%s] %s%n",
+                loc, language, country, variant, loc.toLanguageTag());
 
             if (!language.equals("")) {
                 List<String> options = List.of("-locale", loc.toLanguageTag());
@@ -86,7 +107,7 @@ public class VerifyLocale implements Doclet {
                 DocumentationTask t = tool.getTask(null, null, null,
                         VerifyLocale.class, options, List.of(fo));
                 if (!t.call())
-                    throw new Error("Javadoc encountered warnings or errors.");
+                    throw new Error("javadoc encountered warnings or errors.");
                 testCount++;
             }
             System.err.println();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,11 +37,13 @@ public final class IteratorPool implements java.io.Serializable
   /**
    * Type of objects in this pool.
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private final DTMIterator m_orig;
 
   /**
    * Stack of given objects this points to.
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private final List<DTMIterator> m_freeStack;
 
   /**

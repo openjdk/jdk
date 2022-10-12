@@ -162,7 +162,7 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         dispose();
     }

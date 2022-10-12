@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -132,6 +132,7 @@ public class AttrImpl
     //
 
     /** This can either be a String or the first child node. */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected Object value = null;
 
     /** Attribute name. */

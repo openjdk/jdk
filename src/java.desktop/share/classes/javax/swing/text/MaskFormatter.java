@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
 
 package javax.swing.text;
 
-import java.io.*;
-import java.text.*;
-import java.util.*;
-import javax.swing.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.text.ParseException;
+import java.util.ArrayList;
+import javax.swing.JFormattedTextField;
+import javax.swing.text.DefaultFormatter;
 
 /**
  * <code>MaskFormatter</code> is used to format and edit strings. The behavior
@@ -100,7 +103,7 @@ import javax.swing.*;
  * <pre>
  *   MaskFormatter formatter = new MaskFormatter("###-####");
  *   formatter.setPlaceholderCharacter('_');
- *   formatter.getDisplayValue(tf, "123");
+ *   System.out.println(formatter.valueToString("123"));
  * </pre>
  * <p>
  * Would result in the string '123-____'. If

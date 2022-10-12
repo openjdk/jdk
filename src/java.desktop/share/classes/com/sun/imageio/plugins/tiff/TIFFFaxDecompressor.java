@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.EOFException;
 import javax.imageio.IIOException;
 import javax.imageio.plugins.tiff.BaselineTIFFTagSet;
 import javax.imageio.plugins.tiff.TIFFField;
+import com.sun.imageio.plugins.common.ReaderUtil;
 
 class TIFFFaxDecompressor extends TIFFDecompressor {
 
@@ -637,14 +638,14 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
         this.bitsPerScanline = scanlineStride*8;
         this.lineBitNum = 8*dstOffset;
 
-        this.data = new byte[byteCount];
         this.bitPointer = 0;
         this.bytePointer = 0;
         this.prevChangingElems = new int[w + 1];
         this.currChangingElems = new int[w + 1];
 
         stream.seek(offset);
-        stream.readFully(data);
+        this.data = ReaderUtil.
+            staggeredReadByteStream(stream, byteCount);
 
         if (compression == BaselineTIFFTagSet.COMPRESSION_CCITT_RLE) {
             decodeRLE();

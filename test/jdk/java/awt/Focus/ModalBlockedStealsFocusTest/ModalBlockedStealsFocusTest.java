@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,6 @@ public class ModalBlockedStealsFocusTest {
     }
 
     public void start() {
-        if ("sun.awt.motif.MToolkit".equals(Toolkit.getDefaultToolkit().getClass().getName())) {
-            System.out.println("The test is not for MToolkit.");
-            return;
-        }
-
         dialog.setBounds(800, 0, 200, 100);
         frame.setBounds(800, 150, 200, 100);
 

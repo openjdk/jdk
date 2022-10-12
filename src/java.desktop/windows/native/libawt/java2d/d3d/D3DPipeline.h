@@ -62,7 +62,7 @@
     #include "Trace.h"
 
     #define DebugPrintD3DError(res, msg) \
-        J2dTraceLn1(J2D_TRACE_ERROR, "D3D Error: " ## msg ## " res=%d", res)
+        J2dTraceLn1(J2D_TRACE_ERROR, "D3D Error: " msg " res=%d", res)
 
 #endif /*D3D_PPL_DLL*/
 
@@ -87,9 +87,9 @@ do {                      \
 #define SAFE_PRINTLN(RES) \
 do {                      \
     if ((RES)!= NULL) {   \
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  " ## #RES ## "=0x%x", (RES)); \
+        J2dTraceLn1(J2D_TRACE_VERBOSE, "  " #RES "=0x%x", (RES)); \
     } else {              \
-        J2dTraceLn(J2D_TRACE_VERBOSE, "  " ## #RES ## "=NULL"); \
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  " #RES "=NULL"); \
     }                     \
 } while (0);
 #else // DEBUG
@@ -114,12 +114,12 @@ do {                      \
 
 #define RETURN_STATUS_IF_EXP_FAILED(EXPR) \
     if (FAILED(res = (EXPR))) {                    \
-        DebugPrintD3DError(res, " " ## #EXPR ## " failed in " ## __FILE__); \
+        DebugPrintD3DError(res, " " #EXPR " failed in " __FILE__); \
         return res;                   \
     } else do { } while (0)
 
 #define RETURN_STATUS_IF_FAILED(status) \
     if (FAILED((status))) {                    \
-        DebugPrintD3DError((status), " failed in " ## __FILE__ ## ", return;");\
+        DebugPrintD3DError((status), " failed in " __FILE__ ", return;");\
         return (status);                   \
     } else do { } while (0)

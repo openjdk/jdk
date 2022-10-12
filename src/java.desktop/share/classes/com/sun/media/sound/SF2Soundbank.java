@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import javax.sound.midi.Instrument;
 import javax.sound.midi.Patch;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.SoundbankResource;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A SoundFont 2.04 soundbank reader.
@@ -90,23 +92,16 @@ public final class SF2Soundbank implements Soundbank {
     }
 
     public SF2Soundbank(URL url) throws IOException {
-
-        InputStream is = url.openStream();
-        try {
+        try (InputStream is = url.openStream()) {
             readSoundbank(is);
-        } finally {
-            is.close();
         }
     }
 
     public SF2Soundbank(File file) throws IOException {
         largeFormat = true;
         sampleFile = file;
-        InputStream is = new FileInputStream(file);
-        try {
+        try (InputStream is = new FileInputStream(file)) {
             readSoundbank(is);
-        } finally {
-            is.close();
         }
     }
 
@@ -515,22 +510,27 @@ public final class SF2Soundbank implements Soundbank {
     }
 
     public void save(String name) throws IOException {
-        writeSoundbank(new RIFFWriter(name, "sfbk"));
+        try (RIFFWriter writer = new RIFFWriter(name, "sfbk")) {
+            writeSoundbank(writer);
+        }
     }
 
     public void save(File file) throws IOException {
-        writeSoundbank(new RIFFWriter(file, "sfbk"));
+        try (RIFFWriter writer = new RIFFWriter(file, "sfbk")) {
+            writeSoundbank(writer);
+        }
     }
 
     public void save(OutputStream out) throws IOException {
-        writeSoundbank(new RIFFWriter(out, "sfbk"));
+        try (RIFFWriter writer = new RIFFWriter(out, "sfbk")) {
+            writeSoundbank(writer);
+        }
     }
 
     private void writeSoundbank(RIFFWriter writer) throws IOException {
         writeInfo(writer.writeList("INFO"));
         writeSdtaChunk(writer.writeList("sdta"));
         writePdtaChunk(writer.writeList("pdta"));
-        writer.close();
     }
 
     private void writeInfoStringChunk(RIFFWriter writer, String name,
@@ -539,7 +539,7 @@ public final class SF2Soundbank implements Soundbank {
             return;
         RIFFWriter chunk = writer.writeChunk(name);
         chunk.writeString(value);
-        int len = value.getBytes("ascii").length;
+        int len = value.getBytes(US_ASCII).length;
         chunk.write(0);
         len++;
         if (len % 2 != 0)

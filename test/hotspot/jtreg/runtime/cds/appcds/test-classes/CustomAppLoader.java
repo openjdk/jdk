@@ -40,7 +40,7 @@ public class CustomAppLoader {
     // args[2...] = arguments for the main class
     public static void main(String args[]) throws Throwable {
         File f = new File(args[0]);
-        URL[] classLoaderUrls = new URL[] {new URL("file://" + f.getCanonicalPath())};
+        URL[] classLoaderUrls = new URL[] {f.getAbsoluteFile().toURI().toURL()};
         URLClassLoader loader = new URLClassLoader(classLoaderUrls, CustomAppLoader.class.getClassLoader());
         Class k = Class.forName(args[1], true, loader);
         Class parameterTypes[] = new Class[] {String[].class};

@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.ListResourceBundle;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.Vector;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -115,8 +116,7 @@ public class UserPluginMetadataFormatTest implements MetadataTest {
         public int getWidth(int imageIndex) throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            if (imageIndex >= 5 || imageIndex < 0)
-                throw new IndexOutOfBoundsException();
+            Objects.checkIndex(imageIndex, 5);
 
             return 10;
         }
@@ -124,8 +124,7 @@ public class UserPluginMetadataFormatTest implements MetadataTest {
         public int getHeight(int imageIndex) throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            if (imageIndex >= 5 || imageIndex < 0)
-                throw new IndexOutOfBoundsException();
+            Objects.checkIndex(imageIndex, 5);
 
             return 15;
         }
@@ -133,8 +132,7 @@ public class UserPluginMetadataFormatTest implements MetadataTest {
         public Iterator getImageTypes(int imageIndex) throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            if (imageIndex >= 5 || imageIndex < 0)
-                throw new IndexOutOfBoundsException();
+            Objects.checkIndex(imageIndex, 5);
 
             Vector imageTypes = new Vector();
             imageTypes.add(ImageTypeSpecifier.createFromBufferedImageType
@@ -150,8 +148,7 @@ public class UserPluginMetadataFormatTest implements MetadataTest {
 
             if (input == null)
                 throw new IllegalStateException();
-            if (imageIndex >= 5 || imageIndex < 0)
-                throw new IndexOutOfBoundsException();
+            Objects.checkIndex(imageIndex, 5);
             if (seekForwardOnly) {
                 if (imageIndex < minIndex)
                     throw new IndexOutOfBoundsException();
@@ -169,8 +166,7 @@ public class UserPluginMetadataFormatTest implements MetadataTest {
           throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            if (imageIndex >= 5 || imageIndex < 0)
-                throw new IndexOutOfBoundsException();
+            Objects.checkIndex(imageIndex, 5);
             if (seekForwardOnly) {
                 if (imageIndex < minIndex)
                     throw new IndexOutOfBoundsException();

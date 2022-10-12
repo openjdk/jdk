@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,21 @@ public class LockDuringDumpAgent implements Runnable {
 
     static void waitForThreadStart() {
         try {
+            long started = System.currentTimeMillis();
+            long timeout = 10000;
+            synchronized (LITERAL) {
+                Thread.sleep(1);
+            }
             synchronized (lock) {
                 while (!threadStarted) {
-                    lock.wait();
+                    lock.wait(timeout);
+                    long elapsed = System.currentTimeMillis() - started;
+                    if (elapsed >= timeout) {
+                        System.out.println("This JVM may decide to not launch any Java threads during -Xshare:dump.");
+                        System.out.println("This is OK because no string objects could be in a locked state during heap dump.");
+                        System.out.println("LockDuringDumpAgent timeout after " + elapsed + " ms");
+                        return;
+                    }
                 }
                 System.out.println("Thread has started");
             }

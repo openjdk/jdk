@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,17 +138,17 @@ public final class MD4 extends DigestBase {
 
     private static int FF(int a, int b, int c, int d, int x, int s) {
         a += ((b & c) | ((~b) & d)) + x;
-        return ((a << s) | (a >>> (32 - s)));
+        return Integer.rotateLeft(a, s);
     }
 
     private static int GG(int a, int b, int c, int d, int x, int s) {
         a += ((b & c) | (b & d) | (c & d)) + x + 0x5a827999;
-        return ((a << s) | (a >>> (32 - s)));
+        return Integer.rotateLeft(a, s);
     }
 
     private static int HH(int a, int b, int c, int d, int x, int s) {
         a += ((b ^ c) ^ d) + x + 0x6ed9eba1;
-        return ((a << s) | (a >>> (32 - s)));
+        return Integer.rotateLeft(a, s);
     }
 
     /**

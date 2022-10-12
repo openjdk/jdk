@@ -595,8 +595,9 @@ MTLBlitLoops_Blit(JNIEnv *env,
             }
 
 #ifdef TRACE_BLIT
-            J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_FALSE,
-                    "MTLBlitLoops_Blit [tx=%d, xf=%d, AC=%s]: bdst=%s, src=%p (%dx%d) O=%d premul=%d | (%d, %d, %d, %d)->(%1.2f, %1.2f, %1.2f, %1.2f)",
+            J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_TRUE,
+                    "MTLBlitLoops_Blit srctype=%d [tx=%d, xf=%d, AC=%s]: bdst=%s, src=%p (%dx%d) O=%d premul=%d | (%d, "
+                    "%d, %d, %d)->(%1.2f, %1.2f, %1.2f, %1.2f)", srctype,
                     texture, xform, [mtlc getCompositeDescription].cString,
                     getSurfaceDescription(dstOps).cString, srcOps,
                     sx2 - sx1, sy2 - sy1,

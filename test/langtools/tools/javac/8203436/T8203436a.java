@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8203436
+ * @bug 8203436 8211004
  * @summary javac should fail early when emitting illegal signature attributes
  * @compile/fail/ref=T8203436a.out -XDrawDiagnostics T8203436a.java
  */

@@ -45,5 +45,5 @@ class NativeImageBuffer {
                 });
     }
 
-    native static ByteBuffer getNativeMap(String imagePath);
+    static native ByteBuffer getNativeMap(String imagePath);
 }

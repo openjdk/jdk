@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class WeekDateTest {
             date = ymdFormat.parse(regularDate);
             String s = ywdFormat.format(date);
             if (!s.equals(weekDate)) {
-                throw new RuntimeException("format: got="+s+", expecetd="+weekDate);
+                throw new RuntimeException("format: got="+s+", expected="+weekDate);
             }
         }
     }
@@ -135,7 +135,7 @@ public class WeekDateTest {
     private static void noWeekDateSupport() throws Exception {
         // Tests with Japanese Imperial Calendar that doesn't support week dates.
         Calendar jcal = Calendar.getInstance(TimeZone.getTimeZone("GMT"),
-                                             new Locale("ja", "JP", "JP"));
+                                             Locale.of("ja", "JP", "JP"));
 
         String format = "2-W01-2"; // 2019-12-31 == R1-12-31
         int expectedYear = 2019;

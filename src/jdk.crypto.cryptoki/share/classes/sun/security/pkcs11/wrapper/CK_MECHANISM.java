@@ -164,7 +164,6 @@ public class CK_MECHANISM {
     // CK_MECHANISM(long) constructor and setParameter(CK_RSA_PKCS_PSS_PARAMS)
     // methods instead of creating yet another constructor
     public void setParameter(CK_RSA_PKCS_PSS_PARAMS params) {
-        assert(this.mechanism == CKM_RSA_PKCS_PSS);
         assert(params != null);
         if (this.pParameter != null && this.pParameter.equals(params)) {
             return;

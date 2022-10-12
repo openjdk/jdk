@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
      *
      * The client sends response data to which the server must
      * process using GSS_accept_sec_context.
-     * As per RFC 2222, the GSS authenication completes (GSS_S_COMPLETE)
+     * As per RFC 2222, the GSS authentication completes (GSS_S_COMPLETE)
      * we do an extra hand shake to determine the negotiated security protection
      * and buffer sizes.
      *
@@ -327,9 +327,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
             return null;
         } catch (GSSException e) {
             throw new SaslException("Final handshake step failed", e);
-        } catch (IOException e) {
-            throw new SaslException("Problem with callback handler", e);
-        } catch (UnsupportedCallbackException e) {
+        } catch (IOException | UnsupportedCallbackException e) {
             throw new SaslException("Problem with callback handler", e);
         }
     }

@@ -296,7 +296,7 @@ public class OomDebugTest extends TestScaffold {
     private void handleFailure(InvocationException e) {
         // There is no good way to see the OOME diagnostic message in the target since the
         // TestScaffold might throw an exception while trying to print the stack trace. I.e
-        // it might get a a VMDisconnectedException before the stack trace printing finishes.
+        // it might get a VMDisconnectedException before the stack trace printing finishes.
         System.err.println("FAILURE: InvocationException thrown. Trying to determine cause...");
         defaultHandleOOMFailure(e);
     }

@@ -237,7 +237,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   inline_block  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
   stub_block = *ctrl;
 
-  Node* mask_gen =  new VectorMaskGenNode(casted_length, TypeVect::VECTMASK, type);
+  Node* mask_gen = VectorMaskGenNode::make(casted_length, type);
   transform_later(mask_gen);
 
   unsigned vec_size = lane_count *  type2aelembytes(type);
@@ -831,7 +831,9 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   }
 
   _igvn.replace_node(_callprojs.fallthrough_memproj, out_mem);
-  _igvn.replace_node(_callprojs.fallthrough_ioproj, *io);
+  if (_callprojs.fallthrough_ioproj != NULL) {
+    _igvn.replace_node(_callprojs.fallthrough_ioproj, *io);
+  }
   _igvn.replace_node(_callprojs.fallthrough_catchproj, *ctrl);
 
 #ifdef ASSERT
@@ -1015,7 +1017,7 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
       Node* sval = transform_later(
           LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(s_alias_idx), sptr, s_adr_type,
                          TypeInt::INT, T_INT, MemNode::unordered, LoadNode::DependsOnlyOnTest,
-                         false /*unaligned*/, is_mismatched));
+                         false /*require_atomic_access*/, false /*unaligned*/, is_mismatched));
       Node* st = transform_later(
           StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(d_alias_idx), dptr, adr_type,
                           sval, T_INT, MemNode::unordered));
@@ -1095,8 +1097,14 @@ MergeMemNode* PhaseMacroExpand::generate_slow_arraycopy(ArrayCopyNode *ac,
   }
   transform_later(out_mem);
 
-  *io = _callprojs.fallthrough_ioproj->clone();
-  transform_later(*io);
+  // When src is negative and arraycopy is before an infinite loop,_callprojs.fallthrough_ioproj
+  // could be NULL. Skip clone and update NULL fallthrough_ioproj.
+  if (_callprojs.fallthrough_ioproj != NULL) {
+    *io = _callprojs.fallthrough_ioproj->clone();
+    transform_later(*io);
+  } else {
+    *io = NULL;
+  }
 
   return out_mem;
 }
@@ -1284,14 +1292,14 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   BasicType src_elem = T_CONFLICT;
   BasicType dest_elem = T_CONFLICT;
 
-  if (top_dest != NULL && top_dest->klass() != NULL) {
-    dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
+  if (top_src != NULL && top_src->elem() != Type::BOTTOM) {
+    src_elem = top_src->elem()->array_element_basic_type();
   }
-  if (top_src != NULL && top_src->klass() != NULL) {
-    src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
+  if (top_dest != NULL && top_dest->elem() != Type::BOTTOM) {
+    dest_elem = top_dest->elem()->array_element_basic_type();
   }
-  if (is_reference_type(src_elem))  src_elem  = T_OBJECT;
-  if (is_reference_type(dest_elem)) dest_elem = T_OBJECT;
+  if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
+  if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
   if (ac->is_arraycopy_validated() &&
       dest_elem != T_CONFLICT &&
@@ -1333,7 +1341,9 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     }
 
     _igvn.replace_node(_callprojs.fallthrough_memproj, merge_mem);
-    _igvn.replace_node(_callprojs.fallthrough_ioproj, io);
+    if (_callprojs.fallthrough_ioproj != NULL) {
+      _igvn.replace_node(_callprojs.fallthrough_ioproj, io);
+    }
     _igvn.replace_node(_callprojs.fallthrough_catchproj, ctrl);
     return;
   }

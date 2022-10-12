@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -146,13 +144,12 @@ public class DeployParams {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void validate() throws PackagerException {
         boolean hasModule = (bundlerArguments.get(
                 Arguments.CLIOptions.MODULE.getId()) != null);
         boolean hasAppImage = (bundlerArguments.get(
                 Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId()) != null);
-        boolean hasClass = (bundlerArguments.get(
-                Arguments.CLIOptions.APPCLASS.getId()) != null);
         boolean hasMain = (bundlerArguments.get(
                 Arguments.CLIOptions.MAIN_JAR.getId()) != null);
         boolean hasRuntimeImage = (bundlerArguments.get(
@@ -161,18 +158,20 @@ public class DeployParams {
                 Arguments.CLIOptions.INPUT.getId()) != null);
         boolean hasModulePath = (bundlerArguments.get(
                 Arguments.CLIOptions.MODULE_PATH.getId()) != null);
+        boolean hasMacAppStore = (bundlerArguments.get(
+                Arguments.CLIOptions.MAC_APP_STORE.getId()) != null);
         boolean runtimeInstaller = !isTargetAppImage() &&
                 !hasAppImage && !hasModule && !hasMain && hasRuntimeImage;
 
         if (isTargetAppImage()) {
             // Module application requires --runtime-image or --module-path
             if (hasModule) {
-                if (!hasModulePath && !hasRuntimeImage) {
+                if (!hasModulePath && !hasRuntimeImage && !hasAppImage) {
                     throw new PackagerException("ERR_MissingArgument",
                             "--runtime-image or --module-path");
                 }
             } else {
-                if (!hasInput) {
+                if (!hasInput && !hasAppImage) {
                     throw new PackagerException(
                            "ERR_MissingArgument", "--input");
                 }
@@ -273,6 +272,45 @@ public class DeployParams {
                         Path.of(icon).toAbsolutePath().toString());
             }
         }
+
+
+        if (hasMacAppStore) {
+            // Validate jlink-options if mac-app-store is set
+            Object jlinkOptions = bundlerArguments.get(
+                    Arguments.CLIOptions.JLINK_OPTIONS.getId());
+            if (jlinkOptions instanceof List) {
+                List<String> options = (List<String>) jlinkOptions;
+                if (!options.contains("--strip-native-commands")) {
+                    throw new PackagerException(
+                            "ERR_MissingJLinkOptMacAppStore",
+                            "--strip-native-commands");
+                }
+            }
+
+            // Validate runtime if mac-app-store is set. Predefined runtime
+            // should not contain "bin" folder.
+            runtime = (String)bundlerArguments.get(
+                    Arguments.CLIOptions.PREDEFINED_RUNTIME_IMAGE.getId());
+            if (runtime != null) {
+                // Should exist from check above if not null
+                Path topImage = Path.of(runtime);
+
+                // On Mac topImage can be runtime root or runtime home.
+                Path runtimeHome = topImage.resolve("Contents/Home");
+                if (Files.isDirectory(runtimeHome)) {
+                    // topImage references runtime root, adjust it to pick data
+                    // from runtime home
+                    topImage = runtimeHome;
+                }
+
+                Path runtimeBin = topImage.resolve("bin");
+                if (Files.isDirectory(runtimeBin)) {
+                    throw new PackagerException(
+                            "ERR_MacAppStoreRuntimeBinExists",
+                            topImage.toAbsolutePath().toString());
+                }
+            }
+        }
     }
 
     void setTargetFormat(String t) {
@@ -294,6 +332,8 @@ public class DeployParams {
             StandardBundlerParam.ADD_MODULES.getID(),
             StandardBundlerParam.LIMIT_MODULES.getID(),
             StandardBundlerParam.FILE_ASSOCIATIONS.getID(),
+            StandardBundlerParam.DMG_CONTENT.getID(),
+            StandardBundlerParam.APP_CONTENT.getID(),
             StandardBundlerParam.JLINK_OPTIONS.getID()
     ));
 
@@ -306,8 +346,10 @@ public class DeployParams {
                 String delim = "\n\n";
                 if (key.equals(StandardBundlerParam.MODULE_PATH.getID())) {
                     delim = File.pathSeparator;
-                } else if (key.equals(
-                        StandardBundlerParam.ADD_MODULES.getID())) {
+                } else if (
+                        key.equals(StandardBundlerParam.DMG_CONTENT.getID()) ||
+                        key.equals(StandardBundlerParam.APP_CONTENT.getID()) ||
+                        key.equals(StandardBundlerParam.ADD_MODULES.getID())) {
                     delim = ",";
                 }
                 bundlerArguments.put(key, existingValue + delim + value);
@@ -327,9 +369,6 @@ public class DeployParams {
 
     BundleParams getBundleParams() {
         BundleParams bundleParams = new BundleParams();
-
-        Map<String, String> unescapedHtmlParams = new TreeMap<>();
-        Map<String, String> escapedHtmlParams = new TreeMap<>();
 
         // check for collisions
         TreeSet<String> keys = new TreeSet<>(bundlerArguments.keySet());

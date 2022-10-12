@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @build Tests
  * @build SinCosCornerCasesTests
  * @run main SinCosCornerCasesTests
- * @author Vivek Deshpande
  */
 
 public class SinCosCornerCasesTests {
@@ -1502,7 +1501,7 @@ public class SinCosCornerCasesTests {
 
     private static int testSinCase(double input, double bound1, double bound2) {
         int failures = 0;
-        failures += Tests.testBounds("Math.sin", input, Math.sin(input), bound1, bound2);
+        failures += Tests.testBounds("Math.sin", input, Math::sin, bound1, bound2);
         return failures;
     }
 
@@ -2921,7 +2920,7 @@ public class SinCosCornerCasesTests {
 
     private static int testCosCase(double input, double bound1, double bound2) {
         int failures = 0;
-        failures += Tests.testBounds("Math.cos", input, Math.cos(input), bound1, bound2);
+        failures += Tests.testBounds("Math.cos", input, Math::cos, bound1, bound2);
         return failures;
     }
 }

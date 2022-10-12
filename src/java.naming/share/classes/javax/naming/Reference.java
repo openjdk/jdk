@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,8 +326,7 @@ public class Reference implements Cloneable, java.io.Serializable {
       * @return true if obj is equal to this reference; false otherwise.
       */
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof Reference)) {
-            Reference target = (Reference)obj;
+        if (obj instanceof Reference target) {
             // ignore factory information
             if (target.className.equals(this.className) &&
                 target.size() ==  this.size()) {

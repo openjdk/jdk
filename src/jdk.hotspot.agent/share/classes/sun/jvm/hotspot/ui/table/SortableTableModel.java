@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
  */
 
 package sun.jvm.hotspot.ui.table;
-
-import java.util.Collections;
-import java.util.List;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
@@ -55,7 +52,7 @@ public abstract class SortableTableModel<T> extends AbstractTableModel {
         comparator.addColumn(column);
         comparator.setAscending(ascending);
 
-        Collections.sort(elements, comparator);
+        elements.sort(comparator);
 
         fireTableChanged(new TableModelEvent(this));
     }

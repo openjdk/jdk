@@ -167,7 +167,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.INVALID_URI_ERR,
-        "Ung\u00FCltiger URI \"{0}\"."},
+        "Ung\u00FCltige URI \"{0}\"."},
 
         /*
          * Note to translators:  This message is displayed when the URI
@@ -234,7 +234,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * text is the offending character.
          */
         {ErrorMsg.ILLEGAL_CHAR_ERR,
-        "Ung\u00FCltiges Zeichen \"{0}\" in XPath-Ausdruck."},
+        "Unzul\u00E4ssiges Zeichen \"{0}\" in XPath-Ausdruck."},
 
         /*
          * Note to translators:  A processing instruction is a mark-up item in
@@ -243,7 +243,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * text is the name.
          */
         {ErrorMsg.ILLEGAL_PI_ERR,
-        "Ung\u00FCltiger Name \"{0}\" f\u00FCr Verarbeitungsanweisung."},
+        "Unzul\u00E4ssiger Name \"{0}\" f\u00FCr Verarbeitungsanweisung."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -261,7 +261,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * text.
          */
         {ErrorMsg.ILLEGAL_ATTRIBUTE_ERR,
-        "Ung\u00FCltiges Attribut \"{0}\"."},
+        "Unzul\u00E4ssiges Attribut \"{0}\"."},
 
         /*
          * Note to translators:  "import" and "include" are keywords that should
@@ -321,7 +321,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * function has too many or too few arguments.
          */
         {ErrorMsg.ILLEGAL_ARG_ERR,
-        "Ung\u00FCltige Argumente f\u00FCr Funktionsaufruf."},
+        "Unzul\u00E4ssige Argumente f\u00FCr Funktionsaufruf."},
 
         /*
          * Note to translators:  "document()" is the name of function and must
@@ -383,7 +383,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * element of a type that it was not permitted to contain.
          */
         {ErrorMsg.ILLEGAL_CHILD_ERR,
-        "Ung\u00FCltiges untergeordnetes Element."},
+        "Unzul\u00E4ssiges untergeordnetes Element."},
 
         /*
          * Note to translators:  The stylesheet tried to create an element with

@@ -48,6 +48,7 @@
 
 static const ZStatCounter       ZCounterAllocationRate("Memory", "Allocation Rate", ZStatUnitBytesPerSecond);
 static const ZStatCounter       ZCounterPageCacheFlush("Memory", "Page Cache Flush", ZStatUnitBytesPerSecond);
+static const ZStatCounter       ZCounterDefragment("Memory", "Defragment", ZStatUnitOpsPerSecond);
 static const ZStatCriticalPhase ZCriticalPhaseAllocationStall("Allocation Stall");
 
 enum ZPageAllocationStall {
@@ -559,12 +560,43 @@ ZPage* ZPageAllocator::alloc_page_create(ZPageAllocation* allocation) {
   return new ZPage(allocation->type(), vmem, pmem);
 }
 
-static bool is_alloc_satisfied(ZPageAllocation* allocation) {
+bool ZPageAllocator::should_defragment(const ZPage* page) const {
+  // A small page can end up at a high address (second half of the address space)
+  // if we've split a larger page or we have a constrained address space. To help
+  // fight address space fragmentation we remap such pages to a lower address, if
+  // a lower address is available.
+  return page->type() == ZPageTypeSmall &&
+         page->start() >= _virtual.reserved() / 2 &&
+         page->start() > _virtual.lowest_available_address();
+}
+
+bool ZPageAllocator::is_alloc_satisfied(ZPageAllocation* allocation) const {
   // The allocation is immediately satisfied if the list of pages contains
-  // exactly one page, with the type and size that was requested.
-  return allocation->pages()->size() == 1 &&
-         allocation->pages()->first()->type() == allocation->type() &&
-         allocation->pages()->first()->size() == allocation->size();
+  // exactly one page, with the type and size that was requested. However,
+  // even if the allocation is immediately satisfied we might still want to
+  // return false here to force the page to be remapped to fight address
+  // space fragmentation.
+
+  if (allocation->pages()->size() != 1) {
+    // Not a single page
+    return false;
+  }
+
+  const ZPage* const page = allocation->pages()->first();
+  if (page->type() != allocation->type() ||
+      page->size() != allocation->size()) {
+    // Wrong type or size
+    return false;
+  }
+
+  if (should_defragment(page)) {
+    // Defragment address space
+    ZStatInc(ZCounterDefragment);
+    return false;
+  }
+
+  // Allocation immediately satisfied
+  return true;
 }
 
 ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {

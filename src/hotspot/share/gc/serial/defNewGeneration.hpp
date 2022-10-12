@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.hpp"
@@ -139,6 +141,8 @@ protected:
 
   STWGCTimer* _gc_timer;
 
+  StringDedup::Requests _string_dedup_requests;
+
   enum SomeProtectedConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.
@@ -199,8 +203,6 @@ protected:
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
 
-  virtual void ref_processor_init();
-
   virtual Generation::Name kind() { return Generation::DefNew; }
 
   // Accessing spaces
@@ -221,10 +223,6 @@ protected:
 
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
-
-  bool supports_inline_contig_alloc() const { return true; }
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
 
   // Thread-local allocation buffers
   bool supports_tlab_allocation() const { return true; }

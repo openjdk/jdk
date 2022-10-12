@@ -204,7 +204,7 @@ public class WritableRaster extends Raster {
      * @param bandList   Array of band indices, or null to use all bands.
      * @return a {@code WritableRaster} sharing all or part of the
      *         {@code DataBuffer} of this {@code WritableRaster}.
-     * @exception RasterFormatException if the subregion is outside of the
+     * @throws RasterFormatException if the subregion is outside of the
      *                               raster bounds.
      * @throws RasterFormatException if {@code w} or
      *         {@code h}

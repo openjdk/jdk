@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #ifndef SHARE_UTILITIES_DECODER_HPP
 #define SHARE_UTILITIES_DECODER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/ostream.hpp"
@@ -62,6 +62,11 @@ public:
 
   // demangle a C++ symbol
   virtual bool demangle(const char* symbol, char* buf, int buflen) = 0;
+
+  // Get filename and line number information.
+  virtual bool get_source_info(address pc, char* filename, size_t filename_len, int* line, bool is_pc_after_call) {
+    return false;
+  }
 
   virtual decoder_status status() const {
     return _decoder_status;
@@ -109,9 +114,11 @@ public:
   static bool demangle(const char* symbol, char* buf, int buflen);
 
   // Attempts to retrieve source file name and line number associated with a pc.
-  // If buf != NULL, points to a buffer of size buflen which will receive the
+  // If filename != NULL, points to a buffer of size filename_len which will receive the
   // file name. File name will be silently truncated if output buffer is too small.
-  static bool get_source_info(address pc, char* buf, size_t buflen, int* line);
+  // If is_pc_after_call is true, then pc is treated as pointing to the next instruction
+  // after a call. The source information for the call instruction is fetched in that case.
+  static bool get_source_info(address pc, char* filename, size_t filename_len, int* line, bool is_pc_after_call = false);
 
   static void print_state_on(outputStream* st);
 

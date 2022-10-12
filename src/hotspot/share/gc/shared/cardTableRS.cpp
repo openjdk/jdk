@@ -458,6 +458,6 @@ void CardTableRS::non_clean_card_iterate(Space* sp,
   clear_cl.do_MemRegion(mr);
 }
 
-bool CardTableRS::is_in_young(oop obj) const {
-  return GenCollectedHeap::heap()->is_in_young(obj);
+bool CardTableRS::is_in_young(const void* p) const {
+  return GenCollectedHeap::heap()->is_in_young(p);
 }

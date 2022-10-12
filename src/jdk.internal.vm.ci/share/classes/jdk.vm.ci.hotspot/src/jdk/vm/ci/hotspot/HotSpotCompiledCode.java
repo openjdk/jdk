@@ -118,8 +118,19 @@ public class HotSpotCompiledCode implements CompiledCode {
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `sites`, `targetCode`, `comments`, `methods`, `dataSection`, `dataSectionPatches` and `assumptions`")
-    public HotSpotCompiledCode(String name, byte[] targetCode, int targetCodeSize, Site[] sites, Assumption[] assumptions, ResolvedJavaMethod[] methods, Comment[] comments, byte[] dataSection,
-                    int dataSectionAlignment, DataPatch[] dataSectionPatches, boolean isImmutablePIC, int totalFrameSize, StackSlot deoptRescueSlot) {
+    public HotSpotCompiledCode(String name,
+                    byte[] targetCode,
+                    int targetCodeSize,
+                    Site[] sites,
+                    Assumption[] assumptions,
+                    ResolvedJavaMethod[] methods,
+                    Comment[] comments,
+                    byte[] dataSection,
+                    int dataSectionAlignment,
+                    DataPatch[] dataSectionPatches,
+                    boolean isImmutablePIC,
+                    int totalFrameSize,
+                    StackSlot deoptRescueSlot) {
         this.name = name;
         this.targetCode = targetCode;
         this.targetCodeSize = targetCodeSize;

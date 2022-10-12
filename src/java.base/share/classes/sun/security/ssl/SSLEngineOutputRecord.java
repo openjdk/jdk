@@ -152,6 +152,15 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     @Override
+    void disposeWriteCipher() {
+        if (fragmenter == null) {
+            writeCipher.dispose();
+        } else {
+            fragmenter.queueUpCipherDispose();
+        }
+    }
+
+    @Override
     void encodeV2NoCipher() throws IOException {
         isTalkingToV2 = true;
     }
@@ -361,6 +370,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         byte            majorVersion;
         byte            minorVersion;
         SSLWriteCipher  encodeCipher;
+        boolean         disposeCipher;
 
         byte[]          fragment;
     }
@@ -420,6 +430,15 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             memo.fragment[1] = description;
 
             handshakeMemos.add(memo);
+        }
+
+        void queueUpCipherDispose() {
+            RecordMemo lastMemo = handshakeMemos.peekLast();
+            if (lastMemo != null) {
+                lastMemo.disposeCipher = true;
+            } else {
+                writeCipher.dispose();
+            }
         }
 
         Ciphertext acquireCiphertext(ByteBuffer dstBuf) throws IOException {
@@ -521,6 +540,9 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
                     dstPos, dstLim, headerSize,
                     ProtocolVersion.valueOf(memo.majorVersion,
                             memo.minorVersion));
+            if (memo.disposeCipher) {
+                memo.encodeCipher.dispose();
+            }
 
             if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
                 ByteBuffer temporary = dstBuf.duplicate();

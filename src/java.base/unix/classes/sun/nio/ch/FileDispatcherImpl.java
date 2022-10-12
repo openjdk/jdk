@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,6 +126,10 @@ class FileDispatcherImpl extends FileDispatcher {
         return false;
     }
 
+    boolean canTransferToFromOverlappedMap() {
+        return canTransferToFromOverlappedMap0();
+    }
+
     int setDirectIO(FileDescriptor fd, String path) {
         int result = -1;
         try {
@@ -183,6 +187,8 @@ class FileDispatcherImpl extends FileDispatcher {
     static native void dup0(FileDescriptor fd1, FileDescriptor fd2) throws IOException;
 
     static native void closeIntFD(int fd) throws IOException;
+
+    static native boolean canTransferToFromOverlappedMap0();
 
     static native int setDirect0(FileDescriptor fd) throws IOException;
 

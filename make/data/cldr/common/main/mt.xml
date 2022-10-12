@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -450,7 +450,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="teo">Teso</language>
 			<language type="ter">Tereno</language>
 			<language type="tet">Tetum</language>
-			<language type="tg">Tajik</language>
+			<language type="tg">Taġik</language>
 			<language type="th">Tajlandiż</language>
 			<language type="ti">Tigrinya</language>
 			<language type="tig">Tigre</language>
@@ -646,7 +646,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FJ">Fiġi</territory>
 			<territory type="FK">il-Gżejjer Falkland</territory>
 			<territory type="FK" alt="variant">Il-Gżejjer Falkland (il-Gżejjer Malvinas)</territory>
-			<territory type="FM">Mikroneżja</territory>
+			<territory type="FM">il-Mikroneżja</territory>
 			<territory type="FO">il-Gżejjer Faeroe</territory>
 			<territory type="FR">Franza</territory>
 			<territory type="GA">il-Gabon</territory>
@@ -685,7 +685,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IO">Territorju Brittaniku tal-Oċean Indjan</territory>
 			<territory type="IQ">l-Iraq</territory>
 			<territory type="IR">l-Iran</territory>
-			<territory type="IS">l-iżlanda</territory>
+			<territory type="IS">l-Iżlanda</territory>
 			<territory type="IT">l-Italja</territory>
 			<territory type="JE">Jersey</territory>
 			<territory type="JM">il-Ġamajka</territory>
@@ -771,7 +771,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="RS">is-Serbja</territory>
 			<territory type="RU">ir-Russja</territory>
 			<territory type="RW">ir-Rwanda</territory>
-			<territory type="SA">l-Arabia Sawdija</territory>
+			<territory type="SA">l-Arabja Sawdija</territory>
 			<territory type="SB">il-Gżejjer Solomon</territory>
 			<territory type="SC">is-Seychelles</territory>
 			<territory type="SD">is-Sudan</territory>
@@ -791,7 +791,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SV">El Salvador</territory>
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">is-Sirja</territory>
-			<territory type="SZ">is-Swaziland</territory>
+			<territory type="SZ">l-Eswatini</territory> <!-- ir-Renju tal-Eswatini -->
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">il-Gżejjer Turks u Caicos</territory>
 			<territory type="TD">iċ-Chad</territory>
@@ -902,21 +902,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d 'ta'’ MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d 'ta'’ MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>dd MMM y G</pattern>
+							<datetimeSkeleton>GyMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1303,21 +1307,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d 'ta'’ MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d 'ta'’ MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>dd MMM y</pattern>
+							<datetimeSkeleton>yMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1325,21 +1333,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class EUC_TW {
                     indexC2B[e.cp>>8] = 1;
                 } else {
                     indexC2BSupp[(e.cp&0xffff)>>8] = 1;
-                    suppFlag[e.bs] |= (1 << plane);
+                    suppFlag[e.bs] |= (byte) (1 << plane);
                 }
             }
 

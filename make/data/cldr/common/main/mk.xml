@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -378,7 +378,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mic">микмак</language>
 			<language type="min">минангкабау</language>
 			<language type="mk">македонски</language>
-			<language type="ml">малајамски</language>
+			<language type="ml">малајалски</language>
 			<language type="mn">монголски</language>
 			<language type="mnc">манџурски</language>
 			<language type="mni">манипурски</language>
@@ -469,6 +469,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rap">рапанујски</language>
 			<language type="rar">раротонгански</language>
 			<language type="rgn">ромањолски</language>
+			<language type="rhg">рохиншки</language>
 			<language type="rif">рифски</language>
 			<language type="rm">реторомански</language>
 			<language type="rn">рунди</language>
@@ -735,7 +736,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Mend">мендско</script>
 			<script type="Merc">мероитско ракописно</script>
 			<script type="Mero">мероитско</script>
-			<script type="Mlym">малајаламско писмо</script>
+			<script type="Mlym">малајалско писмо</script>
 			<script type="Modi">моди</script>
 			<script type="Mong">монголско писмо</script>
 			<script type="Moon">Муново</script>
@@ -949,7 +950,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GS">Јужна Џорџија и Јужни Сендвички Острови</territory>
 			<territory type="GT">Гватемала</territory>
 			<territory type="GU">Гуам</territory>
-			<territory type="GW">Гвинеја-Бисау</territory>
+			<territory type="GW">Гвинеја Бисао</territory>
 			<territory type="GY">Гвајана</territory>
 			<territory type="HK">Хонгконг САР Кина</territory>
 			<territory type="HK" alt="short">Хонгконг</territory>
@@ -1070,7 +1071,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SO">Сомалија</territory>
 			<territory type="SR">Суринам</territory>
 			<territory type="SS">Јужен Судан</territory>
-			<territory type="ST">Сао Томе и Принсипе</territory>
+			<territory type="ST">Саун Томе и Принсип</territory>
 			<territory type="SV">Ел Салвадор</territory>
 			<territory type="SX">Свети Мартин</territory>
 			<territory type="SY">Сирија</territory>
@@ -1245,28 +1246,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0}… {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\--/]</parseLenient>
+			<parseLenient sample=":">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
-			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="%">[%٪﹪％]</parseLenient>
+			<parseLenient sample="‰">[؉‰]</parseLenient>
+			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£">[£₤]</parseLenient>
+			<parseLenient sample="¥">[¥￥]</parseLenient>
+			<parseLenient sample="₩">[₩￦]</parseLenient>
+			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1282,21 +1283,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">dd.M.y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">dd.M.y GGGGG</pattern>
+							<datetimeSkeleton draft="contributed">GGGGGyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1476,21 +1481,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">dd.M.y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">dd.M.y GGGGG</pattern>
+							<datetimeSkeleton draft="contributed">GGGGGyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1582,21 +1591,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>dd.M.y G</pattern>
+							<datetimeSkeleton>GyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd.M.y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1635,6 +1648,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">dd MMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, dd MMM y 'г'. G</dateFormatItem>
@@ -1908,7 +1922,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dayWidth type="abbreviated">
 							<day type="sun">нед.</day>
 							<day type="mon">пон.</day>
-							<day type="tue">вт.</day>
+							<day type="tue">вто.</day>
 							<day type="wed">сре.</day>
 							<day type="thu">чет.</day>
 							<day type="fri">пет.</day>
@@ -2114,21 +2128,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d.M.y</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d.M.yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2136,21 +2154,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -2189,6 +2211,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
@@ -2244,13 +2267,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">G y – G y</greatestDifference>
-							<greatestDifference id="y">G y – y</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="G">M.y GGGGG – M.y GGGGG</greatestDifference>
+							<greatestDifference id="M">M.y – M.y GGGGG</greatestDifference>
+							<greatestDifference id="y">M.y – M.y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
 							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
@@ -2451,21 +2474,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">dd.M.y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">dd.M.y GGGGG</pattern>
+							<datetimeSkeleton draft="contributed">GGGGGyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2702,21 +2729,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">dd.M.y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">dd.M.y GGGGG</pattern>
+							<datetimeSkeleton draft="contributed">GGGGGyMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -5586,7 +5617,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>Време на на Сент Пјер и Микелан</generic>
+					<generic>Време на Сент Пјер и Микелан</generic>
 					<standard>Стандардно време на Сент Пјер и Микелан</standard>
 					<daylight>Летно сметање на времето на Сент Пјер и Микелан</daylight>
 				</long>
@@ -5782,32 +5813,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Летно време во Екатеринбург</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Време на Јукон</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
+			<native>latn</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
 			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 			<approximatelySign>≈</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
+			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -5929,7 +5965,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Дирхам на Обединети Арапски Емирати</displayName>
 				<displayName count="one">Дирхам на Обединети Арапски Емирати</displayName>
 				<displayName count="other">Дирхами на Обединети Арапски Емирати</displayName>
-				<symbol draft="contributed">AED</symbol>
+				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>Авгани (1927–2002)</displayName>
@@ -5938,32 +5974,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Авганистански авгани</displayName>
 				<displayName count="one">Авгани</displayName>
 				<displayName count="other">Авгани</displayName>
-				<symbol draft="contributed">AFN</symbol>
+				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>Албански лек</displayName>
 				<displayName count="one">Албански лек</displayName>
 				<displayName count="other">Албански леки</displayName>
-				<symbol draft="contributed">ALL</symbol>
+				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>Ерменски драм</displayName>
 				<displayName count="one">Ерменски драм</displayName>
 				<displayName count="other">Ерменски драми</displayName>
-				<symbol draft="contributed">AMD</symbol>
+				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>Холандски антилски гилдер</displayName>
 				<displayName count="one">Холандски антилски гилдер</displayName>
 				<displayName count="other">Холандски антилски гилдери</displayName>
-				<symbol draft="contributed">ANG</symbol>
+				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>Анголска кванза</displayName>
 				<displayName count="one">Анголска кванза</displayName>
 				<displayName count="other">Анголски кванзи</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
+				<symbol>AOA</symbol>
+				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>Анголска Кванза (1977–1990)</displayName>
@@ -5978,8 +6014,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Аргентински пезос</displayName>
 				<displayName count="one">Аргентински пезос</displayName>
 				<displayName count="other">Аргентински пезоси</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>ARS</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>Австралиски Шилинг</displayName>
@@ -5989,19 +6025,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Австралиски долар</displayName>
 				<displayName count="other">Австралиски долари</displayName>
 				<symbol>AUD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>Арубиски флорин</displayName>
 				<displayName count="one">Арубиски флорин</displayName>
 				<displayName count="other">Арубиски флорини</displayName>
-				<symbol draft="contributed">AWG</symbol>
+				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>Азербејџански манат</displayName>
 				<displayName count="one">Азербејџански манат</displayName>
 				<displayName count="other">Азербејџански манати</displayName>
-				<symbol draft="contributed">AZN</symbol>
+				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>Босанско-Херцеговски Динар</displayName>
@@ -6010,22 +6046,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Босанско-херцеговска конвертибилна марка</displayName>
 				<displayName count="one">Босанско-херцеговска конвертибилна марка</displayName>
 				<displayName count="other">Босанско-херцеговски конвертибилни марки</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
+				<symbol>BAM</symbol>
+				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>Барбадоски долар</displayName>
 				<displayName count="one">Барбадоски долар</displayName>
 				<displayName count="other">Барбадоски долари</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>Бангладешка така</displayName>
 				<displayName count="one">Бангладешка така</displayName>
 				<displayName count="other">Бангладешки таки</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
+				<symbol>BDT</symbol>
+				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>Белгиски Франк (конвертибилен)</displayName>
@@ -6043,67 +6079,67 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Бугарски лев</displayName>
 				<displayName count="one">Бугарски лев</displayName>
 				<displayName count="other">Бугарски левови</displayName>
-				<symbol draft="contributed">BGN</symbol>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>Бахреински динар</displayName>
 				<displayName count="one">Бахреински динар</displayName>
 				<displayName count="other">Бахреински динари</displayName>
-				<symbol draft="contributed">BHD</symbol>
+				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>Бурундиски франк</displayName>
 				<displayName count="one">Бурундиски франк</displayName>
 				<displayName count="other">Бурундиски франци</displayName>
-				<symbol draft="contributed">BIF</symbol>
+				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>Бермудски долар</displayName>
 				<displayName count="one">Бермудски долар</displayName>
 				<displayName count="other">Бермудски долари</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>Брунејски долар</displayName>
 				<displayName count="one">Брунејски долар</displayName>
 				<displayName count="other">Брунејски долари</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BND</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>Боливиски боливиано</displayName>
 				<displayName count="one">Боливиски боливиано</displayName>
 				<displayName count="other">Боливиски боливиани</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>BOB</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>Бразилски реал</displayName>
 				<displayName count="one">Бразилски реал</displayName>
 				<displayName count="other">Бразилски реали</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol>R$</symbol>
+				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>Бахамски долар</displayName>
 				<displayName count="one">Бахамски долар</displayName>
 				<displayName count="other">Бахамски долари</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BSD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>Бутански нгултрум</displayName>
 				<displayName count="one">Бутански нгултрум</displayName>
 				<displayName count="other">Бутански нгултруми</displayName>
-				<symbol draft="contributed">BTN</symbol>
+				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>Боцванска пула</displayName>
 				<displayName count="one">Боцванска пула</displayName>
 				<displayName count="other">Боцвански пули</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
+				<symbol>BWP</symbol>
+				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>Белоруска нова рубља (1994–1999)</displayName>
@@ -6112,74 +6148,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Белоруска рубља</displayName>
 				<displayName count="one">Белоруска рубља</displayName>
 				<displayName count="other">Белоруски рубљи</displayName>
-				<symbol draft="contributed">BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
+				<symbol>BYN</symbol>
+				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>Белоруска рубља (2000–2016)</displayName>
 				<displayName count="one">Белоруска рубља (2000–2016)</displayName>
 				<displayName count="other">Белоруски рубљи (2000–2016)</displayName>
-				<symbol draft="contributed">BYR</symbol>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Белизиски долар</displayName>
 				<displayName count="one">Белизиски долар</displayName>
 				<displayName count="other">Белизиски долари</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BZD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>Канадски долар</displayName>
 				<displayName count="one">Канадски долар</displayName>
 				<displayName count="other">Канадски долари</displayName>
-				<symbol draft="contributed">CA$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CA$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>Конголски франк</displayName>
 				<displayName count="one">Конголски франк</displayName>
 				<displayName count="other">Конголски франци</displayName>
-				<symbol draft="contributed">CDF</symbol>
+				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>Швајцарски франк</displayName>
 				<displayName count="one">Швајцарски франк</displayName>
 				<displayName count="other">Швајцарски франци</displayName>
-				<symbol draft="contributed">CHF</symbol>
+				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>Чилеански пезос</displayName>
 				<displayName count="one">Чилеански пезос</displayName>
 				<displayName count="other">Чилеански пезоси</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CLP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>Кинески јуан (офшор)</displayName>
 				<displayName count="one">Кинески јуан (офшор)</displayName>
 				<displayName count="other">Кинески јуан (офшор)</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>Кинески јуан</displayName>
 				<displayName count="one">Кинески јуан</displayName>
 				<displayName count="other">Кинески јуани</displayName>
 				<symbol>CNY</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>Колумбиски пезос</displayName>
 				<displayName count="one">Колумбиски пезос</displayName>
 				<displayName count="other">Колумбиски пезоси</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>COP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>Костарикански колон</displayName>
 				<displayName count="one">Костарикански колон</displayName>
 				<displayName count="other">Костарикански колони</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
+				<symbol>CRC</symbol>
+				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CSK">
 				<displayName>Чехословачка цврста корона</displayName>
@@ -6188,21 +6224,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Кубански конвертибилен пезос</displayName>
 				<displayName count="one">Кубански конвертибилен пезос</displayName>
 				<displayName count="other">Кубански конвертибилни пезоси</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUC</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>Кубански пезос</displayName>
 				<displayName count="one">Кубански пезос</displayName>
 				<displayName count="other">Кубански пезоси</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Зелено’ртски ескудо</displayName>
 				<displayName count="one">Зелено’ртски ескудо</displayName>
 				<displayName count="other">Зелено’ртски ескуди</displayName>
-				<symbol draft="contributed">CVE</symbol>
+				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>Кипарска фунта</displayName>
@@ -6211,8 +6247,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Чешка круна</displayName>
 				<displayName count="one">Чешка круна</displayName>
 				<displayName count="other">Чешки круни</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
+				<symbol>CZK</symbol>
+				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DEM">
 				<displayName>Германска Марка</displayName>
@@ -6221,40 +6257,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Џибутски франк</displayName>
 				<displayName count="one">Џибутски франк</displayName>
 				<displayName count="other">Џибутски франци</displayName>
-				<symbol draft="contributed">DJF</symbol>
+				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>Данска круна</displayName>
 				<displayName count="one">Данска круна</displayName>
 				<displayName count="other">Дански круни</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>DKK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>Доминикански пезос</displayName>
 				<displayName count="one">Доминикански пезос</displayName>
 				<displayName count="other">Доминикански пезоси</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>DOP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>Алжирски динар</displayName>
 				<displayName count="one">Алжирски динар</displayName>
 				<displayName count="other">Алжирски динари</displayName>
-				<symbol draft="contributed">DZD</symbol>
+				<symbol>DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>Египетска фунта</displayName>
 				<displayName count="one">Египетска фунта</displayName>
 				<displayName count="other">Египетски фунти</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol>EGP</symbol>
+				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>Еритрејска накфа</displayName>
 				<displayName count="one">Еритрејска накфа</displayName>
 				<displayName count="other">Еритрејски накфи</displayName>
-				<symbol draft="contributed">ERN</symbol>
+				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESP">
 				<displayName>Шпанска Пезета</displayName>
@@ -6263,14 +6299,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Етиописки бир</displayName>
 				<displayName count="one">Етиописки бир</displayName>
 				<displayName count="other">Етиописки бири</displayName>
-				<symbol draft="contributed">ETB</symbol>
+				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>Евро</displayName>
 				<displayName count="one">евро</displayName>
 				<displayName count="other">евра</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<symbol>€</symbol>
+				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>Финска марка</displayName>
@@ -6279,15 +6315,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Фиџиски долар</displayName>
 				<displayName count="one">Фиџиски долар</displayName>
 				<displayName count="other">Фиџиски долари</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>FJD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>Фолкландска фунта</displayName>
 				<displayName count="one">Фолкландска фунта</displayName>
 				<displayName count="other">Фолкландски фунти</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>FKP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>Француски франк</displayName>
@@ -6297,15 +6333,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Британска фунта</displayName>
 				<displayName count="other">Британски фунти</displayName>
 				<symbol>GBP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>Грузиски лари</displayName>
 				<displayName count="one">Грузиски лари</displayName>
 				<displayName count="other">Грузиски лари</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
+				<symbol>GEL</symbol>
+				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ганајски Седи</displayName>
@@ -6314,27 +6349,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Гански седи</displayName>
 				<displayName count="one">Гански седи</displayName>
 				<displayName count="other">Гански седи</displayName>
-				<symbol draft="contributed">GHS</symbol>
+				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>Гибралтарска фунта</displayName>
 				<displayName count="one">Гибралтарска фунта</displayName>
 				<displayName count="other">Гибралтарски фунти</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>GIP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>Гамбиски даласи</displayName>
 				<displayName count="one">Гамбиски Даласи</displayName>
 				<displayName count="other">Гамбиски Даласи</displayName>
-				<symbol draft="contributed">GMD</symbol>
+				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>Гвинејски франк</displayName>
 				<displayName count="one">Гвинејски франк</displayName>
 				<displayName count="other">Гвинејски франци</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol>GNF</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GRD">
 				<displayName>Грчка драхма</displayName>
@@ -6343,8 +6378,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Гватемалски кветцал</displayName>
 				<displayName count="one">Гватемалски кветцал</displayName>
 				<displayName count="other">Гватемалски кветцали</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
+				<symbol>GTQ</symbol>
+				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GWP">
 				<displayName>Гвинејски Бисау пезос</displayName>
@@ -6353,22 +6388,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Гвајански долар</displayName>
 				<displayName count="one">Гвајански долар</displayName>
 				<displayName count="other">Гвајански долари</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>GYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Хонгконшки долар</displayName>
 				<displayName count="one">Хонгконшки долар</displayName>
 				<displayName count="other">Хонгконшки долари</displayName>
 				<symbol>HKD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>Хондурска лемпира</displayName>
 				<displayName count="one">Хондурска лемпира</displayName>
 				<displayName count="other">Хондурски лемпири</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol>HNL</symbol>
+				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>Хрватски динар</displayName>
@@ -6377,28 +6412,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Хрватска куна</displayName>
 				<displayName count="one">Хрватска куна</displayName>
 				<displayName count="other">Хрватски куни</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
+				<symbol>HRK</symbol>
+				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>Хаитски гурд</displayName>
 				<displayName count="one">Хаитски гурд</displayName>
 				<displayName count="other">Хаитски гурди</displayName>
-				<symbol draft="contributed">HTG</symbol>
+				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>Унгарска форинта</displayName>
 				<displayName count="one">Унгарска форинта</displayName>
 				<displayName count="other">Унгарски форинти</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
+				<symbol>HUF</symbol>
+				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Индонезиска рупија</displayName>
 				<displayName count="one">Индонезиска рупија</displayName>
 				<displayName count="other">Индонезиски рупии</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
+				<symbol>IDR</symbol>
+				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>Ирска фунта</displayName>
@@ -6411,33 +6446,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Израелски нов шекел</displayName>
 				<displayName count="other">Израелски нови шекели</displayName>
 				<symbol>ILS</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
+				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Индиска рупија</displayName>
 				<displayName count="one">Индиска рупија</displayName>
 				<displayName count="other">Индиски рупии</displayName>
 				<symbol>INR</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>Ирачки динар</displayName>
 				<displayName count="one">Ирачки динар</displayName>
 				<displayName count="other">Ирачки динари</displayName>
-				<symbol draft="contributed">IQD</symbol>
+				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>Ирански риал</displayName>
 				<displayName count="one">Ирански риал</displayName>
 				<displayName count="other">Ирански риали</displayName>
-				<symbol draft="contributed">IRR</symbol>
+				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>Исландска крона</displayName>
 				<displayName count="one">Исландска крона</displayName>
 				<displayName count="other">Исландски крони</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>ISK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>Италијанска лира</displayName>
@@ -6446,118 +6481,120 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Јамајкански долар</displayName>
 				<displayName count="one">Јамајкански долар</displayName>
 				<displayName count="other">Јамајкански долари</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>JMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>Јордански динар</displayName>
 				<displayName count="one">Јордански динар</displayName>
 				<displayName count="other">Јордански динари</displayName>
-				<symbol draft="contributed">JOD</symbol>
+				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Јапонски јен</displayName>
 				<displayName count="one">Јапонски јен</displayName>
 				<displayName count="other">Јапонски јени</displayName>
 				<symbol>JPY</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>Кениски шилинг</displayName>
 				<displayName count="one">Кениски шилинг</displayName>
 				<displayName count="other">Кениски шилинзи</displayName>
-				<symbol draft="contributed">KES</symbol>
+				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>Киргистански сом</displayName>
 				<displayName count="one">Киргистански сом</displayName>
 				<displayName count="other">Киргистански соми</displayName>
-				<symbol draft="contributed">KGS</symbol>
+				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>Камбоџиски рел</displayName>
 				<displayName count="one">Камбоџиски рел</displayName>
 				<displayName count="other">Камбоџиски рели</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
+				<symbol>KHR</symbol>
+				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>Коморски франк</displayName>
 				<displayName count="one">Коморски франк</displayName>
 				<displayName count="other">Коморски франци</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
+				<symbol>KMF</symbol>
+				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>Северно корејски вон</displayName>
 				<displayName count="one">Северно корејски вон</displayName>
 				<displayName count="other">Северно корејски вони</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>KPW</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>Јужно корејски вон</displayName>
 				<displayName count="one">Јужно корејски вон</displayName>
 				<displayName count="other">Јужно корејски вони</displayName>
 				<symbol>KRW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>Кувајтски динар</displayName>
 				<displayName count="one">Кувајтски динар</displayName>
 				<displayName count="other">Кувајтски динари</displayName>
-				<symbol draft="contributed">KWD</symbol>
+				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>Кајмански долар</displayName>
 				<displayName count="one">Кајмански долар</displayName>
 				<displayName count="other">Кајмански долари</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>KYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>Казахстанска тенга</displayName>
 				<displayName count="one">Казахстанска тенга</displayName>
 				<displayName count="other">Казахстански тенги</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
+				<symbol>KZT</symbol>
+				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>Лаоски кип</displayName>
 				<displayName count="one">Лаоски кип</displayName>
 				<displayName count="other">Лаоски кипови</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
+				<symbol>LAK</symbol>
+				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>Либанска фунта</displayName>
 				<displayName count="one">Либанска фунта</displayName>
 				<displayName count="other">Либански фунти</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
+				<symbol>LBP</symbol>
+				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Шриланканска рупија</displayName>
 				<displayName count="one">Шриланканска рупија</displayName>
 				<displayName count="other">Шриланкански рупии</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>LKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Либериски долар</displayName>
 				<displayName count="one">Либериски долар</displayName>
 				<displayName count="other">Либериски долари</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>LRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>Лесотско лоти</displayName>
+				<displayName count="one">Лесотски лоти</displayName>
+				<displayName count="other">Лесотски лоти</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>Литваниска лита</displayName>
 				<displayName count="one">Литваниска лита</displayName>
 				<displayName count="other">Литваниска лита</displayName>
-				<symbol draft="contributed">LTL</symbol>
+				<symbol>LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName>Литваниски литаз</displayName>
@@ -6569,7 +6606,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Латвијски лат</displayName>
 				<displayName count="one">Латвијски лат</displayName>
 				<displayName count="other">Латвијски лат</displayName>
-				<symbol draft="contributed">LVL</symbol>
+				<symbol>LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>Латвијска рубља</displayName>
@@ -6578,13 +6615,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Либијски динар</displayName>
 				<displayName count="one">Либијски динар</displayName>
 				<displayName count="other">Либијски динари</displayName>
-				<symbol draft="contributed">LYD</symbol>
+				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>Марокански дирхам</displayName>
 				<displayName count="one">Марокански дирхам</displayName>
 				<displayName count="other">Марокански дирхами</displayName>
-				<symbol draft="contributed">MAD</symbol>
+				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>Марокански франк</displayName>
@@ -6593,14 +6630,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Молдавски леу</displayName>
 				<displayName count="one">Молдавски леу</displayName>
 				<displayName count="other">Молдавски леу</displayName>
-				<symbol draft="contributed">MDL</symbol>
+				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>Малагасиски ариари</displayName>
 				<displayName count="one">Малагасиски ариари</displayName>
 				<displayName count="other">Малагасиски ариари</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
+				<symbol>MGA</symbol>
+				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>Македонски денар</displayName>
@@ -6615,33 +6652,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Мјанмарски киат</displayName>
 				<displayName count="one">Мјанмарски киат</displayName>
 				<displayName count="other">Мјанмарски киати</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
+				<symbol>MMK</symbol>
+				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>Монголиски тугрик</displayName>
 				<displayName count="one">Монголиски тугрик</displayName>
 				<displayName count="other">Монголиски тугрици</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
+				<symbol>MNT</symbol>
+				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>Макао патака</displayName>
 				<displayName count="one">Макао патака</displayName>
 				<displayName count="other">Макао патаки</displayName>
-				<symbol draft="contributed">MOP</symbol>
+				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>Мавританска угија (1973–2017)</displayName>
 				<displayName count="one">Мавританска угија (1973–2017)</displayName>
 				<displayName count="other">Мавритански угии (1973–2017)</displayName>
-				<symbol draft="contributed">MRO</symbol>
+				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>Мавританска угија</displayName>
 				<displayName count="one">Мавританска угија</displayName>
 				<displayName count="other">Мавритански угии</displayName>
-				<symbol draft="contributed">MRU</symbol>
+				<symbol>MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Малтешка лира</displayName>
@@ -6653,27 +6690,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Мавританска рупија</displayName>
 				<displayName count="one">Мавританска рупија</displayName>
 				<displayName count="other">Мавритански рупии</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>MUR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>Малдивска руфија</displayName>
 				<displayName count="one">Малдивска руфија</displayName>
 				<displayName count="other">Малдивски руфии</displayName>
-				<symbol draft="contributed">MVR</symbol>
+				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>Малависка квача</displayName>
 				<displayName count="one">Малависка квача</displayName>
 				<displayName count="other">Малависки квачи</displayName>
-				<symbol draft="contributed">MWK</symbol>
+				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>Мексикански пезос</displayName>
 				<displayName count="one">Мексикански пезос</displayName>
 				<displayName count="other">Мексикански пезоси</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>MX$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>Мексикански сребрен пезос (1861–1992)</displayName>
@@ -6682,8 +6719,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Малезиски рингит</displayName>
 				<displayName count="one">Малезиски рингит</displayName>
 				<displayName count="other">Малезиски рингити</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
+				<symbol>MYR</symbol>
+				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>Мозамбиско ескудо</displayName>
@@ -6695,21 +6732,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Мозамбиски метикал</displayName>
 				<displayName count="one">Мозамбиски метикал</displayName>
 				<displayName count="other">Мозамбиски метикали</displayName>
-				<symbol draft="contributed">MZN</symbol>
+				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>Намибиски долар</displayName>
 				<displayName count="one">Намибиски долар</displayName>
 				<displayName count="other">Намибиски долари</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NAD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>Нигериска наира</displayName>
 				<displayName count="one">Нигериска наира</displayName>
 				<displayName count="other">Нигериски наири</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol>NGN</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>Никарагванска кордоба (1988–1991)</displayName>
@@ -6720,8 +6757,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Никарагванска кордоба</displayName>
 				<displayName count="one">Никарагванска кордоба</displayName>
 				<displayName count="other">Никарагвански кордоби</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
+				<symbol>NIO</symbol>
+				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>Холандски гилдер</displayName>
@@ -6730,40 +6767,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Норвешка круна</displayName>
 				<displayName count="one">Норвешка круна</displayName>
 				<displayName count="other">Норвешки круни</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>NOK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Непалска рупија</displayName>
 				<displayName count="one">Непалска рупија</displayName>
 				<displayName count="other">Непалски рупии</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>NPR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Новозеландски долар</displayName>
 				<displayName count="one">Новозеландски долар</displayName>
 				<displayName count="other">Новозеландски долари</displayName>
 				<symbol>NZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>Омански риал</displayName>
 				<displayName count="one">Омански риал</displayName>
 				<displayName count="other">Омански риали</displayName>
-				<symbol draft="contributed">OMR</symbol>
+				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>Панамска балбоа</displayName>
 				<displayName count="one">Панамска балбоа</displayName>
 				<displayName count="other">Панамски балбои</displayName>
-				<symbol draft="contributed">PAB</symbol>
+				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>Перуански сол</displayName>
 				<displayName count="one">Перуански сол</displayName>
 				<displayName count="other">Перуански соли</displayName>
-				<symbol draft="contributed">PEN</symbol>
+				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>Перуански сол (1863–1965)</displayName>
@@ -6772,28 +6809,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Папуа новогвинејска кина</displayName>
 				<displayName count="one">Папуа новогвинејска кина</displayName>
 				<displayName count="other">Папуа новогвинејска кина</displayName>
-				<symbol draft="contributed">PGK</symbol>
+				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>Филипински пезос</displayName>
 				<displayName count="one">Филипински пезос</displayName>
 				<displayName count="other">Филипински пезоси</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
+				<symbol>PHP</symbol>
+				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>Пакистанска рупија</displayName>
 				<displayName count="one">Пакистанска рупија</displayName>
 				<displayName count="other">Пакистански рупии</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>PKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>Полска злота</displayName>
 				<displayName count="one">Полска злота</displayName>
 				<displayName count="other">Полски злоти</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
+				<symbol>PLN</symbol>
+				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>Полска злота (1950–1995)</displayName>
@@ -6805,14 +6842,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Парагвајска гуарана</displayName>
 				<displayName count="one">Парагвајска гуарана</displayName>
 				<displayName count="other">Парагвајски гуарани</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
+				<symbol>PYG</symbol>
+				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>Катарски риал</displayName>
 				<displayName count="one">Катарски риал</displayName>
 				<displayName count="other">Катарски риали</displayName>
-				<symbol draft="contributed">QAR</symbol>
+				<symbol>QAR</symbol>
 			</currency>
 			<currency type="ROL">
 				<displayName>Романска леи (1952–2006)</displayName>
@@ -6823,21 +6860,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Романски леу</displayName>
 				<displayName count="one">Романски леу</displayName>
 				<displayName count="other">Романски леи</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
+				<symbol>RON</symbol>
+				<symbol alt="narrow">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Српски динар</displayName>
 				<displayName count="one">Српски динар</displayName>
 				<displayName count="other">Српски динари</displayName>
-				<symbol draft="contributed">RSD</symbol>
+				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>Руска рубља</displayName>
 				<displayName count="one">Руска рубља</displayName>
 				<displayName count="other">Руски рубљи</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<symbol>RUB</symbol>
+				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>Руска рубља (1991–1998)</displayName>
@@ -6846,27 +6883,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Руандски франк</displayName>
 				<displayName count="one">Руандски франк</displayName>
 				<displayName count="other">Руандски франци</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
+				<symbol>RWF</symbol>
+				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Саудиски ријал</displayName>
 				<displayName count="one">Саудиски ријал</displayName>
 				<displayName count="other">Саудиски ријали</displayName>
-				<symbol draft="contributed">SAR</symbol>
+				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>Соломонски долар</displayName>
 				<displayName count="one">Соломонски долар</displayName>
 				<displayName count="other">Соломонски долари</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>Сејшелска рупија</displayName>
 				<displayName count="one">Сејшелска рупија</displayName>
 				<displayName count="other">Сејшелски рупии</displayName>
-				<symbol draft="contributed">SCR</symbol>
+				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>Стар судански динар</displayName>
@@ -6875,7 +6912,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Суданска фунта</displayName>
 				<displayName count="one">Суданска фунта</displayName>
 				<displayName count="other">Судански фунти</displayName>
-				<symbol draft="contributed">SDG</symbol>
+				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>Стара суданска фунта</displayName>
@@ -6884,22 +6921,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Шведска круна</displayName>
 				<displayName count="one">Шведска круна</displayName>
 				<displayName count="other">Шведски круни</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>SEK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Сингапурски долар</displayName>
 				<displayName count="one">Сингапурски долар</displayName>
 				<displayName count="other">Сингапурски долари</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SGD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>Фунта на Света Елена</displayName>
 				<displayName count="one">Фунта на Света Елена</displayName>
 				<displayName count="other">Фунти на Света Елена</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SHP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>Словенечки толар</displayName>
@@ -6911,20 +6948,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Сиералеонско леоне</displayName>
 				<displayName count="one">Сиералеонско леоне</displayName>
 				<displayName count="other">Сиералеонски леони</displayName>
-				<symbol draft="contributed">SLL</symbol>
+				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>Сомалијски шилинг</displayName>
 				<displayName count="one">Сомалијски шилинг</displayName>
 				<displayName count="other">Сомалијски шилинзи</displayName>
-				<symbol draft="contributed">SOS</symbol>
+				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>Суринамски долар</displayName>
 				<displayName count="one">Суринамски долар</displayName>
 				<displayName count="other">Суринамски долари</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>Суринамски гилдер</displayName>
@@ -6933,21 +6970,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Јужносуданска фунта</displayName>
 				<displayName count="one">Јужносуданска фунта</displayName>
 				<displayName count="other">Јужносудански фунти</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SSP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>Добра на Саун Томе и Принсип (1977–2017)</displayName>
 				<displayName count="one">Добра на Саун Томе и Принсип (1977–2017)</displayName>
 				<displayName count="other">Добри на Саун Томе и Принсип (1977–2017)</displayName>
-				<symbol draft="contributed">STD</symbol>
+				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>Добра на Сао Томе и Принсипе</displayName>
 				<displayName count="one">Добра на Сао Томе и Принсипе</displayName>
 				<displayName count="other">Добри на Сао Томе и Принсипе</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
+				<symbol>STN</symbol>
+				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>Советска рубља</displayName>
@@ -6959,21 +6996,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Сиријска фунта</displayName>
 				<displayName count="one">Сиријска фунта</displayName>
 				<displayName count="other">Сиријски фунти</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SYP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>Свазилендски лиланген</displayName>
 				<displayName count="one">Свазилендски лиланген</displayName>
 				<displayName count="other">Свазилендски лилангени</displayName>
-				<symbol draft="contributed">SZL</symbol>
+				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>Таи бат</displayName>
 				<displayName count="one">Таи бат</displayName>
 				<displayName count="other">Таи бат</displayName>
-				<symbol draft="contributed">THB</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
+				<symbol>THB</symbol>
+				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>Таџикистанска рубља</displayName>
@@ -6982,7 +7019,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Таџикистански сомони</displayName>
 				<displayName count="one">Таџикистански сомони</displayName>
 				<displayName count="other">Таџикистански сомони</displayName>
-				<symbol draft="contributed">TJS</symbol>
+				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>Туркменистански манат</displayName>
@@ -6991,20 +7028,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Туркменист. манат</displayName>
 				<displayName count="one">Туркменистански манати</displayName>
 				<displayName count="other">Туркменистански манати</displayName>
-				<symbol draft="contributed">TMT</symbol>
+				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>Тунизиски динар</displayName>
 				<displayName count="one">Тунизиски динар</displayName>
 				<displayName count="other">Тунизиски динари</displayName>
-				<symbol draft="contributed">TND</symbol>
+				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>Тонганска панга</displayName>
 				<displayName count="one">Тонганска панга</displayName>
 				<displayName count="other">Тонганска панга</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
+				<symbol>TOP</symbol>
+				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>Тиморски ескудо</displayName>
@@ -7018,36 +7055,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Турска лира</displayName>
 				<displayName count="one">Турска лира</displayName>
 				<displayName count="other">Турски лири</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
+				<symbol>TRY</symbol>
+				<symbol alt="narrow">₺</symbol>
+				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>Долар на Тринидад и Тобаго</displayName>
 				<displayName count="one">Долар на Тринидад и Тобаго</displayName>
 				<displayName count="other">Долари на Тринидад и Тобаго</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>TTD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>Тајвански нов долар</displayName>
 				<displayName count="one">Тајвански нов долар</displayName>
 				<displayName count="other">Тајвански нови долари</displayName>
 				<symbol>TWD</symbol>
-				<symbol alt="narrow" draft="contributed">NT$</symbol>
+				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>Танзаниски шилинг</displayName>
 				<displayName count="one">Танзаниски шилинг</displayName>
 				<displayName count="other">Танзаниски шилинзи</displayName>
-				<symbol draft="contributed">TZS</symbol>
+				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>Украинска хривнија</displayName>
 				<displayName count="one">Украинска хривнија</displayName>
 				<displayName count="other">Украински хривнии</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
+				<symbol>UAH</symbol>
+				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UGS">
 				<displayName>Угандиски шилинг (1966–1987)</displayName>
@@ -7056,14 +7093,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Угандиски шилинг</displayName>
 				<displayName count="one">Угандиски шилинг</displayName>
 				<displayName count="other">Угандиски шилинзи</displayName>
-				<symbol draft="contributed">UGX</symbol>
+				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>Американски долар</displayName>
 				<displayName count="one">Американски долар</displayName>
 				<displayName count="other">Американски долари</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>US$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>САД долар (Next day)</displayName>
@@ -7078,14 +7115,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Уругвајски пезос</displayName>
 				<displayName count="one">Уругвајски пезос</displayName>
 				<displayName count="other">Уругвајски пезоси</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>UYU</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>Узбекистански сом</displayName>
 				<displayName count="one">Узбекистански сом</displayName>
 				<displayName count="other">Узбекистански соми</displayName>
-				<symbol draft="contributed">UZS</symbol>
+				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>Венецуелски боливар (1871–2008)</displayName>
@@ -7096,58 +7133,58 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Венецуелски боливар (2008–2018)</displayName>
 				<displayName count="one">Венецуелски боливар (2008–2018)</displayName>
 				<displayName count="other">Венецуелски боливари (2008–2018)</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>VEF</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>Венецуелски боливар</displayName>
 				<displayName count="one">Венецуелски боливар</displayName>
 				<displayName count="other">Венецуелски боливари</displayName>
-				<symbol draft="contributed">VES</symbol>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Виетнамски донг</displayName>
 				<displayName count="one">Виетнамски донг</displayName>
 				<displayName count="other">Виетнамски донг</displayName>
 				<symbol>VND</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
+				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>Ванатски вату</displayName>
 				<displayName count="one">Ванатски вату</displayName>
 				<displayName count="other">Ванатски ватуи</displayName>
-				<symbol draft="contributed">VUV</symbol>
+				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>Самоанска тала</displayName>
 				<displayName count="one">Самоанска тала</displayName>
 				<displayName count="other">Самоанска тала</displayName>
-				<symbol draft="contributed">WST</symbol>
+				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Централноафрикански франк</displayName>
 				<displayName count="one">Централноафрикански франк</displayName>
 				<displayName count="other">Централноафрикански франци</displayName>
-				<symbol draft="contributed">FCFA</symbol>
+				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>Источнокарипски долар</displayName>
 				<displayName count="one">Источнокарипски долар</displayName>
 				<displayName count="other">Источнокарипски долари</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>EC$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>Западноафрикански франк</displayName>
 				<displayName count="one">Западноафрикански франк</displayName>
 				<displayName count="other">Западноафрикански франци</displayName>
-				<symbol draft="contributed">F CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>ЦФП франк</displayName>
 				<displayName count="one">ЦФП франк</displayName>
 				<displayName count="other">ЦФП франци</displayName>
-				<symbol draft="contributed">CFPF</symbol>
+				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>Непозната валута</displayName>
@@ -7161,7 +7198,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Јеменски риал</displayName>
 				<displayName count="one">Јеменски риал</displayName>
 				<displayName count="other">Јеменски риали</displayName>
-				<symbol draft="contributed">YER</symbol>
+				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>Југословенски динар</displayName>
@@ -7176,8 +7213,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Јужноафрикански ранд</displayName>
 				<displayName count="one">Јужноафрикански ранд</displayName>
 				<displayName count="other">Јужноафрикански ранди</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
+				<symbol>ZAR</symbol>
+				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Замбијска квача (1968–2012)</displayName>
@@ -7186,8 +7223,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Замбијска квача</displayName>
 				<displayName count="one">Замбијска квача</displayName>
 				<displayName count="other">Замбијски квачи</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
+				<symbol>ZMW</symbol>
+				<symbol alt="narrow">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>Заирско новозаире</displayName>
@@ -7420,6 +7457,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mmol/L</displayName>
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ставки</displayName>
+				<unitPattern count="one">{0} ставка</unitPattern>
+				<unitPattern count="other">{0} ставки</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
@@ -7662,6 +7704,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>њутни</displayName>
 				<unitPattern count="one">{0} њутн</unitPattern>
 				<unitPattern count="other">{0} њутни</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>киловат-час на 100 километри</displayName>
+				<unitPattern count="one">{0} киловат-час на 100 километри</unitPattern>
+				<unitPattern count="other">{0} киловат-часа на 100 километри</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>гигахерц</displayName>
@@ -8339,6 +8386,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>ставка</displayName>
+				<unitPattern count="one">{0} ставка</unitPattern>
+				<unitPattern count="other">{0} ставки</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
@@ -8638,8 +8690,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>тчк.</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} тчк.</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -9161,74 +9211,70 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
-			<unit type="acceleration-g-force">
-				<displayName draft="contributed">G</displayName>
-			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName draft="contributed">м/с²</displayName>
-				<unitPattern count="one">{0} м/с²</unitPattern>
-				<unitPattern count="other">{0} м/с²</unitPattern>
+				<displayName>m/s²</displayName>
 			</unit>
 			<unit type="angle-radian">
-				<unitPattern count="one">{0} рад</unitPattern>
-				<unitPattern count="other">{0} рад</unitPattern>
+				<displayName>rad</displayName>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>степени</displayName>
+				<displayName>deg</displayName>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>arcmin</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>arcsec</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
-			<unit type="area-square-kilometer">
-				<unitPattern count="one">{0} км²</unitPattern>
-				<unitPattern count="other">{0} км²</unitPattern>
-			</unit>
 			<unit type="area-hectare">
-				<unitPattern count="one">{0} ха</unitPattern>
-				<unitPattern count="other">{0} ха</unitPattern>
-			</unit>
-			<unit type="area-square-meter">
-				<displayName>м²</displayName>
-				<unitPattern count="one">{0} м²</unitPattern>
-				<unitPattern count="other">{0} м²</unitPattern>
+				<displayName>хектар</displayName>
 			</unit>
 			<unit type="area-square-mile">
-				<unitPattern count="one">{0} ми²</unitPattern>
-				<unitPattern count="other">{0} ми²</unitPattern>
+				<displayName>mi²</displayName>
+				<unitPattern count="one">{0} mi²</unitPattern>
+				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<unitPattern count="one">{0} акр</unitPattern>
-				<unitPattern count="other">{0} акри</unitPattern>
+				<displayName>акр</displayName>
 			</unit>
 			<unit type="area-square-yard">
-				<unitPattern count="one">{0} јд²</unitPattern>
-				<unitPattern count="other">{0} јд²</unitPattern>
+				<displayName>yd²</displayName>
 			</unit>
 			<unit type="area-square-foot">
-				<unitPattern count="one">{0} стапка²</unitPattern>
-				<unitPattern count="other">{0} стапки²</unitPattern>
+				<displayName>ft²</displayName>
+				<unitPattern count="one">{0} ft²</unitPattern>
+				<unitPattern count="other">{0} ft²</unitPattern>
 			</unit>
-			<unit type="area-square-inch">
-				<unitPattern count="one">{0} ин²</unitPattern>
-				<unitPattern count="other">{0} ин²</unitPattern>
+			<unit type="area-dunam">
+				<displayName>дунам</displayName>
 			</unit>
 			<unit type="concentr-karat">
-				<unitPattern count="one">{0} кт</unitPattern>
-				<unitPattern count="other">{0} кт</unitPattern>
+				<displayName>karat</displayName>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ставка</displayName>
+				<unitPattern count="one">{0} ставка</unitPattern>
+				<unitPattern count="other">{0} ставки</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0} %</unitPattern>
 				<unitPattern count="other">{0} %</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="one">{0} ‱</unitPattern>
+				<unitPattern count="other">{0} ‱</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<unitPattern count="one">{0} л/км</unitPattern>
-				<unitPattern count="other">{0} л/км</unitPattern>
+				<displayName>L/km</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
@@ -9236,8 +9282,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<unitPattern count="one">{0} ми/гал</unitPattern>
-				<unitPattern count="other">{0} ми/гал</unitPattern>
+				<displayName>mpg</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg UK</displayName>
+				<unitPattern count="one">{0} m/gUK</unitPattern>
+				<unitPattern count="other">{0} m/gUK</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -9245,6 +9295,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
 				<unitPattern count="one">{0} Tb</unitPattern>
 				<unitPattern count="other">{0} Tb</unitPattern>
 			</unit>
@@ -9278,57 +9329,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kb</unitPattern>
 				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
-			<unit type="digital-bit">
-				<displayName>бит</displayName>
-				<unitPattern count="one">{0} бит</unitPattern>
-				<unitPattern count="other">{0} битови</unitPattern>
+			<unit type="digital-byte">
+				<displayName>B</displayName>
+				<unitPattern count="one">{0} B</unitPattern>
+				<unitPattern count="other">{0} B</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName draft="contributed">в.</displayName>
-				<unitPattern count="one" draft="contributed">{0} в.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} в.</unitPattern>
+				<displayName>в.</displayName>
+				<unitPattern count="one">{0} в.</unitPattern>
+				<unitPattern count="other">{0} в.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>г.</displayName>
 				<unitPattern count="one">{0} г.</unitPattern>
 				<unitPattern count="other">{0} г.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/г.</perUnitPattern>
+				<perUnitPattern>{0}/г.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>месец</displayName>
 				<unitPattern count="one">{0} м.</unitPattern>
 				<unitPattern count="other">{0} м.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/м.</perUnitPattern>
+				<perUnitPattern>{0}/м.</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>сед.</displayName>
 				<unitPattern count="one">{0} с.</unitPattern>
 				<unitPattern count="other">{0} с.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/с.</perUnitPattern>
+				<perUnitPattern>{0}/с.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ден</displayName>
 				<unitPattern count="one">{0} д.</unitPattern>
 				<unitPattern count="other">{0} д.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/д.</perUnitPattern>
+				<perUnitPattern>{0}/д.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>час</displayName>
 				<unitPattern count="one">{0} ч.</unitPattern>
 				<unitPattern count="other">{0} ч.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ч.</perUnitPattern>
+				<perUnitPattern>{0}/ч.</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>мин</displayName>
 				<unitPattern count="one">{0} м.</unitPattern>
 				<unitPattern count="other">{0} м.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/м.</perUnitPattern>
+				<perUnitPattern>{0}/м.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>сек.</displayName>
 				<unitPattern count="one">{0} с.</unitPattern>
 				<unitPattern count="other">{0} с.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/с.</perUnitPattern>
+				<perUnitPattern>{0}/с.</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>мс</displayName>
@@ -9336,320 +9387,201 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} мс</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<displayName>μс</displayName>
 				<unitPattern count="one">{0}μс</unitPattern>
 				<unitPattern count="other">{0}μс</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName draft="contributed">наносек</displayName>
+				<displayName>наносек</displayName>
 				<unitPattern count="one">{0} нс</unitPattern>
 				<unitPattern count="other">{0} нс</unitPattern>
 			</unit>
+			<unit type="electric-ampere">
+				<displayName>amp</displayName>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mA</displayName>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ohm</displayName>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>volt</displayName>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>kJ</displayName>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therms</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>dot</displayName>
+				<unitPattern count="one">{0} dot</unitPattern>
+				<unitPattern count="other">{0} dot</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
-				<unitPattern count="one">{0}km</unitPattern>
-				<unitPattern count="other">{0}km</unitPattern>
-				<perUnitPattern draft="contributed">{0}/км</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
-				<unitPattern count="one">{0}m</unitPattern>
-				<unitPattern count="other">{0}m</unitPattern>
-				<perUnitPattern draft="contributed">{0}/м</perUnitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<displayName draft="contributed">дм</displayName>
-				<unitPattern count="one">{0} дм</unitPattern>
-				<unitPattern count="other">{0} дм</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
-				<unitPattern count="one">{0}cm</unitPattern>
-				<unitPattern count="other">{0}cm</unitPattern>
-				<perUnitPattern draft="contributed">{0}/см</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
-				<unitPattern count="one">{0}mm</unitPattern>
-				<unitPattern count="other">{0}mm</unitPattern>
-			</unit>
-			<unit type="length-micrometer">
-				<unitPattern count="one">{0} μм</unitPattern>
-				<unitPattern count="other">{0} μм</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<displayName draft="contributed">нм</displayName>
-				<unitPattern count="one">{0} нм</unitPattern>
-				<unitPattern count="other">{0} нм</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<displayName draft="contributed">пм</displayName>
-				<unitPattern count="one">{0} пм</unitPattern>
-				<unitPattern count="other">{0} пм</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="contributed">ми</displayName>
-				<unitPattern count="one">{0} ми</unitPattern>
-				<unitPattern count="other">{0} ми</unitPattern>
+				<displayName>mi</displayName>
 			</unit>
 			<unit type="length-yard">
-				<displayName draft="contributed">јд</displayName>
-				<unitPattern count="one">{0} јд</unitPattern>
-				<unitPattern count="other">{0} јд</unitPattern>
+				<displayName>yd</displayName>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="contributed">ст</displayName>
-				<unitPattern count="one">{0}′</unitPattern>
-				<unitPattern count="other">{0}′</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ст</perUnitPattern>
+				<displayName>ft</displayName>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="contributed">ин</displayName>
-				<unitPattern count="one">{0}″</unitPattern>
-				<unitPattern count="other">{0}″</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ин</perUnitPattern>
+				<displayName>in</displayName>
 			</unit>
 			<unit type="length-parsec">
-				<displayName draft="contributed">парсеци</displayName>
-				<unitPattern count="one">{0} пс</unitPattern>
-				<unitPattern count="other">{0} пс</unitPattern>
+				<displayName>parsec</displayName>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="contributed">сг</displayName>
-				<unitPattern count="one">{0} сг</unitPattern>
-				<unitPattern count="other">{0} сг</unitPattern>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<displayName draft="contributed">ае</displayName>
-				<unitPattern count="one">{0} ае</unitPattern>
-				<unitPattern count="other">{0} ае</unitPattern>
+				<displayName>ly</displayName>
 			</unit>
 			<unit type="length-furlong">
-				<displayName>фурлонг</displayName>
-				<unitPattern count="one">{0} фур</unitPattern>
-				<unitPattern count="other">{0} фур</unitPattern>
+				<displayName>furlong</displayName>
 			</unit>
 			<unit type="length-fathom">
-				<displayName>фатоми</displayName>
-				<unitPattern count="one">{0} фм</unitPattern>
-				<unitPattern count="other">{0} фм</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<displayName draft="contributed">нми</displayName>
-				<unitPattern count="one">{0} нми</unitPattern>
-				<unitPattern count="other">{0} нми</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<displayName draft="contributed">сми</displayName>
-				<unitPattern count="one" draft="contributed">{0} сми</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} сми</unitPattern>
-			</unit>
-			<unit type="light-lux">
-				<unitPattern count="one">{0} лк</unitPattern>
-				<unitPattern count="other">{0} лк</unitPattern>
-			</unit>
-			<unit type="mass-metric-ton">
-				<displayName draft="contributed">т</displayName>
-				<unitPattern count="one">{0} т</unitPattern>
-				<unitPattern count="other">{0} т</unitPattern>
+				<displayName>fathom</displayName>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
-				<unitPattern count="one">{0}kg</unitPattern>
-				<unitPattern count="other">{0}kg</unitPattern>
-				<perUnitPattern draft="contributed">{0}/кг</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>грам</displayName>
-				<unitPattern count="one">{0}g</unitPattern>
-				<unitPattern count="other">{0}g</unitPattern>
-				<perUnitPattern draft="contributed">{0}/г</perUnitPattern>
-			</unit>
-			<unit type="mass-milligram">
-				<displayName draft="contributed">мг</displayName>
-				<unitPattern count="one">{0} мг</unitPattern>
-				<unitPattern count="other">{0} мг</unitPattern>
-			</unit>
-			<unit type="mass-microgram">
-				<unitPattern count="one">{0} μг</unitPattern>
-				<unitPattern count="other">{0} μг</unitPattern>
-			</unit>
-			<unit type="mass-ton">
-				<displayName>тони</displayName>
-				<unitPattern count="one">{0} тн</unitPattern>
-				<unitPattern count="other">{0} тн</unitPattern>
-			</unit>
-			<unit type="mass-stone">
-				<displayName>стоун</displayName>
-				<unitPattern count="one">{0} стоун</unitPattern>
-				<unitPattern count="other">{0} стоуни</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName draft="contributed">фунти</displayName>
-				<unitPattern count="one">{0} фунта</unitPattern>
-				<unitPattern count="other">{0} фунти</unitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<displayName draft="contributed">унци</displayName>
-				<unitPattern count="one">{0} унца</unitPattern>
-				<unitPattern count="other">{0} унци</unitPattern>
+				<displayName>lb</displayName>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName draft="contributed">тројска унца</displayName>
+				<displayName>oz t</displayName>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="contributed">карати</displayName>
-				<unitPattern count="one">{0} кар.</unitPattern>
-				<unitPattern count="other">{0} кар.</unitPattern>
+				<displayName>карати</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gr</displayName>
+				<unitPattern count="one">{0} gr</unitPattern>
+				<unitPattern count="other">{0} gr</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName>kW</displayName>
 				<unitPattern count="one">{0} kW</unitPattern>
 				<unitPattern count="other">{0} kW</unitPattern>
 			</unit>
-			<unit type="power-watt">
-				<unitPattern count="one">{0} ват</unitPattern>
-				<unitPattern count="other">{0} вати</unitPattern>
-			</unit>
-			<unit type="power-horsepower">
-				<unitPattern count="one">{0} кс</unitPattern>
-				<unitPattern count="other">{0} кс</unitPattern>
-			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="contributed">мм жива</displayName>
-				<unitPattern count="one">{0}mm Hg</unitPattern>
-				<unitPattern count="other">{0}mm Hg</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
-			<unit type="pressure-millibar">
-				<displayName>мбар</displayName>
-				<unitPattern count="one">{0} мб</unitPattern>
-				<unitPattern count="other">{0} мб</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} хПа</unitPattern>
-				<unitPattern count="other">{0} хПа</unitPattern>
-			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/hr</displayName>
-				<unitPattern count="one">{0}km/h</unitPattern>
-				<unitPattern count="other">{0}km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName draft="contributed">м/с</displayName>
-				<unitPattern count="one">{0} м/с</unitPattern>
-				<unitPattern count="other">{0} м/с</unitPattern>
+				<displayName>m/s</displayName>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName draft="contributed">ми/ч</displayName>
-				<unitPattern count="one">{0} ми/ч</unitPattern>
-				<unitPattern count="other">{0} ми/ч</unitPattern>
-			</unit>
-			<unit type="speed-knot">
-				<displayName draft="contributed">ја</displayName>
-				<unitPattern count="one" draft="contributed">{0} ја</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ја</unitPattern>
+				<displayName>mi/hr</displayName>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
-			</unit>
-			<unit type="temperature-fahrenheit">
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<unitPattern count="one">{0}°K</unitPattern>
-				<unitPattern count="other">{0}°K</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<unitPattern count="one">{0} км³</unitPattern>
-				<unitPattern count="other">{0} км³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-meter">
-				<unitPattern count="one">{0} м³</unitPattern>
-				<unitPattern count="other">{0} м³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-centimeter">
-				<unitPattern count="one">{0} см³</unitPattern>
-				<unitPattern count="other">{0} см³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one">{0} ми³</unitPattern>
-				<unitPattern count="other">{0} ми³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
-				<unitPattern count="one">{0} јд³</unitPattern>
-				<unitPattern count="other">{0} јд³</unitPattern>
+				<displayName>yd³</displayName>
 			</unit>
 			<unit type="volume-cubic-foot">
-				<unitPattern count="one">{0} ст³</unitPattern>
-				<unitPattern count="other">{0} ст³</unitPattern>
+				<displayName>ft³</displayName>
 			</unit>
 			<unit type="volume-cubic-inch">
-				<unitPattern count="one">{0} ин³</unitPattern>
-				<unitPattern count="other">{0} ин³</unitPattern>
-			</unit>
-			<unit type="volume-megaliter">
-				<unitPattern count="one">{0} Мл</unitPattern>
-				<unitPattern count="other">{0} Мл</unitPattern>
-			</unit>
-			<unit type="volume-hectoliter">
-				<unitPattern count="one">{0} хл</unitPattern>
-				<unitPattern count="other">{0} хл</unitPattern>
+				<displayName>in³</displayName>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>литар</displayName>
-				<unitPattern count="one">{0}L</unitPattern>
-				<unitPattern count="other">{0}L</unitPattern>
 			</unit>
-			<unit type="volume-deciliter">
-				<unitPattern count="one">{0} дл</unitPattern>
-				<unitPattern count="other">{0} дл</unitPattern>
-			</unit>
-			<unit type="volume-centiliter">
-				<unitPattern count="one">{0} сл</unitPattern>
-				<unitPattern count="other">{0} сл</unitPattern>
-			</unit>
-			<unit type="volume-milliliter">
-				<unitPattern count="one">{0} мл</unitPattern>
-				<unitPattern count="other">{0} мл</unitPattern>
-			</unit>
-			<unit type="volume-acre-foot">
-				<unitPattern count="one">{0} ак ст</unitPattern>
-				<unitPattern count="other">{0} ак ст</unitPattern>
+			<unit type="volume-pint-metric">
+				<displayName>pt</displayName>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName>бу</displayName>
-				<unitPattern count="one">{0} бу</unitPattern>
-				<unitPattern count="other">{0} бу</unitPattern>
+				<displayName>бушел</displayName>
 			</unit>
 			<unit type="volume-gallon">
-				<unitPattern count="one">{0} гал</unitPattern>
-				<unitPattern count="other">{0} гал</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp gal</displayName>
+				<unitPattern count="one">{0} galIm</unitPattern>
+				<unitPattern count="other">{0} galIm</unitPattern>
+				<perUnitPattern>{0}/galIm</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<unitPattern count="one">{0} qt</unitPattern>
 				<unitPattern count="other">{0} qt</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<unitPattern count="one">{0} пт</unitPattern>
-				<unitPattern count="other">{0} пт</unitPattern>
+				<displayName>pt</displayName>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>чаша</displayName>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
-			<unit type="volume-tablespoon">
-				<unitPattern count="one">{0}tbsp</unitPattern>
-				<unitPattern count="other">{0}tbsp</unitPattern>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp fl oz</displayName>
+				<unitPattern count="one">{0} fl oz Im</unitPattern>
+				<unitPattern count="other">{0} fl oz Im</unitPattern>
 			</unit>
-			<unit type="volume-teaspoon">
-				<unitPattern count="one">{0}tsp</unitPattern>
-				<unitPattern count="other">{0}tsp</unitPattern>
+			<unit type="volume-dessert-spoon">
+				<displayName>dsp</displayName>
+				<unitPattern count="one">{0} dsp</unitPattern>
+				<unitPattern count="other">{0} dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dsp Imp</displayName>
+				<unitPattern count="one">{0} dsp-Imp</unitPattern>
+				<unitPattern count="other">{0} dsp-Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>dr</displayName>
+				<unitPattern count="one">{0} dr</unitPattern>
+				<unitPattern count="other">{0} dr</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>fl.dr.</displayName>
+				<unitPattern count="one">{0} fl.dr.</unitPattern>
+				<unitPattern count="other">{0} fl.dr.</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pn</displayName>
+				<unitPattern count="one">{0} pn</unitPattern>
+				<unitPattern count="other">{0} pn</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="one">{0} qt-Imp.</unitPattern>
+				<unitPattern count="other">{0} qt-Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>насока</displayName>

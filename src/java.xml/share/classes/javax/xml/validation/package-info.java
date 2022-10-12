@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,27 +39,27 @@
  *     <li><strong>Document Type Definition (DTD)</strong>
  *         - XML's built-in schema language.
  *     </li>
- *     <li><strong><a href="http://www.w3.org/XML/Schema">W3C XML Schema (WXS)</a></strong> -
+ *     <li><strong><a href="https://www.w3.org/XML/Schema">W3C XML Schema (WXS)</a></strong> -
  *         an object-oriented XML schema language. WXS also provides a type system
  *         for constraining the character data of an XML document. WXS is maintained
- *         by the <a href="http://www.w3.org">World Wide Web Consortium (W3C)</a>
+ *         by the <a href="https://www.w3.org">World Wide Web Consortium (W3C)</a>
  *         and is a W3C Recommendation (that is, a ratified W3C standard specification).
  *     </li>
- *     <li><strong><a href="http://www.relaxng.org">RELAX NG (RNG)</a></strong> -
+ *     <li><strong><a href="https://relaxng.org/">RELAX NG (RNG)</a></strong> -
  *         a pattern-based, user-friendly XML schema language. RNG schemas may
  *         also use types to constrain XML character data. RNG is maintained by
- *         the <a href="http://www.oasis-open.org">Organization for the Advancement
+ *         the <a href="https://www.oasis-open.org">Organization for the Advancement
  *         of Structured Information Standards (OASIS)</a> and is both an OASIS
- *         and an <a href="http://www.iso.org">ISO (International Organization
+ *         and an <a href="https://www.iso.org/home.html">ISO (International Organization
  *         for Standardization)</a> standard.
  *     </li>
- *     <li><strong><a href="http://standards.iso.org/ittf/PubliclyAvailableStandards/c055982_ISO_IEC_19757-3_2016.zip">Schematron</a></strong> -
+ *     <li><strong><a href="https://standards.iso.org/ittf/PubliclyAvailableStandards/c055982_ISO_IEC_19757-3_2016.zip">Schematron</a></strong> -
  *         a rules-based XML schema language. Whereas DTD, WXS, and RNG are designed
  *         to express the structure of a content model, Schematron is designed to
  *         enforce individual rules that are difficult or impossible to express
  *         with other schema languages. Schematron is intended to supplement a
  *         schema written in structural schema language such as the aforementioned.
- *         Schematron is <a href="http://standards.iso.org/ittf/PubliclyAvailableStandards/index.html">an ISO standard</a>.
+ *         Schematron is <a href="https://standards.iso.org/ittf/PubliclyAvailableStandards/index.html">an ISO standard</a>.
  *     </li>
  * </ul>
  * <p>
@@ -73,7 +73,7 @@
  * some of which are:
  *
  * <ul>
- *     <li><strong>Support for additional schema langauges.</strong>
+ *     <li><strong>Support for additional schema languages.</strong>
  *         The JAXP parser implementations support only a subset of the available
  *         XML schema languages. The Validation API provides a standard mechanism
  *         through which applications may take of advantage of specialization

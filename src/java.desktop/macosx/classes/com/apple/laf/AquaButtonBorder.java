@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,9 +145,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
      * @param c the component for which this border insets value applies
      */
     public Insets getBorderInsets(final Component c) {
-        if (c == null || !(c instanceof AbstractButton)) return new Insets(0, 0, 0, 0);
+        if (!(c instanceof AbstractButton button)) return new Insets(0, 0, 0, 0);
 
-        Insets margin = ((AbstractButton)c).getMargin();
+        Insets margin = button.getMargin();
         margin = (margin == null) ? new InsetsUIResource(0, 0, 0, 0) : (Insets)margin.clone();
 
         margin.top += sizeVariant.margins.top;

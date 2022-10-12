@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,22 +133,23 @@ class InstanceKlass: public Klass {
   friend class CompileReplay;
 
  public:
-  static const KlassID ID = InstanceKlassID;
+  static const KlassKind Kind = InstanceKlassKind;
 
  protected:
-  InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id = ID);
+  InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
  public:
   InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
   // of the class loading & initialization procedure, and the use of the states.
-  enum ClassState {
+  enum ClassState : u1 {
     allocated,                          // allocated (but not yet linked)
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
+    being_linked,                       // currently running verifier and rewriter
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
-    fully_initialized,                  // initialized (successfull final state)
+    fully_initialized,                  // initialized (successful final state)
     initialization_error                // error happened during initialization
   };
 
@@ -224,20 +225,9 @@ class InstanceKlass: public Klass {
   // _misc_flags.
   bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
 
-  // Class states are defined as ClassState (see above).
-  // Place the _init_state here to utilize the unused 2-byte after
-  // _idnum_allocated_count.
-  u1              _init_state;              // state of class
+  ClassState      _init_state;              // state of class
 
-  // This can be used to quickly discriminate among the four kinds of
-  // InstanceKlass. This should be an enum (?)
-  static const unsigned _kind_other        = 0; // concrete InstanceKlass
-  static const unsigned _kind_reference    = 1; // InstanceRefKlass
-  static const unsigned _kind_class_loader = 2; // InstanceClassLoaderKlass
-  static const unsigned _kind_mirror       = 3; // InstanceMirrorKlass
-
-  u1              _reference_type;                // reference type
-  u1              _kind;                          // kind of InstanceKlass
+  u1              _reference_type;          // reference type
 
   enum {
     _misc_rewritten                           = 1 << 0,  // methods rewritten.
@@ -253,16 +243,16 @@ class InstanceKlass: public Klass {
     _misc_is_shared_boot_class                = 1 << 10, // defining class loader is boot class loader
     _misc_is_shared_platform_class            = 1 << 11, // defining class loader is platform class loader
     _misc_is_shared_app_class                 = 1 << 12, // defining class loader is app class loader
-    _misc_has_resolved_methods                = 1 << 13, // resolved methods table entries added for this class
-    _misc_is_being_redefined                  = 1 << 14, // used for locking redefinition
-    _misc_has_contended_annotations           = 1 << 15  // has @Contended annotation
+    _misc_has_contended_annotations           = 1 << 13  // has @Contended annotation
   };
   u2 shared_loader_type_bits() const {
     return _misc_is_shared_boot_class|_misc_is_shared_platform_class|_misc_is_shared_app_class;
   }
   u2              _misc_flags;           // There is more space in access_flags for more flags.
 
+  Monitor*        _init_monitor;         // mutual exclusion to _init_state and _init_thread.
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recursive initialization)
+
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
@@ -330,7 +320,17 @@ class InstanceKlass: public Klass {
 
   static bool _disable_method_binary_search;
 
+  // Controls finalizer registration
+  static bool _finalization_enabled;
+
  public:
+
+  // Queries finalization state
+  static bool is_finalization_enabled() { return _finalization_enabled; }
+
+  // Sets finalization state
+  static void set_finalization_enabled(bool val) { _finalization_enabled = val; }
+
   // The three BUILTIN class loader types
   bool is_shared_boot_class() const {
     return (_misc_flags & _misc_is_shared_boot_class) != 0;
@@ -349,20 +349,12 @@ class InstanceKlass: public Klass {
   // Check if the class can be shared in CDS
   bool is_shareable() const;
 
-  void clear_shared_class_loader_type() {
-    _misc_flags &= ~shared_loader_type_bits();
-  }
-
   bool shared_loading_failed() const {
     return (_misc_flags & _misc_shared_loading_failed) != 0;
   }
 
   void set_shared_loading_failed() {
     _misc_flags |= _misc_shared_loading_failed;
-  }
-
-  void clear_shared_loading_failed() {
-    _misc_flags &= ~_misc_shared_loading_failed;
   }
 
   void set_shared_class_loader_type(s2 loader_type);
@@ -373,10 +365,9 @@ class InstanceKlass: public Klass {
     return (_misc_flags & _misc_has_nonstatic_fields) != 0;
   }
   void set_has_nonstatic_fields(bool b)    {
+    assert(!has_nonstatic_fields(), "set once");
     if (b) {
       _misc_flags |= _misc_has_nonstatic_fields;
-    } else {
-      _misc_flags &= ~_misc_has_nonstatic_fields;
     }
   }
 
@@ -397,7 +388,6 @@ class InstanceKlass: public Klass {
   // array klasses
   ObjArrayKlass* array_klasses() const     { return _array_klasses; }
   inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
-  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
   inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
 
   // methods
@@ -484,6 +474,11 @@ private:
   bool has_nest_member(JavaThread* current, InstanceKlass* k) const;
 
 public:
+  // Call this only if you know that the nest host has been initialized.
+  InstanceKlass* nest_host_not_null() {
+    assert(_nest_host != NULL, "must be");
+    return _nest_host;
+  }
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns NULL if there was no error.
@@ -541,15 +536,32 @@ public:
                                        TRAPS);
  public:
   // initialization state
-  bool is_loaded() const                   { return _init_state >= loaded; }
-  bool is_linked() const                   { return _init_state >= linked; }
-  bool is_initialized() const              { return _init_state == fully_initialized; }
-  bool is_not_initialized() const          { return _init_state <  being_initialized; }
-  bool is_being_initialized() const        { return _init_state == being_initialized; }
-  bool is_in_error_state() const           { return _init_state == initialization_error; }
-  bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
-  ClassState  init_state()                 { return (ClassState)_init_state; }
+  bool is_loaded() const                   { return init_state() >= loaded; }
+  bool is_linked() const                   { return init_state() >= linked; }
+  bool is_being_linked() const             { return init_state() == being_linked; }
+  bool is_initialized() const              { return init_state() == fully_initialized; }
+  bool is_not_initialized() const          { return init_state() <  being_initialized; }
+  bool is_being_initialized() const        { return init_state() == being_initialized; }
+  bool is_in_error_state() const           { return init_state() == initialization_error; }
+  bool is_init_thread(Thread *thread)      { return thread == _init_thread; }
+  ClassState  init_state() const           { return Atomic::load(&_init_state); }
+  const char* init_state_name() const;
   bool is_rewritten() const                { return (_misc_flags & _misc_rewritten) != 0; }
+
+  class LockLinkState : public StackObj {
+    InstanceKlass* _ik;
+    JavaThread*    _current;
+   public:
+    LockLinkState(InstanceKlass* ik, JavaThread* current) : _ik(ik), _current(current) {
+      ik->check_link_state_and_wait(current);
+    }
+    ~LockLinkState() {
+      if (!_ik->is_linked()) {
+        // Reset to loaded if linking failed.
+        _ik->set_initialization_state_and_notify(loaded, _current);
+      }
+    }
+  };
 
   // is this a sealed class
   bool is_sealed() const;
@@ -559,10 +571,9 @@ public:
     return (_misc_flags & _misc_should_verify_class) != 0;
   }
   void set_should_verify_class(bool value) {
+    assert(!should_verify_class(), "set once");
     if (value) {
       _misc_flags |= _misc_should_verify_class;
-    } else {
-      _misc_flags &= ~_misc_should_verify_class;
     }
   }
 
@@ -579,15 +590,8 @@ public:
   void link_methods(TRAPS);
   Method* class_initializer() const;
 
-  // set the class to initialized if no static initializer is present
-  void eager_initialize(Thread *thread);
-
   // reference type
   ReferenceType reference_type() const     { return (ReferenceType)_reference_type; }
-  void set_reference_type(ReferenceType t) {
-    assert(t == (u1)t, "overflow");
-    _reference_type = (u1)t;
-  }
 
   // this class cp index
   u2 this_class_index() const             { return _this_class_index; }
@@ -691,10 +695,9 @@ public:
     return (_misc_flags & _misc_is_contended) != 0;
   }
   void set_is_contended(bool value)        {
+    assert(!is_contended(), "set once");
     if (value) {
       _misc_flags |= _misc_is_contended;
-    } else {
-      _misc_flags &= ~_misc_is_contended;
     }
   }
 
@@ -729,23 +732,24 @@ public:
     return ((_misc_flags & _misc_has_contended_annotations) != 0);
   }
   void set_has_contended_annotations(bool value)  {
+    assert(!has_contended_annotations(), "set once");
     if (value) {
       _misc_flags |= _misc_has_contended_annotations;
-    } else {
-      _misc_flags &= ~_misc_has_contended_annotations;
     }
   }
 
 #if INCLUDE_JVMTI
   // Redefinition locking.  Class can only be redefined by one thread at a time.
+  // The flag is in access_flags so that it can be set and reset using atomic
+  // operations, and not be reset by other misc_flag settings.
   bool is_being_redefined() const          {
-    return ((_misc_flags & _misc_is_being_redefined) != 0);
+    return _access_flags.is_being_redefined();
   }
   void set_is_being_redefined(bool value)  {
     if (value) {
-      _misc_flags |= _misc_is_being_redefined;
+      _access_flags.set_is_being_redefined();
     } else {
-      _misc_flags &= ~_misc_is_being_redefined;
+      _access_flags.clear_is_being_redefined();
     }
   }
 
@@ -783,30 +787,14 @@ public:
   }
 
   bool has_resolved_methods() const {
-    return (_misc_flags & _misc_has_resolved_methods) != 0;
+    return _access_flags.has_resolved_methods();
   }
 
   void set_has_resolved_methods() {
-    _misc_flags |= _misc_has_resolved_methods;
-  }
-private:
-
-  void set_kind(unsigned kind) {
-    _kind = (u1)kind;
-  }
-
-  bool is_kind(unsigned desired) const {
-    return _kind == (u1)desired;
+    _access_flags.set_has_resolved_methods();
   }
 
 public:
-
-  // Other is anything that is not one of the more specialized kinds of InstanceKlass.
-  bool is_other_instance_klass() const        { return is_kind(_kind_other); }
-  bool is_reference_instance_klass() const    { return is_kind(_kind_reference); }
-  bool is_mirror_instance_klass() const       { return is_kind(_kind_mirror); }
-  bool is_class_loader_instance_klass() const { return is_kind(_kind_class_loader); }
-
 #if INCLUDE_JVMTI
 
   void init_previous_versions() {
@@ -856,10 +844,9 @@ public:
     return (_misc_flags & _misc_has_nonstatic_concrete_methods) != 0;
   }
   void set_has_nonstatic_concrete_methods(bool b) {
+    assert(!has_nonstatic_concrete_methods(), "set once");
     if (b) {
       _misc_flags |= _misc_has_nonstatic_concrete_methods;
-    } else {
-      _misc_flags &= ~_misc_has_nonstatic_concrete_methods;
     }
   }
 
@@ -867,10 +854,9 @@ public:
     return (_misc_flags & _misc_declares_nonstatic_concrete_methods) != 0;
   }
   void set_declares_nonstatic_concrete_methods(bool b) {
+    assert(!declares_nonstatic_concrete_methods(), "set once");
     if (b) {
       _misc_flags |= _misc_declares_nonstatic_concrete_methods;
-    } else {
-      _misc_flags &= ~_misc_declares_nonstatic_concrete_methods;
     }
   }
 
@@ -937,7 +923,7 @@ public:
 
   // initialization
   void call_class_initializer(TRAPS);
-  void set_initialization_state_and_notify(ClassState state, TRAPS);
+  void set_initialization_state_and_notify(ClassState state, JavaThread* current);
 
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
@@ -953,7 +939,6 @@ public:
   inline DependencyContext dependencies();
   int  mark_dependent_nmethods(KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
 
   // On-stack replacement support
@@ -998,7 +983,7 @@ public:
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces);
   bool can_be_primary_super_slow() const;
-  int oop_size(oop obj)  const             { return size_helper(); }
+  size_t oop_size(oop obj)  const             { return size_helper(); }
   // slow because it's a virtual call and used for verifying the layout_helper.
   // Using the layout_helper bits, we can call is_instance_klass without a virtual call.
   DEBUG_ONLY(bool is_instance_klass_slow() const      { return true; })
@@ -1010,8 +995,6 @@ public:
   void print_nonstatic_fields(FieldClosure* cl); // including inherited and injected fields
 
   void methods_do(void f(Method* method));
-  void array_klasses_do(void f(Klass* k));
-  void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
 
   static InstanceKlass* cast(Klass* k) {
     return const_cast<InstanceKlass*>(cast(const_cast<const Klass*>(k)));
@@ -1108,7 +1091,7 @@ public:
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
 
-  virtual void release_C_heap_structures();
+  virtual void release_C_heap_structures(bool release_constant_pool = true);
 
   // Naming
   const char* signature_name() const;
@@ -1166,11 +1149,14 @@ public:
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
-private:
+ private:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags |= _misc_rewritten; }
-  void set_init_thread(Thread *thread)  { _init_thread = thread; }
+  void set_init_thread(Thread *thread)  {
+    assert(thread == nullptr || _init_thread == nullptr, "Only one thread is allowed to own initialization");
+    _init_thread = thread;
+  }
 
   // The RedefineClasses() API can cause new method idnums to be needed
   // which will cause the caches to grow. Safety requires different
@@ -1182,12 +1168,6 @@ private:
 
   // Lock during initialization
 public:
-  // Lock for (1) initialization; (2) access to the ConstantPool of this class.
-  // Must be one per class and it has to be a VM internal object so java code
-  // cannot lock it (like the mirror).
-  // It has to be an object not a Mutex because it's held through java calls.
-  oop init_lock() const;
-
   // Returns the array class for the n'th dimension
   virtual Klass* array_klass(int n, TRAPS);
   virtual Klass* array_klass_or_null(int n);
@@ -1196,16 +1176,18 @@ public:
   virtual Klass* array_klass(TRAPS);
   virtual Klass* array_klass_or_null();
 
-private:
-  void fence_and_clear_init_lock();
+  static void clean_initialization_error_table();
 
+  Monitor* init_monitor() const { return _init_monitor; }
+private:
+  void check_link_state_and_wait(JavaThread* current);
   bool link_class_impl                           (TRAPS);
   bool verify_code                               (TRAPS);
   void initialize_impl                           (TRAPS);
   void initialize_super_interfaces               (TRAPS);
-  void eager_initialize_impl                     ();
-  /* jni_id_for_impl for jfieldID only */
-  JNIid* jni_id_for_impl                         (int offset);
+
+  void add_initialization_error(JavaThread* current, Handle exception);
+  oop get_initialization_error(JavaThread* current);
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(const Symbol* name,
@@ -1221,9 +1203,6 @@ private:
                                   StaticLookupMode static_mode,
                                   PrivateLookupMode private_mode);
 
-  // Free CHeap allocated fields.
-  void release_C_heap_structures_internal();
-
 #if INCLUDE_JVMTI
   // RedefineClasses support
   void link_previous_versions(InstanceKlass* pv) { _previous_versions = pv; }
@@ -1232,12 +1211,15 @@ private:
   // log class name to classlist
   void log_to_classlist() const;
 public:
+
+#if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
+#endif
 
   jint compute_modifier_flags() const;
 
@@ -1285,6 +1267,15 @@ inline u2 InstanceKlass::next_method_idnum() {
   }
 }
 
+class PrintClassClosure : public KlassClosure {
+private:
+  outputStream* _st;
+  bool _verbose;
+public:
+  PrintClassClosure(outputStream* st, bool verbose);
+
+  void do_klass(Klass* k);
+};
 
 /* JNIid class for jfieldIDs only */
 class JNIid: public CHeapObj<mtClass> {

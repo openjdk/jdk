@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHAINS_EDGEUTILS_HPP
 #define SHARE_JFR_LEAKPROFILER_CHAINS_EDGEUTILS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class Edge;
 class Symbol;
@@ -36,7 +36,6 @@ class EdgeUtils : public AllStatic {
   static const size_t root_context = 100;
   static const size_t max_ref_chain_depth = leak_context + root_context;
 
-  static bool is_leak_edge(const Edge& edge);
   static const Edge* root(const Edge& edge);
   static const Edge* ancestor(const Edge& edge, size_t distance);
 

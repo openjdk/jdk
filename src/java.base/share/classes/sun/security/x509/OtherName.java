@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,10 @@ import sun.security.util.*;
  */
 public class OtherName implements GeneralNameInterface {
 
-    private String name;
-    private ObjectIdentifier oid;
-    private byte[] nameValue = null;
-    private GeneralNameInterface gni = null;
+    private final ObjectIdentifier oid;
+    private final String name;
+    private final byte[] nameValue; // value inside [0]
+    private final GeneralNameInterface gni;
 
     private static final byte TAG_VALUE = 0;
 
@@ -89,8 +89,12 @@ public class OtherName implements GeneralNameInterface {
         DerInputStream in = derValue.toDerInputStream();
 
         oid = in.getOID();
-        DerValue val = in.getDerValue();
-        nameValue = val.toByteArray();
+        DerValue derValue1 = in.getDerValue();
+        if (derValue1.isContextSpecific((byte) 0) && derValue1.isConstructed()) {
+            nameValue = derValue1.data.toByteArray();
+        } else {
+            throw new IOException("value is not EXPLICTly tagged [0]");
+        }
         gni = getGNI(oid, nameValue);
         if (gni != null) {
             name = gni.toString();
@@ -125,12 +129,13 @@ public class OtherName implements GeneralNameInterface {
                 return null;
             }
             Class<?>[] params = { Object.class };
-            Constructor<?> cons = extClass.getConstructor(params);
-
-            Object[] passed = new Object[] { nameValue };
-            GeneralNameInterface gni =
-                       (GeneralNameInterface)cons.newInstance(passed);
-            return gni;
+            Constructor<?> cons;
+            try {
+                cons = extClass.getConstructor(Object.class);
+            } catch (NoSuchMethodException e) {
+                cons = extClass.getConstructor(byte[].class);
+            }
+            return (GeneralNameInterface)cons.newInstance(nameValue);
         } catch (Exception e) {
             throw new IOException("Instantiation error: " + e, e);
         }

@@ -46,6 +46,7 @@ public class TestProperty extends JavadocTester {
                 "--no-platform-links",
                 "-javafx",
                 "--disable-javafx-strict-checks",
+                "-Xdoclint:all,-missing",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -63,6 +64,7 @@ public class TestProperty extends JavadocTester {
                     <ul class="see-list">
                     <li><a href="#getGood()"><code>getGood()</code></a></li>
                     <li><a href="#setGood(pkg.MyObj)"><code>setGood(MyObj)</code></a></li>
+                    <li><a href="#goodProperty()"><code>goodProperty()</code></a></li>
                     </ul>
                     </dd>
                     </dl>""",
@@ -79,6 +81,7 @@ public class TestProperty extends JavadocTester {
                     <ul class="see-list">
                     <li><a href="#getBad()"><code>getBad()</code></a></li>
                     <li><a href="#setBad(pkg.MyObj%5B%5D)"><code>setBad(MyObj[])</code></a></li>
+                    <li><a href="#badProperty()"><code>badProperty()</code></a></li>
                     </ul>
                     </dd>
                     </dl>""",
@@ -117,6 +120,7 @@ public class TestProperty extends JavadocTester {
                     <ul class="see-list">
                     <li><a href="#getList()"><code>getList()</code></a></li>
                     <li><a href="#setList(java.util.List)"><code>setList(List)</code></a></li>
+                    <li><a href="#listProperty()"><code>listProperty()</code></a></li>
                     </ul>
                     </dd>
                     </dl>"""

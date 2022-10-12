@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
     /**
      * Construct a {@code ChoiceCallback} with a prompt,
      * a list of choices, a default choice, and a boolean specifying
-     * whether or not multiple selections from the list of choices are allowed.
+     * whether multiple selections from the list of choices are allowed.
      *
      *
      * @param prompt the prompt used to describe the list of choices.
@@ -83,9 +83,8 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
      *                  is represented as an index into the
      *                  {@code choices} array.
      *
-     * @param multipleSelectionsAllowed boolean specifying whether or
-     *                  not multiple selections can be made from the
-     *                  list of choices.
+     * @param multipleSelectionsAllowed boolean specifying whether multiple
+     *                  selections can be made from the list of choices.
      *
      * @exception IllegalArgumentException if {@code prompt} is null,
      *                  if {@code prompt} has a length of 0,

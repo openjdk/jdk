@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,19 +62,8 @@ public class CheckForProperDetailStackTrace {
        to make sure it matches even if the symbol is not unmangled.
     */
     private static String stackTraceDefault =
-        ".*Hashtable.*new_entry.*\n" +
-        ".*ModuleEntryTable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
-
-    /* Alternate stacktrace that we check if the default fails, because
-       new_entry may be inlined.
-    */
-    private static String stackTraceAlternate =
-        ".*Hashtable.*new_entry.*\n" +
-        ".*ModuleEntryTable.*locked_create_entry.*\n" +
-        ".*Modules.*define_module.*\n" +
-        ".*JVM_DefineModule.*\n";
 
     /* The stack trace we look for on AIX and Windows slowdebug builds.
        ALWAYSINLINE is only a hint and is ignored for AllocateHeap on the
@@ -83,7 +72,6 @@ public class CheckForProperDetailStackTrace {
     */
     private static String stackTraceAllocateHeap =
         ".*AllocateHeap.*\n" +
-        ".*ModuleEntryTable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
 
@@ -133,7 +121,7 @@ public class CheckForProperDetailStackTrace {
             // It's ok for ARM not to have symbols, because it does not support NMT detail
             // when targeting thumb2. It's also ok for Windows not to have symbols, because
             // they are only available if the symbols file is included with the build.
-            if (Platform.isWindows() || Platform.isARM()) {
+            if (Platform.isWindows() || Platform.isARM() || Platform.isRISCV64()) {
                 return; // we are done
             }
             output.reportDiagnosticSummary();
@@ -149,13 +137,7 @@ public class CheckForProperDetailStackTrace {
             }
         } else {
             System.out.print(stackTraceDefault);
-            if (!stackTraceMatches(stackTraceDefault, output)) {
-                System.out.println("Looking for alternate stack matching:");
-                System.out.print(stackTraceAlternate);
-                if (stackTraceMatches(stackTraceAlternate, output)) {
-                    return;
-                }
-            } else {
+            if (stackTraceMatches(stackTraceDefault, output)) {
                 return;
             }
         }

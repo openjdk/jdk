@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequest.disable;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class disable001a {
 
     //====================================================== test program
 
-    static disable001aThread1 thread1 = null;
+    static Thread thread1 = null;
 
     static disable001aTestClass11 obj = new disable001aTestClass11();
 
@@ -100,7 +99,7 @@ public class disable001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new disable001aThread1("thread1");
+                            thread1 = JDIThreadFactory.newThread(new disable001aThread1("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -202,24 +201,21 @@ class disable001aTestClass11 extends disable001aTestClass10{
     }
 }
 
-class disable001aThread1 extends Thread {
-
-    String tName = null;
+class disable001aThread1 extends NamedTask {
 
     public disable001aThread1(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        disable001a.log1("  'run': enter  :: threadName == " + tName);
+        disable001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(disable001a.waitnotifyObj) {
             disable001a.waitnotifyObj.notify();
         }
         synchronized(disable001a.lockObj) {
             disable001aTestClass11.method11();
         }
-        disable001a.log1("  'run': exit   :: threadName == " + tName);
+        disable001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

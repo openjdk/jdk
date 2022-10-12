@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2022 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="yrl"/>
+		<territory type="VE"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="br">beretan</language>
+			<language type="chn">yarigan xinoki</language>
+			<language type="de">areman</language>
+			<language type="de_CH">areman iwaté (Suisa)</language>
+			<language type="gmh">areman iwaté médiu</language>
+			<language type="goh">areman arkaiku iwaté</language>
+			<language type="gsw">areman (Suisa)</language>
+			<language type="lv">retan</language>
+			<language type="mul">siía ñeẽga</language>
+			<language type="nds_NL">sakisan yatuka</language>
+			<language type="und">ũba uyukuau ñeẽga</language>
+			<language type="wa">waran</language>
+			<language type="yrl">ñengatú</language>
+			<language type="zgh">tamasiriti marukinu padran</language>
+			<language type="zh">xinañeẽga</language>
+			<language type="zh" alt="menu">xinañeẽga, mãdarĩ</language>
+			<language type="zh_Hans">xinañeẽga iwasuĩma</language>
+			<language type="zh_Hans" alt="long">xinañeẽga mãdarĩ (iwasuĩma)</language>
+			<language type="zh_Hant">xinañeẽga katuwa</language>
+			<language type="zh_Hant" alt="long">xinañeẽga mãdarĩ (katuwa)</language>
+			<language type="zxx">ũba aykué ñeẽga sesewaraitá</language>
+		</languages>
+		<scripts>
+			<script type="Visp">ñeẽga xipiawera</script>
+		</scripts>
+		<territories>
+			<territory type="AC">Asesan Kapuãma</territory>
+			<territory type="BL">San Batulumeu</territory>
+			<territory type="BT">Butan</territory>
+			<territory type="CR">Koñta Rika</territory>
+			<territory type="GA">Gaban</territory>
+			<territory type="KN">San Kirituwan suí Newi</territory>
+			<territory type="PM">San Peduru asuí Mikelan</territory>
+			<territory type="TA">Tiritan Kũya</territory>
+			<territory type="UN">Nasan Yepewasuwaitá</territory>
+		</territories>
+		<variants>
+			<variant type="1606NICT" draft="contributed">frãsañeẽga kaxiímawara 1606 upé</variant>
+			<variant type="1694ACAD">frãsañeẽga kuiriwara</variant>
+			<variant type="AO1990">Kuatiasawasupí Ewakisawa ñeẽga Putugewara 1990</variant>
+			<variant type="COLB1945">Kõvẽsan kuatiasawasupí Brasiu-Putugau 1945</variant>
+			<variant type="KKCOR" draft="contributed">kuatiasawasupí pañé-yara</variant>
+		</variants>
+		<types>
+			<type key="collation" type="big5han">Xinañẽẽga rikusawarupí muakaresawa - Big5</type>
+			<type key="collation" type="gb2312han">Xinañeẽga iwasuĩma muakarewa - GB2312</type>
+			<type key="collation" type="search">Sikaisá purusawa pañérupí</type>
+			<type key="colStrength" type="primary" draft="contributed">Reyupurawaka letera básika ñũtú</type>
+		</types>
+		<codePatterns>
+			<codePattern type="language">Ñeẽga: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="contributed">h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="contributed">h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="contributed">h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="dayperiod-short">
+				<displayName>a. m./p. m.</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>a. m./p. m.</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>a. m./p. m.</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<zone type="America/St_Kitts">
+				<exemplarCity>Sã Kirituwan</exemplarCity>
+			</zone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Butan Hurariyu</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Sã Peduru asuí Mikiran Hurariyu</generic>
+					<standard>Sã Peduru asuí Mikiran Hurariyu Retewa</standard>
+					<daylight>Sã Peduru asuí Mikiran Kurasí Ara Hurariyu</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000000" count="one">0 millón</pattern>
+					<pattern type="1000000" count="other">0 millón-ita</pattern>
+					<pattern type="10000000" count="one">00 millón</pattern>
+					<pattern type="10000000" count="other">00 millón-ita</pattern>
+					<pattern type="100000000" count="one">000 millón</pattern>
+					<pattern type="100000000" count="other">000 millón-ita</pattern>
+					<pattern type="1000000000" count="one">0 billón</pattern>
+					<pattern type="1000000000" count="other">0 billón-ita</pattern>
+					<pattern type="10000000000" count="one">00 billón</pattern>
+					<pattern type="10000000000" count="other">00 billón-ita</pattern>
+					<pattern type="100000000000" count="one">000 billón</pattern>
+					<pattern type="100000000000" count="other">000 billón-ita</pattern>
+					<pattern type="1000000000000" count="one">0 tirillón</pattern>
+					<pattern type="1000000000000" count="other">0 tirillón-ita</pattern>
+					<pattern type="10000000000000" count="one">00 tirillón</pattern>
+					<pattern type="10000000000000" count="other">00 tirillón-ita</pattern>
+					<pattern type="100000000000000" count="one">000 tirillón</pattern>
+					<pattern type="100000000000000" count="other">000 tirillón-ita</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencies>
+			<currency type="AOR">
+				<displayName>Kuãsa ãgulawara yumũñãwa yuiri (1995–1999)</displayName>
+				<displayName count="one">Kuãsa ãgulawara yumuñãwa yuiri (AOR)</displayName>
+				<displayName count="other">Kuãsa-ita ãgulawara yumuñãwa-itayuiri (AOR)</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="area-square-mile">
+				<displayName>milla kuadaradu-ita</displayName>
+				<unitPattern count="one">{0} milla kuadaradu</unitPattern>
+				<unitPattern count="other">{0} milla kuadaradu-ita</unitPattern>
+				<perUnitPattern>{0} milla kuadaradu rupi</perUnitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>pisawera-ita millón rupi</displayName>
+				<unitPattern count="one">{0} pisawera millón rupi</unitPattern>
+				<unitPattern count="other">{0} pisawera-ita millón rupi</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>milla-ita karóti rupi</displayName>
+				<unitPattern count="one">{0} milla karóti rupi</unitPattern>
+				<unitPattern count="other">{0} milla-ita karóti rupi</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>milla-ita karóti ĩperiawa rupi</displayName>
+				<unitPattern count="one">{0} milla karóti ĩperiawa rupi</unitPattern>
+				<unitPattern count="other">{0} milla-ita karóti ĩperiawa rupi</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>milla-ita</displayName>
+				<unitPattern count="one">{0} milla</unitPattern>
+				<unitPattern count="other">{0} milla-ita</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>milla paranãuara-ita</displayName>
+				<unitPattern count="one">{0} milla paranãuara</unitPattern>
+				<unitPattern count="other">{0} milla paranãuara-ita</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>milla esikãdinaua-ita</displayName>
+				<unitPattern count="one">{0} milla esikãdinaua</unitPattern>
+				<unitPattern count="other">{0} milla esikãdinaua-ita</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>milla-ita hura rupi</displayName>
+				<unitPattern count="one">{0} milla hura rupi</unitPattern>
+				<unitPattern count="other">{0} milla-ita hura rupi</unitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>milla kúbika-ita</displayName>
+				<unitPattern count="one">{0} milla kúbika</unitPattern>
+				<unitPattern count="other">{0} milla kúbika-ita</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="area-square-mile">
+				<displayName>milla-itá²</displayName>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>pisawera millón rupi</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>milla-itá/gal</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>millas/gal. imp.</displayName>
+			</unit>
+			<unit type="length-mile">
+				<displayName>milla</displayName>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>milla-itá/hura</displayName>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="length-mile">
+				<unitPattern count="one">{0} milla</unitPattern>
+				<unitPattern count="other">{0} milla</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — pañé</characterLabelPattern>
+		<characterLabel type="punctuation">pũtuasan</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="slnt">ĩkrinasan</axisName>
+		<featureName type="afrc">frasan-ita puãmuwa</featureName>
+		<featureName type="frac">frasan-ita diagunau</featureName>
+	</typographicNames>
+</ldml>

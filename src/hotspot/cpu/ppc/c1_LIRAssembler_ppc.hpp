@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
   //////////////////////////////////////////////////////////////////////////////
   // PPC64 load/store emission
   //
-  // The PPC ld/st instructions cannot accomodate displacements > 16 bits long.
+  // The PPC ld/st instructions cannot accommodate displacements > 16 bits long.
   // The following "pseudo" instructions (load/store) make it easier to
   // use the indexed addressing mode by allowing 32 bit displacements:
   //

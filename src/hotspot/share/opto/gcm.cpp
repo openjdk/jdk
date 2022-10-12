@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,7 +511,7 @@ static Block* memory_early_block(Node* load, Block* early, const PhaseCFG* cfg) 
   if (index != NULL) mem_inputs[mem_inputs_length++] = index;
   if (store != NULL) mem_inputs[mem_inputs_length++] = store;
 
-  // In the comparision below, add one to account for the control input,
+  // In the comparison below, add one to account for the control input,
   // which may be null, but always takes up a spot in the in array.
   if (mem_inputs_length + 1 < (int) load->req()) {
     // This "load" has more inputs than just the memory, base and index inputs.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554 8166232
+ * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554 8166232 8277328
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -49,10 +49,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.testng.SkipException;
 import org.testng.annotations.Test;
+
 import jdk.internal.jshell.tool.JShellTool;
 import jdk.internal.jshell.tool.JShellToolBuilder;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -329,17 +332,45 @@ public class CommandCompletionTest extends ReplToolTesting {
     }
 
     @Test
+    public void testClassPathWithSpace() throws IOException {
+        Compiler compiler = new Compiler();
+        Path outDir = compiler.getPath("testClassPathWithSpace");
+        Path dirWithSpace = Files.createDirectories(outDir.resolve("dir with space"));
+        Files.createDirectories(dirWithSpace.resolve("nested with space"));
+        String[] pathArray = new String[] {"dir\\ with\\ space/"};
+        String[] pathArray2 = new String[] {"nested\\ with\\ space/"};
+        testNoStartUp(
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir\\ with|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir\\ with\\ space/|", false, pathArray2)
+        );
+    }
+
+    @Test
     public void testUserHome() throws IOException {
         List<String> completions;
         Path home = Paths.get(System.getProperty("user.home"));
+        String selectedFile;
+        try (Stream<Path> content = Files.list(home)) {
+            selectedFile = content.filter(CLASSPATH_FILTER)
+                                  .filter(file -> file.getFileName().toString().contains(" "))
+                                  .findAny()
+                                  .map(file -> file.getFileName().toString().replace(" ", "\\ "))
+                                  .orElse(null);
+        }
+        if (selectedFile == null) {
+            throw new SkipException("No suitable file(s) found for this test in " + home);
+        }
         try (Stream<Path> content = Files.list(home)) {
             completions = content.filter(CLASSPATH_FILTER)
-                                 .map(file -> file.getFileName().toString() + (Files.isDirectory(file) ? "/" : ""))
+                                 .filter(file -> file.getFileName().toString().startsWith(selectedFile.replace("\\ ", " ")))
+                                 .map(file -> file.getFileName().toString().replace(" ", "\\ ") + (Files.isDirectory(file) ? "/" : ""))
                                  .sorted()
                                  .collect(Collectors.toList());
         }
         testNoStartUp(
-                a -> assertCompletion(a, "/env --class-path ~/|", false, completions.toArray(new String[completions.size()]))
+                a -> assertCompletion(a, "/env --class-path ~/" + selectedFile + "|", false, completions.toArray(new String[completions.size()]))
         );
     }
 

@@ -132,7 +132,7 @@ public abstract class ProxySelector {
      * Selects all the applicable proxies based on the protocol to
      * access the resource with and a destination address to access
      * the resource at.
-     * The format of the URI is defined as follow:
+     * The format of the URI is defined as follows:
      * <UL>
      * <LI>http URI for http connections</LI>
      * <LI>https URI for https connections

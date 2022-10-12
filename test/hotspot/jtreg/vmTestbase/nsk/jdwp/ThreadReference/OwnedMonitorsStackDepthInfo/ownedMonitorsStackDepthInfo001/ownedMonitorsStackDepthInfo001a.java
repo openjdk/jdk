@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,22 +85,33 @@ public class ownedMonitorsStackDepthInfo001a extends AbstractJDWPDebuggee {
         }
 
         monitor1 = monitorsInfo[0].monitor;
-        depth1 = monitorsInfo[0].stackDepth;
+        depth1 = adjustStackDepth(monitorsInfo[0].stackDepth);
 
         monitor2 = monitorsInfo[1].monitor;
-        depth2 = monitorsInfo[1].stackDepth;
+        depth2 = adjustStackDepth(monitorsInfo[1].stackDepth);
 
         monitor3 = monitorsInfo[2].monitor;
-        depth3 = monitorsInfo[2].stackDepth;
+        depth3 = adjustStackDepth(monitorsInfo[2].stackDepth);
 
         monitor4 = monitorsInfo[3].monitor;
-        depth4 = monitorsInfo[3].stackDepth;
+        depth4 = adjustStackDepth(monitorsInfo[3].stackDepth);
 
         monitor5 = monitorsInfo[4].monitor;
-        depth5 = monitorsInfo[4].stackDepth;
+        depth5 = adjustStackDepth(monitorsInfo[4].stackDepth);
 
         monitor6 = monitorsInfo[5].monitor;
-        depth6 = monitorsInfo[5].stackDepth;
+        depth6 = adjustStackDepth(monitorsInfo[5].stackDepth);
+    }
+
+    static int adjustStackDepth(int depth) {
+        // The stack depth does not take into account the extra frame below Thread.sleep() (sleep0),
+        // so we need to add it to the stack depth. See LockingThread.expectedDepth(), which is where the
+        // depth is calculated.
+        if (depth == -1) {
+            return -1;
+        } else {
+            return depth + 1;
+        }
     }
 
     public static void main(String args[]) {

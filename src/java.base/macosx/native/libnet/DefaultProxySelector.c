@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -168,7 +168,6 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
 {
     CFDictionaryRef proxyDicRef = NULL;
     CFURLRef        urlRef = NULL;
-    bool proxyFound = false;
     jobjectArray proxyArray = NULL;
     const char *cproto;
     const char *chost;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -173,16 +174,10 @@ public:
 
 class ShenandoahWorkerSession : public StackObj {
 protected:
-  uint _worker_id;
-
   ShenandoahWorkerSession(uint worker_id);
-  ~ShenandoahWorkerSession();
 public:
   static inline uint worker_id() {
-    Thread* thr = Thread::current();
-    uint id = ShenandoahThreadLocalData::worker_id(thr);
-    assert(id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "Worker session has not been created");
-    return id;
+    return WorkerThread::worker_id();
   }
 };
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +28,7 @@
  * @summary On sparcv9, C2's intrinsic for Integer.bitCount(OV) returns wrong result if OV is the result of an operation with int overflow.
  *
  * @run main/othervm -Xcomp
- *      -XX:CompileCommand=compileony,compiler.codegen.Test8005033::testBitCount
+ *      -XX:CompileCommand=compileonly,compiler.codegen.Test8005033::testBitCount
  *      compiler.codegen.Test8005033
  * @author Richard Reingruber richard DOT reingruber AT sap DOT com
  */

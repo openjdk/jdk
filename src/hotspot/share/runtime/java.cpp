@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -57,18 +58,19 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
@@ -230,7 +232,6 @@ void print_statistics() {
   if ((PrintC1Statistics || LogVMOutput || LogCompilation) && UseCompiler) {
     FlagSetting fs(DisplayVMOutput, DisplayVMOutput && PrintC1Statistics);
     Runtime1::print_statistics();
-    Deoptimization::print_statistics();
     SharedRuntime::print_statistics();
   }
 #endif /* COMPILER1 */
@@ -239,11 +240,10 @@ void print_statistics() {
   if ((PrintOptoStatistics || LogVMOutput || LogCompilation) && UseCompiler) {
     FlagSetting fs(DisplayVMOutput, DisplayVMOutput && PrintOptoStatistics);
     Compile::print_statistics();
-#ifndef COMPILER1
     Deoptimization::print_statistics();
+#ifndef COMPILER1
     SharedRuntime::print_statistics();
 #endif //COMPILER1
-    os::print_statistics();
   }
 
   if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
@@ -294,11 +294,8 @@ void print_statistics() {
   }
 
   // CodeHeap State Analytics.
-  // Does also call NMethodSweeper::print(tty)
   if (PrintCodeHeapAnalytics) {
     CompileBroker::print_heapinfo(NULL, "all", 4096); // details
-  } else if (PrintMethodFlushingStatistics) {
-    NMethodSweeper::print(tty);
   }
 
   if (PrintCodeCache2) {
@@ -306,10 +303,6 @@ void print_statistics() {
     CodeCache::print_internals();
   }
 
-  if (PrintVtableStats) {
-    klassVtable::print_statistics();
-    klassItable::print_statistics();
-  }
   if (VerifyOops && Verbose) {
     tty->print_cr("+VerifyOops count: %d", StubRoutines::verify_oop_count());
   }
@@ -326,10 +319,6 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
-  }
-
-  if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
-    Method::print_touched_methods(tty);
   }
 
   // Native memory tracking data
@@ -356,17 +345,22 @@ void print_statistics() {
     CompileBroker::print_times();
   }
 
+#ifdef COMPILER2_OR_JVMCI
+  if ((LogVMOutput || LogCompilation) && UseCompiler) {
+    // Only print the statistics to the log file
+    FlagSetting fs(DisplayVMOutput, false);
+    Deoptimization::print_statistics();
+  }
+#endif /* COMPILER2 || INCLUDE_JVMCI */
+
   if (PrintCodeCache) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print();
   }
 
   // CodeHeap State Analytics.
-  // Does also call NMethodSweeper::print(tty)
   if (PrintCodeHeapAnalytics) {
     CompileBroker::print_heapinfo(NULL, "all", 4096); // details
-  } else if (PrintMethodFlushingStatistics) {
-    NMethodSweeper::print(tty);
   }
 
 #ifdef COMPILER2
@@ -384,10 +378,6 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
-    Method::print_touched_methods(tty);
-  }
-
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -396,7 +386,7 @@ void print_statistics() {
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
 //       can run before_exit() and all other threads must wait.
-void before_exit(JavaThread* thread) {
+void before_exit(JavaThread* thread, bool halt) {
   #define BEFORE_EXIT_NOT_RUN 0
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
@@ -428,7 +418,7 @@ void before_exit(JavaThread* thread) {
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
-    JVMCI::shutdown();
+    JVMCI::shutdown(thread);
   }
 #endif
 
@@ -439,11 +429,11 @@ void before_exit(JavaThread* thread) {
 
   EventThreadEnd event;
   if (event.should_commit()) {
-    event.set_thread(JFR_THREAD_ID(thread));
+    event.set_thread(JFR_JVM_THREAD_ID(thread));
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown();)
+  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
@@ -500,9 +490,10 @@ void before_exit(JavaThread* thread) {
   os::terminate_signal_thread();
 
 #if INCLUDE_CDS
-  if (DynamicDumpSharedSpaces) {
+  if (DynamicArchive::should_dump_at_vm_exit()) {
+    assert(ArchiveClassesAtExit != NULL, "Must be already set");
     ExceptionMark em(thread);
-    DynamicArchive::dump(thread);
+    DynamicArchive::dump(ArchiveClassesAtExit, thread);
     if (thread->has_pending_exception()) {
       ResourceMark rm(thread);
       oop pending_exception = thread->pending_exception();
@@ -604,7 +595,7 @@ void vm_perform_shutdown_actions() {
       JavaThread* jt = JavaThread::cast(thread);
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
-      jt->frame_anchor()->make_walkable(jt);
+      jt->frame_anchor()->make_walkable();
       jt->set_thread_state(_thread_in_native);
     }
   }

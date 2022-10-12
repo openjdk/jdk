@@ -10,7 +10,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<languageMatching>
 		<languageMatches type="written_new">
 			<paradigmLocales locales="en en_GB es es_419 pt_BR pt_PT"/>
-			<matchVariable id="$enUS" value="AS+GU+MH+MP+PR+UM+US+VI"/>
+			<matchVariable id="$enUS" value="AS+CA+GU+MH+MP+PH+PR+UM+US+VI"/>
 			<matchVariable id="$cnsar" value="HK+MO"/>
 			<matchVariable id="$americas" value="019"/>
 			<matchVariable id="$maghreb" value="MA+DZ+TN+LY+MR+EH"/>
@@ -96,7 +96,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageMatch desired="mai"	supported="hi"	distance="20"	oneway="true"/>	<!-- Maithili ⇒ Hindi -->
 			<languageMatch desired="mfe"	supported="en"	distance="30"	oneway="true"/>	<!-- Morisyen: mfe ⇒ en -->
 			<languageMatch desired="mg"	supported="fr"	distance="30"	oneway="true"/>	<!-- Malagasy: mg ⇒ fr -->
-			<languageMatch desired="mi"	supported="en"	distance="20"	oneway="true"/>	<!-- Maori: mi ⇒ en -->
+			<languageMatch desired="mi"	supported="en"	distance="20"	oneway="true"/>	<!-- Māori: mi ⇒ en -->
 
 			<!-- CLDR-13625: Macedonian should not fall back to Bulgarian -->
 			<!-- languageMatch desired="mk"	supported="bg"	distance="30"	oneway="true"/-->	<!-- Macedonian: mk ⇒ bg -->

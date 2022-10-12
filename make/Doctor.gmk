@@ -1,0 +1,148 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, Doctor.gmk))
+
+################################################################################
+#
+# Help user diagnose possible errors and problems with the build environment.
+#
+
+prologue:
+	$(ECHO)
+	$(ECHO) '"make doctor" will help you analyze your build environment. It can highlight'
+	$(ECHO) 'certain well-known problems, but it can never find all possible errors.'
+
+TARGETS += prologue
+
+check-git: prologue
+	$(ECHO)
+	$(ECHO) '* Verifying that configure has picked up git...'
+        ifeq ($(GIT), )
+	  $(ECHO) 'WARNING: "git" is not present. This will disable several checks.'
+	  $(ECHO) '! Correct by installing git and verifying that it is in the PATH'
+        endif
+
+TARGETS += check-git
+
+ifneq ($(GIT), )
+  AUTOCRLF := $(shell $(GIT) config core.autocrlf)
+endif
+
+check-autocrlf: check-git
+        ifneq ($(GIT), )
+          ifeq ($(call isBuildOs, windows), true)
+	    $(ECHO)
+	    $(ECHO) '* Verifying git core.autocrlf value...'
+            ifneq ($(AUTOCRLF), false)
+	      $(ECHO) 'WARNING: core.autocrlf is not "false".  HIGH RISK of build failure!'
+	      $(ECHO) '! Correct by running 'git config --global core.autocrlf false' and re-cloning the repo'
+            endif
+          endif
+        endif
+
+TARGETS += check-autocrlf
+
+check-configure-warnings: check-autocrlf
+	$(ECHO)
+	$(ECHO) '* Checking for warnings from configure...'
+	warning_output=`$(GREP) -e "^\* Memory limit:" -A 300 $(OUTPUTDIR)/configure.log | $(TAIL) -n +3 | $(SED) -e '$(DOLLAR){/^$(DOLLAR)/d;}'` && \
+	if test -n "$$warning_output" ; then \
+	  $(ECHO) ' ---' ; \
+	  $(GREP) -e "^\* Memory limit:" -A 300 $(OUTPUTDIR)/configure.log | $(TAIL) -n +3 | $(SED) -e '$(DOLLAR){/^$(DOLLAR)/d;}' ; \
+	  $(ECHO) ' ---' ; \
+	  $(ECHO) '! Inspect the warnings, fix any problems, and re-run configure' ; \
+	fi
+
+TARGETS += check-configure-warnings
+
+ifneq ($(GIT), )
+  # This might have been set by custom component
+  UNTRACKED_FILES ?= $(shell $(GIT) status --porcelain --ignored | $(CUT) -c 4-)
+endif
+
+check-core-files: check-configure-warnings
+        ifneq ($(GIT), )
+	  $(ECHO)
+	  $(ECHO) '* Checking for left-over core files...'
+	  core_files_found=`echo "$(UNTRACKED_FILES)" | $(TR) ' ' '\n' | $(GREP) core` && \
+	  if test -n "$$core_files_found" ; then \
+	    $(ECHO) 'Found these potential core files. They might interfere with the build process:' ; \
+	    $(ECHO) ' ---' ; \
+	    $(ECHO) $$core_files_found | $(TR) ' ' '\n'; \
+	    $(ECHO) ' ---' ; \
+	    $(ECHO) '! Remove left-over core files' ; \
+	  fi || : # do nothing if grep returns non-0 value
+        endif
+
+TARGETS += check-core-files
+
+check-bad-file-names: check-core-files
+        ifneq ($(GIT), )
+	  $(ECHO)
+	  $(ECHO) '* Checking for untracked files with illegal names...'
+	  core_files_found=`echo "$(UNTRACKED_FILES)" | $(TR) ' ' '\n' | $(GREP) '#'` && \
+	  if test -n "$$core_files_found" ; then \
+	    $(ECHO) 'Found these files with illegal names. They *will* cause build failures:' ; \
+	    $(ECHO) ' ---' ; \
+	    $(ECHO) $$core_files_found | $(TR) ' ' '\n'; \
+	    $(ECHO) ' ---' ; \
+	    $(ECHO) '! Remove all files with '#' in their name from the JDK source tree' ; \
+	  fi || : # do nothing if grep returns non-0 value
+        endif
+
+TARGETS += check-bad-file-names
+
+epilogue: check-bad-file-names
+	$(ECHO)
+	$(ECHO) '* If all else fails, try removing the entire build directory and re-creating'
+	$(ECHO) 'the same configuration using:'
+	$(ECHO) ' ---' ; \
+	$(ECHO) configure_command_line=\$$\(make print-configuration\)
+	$(ECHO) make dist-clean
+	$(ECHO) bash configure \$$configure_command_line
+	$(ECHO) ' ---' ; \
+	$(ECHO)
+	$(ECHO) '* The build README (doc/building.md) is a great source of information,'
+	$(ECHO) 'especially the chapter "Fixing Unexpected Build Failures". Check it out!'
+	$(ECHO)
+	$(ECHO) '* If you still need assistance please contact build-dev@openjdk.java.net.'
+	$(ECHO)
+
+TARGETS += epilogue
+
+################################################################################
+
+doctor: $(TARGETS)
+
+all: doctor
+
+.PHONY: default all doctor $(TARGETS)

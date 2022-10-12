@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -39,7 +40,9 @@
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
 VirtualSpace* ArchivePtrMarker::_vs;
@@ -262,10 +265,14 @@ void WriteClosure::do_oop(oop* o) {
   if (*o == NULL) {
     _dump_region->append_intptr_t(0);
   } else {
-    assert(HeapShared::is_heap_object_archiving_allowed(),
-           "Archiving heap object is not allowed");
-    _dump_region->append_intptr_t(
-      (intptr_t)CompressedOops::encode_not_null(*o));
+    assert(HeapShared::can_write(), "sanity");
+    intptr_t p;
+    if (UseCompressedOops) {
+      p = (intptr_t)CompressedOops::encode_not_null(*o);
+    } else {
+      p = cast_from_oop<intptr_t>(HeapShared::to_requested_address(*o));
+    }
+    _dump_region->append_intptr_t(p);
   }
 }
 
@@ -307,15 +314,23 @@ void ReadClosure::do_tag(int tag) {
 }
 
 void ReadClosure::do_oop(oop *p) {
-  narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-  if (CompressedOops::is_null(o) || !HeapShared::open_regions_mapped()) {
-    *p = NULL;
+  if (UseCompressedOops) {
+    narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
+    if (CompressedOops::is_null(o) || !ArchiveHeapLoader::is_fully_available()) {
+      *p = NULL;
+    } else {
+      assert(ArchiveHeapLoader::can_use(), "sanity");
+      assert(ArchiveHeapLoader::is_fully_available(), "must be");
+      *p = ArchiveHeapLoader::decode_from_archive(o);
+    }
   } else {
-    assert(HeapShared::is_heap_object_archiving_allowed(),
-           "Archived heap object is not allowed");
-    assert(HeapShared::open_regions_mapped(),
-           "Open archive heap region is not mapped");
-    *p = HeapShared::decode_from_archive(o);
+    intptr_t dumptime_oop = nextPtr();
+    if (dumptime_oop == 0 || !ArchiveHeapLoader::is_fully_available()) {
+      *p = NULL;
+    } else {
+      intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::runtime_delta();
+      *p = cast_to_oop(runtime_oop);
+    }
   }
 }
 
@@ -330,23 +345,24 @@ void ReadClosure::do_region(u_char* start, size_t size) {
   }
 }
 
-fileStream* ClassListWriter::_classlist_file = NULL;
-
 void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   if (ClassListWriter::is_enabled()) {
     if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
-      ResourceMark rm(THREAD);
       const constantPoolHandle& pool = bootstrap_specifier->pool();
-      int pool_index = bootstrap_specifier->bss_index();
-      ClassListWriter w;
-      w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
-      CDSIndyInfo cii;
-      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, CHECK);
-      GrowableArray<const char*>* indy_items = cii.items();
-      for (int i = 0; i < indy_items->length(); i++) {
-        w.stream()->print(" %s", indy_items->at(i));
+      if (SystemDictionaryShared::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
+        // Currently lambda proxy classes are supported only for the built-in loaders.
+        ResourceMark rm(THREAD);
+        int pool_index = bootstrap_specifier->bss_index();
+        ClassListWriter w;
+        w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
+        CDSIndyInfo cii;
+        ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, CHECK);
+        GrowableArray<const char*>* indy_items = cii.items();
+        for (int i = 0; i < indy_items->length(); i++) {
+          w.stream()->print(" %s", indy_items->at(i));
+        }
+        w.stream()->cr();
       }
-      w.stream()->cr();
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -978,6 +978,7 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    * clear that this is needed.
    * @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private PrefixResolver m_prefixResolver;
 
   /**

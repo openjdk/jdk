@@ -181,15 +181,15 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      * {@code getImageMetadataFormat}.  An array of length
      * 0 is normalized to {@code null}.
      *
-     * @exception IllegalArgumentException if {@code vendorName}
+     * @throws IllegalArgumentException if {@code vendorName}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code version}
+     * @throws IllegalArgumentException if {@code version}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code names}
+     * @throws IllegalArgumentException if {@code names}
      * is {@code null} or has length 0.
-     * @exception IllegalArgumentException if {@code writerClassName}
+     * @throws IllegalArgumentException if {@code writerClassName}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code outputTypes}
+     * @throws IllegalArgumentException if {@code outputTypes}
      * is {@code null} or has length 0.
      */
     public ImageWriterSpi(String vendorName,
@@ -304,7 +304,7 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      * @return {@code true} if this writer is likely to be able
      * to encode images with the given layout.
      *
-     * @exception IllegalArgumentException if {@code type}
+     * @throws IllegalArgumentException if {@code type}
      * is {@code null}.
      */
     public abstract boolean canEncodeImage(ImageTypeSpecifier type);
@@ -325,7 +325,7 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      * @return {@code true} if this writer is likely to be able
      * to encode this image.
      *
-     * @exception IllegalArgumentException if {@code im}
+     * @throws IllegalArgumentException if {@code im}
      * is {@code null}.
      */
     public boolean canEncodeImage(RenderedImage im) {
@@ -343,7 +343,7 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      *
      * @return an {@code ImageWriter} instance.
      *
-     * @exception IOException if an error occurs during loading,
+     * @throws IOException if an error occurs during loading,
      * or initialization of the writer class, or during instantiation
      * or initialization of the writer object.
      */
@@ -369,9 +369,9 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      *
      * @return an {@code ImageWriter} instance.
      *
-     * @exception IOException if the attempt to instantiate
+     * @throws IOException if the attempt to instantiate
      * the writer fails.
-     * @exception IllegalArgumentException if the
+     * @throws IllegalArgumentException if the
      * {@code ImageWriter}'s constructor throws an
      * {@code IllegalArgumentException} to indicate that the
      * extension object is unsuitable.
@@ -388,7 +388,7 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      *
      * @return {@code true} if {@code writer} is recognized
      *
-     * @exception IllegalArgumentException if {@code writer} is
+     * @throws IllegalArgumentException if {@code writer} is
      * {@code null}.
      */
     public boolean isOwnWriter(ImageWriter writer) {

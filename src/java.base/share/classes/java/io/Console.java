@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
 import sun.security.action.GetPropertyAction;
@@ -475,7 +476,7 @@ public final class Console implements Flushable
             return in.ready();
         }
 
-        public int read(char cbuf[], int offset, int length)
+        public int read(char[] cbuf, int offset, int length)
             throws IOException
         {
             int off = offset;
@@ -572,22 +573,29 @@ public final class Console implements Flushable
 
     private static final Charset CHARSET;
     static {
-        String csname = encoding();
         Charset cs = null;
-        if (csname == null) {
-            csname = GetPropertyAction.privilegedGetProperty("sun.stdout.encoding");
+        boolean istty = istty();
+
+        if (istty) {
+            String csname = encoding();
+            if (csname == null) {
+                csname = GetPropertyAction.privilegedGetProperty("stdout.encoding");
+            }
+            if (csname != null) {
+                cs = Charset.forName(csname, null);
+            }
         }
-        if (csname != null) {
-            try {
-                cs = Charset.forName(csname);
-            } catch (Exception ignored) { }
+        if (cs == null) {
+            cs = Charset.forName(StaticProperty.nativeEncoding(),
+                    Charset.defaultCharset());
         }
-        CHARSET = cs == null ? Charset.defaultCharset() : cs;
+
+        CHARSET = cs;
 
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                if (istty()) {
+                if (istty) {
                     if (cons == null)
                         cons = new Console();
                     return cons;

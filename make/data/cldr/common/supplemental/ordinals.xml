@@ -12,7 +12,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
         <!-- 1: other -->
 
-        <pluralRules locales="af am an ar bg bs ce cs da de dsb el es et eu fa fi fy gl gsw he hr hsb ia id in is iw ja km kn ko ky lt lv ml mn my nb nl no pa pl prg ps pt root ru sd sh si sk sl sr sw ta te th tr ur uz yue zh zu">
+        <pluralRules locales="af am an ar bg bs ce cs da de dsb el es et eu fa fi fy gl gsw he hr hsb ia id in is iw ja km kn ko ky lt lv ml mn my nb nl no pa pl prg ps pt root ru sd sh si sk sl sr sw ta te th tpi tr ur uz yue zh zu">
             <pluralRule count="other"> @integer 0~15, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
 
@@ -22,7 +22,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <pluralRule count="one">n % 10 = 1,2 and n % 100 != 11,12 @integer 1, 2, 21, 22, 31, 32, 41, 42, 51, 52, 61, 62, 71, 72, 81, 82, 101, 1001, …</pluralRule>
             <pluralRule count="other"> @integer 0, 3~17, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
-        <pluralRules locales="fil fr ga hy lo mo ms ro tl vi">
+        <pluralRules locales="bal fil fr ga hy lo mo ms ro tl vi">
             <pluralRule count="one">n = 1 @integer 1</pluralRule>
             <pluralRule count="other"> @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>

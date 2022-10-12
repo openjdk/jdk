@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1906,7 +1906,7 @@ int sock_feed_event(port_state_t* port_state,
   if (epoll_events == 0)
     return 0;
 
-  /* If the the socket has the EPOLLONESHOT flag set, unmonitor all events,
+  /* If the socket has the EPOLLONESHOT flag set, unmonitor all events,
    * even EPOLLERR and EPOLLHUP. But always keep looking for closed sockets. */
   if (sock_state->user_events & EPOLLONESHOT)
     sock_state->user_events = 0;

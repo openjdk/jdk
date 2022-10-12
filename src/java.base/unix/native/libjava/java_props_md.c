@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,7 +353,6 @@ java_props_t *
 GetJavaProperties(JNIEnv *env)
 {
     static java_props_t sprops;
-    char *v; /* tmp var */
 
     if (sprops.user_dir) {
         return &sprops;
@@ -455,10 +454,10 @@ GetJavaProperties(JNIEnv *env)
     sprops.sun_jnu_encoding = sprops.encoding;
 #endif
     if (isatty(STDOUT_FILENO) == 1) {
-        sprops.sun_stdout_encoding = sprops.encoding;
+        sprops.stdout_encoding = sprops.encoding;
     }
     if (isatty(STDERR_FILENO) == 1) {
-        sprops.sun_stderr_encoding = sprops.encoding;
+        sprops.stderr_encoding = sprops.encoding;
     }
 
 #ifdef _ALLBSD_SOURCE
@@ -488,8 +487,16 @@ GetJavaProperties(JNIEnv *env)
 #else
         sprops.user_home = pwent ? strdup(pwent->pw_dir) : NULL;
 #endif
-        if (sprops.user_home == NULL) {
-            sprops.user_home = "?";
+        if (sprops.user_home == NULL || sprops.user_home[0] == '\0' ||
+            sprops.user_home[1] == '\0') {
+            // If the OS supplied home directory is not defined or less than two characters long
+            // $HOME is the backup source for the home directory, if defined
+            char* user_home = getenv("HOME");
+            if ((user_home != NULL) && (user_home[0] != '\0')) {
+                sprops.user_home = user_home;
+            } else {
+                sprops.user_home = "?";
+            }
         }
     }
 

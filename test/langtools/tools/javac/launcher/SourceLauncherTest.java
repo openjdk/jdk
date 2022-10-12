@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,28 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.launcher
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.JavaTask toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main SourceLauncherTest
  */
 
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.Attributes;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ClassWriter;
+import com.sun.tools.classfile.ConstantPool;
+import com.sun.tools.classfile.ConstantPool.CPInfo;
+import com.sun.tools.classfile.ModuleResolution_attribute;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -45,6 +54,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -56,7 +67,7 @@ import toolbox.JavaTask;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.TestRunner;
-import toolbox.TestRunner;
+import toolbox.TestRunner.Test;
 import toolbox.ToolBox;
 
 public class SourceLauncherTest extends TestRunner {
@@ -213,50 +224,25 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
-    public void testPermissions(Path base) throws IOException {
-        // does not work on exploded image, because the default policy file assumes jrt:; skip the test
-        if (Files.exists(Path.of(System.getProperty("java.home")).resolve("modules"))) {
-            out.println("JDK using exploded modules; test skipped");
-            return;
-        }
-
-        Path policyFile = base.resolve("test.policy");
-        Path sourceFile = base.resolve("TestPermissions.java");
-
-        tb.writeFile(policyFile,
-            "grant codeBase \"jrt:/jdk.compiler\" {\n" +
-            "    permission java.security.AllPermission;\n" +
-            "};\n" +
-            "grant codeBase \"" + sourceFile.toUri().toURL() + "\" {\n" +
-            "    permission java.util.PropertyPermission \"user.dir\", \"read\";\n" +
-            "};\n");
-
+    public void testSecurityManager(Path base) throws IOException {
+        Path sourceFile = base.resolve("HelloWorld.java");
         tb.writeJavaFiles(base,
-            "import java.net.URL;\n" +
-            "class TestPermissions {\n" +
-            "    public static void main(String... args) {\n" +
-            "        System.out.println(\"user.dir=\" + System.getProperty(\"user.dir\"));\n" +
-            "        try {\n" +
-            "            System.setProperty(\"user.dir\", \"\");\n" +
-            "            System.out.println(\"no exception\");\n" +
-            "            System.exit(1);\n" +
-            "        } catch (SecurityException e) {\n" +
-            "            System.out.println(\"exception: \" + e);\n" +
-            "        }\n" +
-            "    }\n" +
-            "}");
+                "class HelloWorld {\n" +
+                        "    public static void main(String... args) {\n" +
+                        "        System.out.println(\"Hello World!\");\n" +
+                        "    }\n" +
+                        "}");
 
         String log = new JavaTask(tb)
-                .vmOptions("-Djava.security.manager", "-Djava.security.policy=" + policyFile)
+                .vmOptions("-Djava.security.manager=default")
                 .className(sourceFile.toString())
-                .run(Task.Expect.SUCCESS)
-                .getOutput(Task.OutputKind.STDOUT);
-        checkEqual("stdout", log.trim(),
-                "user.dir=" + System.getProperty("user.dir") + "\n" +
-                "exception: java.security.AccessControlException: " +
-                    "access denied (\"java.util.PropertyPermission\" \"user.dir\" \"write\")");
+                .run(Task.Expect.FAIL)
+                .getOutput(Task.OutputKind.STDERR);
+        checkContains("stderr", log,
+                "error: cannot use source-code launcher with a security manager enabled");
     }
 
+    @Test
     public void testSystemProperty(Path base) throws IOException {
         tb.writeJavaFiles(base,
             "class ShowProperty {\n" +
@@ -598,6 +584,52 @@ public class SourceLauncherTest extends TestRunner {
                 "error: compilation failed");
     }
 
+    @Test
+    public void testNoRecompileWithSuggestions(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "class NoRecompile {\n" +
+            "    void use(String s) {}\n" +
+            "    void test() {\n" +
+            "        use(1);\n" +
+            "    }\n" +
+            "    <T> void test(T t, Object o) {\n" +
+            "        T t1 = (T) o;\n" +
+            "    }\n" +
+            "    static class Generic<T> {\n" +
+            "        T t;\n" +
+            "        void raw(Generic raw) {\n" +
+            "            raw.t = \"\";\n" +
+            "        }\n" +
+            "    }\n" +
+            "    void deprecation() {\n" +
+            "        Thread.currentThread().stop();\n" +
+            "    }\n" +
+            "    void preview(Object o) {\n" +
+            "      if (o instanceof String s) {\n" +
+            "          System.out.println(s);\n" +
+            "      }\n" +
+            "    }\n" +
+            "}");
+        Result r = run(base.resolve("NoRecompile.java"), Collections.emptyList(), Collections.emptyList());
+        if (r.stdErr.contains("recompile with")) {
+            error("Unexpected recompile suggestions in error output: " + r.stdErr);
+        }
+    }
+
+    @Test
+    public void testNoOptionsWarnings(Path base) throws IOException {
+        tb.writeJavaFiles(base, "public class Main { public static void main(String... args) {}}");
+        String log = new JavaTask(tb)
+                .vmOptions("--source", "8")
+                .className(base.resolve("Main.java").toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDERR);
+
+        if (log.contains("warning: [options]")) {
+            error("Unexpected options warning in error output: " + log);
+        }
+    }
+
     void testError(Path file, String expectStdErr, String expectFault) throws IOException {
         Result r = run(file, Collections.emptyList(), List.of("1", "2", "3"));
         checkEmpty("stdout", r.stdOut);
@@ -634,6 +666,83 @@ public class SourceLauncherTest extends TestRunner {
                 "at Thrower.main(Thrower.java:4)");
     }
 
+    @Test
+    public void testNoDuplicateIncubatorWarning(Path base) throws Exception {
+        Path module = base.resolve("lib");
+        Path moduleSrc = module.resolve("src");
+        Path moduleClasses = module.resolve("classes");
+        Files.createDirectories(moduleClasses);
+        tb.cleanDirectory(moduleClasses);
+        tb.writeJavaFiles(moduleSrc, "module test {}");
+        new JavacTask(tb)
+                .outdir(moduleClasses)
+                .files(tb.findJavaFiles(moduleSrc))
+                .run()
+                .writeAll();
+        markModuleAsIncubator(moduleClasses.resolve("module-info.class"));
+        tb.writeJavaFiles(base, "public class Main { public static void main(String... args) {}}");
+        String log = new JavaTask(tb)
+                .vmOptions("--module-path", moduleClasses.toString(),
+                           "--add-modules", "test")
+                .className(base.resolve("Main.java").toString())
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutput(Task.OutputKind.STDERR);
+
+        int numberOfWarnings = log.split("WARNING").length - 1;
+
+        if (log.contains("warning:") || numberOfWarnings != 1) {
+            error("Unexpected warning in error output: " + log);
+        }
+
+        List<String> compileLog = new JavacTask(tb)
+                .options("--module-path", moduleClasses.toString(),
+                         "--add-modules", "test",
+                         "-XDrawDiagnostics",
+                         "-XDsourceLauncher",
+                         "-XDshould-stop.at=FLOW")
+                .files(base.resolve("Main.java").toString())
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expectedOutput = List.of(
+                "- compiler.warn.incubating.modules: test",
+                "1 warning"
+        );
+
+        if (!expectedOutput.equals(compileLog)) {
+            error("Unexpected options : " + compileLog);
+        }
+    }
+        //where:
+        private static void markModuleAsIncubator(Path moduleInfoFile) throws Exception {
+            ClassFile cf = ClassFile.read(moduleInfoFile);
+            List<CPInfo> newPool = new ArrayList<>();
+            newPool.add(null);
+            cf.constant_pool.entries().forEach(newPool::add);
+            int moduleResolutionIndex = newPool.size();
+            newPool.add(new ConstantPool.CONSTANT_Utf8_info(Attribute.ModuleResolution));
+            Map<String, Attribute> newAttributes = new HashMap<>(cf.attributes.map);
+            newAttributes.put(Attribute.ModuleResolution,
+                              new ModuleResolution_attribute(moduleResolutionIndex,
+                                                             ModuleResolution_attribute.WARN_INCUBATING));
+            ClassFile newClassFile = new ClassFile(cf.magic,
+                                                   cf.minor_version,
+                                                   cf.major_version,
+                                                   new ConstantPool(newPool.toArray(new CPInfo[0])),
+                                                   cf.access_flags,
+                                                   cf.this_class,
+                                                   cf.super_class,
+                                                   cf.interfaces,
+                                                   cf.fields,
+                                                   cf.methods,
+                                                   new Attributes(newAttributes));
+            try (OutputStream out = Files.newOutputStream(moduleInfoFile)) {
+                new ClassWriter().write(newClassFile, out);
+            }
+        }
+
     Result run(Path file, List<String> runtimeArgs, List<String> appArgs) {
         List<String> args = new ArrayList<>();
         args.add(file.toString());
@@ -661,6 +770,14 @@ public class SourceLauncherTest extends TestRunner {
         out.println(name + ": " + found);
         if (!expect.equals(found)) {
             error("Unexpected output; expected: " + expect);
+        }
+    }
+
+    void checkContains(String name, String found, String expect) {
+        expect = expect.replace("\n", tb.lineSeparator);
+        out.println(name + ": " + found);
+        if (!found.contains(expect)) {
+            error("Expected output not found: " + expect);
         }
     }
 

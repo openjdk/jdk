@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,55 @@
 
 <Metadata>
 
+  <!-- Internal events are only to be used during development, i.e. temporary time measurements, without the need
+       to modify .jfc files etc. Code that commits an internal event should NEVER be checked in.
+
+       Example usage:
+
+       #include "jfr/jfrEvents.hpp"
+
+       void foo() {
+         EventDuration event;
+         bar();
+         baz();
+         event.commit();
+       }
+
+       $ make images
+       $ java -XX:StartFlightRecording:settings=none,filename=dump.jfr ...
+       ...
+       $ jfr print dump.jfr
+
+       Programmatic access:
+       try (var rf = new RecordingFile(Path.of("dump.jfr)) {
+           while (rf.hasMoreEvents()) {
+               RecordedEvent e = rf.readEvent();
+               System.out.println(e.getName() + " " + e.getDuration()));
+           }
+       };
+  !-->
+
+  <Event name="Duration" category="Java Virtual Machine, Internal" label="Duration" startTime="true" thread="true" stackTrace="false" internal="true">
+  </Event>
+
+  <Event name="Instant" category="Java Virtual Machine, Internal" label="Instant" startTime="false" thread="true" stackTrace="false" internal="true">
+  </Event>
+
+  <Event name="Value" category="Java Virtual Machine, Internal" label="Value" startTime="false" thread="true" stackTrace="false" internal="true">
+    <Field type="ulong" name="value" label="Value"/>
+  </Event>
+
+  <Event name="Text" category="Java Virtual Machine, Internal" label="Text" startTime="false" thread="true" stackTrace="false" internal="true">
+    <Field type="string" name="text" label="Text"/>
+  </Event>
+
+  <Event name="ZThreadDebug" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Event" description="Temporary latency measurements used during development and debugging of ZGC" thread="true" internal="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <!-- Ordinary and experimental events !-->
+
   <Event name="ThreadStart" category="Java Application" label="Java Thread Start" thread="true" startTime="false" stackTrace="true">
     <Field type="Thread" name="thread" label="New Java Thread" />
     <Field type="Thread" name="parentThread" label="Parent Java Thread" />
@@ -33,10 +82,6 @@
 
   <Event name="ThreadEnd" category="Java Application" label="Java Thread End" thread="true" startTime="false">
     <Field type="Thread" name="thread" label="Java Thread" />
-  </Event>
-
-  <Event name="ThreadSleep" category="Java Application" label="Java Thread Sleep" thread="true" stackTrace="true">
-    <Field type="long" contentType="millis" name="time" label="Sleep Time" />
   </Event>
 
   <Event name="ThreadPark" category="Java Application" label="Java Thread Park" thread="true" stackTrace="true">
@@ -68,6 +113,44 @@
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
     <Field type="Class" name="valueBasedClass" label="Value Based Class" />
+  </Event>
+
+  <Event name="ContinuationFreeze" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Yield" description="Invocation of Continuation.yield()"
+    thread="true" stackTrace="true">
+    <Field type="Thread" name="carrierThread" label="Carrier Thread" description="Thread enlisted as a carrier" />
+    <Field type="Class" name="continuationClass" label="Continuation Class" />
+    <Field type="ushort" name="interpretedFrames" label="Interpreted Frames" />
+    <Field type="ushort" name="references" label="References" />
+    <Field type="ushort" contentType="bytes" name="size" label="Stack Size" />
+  </Event>
+
+  <Event name="ContinuationThaw" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Continue" description="Invocation of Continuation.run() on a started continuation"
+    thread="true" stackTrace="true">
+    <Field type="Thread" name="carrierThread" label="Carrier Thread" description="Thread enlisted as a carrier" />
+    <Field type="Class" name="continuationClass" label="Continuation Class" />
+    <Field type="ushort" name="interpretedFrames" label="Interpreted Frames" />
+    <Field type="ushort" name="references" label="References" />
+    <Field type="ushort" contentType="bytes" name="size" label="Stack Size" />
+  </Event>
+
+  <Event name="ContinuationFreezeYoung" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Freeze Young" thread="true" stackTrace="false" startTime="false">
+    <Field type="ulong" name="id" label="Continuation ID" />
+    <Field type="uint" name="size" label="Size" />
+    <Field type="boolean" name="allocate" label="Allocated New" />
+  </Event>
+
+  <Event name="ContinuationFreezeOld" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Freeze Old" thread="true" stackTrace="false" startTime="false">
+    <Field type="ulong" name="id" label="Continuation ID" />
+  </Event>
+
+  <Event name="ContinuationThawYoung" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Young" thread="true" stackTrace="false" startTime="false">
+    <Field type="ulong" name="id" label="Continuation ID" />
+    <Field type="boolean" name="full" label="Full" />
+    <Field type="uint" name="size" label="Size" />
+  </Event>
+
+  <Event name="ContinuationThawOld" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Old" thread="true" stackTrace="false" startTime="false">
+    <Field type="ulong" name="id" label="Continuation ID" />
   </Event>
 
   <Event name="ReservedStackActivation" category="Java Virtual Machine, Runtime" label="Reserved Stack Activation"
@@ -330,8 +413,10 @@
     <Field type="ulong" contentType="bytes" name="used" label="Used" description="Total memory occupied by objects within PLABs" />
     <Field type="ulong" contentType="bytes" name="undoWaste" label="Undo Wasted" description="Total memory wasted due to allocation undo within PLABs" />
     <Field type="ulong" contentType="bytes" name="regionEndWaste" label="Region End Wasted" description="Total memory wasted at the end of regions due to refill" />
-    <Field type="uint" contentType="bytes" name="regionsRefilled" label="Region Refills" description="Total memory wasted at the end of regions due to refill" />
+    <Field type="uint" name="regionsRefilled" label="Region Refills" description="Number of regions refilled" />
+    <Field type="ulong" name="numPlabsFilled" label="PLAB Fills" description="Number of PLABs filled" />
     <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (direct)" description="Total memory allocated using direct allocation outside of PLABs" />
+    <Field type="ulong" name="numDirectAllocated" label="Direct allocations" description="Number of direct allocations" />
     <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (failure)" description="Total memory occupied by objects in regions where evacuation failed" />
     <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (failure)" description="Total memory left unused in regions where evacuation failed" />
   </Type>
@@ -375,25 +460,25 @@
   </Event>
 
   <Event name="PromoteObjectInNewPLAB" category="Java Virtual Machine, GC, Detailed" label="Promotion in new PLAB"
-    description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
+    description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavenge, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
     thread="true" stackTrace="false" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" description="Identifier signifying GC during which the object was promoted" />
     <Field type="Class" name="objectClass" label="Object Class" description="Class of promoted object" />
     <Field type="ulong" contentType="bytes" name="objectSize" label="Object Size" description="Size of promoted object" />
     <Field type="uint" name="tenuringAge" label="Object Tenuring Age"
-      description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavange the object survives. Newly allocated objects have tenuring age 0." />
+      description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavenge the object survives. Newly allocated objects have tenuring age 0." />
     <Field type="boolean" name="tenured" label="Tenured" description="True if object was promoted to Old space, otherwise the object was aged and copied to a Survivor space" />
     <Field type="ulong" contentType="bytes" name="plabSize" label="PLAB Size" description="Size of the allocated PLAB to which the object was copied" />
   </Event>
 
   <Event name="PromoteObjectOutsidePLAB" category="Java Virtual Machine, GC, Detailed" label="Promotion outside PLAB"
-    description="Object survived scavenge and was copied directly to the heap. Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
+    description="Object survived scavenge and was copied directly to the heap. Supported GCs are Parallel Scavenge, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
     thread="true" stackTrace="false" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" description="Identifier signifying GC during which the object was promoted" />
     <Field type="Class" name="objectClass" label="Object Class" description="Class of promoted object" />
     <Field type="ulong" contentType="bytes" name="objectSize" label="Object Size" description="Size of promoted object" />
     <Field type="uint" name="tenuringAge" label="Object Tenuring Age"
-      description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavange the object survives. Newly allocated objects have tenuring age 0." />
+      description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavenge the object survives. Newly allocated objects have tenuring age 0." />
     <Field type="boolean" name="tenured" label="Tenured" description="True if object was promoted to Old space, otherwise the object was aged and copied to a Survivor space" />
   </Event>
 
@@ -475,7 +560,12 @@
     <Field type="ulong" contentType="bytes" name="used" label="Used" />
   </Event>
 
-  <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation" thread="true" commitState="_thread_in_native">
+  <Event name="JitRestart" category="Java Virtual Machine, Compiler" label="JIT Restart" stackTrace="false" startTime="false" thread="true">
+    <Field type="ulong" contentType="bytes" name="freedMemory" label="Freed Memory" />
+    <Field type="ulong" contentType="bytes" name="codeCacheMaxCapacity" label="Code Cache Maximum Capacity" />
+  </Event>
+
+  <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation" thread="true">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
     <Field type="Method" name="method" label="Method" />
@@ -503,20 +593,13 @@
     <Field type="string" name="descriptor" label="Method Descriptor" />
   </Type>
 
-  <Event name="CompilerInlining" category="Java Virtual Machine, Compiler, Optimization" label="Method Inlining" thread="true" startTime="false" commitState="_thread_in_native">
+  <Event name="CompilerInlining" category="Java Virtual Machine, Compiler, Optimization" label="Method Inlining" thread="true" startTime="false">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="Method" name="caller" label="Caller Method" />
     <Field type="CalleeMethod" name="callee" struct="true" label="Callee Method" />
     <Field type="boolean" name="succeeded" label="Succeeded" />
     <Field type="string" name="message" label="Message" />
     <Field type="int" name="bci" label="Bytecode Index" />
-  </Event>
-
-  <Event name="SweepCodeCache" category="Java Virtual Machine, Code Sweeper" label="Sweep Code Cache" thread="true" >
-    <Field type="int" name="sweepId" label="Sweep Identifier" relation="SweepId" />
-    <Field type="uint" name="sweptCount" label="Methods Swept" />
-    <Field type="uint" name="flushedCount" label="Methods Flushed" />
-    <Field type="uint" name="zombifiedCount" label="Methods Zombified" />
   </Event>
 
   <Event name="CodeCacheFull" category="Java Virtual Machine, Code Cache" label="Code Cache Full" thread="true" startTime="false">
@@ -529,6 +612,7 @@
     <Field type="int" name="adaptorCount" label="Adaptors" />
     <Field type="ulong" contentType="bytes" name="unallocatedCapacity" label="Unallocated" />
     <Field type="int" name="fullCount" label="Full Count" />
+    <Field type="ulong" contentType="bytes" name="codeCacheMaxCapacity" label="Code Cache Maximum Capacity" />
   </Event>
 
   <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization" thread="true" stackTrace="true" startTime="false">
@@ -573,7 +657,7 @@
 
   <Event name="ExecuteVMOperation" category="Java Virtual Machine, Runtime" label="VM Operation" description="Execution of a VM Operation" thread="true">
     <Field type="VMOperationType" name="operation" label="Operation" />
-    <Field type="boolean" name="safepoint" label="At Safepoint" description="If the operation occured at a safepoint" />
+    <Field type="boolean" name="safepoint" label="At Safepoint" description="If the operation occurred at a safepoint" />
     <Field type="boolean" name="blocking" label="Caller Blocked" description="If the calling thread was blocked until the operation was complete" />
     <Field type="Thread" name="caller" label="Caller" transition="from"
       description="Thread requesting operation. If non-blocking, will be set to 0 indicating thread is unknown" />
@@ -751,42 +835,6 @@
     <Field type="float" name="removalRate" label="Removal Rate" description="How many items were removed since last event (per second)" />
   </Event>
 
-  <Event name="PlaceholderTableStatistics" category="Java Virtual Machine, Runtime, Tables" label="Placeholder Table Statistics" period="everyChunk">
-    <Field type="ulong" name="bucketCount" label="Bucket Count" description="Number of buckets" />
-    <Field type="ulong" name="entryCount" label="Entry Count" description="Number of all entries" />
-    <Field type="ulong" contentType="bytes" name="totalFootprint" label="Total Footprint" description="Total memory footprint (the table itself plus all of the entries)" />
-    <Field type="ulong" name="bucketCountMaximum" label="Maximum Bucket Count" description="The maximum bucket length (entries in a single bucket)" />
-    <Field type="float" name="bucketCountAverage" label="Average Bucket Count" description="The average bucket length" />
-    <Field type="float" name="bucketCountVariance" label="Bucket Count Variance" description="How far bucket lengths are spread out from their average value" />
-    <Field type="float" name="bucketCountStandardDeviation" label="Bucket Count Standard Deviation" description="How far bucket lengths are spread out from their mean (expected) value" />
-    <Field type="float" name="insertionRate" label="Insertion Rate" description="How many items were added since last event (per second)" />
-    <Field type="float" name="removalRate" label="Removal Rate" description="How many items were removed since last event (per second)" />
-  </Event>
-
-  <Event name="LoaderConstraintsTableStatistics" category="Java Virtual Machine, Runtime, Tables" label="Loader Constraints Table Statistics" period="everyChunk">
-    <Field type="ulong" name="bucketCount" label="Bucket Count" />
-    <Field type="ulong" name="entryCount" label="Entry Count" description="Number of all entries" />
-    <Field type="ulong" contentType="bytes" name="totalFootprint" label="Total Footprint" description="Total memory footprint (the table itself plus all of the entries)" />
-    <Field type="ulong" name="bucketCountMaximum" label="Maximum Bucket Count" description="The maximum bucket length (entries in a single bucket)" />
-    <Field type="float" name="bucketCountAverage" label="Average Bucket Count" description="The average bucket length" />
-    <Field type="float" name="bucketCountVariance" label="Bucket Count Variance" description="How far bucket lengths are spread out from their average value" />
-    <Field type="float" name="bucketCountStandardDeviation" label="Bucket Count Standard Deviation" description="How far bucket lengths are spread out from their mean (expected) value" />
-    <Field type="float" name="insertionRate" label="Insertion Rate" description="How many items were added since last event (per second)" />
-    <Field type="float" name="removalRate" label="Removal Rate" description="How many items were removed since last event (per second)" />
-  </Event>
-
-  <Event name="ProtectionDomainCacheTableStatistics" category="Java Virtual Machine, Runtime, Tables" label="Protection Domain Cache Table Statistics" period="everyChunk">
-    <Field type="ulong" name="bucketCount" label="Bucket Count" description="Number of buckets" />
-    <Field type="ulong" name="entryCount" label="Entry Count" description="Number of all entries" />
-    <Field type="ulong" contentType="bytes" name="totalFootprint" label="Total Footprint" description="Total memory footprint (the table itself plus all of the entries)" />
-    <Field type="ulong" name="bucketCountMaximum" label="Maximum Bucket Count" description="The maximum bucket length (entries in a single bucket)" />
-    <Field type="float" name="bucketCountAverage" label="Average Bucket Count" description="The average bucket length" />
-    <Field type="float" name="bucketCountVariance" label="Bucket Count Variance" description="How far bucket lengths are spread out from their average value" />
-    <Field type="float" name="bucketCountStandardDeviation" label="Bucket Count Standard Deviation" description="How far bucket lengths are spread out from their mean (expected) value" />
-    <Field type="float" name="insertionRate" label="Insertion Rate" description="How many items were added since last event (per second)" />
-    <Field type="float" name="removalRate" label="Removal Rate" description="How many items were removed since last event (per second)" />
-  </Event>
-
   <Event name="ThreadAllocationStatistics" category="Java Application, Statistics" label="Thread Allocation Statistics" period="everyChunk">
     <Field type="ulong" contentType="bytes" name="allocated" label="Allocated" description="Approximate number of bytes allocated since thread start" />
     <Field type="Thread" name="thread" label="Thread" />
@@ -873,20 +921,6 @@
     <Field type="ulong" contentType="bytes" name="minBlockLength" label="Minimum Block Length" />
     <Field type="ulong" contentType="address" name="startAddress" label="Start Address" />
     <Field type="ulong" contentType="address" name="reservedTopAddress" label="Reserved Top" />
-  </Event>
-
-  <Event name="CodeSweeperStatistics" category="Java Virtual Machine, Code Sweeper" label="Code Sweeper Statistics" thread="false" period="everyChunk" startTime="false">
-    <Field type="int" name="sweepCount" label="Sweeps" />
-    <Field type="int" name="methodReclaimedCount" label="Methods Reclaimed" />
-    <Field type="Tickspan" name="totalSweepTime" label="Time Spent Sweeping" />
-    <Field type="Tickspan" name="peakFractionTime" label="Peak Time Fraction Sweep" />
-    <Field type="Tickspan" name="peakSweepTime" label="Peak Time Full Sweep" />
-  </Event>
-
-  <Event name="CodeSweeperConfiguration" category="Java Virtual Machine, Code Sweeper" label="Code Sweeper Configuration" thread="false" period="endChunk" startTime="false">
-    <Field type="boolean" name="sweeperEnabled" label="Code Sweeper Enabled" />
-    <Field type="boolean" name="flushingEnabled" label="Code Cache Flushing Enabled" />
-    <Field type="ulong" contentType="bytes" name="sweepThreshold" label="Sweep Threshold" />
   </Event>
 
   <Event name="IntFlag" category="Java Virtual Machine, Flag" period="endChunk" label="Int Flag">
@@ -1081,6 +1115,13 @@
     <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
 
+  <Event name="FinalizerStatistics" category="Java Application, Statistics" label="Finalizer Statistics" description="Per class statistics about finalizers" thread="false" startTime="false" period="endChunk">
+    <Field type="Class" name="finalizableClass" label="Class Overriding Finalize" />
+    <Field type="Symbol" name="codeSource" label="Code Source" description="URL from where the class was loaded" />
+    <Field type="ulong" name="objects" label="Finalizable Objects on Heap" description="Number of objects on heap that can be finalized" />
+    <Field type="ulong" name="totalFinalizersRun" label="Finalizers Run" description="Total number of finalizers run since JVM start" />
+  </Event>
+
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
     <Field type="string" name="reason" label="Reason" />
   </Type>
@@ -1119,6 +1160,7 @@
     <Field type="string" name="javaName" label="Java Thread Name" />
     <Field type="long" name="javaThreadId" label="Java Thread Id" />
     <Field type="ThreadGroup" name="group" label="Java Thread Group" />
+    <Field type="boolean" name="virtual" label="Virtual Thread" />
   </Type>
 
   <Type name="ThreadGroup" label="Thread Group">

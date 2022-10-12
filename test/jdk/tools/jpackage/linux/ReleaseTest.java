@@ -24,6 +24,7 @@
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
 
 
 /**
@@ -47,10 +48,26 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @build ReleaseTest
  * @requires (os.family == "linux")
+ * @requires (jpackage.test.SQETest == null)
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ReleaseTest
  */
+
+/*
+ * @test
+ * @summary jpackage with --linux-app-release
+ * @library ../helpers
+ * @key jpackagePlatformPackage
+ * @build jdk.jpackage.test.*
+ * @build ReleaseTest
+ * @requires (os.family == "linux")
+ * @requires (jpackage.test.SQETest != null)
+ * @modules jdk.jpackage/jdk.jpackage.internal
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=ReleaseTest.test
+ */
+
 public class ReleaseTest {
 
     @Test
@@ -69,6 +86,19 @@ public class ReleaseTest {
                 .addBundlePropertyVerifier("Version", propValue -> {
                     return propValue.endsWith("-" + RELEASE);
                 }, "ends with")
+                .run();
+    }
+
+    @Test
+    public static void testNoExplitRelease() {
+        new PackageTest()
+                .forTypes(PackageType.LINUX)
+                .configureHelloApp()
+                .addInitializer(JPackageCommand::setFakeRuntime)
+                .forTypes(PackageType.LINUX_RPM)
+                .addBundlePropertyVerifier("Release", "1")
+                .forTypes(PackageType.LINUX_DEB)
+                .addBundlePropertyVerifier("Version", "1.0")
                 .run();
     }
 }

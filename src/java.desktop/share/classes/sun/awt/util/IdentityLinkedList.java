@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,7 @@ public class IdentityLinkedList<E>
      * Returns {@code true} if this list contains the specified element.
      * More formally, returns {@code true} if and only if this list contains
      * at least one element {@code e} such that
-     * {@code Objects.equals(o, e)}.
+     * {@code o == e}.
      *
      * @param o element whose presence in this list is to be tested
      * @return {@code true} if this list contains the specified element
@@ -218,7 +218,7 @@ public class IdentityLinkedList<E>
      * Removes the first occurrence of the specified element from this list,
      * if it is present.  If this list does not contain the element, it is
      * unchanged.  More formally, removes the element with the lowest index
-     * {@code i} such that {@code get(i)==o}
+     * {@code i} such that {@code get(i) == o}
      * (if such an element exists).  Returns {@code true} if this list
      * contained the specified element (or equivalently, if this list
      * changed as a result of the call).
@@ -389,7 +389,7 @@ public class IdentityLinkedList<E>
      * Returns the index of the first occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
      * More formally, returns the lowest index {@code i} such that
-     * {@code get(i)==o},
+     * {@code get(i) == o},
      * or -1 if there is no such index.
      *
      * @param o element to search for
@@ -411,7 +411,7 @@ public class IdentityLinkedList<E>
      * Returns the index of the last occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
      * More formally, returns the highest index {@code i} such that
-     * {@code get(i)==o},
+     * {@code get(i) == o},
      * or -1 if there is no such index.
      *
      * @param o element to search for

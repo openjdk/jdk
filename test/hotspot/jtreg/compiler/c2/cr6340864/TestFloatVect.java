@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
  * @bug 6340864
  * @summary Implement vectorization optimizations in hotspot-server
  *
- * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m compiler.c2.cr6340864.TestFloatVect
- * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestFloatVect
- * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=16 compiler.c2.cr6340864.TestFloatVect
- * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestFloatVect
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic compiler.c2.cr6340864.TestFloatVect
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestFloatVect
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=16 compiler.c2.cr6340864.TestFloatVect
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestFloatVect
  */
 
 package compiler.c2.cr6340864;
@@ -52,6 +52,7 @@ public class TestFloatVect {
 
   static int test() {
     float[] a0 = new float[ARRLEN];
+    int[] i0 = new int[ARRLEN];
     float[] a1 = new float[ARRLEN];
     float[] a2 = new float[ARRLEN];
     float[] a3 = new float[ARRLEN];
@@ -87,8 +88,11 @@ public class TestFloatVect {
       test_divv(a0, a1, -VALUE);
       test_diva(a0, a1, a3);
       test_negc(a0, a1);
+      test_signum(a0, a1);
       test_sqrt(a0, a1);
+      test_round(i0, a1);
     }
+
     // Test and verify results
     System.out.println("Verification");
     int errn = 0;
@@ -342,6 +346,7 @@ public class TestFloatVect {
         errn += verify("test_diva_n: ", i, a0[i], ((ADD_INIT+i)/(-VALUE)));
       }
 
+
       test_negc(a0, a1);
       errn += verify("test_negc: ", 0, a0[0], (Float.NaN));
       errn += verify("test_negc: ", 1, a0[1], (Float.NEGATIVE_INFINITY));
@@ -369,6 +374,47 @@ public class TestFloatVect {
         errn += verify("test_sqrt: ", i, a0[i], (float)(Math.sqrt((double)(ADD_INIT+i))));
       }
 
+      test_signum(a0, a1);
+      errn += verify("test_signum: ", 0, a0[0], (Float.NaN));
+      errn += verify("test_signum: ", 1, a0[1],  1.0f);
+      errn += verify("test_signum: ", 2, a0[2], -1.0f);
+      errn += verify("test_signum: ", 3, a0[3],  1.0f);
+      errn += verify("test_signum: ", 4, a0[4],  1.0f);
+      errn += verify("test_signum: ", 5, a0[5],  1.0f);
+      errn += verify("test_signum: ", 6, a0[6],  0.0f);
+      errn += verify("test_signum: ", 7, a0[7], -0.0f);
+      for (int i=8; i<ARRLEN; i++) {
+        errn += verify("test_signum: ", i, a0[i], (((float)(ADD_INIT+i)) > 0.0f ? 1.0f : -1.0f));
+      }
+
+      a1[6] = +0x1.fffffep-2f;
+      a1[7] = +0x1.0p-1f;
+      a1[8] = +0x1.000002p-1f;
+      a1[9] = -0x1.fffffep-2f;
+      a1[10] = -0x1.0p-1f;
+      a1[11] = -0x1.000002p-1f;
+      a1[12] = 3.4028235E10f;
+      a1[13] = -3.4028235E10f;
+
+      test_round(i0, a1);
+      errn += verify("test_round: ", 0, i0[0], 0);
+      errn += verify("test_round: ", 1, i0[1], Integer.MAX_VALUE);
+      errn += verify("test_round: ", 2, i0[2], Integer.MIN_VALUE);
+      errn += verify("test_round: ", 3, i0[3], Integer.MAX_VALUE);
+      errn += verify("test_round: ", 4, i0[4], 0);
+      errn += verify("test_round: ", 5, i0[5], 0);
+      errn += verify("test_round: ", 6, i0[6], 0);
+      errn += verify("test_round: ", 7, i0[7], 1);
+      errn += verify("test_round: ", 8, i0[8], 1);
+      errn += verify("test_round: ", 9, i0[9], 0);
+      errn += verify("test_round: ", 10, i0[10], 0);
+      errn += verify("test_round: ", 11, i0[11], -1);
+      errn += verify("test_round: ", 12, i0[12], Integer.MAX_VALUE);
+      errn += verify("test_round: ", 13, i0[13], Integer.MIN_VALUE);
+
+      for (int i=14; i<ARRLEN; i++) {
+        errn += verify("test_round: ", i, i0[i], Math.round(((float)(ADD_INIT+i))));
+      }
     }
 
     if (errn > 0)
@@ -507,11 +553,24 @@ public class TestFloatVect {
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
+      test_signum(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_signum_n: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
       test_sqrt(a0, a1);
     }
     end = System.currentTimeMillis();
     System.out.println("test_sqrt_n: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_round(i0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_round_n: " + (end - start));
     return errn;
   }
 
@@ -597,6 +656,12 @@ public class TestFloatVect {
     }
   }
 
+  static void test_signum(float[] a0, float[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.signum(a1[i]);
+    }
+  }
+
   static void test_negc(float[] a0, float[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (float)(-((float)a1[i]));
@@ -607,6 +672,20 @@ public class TestFloatVect {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (float)(Math.sqrt((double)a1[i]));
     }
+  }
+
+  static void test_round(int[] a0, float[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.round(a1[i]);
+    }
+  }
+
+  static int verify(String text, int i, int elem, int val) {
+    if (elem != val) {
+      System.err.println(text + "[" + i + "] = " + elem + " != " + val);
+      return 1;
+    }
+    return 0;
   }
 
   static int verify(String text, int i, float elem, float val) {

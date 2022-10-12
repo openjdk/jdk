@@ -39,6 +39,7 @@ import org.w3c.dom.NodeList;
 public class XRTreeFrag extends XObject implements Cloneable
 {
     static final long serialVersionUID = -3201553822254911567L;
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private DTMXRTreeFrag m_DTMXRTreeFrag;
   private int m_dtmRoot = DTM.NULL;
   protected boolean m_allowRelease = false;
@@ -169,6 +170,7 @@ public class XRTreeFrag extends XObject implements Cloneable
     return true;
   }
 
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private XMLString m_xmlStr = null;
 
   /**

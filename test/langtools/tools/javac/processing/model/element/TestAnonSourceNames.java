@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.lang.model.util.*;
 import java.util.*;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Using the tree API, retrieve element representations of anonymous
@@ -65,9 +64,8 @@ public class TestAnonSourceNames extends JavacTestingAbstractProcessor {
        public Void visitClass(ClassTree node, CompilationUnitTree cu) {
                      Element element = trees.getElement(trees.getPath(cu, node));
            if (element == null) {
-               processingEnv.getMessager().printMessage(ERROR,
-                                                        "No element retrieved for node named ''" +
-                                                        node.getSimpleName() + "''.");
+               processingEnv.getMessager().printError("No element retrieved for node named ''" +
+                                                      node.getSimpleName() + "''.");
            } else {
 
                System.out.println("\nVisiting class ``" + element.getSimpleName() +

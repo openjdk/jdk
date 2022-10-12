@@ -139,6 +139,13 @@ class BadArgumentsAnnotation {
     @Test
     public void noArgAnnotation(int a) {}
 
+    @FailCount(0) // Combined with both checkNoArgAnnotation2() below
+    @Test
+    public void noArgAnnotation2(int a) {}
+
+    @Check(test = "noArgAnnotation2")
+    public void checkNoArgAnnotation2() {}
+
     @Test
     @Arguments(Argument.DEFAULT)
     public void argNumberMismatch(int a, int b) {}

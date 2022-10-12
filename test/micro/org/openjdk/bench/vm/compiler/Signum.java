@@ -40,9 +40,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(3)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public class Signum {
 
     private final int ITERATIONS = 15000;
@@ -100,6 +100,16 @@ public class Signum {
         return Math.signum(data);
     }
 
+    private static double Copysign_Kernel(double data, double sign)
+    {
+        return Math.copySign(data, sign);
+    }
+
+    private static float Copysign_Kernel(float data, float sign)
+    {
+        return Math.copySign(data, sign);
+    }
+
     @Benchmark
     @OperationsPerInvocation(ITERATIONS * 17)
     public void _1_signumFloatTest(Blackhole bh) {
@@ -139,4 +149,45 @@ public class Signum {
             }
         }
     }
+
+    @Benchmark
+    @OperationsPerInvocation(ITERATIONS * 17)
+    public void _5_copySignFloatTest(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            for (float f : float_values) {
+                bh.consume(Copysign_Kernel(floatValue, f));
+            }
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(ITERATIONS * 17)
+    public void _6_overheadCopySignFloat(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            for (float f : float_values) {
+                bh.consume(f);
+            }
+       }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(ITERATIONS * 17)
+    public void _7_copySignDoubleTest(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            for (double d : double_values) {
+                bh.consume(Copysign_Kernel(doubleValue, d));
+            }
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(ITERATIONS * 17)
+    public void _8_overheadCopySignDouble(Blackhole bh) {
+        for (int i = 0; i < ITERATIONS; i++) {
+            for (double d : double_values) {
+                bh.consume(d);
+            }
+        }
+    }
+
 }

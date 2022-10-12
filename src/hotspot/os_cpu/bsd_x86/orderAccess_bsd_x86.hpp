@@ -60,8 +60,12 @@ inline void OrderAccess::fence() {
 }
 
 inline void OrderAccess::cross_modify_fence_impl() {
-  int idx = 0;
-  __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
+  if (VM_Version::supports_serialize()) {
+    __asm__ volatile (".byte 0x0f, 0x01, 0xe8\n\t" : : :); //serialize
+  } else {
+    int idx = 0;
+    __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
+  }
 }
 
 #endif // OS_CPU_BSD_X86_ORDERACCESS_BSD_X86_HPP

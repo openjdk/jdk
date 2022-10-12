@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 
 package java.security;
 
-import java.io.IOException;
-import java.io.EOFException;
-import java.io.OutputStream;
 import java.io.FilterOutputStream;
-import java.io.PrintStream;
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * A transparent stream that updates the associated message digest using
@@ -155,8 +152,8 @@ public class DigestOutputStream extends FilterOutputStream {
      * update on the message digest.  But when it is off, the message
      * digest is not updated.
      *
-     * @param on true to turn the digest function on, false to turn it
-     * off.
+     * @param on {@code true} to turn the digest function on,
+     * {@code false} to turn it off.
      */
     public void on(boolean on) {
         this.on = on;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ final class CertificateStatus {
             statusType = CertStatusRequestType.valueOf((byte)Record.getInt8(m));
             if (statusType == CertStatusRequestType.OCSP) {
                 byte[] respDER = Record.getBytes24(m);
-                // Convert the incoming bytes to a OCSPResponse strucutre
+                // Convert the incoming bytes to a OCSPResponse structure
                 if (respDER.length > 0) {
                     encodedResponses.add(respDER);
                     encodedResponsesLen = 3 + respDER.length;
@@ -164,7 +164,7 @@ final class CertificateStatus {
                 int respListLen = Record.getInt24(m);
                 encodedResponsesLen = respListLen;
 
-                // Add each OCSP reponse into the array list in the order
+                // Add each OCSP response into the array list in the order
                 // we receive them off the wire.  A zero-length array is
                 // allowed for ocsp_multi, and means that a response for
                 // a given certificate is not available.

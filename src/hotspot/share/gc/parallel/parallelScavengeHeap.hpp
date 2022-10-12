@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
@@ -50,6 +50,26 @@ class PSAdaptiveSizePolicy;
 class PSCardTable;
 class PSHeapSummary;
 
+// ParallelScavengeHeap is the implementation of CollectedHeap for Parallel GC.
+//
+// The heap is reserved up-front in a single contiguous block, split into two
+// parts, the old and young generation. The old generation resides at lower
+// addresses, the young generation at higher addresses. The boundary address
+// between the generations is fixed. Within a generation, committed memory
+// grows towards higher addresses.
+//
+//
+// low                                                                high
+//
+//                          +-- generation boundary (fixed after startup)
+//                          |
+// |<- old gen (reserved) ->|<-       young gen (reserved)             ->|
+// +---------------+--------+-----------------+--------+--------+--------+
+// |      old      |        |       eden      |  from  |   to   |        |
+// |               |        |                 |  (to)  | (from) |        |
+// +---------------+--------+-----------------+--------+--------+--------+
+// |<- committed ->|        |<-          committed            ->|
+//
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
  private:
@@ -71,7 +91,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;
 
-  WorkGang _workers;
+  WorkerThreads _workers;
 
   virtual void initialize_serviceability();
 
@@ -98,10 +118,7 @@ class ParallelScavengeHeap : public CollectedHeap {
     _eden_pool(NULL),
     _survivor_pool(NULL),
     _old_pool(NULL),
-    _workers("GC Thread",
-             ParallelGCThreads,
-             true /* are_GC_task_threads */,
-             false /* are_ConcurrentGC_threads */) { }
+    _workers("GC Thread", ParallelGCThreads) { }
 
   // For use by VM operations
   enum CollectionType {
@@ -139,6 +156,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Returns JNI_OK on success
   virtual jint initialize();
 
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
+
   void post_initialize();
   void update_counters();
 
@@ -153,7 +173,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nm);
-  virtual void flush_nmethod(nmethod* nm);
 
   void prune_scavengable_nmethods();
 
@@ -164,8 +183,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   bool is_in_reserved(const void* p) const;
 
-  bool is_in_young(oop p);  // reserved part
-  bool is_in_old(oop p);    // reserved part
+  bool is_in_young(const void* p) const;
+
+  virtual bool requires_barriers(stackChunkOop obj) const;
 
   MemRegion reserved_region() const { return _reserved; }
   HeapWord* base() const { return _reserved.start(); }
@@ -197,11 +217,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Perform a full collection
   virtual void do_full_collection(bool clear_all_soft_refs);
 
-  bool supports_inline_contig_alloc() const { return !UseNUMA; }
-
-  HeapWord* volatile* top_addr() const { return !UseNUMA ? young_gen()->top_addr() : (HeapWord* volatile*)-1; }
-  HeapWord** end_addr() const { return !UseNUMA ? young_gen()->end_addr() : (HeapWord**)-1; }
-
   void ensure_parsability(bool retire_tlabs);
   void resize_all_tlabs();
 
@@ -211,7 +226,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void object_iterate(ObjectClosure* cl);
   void object_iterate_parallel(ObjectClosure* cl, HeapBlockClaimer* claimer);
-  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num);
 
   HeapWord* block_start(const void* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
@@ -223,7 +238,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 
-  virtual WorkGang* safepoint_workers() { return &_workers; }
+  virtual WorkerThreads* safepoint_workers() { return &_workers; }
 
   PreGenGCValues get_pre_gc_values() const;
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
@@ -247,19 +262,17 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Mangle the unused parts of all spaces in the heap
   void gen_mangle_unused_area() PRODUCT_RETURN;
 
-  // Call these in sequential code around the processing of strong roots.
-  class ParStrongRootsScope : public MarkScope {
-   public:
-    ParStrongRootsScope();
-    ~ParStrongRootsScope();
-  };
-
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }
 
-  WorkGang& workers() {
+  WorkerThreads& workers() {
     return _workers;
   }
+
+  // Support for loading objects from CDS archive into the heap
+  bool can_load_archived_objects() const { return UseCompressedOops; }
+  HeapWord* allocate_loaded_archive_space(size_t size);
+  void complete_loaded_archive_space(MemRegion archive_space);
 };
 
 // Class that can be used to print information about the

@@ -25,6 +25,7 @@
  * @test
  * @bug 8260349
  * @summary test that setting via the env-var and options file shows up as expected
+ * @requires vm.flagless
  * @library /test/lib
  * @run driver MaxMetaspaceSizeEnvVarTest
  */

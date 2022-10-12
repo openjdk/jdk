@@ -63,5 +63,4 @@ public final class FinishedStream extends EventByteStream {
     public synchronized void close() throws IOException {
         inputStream.close();
     }
-
 }

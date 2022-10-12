@@ -39,6 +39,14 @@ int LogBitsPerHeapOop  = 0;
 int BytesPerHeapOop    = 0;
 int BitsPerHeapOop     = 0;
 
+// Old CDS options
+bool DumpSharedSpaces;
+bool DynamicDumpSharedSpaces;
+bool RequireSharedSpaces;
+extern "C" {
+JNIEXPORT jboolean UseSharedSpaces = true;
+}
+
 // Object alignment, in units of HeapWords.
 // Defaults are -1 so things will break badly if incorrectly initialized.
 int MinObjAlignment            = -1;
@@ -315,7 +323,7 @@ int _type2aelembytes[T_CONFLICT+1] = {
 
 #ifdef ASSERT
 int type2aelembytes(BasicType t, bool allow_address) {
-  assert(allow_address || t != T_ADDRESS, " ");
+  assert((allow_address || t != T_ADDRESS) && t <= T_CONFLICT, "unexpected basic type");
   return _type2aelembytes[t];
 }
 #endif

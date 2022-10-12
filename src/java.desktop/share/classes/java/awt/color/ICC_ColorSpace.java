@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -527,16 +527,16 @@ public class ICC_ColorSpace extends ColorSpace {
                     ColorTransform[] transforms = new ColorTransform[2];
                     var xyz = (ICC_ColorSpace) getInstance(CS_CIEXYZ);
                     PCMM mdl = CMSManager.getModule();
-                    transforms[0] = mdl.createTransform(xyz.getProfile(),
-                                    ColorTransform.Any, ColorTransform.In);
                     try {
-                        transforms[1] = mdl.createTransform(thisProfile,
+                        transforms[0] = mdl.createTransform(xyz.getProfile(),
                                         ICC_Profile.icRelativeColorimetric,
-                                        ColorTransform.Out);
+                                        ColorTransform.In);
                     } catch (CMMException e) {
-                        transforms[1] = mdl.createTransform(thisProfile,
-                                        ColorTransform.Any, ColorTransform.Out);
+                        transforms[0] = mdl.createTransform(xyz.getProfile(),
+                                        ColorTransform.Any, ColorTransform.In);
                     }
+                    transforms[1] = mdl.createTransform(thisProfile,
+                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }

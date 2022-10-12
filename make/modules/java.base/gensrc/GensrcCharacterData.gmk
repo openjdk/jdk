@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 
 GENSRC_CHARACTERDATA :=
 
-CHARACTERDATA = $(TOPDIR)/make/data/characterdata
-UNICODEDATA = $(TOPDIR)/make/data/unicodedata
+CHARACTERDATA_TEMPLATES = $(MODULE_SRC)/share/classes/java/lang
+UNICODEDATA = $(MODULE_SRC)/share/data/unicodedata
 
 ifneq ($(DEBUG_LEVEL), release)
   ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), true)
@@ -40,11 +40,11 @@ endif
 
 define SetupCharacterData
   $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java: \
-      $(CHARACTERDATA)/$1.java.template
+      $(CHARACTERDATA_TEMPLATES)/$1.java.template
 	$$(call LogInfo, Generating $1.java)
 	$$(call MakeDir, $$(@D))
 	$(TOOL_GENERATECHARACTER) $2 $(DEBUG_OPTION) \
-	    -template $(CHARACTERDATA)/$1.java.template \
+	    -template $(CHARACTERDATA_TEMPLATES)/$1.java.template \
 	    -spec $(UNICODEDATA)/UnicodeData.txt \
 	    -specialcasing $(UNICODEDATA)/SpecialCasing.txt \
 	    -proplist $(UNICODEDATA)/PropList.txt \

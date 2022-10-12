@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ public class MenuSelectionManager {
 
                 // installing additional listener if found in the AppContext
                 Object o = context.get(SwingUtilities2.MENU_SELECTION_MANAGER_LISTENER_KEY);
-                if (o != null && o instanceof ChangeListener) {
-                    msm.addChangeListener((ChangeListener) o);
+                if (o instanceof ChangeListener listener) {
+                    msm.addChangeListener(listener);
                 }
             }
 

@@ -95,6 +95,11 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
                 }
             }
         }
+
+        @Override
+        public String toString() {
+            return String.format("AssumptionResult<%s, assumptions=%s>", result, Arrays.toString(assumptions));
+        }
     }
 
     /**
@@ -102,7 +107,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
      */
     public static final class NoFinalizableSubclass extends Assumption {
 
-        private ResolvedJavaType receiverType;
+        public final ResolvedJavaType receiverType;
 
         public NoFinalizableSubclass(ResolvedJavaType receiverType) {
             this.receiverType = receiverType;

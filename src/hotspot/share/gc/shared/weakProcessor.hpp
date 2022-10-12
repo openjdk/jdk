@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
-#include "gc/shared/workgroup.hpp"
-#include "memory/allocation.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "memory/allStatic.hpp"
 
 class WeakProcessorTimes;
-class WorkGang;
+class WorkerThreads;
 
 // Helper class to aid in root scanning and cleaning of weak oops in the VM.
 //
@@ -53,7 +53,7 @@ public:
   // IsAlive must be derived from BoolObjectClosure.
   // KeepAlive must be derived from OopClosure.
   template<typename IsAlive, typename KeepAlive>
-  static void weak_oops_do(WorkGang* workers,
+  static void weak_oops_do(WorkerThreads* workers,
                            IsAlive* is_alive,
                            KeepAlive* keep_alive,
                            WeakProcessorTimes* times);
@@ -64,7 +64,7 @@ public:
   // IsAlive must be derived from BoolObjectClosure.
   // KeepAlive must be derived from OopClosure.
   template<typename IsAlive, typename KeepAlive>
-  static void weak_oops_do(WorkGang* workers,
+  static void weak_oops_do(WorkerThreads* workers,
                            IsAlive* is_alive,
                            KeepAlive* keep_alive,
                            uint indent_log);
@@ -79,7 +79,7 @@ private:
   template<typename IsAlive, typename KeepAlive>
   class CountingClosure;
 
-  class GangTask;
+  class WeakOopsDoTask;
 };
 
 class WeakProcessor::Task {

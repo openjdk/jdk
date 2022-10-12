@@ -44,124 +44,90 @@ STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
 //--------------------------------------------------------------------------------------
 // ChunkPool implementation
 
-// MT-safe pool of chunks to reduce malloc/free thrashing
+// MT-safe pool of same-sized chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
-class ChunkPool: public CHeapObj<mtInternal> {
+class ChunkPool {
   Chunk*       _first;        // first cached Chunk; its first word points to next chunk
   size_t       _num_chunks;   // number of unused chunks in pool
-  size_t       _num_used;     // number of chunks currently checked out
-  const size_t _size;         // size of each chunk (must be uniform)
+  const size_t _size;         // (inner payload) size of the chunks this pool serves
 
   // Our four static pools
-  static ChunkPool* _large_pool;
-  static ChunkPool* _medium_pool;
-  static ChunkPool* _small_pool;
-  static ChunkPool* _tiny_pool;
+  static const int _num_pools = 4;
+  static ChunkPool _pools[_num_pools];
 
-  // return first element or null
-  void* get_first() {
+ public:
+  ChunkPool(size_t size) : _first(NULL), _num_chunks(0), _size(size) {}
+
+  // Allocate a chunk from the pool; returns NULL if pool is empty.
+  Chunk* allocate() {
+    ThreadCritical tc;
     Chunk* c = _first;
-    if (_first) {
+    if (_first != nullptr) {
       _first = _first->next();
       _num_chunks--;
     }
     return c;
   }
 
- public:
-  // All chunks in a ChunkPool has the same size
-   ChunkPool(size_t size) : _size(size) { _first = NULL; _num_chunks = _num_used = 0; }
-
-  // Allocate a new chunk from the pool (might expand the pool)
-  NOINLINE void* allocate(size_t bytes, AllocFailType alloc_failmode) {
-    assert(bytes == _size, "bad size");
-    void* p = NULL;
-    // No VM lock can be taken inside ThreadCritical lock, so os::malloc
-    // should be done outside ThreadCritical lock due to NMT
-    { ThreadCritical tc;
-      _num_used++;
-      p = get_first();
-    }
-    if (p == NULL) p = os::malloc(bytes, mtChunk, CURRENT_PC);
-    if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
-      vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "ChunkPool::allocate");
-    }
-    return p;
-  }
-
   // Return a chunk to the pool
   void free(Chunk* chunk) {
-    assert(chunk->length() + Chunk::aligned_overhead_size() == _size, "bad size");
+    assert(chunk->length() == _size, "wrong pool for this chunk");
     ThreadCritical tc;
-    _num_used--;
-
-    // Add chunk to list
     chunk->set_next(_first);
     _first = chunk;
     _num_chunks++;
   }
 
   // Prune the pool
-  void free_all_but(size_t n) {
+  void prune() {
+    static const int blocksToKeep = 5;
     Chunk* cur = NULL;
     Chunk* next;
-    {
-      // if we have more than n chunks, free all of them
-      ThreadCritical tc;
-      if (_num_chunks > n) {
-        // free chunks at end of queue, for better locality
-        cur = _first;
-        for (size_t i = 0; i < (n - 1) && cur != NULL; i++) cur = cur->next();
+    // if we have more than n chunks, free all of them
+    ThreadCritical tc;
+    if (_num_chunks > blocksToKeep) {
+      // free chunks at end of queue, for better locality
+      cur = _first;
+      for (size_t i = 0; i < (blocksToKeep - 1); i++) {
+        assert(cur != NULL, "counter out of sync?");
+        cur = cur->next();
+      }
+      assert(cur != NULL, "counter out of sync?");
 
-        if (cur != NULL) {
-          next = cur->next();
-          cur->set_next(NULL);
-          cur = next;
+      next = cur->next();
+      cur->set_next(NULL);
+      cur = next;
 
-          // Free all remaining chunks while in ThreadCritical lock
-          // so NMT adjustment is stable.
-          while(cur != NULL) {
-            next = cur->next();
-            os::free(cur);
-            _num_chunks--;
-            cur = next;
-          }
-        }
+      // Free all remaining chunks while in ThreadCritical lock
+      // so NMT adjustment is stable.
+      while(cur != NULL) {
+        next = cur->next();
+        os::free(cur);
+        _num_chunks--;
+        cur = next;
       }
     }
   }
 
-  // Accessors to preallocated pool's
-  static ChunkPool* large_pool()  { assert(_large_pool  != NULL, "must be initialized"); return _large_pool;  }
-  static ChunkPool* medium_pool() { assert(_medium_pool != NULL, "must be initialized"); return _medium_pool; }
-  static ChunkPool* small_pool()  { assert(_small_pool  != NULL, "must be initialized"); return _small_pool;  }
-  static ChunkPool* tiny_pool()   { assert(_tiny_pool   != NULL, "must be initialized"); return _tiny_pool;   }
-
-  static void initialize() {
-    _large_pool  = new ChunkPool(Chunk::size        + Chunk::aligned_overhead_size());
-    _medium_pool = new ChunkPool(Chunk::medium_size + Chunk::aligned_overhead_size());
-    _small_pool  = new ChunkPool(Chunk::init_size   + Chunk::aligned_overhead_size());
-    _tiny_pool   = new ChunkPool(Chunk::tiny_size   + Chunk::aligned_overhead_size());
-  }
-
   static void clean() {
-    enum { BlocksToKeep = 5 };
-     _tiny_pool->free_all_but(BlocksToKeep);
-     _small_pool->free_all_but(BlocksToKeep);
-     _medium_pool->free_all_but(BlocksToKeep);
-     _large_pool->free_all_but(BlocksToKeep);
+    for (int i = 0; i < _num_pools; i++) {
+      _pools[i].prune();
+    }
   }
+
+  // Given a (inner payload) size, return the pool responsible for it, or NULL if the size is non-standard
+  static ChunkPool* get_pool_for_size(size_t size) {
+    for (int i = 0; i < _num_pools; i++) {
+      if (_pools[i]._size == size) {
+        return _pools + i;
+      }
+    }
+    return NULL;
+  }
+
 };
 
-ChunkPool* ChunkPool::_large_pool  = NULL;
-ChunkPool* ChunkPool::_medium_pool = NULL;
-ChunkPool* ChunkPool::_small_pool  = NULL;
-ChunkPool* ChunkPool::_tiny_pool   = NULL;
-
-void chunkpool_init() {
-  ChunkPool::initialize();
-}
-
+ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_size, Chunk::tiny_size };
 
 //--------------------------------------------------------------------------------------
 // ChunkPoolCleaner implementation
@@ -181,7 +147,6 @@ class ChunkPoolCleaner : public PeriodicTask {
 // Chunk implementation
 
 void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, size_t length) throw() {
-
   // - requested_size = sizeof(Chunk)
   // - length = payload size
   // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
@@ -203,34 +168,35 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
   assert(sizeofChunk == sizeof(Chunk), "weird request size");
   assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: "
          SIZE_FORMAT ".", length);
-  size_t bytes = ARENA_ALIGN(sizeofChunk) + length;
-  switch (length) {
-   case Chunk::size:        return ChunkPool::large_pool()->allocate(bytes, alloc_failmode);
-   case Chunk::medium_size: return ChunkPool::medium_pool()->allocate(bytes, alloc_failmode);
-   case Chunk::init_size:   return ChunkPool::small_pool()->allocate(bytes, alloc_failmode);
-   case Chunk::tiny_size:   return ChunkPool::tiny_pool()->allocate(bytes, alloc_failmode);
-   default: {
-     void* p = os::malloc(bytes, mtChunk, CALLER_PC);
-     if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
-       vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
-     }
-     // We rely on arena alignment <= malloc alignment.
-     assert(is_aligned(p, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
-     return p;
-   }
+  // Try to reuse a freed chunk from the pool
+  ChunkPool* pool = ChunkPool::get_pool_for_size(length);
+  if (pool != NULL) {
+    Chunk* c = pool->allocate();
+    if (c != NULL) {
+      assert(c->length() == length, "wrong length?");
+      return c;
+    }
   }
+  // Either the pool was empty, or this is a non-standard length. Allocate a new Chunk from C-heap.
+  size_t bytes = ARENA_ALIGN(sizeofChunk) + length;
+  void* p = os::malloc(bytes, mtChunk, CALLER_PC);
+  if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+    vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
+  }
+  // We rely on arena alignment <= malloc alignment.
+  assert(is_aligned(p, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
+  return p;
 }
 
 void Chunk::operator delete(void* p) {
+  // If this is a standard-sized chunk, return it to its pool; otherwise free it.
   Chunk* c = (Chunk*)p;
-  switch (c->length()) {
-   case Chunk::size:        ChunkPool::large_pool()->free(c); break;
-   case Chunk::medium_size: ChunkPool::medium_pool()->free(c); break;
-   case Chunk::init_size:   ChunkPool::small_pool()->free(c); break;
-   case Chunk::tiny_size:   ChunkPool::tiny_pool()->free(c); break;
-   default:
-     ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
-     os::free(c);
+  ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
+  if (pool != NULL) {
+    pool->free(c);
+  } else {
+    ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
+    os::free(c);
   }
 }
 

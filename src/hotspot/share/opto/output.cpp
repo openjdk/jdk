@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/c2compiler.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/locknode.hpp"
@@ -95,10 +96,6 @@ private:
 
   // Free list for pinch nodes.
   Node_List _pinch_free_list;
-
-  // Latency from the beginning of the containing basic block (base 1)
-  // for each node.
-  unsigned short *_node_latency;
 
   // Number of uses of this node within the containing basic block.
   short *_uses;
@@ -161,10 +158,6 @@ public:
 
   // Do the scheduling
   void DoScheduling();
-
-  // Compute the local latencies walking forward over the list of
-  // nodes for a basic block
-  void ComputeLocalLatenciesForward(const Block *bb);
 
   // Compute the register antidependencies within a basic block
   void ComputeRegisterAntidependencies(Block *bb);
@@ -292,12 +285,51 @@ int C2SafepointPollStubTable::estimate_stub_size() const {
   return result;
 }
 
+// Nmethod entry barrier stubs
+C2EntryBarrierStub* C2EntryBarrierStubTable::add_entry_barrier() {
+  assert(_stub == NULL, "There can only be one entry barrier stub");
+  _stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+  return _stub;
+}
+
+void C2EntryBarrierStubTable::emit(CodeBuffer& cb) {
+  if (_stub == NULL) {
+    // No stub - nothing to do
+    return;
+  }
+
+  C2_MacroAssembler masm(&cb);
+  // Make sure there is enough space in the code buffer
+  if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
+
+  intptr_t before = masm.offset();
+  masm.emit_entry_barrier_stub(_stub);
+  intptr_t after = masm.offset();
+  int actual_size = (int)(after - before);
+  int expected_size = masm.entry_barrier_stub_size();
+  assert(actual_size == expected_size, "Estimated size is wrong, expected %d, was %d", expected_size, actual_size);
+}
+
+int C2EntryBarrierStubTable::estimate_stub_size() const {
+  if (BarrierSet::barrier_set()->barrier_set_nmethod() == NULL) {
+    // No nmethod entry barrier?
+    return 0;
+  }
+
+  return C2_MacroAssembler::entry_barrier_stub_size();
+}
+
 PhaseOutput::PhaseOutput()
   : Phase(Phase::Output),
     _code_buffer("Compile::Fill_buffer"),
     _first_block_size(0),
     _handler_table(),
     _inc_table(),
+    _safepoint_poll_table(),
+    _entry_barrier_table(),
     _oop_map_set(NULL),
     _scratch_buffer_blob(NULL),
     _scratch_locs_memory(NULL),
@@ -332,6 +364,8 @@ void PhaseOutput::perform_mach_node_analysis() {
   bs->late_barrier_analysis();
 
   pd_perform_mach_node_analysis();
+
+  C->print_method(CompilerPhaseType::PHASE_MACHANALYSIS, 4);
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -822,12 +856,11 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == NULL) {
-      ciKlass* cik = t->is_oopptr()->klass();
+      ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
-      ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
-      sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
-                                    : new ObjectValue(spobj->_idx, klass_sv);
+      sv = new ObjectValue(spobj->_idx,
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -867,7 +900,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       array->append(new ConstantIntValue((jint)0));
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     } else if ( t->base() == Type::RawPtr ) {
-      // jsr/ret return address which must be restored into a the full
+      // jsr/ret return address which must be restored into the full
       // width 64-bit stack slot.
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     }
@@ -1003,7 +1036,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
-  bool is_opt_native = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1022,8 +1054,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         is_method_handle_invoke = true;
       }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
-    } else if (mcall->is_MachCallNative()) {
-      is_opt_native = true;
     }
 
     // Check if a call returns an object.
@@ -1096,12 +1126,11 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == NULL) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->klass();
+          ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
-          ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
-          ObjectValue* sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
-                                        : new ObjectValue(spobj->_idx, klass_sv);
+          ObjectValue* sv = new ObjectValue(spobj->_idx,
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
@@ -1153,7 +1182,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->should_reexecute(),
       rethrow_exception,
       is_method_handle_invoke,
-      is_opt_native,
       return_oop,
       has_ea_local_in_scope,
       arg_escape,
@@ -1314,6 +1342,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
   stub_req += safepoint_poll_table()->estimate_stub_size();
+  stub_req += entry_barrier_table()->estimate_stub_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
@@ -1824,6 +1853,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   safepoint_poll_table()->emit(*cb);
   if (C->failing())  return;
 
+  // Fill in stubs for calling the runtime from nmethod entries.
+  entry_barrier_table()->emit(*cb);
+  if (C->failing())  return;
+
 #ifndef PRODUCT
   // Information on the size of the method, without the extraneous code
   Scheduling::increment_method_size(cb->insts_size());
@@ -1870,6 +1903,19 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   if (C->print_assembly()) {
     ttyLocker ttyl;  // keep the following output all in one block
     if (!VMThread::should_terminate()) {  // test this under the tty lock
+      // print_metadata and dump_asm may safepoint which makes us loose the ttylock.
+      // We call them first and write to a stringStream, then we retake the lock to
+      // make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
+      ResourceMark rm;
+      stringStream method_metadata_str;
+      if (C->method() != NULL) {
+        C->method()->print_metadata(&method_metadata_str);
+      }
+      stringStream dump_asm_str;
+      dump_asm_on(&dump_asm_str, node_offsets, node_offset_limit);
+
+      NoSafepointVerifier nsv;
+      ttyLocker ttyl2;
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
@@ -1879,19 +1925,15 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        C->method()->print_metadata();
+        tty->print_raw(method_metadata_str.as_string());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      dump_asm(node_offsets, node_offset_limit);
+      tty->print_raw(dump_asm_str.as_string());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
-        // print_metadata and dump_asm above may safepoint which makes us loose the ttylock.
-        // Retake lock too make sure the end tag is coherent, and that xmlStream->pop_tag is done
-        // thread safe
-        ttyLocker ttyl2;
         xtty->tail("opto_assembly");
       }
     }
@@ -2027,7 +2069,6 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   _node_bundling_base = NEW_ARENA_ARRAY(compile.comp_arena(), Bundle, node_max);
 
   // Allocate space for fixed-size arrays
-  _node_latency    = NEW_ARENA_ARRAY(arena, unsigned short, node_max);
   _uses            = NEW_ARENA_ARRAY(arena, short,          node_max);
   _current_latency = NEW_ARENA_ARRAY(arena, unsigned short, node_max);
 
@@ -2035,7 +2076,6 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   for (uint i = 0; i < node_max; i++) {
     ::new (&_node_bundling_base[i]) Bundle();
   }
-  memset(_node_latency,       0, node_max * sizeof(unsigned short));
   memset(_uses,               0, node_max * sizeof(short));
   memset(_current_latency,    0, node_max * sizeof(unsigned short));
 
@@ -2108,8 +2148,12 @@ void PhaseOutput::ScheduleAndBundle() {
     return;
 
   // Scheduling code works only with pairs (8 bytes) maximum.
-  if (C->max_vector_size() > 8)
+  // And when the scalable vector register is used, we may spill/unspill
+  // the whole reg regardless of the max vector size.
+  if (C->max_vector_size() > 8 ||
+      (C->max_vector_size() > 0 && Matcher::supports_scalable_vector())) {
     return;
+  }
 
   Compile::TracePhase tp("isched", &timers[_t_instrSched]);
 
@@ -2123,67 +2167,26 @@ void PhaseOutput::ScheduleAndBundle() {
 #ifndef PRODUCT
   if (C->trace_opto_output()) {
     tty->print("\n---- After ScheduleAndBundle ----\n");
-    for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
-      tty->print("\nBB#%03d:\n", i);
-      Block* block = C->cfg()->get_block(i);
-      for (uint j = 0; j < block->number_of_nodes(); j++) {
-        Node* n = block->get_node(j);
-        OptoReg::Name reg = C->regalloc()->get_reg_first(n);
-        tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
-        n->dump();
-      }
-    }
+    print_scheduling();
   }
 #endif
 }
 
-// Compute the latency of all the instructions.  This is fairly simple,
-// because we already have a legal ordering.  Walk over the instructions
-// from first to last, and compute the latency of the instruction based
-// on the latency of the preceding instruction(s).
-void Scheduling::ComputeLocalLatenciesForward(const Block *bb) {
 #ifndef PRODUCT
-  if (_cfg->C->trace_opto_output())
-    tty->print("# -> ComputeLocalLatenciesForward\n");
-#endif
-
-  // Walk over all the schedulable instructions
-  for( uint j=_bb_start; j < _bb_end; j++ ) {
-
-    // This is a kludge, forcing all latency calculations to start at 1.
-    // Used to allow latency 0 to force an instruction to the beginning
-    // of the bb
-    uint latency = 1;
-    Node *use = bb->get_node(j);
-    uint nlen = use->len();
-
-    // Walk over all the inputs
-    for ( uint k=0; k < nlen; k++ ) {
-      Node *def = use->in(k);
-      if (!def)
-        continue;
-
-      uint l = _node_latency[def->_idx] + use->latency(k);
-      if (latency < l)
-        latency = l;
+// Separated out so that it can be called directly from debugger
+void PhaseOutput::print_scheduling() {
+  for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+    tty->print("\nBB#%03d:\n", i);
+    Block* block = C->cfg()->get_block(i);
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      OptoReg::Name reg = C->regalloc()->get_reg_first(n);
+      tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
+      n->dump();
     }
-
-    _node_latency[use->_idx] = latency;
-
-#ifndef PRODUCT
-    if (_cfg->C->trace_opto_output()) {
-      tty->print("# latency %4d: ", latency);
-      use->dump();
-    }
-#endif
   }
-
-#ifndef PRODUCT
-  if (_cfg->C->trace_opto_output())
-    tty->print("# <- ComputeLocalLatenciesForward\n");
+}
 #endif
-
-} // end ComputeLocalLatenciesForward
 
 // See if this node fits into the present instruction bundle
 bool Scheduling::NodeFitsInBundle(Node *n) {
@@ -2760,9 +2763,6 @@ void Scheduling::DoScheduling() {
     ComputeRegisterAntidependencies(bb);
     if (C->failing())  return;  // too many D-U pinch points
 
-    // Compute intra-bb latencies for the nodes
-    ComputeLocalLatenciesForward(bb);
-
     // Compute the usage within the block, and set the list of all nodes
     // in the block that have no uses within the block.
     ComputeUseCount(bb);
@@ -2910,6 +2910,16 @@ static void add_prec_edge_from_to( Node *from, Node *to ) {
 void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is_def ) {
   if( !OptoReg::is_valid(def_reg) ) // Ignore stores & control flow
     return;
+
+  if (OptoReg::is_reg(def_reg)) {
+    VMReg vmreg = OptoReg::as_VMReg(def_reg);
+    if (vmreg->is_reg() && !vmreg->is_concrete() && !vmreg->prev()->is_concrete()) {
+      // This is one of the high slots of a vector register.
+      // ScheduleAndBundle already checked there are no live wide
+      // vectors in this method so it can be safely ignored.
+      return;
+    }
+  }
 
   Node *pinch = _reg_node[def_reg]; // Get pinch point
   if ((pinch == NULL) || _cfg->get_block_for_node(pinch) != b || // No pinch-point yet?
@@ -3393,8 +3403,9 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      compiler,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->rtm_state(),
-                                     C->native_invokers());
+                                     C->has_monitors(),
+                                     0,
+                                     C->rtm_state());
 
     if (C->log() != NULL) { // Print code cache state into compiler log
       C->log()->code_cache_state();

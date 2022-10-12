@@ -44,7 +44,7 @@ define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
-define_pd_global(intx, LoopPercentProfileLimit,      30);
+define_pd_global(intx, LoopPercentProfileLimit,      10);
 #ifdef AMD64
 define_pd_global(intx,  InteriorEntryAlignment,      16);
 define_pd_global(size_t, NewSizeThreadIncrease,     ScaleForWordSize(4*K));

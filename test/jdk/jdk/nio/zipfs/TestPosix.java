@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2022, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,12 @@ import static org.testng.Assert.fail;
 
 /**
  * @test
- * @bug 8213031
+ * @bug 8213031 8273935
+ * @summary Test POSIX ZIP file operations.
  * @modules jdk.zipfs
  *          jdk.jartool
  * @run testng TestPosix
  * @run testng/othervm/java.security.policy=test.policy.posix TestPosix
- * @summary Test POSIX zip file operations.
  */
 public class TestPosix {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
@@ -528,9 +528,11 @@ public class TestPosix {
         }
 
         // check entries on copied zipfs - no permission data should exist
-        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE_COPY, ENV_DEFAULT)) {
-            checkEntries(zip, checkExpects.noPermDataInZip);
-        }
+        if (System.getProperty("os.name").toLowerCase().contains("windows"))
+            try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE_COPY,
+                ENV_DEFAULT)) {
+                checkEntries(zip, checkExpects.noPermDataInZip);
+            }
     }
 
     /**
@@ -595,7 +597,7 @@ public class TestPosix {
             assertTrue(throwsUOE(()->Files.setPosixFilePermissions(entry, UW)));
             assertTrue(throwsUOE(()->Files.getOwner(entry)));
             assertTrue(throwsUOE(()->Files.setOwner(entry, DUMMY_USER)));
-            assertTrue(throwsUOE(()->Files.getFileAttributeView(entry, PosixFileAttributeView.class)));
+            assertNull(Files.getFileAttributeView(entry, PosixFileAttributeView.class));
         }
 
         // test with posix = true -> default values

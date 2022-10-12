@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import jdk.jfr.events.Handlers;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.events.EventConfigurations;
+import jdk.jfr.events.SocketReadEvent;
+import jdk.jfr.internal.event.EventConfiguration;
 
 /**
  * See {@link JITracer} for an explanation of this code.
@@ -44,27 +45,27 @@ final class SocketInputStreamInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[], int off, int length) throws IOException {
-        EventHandler handler = Handlers.SOCKET_READ;
-        if (!handler.isEnabled()) {
+        EventConfiguration eventConfiguration = EventConfigurations.SOCKET_READ;
+        if (!eventConfiguration.isEnabled()) {
             return read(b, off, length);
         }
         int bytesRead = 0;
         long start = 0;
         try {
-            start = EventHandler.timestamp();
+            start = EventConfiguration.timestamp();
             bytesRead = read(b, off, length);
         } finally {
-            long duration = EventHandler.timestamp() - start;
-            if (handler.shouldCommit(duration)) {
+            long duration = EventConfiguration.timestamp() - start;
+            if (eventConfiguration.shouldCommit(duration)) {
                 InetAddress remote = parent.getInetAddress();
                 String host = remote.getHostName();
                 String address = remote.getHostAddress();
                 int port = parent.getPort();
                 int timeout = parent.getSoTimeout();
                 if (bytesRead < 0) {
-                    handler.write(start, duration, host, address, port, timeout, 0L, true);
+                    SocketReadEvent.commit(start, duration, host, address, port, timeout, 0L, true);
                 } else {
-                    handler.write(start, duration, host, address, port, timeout, bytesRead, false);
+                    SocketReadEvent.commit(start, duration, host, address, port, timeout, bytesRead, false);
                 }
             }
         }

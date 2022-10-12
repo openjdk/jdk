@@ -1,0 +1,4 @@
+ImproperSerialPF.java:17:75: compiler.warn.SPF.null.init
+ImproperSerialPF.java:12:32: compiler.warn.improper.SPF
+ImproperSerialPF.java:12:32: compiler.warn.OSF.array.SPF
+3 warnings

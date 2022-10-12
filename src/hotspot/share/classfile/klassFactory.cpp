@@ -211,7 +211,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
 #if INCLUDE_CDS
   if (Arguments::is_dumping_archive()) {
-    ClassLoader::record_result(THREAD, result, stream);
+    ClassLoader::record_result(THREAD, result, stream, old_stream != stream);
   }
 #endif // INCLUDE_CDS
 

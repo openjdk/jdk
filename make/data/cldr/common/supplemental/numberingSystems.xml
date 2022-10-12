@@ -86,6 +86,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="talu" type="numeric" digits="᧐᧑᧒᧓᧔᧕᧖᧗᧘᧙"/>
         <numberingSystem id="taml" type="algorithmic" rules="tamil"/>
         <numberingSystem id="tamldec" type="numeric" digits="௦௧௨௩௪௫௬௭௮௯"/>
+        <numberingSystem id="tnsa" type="numeric" digits="&#x16AC0;&#x16AC1;&#x16AC2;&#x16AC3;&#x16AC4;&#x16AC5;&#x16AC6;&#x16AC7;&#x16AC8;&#x16AC9;"/>
         <numberingSystem id="telu" type="numeric" digits="౦౧౨౩౪౫౬౭౮౯"/>
         <numberingSystem id="thai" type="numeric" digits="๐๑๒๓๔๕๖๗๘๙"/>
         <numberingSystem id="tibt" type="numeric" digits="༠༡༢༣༤༥༦༧༨༩"/>

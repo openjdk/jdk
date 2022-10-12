@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.tree;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.List;
 
@@ -64,7 +65,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
                 tree.accept(this, null);
             }
         } catch (UncheckedIOException ex) {
-            throw new IOException(ex.getMessage(), ex);
+            throw ex.getCause();
         }
     }
 
@@ -115,14 +116,6 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     /* ************************************************************************
      * Traversal methods
      *************************************************************************/
-
-    /** Exception to propagate IOException through visitXYZ methods */
-    private static class UncheckedIOException extends Error {
-        static final long serialVersionUID = -4032692679158424751L;
-        UncheckedIOException(IOException e) {
-            super(e.getMessage(), e);
-        }
-    }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitAttribute(AttributeTree node, Void p) {
@@ -491,6 +484,27 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitSnippet(SnippetTree node, Void p) {
+        try {
+            print("{");
+            printTagName(node);
+            List<? extends DocTree> attrs = node.getAttributes();
+            if (!attrs.isEmpty()) {
+                print(" ");
+                print(attrs, " ");
+            }
+            if (node.getBody() != null) {
+                print(" :\n");
+                print(node.getBody());
+            }
+            print("}");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitStartElement(StartElementTree node, Void p) {
         try {
             print("<");
@@ -618,6 +632,10 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         try {
             print("{");
             printTagName(node);
+            if (node.getFormat() != null) {
+                print(" ");
+                print(node.getFormat());
+            }
             if (node.getReference() != null) {
                 print(" ");
                 print(node.getReference());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,36 +382,39 @@ public final class UTF16
     }
 
     /**
-     * Determines whether the code value is a surrogate.
-     * @param char16 the input character.
-     * @return true if the input character is a surrogate.
-     * @stable ICU 2.1
+     * Determines whether the code point is a surrogate.
+     *
+     * @param codePoint The input character.
+     *        (In ICU 2.1-69 the type of this parameter was <code>char</code>.)
+     * @return true If the input code point is a surrogate.
+     * @stable ICU 70
      */
-    public static boolean isSurrogate(char char16)
-    {
-        return (char16 & SURROGATE_BITMASK) == SURROGATE_BITS;
+    public static boolean isSurrogate(int codePoint) {
+        return (codePoint & SURROGATE_BITMASK) == SURROGATE_BITS;
     }
 
     /**
-     * Determines whether the character is a trail surrogate.
-     * @param char16 the input character.
-     * @return true if the input character is a trail surrogate.
-     * @stable ICU 2.1
+     * Determines whether the code point is a trail surrogate.
+     *
+     * @param codePoint The input character.
+     *        (In ICU 2.1-69 the type of this parameter was <code>char</code>.)
+     * @return true If the input code point is a trail surrogate.
+     * @stable ICU 70
      */
-    public static boolean isTrailSurrogate(char char16)
-    {
-        return (char16 & TRAIL_SURROGATE_BITMASK) == TRAIL_SURROGATE_BITS;
+    public static boolean isTrailSurrogate(int codePoint) {
+        return (codePoint & TRAIL_SURROGATE_BITMASK) == TRAIL_SURROGATE_BITS;
     }
 
     /**
-     * Determines whether the character is a lead surrogate.
-     * @param char16 the input character.
-     * @return true if the input character is a lead surrogate
-     * @stable ICU 2.1
+     * Determines whether the code point is a lead surrogate.
+     *
+     * @param codePoint The input character.
+     *        (In ICU 2.1-69 the type of this parameter was <code>char</code>.)
+     * @return true If the input code point is a lead surrogate
+     * @stable ICU 70
      */
-    public static boolean isLeadSurrogate(char char16)
-    {
-        return (char16 & LEAD_SURROGATE_BITMASK) == LEAD_SURROGATE_BITS;
+    public static boolean isLeadSurrogate(int codePoint) {
+        return (codePoint & LEAD_SURROGATE_BITMASK) == LEAD_SURROGATE_BITS;
     }
 
     /**

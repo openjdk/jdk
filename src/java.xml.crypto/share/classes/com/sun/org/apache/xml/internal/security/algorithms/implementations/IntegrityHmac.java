@@ -309,7 +309,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
         Node n = XMLUtils.selectDsNode(element.getFirstChild(), Constants._TAG_HMACOUTPUTLENGTH, 0);
         if (n != null) {
             String hmacLength = XMLUtils.getFullTextChildrenFromNode(n);
-            if (hmacLength != null && !"".equals(hmacLength)) {
+            if (hmacLength != null && hmacLength.length() != 0) {
                 this.hmacOutputLength = new HMACOutputLength(Integer.parseInt(hmacLength));
             }
         }

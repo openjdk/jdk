@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +80,7 @@ public class TCKTestServiceLoader {
         ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
         LocalDate ld = LocalDate.from(copticDate);
         assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
+        assertEquals(chrono.isIsoBased(), false);
     }
 
 }

@@ -31,7 +31,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/arrayOop.hpp"
 
-int typeArrayOopDesc::object_size(const TypeArrayKlass* tk) const {
+size_t typeArrayOopDesc::object_size(const TypeArrayKlass* tk) const {
   return object_size(tk->layout_helper(), length());
 }
 
@@ -90,113 +90,76 @@ inline jdouble* typeArrayOopDesc::double_at_addr(int which) const {
 }
 
 inline jbyte typeArrayOopDesc::byte_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jbyte>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *byte_at_addr(which);
 }
 inline void typeArrayOopDesc::byte_at_put(int which, jbyte contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jbyte>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, contents);
+  *byte_at_addr(which) = contents;
 }
 
 inline jboolean typeArrayOopDesc::bool_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jboolean>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *bool_at_addr(which);
 }
 inline void typeArrayOopDesc::bool_at_put(int which, jboolean contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jboolean>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, jboolean(contents & 1));
+  *bool_at_addr(which) = jboolean(contents & 1);
 }
 
 inline jchar typeArrayOopDesc::char_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jchar>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *char_at_addr(which);
 }
 inline void typeArrayOopDesc::char_at_put(int which, jchar contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jchar>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, contents);
+  *char_at_addr(which) = contents;
 }
 
 inline jint typeArrayOopDesc::int_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jint>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *int_at_addr(which);
 }
 inline void typeArrayOopDesc::int_at_put(int which, jint contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jint>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, contents);
+  *int_at_addr(which) = contents;
 }
 
 inline jshort typeArrayOopDesc::short_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jshort>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *short_at_addr(which);
 }
 inline void typeArrayOopDesc::short_at_put(int which, jshort contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jshort>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, contents);
+  *short_at_addr(which) = contents;
 }
 
 inline jushort typeArrayOopDesc::ushort_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jushort>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *ushort_at_addr(which);
 }
+
 inline void typeArrayOopDesc::ushort_at_put(int which, jushort contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jushort>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, contents);
+  *ushort_at_addr(which) = contents;
 }
 
 inline jlong typeArrayOopDesc::long_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jlong>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *long_at_addr(which);
 }
 inline void typeArrayOopDesc::long_at_put(int which, jlong contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jlong>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, contents);
+  *long_at_addr(which) = contents;
 }
 
 inline jfloat typeArrayOopDesc::float_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jfloat>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *float_at_addr(which);
 }
+
 inline void typeArrayOopDesc::float_at_put(int which, jfloat contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jfloat>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, contents);
+  *float_at_addr(which) = contents;
 }
 
 inline jdouble typeArrayOopDesc::double_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jdouble>(which);
-  return HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *double_at_addr(which);
 }
+
 inline void typeArrayOopDesc::double_at_put(int which, jdouble contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jdouble>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, contents);
+  *double_at_addr(which) = contents;
 }
 
 inline jbyte typeArrayOopDesc::byte_at_acquire(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jbyte>(which);
-  return HeapAccess<MO_ACQUIRE | IS_ARRAY>::load_at(as_oop(), offset);
+  return Atomic::load_acquire(byte_at_addr(which));
 }
 inline void typeArrayOopDesc::release_byte_at_put(int which, jbyte contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jbyte>(which);
-  HeapAccess<MO_RELEASE | IS_ARRAY>::store_at(as_oop(), offset, contents);
+  Atomic::release_store(byte_at_addr(which), contents);
 }
 
 // Java thinks Symbol arrays are just arrays of either long or int, since
@@ -204,25 +167,18 @@ inline void typeArrayOopDesc::release_byte_at_put(int which, jbyte contents) {
 // casting
 #ifdef _LP64
 inline Symbol* typeArrayOopDesc::symbol_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jlong>(which);
-  return (Symbol*)(jlong) HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *reinterpret_cast<Symbol**>(long_at_addr(which));
 }
+
 inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jlong>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, (jlong)contents);
+  *reinterpret_cast<Symbol**>(long_at_addr(which)) = contents;
 }
 #else
 inline Symbol* typeArrayOopDesc::symbol_at(int which) const {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jint>(which);
-  return (Symbol*)(jint) HeapAccess<IS_ARRAY>::load_at(as_oop(), offset);
+  return *reinterpret_cast<Symbol**>(int_at_addr(which));
 }
 inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
-  assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-  ptrdiff_t offset = element_offset<jint>(which);
-  HeapAccess<IS_ARRAY>::store_at(as_oop(), offset, (jint)contents);
+  *reinterpret_cast<Symbol**>(int_at_addr(which)) = contents;
 }
 #endif // _LP64
 

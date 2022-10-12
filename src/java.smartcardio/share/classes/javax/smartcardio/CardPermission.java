@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,17 +74,17 @@ public class CardPermission extends Permission {
 
     private static final long serialVersionUID = 7146787880530705613L;
 
-    private final static int A_CONNECT              = 0x01;
-    private final static int A_EXCLUSIVE            = 0x02;
-    private final static int A_GET_BASIC_CHANNEL    = 0x04;
-    private final static int A_OPEN_LOGICAL_CHANNEL = 0x08;
-    private final static int A_RESET                = 0x10;
-    private final static int A_TRANSMIT_CONTROL     = 0x20;
+    private static final int A_CONNECT              = 0x01;
+    private static final int A_EXCLUSIVE            = 0x02;
+    private static final int A_GET_BASIC_CHANNEL    = 0x04;
+    private static final int A_OPEN_LOGICAL_CHANNEL = 0x08;
+    private static final int A_RESET                = 0x10;
+    private static final int A_TRANSMIT_CONTROL     = 0x20;
 
     // sum of all the actions above
-    private final static int A_ALL                  = 0x3f;
+    private static final int A_ALL                  = 0x3f;
 
-    private final static int[] ARRAY_MASKS = {
+    private static final int[] ARRAY_MASKS = {
         A_ALL,
         A_CONNECT,
         A_EXCLUSIVE,
@@ -94,16 +94,16 @@ public class CardPermission extends Permission {
         A_TRANSMIT_CONTROL,
     };
 
-    private final static String S_CONNECT              = "connect";
-    private final static String S_EXCLUSIVE            = "exclusive";
-    private final static String S_GET_BASIC_CHANNEL    = "getBasicChannel";
-    private final static String S_OPEN_LOGICAL_CHANNEL = "openLogicalChannel";
-    private final static String S_RESET                = "reset";
-    private final static String S_TRANSMIT_CONTROL     = "transmitControl";
+    private static final String S_CONNECT              = "connect";
+    private static final String S_EXCLUSIVE            = "exclusive";
+    private static final String S_GET_BASIC_CHANNEL    = "getBasicChannel";
+    private static final String S_OPEN_LOGICAL_CHANNEL = "openLogicalChannel";
+    private static final String S_RESET                = "reset";
+    private static final String S_TRANSMIT_CONTROL     = "transmitControl";
 
-    private final static String S_ALL                  = "*";
+    private static final String S_ALL                  = "*";
 
-    private final static String[] ARRAY_STRINGS = {
+    private static final String[] ARRAY_STRINGS = {
         S_ALL,
         S_CONNECT,
         S_EXCLUSIVE,

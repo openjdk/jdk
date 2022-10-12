@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.function.BiFunction;
  * (using the method handle combinator API) and then repackaging the adapted method handles into a new, indirect
  * var handle.
  */
-/* package */ class IndirectVarHandle extends VarHandle {
+/* package */ final class IndirectVarHandle extends VarHandle {
 
     @Stable
     private final MethodHandle[] handleMap = new MethodHandle[AccessMode.COUNT];
@@ -82,11 +82,6 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    boolean isDirect() {
-        return false;
-    }
-
-    @Override
     VarHandle asDirect() {
         return directTarget;
     }
@@ -100,6 +95,13 @@ import java.util.function.BiFunction;
         return hasInvokeExactBehavior()
             ? this
             : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
+    }
+
+    @ForceInline
+    boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
+        super.checkAccessModeThenIsDirect(ad);
+        // return false to indicate this is an IndirectVarHandle
+        return false;
     }
 
     @Override

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -91,6 +91,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="de">អាល្លឺម៉ង់</language>
 			<language type="dgr">ដូគ្រីប</language>
 			<language type="dje">ហ្សាម៉ា</language>
+			<language type="doi">ដូហ្គ្រី</language>
 			<language type="dsb">សូប៊ីក្រោម</language>
 			<language type="dua">ឌួលឡា</language>
 			<language type="dv">ទេវីហ៊ី</language>
@@ -301,6 +302,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="quc">គីចឈី</language>
 			<language type="rap">រ៉ាប៉ានូ</language>
 			<language type="rar">រ៉ារ៉ូតុងហ្គាន</language>
+			<language type="rhg">រ៉ូហ៊ីងយ៉ា</language>
 			<language type="rm">រ៉ូម៉ង់</language>
 			<language type="rn">រុណ្ឌី</language>
 			<language type="ro">រូម៉ានី</language>
@@ -892,21 +894,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1411,21 +1417,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1433,21 +1443,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -4419,6 +4433,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ម៉ោង​នៅ​អ៊ិខាធឺរីនប៊័កនា​រដូវ​​ក្ដៅ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>ម៉ោងនៅយូខន់</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -4798,7 +4817,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ឡារី​​ហ្សកហ្ស៊ី</displayName>
 				<displayName count="other">ឡារី​​ហ្សកហ្ស៊ី</displayName>
 				<symbol>GEL</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ស៊ីឌី​ហ្គាណា</displayName>
@@ -4820,7 +4838,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ហ្វ្រង់​ហ្គីណេ</displayName>
 				<displayName count="other">ហ្វ្រង់ ហ្គីណេ</displayName>
 				<symbol>GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>ហ្គីស្សាល​ក្វាតេម៉ាឡា</displayName>
@@ -4986,7 +5004,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ដុល្លារ​លីប៊ី</displayName>
 				<displayName count="other">ដុល្លារ​លីប៊ី</displayName>
 				<symbol>LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
+			</currency>
+			<currency type="LSL">
+				<displayName>ឡូទីឡេសូតូ</displayName>
+				<displayName count="other">ឡូទីឡេសូតូ</displayName>
+				<symbol draft="contributed">ឡូទី</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>លីតា​លីទុយអានី</displayName>
@@ -5093,7 +5116,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ណៃរ៉ា​នីហ្សេរីយ៉ា</displayName>
 				<displayName count="other">ណៃរ៉ា​នីហ្សេរីយ៉ា</displayName>
 				<symbol>NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>ខឌូបា​នីការ៉ាហ្កា</displayName>
@@ -5226,7 +5249,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ផោន​សាំងហេឡេណា</displayName>
 				<displayName count="other">ផោន​សាំងហេឡេណា</displayName>
 				<symbol>SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>លីអ៊ុន​សៀរ៉ាឡេអូន</displayName>
@@ -5589,6 +5612,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>មិល្លីម៉ូលក្នុងមួយលីត្រ</displayName>
 				<unitPattern count="other">{0} មិល្លីម៉ូលក្នុងមួយលីត្រ</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>របស់</displayName>
+				<unitPattern count="other">{0} របស់</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ផ្នែកក្នុងមួយលាន</displayName>
 				<unitPattern count="other">{0} ផ្នែកក្នុងមួយលាន</unitPattern>
@@ -5767,6 +5794,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-therm-us">
 				<displayName>ឯកតាកម្ដៅអាមេរិក</displayName>
 				<unitPattern count="other">{0} ឯកតាកម្ដៅអាមេរិក</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>គីឡូវ៉ាត់ម៉ោងក្នុង 100 គីឡូម៉ែត្រ</displayName>
+				<unitPattern count="other">{0} គីឡូវ៉ាត់ម៉ោងក្នុង 100 គីឡូម៉ែត្រ</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ជីកាហឺត</displayName>
@@ -6342,8 +6373,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
-				<displayName>mmol/L</displayName>
-				<unitPattern count="other">{0} mmol/L</unitPattern>
+				<displayName>មិល្លីម៉ូល/លីត្រ</displayName>
+				<unitPattern count="other">{0} ម.ម៉ូល/លី</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>របស់</displayName>
+				<unitPattern count="other">{0} របស់</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
@@ -6358,8 +6393,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>លីត្រ/km</displayName>
-				<unitPattern count="other">{0} L/km</unitPattern>
+				<displayName>លីត្រ/គម</displayName>
+				<unitPattern count="other">{0} លី/គម</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
@@ -6983,9 +7018,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-foot">
 				<unitPattern count="other">{0} ហ្វ².</unitPattern>
 			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ម.ម៉ូល/លី</displayName>
+				<unitPattern count="other">{0} ម.ម៉ូល/លី</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>របស់</displayName>
+				<unitPattern count="other">{0} របស់</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>ម៉ូល</displayName>
+				<unitPattern count="other">{0} ម៉ូល</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>លី/គម</displayName>
+				<unitPattern count="other">{0} លី/គម</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
@@ -7079,11 +7130,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-horsepower">
 				<unitPattern count="other">{0} សេះ</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>mmHg</displayName>
+				<unitPattern count="other">{0}mmHg</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
+				<displayName>″ Hg</displayName>
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>បារ</displayName>
+				<unitPattern count="other">{0} បារ</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
-				<unitPattern count="other">{0} ម.ប.</unitPattern>
+				<unitPattern count="other">{0}mb</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<unitPattern count="other">{0} hPa</unitPattern>
@@ -7124,13 +7184,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
-			<durationUnitPattern>ម៉:នន</durationUnitPattern>
+			<durationUnitPattern>h:mm</durationUnitPattern>
 		</durationUnit>
 		<durationUnit type="hms">
-			<durationUnitPattern>ម៉:នន:វិវិ</durationUnitPattern>
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
 		</durationUnit>
 		<durationUnit type="ms">
-			<durationUnitPattern>ម៉:វិវិ</durationUnitPattern>
+			<durationUnitPattern>m:ss</durationUnitPattern>
 		</durationUnit>
 	</units>
 	<listPatterns>

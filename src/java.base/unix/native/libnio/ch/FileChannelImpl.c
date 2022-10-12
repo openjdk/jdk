@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 #if defined(__linux__)
 #include <sys/sendfile.h>
+#include <dlfcn.h>
 #elif defined(_AIX)
 #include <string.h>
 #include <sys/socket.h>
@@ -50,13 +51,20 @@
 #include "java_lang_Integer.h"
 #include <assert.h>
 
-static jfieldID chan_fd;        /* jobject 'fd' in sun.nio.ch.FileChannelImpl */
+#if defined(__linux__)
+typedef ssize_t copy_file_range_func(int, loff_t*, int, loff_t*, size_t,
+                                     unsigned int);
+static copy_file_range_func* my_copy_file_range_func = NULL;
+#endif
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
+Java_sun_nio_ch_FileChannelImpl_allocationGranularity0(JNIEnv *env, jclass clazz)
 {
     jlong pageSize = sysconf(_SC_PAGESIZE);
-    chan_fd = (*env)->GetFieldID(env, clazz, "fd", "Ljava/io/FileDescriptor;");
+#if defined(__linux__)
+    my_copy_file_range_func =
+        (copy_file_range_func*) dlsym(RTLD_DEFAULT, "copy_file_range");
+#endif
     return pageSize;
 }
 
@@ -73,11 +81,10 @@ handle(JNIEnv *env, jlong rv, char *msg)
 
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this, jobject fdo,
                                      jint prot, jlong off, jlong len, jboolean map_sync)
 {
     void *mapAddress = 0;
-    jobject fdo = (*env)->GetObjectField(env, this, chan_fd);
     jint fd = fdval(env, fdo);
     int protections = 0;
     int flags = 0;
@@ -162,14 +169,41 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFDO,
                                             jlong position, jlong count,
-                                            jobject dstFDO)
+                                            jobject dstFDO, jboolean append)
 {
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);
 
 #if defined(__linux__)
+    // copy_file_range fails with EBADF when appending, and sendfile
+    // fails with EINVAL
+    if (append == JNI_TRUE)
+        return IOS_UNSUPPORTED_CASE;
+
     off64_t offset = (off64_t)position;
-    jlong n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
+    jlong n;
+    if (my_copy_file_range_func != NULL) {
+        size_t len = (size_t)count;
+        n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, len, 0);
+        if (n < 0) {
+            switch (errno) {
+                case EINTR:
+                    return IOS_INTERRUPTED;
+                case EINVAL:
+                case ENOSYS:
+                case EXDEV:
+                    // ignore and try sendfile()
+                    break;
+                default:
+                    JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
+                    return IOS_THROWN;
+            }
+        }
+        if (n >= 0)
+            return n;
+    }
+
+    n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
@@ -227,8 +261,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
     result = send_file(&dstFD, &sf_iobuf, SF_SYNC_CACHE);
 
     /* AIX send_file() will return 0 when this operation complete successfully,
-     * return 1 when partial bytes transfered and return -1 when an error has
-     * Occured.
+     * return 1 when partial bytes transferred and return -1 when an error has
+     * occurred.
      */
     if (result == -1) {
         if (errno == EWOULDBLOCK)
@@ -248,7 +282,55 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 
     return IOS_UNSUPPORTED_CASE;
 #else
-    return IOS_UNSUPPORTED_CASE;
+    return IOS_UNSUPPORTED;
 #endif
 }
 
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_FileChannelImpl_transferFrom0(JNIEnv *env, jobject this,
+                                              jobject srcFDO, jobject dstFDO,
+                                              jlong position, jlong count,
+                                              jboolean append)
+{
+#if defined(__linux__)
+    if (my_copy_file_range_func == NULL)
+        return IOS_UNSUPPORTED;
+    // copy_file_range fails with EBADF when appending
+    if (append == JNI_TRUE)
+        return IOS_UNSUPPORTED_CASE;
+
+    jint srcFD = fdval(env, srcFDO);
+    jint dstFD = fdval(env, dstFDO);
+
+    off64_t offset = (off64_t)position;
+    size_t len = (size_t)count;
+    jlong n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, len, 0);
+    if (n < 0) {
+        if (errno == EAGAIN)
+            return IOS_UNAVAILABLE;
+        if (errno == ENOSYS)
+            return IOS_UNSUPPORTED_CASE;
+        if ((errno == EBADF || errno == EINVAL || errno == EXDEV) &&
+            ((ssize_t)count >= 0))
+            return IOS_UNSUPPORTED_CASE;
+        if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+        }
+        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+        return IOS_THROWN;
+    }
+    return n;
+#else
+    return IOS_UNSUPPORTED;
+#endif
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
+{
+#if defined(LINUX)
+    return 0x7ffff000; // 2,147,479,552 maximum for sendfile()
+#else
+    return java_lang_Integer_MAX_VALUE;
+#endif
+}

@@ -101,7 +101,7 @@ public class JavadocElementList {
                 throw new IllegalStateException("Missing: " + current);
             }
 
-             //use the internal structure to avoid unnecesarily completing the symbol using the UsesProvidesVisitor:
+             //use the internal structure to avoid unnecessarily completing the symbol using the UsesProvidesVisitor:
             modulesAndExports.put(mod.getQualifiedName().toString(),
                                   mod.exports
                                      .stream()

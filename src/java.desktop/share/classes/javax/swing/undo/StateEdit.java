@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package javax.swing.undo;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 
 /**
  * <P>StateEdit is a general edit for objects that change state.
@@ -178,7 +178,7 @@ public class StateEdit
      * Remove redundant key/values in state hashtables.
      */
     protected void removeRedundantState() {
-        Vector<Object> uselessKeys = new Vector<>();
+        ArrayList<Object> uselessKeys = new ArrayList<>();
         Enumeration<Object> myKeys = preState.keys();
 
         // Locate redundant state
@@ -186,13 +186,13 @@ public class StateEdit
             Object myKey = myKeys.nextElement();
             if (postState.containsKey(myKey) &&
                 postState.get(myKey).equals(preState.get(myKey))) {
-                uselessKeys.addElement(myKey);
+                uselessKeys.add(myKey);
             }
         }
 
         // Remove redundant state
         for (int i = uselessKeys.size()-1; i >= 0; i--) {
-            Object myKey = uselessKeys.elementAt(i);
+            Object myKey = uselessKeys.get(i);
             preState.remove(myKey);
             postState.remove(myKey);
         }

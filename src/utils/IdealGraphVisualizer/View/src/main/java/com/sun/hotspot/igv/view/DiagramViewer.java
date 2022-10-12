@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.graph.Figure;
 import java.awt.Component;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.util.Collection;
 import java.util.List;
 import javax.swing.JComponent;
@@ -44,7 +45,7 @@ interface DiagramViewer {
         PANNING,
     }
 
-    public void paint(Graphics2D svgGenerator);
+    public void paint(Graphics2D generator);
 
     public Lookup getLookup();
 
@@ -69,5 +70,7 @@ interface DiagramViewer {
     public void centerFigures(List<Figure> list);
 
     public void setInteractionMode(InteractionMode mode);
+
+    public Rectangle getBounds();
 
 }

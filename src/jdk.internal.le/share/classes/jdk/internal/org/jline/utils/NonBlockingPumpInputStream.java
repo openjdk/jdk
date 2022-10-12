@@ -106,6 +106,20 @@ public class NonBlockingPumpInputStream extends NonBlockingInputStream {
         return res;
     }
 
+    @Override
+    public synchronized int readBuffered(byte[] b) throws IOException {
+        checkIoException();
+        int res = wait(readBuffer, 0L);
+        if (res >= 0) {
+            res = 0;
+            while (res < b.length && readBuffer.hasRemaining()) {
+                b[res++] = (byte) (readBuffer.get() & 0x00FF);
+            }
+        }
+        rewind(readBuffer, writeBuffer);
+        return res;
+    }
+
     public synchronized void setIoException(IOException exception) {
         this.ioException = exception;
         notifyAll();

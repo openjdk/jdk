@@ -345,7 +345,7 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
                 wName = L"Arial";
             }
 
-            WCHAR* wEName;
+            LPCWSTR wEName;
             if (!wcscmp(wName, L"Helvetica") || !wcscmp(wName, L"SansSerif")) {
                 wEName = L"Arial";
             } else if (!wcscmp(wName, L"TimesRoman") ||
@@ -388,7 +388,7 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
     return awtFont;
 }
 
-static void strip_tail(wchar_t* text, wchar_t* tail) { // strips tail and any possible whitespace before it from the end of text
+static void strip_tail(wchar_t* text, const wchar_t* tail) { // strips tail and any possible whitespace before it from the end of text
     if (wcslen(text)<=wcslen(tail)) {
         return;
     }
@@ -495,7 +495,7 @@ static HFONT CreateHFont_sub(LPCWSTR name, int style, int height,
     return hFont;
 }
 
-HFONT AwtFont::CreateHFont(WCHAR* name, int style, int height,
+HFONT AwtFont::CreateHFont(LPCWSTR name, int style, int height,
                            int angle, float awScale)
 {
     WCHAR longName[80];

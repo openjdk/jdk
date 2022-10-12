@@ -32,6 +32,7 @@
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodHandles.Lookup.ClassOption;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
@@ -44,12 +45,19 @@ public class InstantiateHiddenClass {
         " } } ");
 
     public static void main(String[] args) throws Throwable {
+        // This class is also used by the appcds/dynamicArchive/RegularHiddenClass.java
+        // test which will pass the "keep-alive" argument during dynamic CDS dump
+        // for preventing from being GC'ed prior to the dumping operation.
+        boolean keepAlive = false;
+        if (args.length == 1 && args[0].equals("keep-alive")) {
+            keepAlive = true;
+        }
 
         // Test that a hidden class cannot be found through its name.
         try {
             Lookup lookup = MethodHandles.lookup();
-            Class<?> cl = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
-            Class.forName(cl.getName()).newInstance();
+            Class<?> c0 = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
+            Class.forName(c0.getName()).newInstance();
             throw new RuntimeException("Expected ClassNotFoundException not thrown");
         } catch (ClassNotFoundException e ) {
             // Test passed
@@ -60,8 +68,9 @@ public class InstantiateHiddenClass {
         // Verify that the references to these objects are different and references
         // to their classes are not equal either.
         Lookup lookup = MethodHandles.lookup();
-        Class<?> c1 = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
-        Class<?> c2 = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
+        ClassOption classOption = keepAlive ? STRONG : NESTMATE;
+        Class<?> c1 = lookup.defineHiddenClass(klassbuf, false, classOption).lookupClass();
+        Class<?> c2 = lookup.defineHiddenClass(klassbuf, false, classOption).lookupClass();
         Object o1 = c1.newInstance();
         Object o2 = c2.newInstance();
         if (o1 == o2) {

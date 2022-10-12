@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -885,8 +885,7 @@ public abstract class Duration {
      * @return A non-{@code null} valid {@code String} representation of this {@code Duration}.
      */
     public String toString() {
-
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         if (getSign() < 0) {
             buf.append('-');
@@ -946,15 +945,15 @@ public abstract class Duration {
         }
 
         /* Insert decimal point */
-        StringBuffer buf;
+        StringBuilder buf;
         int insertionPoint = intString.length() - scale;
         if (insertionPoint == 0) { /* Point goes right before intVal */
             return "0." + intString;
         } else if (insertionPoint > 0) { /* Point goes inside intVal */
-            buf = new StringBuffer(intString);
+            buf = new StringBuilder(intString);
             buf.insert(insertionPoint, '.');
         } else { /* We must insert zeros between point and intVal */
-            buf = new StringBuffer(3 - insertionPoint + intString.length());
+            buf = new StringBuilder(3 - insertionPoint + intString.length());
             buf.append("0.");
             for (int i = 0; i < -insertionPoint; i++) {
                 buf.append('0');

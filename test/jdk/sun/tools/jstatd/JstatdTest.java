@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,13 @@ import jdk.test.lib.thread.ProcessThread;
  * <pre>
  * {@code
  * // start jstatd process
- * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy
+ * jstatd -J-XX:+UsePerfData
  *
  * // run jps and verify its output
  * jps -J-XX:+UsePerfData hostname
  *
  * // run jstat and verify its output
- * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname 250 5
+ * jstat -J-XX:+UsePerfData -gcutil pid@hostname 250 5
  *
  * // stop jstatd process and verify that no unexpected exceptions have been thrown
  * }
@@ -128,7 +128,6 @@ public final class JstatdTest {
      */
     private OutputAnalyzer runJps() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jps");
-        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:+UsePerfData"));
         launcher.addVMArg("-XX:+UsePerfData");
         launcher.addToolArg(getDestination());
 
@@ -173,15 +172,14 @@ public final class JstatdTest {
     /**
      * Depending on test settings command line can look like:
      *
-     * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname 250 5
-     * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname:port 250 5
-     * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname/serverName 250 5
-     * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname:port/serverName 250 5
+     * jstat -J-XX:+UsePerfData -gcutil pid@hostname 250 5
+     * jstat -J-XX:+UsePerfData -gcutil pid@hostname:port 250 5
+     * jstat -J-XX:+UsePerfData -gcutil pid@hostname/serverName 250 5
+     * jstat -J-XX:+UsePerfData -gcutil pid@hostname:port/serverName 250 5
      */
     private OutputAnalyzer runJstat() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstat");
         launcher.addVMArg("-XX:+UsePerfData");
-        launcher.addVMArg("-Duser.language=en");
         launcher.addToolArg("-gcutil");
         launcher.addToolArg(jstatdPid + "@" + getDestination());
         launcher.addToolArg(Integer.toString(JSTAT_GCUTIL_INTERVAL_MS));
@@ -244,21 +242,17 @@ public final class JstatdTest {
     /**
      * Depending on test settings command line can look like:
      *
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy -p port
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy -p port -r rmiport
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy -n serverName
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy -p port -n serverName
+     * jstatd -J-XX:+UsePerfData
+     * jstatd -J-XX:+UsePerfData -p port
+     * jstatd -J-XX:+UsePerfData -p port -r rmiport
+     * jstatd -J-XX:+UsePerfData -n serverName
+     * jstatd -J-XX:+UsePerfData -p port -n serverName
      */
     private String[] getJstatdCmd() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstatd");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addVMArg("-XX:+UsePerfData");
-        launcher.addVMArg("-Djava.security.manager=allow");
         String testSrc = System.getProperty("test.src");
-        File policy = new File(testSrc, "all.policy");
-        assertTrue(policy.exists() && policy.isFile(),
-                "Security policy " + policy.getAbsolutePath() + " does not exist or not a file");
-        launcher.addVMArg("-Djava.security.policy=" + policy.getAbsolutePath());
         if (port != null) {
             addToolArg(launcher,"-p", port);
         }

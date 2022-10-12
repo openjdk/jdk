@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
+#include "services/finalizerService.hpp"
 #include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/threadIdTable.hpp"
@@ -115,6 +116,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool has_dcmd_notification_event = false;
     bool stringtable_work = false;
     bool symboltable_work = false;
+    bool finalizerservice_work = false;
     bool resolved_method_table_work = false;
     bool thread_id_table_work = false;
     bool protection_domain_table_work = false;
@@ -145,9 +147,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (has_dcmd_notification_event = (!UseNotificationThread && DCmdFactory::has_pending_jmx_notification())) |
               (stringtable_work = StringTable::has_work()) |
               (symboltable_work = SymbolTable::has_work()) |
+              (finalizerservice_work = FinalizerService::has_work()) |
               (resolved_method_table_work = ResolvedMethodTable::has_work()) |
               (thread_id_table_work = ThreadIdTable::has_work()) |
-              (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
+              (protection_domain_table_work = ProtectionDomainCacheTable::has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
               (oop_handles_to_release = (_oop_handle_list != NULL)) |
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
@@ -170,6 +173,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (symboltable_work) {
       SymbolTable::do_concurrent_work(jt);
+    }
+
+    if (finalizerservice_work) {
+      FinalizerService::do_concurrent_work(jt);
     }
 
     if (has_jvmti_events) {
@@ -200,7 +207,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (protection_domain_table_work) {
-      SystemDictionary::pd_cache_table()->unlink();
+      ProtectionDomainCacheTable::unlink();
     }
 
     if (oopstorage_work) {
@@ -223,7 +230,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
 void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  // If you enqueue events before the service thread runs, gc and the sweeper
+  // If you enqueue events before the service thread runs, gc
   // cannot keep the nmethod alive.  This could be restricted to compiled method
   // load and unload events, if we wanted to be picky.
   assert(_instance != NULL, "cannot enqueue events before the service thread runs");

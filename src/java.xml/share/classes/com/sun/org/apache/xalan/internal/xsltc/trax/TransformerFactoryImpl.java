@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,9 @@
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.utils.FeaturePropertyBase;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityPropertyManager.Property;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
@@ -88,7 +88,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: May 2021
+ * @LastModified: Jan 2022
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
@@ -286,7 +286,8 @@ public class TransformerFactoryImpl
         _xmlSecurityManager = new XMLSecurityManager(true);
         //Unmodifiable hash map with loaded external extension functions
         _xsltcExtensionFunctions = null;
-        _extensionClassLoader = new JdkProperty<>(ImplPropMap.EXTCLSLOADER, null, State.DEFAULT);
+        _extensionClassLoader = new JdkProperty<>(ImplPropMap.EXTCLSLOADER,
+                ClassLoader.class, null, State.DEFAULT);
     }
 
     public Map<String, Class<?>> getExternalExtensionsMap() {

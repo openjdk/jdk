@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,11 +281,15 @@ void outputStream::print_julong(julong value) {
  *
  * indent is applied to each line.  Ends with a CR.
  */
-void outputStream::print_data(void* data, size_t len, bool with_ascii) {
+void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_addr) {
   size_t limit = (len + 16) / 16 * 16;
   for (size_t i = 0; i < limit; ++i) {
     if (i % 16 == 0) {
-      indent().print(INTPTR_FORMAT_W(07) ":", i);
+      if (rel_addr) {
+        indent().print("%07" PRIxPTR ":", i);
+      } else {
+        indent().print(INTPTR_FORMAT ":", p2i((unsigned char*)data + i));
+      }
     }
     if (i % 2 == 0) {
       print(" ");
@@ -417,8 +421,19 @@ stringStream::~stringStream() {
   }
 }
 
+// tty needs to be always accessible since there are code paths that may write to it
+// outside of the VM lifespan.
+// Examples for pre-VM-init accesses: Early NMT init, Early UL init
+// Examples for post-VM-exit accesses: many, e.g. NMT C-heap bounds checker, signal handling, AGCT, ...
+// During lifetime tty is served by an instance of defaultStream. That instance's deletion cannot
+// be (easily) postponed or omitted since it has ties to the JVM infrastructure.
+// The policy followed here is a compromise reached during review of JDK-8292351:
+// - pre-init: we silently swallow all output. We won't see anything, but at least won't crash
+// - post-exit: we write to a simple fdStream, but somewhat mimic the behavior of the real defaultStream
+static nullStream tty_preinit_stream;
+outputStream* tty = &tty_preinit_stream;
+
 xmlStream*   xtty;
-outputStream* tty;
 extern Mutex* tty_lock;
 
 #define EXTRACHARLEN   32
@@ -545,7 +560,7 @@ const char* make_log_name(const char* log_name, const char* force_directory) {
 }
 
 fileStream::fileStream(const char* file_name) {
-  _file = fopen(file_name, "w");
+  _file = os::fopen(file_name, "w");
   if (_file != NULL) {
     _need_close = true;
   } else {
@@ -555,7 +570,7 @@ fileStream::fileStream(const char* file_name) {
 }
 
 fileStream::fileStream(const char* file_name, const char* opentype) {
-  _file = fopen(file_name, opentype);
+  _file = os::fopen(file_name, opentype);
   if (_file != NULL) {
     _need_close = true;
   } else {
@@ -611,10 +626,13 @@ void fileStream::flush() {
   }
 }
 
+fdStream fdStream::_stdout_stream(1);
+fdStream fdStream::_stderr_stream(2);
+
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
     // Make an unused local variable to avoid warning from gcc compiler.
-    size_t count = ::write(_fd, s, (int)len);
+    ssize_t count = ::write(_fd, s, (int)len);
     update_position(s, len);
   }
 }
@@ -746,7 +764,7 @@ void defaultStream::start_log() {
       outputStream *text = xs->text();
       for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
         assert(p->key() != NULL, "p->key() is NULL");
-        if (p->is_readable()) {
+        if (p->readable()) {
           // Print in two stages to avoid problems with long
           // keys/values.
           text->print_raw(p->key());
@@ -957,13 +975,13 @@ void ostream_exit() {
   if (ostream_exit_called)  return;
   ostream_exit_called = true;
   ClassListWriter::delete_classlist();
-  if (tty != defaultStream::instance) {
-    delete tty;
+  // Make sure tty works after VM exit by assigning an always-on functioning fdStream.
+  outputStream* tmp = tty;
+  tty = DisplayVMOutputToStderr ? fdStream::stdout_stream() : fdStream::stderr_stream();
+  if (tmp != &tty_preinit_stream && tmp != defaultStream::instance) {
+    delete tmp;
   }
-  if (defaultStream::instance != NULL) {
-    delete defaultStream::instance;
-  }
-  tty = NULL;
+  delete defaultStream::instance;
   xtty = NULL;
   defaultStream::instance = NULL;
 }
@@ -1069,6 +1087,7 @@ bufferedStream::~bufferedStream() {
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <arpa/inet.h>
 #elif defined(_WINDOWS)
 #include <winsock2.h>
@@ -1079,7 +1098,7 @@ networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
 
   _socket = -1;
 
-  int result = os::socket(AF_INET, SOCK_STREAM, 0);
+  int result = ::socket(AF_INET, SOCK_STREAM, 0);
   if (result <= 0) {
     assert(false, "Socket could not be created!");
   } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,7 @@
 
 package sun.font;
 
-import java.awt.FontFormatException;
-import java.awt.font.FontRenderContext;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
-import java.util.Locale;
 import java.nio.charset.*;
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
@@ -119,13 +114,13 @@ class XMap {
         } else if (encoding.equals("ksc5601.1987-0")) {
             jclass ="sun.font.X11KSC5601";
             nBytes = DOUBLE_BYTE;
-        } else if (encoding.equals( "ksc5601.1992-3")) {
+        } else if (encoding.equals("ksc5601.1992-3")) {
             jclass ="sun.font.X11Johab";
             nBytes = DOUBLE_BYTE;
-        } else if (encoding.equals( "ksc5601.1987-1")) {
+        } else if (encoding.equals("ksc5601.1987-1")) {
             jclass ="EUC_KR";
             nBytes = DOUBLE_BYTE;
-        } else if (encoding.equals( "cns11643-1")) {
+        } else if (encoding.equals("cns11643-1")) {
             jclass = "sun.font.X11CNS11643P1";
             nBytes = DOUBLE_BYTE;
         } else if (encoding.equals("cns11643-2")) {
@@ -137,7 +132,7 @@ class XMap {
         } else if (encoding.equals("gb2312.1980-0")) {
             jclass = "sun.font.X11GB2312";
             nBytes = DOUBLE_BYTE;
-        } else if (encoding.indexOf("big5") >= 0) {
+        } else if (encoding.contains("big5")) {
             jclass = "Big5";
             nBytes = DOUBLE_BYTE;
             addAscii = true;
@@ -146,16 +141,16 @@ class XMap {
         } else if (encoding.equals("gbk-0")) {
             jclass = "sun.font.X11GBK";
             nBytes = DOUBLE_BYTE;
-        } else if (encoding.indexOf("sun.unicode-0") >= 0) {
+        } else if (encoding.contains("sun.unicode-0")) {
             jclass = "sun.font.X11SunUnicode_0";
             nBytes = DOUBLE_BYTE;
-        } else if (encoding.indexOf("gb18030.2000-1") >= 0) {
+        } else if (encoding.contains("gb18030.2000-1")) {
             jclass = "sun.font.X11GB18030_1";
             nBytes = DOUBLE_BYTE;
-        } else if (encoding.indexOf( "gb18030.2000-0") >= 0) {
+        } else if (encoding.contains("gb18030.2000-0")) {
             jclass = "sun.font.X11GB18030_0";
             nBytes = DOUBLE_BYTE;
-        } else if (encoding.indexOf("hkscs") >= 0) {
+        } else if (encoding.contains("hkscs")) {
             jclass = "MS950_HKSCS_XP";
             nBytes = DOUBLE_BYTE;
         }

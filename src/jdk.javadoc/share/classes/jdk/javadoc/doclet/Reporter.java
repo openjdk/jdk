@@ -49,7 +49,7 @@ import com.sun.source.util.DocTreePath;
  * means the output that is the expected result of executing some operation,
  * such as the command-line help that is generated when using a {@code --help} option,
  * and "diagnostic output" refers to any errors, warnings and other output that is
- * a side-effect of executing the operation.
+ * a side effect of executing the operation.
  *
  * <p>The exact manner in which diagnostics are output is unspecified and depends
  * on the enclosing context. For example:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ import com.sun.jdi.event.VMStartEvent;
  * {@code -agentlib:jdwp=transport=xxx,server=y}
  * </LI>
  * <LI>
- * Target VM generates and outputs the tranport-specific address at which it will
+ * Target VM generates and outputs the transport-specific address at which it will
  * listen for a connection.</LI>
  * <LI>
  * Debugger is launched. Debugger selects a connector in the list
@@ -158,7 +158,7 @@ import com.sun.jdi.event.VMStartEvent;
  * </LI>
  * <LI>
  * Later, an uncaught exception is thrown in the target VM. The target
- * VM generates the tranport-specific address at which it will
+ * VM generates the transport-specific address at which it will
  * listen for a connection.
  * <LI>Target VM launches the debugger with the following items concatenated
  * together (separated by spaces) to form the command line:
@@ -255,7 +255,7 @@ import com.sun.jdi.event.VMStartEvent;
  * For example, if the transport service {@link
  * TransportService#name() name()} method
  * returns {@code telepathic} then the AttachingConnector will
- * be named {@code telepathicAttach}. Similiarly the ListeningConnector
+ * be named {@code telepathicAttach}. Similarly the ListeningConnector
  * will be named with the string {@code Listen} tagged onto the
  * name of the transport service. The {@link
  * Connector#description() description()} method
@@ -377,7 +377,7 @@ public interface VirtualMachineManager {
       * mirror to represent the composite state of the target VM.
       *
       * <p> The {@code process} argument specifies the
-      * {@link java.lang.Process} object for the taget VM. It may be
+      * {@link java.lang.Process} object for the target VM. It may be
       * specified as {@code null}. If the target VM is launched
       * by a {@link LaunchingConnector
       * LaunchingConnector} the {@code process} argument should be

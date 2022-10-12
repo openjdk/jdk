@@ -30,7 +30,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
 
-class G1EvacuationInfo;
+class G1EvacInfo;
 class G1NUMA;
 
 // Interface to keep track of which regions G1 is currently allocating into. Provides
@@ -68,7 +68,7 @@ private:
   void set_survivor_full();
   void set_old_full();
 
-  void reuse_retained_old_region(G1EvacuationInfo* evacuation_info,
+  void reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                  OldGCAllocRegion* old,
                                  HeapRegion** retained);
 
@@ -105,8 +105,8 @@ public:
   void init_mutator_alloc_regions();
   void release_mutator_alloc_regions();
 
-  void init_gc_alloc_regions(G1EvacuationInfo* evacuation_info);
-  void release_gc_alloc_regions(G1EvacuationInfo* evacuation_info);
+  void init_gc_alloc_regions(G1EvacInfo* evacuation_info);
+  void release_gc_alloc_regions(G1EvacInfo* evacuation_info);
   void abandon_gc_alloc_regions();
   bool is_retained_old_region(HeapRegion* hr);
 
@@ -161,7 +161,20 @@ private:
   // Number of words allocated directly (not counting PLAB allocation).
   size_t _direct_allocated[G1HeapRegionAttr::Num];
 
-  void flush_and_retire_stats();
+  // Number of PLAB refills experienced so far.
+  size_t _num_plab_fills[G1HeapRegionAttr::Num];
+  size_t _num_direct_allocations[G1HeapRegionAttr::Num];
+
+  size_t _plab_fill_counter[G1HeapRegionAttr::Num];
+  // Current desired PLAB size incorporating eventual boosting.
+  size_t _cur_desired_plab_size[G1HeapRegionAttr::Num];
+
+  // The amount of PLAB refills tolerated until boosting PLAB size.
+  // This value is the same for all generations because they all use the same
+  // resizing logic.
+  size_t _tolerated_refills;
+
+  void flush_and_retire_stats(uint num_workers);
   inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
   inline PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
 
@@ -177,6 +190,7 @@ public:
 
   size_t waste() const;
   size_t undo_waste() const;
+  size_t plab_size(G1HeapRegionAttr which) const;
 
   // Allocate word_sz words in dest, either directly into the regions or by
   // allocating a new PLAB. Returns the address of the allocated memory, NULL if
@@ -223,9 +237,6 @@ protected:
   // Regions allocated for the current archive range.
   GrowableArray<HeapRegion*> _allocated_regions;
 
-  // The number of bytes used in the current range.
-  size_t _summary_bytes_used;
-
   // Current allocation window within the current region.
   HeapWord* _bottom;
   HeapWord* _top;
@@ -243,7 +254,6 @@ public:
     _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
                                                          ResourceObj::C_HEAP),
                         2), mtGC),
-    _summary_bytes_used(0),
     _bottom(NULL),
     _top(NULL),
     _max(NULL) { }
@@ -261,19 +271,6 @@ public:
   // aligning to the requested alignment.
   void complete_archive(GrowableArray<MemRegion>* ranges,
                         size_t end_alignment_in_bytes);
-
-  // The number of bytes allocated by this allocator.
-  size_t used() {
-    return _summary_bytes_used;
-  }
-
-  // Clear the count of bytes allocated in prior G1 regions. This
-  // must be done when recalculate_use is used to reset the counter
-  // for the generic allocator, since it counts bytes in all G1
-  // regions, including those still associated with this allocator.
-  void clear_used() {
-    _summary_bytes_used = 0;
-  }
 };
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,12 +122,10 @@ public class TestIntegerModuloP {
         final int length = Integer.parseInt(args[1]);
         int seed = Integer.parseInt(args[2]);
 
-        Class<IntegerFieldModuloP> fieldBaseClass = IntegerFieldModuloP.class;
         try {
-            Class<? extends IntegerFieldModuloP> clazz =
-                Class.forName(className).asSubclass(fieldBaseClass);
-            IntegerFieldModuloP field =
-                clazz.getDeclaredConstructor().newInstance();
+            Class<?> clazz = Class.forName(className);
+            IntegerFieldModuloP field = (IntegerFieldModuloP)
+                    clazz.getDeclaredField("ONE").get(null);
 
             setUpFunctions(field, length);
 

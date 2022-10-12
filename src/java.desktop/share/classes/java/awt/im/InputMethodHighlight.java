@@ -111,7 +111,7 @@ public class InputMethodHighlight {
      * @param state The conversion state for the text range - RAW_TEXT or CONVERTED_TEXT
      * @see InputMethodHighlight#RAW_TEXT
      * @see InputMethodHighlight#CONVERTED_TEXT
-     * @exception IllegalArgumentException if a state other than RAW_TEXT or CONVERTED_TEXT is given
+     * @throws IllegalArgumentException if a state other than RAW_TEXT or CONVERTED_TEXT is given
      */
     public InputMethodHighlight(boolean selected, int state) {
         this(selected, state, 0, null);
@@ -125,7 +125,7 @@ public class InputMethodHighlight {
      * @param variation The style variation for the text range
      * @see InputMethodHighlight#RAW_TEXT
      * @see InputMethodHighlight#CONVERTED_TEXT
-     * @exception IllegalArgumentException if a state other than RAW_TEXT or CONVERTED_TEXT is given
+     * @throws IllegalArgumentException if a state other than RAW_TEXT or CONVERTED_TEXT is given
      */
     public InputMethodHighlight(boolean selected, int state, int variation) {
         this(selected, state, variation, null);
@@ -140,7 +140,7 @@ public class InputMethodHighlight {
      * @param style the rendering style attributes for the text range, or null
      * @see InputMethodHighlight#RAW_TEXT
      * @see InputMethodHighlight#CONVERTED_TEXT
-     * @exception IllegalArgumentException if a state other than RAW_TEXT or CONVERTED_TEXT is given
+     * @throws IllegalArgumentException if a state other than RAW_TEXT or CONVERTED_TEXT is given
      * @since 1.3
      */
     public InputMethodHighlight(boolean selected, int state, int variation,

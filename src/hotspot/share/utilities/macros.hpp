@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,24 @@
 // Apply pre-processor token pasting to the expansions of x and y.
 // The token pasting operator (##) prevents its arguments from being
 // expanded.  This macro allows expansion of its arguments before the
-// concatenation is performed.  Note: One auxilliary level ought to be
+// concatenation is performed.  Note: One auxiliary level ought to be
 // sufficient, but two are used because of bugs in some preprocesors.
 #define PASTE_TOKENS(x, y) PASTE_TOKENS_AUX(x, y)
 #define PASTE_TOKENS_AUX(x, y) PASTE_TOKENS_AUX2(x, y)
 #define PASTE_TOKENS_AUX2(x, y) x ## y
 
+// Convenience macro that produces a string literal with the filename
+// and linenumber of the location where the macro was used.
+#ifndef FILE_AND_LINE
+#define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
+#endif
+
 // -DINCLUDE_<something>=0 | 1 can be specified on the command line to include
 // or exclude functionality.
+
+#ifndef FILE_AND_LINE
+#define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
+#endif
 
 #ifndef INCLUDE_JVMTI
 #define INCLUDE_JVMTI 1
@@ -126,9 +136,11 @@
 #if INCLUDE_MANAGEMENT
 #define NOT_MANAGEMENT_RETURN        /* next token must be ; */
 #define NOT_MANAGEMENT_RETURN_(code) /* next token must be ; */
+#define MANAGEMENT_ONLY(x) x
 #else
 #define NOT_MANAGEMENT_RETURN        {}
 #define NOT_MANAGEMENT_RETURN_(code) { return code; }
+#define MANAGEMENT_ONLY(x)
 #endif // INCLUDE_MANAGEMENT
 
 #ifndef INCLUDE_EPSILONGC
@@ -238,22 +250,6 @@
 #define NOT_ZGC_RETURN        {}
 #define NOT_ZGC_RETURN_(code) { return code; }
 #endif // INCLUDE_ZGC
-
-#ifndef INCLUDE_NMT
-#define INCLUDE_NMT 1
-#endif // INCLUDE_NMT
-
-#if INCLUDE_NMT
-#define NOT_NMT_RETURN        /* next token must be ; */
-#define NOT_NMT_RETURN_(code) /* next token must be ; */
-#define NMT_ONLY(x) x
-#define NOT_NMT(x)
-#else
-#define NOT_NMT_RETURN        {}
-#define NOT_NMT_RETURN_(code) { return code; }
-#define NMT_ONLY(x)
-#define NOT_NMT(x) x
-#endif // INCLUDE_NMT
 
 #ifndef INCLUDE_JFR
 #define INCLUDE_JFR 1
@@ -526,7 +522,7 @@
 
 // Note: There are two ARM ports. They set the following in the makefiles:
 // 1. 32-bit port:   -DARM -DARM32 -DTARGET_ARCH_arm
-// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aaarch64
+// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aarch64
 #ifdef ARM
 #define ARM_ONLY(code) code
 #define NOT_ARM(code)
@@ -551,7 +547,39 @@
 #define NOT_AARCH64(code) code
 #endif
 
+#ifdef TARGET_ARCH_aarch64
+#define AARCH64_PORT_ONLY(code) code
+#else
+#define AARCH64_PORT_ONLY(code)
+#endif
+
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
+
+#if defined(RISCV32) || defined(RISCV64)
+#define RISCV
+#define RISCV_ONLY(code) code
+#define NOT_RISCV(code)
+#else
+#undef RISCV
+#define RISCV_ONLY(code)
+#define NOT_RISCV(code) code
+#endif
+
+#ifdef RISCV32
+#define RISCV32_ONLY(code) code
+#define NOT_RISCV32(code)
+#else
+#define RISCV32_ONLY(code)
+#define NOT_RISCV32(code) code
+#endif
+
+#ifdef RISCV64
+#define RISCV64_ONLY(code) code
+#define NOT_RISCV64(code)
+#else
+#define RISCV64_ONLY(code)
+#define NOT_RISCV64(code) code
+#endif
 
 #ifdef VM_LITTLE_ENDIAN
 #define LITTLE_ENDIAN_ONLY(code) code

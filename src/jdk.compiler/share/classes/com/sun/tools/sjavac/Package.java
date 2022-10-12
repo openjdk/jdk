@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import com.sun.tools.sjavac.pubapi.PubApi;
 
 /**
  * The Package class maintains meta information about a package.
- * For example its sources, dependents,its pubapi and its artifacts.
+ * For example its sources, dependents, its pubapi and its artifacts.
  *
  * It might look odd that we track dependents/pubapi/artifacts on
  * a package level, but it makes sense since recompiling a full package

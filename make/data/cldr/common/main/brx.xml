@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -59,7 +59,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bo">तिब्बती</language>
 			<language type="br">ब्रटों</language>
 			<language type="bra">ब्रज</language>
-			<language type="brx">बड़ो</language>
+			<language type="brx">बर’</language>
 			<language type="bs">बोस्नियाई</language>
 			<language type="bua">बुरियात</language>
 			<language type="bug">बुगीनी</language>
@@ -92,9 +92,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="da">डैनीश्</language>
 			<language type="dak">डकौटा</language>
 			<language type="dar">दर्गवा</language>
-			<language type="de">ज़र्मन</language>
-			<language type="de_AT">जर्मन (ऑस्ट्रिया)</language>
-			<language type="de_CH">उच्च स्तरिय स्वीस जर्मन</language>
+			<language type="de">जार्मान</language>
+			<language type="de_AT">अस्ट्रेयाआरि जार्मान</language>
+			<language type="de_CH">सुइस गोजौ जार्मान</language>
 			<language type="del">दलावार्</language>
 			<language type="den">स्लेव्</language>
 			<language type="dgr">डोगरीब्</language>
@@ -112,16 +112,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eka">एकाजुक</language>
 			<language type="el">ग्रीक</language>
 			<language type="elx">एलामी</language>
-			<language type="en">अंग्रेज़ी</language>
-			<language type="en_AU">अंग्रेज़ी (ऑस्ट्रेलिया का)</language>
-			<language type="en_CA">अंग्रेज़ी (कनाडाई)</language>
-			<language type="en_GB">अंग्रेजी (ब्रिटिश)</language>
-			<language type="en_US">अंग्रेज़ी (अमरिकी)</language>
+			<language type="en">इंराजी</language>
+			<language type="en_AU">अस्ट्रेलियानि इंराजी</language>
+			<language type="en_CA">कानाडानि इंराजी</language>
+			<language type="en_GB">ब्रिटिश इंराजी</language>
+			<language type="en_GB" alt="short">इउ.के इंराजी</language>
+			<language type="en_US">आमेरिकानि इंराजी</language>
+			<language type="en_US" alt="short">इउ.एस इंराजी</language>
 			<language type="enm">मध्य अंग्रेज़ी</language>
 			<language type="eo">एस्पेरान्तो</language>
-			<language type="es">स्पैनिश</language>
-			<language type="es_419">लैटिन अमरिकी स्पैनिश</language>
-			<language type="es_ES">ईवेरियाई स्पैनिश</language>
+			<language type="es">स्पेनिश</language>
+			<language type="es_419">लेटीन आमेरिकानि स्पेनिश</language>
+			<language type="es_ES">युरोपनि स्पेनिश</language>
+			<language type="es_MX">मेक्सिक’नि स्पेनिश</language>
 			<language type="et">ऐस्टोनियन्</language>
 			<language type="eu">बास्क्</language>
 			<language type="ewo">एवौंडो</language>
@@ -134,9 +137,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fj">फ़ीजी</language>
 			<language type="fo">फिरोज़ी</language>
 			<language type="fon">फोन</language>
-			<language type="fr">फ्रांसीसी</language>
-			<language type="fr_CA">फ्रांसीसी (कनाडाई)</language>
-			<language type="fr_CH">फ्रांसीसी (स्वीस)</language>
+			<language type="fr">फ्रेन्च</language>
+			<language type="fr_CA">कानाडानि फ्रेन्च</language>
+			<language type="fr_CH">सुइस फ्रेन्च</language>
 			<language type="frm">मध्य फ्रांसीसी</language>
 			<language type="fro">पुरानी फ्रांसीसी</language>
 			<language type="frr">उत्तरी फ्रीज़ियन्</language>
@@ -190,9 +193,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="inh">ईंगुष</language>
 			<language type="io">ईडो</language>
 			<language type="is">आईस्लैंडिक्</language>
-			<language type="it">ईटालियन्</language>
+			<language type="it">इटालियान</language>
 			<language type="iu">इनूक्टीटूत्</language>
-			<language type="ja">जापानी</language>
+			<language type="ja">जापानीज</language>
 			<language type="jbo">लोजबान</language>
 			<language type="jpr">यहुदी फ़ारसी</language>
 			<language type="jrb">यहुदी अरबी</language>
@@ -327,7 +330,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pon">पोहनपी</language>
 			<language type="pro">पुरानी प्रोवाँसाल</language>
 			<language type="ps">पख़्तु</language>
-			<language type="pt">पुर्तगाली</language>
+			<language type="pt">पर्टुगिज</language>
+			<language type="pt_BR">ब्राजिलनि पर्टुगिज</language>
+			<language type="pt_PT">युरोपनि पर्टुगिज</language>
 			<language type="qu">क्वेचुआ</language>
 			<language type="raj">राजस्थानी</language>
 			<language type="rap">रापानुई</language>
@@ -337,7 +342,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro">रूमानीयन्</language>
 			<language type="ro_MD">मोल्डेवियन्</language>
 			<language type="rom">रुमानी</language>
-			<language type="ru">रुसी</language>
+			<language type="ru">रासियान</language>
 			<language type="rup">आरोमानी</language>
 			<language type="rw">किन्यारुआण्डा</language>
 			<language type="sa">संस्कृत्</language>
@@ -416,7 +421,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="uga">उगारिती</language>
 			<language type="uk">यूक्रेनियन्</language>
 			<language type="umb">उंबुंडु</language>
-			<language type="und">अज्ञात या अवैध भाषा</language>
+			<language type="und">मिथियै राव</language>
 			<language type="ur">ऊर्दु</language>
 			<language type="uz">उज़बेक्</language>
 			<language type="vai">वाई</language>
@@ -439,16 +444,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zap">ज़ापोतेक</language>
 			<language type="zbl">ब्लीस चिन्ह</language>
 			<language type="zen">ज़ेनागा</language>
-			<language type="zh">चीनी</language>
-			<language type="zh_Hans">चीनी (सरलीकृत)</language>
-			<language type="zh_Hant">चीनी (पारम्परिक)</language>
+			<language type="zh">चाइनीज</language>
+			<language type="zh" alt="menu">चाइनीज, मेण्डारिन</language>
+			<language type="zh_Hans">गोरलै खालामनाय चाइनीज</language>
+			<language type="zh_Hans" alt="long">गोरलै खालामनाय मेण्डारिन चाइनीज</language>
+			<language type="zh_Hant">आसार-खान्थियारि चाइनीज</language>
+			<language type="zh_Hant" alt="long">आसार-खान्थियारि चाइनीज</language>
 			<language type="zu">ज़ुलू</language>
 			<language type="zun">ज़ुनी</language>
 			<language type="zxx">रिक्त</language>
 			<language type="zza">ज़ाज़ा</language>
 		</languages>
 		<scripts>
-			<script type="Arab">अरबी</script>
+			<script type="Arab">आराबिक</script>
 			<script type="Armi">शहनशाही आरामाईक</script>
 			<script type="Armn">अर्मेनियाई</script>
 			<script type="Avst">अवस्तन्</script>
@@ -468,9 +476,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Cirt">सिर्थ</script>
 			<script type="Copt">कॉप्ट</script>
 			<script type="Cprt">सीप्रीओट्</script>
-			<script type="Cyrl">सिरिलिक्</script>
+			<script type="Cyrl">सिरिल्लिक</script>
 			<script type="Cyrs">पुरानी चर्च सिरिलिक्</script>
-			<script type="Deva">देवनागरी</script>
+			<script type="Deva">देबनागिरि</script>
 			<script type="Dsrt">देसेरट्</script>
 			<script type="Egyd">मीस्री डैमोटीक्</script>
 			<script type="Egyh">मीस्री हैरैटीक्</script>
@@ -486,8 +494,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hang">हंगुल</script>
 			<script type="Hani">हान</script>
 			<script type="Hano">हानुनु</script>
-			<script type="Hans">सरलीकृत हान</script>
-			<script type="Hant">पारम्परिक हान</script>
+			<script type="Hans">गोरलै खालामना होनाय</script>
+			<script type="Hans" alt="stand-alone">गोरलै खालामना होनाय हान</script>
+			<script type="Hant">आसार-खान्थिनि</script>
+			<script type="Hant" alt="stand-alone">आसार-खान्थिनि हान</script>
 			<script type="Hebr">हिब्रू</script>
 			<script type="Hira">हीरागाना</script>
 			<script type="Hmng">पाहवाह ह्मौंग</script>
@@ -507,7 +517,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Laoo">लाओ</script>
 			<script type="Latf">फ्रैक्तुर लैटिन</script>
 			<script type="Latg">गैलीक लैटिन</script>
-			<script type="Latn">लैटिन</script>
+			<script type="Latn">लेटीन</script>
 			<script type="Lepc">लेपचा</script>
 			<script type="Limb">लिम्बु</script>
 			<script type="Lina">लीनीयर ए</script>
@@ -567,9 +577,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Xsux">सुमेरो अक्काड़ी कुनेईफॉर्म</script>
 			<script type="Yiii">यी</script>
 			<script type="Zinh">विरासत</script>
-			<script type="Zxxx">अलिखित</script>
+			<script type="Zxxx">लिरै</script>
 			<script type="Zyyy">आम</script>
-			<script type="Zzzz">अज्ञात या अवैध लिपि</script>
+			<script type="Zzzz">मिथियै हांखो</script>
 		</scripts>
 		<territories>
 			<territory type="001">दुनिया</territory>
@@ -631,7 +641,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BM">बरमूडा</territory>
 			<territory type="BN">ब्रूनइ</territory>
 			<territory type="BO">बोलीविया</territory>
-			<territory type="BR">ब्राज़ील</territory>
+			<territory type="BR">ब्राजील</territory>
 			<territory type="BS">बहामा</territory>
 			<territory type="BT">भूटान</territory>
 			<territory type="BV">बुवे द्वीप</territory>
@@ -648,7 +658,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CK">कुक द्वीप</territory>
 			<territory type="CL">चिली</territory>
 			<territory type="CM">कोमेरान</territory>
-			<territory type="CN">चीन</territory>
+			<territory type="CN">चाइना</territory>
 			<territory type="CO">कोलम्बिया</territory>
 			<territory type="CR">कोस्टारीका</territory>
 			<territory type="CU">क्यूबा</territory>
@@ -656,7 +666,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CX">क्रिस्मस द्वीप</territory>
 			<territory type="CY">साइप्रस</territory>
 			<territory type="CZ">चेक गणराज्य</territory>
-			<territory type="DE">जर्मनी</territory>
+			<territory type="DE">जार्मानी</territory>
 			<territory type="DJ">द्जिबूती</territory>
 			<territory type="DK">डेनमार्क</territory>
 			<territory type="DM">डोमिनिका</territory>
@@ -675,9 +685,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FK">फ़ॉल्कलैंड द्वीप</territory>
 			<territory type="FM">माइक्रोनेशिया</territory>
 			<territory type="FO">फरो द्वीप</territory>
-			<territory type="FR">फ्राँस</territory>
+			<territory type="FR">फ्रान्स</territory>
 			<territory type="GA">गैबॉन</territory>
-			<territory type="GB">ब्रितन</territory>
+			<territory type="GB">जथाय ब्रिटिश हादोर</territory>
 			<territory type="GD">ग्रेनडा</territory>
 			<territory type="GE">जॉर्जिया</territory>
 			<territory type="GF">फ्राँसीसी गिआना</territory>
@@ -710,7 +720,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IQ">ईराक़</territory>
 			<territory type="IR">ईरान</territory>
 			<territory type="IS">आइसलैंड</territory>
-			<territory type="IT">इटली</territory>
+			<territory type="IT">इटाली</territory>
 			<territory type="JE">जर्सी</territory>
 			<territory type="JM">जमाइका</territory>
 			<territory type="JO">जॉर्डन</territory>
@@ -791,7 +801,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="RE">रेयूनियॉं</territory>
 			<territory type="RO">रोमानिया</territory>
 			<territory type="RS">सर्बिया</territory>
-			<territory type="RU">रूस</territory>
+			<territory type="RU">रासिया</territory>
 			<territory type="RW">रूआण्डा</territory>
 			<territory type="SA">सऊदी अरब</territory>
 			<territory type="SB">सॉलोमन द्वीप</territory>
@@ -831,7 +841,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UA">यूक्रेन</territory>
 			<territory type="UG">युगाँडा</territory>
 			<territory type="UM">युनाइटेड स्टेट्स के छोटे बाहरिय द्वीप</territory>
-			<territory type="US">संयुक्त राज्य अमरिका</territory>
+			<territory type="US">जथाय हादोर आमेरिका</territory>
 			<territory type="UY">युरूगुए</territory>
 			<territory type="UZ">उज़बेकिस्तान</territory>
 			<territory type="VA">वैटिकन</territory>
@@ -848,7 +858,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZA">दक्षिण अफ्रीका</territory>
 			<territory type="ZM">ज़ाम्बिया</territory>
 			<territory type="ZW">ज़ीम्बाब्वे</territory>
-			<territory type="ZZ">अज्ञात या अवैध प्रदेश</territory>
+			<territory type="ZZ">मिथियै ओनसोल</territory>
 		</territories>
 		<variants>
 			<variant type="1901">पारम्पारिक जर्मन वर्तनी 1901</variant>
@@ -884,7 +894,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="buddhist">बौद्ध पंचांग</type>
 			<type key="calendar" type="chinese">चीनी पंचांग</type>
-			<type key="calendar" type="gregorian">ग्रेगरीअन पंचांग</type>
+			<type key="calendar" type="gregorian">ग्रेग’रियान केलेण्डार</type>
 			<type key="calendar" type="hebrew">यहुदी पंचांग</type>
 			<type key="calendar" type="islamic">इस्लामी पंचांग</type>
 			<type key="calendar" type="islamic-civil">इस्लामी नागरिक पंचांग</type>
@@ -894,16 +904,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">सरलीकृत चीनी वर्गीकरण जीबी2312</type>
 			<type key="collation" type="phonebook">दूरभाष निर्देशिका वर्गीकरण</type>
 			<type key="collation" type="pinyin">पिनयीन वर्गीकरण</type>
+			<type key="collation" type="standard">थाखोआरि रोखोम फारि</type>
 			<type key="collation" type="stroke">स्ट्रोक वर्गीकरण</type>
 			<type key="collation" type="traditional">पारम्पारिक वर्गीकरण</type>
+			<type key="numbers" type="deva">देबनागिरि अनजिमाफोर</type>
+			<type key="numbers" type="latn">सोनाबारी अनजिमाफोर</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric">मिथार खिलमिथार</measurementSystemName>
-			<measurementSystemName type="US">यु.एस</measurementSystemName>
+			<measurementSystemName type="metric">मेट्रिक जखा</measurementSystemName>
+			<measurementSystemName type="UK">इउ.के</measurementSystemName>
+			<measurementSystemName type="US">इउ.एस</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="script">देवनागरी: {0}</codePattern>
-			<codePattern type="territory">क्षेत्र:भारत {0}</codePattern>
+			<codePattern type="language">राव: {0}</codePattern>
+			<codePattern type="script">हांखो: {0}</codePattern>
+			<codePattern type="territory">ओनसोल: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
@@ -911,6 +926,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
 		<exemplarCharacters type="index">[अ आ इ ई उ ऊ ऍ ए ऐ ऑ ओ औ क ख ग घ च छ ज झ ञ ट ठ ड {ड\u093C} ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -925,25 +941,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>M/d/yy GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} नि {0} आव</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} नि {0} आव</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
@@ -976,35 +1016,91 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="wide">
-							<month type="1">जानुवारी</month>
-							<month type="2">फेब्रुवारी</month>
-							<month type="3">मार्स</month>
-							<month type="4">एफ्रिल</month>
+						<monthWidth type="abbreviated">
+							<month type="1">जान</month>
+							<month type="2">फेब</month>
+							<month type="3">मार्च</month>
+							<month type="4">एप्रि</month>
 							<month type="5">मे</month>
 							<month type="6">जुन</month>
-							<month type="7">जुलाइ</month>
-							<month type="8">आगस्थ</month>
-							<month type="9">सेबथेज्ब़र</month>
-							<month type="10">अखथबर</month>
-							<month type="11">नबेज्ब़र</month>
-							<month type="12">दिसेज्ब़र</month>
+							<month type="7">जुल</month>
+							<month type="8">आग</month>
+							<month type="9">सेप</month>
+							<month type="10">अक्ट’</month>
+							<month type="11">नवे</month>
+							<month type="12">डिसे</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">ज</month>
+							<month type="2">फ</month>
+							<month type="3">म</month>
+							<month type="4">ए</month>
+							<month type="5">म</month>
+							<month type="6">ज</month>
+							<month type="7">ज</month>
+							<month type="8">आ</month>
+							<month type="9">स</month>
+							<month type="10">अ</month>
+							<month type="11">न</month>
+							<month type="12">ड</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">जानुवारी</month>
+							<month type="2">फेब्रूवारी</month>
+							<month type="3">मार्च</month>
+							<month type="4">एप्रिल</month>
+							<month type="5">मे</month>
+							<month type="6">जुन</month>
+							<month type="7">जुलाई</month>
+							<month type="8">आगष्ट</month>
+							<month type="9">सेप्थेम्बर</month>
+							<month type="10">अक्ट’बर</month>
+							<month type="11">नवेम्बर</month>
+							<month type="12">डिसेम्बर</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">जान</month>
+							<month type="2">फेब</month>
+							<month type="3">मार्च</month>
+							<month type="4">एप्रि</month>
+							<month type="5">मे</month>
+							<month type="6">जुन</month>
+							<month type="7">जुल</month>
+							<month type="8">आग</month>
+							<month type="9">सेप</month>
+							<month type="10">अक्ट’</month>
+							<month type="11">नवे</month>
+							<month type="12">डिसे</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ज</month>
-							<month type="2">फे</month>
-							<month type="3">मा</month>
+							<month type="2">फ</month>
+							<month type="3">म</month>
 							<month type="4">ए</month>
-							<month type="5">मे</month>
-							<month type="6">जु</month>
-							<month type="7">जु</month>
+							<month type="5">म</month>
+							<month type="6">ज</month>
+							<month type="7">ज</month>
 							<month type="8">आ</month>
-							<month type="9">से</month>
+							<month type="9">स</month>
 							<month type="10">अ</month>
 							<month type="11">न</month>
-							<month type="12">दि</month>
+							<month type="12">ड</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">जानुवारी</month>
+							<month type="2">फेब्रूवारी</month>
+							<month type="3">मार्च</month>
+							<month type="4">एप्रिल</month>
+							<month type="5">मे</month>
+							<month type="6">जुन</month>
+							<month type="7">जुलाई</month>
+							<month type="8">आगष्ट</month>
+							<month type="9">सेप्थेम्बर</month>
+							<month type="10">अक्ट’बर</month>
+							<month type="11">नवेम्बर</month>
+							<month type="12">डिसेम्बर</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1014,8 +1110,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sun">रबि</day>
 							<day type="mon">सम</day>
 							<day type="tue">मंगल</day>
-							<day type="wed">बुद</day>
-							<day type="thu">बिसथि</day>
+							<day type="wed">बुध</day>
+							<day type="thu">बिस्थि</day>
 							<day type="fri">सुखुर</day>
 							<day type="sat">सुनि</day>
 						</dayWidth>
@@ -1023,13 +1119,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sun">रबिबार</day>
 							<day type="mon">समबार</day>
 							<day type="tue">मंगलबार</day>
-							<day type="wed">बुदबार</day>
-							<day type="thu">बिसथिबार</day>
+							<day type="wed">बुधबार</day>
+							<day type="thu">बिस्थिबार</day>
 							<day type="fri">सुखुरबार</day>
 							<day type="sat">सुनिबार</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">रबि</day>
+							<day type="mon">सम</day>
+							<day type="tue">मंगल</day>
+							<day type="wed">बुध</day>
+							<day type="thu">बिस्थि</day>
+							<day type="fri">सुखुर</day>
+							<day type="sat">सुनि</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">र</day>
 							<day type="mon">स</day>
@@ -1039,15 +1144,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">सु</day>
 							<day type="sat">सु</day>
 						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">रबिबार</day>
+							<day type="mon">समबार</day>
+							<day type="tue">मंगलबार</day>
+							<day type="wed">बुधबार</day>
+							<day type="thu">बिस्थिबार</day>
+							<day type="fri">सुखुरबार</day>
+							<day type="sat">सुनिबार</day>
+						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">किउ 1</quarter>
+							<quarter type="2">किउ 2</quarter>
+							<quarter type="3">किउ 3</quarter>
+							<quarter type="4">किउ 4</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1">सिथासे/खोन्दोसे/बाहागोसे</quarter>
-							<quarter type="2">खावसे/खोन्दोनै/बाहागोनै</quarter>
-							<quarter type="3">खावथाम/खोन्दोथाम/बाहागोथाम</quarter>
-							<quarter type="4">खावब्रै/खोन्दोब्रै/फुरा/आबुं</quarter>
+							<quarter type="1">ब्रै बाहागोनि सेथि खोन्दो</quarter>
+							<quarter type="2">ब्रै बाहागोनि नैथि खोन्दो</quarter>
+							<quarter type="3">ब्रै बाहागोनि थामथि खोन्दो</quarter>
+							<quarter type="4">ब्रै बाहागोनि ब्रैथि खोन्दो</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">किउ 1</quarter>
+							<quarter type="2">किउ 2</quarter>
+							<quarter type="3">किउ 3</quarter>
+							<quarter type="4">किउ 4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">ब्रै बाहागोनि सेथि खोन्दो</quarter>
+							<quarter type="2">ब्रै बाहागोनि नैथि खोन्दो</quarter>
+							<quarter type="3">ब्रै बाहागोनि थामथि खोन्दो</quarter>
+							<quarter type="4">ब्रै बाहागोनि ब्रैथि खोन्दो</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -1065,64 +1199,105 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<eras>
 					<eraAbbr>
-						<era type="0">ईसा.पूर्व</era>
-						<era type="1">सन</era>
+						<era type="0">बि.सि.</era>
+						<era type="0" alt="variant">बिसिइ</era>
+						<era type="1">ए.दि</era>
+						<era type="1" alt="variant">सि.इ.</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, MMMM d, y</pattern>
+							<pattern>y MMMM d, EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/yy</pattern>
+							<pattern>y-MM-dd</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>a h:mm:ss zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>a h:mm:ss z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>a h:mm:ss</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>a नि h:mm</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} नि {0} याव</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} नि {0} याव</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B नि h</dateFormatItem>
+						<dateFormatItem id="Bhm">B नि h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B नि h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="EBhm">E B नि h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B नि h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ehm">E, a h:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">Gy</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM E d</dateFormatItem>
+						<dateFormatItem id="h">a नि h</dateFormatItem>
+						<dateFormatItem id="hm">a नि h:mm</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">a नि h:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -1136,11 +1311,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="y">y, MMM d – y, MMM d</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="indian">
@@ -1166,16 +1347,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>जौथाय</displayName>
+				<displayName>मुगा</displayName>
 			</field>
 			<field type="year">
 				<displayName>बोसोर</displayName>
+				<relative type="-1">थांनाय बोसोर</relative>
+				<relative type="0">बे बोसोर</relative>
+				<relative type="1">फैगौ बोसोर</relative>
+			</field>
+			<field type="quarter">
+				<displayName>ब्रै बाहागो खोन्दोेसे</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName>खोन्दोेसे</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>खोन्दोेसे</displayName>
 			</field>
 			<field type="month">
 				<displayName>दान</displayName>
+				<relative type="-1">थांनाय दान</relative>
+				<relative type="0">बे दान</relative>
+				<relative type="1">फैगौ दान</relative>
 			</field>
 			<field type="week">
-				<displayName>सबथा/हबथा</displayName>
+				<displayName>सप्थाह</displayName>
+				<relative type="-1">थांनाय सप्थाह</relative>
+				<relative type="0">बे सप्थाह</relative>
+				<relative type="1">फैगौ सप्थाह</relative>
+			</field>
+			<field type="week-short">
+				<displayName>सप्थाह</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName>सप्थाह</displayName>
 			</field>
 			<field type="day">
 				<displayName>सान</displayName>
@@ -1184,27 +1389,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">गाबोन</relative>
 			</field>
 			<field type="weekday">
-				<displayName>सप्ताह के दिन</displayName>
+				<displayName>सप्थाहनि सान</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">थांनाय रबिबार</relative>
+				<relative type="0">बे रबिबार</relative>
+				<relative type="1">फैगौ रबिबार</relative>
 			</field>
 			<field type="dayperiod">
 				<displayName>फुं/बेलासे</displayName>
 			</field>
 			<field type="hour">
-				<displayName>रिंगा</displayName>
+				<displayName>घन्टा</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>घन्टा</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>घन्टा</displayName>
 			</field>
 			<field type="minute">
-				<displayName>मिनिथ</displayName>
+				<displayName>मिनित</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>मिनित</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>मिनित</displayName>
 			</field>
 			<field type="second">
-				<displayName>सेखेन्द</displayName>
+				<displayName>सेकेण्ड</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>सेकेण्ड</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>सेकेण्ड</displayName>
 			</field>
 			<field type="zone">
-				<displayName>ओनसोल</displayName>
+				<displayName>सम मण्डल</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
+			<gmtFormat>जि.एम.ति {0}</gmtFormat>
+			<gmtZeroFormat>जि.एम.ति</gmtZeroFormat>
+			<regionFormat>{0} सम</regionFormat>
+			<regionFormat type="daylight">{0} साननि सम</regionFormat>
+			<regionFormat type="standard">{0} थाखोआरि सम</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>गोरोबहोनाय मुलुगनां सम</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>अज्ञात</exemplarCity>
+				<exemplarCity>मिथियै नोगोर</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>अंडोरा</exemplarCity>
@@ -2333,7 +2571,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<metazone type="Acre">
 				<long>
-					<generic>आकर टाईम</generic>
+					<generic>एकोर सम</generic>
 					<standard>आकर स्टैंडर्ड टाईम</standard>
 					<daylight>आकर समर टाईम</daylight>
 				</long>
@@ -2360,14 +2598,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>पश्चीम अफ्रीका टाईम</generic>
+					<generic>सोनाब आफ्रिकानि सम</generic>
 					<standard>पश्चीम अफ्रीका स्टैंडर्ड टाईम</standard>
 					<daylight>पश्चीम अफ्रीका समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic>अलास्का टाईम</generic>
+					<generic>आलास्का सम</generic>
 					<standard>अलास्का स्टैंडर्ड टाईम</standard>
 					<daylight>अलास्का डेलाईट टाईम</daylight>
 				</long>
@@ -2381,70 +2619,77 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Amazon">
 				<long>
-					<generic>अमाज़ोन टाईम</generic>
+					<generic>आमाजन सम</generic>
 					<standard>अमाज़ोन स्टैंडर्ड टाईम</standard>
 					<daylight>अमाज़ोन समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>सैंट्रल अमरिका टाईम</generic>
-					<standard>सैंट्रल अमरिका स्टैंडर्ड टाईम</standard>
-					<daylight>सैंट्रल अमरिका डेलाईट टाईम</daylight>
+					<generic>मिरु आमेरिका सम</generic>
+					<standard>मिरु आमेरिका थाखोआरि सम</standard>
+					<daylight>मिरु साननि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>ईस्टर्न अमरिका टाईम</generic>
-					<standard>ईस्टर्न अमरिका स्टैंडर्ड टाईम</standard>
-					<daylight>ईस्टर्न अमरिका डेलाईट टाईम</daylight>
+					<generic>सानजायारि सम</generic>
+					<standard>सानजानि थाखोआरि सम</standard>
+					<daylight>सानजायारि सान सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>अमरिका माऊन्टन टाईम</generic>
-					<standard>अमरिका माऊन्टन स्टैंडर्ड टाईम</standard>
-					<daylight>अमरिका माऊन्टन डेलाईट टाईम</daylight>
+					<generic>हाजोमायारि सम</generic>
+					<standard>हाजोमानि थाखोआरि सम</standard>
+					<daylight>हाजोमायारि सान सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>पैसीफीक टाईम</generic>
-					<standard>पैसीफीक स्टैंडर्ड टाईम</standard>
-					<daylight>पैसीफीक डेलाईट टाईम</daylight>
+					<generic>पेसिफिक सम</generic>
+					<standard>पेसिफिकनि थाखोआरि सम</standard>
+					<daylight>पोसिफिक सानारि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
-					<generic>अनादीर टाईम</generic>
+					<generic>आनादीर सम</generic>
 					<standard>अनादीर स्टैंडर्ड टाईम</standard>
 					<daylight>अनादीर समर टाईम</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>आपिया सम</generic>
+					<standard>आपिया थाखोआरि सम</standard>
+					<daylight>आपिया सान सम</daylight>
+				</long>
+			</metazone>
 			<metazone type="Aqtau">
 				<long>
-					<generic>अक़्टाऊ टाईम</generic>
+					<generic>अक्टाऊ सम</generic>
 					<standard>अक़्टाऊ स्टैंडर्ड टाईम</standard>
 					<daylight>अक़्टाऊ समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtobe">
 				<long>
-					<generic>अक़्टोबे टाईम</generic>
+					<generic>आक्त’ब सम</generic>
 					<standard>अक़्टोबे स्टैंडर्ड टाईम</standard>
 					<daylight>अक़्टोबे समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
 				<long>
-					<generic>अरबी टाईम</generic>
+					<generic>आराबि सम</generic>
 					<standard>अरबी स्टैंडर्ड टाईम</standard>
 					<daylight>अरबी डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
-					<generic>अर्जनटिना टाईम</generic>
+					<generic>आर्जेन्टिना सम</generic>
 					<standard>अर्जनटिना स्टैंडर्ड टाईम</standard>
 					<daylight>अर्जण्टिना समर टाईम</daylight>
 				</long>
@@ -2458,63 +2703,63 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Armenia">
 				<long>
-					<generic>आरमीनी टाईम</generic>
+					<generic>आर्मेनिया सम</generic>
 					<standard>आरमीनी स्टैंडर्ड टाईम</standard>
 					<daylight>आरमीनी समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>अटलांटीक टाईम</generic>
-					<standard>अटलांटीक स्टैंडर्ड टाईम</standard>
-					<daylight>अटलांटीक डेलाईट टाईम</daylight>
+					<generic>आटलान्टिक सम</generic>
+					<standard>आटलान्टिक थाखोआरि सम</standard>
+					<daylight>आटलान्टिक सानारि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>ओस्ट्रेलिया टाईम</generic>
+					<generic>मिरु अ’स्ट्रेलिया सम</generic>
 					<standard>मध्य ओस्ट्रेलिया स्टैंडर्ड टाईम</standard>
 					<daylight>मध्य ओस्ट्रेलिया डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
-					<generic>मध्य-पश्चीम ओस्ट्रेलिया टाईम</generic>
+					<generic>अस्ट्रेलियानि मिरु सोनाबारि सम</generic>
 					<standard>मध्य-पश्चीम ओस्ट्रेलिया स्टैंडर्ड टाईम</standard>
 					<daylight>मध्य-पश्चीम ओस्ट्रेलिया डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
-					<generic>पूर्वी ओस्ट्रेलिया टाईम</generic>
+					<generic>सानजा अ’स्ट्रेलिया सम</generic>
 					<standard>पूर्वी ओस्ट्रेलिया स्टैंडर्ड टाईम</standard>
 					<daylight>पूर्वी ओस्ट्रेलिया डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>दक्षिण ओस्ट्रेलिया टाईम</generic>
+					<generic>सोनाब अ’स्ट्रेलिया सम</generic>
 					<standard>दक्षिण ओस्ट्रेलिया स्टैंडर्ड टाईम</standard>
 					<daylight>दक्षिण ओस्ट्रेलिया डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
-					<generic>आज़रबैजान टाईम</generic>
+					<generic>आजारबैजान सम</generic>
 					<standard>आज़रबैजान स्टैंडर्ड टाईम</standard>
 					<daylight>आज़रबैजान समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
 				<long>
-					<generic>आज़ोर टाईम</generic>
+					<generic>आज’रनि सम</generic>
 					<standard>आज़ोर स्टैंडर्ड टाईम</standard>
 					<daylight>आज़ोर समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
-					<generic>बांगलादेश टाईम</generic>
+					<generic>बांलादेश सम</generic>
 					<standard>बांगलादेश स्टैंडर्ड टाईम</standard>
 					<daylight>बांगलादेश समर टाईम</daylight>
 				</long>
@@ -2531,7 +2776,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Brasilia">
 				<long>
-					<generic>ब्राज़ीलिया टाईम</generic>
+					<generic>ब्राजीलिया सम</generic>
 					<standard>ब्राज़ीलिया स्टैंडर्ड टाईम</standard>
 					<daylight>ब्राज़ीलिया समर टाईम</daylight>
 				</long>
@@ -2543,7 +2788,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
-					<generic>काप वेर्दे टाईम</generic>
+					<generic>केप भोर्दि सम</generic>
 					<standard>काप वेर्दे स्टैंडर्ड टाईम</standard>
 					<daylight>काप वेर्दे समर टाईम</daylight>
 				</long>
@@ -2555,14 +2800,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Chatham">
 				<long>
-					<generic>चैथम टाईम</generic>
+					<generic>चेथाम सम</generic>
 					<standard>चैथम स्टैंडर्ड टाईम</standard>
 					<daylight>चैथम डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
 				<long>
-					<generic>चीली टाईम</generic>
+					<generic>चीले सम</generic>
 					<standard>चीली स्टैंडर्ड टाईम</standard>
 					<daylight>चीली समर टाईम</daylight>
 				</long>
@@ -2576,7 +2821,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Choibalsan">
 				<long>
-					<generic>चोईबालसान टाईम</generic>
+					<generic>च’इबालसान सम</generic>
 					<standard>चोईबालसान स्टैंडर्ड टाईम</standard>
 					<daylight>चोईबालसान समर टाईम</daylight>
 				</long>
@@ -2593,21 +2838,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Colombia">
 				<long>
-					<generic>कोलंबिया टाईम</generic>
+					<generic>कलम्बिया सम</generic>
 					<standard>कोलंबिया स्टैंडर्ड टाईम</standard>
 					<daylight>कोलंबिया समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
 				<long>
-					<generic>कुक द्वीप टाईम</generic>
+					<generic>कुक द्वीपफोरनि सम</generic>
 					<standard>कुक द्वीप स्टैंडर्ड टाईम</standard>
 					<daylight>कुक द्वीप अर्ध समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>क्युबा टाईम</generic>
+					<generic>किउबा सम</generic>
 					<standard>क्युबा स्टैंडर्ड टाईम</standard>
 					<daylight>क्युबा डेलाईट टाईम</daylight>
 				</long>
@@ -2629,7 +2874,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Easter">
 				<long>
-					<generic>ईस्टर आईलंड टाईम</generic>
+					<generic>ईस्टार द्वीप सम</generic>
 					<standard>ईस्टर आईलंड स्टैंडर्ड टाईम</standard>
 					<daylight>ईस्टर आईलंड समर टाईम</daylight>
 				</long>
@@ -2641,35 +2886,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>मध्य यूरोप टाईम</generic>
-					<standard>मध्य यूरोप स्टैंडर्ड टाईम</standard>
-					<daylight>मध्य यूरोप समर टाईम</daylight>
+					<generic>मिरु युरोपनि सम</generic>
+					<standard>मिरु युरोपनि थाखोआरि सम</standard>
+					<daylight>मिरु युरोपनि गोलोम बोथोरारि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
-					<generic>ईस्टर्न यूरोप टाईम</generic>
-					<standard>ईस्टर्न यूरोप स्टैंडर्ड टाईम</standard>
-					<daylight>ईस्टर्न यूरोप समर टाईम</daylight>
+					<generic>सानजा युरोपनि सम</generic>
+					<standard>सानजा युरोपनि थाखोआरि सम</standard>
+					<daylight>सानजा युरोपनि गोलोम बोथोरारि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic>वेस्टर्न यूरोप टाईम</generic>
-					<standard>वेस्टर्न यूरोप स्टैंडर्ड टाईम</standard>
-					<daylight>वेस्टर्न यूरोप समर टाईम</daylight>
+					<generic>सोनाब युरोपनि सम</generic>
+					<standard>सोनाब युरोपनि थाखोआरि सम</standard>
+					<daylight>सोनाब युरोपनि गोलोम बोथोरारि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>फ़ाल्कलैण्ड टाईम</generic>
+					<generic>फकलेण्ड द्वीपफोरनि सम</generic>
 					<standard>फ़ाल्कलैण्ड स्टैंडर्ड टाईम</standard>
 					<daylight>फ़ाल्कलैण्ड समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
-					<generic>फीजी टाईम</generic>
+					<generic>फीजी सम</generic>
 					<standard>फीजी स्टैंडर्ड टाईम</standard>
 					<daylight>फीजी समर टाईम</daylight>
 				</long>
@@ -2696,7 +2941,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Georgia">
 				<long>
-					<generic>जोर्जिया टाईम</generic>
+					<generic>जर्जिया सम</generic>
 					<standard>जोर्जिया स्टैंडर्ड टाईम</standard>
 					<daylight>जोर्जिया समर टाईम</daylight>
 				</long>
@@ -2708,7 +2953,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>ग्रीनीच स्टैंडर्ड टाईम</standard>
+					<standard>ग्रिनवीच गेजेरारि सम</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -2720,7 +2965,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>ग्रीनलैण्ड वेस्टर्न टाईम</generic>
+					<generic>सोनाब ग्रीनलेण्ड सम</generic>
 					<standard>ग्रीनलैण्ड वेस्टर्न स्टैंडर्ड टाईम</standard>
 					<daylight>ग्रीनलैण्ड वेस्टर्न समर टाईम</daylight>
 				</long>
@@ -2742,14 +2987,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>हवाई आलटन टाईम</generic>
+					<generic>हावाई-एल्युतियान सम</generic>
 					<standard>हवाई आलटन स्टैंडर्ड टाईम</standard>
 					<daylight>हवाई आलटन डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
-					<generic>हाँगकॉंग टाईम</generic>
+					<generic>हंकं सम</generic>
 					<standard>हाँगकॉंग स्टैंडर्ड टाईम</standard>
 					<daylight>हाँगकॉंग समर टाईम</daylight>
 				</long>
@@ -2796,21 +3041,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Iran">
 				<long>
-					<generic>ईरान टाईम</generic>
+					<generic>ईरान सम</generic>
 					<standard>ईरान स्टैंडर्ड टाईम</standard>
 					<daylight>ईरान डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
-					<generic>ईरकुर्त्स्क टाईम</generic>
+					<generic>ईर्कुत्स्क सम</generic>
 					<standard>ईरकुर्त्स्क स्टैंडर्ड टाईम</standard>
 					<daylight>ईरकुर्त्स्क समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
-					<generic>ईस्राइल टाईम</generic>
+					<generic>इज्राईल सम</generic>
 					<standard>ईस्राइल स्टैंडर्ड टाईम</standard>
 					<daylight>ईस्राइल डेलाईट टाईम</daylight>
 				</long>
@@ -2824,7 +3069,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>पेत्रोपावलोस्क कामचटका टाईम</generic>
+					<generic>पेत्र’पाभ्ल’भ्स्क-कामचात्स्कि सम</generic>
 					<standard>पेत्रोपावलोस्क कामचटका स्टैंडर्ड टाईम</standard>
 					<daylight>पेत्रोपावलोस्क कामचटका समर टाईम</daylight>
 				</long>
@@ -2841,7 +3086,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Korea">
 				<long>
-					<generic>कोरिया टाईम</generic>
+					<generic>क’रिया सम</generic>
 					<standard>कोरिया स्टैंडर्ड टाईम</standard>
 					<daylight>कोरिया डेलाईट टाईम</daylight>
 				</long>
@@ -2853,7 +3098,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Krasnoyarsk">
 				<long>
-					<generic>क्रासनोयार्स्क टाईम</generic>
+					<generic>क्रासनोयार्स्क सम</generic>
 					<standard>क्रासनोयार्स्क स्टैंडर्ड टाईम</standard>
 					<daylight>क्रासनोयार्स्क समर टाईम</daylight>
 				</long>
@@ -2875,21 +3120,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Lord_Howe">
 				<long>
-					<generic>लार्ड़ होव टाईम</generic>
+					<generic>लर्ड हावि सम</generic>
 					<standard>लार्ड़ होव स्टैंडर्ड टाईम</standard>
 					<daylight>लार्ड़ होव डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macau">
 				<long>
-					<generic>माकाऊ टाईम</generic>
+					<generic>माकाऊ सम</generic>
 					<standard>माकाऊ स्टैंडर्ड टाईम</standard>
 					<daylight>माकाऊ समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
 				<long>
-					<generic>मगदन टाईम</generic>
+					<generic>मग’दन सम</generic>
 					<standard>मगदन स्टैंडर्ड टाईम</standard>
 					<daylight>मगदन समर टाईम</daylight>
 				</long>
@@ -2916,7 +3161,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
-					<generic>मॉरिशीयस टाईम</generic>
+					<generic>म’रिशियानि सम</generic>
 					<standard>मॉरिशीयस स्टैंडर्ड टाईम</standard>
 					<daylight>मॉरिशीयस समर टाईम</daylight>
 				</long>
@@ -2924,6 +3169,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>मॉसन स्टैंडर्ड टाईम</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>साहा-सोनाब मेक्सिक’ सम</generic>
+					<standard>साहासोनाब मेक्सिक’ थाखोआरि सम</standard>
+					<daylight>साहासोनाब मेक्सिक’ सान सम</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>मेक्सिकनि पेसिफिक सम</generic>
+					<standard>मेक्सिक’आरि पेसिफिक थाखोआरि सम</standard>
+					<daylight>मेक्सिक’आरि पेसिफिक सान सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -2935,7 +3194,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Moscow">
 				<long>
-					<generic>मॉस्को टाईम</generic>
+					<generic>मस्कौ सम</generic>
 					<standard>मॉस्को स्टैंडर्ड टाईम</standard>
 					<daylight>मॉस्को समर टाईम</daylight>
 				</long>
@@ -2957,21 +3216,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
-					<generic>न्यु कैलेडोनिया टाईम</generic>
+					<generic>गोदान केलेडनिया सम</generic>
 					<standard>न्यु कैलेडोनिया स्टैंडर्ड टाईम</standard>
 					<daylight>न्यु कैलेडोनिया समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
 				<long>
-					<generic>न्युज़ीलैण्ड टाईम</generic>
+					<generic>निउजिलेण्ड सम</generic>
 					<standard>न्युज़ीलैण्ड स्टैंडर्ड टाईम</standard>
 					<daylight>न्युज़ीलैण्ड डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic>न्युफाऊंडलैण्ड टाईम</generic>
+					<generic>निउफाउन्दलेन्द सम</generic>
 					<standard>न्युफाऊंडलैण्ड स्टैंडर्ड टाईम</standard>
 					<daylight>न्युफाऊंडलैण्ड डेलाईट टाईम</daylight>
 				</long>
@@ -2983,14 +3242,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">नॉरफोक टाईम</generic>
+					<generic>नरफ’क द्वीप सम</generic>
 					<standard draft="contributed">नॉरफोक स्टैंडर्ड टाईम</standard>
 					<daylight draft="contributed">नॉरफोक डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
 				<long>
-					<generic>फेरनान्दो द नोरोन्हा टाईम</generic>
+					<generic>फेरनान्दो दे नर’न्हा सम</generic>
 					<standard>फेरनान्दो द नोरोन्हा स्टैंडर्ड टाईम</standard>
 					<daylight>फेरनान्दो द नोरोन्हा समर टाईम</daylight>
 				</long>
@@ -3002,14 +3261,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
-					<generic>नोवोसीबीर्स्क टाईम</generic>
+					<generic>नभसिबिर्स्क सम</generic>
 					<standard>नोवोसीबीर्स्क स्टैंडर्ड टाईम</standard>
 					<daylight>नोवोसीबीर्स्क समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
-					<generic>ओम्स्क टाईम</generic>
+					<generic>ओम्स्क सम</generic>
 					<standard>ओम्स्क स्टैंडर्ड टाईम</standard>
 					<daylight>ओम्स्क समर टाईम</daylight>
 				</long>
@@ -3033,21 +3292,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
-					<generic>पारागुए टाईम</generic>
+					<generic>पारागुवे सम</generic>
 					<standard>पारागुए स्टैंडर्ड टाईम</standard>
 					<daylight>पारागुए समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
-					<generic>पेरु टाईम</generic>
+					<generic>पेरु सम</generic>
 					<standard>पेरु स्टैंडर्ड टाईम</standard>
 					<daylight>पेरु समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
 				<long>
-					<generic>फीलीपीन्स टाईम</generic>
+					<generic>फिलीपीन्स सम</generic>
 					<standard>फीलीपीन्स स्टैंडर्ड टाईम</standard>
 					<daylight>फीलीपीन्स समर टाईम</daylight>
 				</long>
@@ -3059,7 +3318,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>सेँ पीयॅर एवं मीकलों टाईम</generic>
+					<generic>सेन्ट पियेर्र आरो मिक्वेलन सम</generic>
 					<standard>सेँ पीयॅर एवं मीकलों स्टैंडर्ड टाईम</standard>
 					<daylight>सेँ पीयॅर एवं मीकलों डेलाईट टाईम</daylight>
 				</long>
@@ -3093,7 +3352,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Sakhalin">
 				<long>
-					<generic>सख़ालीन टाईम</generic>
+					<generic>साखालिन सम</generic>
 					<standard>सख़ालीन स्टैंडर्ड टाईम</standard>
 					<daylight>सख़ालीन समर टाईम</daylight>
 				</long>
@@ -3107,7 +3366,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>समोआ टाईम</generic>
+					<generic>साम’वा सम</generic>
 					<standard>समोआ स्टैंडर्ड टाईम</standard>
 					<daylight>समोआ समर टाईम</daylight>
 				</long>
@@ -3159,7 +3418,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Tonga">
 				<long>
-					<generic>टॉंगा टाईम</generic>
+					<generic>टोङा सम</generic>
 					<standard>टॉंगा स्टैंडर्ड टाईम</standard>
 					<daylight>टॉंगा समर टाईम</daylight>
 				</long>
@@ -3171,7 +3430,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
-					<generic>तुर्कमेनीस्तान टाईम</generic>
+					<generic>तुर्कमेनीस्तान सम</generic>
 					<standard>तुर्कमेनीस्तान स्टैंडर्ड टाईम</standard>
 					<daylight>तुर्कमेनीस्तान समर टाईम</daylight>
 				</long>
@@ -3183,7 +3442,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
-					<generic>ऊरुगुए टाईम</generic>
+					<generic>उरुगुवे सम</generic>
 					<standard>ऊरुगुए स्टैंडर्ड टाईम</standard>
 					<daylight>ऊरुगुए समर टाईम</daylight>
 				</long>
@@ -3197,7 +3456,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
-					<generic>वनुआटु टाईम</generic>
+					<generic>वानुआटु सम</generic>
 					<standard>वनुआटु स्टैंडर्ड टाईम</standard>
 					<daylight>वनुआटु समर टाईम</daylight>
 				</long>
@@ -3209,14 +3468,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Vladivostok">
 				<long>
-					<generic>व्लादीवॉस्तॉक टाईम</generic>
+					<generic>भ्लादिभस्त’क सम</generic>
 					<standard>व्लादीवॉस्तॉक स्टैंडर्ड टाईम</standard>
 					<daylight>व्लादीवॉस्तॉक डेलाईट टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
-					<generic>वॉलगोग्राद टाईम</generic>
+					<generic>भल्ग’ग्रेद सम</generic>
 					<standard>वॉलगोग्राद स्टैंडर्ड टाईम</standard>
 					<daylight>वॉलगोग्राद समर टाईम</daylight>
 				</long>
@@ -3238,7 +3497,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Yakutsk">
 				<long>
-					<generic>याकुट्स्क टाईम</generic>
+					<generic>याकुत्स्क सम</generic>
 					<standard>याकुट्स्क स्टैंडर्ड टाईम</standard>
 					<daylight>याकुट्स्क समर टाईम</daylight>
 				</long>
@@ -3441,7 +3700,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ब्रज़ीली क्रुज़ेरो (190–1993)</displayName>
 			</currency>
 			<currency type="BRL">
-				<displayName>ब्रज़ीली रेयाल</displayName>
+				<displayName>ब्राजिलनि रीयाल</displayName>
+				<displayName count="one">ब्राजिलनि रीयाल</displayName>
+				<displayName count="other">ब्राजिलनि रीयालफोर</displayName>
 			</currency>
 			<currency type="BRN">
 				<displayName>ब्रज़ीली नया क्रुज़ाडो</displayName>
@@ -3495,7 +3756,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>चिली पेसो</displayName>
 			</currency>
 			<currency type="CNY">
-				<displayName>चीनी युआन रेनमीनबी</displayName>
+				<displayName>चाइनीज युवान</displayName>
+				<displayName count="one">चाइनीज युवान</displayName>
+				<displayName count="other">चाइनीज युवान</displayName>
+				<symbol draft="contributed">सिएन¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>कोलम्बियाई पेसो</displayName>
@@ -3571,6 +3835,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EUR">
 				<displayName>युरो</displayName>
+				<displayName count="one">युरोस</displayName>
+				<displayName count="other">युरोस</displayName>
 			</currency>
 			<currency type="FIM">
 				<displayName>फीनीश मार्क्का</displayName>
@@ -3585,7 +3851,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>फ्राँसीसी फ्राँ</displayName>
 			</currency>
 			<currency type="GBP">
-				<displayName>ब्रितन का पौण्ड स्टर्लिग</displayName>
+				<displayName>ब्रिटिश पाउण्ड</displayName>
+				<displayName count="one">ब्रिटिश पाउण्ड</displayName>
+				<displayName count="other">ब्रिटिश पाउण्डफोर</displayName>
 			</currency>
 			<currency type="GEK">
 				<displayName>जॉर्जिया का कुपोन लारीत</displayName>
@@ -3660,7 +3928,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>इस्राइली शेकेल</displayName>
 			</currency>
 			<currency type="INR">
-				<displayName>रां</displayName>
+				<displayName>भारतनि रुपी</displayName>
+				<displayName count="one">भारतनि रुपी</displayName>
+				<displayName count="other">भारतनि रुपी</displayName>
 			</currency>
 			<currency type="IQD">
 				<displayName>ईराक़ी दीनार</displayName>
@@ -3682,6 +3952,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="JPY">
 				<displayName>जापानी येन</displayName>
+				<displayName count="one">जापानीज येन</displayName>
+				<displayName count="other">जापानीज येन</displayName>
 			</currency>
 			<currency type="KES">
 				<displayName>किनियाई शीलींग</displayName>
@@ -3894,7 +4166,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>सर्बियाई दिनार</displayName>
 			</currency>
 			<currency type="RUB">
-				<displayName>रूसी रूबल</displayName>
+				<displayName>रासियानि रूबल</displayName>
+				<displayName count="one">रासियानि रूबल</displayName>
+				<displayName count="other">रासियानि रूबलफोर</displayName>
+				<symbol draft="contributed">रूब</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>रुआँदा फ्राँ</displayName>
@@ -4011,7 +4286,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>युगाँडाई शीलींग</displayName>
 			</currency>
 			<currency type="USD">
-				<displayName>अमरिकी डॉलर</displayName>
+				<displayName>इउ.एस डलार</displayName>
+				<displayName count="one">इउ.एस डलार</displayName>
+				<displayName count="other">इउ.एस डलारफोर</displayName>
+				<symbol draft="contributed">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>अमरिकी डॉलर (अगले दिन का)</displayName>
@@ -4105,6 +4383,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XXX">
 				<displayName>अज्ञात या अवैध मुद्रा</displayName>
+				<displayName count="one">मिथियै रां</displayName>
+				<displayName count="other">मिथियै रां</displayName>
 			</currency>
 			<currency type="YDD">
 				<displayName>यमनी दीनार</displayName>
@@ -4203,10 +4483,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end">{0}, आरो {1}</listPatternPart>
+			<listPatternPart type="2">{0} आरो {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<posix>
 		<messages>
-			<yesstr>हाँ</yesstr>
-			<nostr>नहीं</nostr>
+			<yesstr>नंगौ:नं</yesstr>
+			<nostr>नङा:न</nostr>
 		</messages>
 	</posix>
 </ldml>

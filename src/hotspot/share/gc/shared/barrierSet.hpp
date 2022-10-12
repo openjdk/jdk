@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,12 +98,7 @@ protected:
              BarrierSetC1* barrier_set_c1,
              BarrierSetC2* barrier_set_c2,
              BarrierSetNMethod* barrier_set_nmethod,
-             const FakeRtti& fake_rtti) :
-    _fake_rtti(fake_rtti),
-    _barrier_set_assembler(barrier_set_assembler),
-    _barrier_set_c1(barrier_set_c1),
-    _barrier_set_c2(barrier_set_c2),
-    _barrier_set_nmethod(barrier_set_nmethod) {}
+             const FakeRtti& fake_rtti);
   ~BarrierSet() { }
 
   template <class BarrierSetAssemblerT>
@@ -139,7 +134,7 @@ public:
   // caller. That locking ensures the operation is "atomic" with the list
   // modification wrto operations that hold the NJTList_lock and either also
   // hold the Threads_lock or are at a safepoint.
-  virtual void on_thread_attach(Thread* thread) {}
+  virtual void on_thread_attach(Thread* thread);
   virtual void on_thread_detach(Thread* thread) {}
 
   virtual void make_parsable(JavaThread* thread) {}
@@ -309,10 +304,6 @@ public:
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size) {
       Raw::clone(src, dst, size);
-    }
-
-    static oop resolve(oop obj) {
-      return Raw::resolve(obj);
     }
   };
 };

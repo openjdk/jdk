@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -755,7 +755,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
      * Write default Namespace.
      *
      * If namespaceURI == null,
-     * then it is assumed to be equivilent to {@link XMLConstants.NULL_NS_URI},
+     * then it is assumed to be equivalent to {@link XMLConstants.NULL_NS_URI},
      * i.e. there is no Namespace.
      *
      * @param namespaceURI NamespaceURI to declare.
@@ -982,7 +982,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
      * Write a Namespace declaration.
      *
      * If namespaceURI == null,
-     * then it is assumed to be equivilent to {@link XMLConstants.NULL_NS_URI},
+     * then it is assumed to be equivalent to {@link XMLConstants.NULL_NS_URI},
      * i.e. there is no Namespace.
      *
      * @param prefix Prefix to bind.
@@ -1246,7 +1246,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
             if (!foundAlias) {
                 throw new XMLStreamException("Underlying stream encoding '"
                         + streamEncoding
-                        + "' and input paramter for writeStartDocument() method '"
+                        + "' and input parameter for writeStartDocument() method '"
                         + encoding + "' do not match.");
             }
         }
@@ -2034,7 +2034,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
 
         /**
          * This function is as a result of optimization done for endElement --
-         * we dont need to set the value for every end element we encouter.
+         * we dont need to set the value for every end element we encounter.
          * For Well formedness checks we can have the same QName object that was pushed.
          * the values will be set only if application need to know about the endElement
          */
@@ -2220,7 +2220,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
     /**
      * Overrides the method defined in AbstractMap which is
      * not completely implemented. Calling toString() in
-     * AbstractMap would cause an unsupported exection to
+     * AbstractMap would cause an unsupported exception to
      * be thrown.
      */
     @Override

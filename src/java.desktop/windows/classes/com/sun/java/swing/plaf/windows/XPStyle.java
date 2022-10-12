@@ -301,7 +301,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPFillBorder extends LineBorder implements UIResource {
+    private static class XPFillBorder extends LineBorder implements UIResource {
         XPFillBorder(Color color, int thickness) {
             super(color, thickness);
         }
@@ -398,7 +398,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPEmptyBorder extends EmptyBorder implements UIResource {
+    private static class XPEmptyBorder extends EmptyBorder implements UIResource {
         XPEmptyBorder(Insets m) {
             super(m.top+2, m.left+2, m.bottom+2, m.right+2);
         }

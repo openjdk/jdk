@@ -113,7 +113,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>Default:</dt>
-                    <dd>true</dd>
+                    <dd><code>true</code></dd>
                     </dl>""");
 
         // Test for valid HTML generation which should not comprise of empty

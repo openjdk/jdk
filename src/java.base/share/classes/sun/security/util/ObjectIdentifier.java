@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public final class ObjectIdentifier implements Serializable {
      *    Otherwise, old object cannot recognize the form (component not int[])
      *    and throw a ClassNotFoundException at deserialization time.
      *
-     * Therfore, for the first 3 cases, exact compatibility is preserved. In
+     * Therefore, for the first 3 cases, exact compatibility is preserved. In
      * the 4th case, non-huge OID is still supportable in old versions, while
      * huge OID is not.
      */
@@ -365,7 +365,7 @@ public final class ObjectIdentifier implements Serializable {
             if ((encoding[i] & 0x80) == 0) {
                 // one section [fromPos..i]
                 if (i - fromPos + 1 > 4) {
-                    BigInteger big = new BigInteger(pack(encoding,
+                    BigInteger big = new BigInteger(1, pack(encoding,
                             fromPos, i-fromPos+1, 7, 8));
                     if (fromPos == 0) {
                         result[which++] = 2;
@@ -434,7 +434,7 @@ public final class ObjectIdentifier implements Serializable {
                         sb.append('.');
                     }
                     if (i - fromPos + 1 > 4) { // maybe big integer
-                        BigInteger big = new BigInteger(
+                        BigInteger big = new BigInteger(1,
                                 pack(encoding, fromPos, i-fromPos+1, 7, 8));
                         if (fromPos == 0) {
                             // first section encoded with more than 4 bytes,
@@ -524,10 +524,10 @@ public final class ObjectIdentifier implements Serializable {
 
             // and move them!
             out[opos/ow] |=                     // paste!
-                (((in[ioffset+ipos/iw]+256)     // locate the byte (+256 so that it's never negative)
+                (byte)((((in[ioffset+ipos/iw]+256)     // locate the byte (+256 so that it's never negative)
                     >> (iw-ipos%iw-count)) &    // move to the end of a byte
                   ((1 << (count))-1))           // zero out all other bits
-                        << (ow-opos%ow-count);  // move to the output position
+                        << (ow-opos%ow-count));  // move to the output position
             ipos += count;  // advance
             opos += count;  // advance
         }
@@ -551,7 +551,7 @@ public final class ObjectIdentifier implements Serializable {
             if (pack[i] != 0) {
                 firstNonZero = i;
             }
-            pack[i] |= 0x80;
+            pack[i] |= (byte)0x80;
         }
         System.arraycopy(pack, firstNonZero,
                 out, ooffset, pack.length-firstNonZero);
@@ -684,6 +684,11 @@ public final class ObjectIdentifier implements Serializable {
     }
 
     private static void checkOidSize(int oidLength) throws IOException {
+        if (oidLength < 0) {
+            throw new IOException("ObjectIdentifier encoded length was " +
+                    "negative: " + oidLength);
+        }
+
         if (oidLength > MAXIMUM_OID_SIZE) {
             throw new IOException(
                     "ObjectIdentifier encoded length exceeds " +

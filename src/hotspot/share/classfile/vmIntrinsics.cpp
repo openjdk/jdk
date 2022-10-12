@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@
 // These are flag-matching functions:
 inline bool match_F_R(jshort flags) {
   const int req = 0;
-  const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED;
+  const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
 inline bool match_F_Y(jshort flags) {
   const int req = JVM_ACC_SYNCHRONIZED;
-  const int neg = JVM_ACC_STATIC;
+  const int neg = JVM_ACC_STATIC | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
@@ -51,7 +51,7 @@ inline bool match_F_RN(jshort flags) {
 
 inline bool match_F_S(jshort flags) {
   const int req = JVM_ACC_STATIC;
-  const int neg = JVM_ACC_SYNCHRONIZED;
+  const int neg = JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
@@ -75,12 +75,15 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_getClass:
   case vmIntrinsics::_isInstance:
+  case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
+  case vmIntrinsics::_extentLocalCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
   case vmIntrinsics::_labs:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
@@ -91,6 +94,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Continuation_doYield:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -113,7 +117,6 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   switch(id) {
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
-  case vmIntrinsics::_getClassId:
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
@@ -121,12 +124,17 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
   case vmIntrinsics::_longBitsToDouble:
+  case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
+  case vmIntrinsics::_setCurrentThread:
+  case vmIntrinsics::_extentLocalCache:
+  case vmIntrinsics::_setExtentLocalCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
   case vmIntrinsics::_labs:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
@@ -182,6 +190,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
     return 1;
   case vmIntrinsics::_digestBase_implCompressMB:
     return 5;
@@ -226,8 +235,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_loadFence:
     case vmIntrinsics::_storeFence:
     case vmIntrinsics::_fullFence:
-    case vmIntrinsics::_hasNegatives:
+    case vmIntrinsics::_countPositives:
     case vmIntrinsics::_Reference_get:
+    case vmIntrinsics::_Continuation_doYield:
+    case vmIntrinsics::_Continuation_enterSpecial:
       break;
     default:
       return true;
@@ -249,9 +260,13 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_getClass:
     if (!InlineClassNatives) return true;
     break;
+  case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
     if (!InlineThreadNatives) return true;
     break;
+  case vmIntrinsics::_setCurrentThread:
+  case vmIntrinsics::_extentLocalCache:
+  case vmIntrinsics::_setExtentLocalCache:
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
@@ -264,6 +279,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_iabs:
   case vmIntrinsics::_labs:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
@@ -272,14 +288,20 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_datan2:
-  case vmIntrinsics::_min:
-  case vmIntrinsics::_max:
   case vmIntrinsics::_floatToIntBits:
   case vmIntrinsics::_doubleToLongBits:
+  case vmIntrinsics::_min:
+  case vmIntrinsics::_max:
   case vmIntrinsics::_maxF:
   case vmIntrinsics::_minF:
   case vmIntrinsics::_maxD:
   case vmIntrinsics::_minD:
+  case vmIntrinsics::_min_strict:
+  case vmIntrinsics::_max_strict:
+  case vmIntrinsics::_maxF_strict:
+  case vmIntrinsics::_minF_strict:
+  case vmIntrinsics::_maxD_strict:
+  case vmIntrinsics::_minD_strict:
     if (!InlineMathNatives) return true;
     break;
   case vmIntrinsics::_fmaD:
@@ -398,6 +420,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_compareAndExchangeReference:
   case vmIntrinsics::_compareAndExchangeReferenceAcquire:
   case vmIntrinsics::_compareAndExchangeReferenceRelease:
+  case vmIntrinsics::_allocateInstance:
     if (!InlineUnsafeOps) return true;
     break;
   case vmIntrinsics::_getShortUnaligned:
@@ -408,7 +431,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_putCharUnaligned:
   case vmIntrinsics::_putIntUnaligned:
   case vmIntrinsics::_putLongUnaligned:
-  case vmIntrinsics::_allocateInstance:
     if (!InlineUnsafeOps || !UseUnalignedAccesses) return true;
     break;
   case vmIntrinsics::_hashCode:
@@ -428,6 +450,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_counterMode_AESCrypt:
     if (!UseAESCTRIntrinsics) return true;
+    break;
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
+    if (!UseAESIntrinsics) return true;
     break;
   case vmIntrinsics::_md5_implCompress:
     if (!UseMD5Intrinsics) return true;
@@ -501,6 +526,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!SpecialArraysEquals) return true;
     break;
   case vmIntrinsics::_encodeISOArray:
+  case vmIntrinsics::_encodeAsciiArray:
   case vmIntrinsics::_encodeByteISOArray:
     if (!SpecialEncodeISOArray) return true;
     break;

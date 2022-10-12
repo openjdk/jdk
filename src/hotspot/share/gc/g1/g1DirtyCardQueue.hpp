@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,16 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
-#include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "utilities/nonblockingQueue.hpp"
 
-class G1ConcurrentRefineThread;
+class G1PrimaryConcurrentRefineThread;
 class G1DirtyCardQueueSet;
 class G1RedirtyCardsQueueSet;
 class Thread;
@@ -69,7 +69,7 @@ public:
 
 class G1DirtyCardQueueSet: public PtrQueueSet {
   // Head and tail of a list of BufferNodes, linked through their next()
-  // fields.  Similar to G1BufferNodeList, but without the _entry_count.
+  // fields.  Similar to BufferNodeList, but without the _entry_count.
   struct HeadTail {
     BufferNode* _head;
     BufferNode* _tail;
@@ -156,10 +156,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     HeadTail take_all();
   };
 
-  // The primary refinement thread, for activation when the processing
-  // threshold is reached.  NULL if there aren't any refinement threads.
-  G1ConcurrentRefineThread* _primary_refinement_thread;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(G1ConcurrentRefineThread*));
+  // The refinement notification thread, for activation when the notification
+  // threshold is reached.  nullptr if there aren't any refinement threads.
+  G1PrimaryConcurrentRefineThread* _refinement_notification_thread;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(G1PrimaryConcurrentRefineThread*));
   // Upper bound on the number of cards in the completed and paused buffers.
   volatile size_t _num_cards;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
@@ -173,9 +173,6 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   PausedBuffers _paused;
 
   G1FreeIdSet _free_ids;
-
-  // Activation threshold for the primary refinement thread.
-  size_t _process_cards_threshold;
 
   // If the queue contains more cards than configured here, the
   // mutator must start doing some of the concurrent refinement work.
@@ -242,10 +239,6 @@ public:
   G1DirtyCardQueueSet(BufferNode::Allocator* allocator);
   ~G1DirtyCardQueueSet();
 
-  void set_primary_refinement_thread(G1ConcurrentRefineThread* thread) {
-    _primary_refinement_thread = thread;
-  }
-
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.
   static uint num_par_ids();
@@ -254,28 +247,20 @@ public:
 
   virtual void enqueue_completed_buffer(BufferNode* node);
 
-  // Upper bound on the number of cards currently in in this queue set.
+  // Upper bound on the number of cards currently in this queue set.
   // Read without synchronization.  The value may be high because there
   // is a concurrent modification of the set of buffers.
-  size_t num_cards() const { return _num_cards; }
+  size_t num_cards() const;
 
-  // Get/Set the number of cards that triggers log processing.
-  // Log processing should be done when the number of cards exceeds the
-  // threshold.
-  void set_process_cards_threshold(size_t sz) {
-    _process_cards_threshold = sz;
+  // Record the primary concurrent refinement thread.  This is the thread to
+  // be notified when num_cards() exceeds the refinement notification threshold.
+  void set_refinement_notification_thread(G1PrimaryConcurrentRefineThread* thread) {
+    _refinement_notification_thread = thread;
   }
-  size_t process_cards_threshold() const {
-    return _process_cards_threshold;
-  }
-  static const size_t ProcessCardsThresholdNever = SIZE_MAX;
-
-  // Notify the consumer if the number of buffers crossed the threshold
-  void notify_if_necessary();
 
   void merge_bufferlists(G1RedirtyCardsQueueSet* src);
 
-  G1BufferNodeList take_all_completed_buffers();
+  BufferNodeList take_all_completed_buffers();
 
   void flush_queue(G1DirtyCardQueue& queue);
 

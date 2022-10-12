@@ -26,6 +26,7 @@
  * @summary Ensure that a package whose module has not been defined to the boot loader
  *          is correctly located with -Xbootclasspath/a
  * @requires !(os.family == "windows")
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

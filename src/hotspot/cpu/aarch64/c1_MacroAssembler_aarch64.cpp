@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   cbnz(hdr, slow_case);
   // done
   bind(done);
+  increment(Address(rthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
 
@@ -147,6 +148,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   }
   // done
   bind(done);
+  decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
 }
 
 
@@ -155,7 +157,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
   if (UseTLAB) {
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
   } else {
-    eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
+    b(slow_case);
   }
 }
 
@@ -180,20 +182,24 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 }
 
 // preserves obj, destroys len_in_bytes
-void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1) {
+//
+// Scratch registers: t1 = r10, t2 = r11
+//
+void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
+  assert(t1 == r10 && t2 == r11, "must be");
+
   Label done;
 
   // len_in_bytes is positive and ptr sized
   subs(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   br(Assembler::EQ, done);
 
-  // Preserve obj
-  if (hdr_size_in_bytes)
-    add(obj, obj, hdr_size_in_bytes);
-  zero_memory(obj, len_in_bytes, t1);
-  if (hdr_size_in_bytes)
-    sub(obj, obj, hdr_size_in_bytes);
+  // zero_words() takes ptr in r10 and count in words in r11
+  mov(rscratch1, len_in_bytes);
+  lea(t1, Address(obj, hdr_size_in_bytes));
+  lsr(t2, rscratch1, LogBytesPerWord);
+  zero_words(t1, t2);
 
   bind(done);
 }
@@ -208,6 +214,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
   initialize_object(obj, klass, noreg, object_size * HeapWordSize, t1, t2, UseTLAB);
 }
 
+// Scratch registers: t1 = r10, t2 = r11
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
@@ -218,45 +225,13 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
      // clear rest of allocated space
      const Register index = t2;
-     const int threshold = 16 * BytesPerWord;   // approximate break even point for code size (see comments below)
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
-       initialize_body(obj, index, hdr_size_in_bytes, t1);
-     } else if (con_size_in_bytes <= threshold) {
-       // use explicit null stores
-       int i = hdr_size_in_bytes;
-       if (i < con_size_in_bytes && (con_size_in_bytes % (2 * BytesPerWord))) {
-         str(zr, Address(obj, i));
-         i += BytesPerWord;
-       }
-       for (; i < con_size_in_bytes; i += 2 * BytesPerWord)
-         stp(zr, zr, Address(obj, i));
+       initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
-       block_comment("zero memory");
-      // use loop to null out the fields
-
-       int words = (con_size_in_bytes - hdr_size_in_bytes) / BytesPerWord;
-       mov(index,  words / 8);
-
-       const int unroll = 8; // Number of str(zr) instructions we'll unroll
-       int remainder = words % unroll;
-       lea(rscratch1, Address(obj, hdr_size_in_bytes + remainder * BytesPerWord));
-
-       Label entry_point, loop;
-       b(entry_point);
-
-       bind(loop);
-       sub(index, index, 1);
-       for (int i = -unroll; i < 0; i++) {
-         if (-i == remainder)
-           bind(entry_point);
-         str(zr, Address(rscratch1, i * wordSize));
-       }
-       if (remainder == 0)
-         bind(entry_point);
-       add(rscratch1, rscratch1, unroll * wordSize);
-       cbnz(index, loop);
-
+       con_size_in_bytes -= hdr_size_in_bytes;
+       lea(t1, Address(obj, hdr_size_in_bytes));
+       zero_words(t1, con_size_in_bytes / BytesPerWord);
      }
   }
 
@@ -291,8 +266,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  const Register len_zero = len;
-  initialize_body(obj, arr_size, header_size * BytesPerWord, len_zero);
+  initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
 
   membar(StoreStore);
 
@@ -324,7 +298,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this);
+  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {
@@ -332,7 +306,7 @@ void C1_MacroAssembler::remove_frame(int framesize) {
 }
 
 
-void C1_MacroAssembler::verified_entry() {
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.  For this action to be legal we
   // must ensure that this first instruction is a B, BL, NOP, BKPT,
@@ -341,7 +315,7 @@ void C1_MacroAssembler::verified_entry() {
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
-  // rbp, + 0: link
+  // rfp, + 0: link
   //     + 1: return address
   //     + 2: argument with offset 0
   //     + 3: argument with offset 1
@@ -354,7 +328,7 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
 
 void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
   if (!VerifyOops) return;
-  verify_oop_addr(Address(sp, stack_offset), "oop");
+  verify_oop_addr(Address(sp, stack_offset));
 }
 
 void C1_MacroAssembler::verify_not_null_oop(Register r) {

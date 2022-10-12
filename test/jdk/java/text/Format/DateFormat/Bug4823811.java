@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.*;
 
 public class Bug4823811 {
 
-    private static Locale localeEG = new Locale("ar", "EG");
+    private static Locale localeEG = Locale.of("ar", "EG");
     private static Locale localeUS = Locale.US;
 
     private static String JuneInArabic = "\u064a\u0648\u0646\u064a\u0648";

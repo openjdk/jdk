@@ -39,9 +39,6 @@ public class MetricsMemoryTester {
             case "memoryswap":
                 testMemoryAndSwapLimit(args[1], args[2]);
                 break;
-            case "kernelmem":
-                testKernelMemoryLimit(args[1]);
-                break;
             case "oomkill":
                 testOomKillFlag(Boolean.parseBoolean(args[2]));
                 break;
@@ -117,23 +114,6 @@ public class MetricsMemoryTester {
                     + memorySoftLimit + "]");
         }
         System.out.println("TEST PASSED!!!");
-    }
-
-    private static void testKernelMemoryLimit(String value) {
-        Metrics m = Metrics.systemMetrics();
-        if (m instanceof CgroupV1Metrics) {
-            CgroupV1Metrics mCgroupV1 = (CgroupV1Metrics)m;
-            System.out.println("TEST PASSED!!!");
-            long limit = getMemoryValue(value);
-            long kmemlimit = mCgroupV1.getKernelMemoryLimit();
-            if (kmemlimit != UNLIMITED && limit != kmemlimit) {
-                throw new RuntimeException("Kernel Memory limit not equal, expected : ["
-                        + limit + "]" + ", got : ["
-                        + kmemlimit + "]");
-            }
-        } else {
-            throw new RuntimeException("kernel memory limit test not supported for cgroups v2");
-        }
     }
 
     private static void testMemoryAndSwapLimit(String memory, String memAndSwap) {

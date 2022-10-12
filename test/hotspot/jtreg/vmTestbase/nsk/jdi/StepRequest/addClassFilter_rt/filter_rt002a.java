@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.StepRequest.addClassFilter_rt;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class filter_rt002a {
 
     //====================================================== test program
 
-    static Thread1filter_rt002a thread1 = null;
+    static Thread thread1 = null;
 
     static filter_rt002aTestClass10 obj = new filter_rt002aTestClass10();
 
@@ -98,7 +97,7 @@ public class filter_rt002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1filter_rt002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1filter_rt002a("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -156,24 +155,21 @@ class filter_rt002aTestClass11 extends filter_rt002aTestClass10{
     }
 }
 
-class Thread1filter_rt002a extends Thread {
-
-    String tName = null;
+class Thread1filter_rt002a extends NamedTask {
 
     public Thread1filter_rt002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_rt002a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(filter_rt002a.waitnotifyObj) {
             filter_rt002a.waitnotifyObj.notify();
         }
         synchronized(filter_rt002a.lockObj) {
             filter_rt002aTestClass11.m11();
         }
-        filter_rt002a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

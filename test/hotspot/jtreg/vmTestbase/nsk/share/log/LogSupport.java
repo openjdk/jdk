@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,12 @@ public class LogSupport implements Log {
 
         public LogSupport(PrintStream out) {
                 this.out = out;
+                // pre-load all classes used by Thread.sleep()
+                // to don't hit OOME in OOME handler
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ie) {
+                }
         }
 
         protected void logObject(Object o) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,7 @@
 
 #include "runtime/prefetch.hpp"
 
-inline void Prefetch::read(void* loc, intx interval) {
+inline void Prefetch::read(const void* loc, intx interval) {
   // No prefetch instructions on z/Architecture -> implement trivially.
 }
 

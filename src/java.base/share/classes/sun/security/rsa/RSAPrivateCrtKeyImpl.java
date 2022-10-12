@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger q;       // prime q
     private BigInteger pe;      // prime exponent p
     private BigInteger qe;      // prime exponent q
-    private BigInteger coeff;   // CRT coeffcient
+    private BigInteger coeff;   // CRT coefficient
 
     private transient KeyType type;
 
@@ -91,16 +91,11 @@ public final class RSAPrivateCrtKeyImpl
             RSAKeyFactory.checkKeyAlgo(key, type.keyAlgo);
             // check all CRT-specific components are available, if any one
             // missing, return a non-CRT key instead
-            if ((key.getPublicExponent().signum() == 0) ||
-                (key.getPrimeExponentP().signum() == 0) ||
-                (key.getPrimeExponentQ().signum() == 0) ||
-                (key.getPrimeP().signum() == 0) ||
-                (key.getPrimeQ().signum() == 0) ||
-                (key.getCrtCoefficient().signum() == 0)) {
+            if (checkComponents(key)) {
+                return key;
+            } else {
                 return new RSAPrivateKeyImpl(key.type, key.keyParams,
                     key.getModulus(), key.getPrivateExponent());
-            } else {
-                return key;
             }
         case "PKCS#1":
             try {
@@ -125,6 +120,18 @@ public final class RSAPrivateCrtKeyImpl
     }
 
     /**
+     * Validate if all CRT-specific components are available.
+     */
+    static boolean checkComponents(RSAPrivateCrtKey key) {
+        return !((key.getPublicExponent().signum() == 0) ||
+            (key.getPrimeExponentP().signum() == 0) ||
+            (key.getPrimeExponentQ().signum() == 0) ||
+            (key.getPrimeP().signum() == 0) ||
+            (key.getPrimeQ().signum() == 0) ||
+            (key.getCrtCoefficient().signum() == 0));
+    }
+
+    /**
      * Generate a new key from the specified type and components.
      * Returns a CRT key if possible and a non-CRT key otherwise.
      * Used by SunPKCS11 provider.
@@ -134,7 +141,7 @@ public final class RSAPrivateCrtKeyImpl
             BigInteger n, BigInteger e, BigInteger d,
             BigInteger p, BigInteger q, BigInteger pe, BigInteger qe,
             BigInteger coeff) throws InvalidKeyException {
-        RSAPrivateKey key;
+
         if ((e.signum() == 0) || (p.signum() == 0) ||
             (q.signum() == 0) || (pe.signum() == 0) ||
             (qe.signum() == 0) || (coeff.signum() == 0)) {

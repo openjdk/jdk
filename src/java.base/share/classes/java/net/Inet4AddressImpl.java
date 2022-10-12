@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,25 @@
  */
 package java.net;
 import java.io.IOException;
+import java.net.spi.InetAddressResolver.LookupPolicy;
+
+import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4;
 
 /*
  * Package private implementation of InetAddressImpl for IPv4.
  *
  * @since 1.4
  */
-class Inet4AddressImpl implements InetAddressImpl {
+final class Inet4AddressImpl implements InetAddressImpl {
     public native String getLocalHostName() throws UnknownHostException;
-    public native InetAddress[]
-        lookupAllHostAddr(String hostname) throws UnknownHostException;
+    public InetAddress[] lookupAllHostAddr(String hostname, LookupPolicy lookupPolicy)
+            throws UnknownHostException {
+        if ((lookupPolicy.characteristics() & IPV4) == 0) {
+            throw new UnknownHostException(hostname);
+        }
+        return lookupAllHostAddr(hostname);
+    }
+    private native InetAddress[] lookupAllHostAddr(String hostname) throws UnknownHostException;
     public native String getHostByAddr(byte[] addr) throws UnknownHostException;
     private native boolean isReachable0(byte[] addr, int timeout, byte[] ifaddr, int ttl) throws IOException;
 

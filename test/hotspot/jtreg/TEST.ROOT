@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ groups=TEST.groups TEST.quick-groups
 # to determine additional characteristics of the system for use with the @requires tag.
 # Note: compiled bootlibs classes will be added to BCP.
 requires.extraPropDefns = ../../jtreg-ext/requires/VMProps.java
-requires.extraPropDefns.bootlibs = ../../lib/sun
+requires.extraPropDefns.bootlibs = ../../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../../lib/jdk/test/lib/Platform.java \
     ../../lib/jdk/test/lib/Container.java
@@ -63,11 +63,13 @@ requires.properties= \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \
+    vm.hasDTrace \
     vm.rtm.cpu \
     vm.rtm.compiler \
     vm.cds \
     vm.cds.custom.loaders \
-    vm.cds.archived.java.heap \
+    vm.cds.write.archived.java.heap \
+    vm.continuations \
     vm.jvmti \
     vm.graal.enabled \
     vm.compiler1.enabled \
@@ -78,7 +80,7 @@ requires.properties= \
     jdk.containerized
 
 # Minimum jtreg version
-requiredVersion=6+1
+requiredVersion=7+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them

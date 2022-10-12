@@ -138,7 +138,7 @@ public interface FlowTube extends
      * It is not required that a {@code TubePublisher} implementation extends
      * this class.
      */
-    static abstract class AbstractTubePublisher implements TubePublisher {
+    abstract static class AbstractTubePublisher implements TubePublisher {
         static final class TubePublisherWrapper extends AbstractTubePublisher {
             final Flow.Publisher<List<ByteBuffer>> delegate;
             public TubePublisherWrapper(Flow.Publisher<List<ByteBuffer>> delegate) {
@@ -156,7 +156,7 @@ public interface FlowTube extends
      * It is not required that a {@code TubeSubscriber} implementation extends
      * this class.
      */
-    static abstract class AbstractTubeSubscriber implements TubeSubscriber {
+    abstract static class AbstractTubeSubscriber implements TubeSubscriber {
         static final class TubeSubscriberWrapper extends  AbstractTubeSubscriber {
             final Flow.Subscriber<? super List<ByteBuffer>> delegate;
             TubeSubscriberWrapper(Flow.Subscriber<? super List<ByteBuffer>> delegate) {

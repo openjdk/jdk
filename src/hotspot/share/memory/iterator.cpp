@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
@@ -38,10 +39,6 @@ void CLDToOopClosure::do_cld(ClassLoaderData* cld) {
 
 void ObjectToOopClosure::do_object(oop obj) {
   obj->oop_iterate(_cl);
-}
-
-void VoidClosure::do_void() {
-  ShouldNotCallThis();
 }
 
 void CodeBlobToOopClosure::do_nmethod(nmethod* nm) {
@@ -61,7 +58,22 @@ void CodeBlobToOopClosure::do_code_blob(CodeBlob* cb) {
 void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* nm = cb->as_nmethod_or_null();
   if (nm != NULL && nm->oops_do_try_claim()) {
-    do_nmethod(nm);
+    // Process the oops in the nmethod
+    nm->oops_do(_cl);
+
+    if (_keepalive_nmethods) {
+      // CodeCache unloading support
+      nm->mark_as_maybe_on_stack();
+
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      if (bs_nm != NULL) {
+        bs_nm->disarm(nm);
+      }
+    }
+
+    if (_fix_relocations) {
+      nm->fix_oop_relocations();
+    }
   }
 }
 

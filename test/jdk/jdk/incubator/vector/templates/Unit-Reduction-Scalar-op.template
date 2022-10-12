@@ -1,3 +1,4 @@
+
     static $type$ [[TEST]]Reduce($type$[] a, int idx) {
         $type$ res = [[TEST_INIT]];
         for (int i = idx; i < (idx + SPECIES.length()); i++) {

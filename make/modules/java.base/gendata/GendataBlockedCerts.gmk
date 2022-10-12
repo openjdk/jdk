@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-GENDATA_BLOCKED_CERTS_SRC += $(TOPDIR)/make/data/blockedcertsconverter/blocked.certs.pem
+GENDATA_BLOCKED_CERTS_SRC += $(MODULE_SRC)/share/data/blockedcertsconverter/blocked.certs.pem
 GENDATA_BLOCKED_CERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/blocked.certs
 
 $(GENDATA_BLOCKED_CERTS): $(BUILD_TOOLS_JDK) $(GENDATA_BLOCKED_CERTS_SRC)

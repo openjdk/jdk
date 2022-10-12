@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,6 +376,16 @@ import java.lang.module.ModuleFinder;
  *   <td>Access system modules in the runtime image.</td>
  *   <td>This grants the permission to access resources in the
  *   {@linkplain ModuleFinder#ofSystem system modules} in the runtime image.</td>
+ * </tr>
+ *
+ * <tr>
+ *   <th scope="row">inetAddressResolverProvider</th>
+ *   <td>This {@code RuntimePermission} is required to be granted to
+ *   classes which subclass and implement {@code java.net.spi.InetAddressResolverProvider}.
+ *   The permission is checked during invocation of the abstract base class constructor.
+ *   This permission ensures trust in classes which provide resolvers used by
+ *   {@link java.net.InetAddress} hostname and address resolution methods.</td>
+ *   <td>See {@link java.net.spi.InetAddressResolverProvider} for more information.</td>
  * </tr>
  *
  * </tbody>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1121,7 +1121,7 @@ public class Infer {
      * t = java.util.ArrayList<java.lang.String>
      * s = java.util.List<T>
      *
-     * we get this ouput (singleton list):
+     * we get this output (singleton list):
      *
      * [Pair[java.util.List<java.lang.String>,java.util.List<T>]]
      */
@@ -1309,6 +1309,12 @@ public class Infer {
 
             public NodeNotFoundException(InferenceGraph graph) {
                 this.graph = graph;
+            }
+
+            @Override
+            public Throwable fillInStackTrace() {
+                // This is an internal exception; the stack trace is irrelevant.
+                return this;
             }
         }
         /**

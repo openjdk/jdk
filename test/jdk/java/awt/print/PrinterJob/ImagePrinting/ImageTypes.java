@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,84 +21,132 @@
  * questions.
  */
 
-/**
- *
+/*
  * @test
  * @bug 4521945 7006865
  * @summary Test printing images of different types.
  * @author prr
- * @run main/manual=yesno/timeout=900 ImageTypes
+ * @run main/manual ImageTypes
  */
 
-import java.io.*;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.IndexColorModel;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+
 import static java.awt.Color.*;
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.event.*;
-import java.awt.print.*;
-import java.awt.image.*;
 import static java.awt.image.BufferedImage.*;
-import javax.print.*;
-import javax.print.attribute.*;
-import javax.print.attribute.standard.*;
 
-public class ImageTypes extends Frame implements ActionListener {
+public class ImageTypes {
 
-    private ImageCanvas c;
+    private static Frame testFrame;
+    private static ImageCanvas imageCanvas;
+    private static volatile boolean testResult;
+    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
 
-    public static void main(String args[]) {
-
-        ImageTypes f = new ImageTypes();
-        f.show();
-    }
-
-    public ImageTypes () {
-        super("Image Types Printing Test");
-        c = new ImageCanvas();
-        add("Center", c);
-
-        Button printThisButton = new Button("Print");
-        printThisButton.addActionListener(this);
-        Panel p = new Panel();
-        p.add(printThisButton);
-        add("South", p);
-        add("North", getInstructions());
-        addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
-                    System.exit(0);
-                }
-            });
-
-        pack();
-    }
-
-    private TextArea getInstructions() {
-        TextArea ta = new TextArea(10, 60);
-        ta.setFont(new Font("Dialog", Font.PLAIN, 11));
-        ta.setText
-            ("This is a manual test as it requires that you compare "+
-             "the on-screen rendering with the printed output.\n"+
-             "Select the 'Print' button to print out the test.\n"+
-             "For each image compare the printed one to the on-screen one.\n"+
-             "The test PASSES if the onscreen and printed rendering match.");
-        return ta;
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        PrinterJob pj = PrinterJob.getPrinterJob();
-
-        PrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
-        if (pj != null && pj.printDialog(attrs)) {
-            pj.setPrintable(c);
-            try {
-                pj.print(attrs);
-            } catch (PrinterException pe) {
-                pe.printStackTrace();
-                throw new RuntimeException("Exception whilst printing.");
-            } finally {
-                System.out.println("PRINT RETURNED OK.");
-            }
+    public static void main(String[] args) throws InterruptedException {
+        createTestUI();
+        if (!countDownLatch.await(10, TimeUnit.MINUTES)) {
+            throw new RuntimeException("Timeout : No action was performed on the test UI.");
         }
+        if (!testResult) {
+            throw new RuntimeException("Test failed!");
+        }
+    }
+
+    public static void createTestUI() {
+        testFrame = new Frame("Image Types Printing Test");
+        imageCanvas = new ImageCanvas();
+        testFrame.add("Center", imageCanvas);
+
+        Button printButton = new Button("Print");
+        printButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                PrinterJob pj = PrinterJob.getPrinterJob();
+                if (pj.getPrintService() == null) {
+                    System.out.println("No printers. Test cannot continue. Install " +
+                            "printer and restart the test.");
+                    return;
+                }
+                PrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
+                if (pj != null && pj.printDialog(attrs)) {
+                    pj.setPrintable(imageCanvas);
+                    try {
+                        pj.print(attrs);
+                    } catch (PrinterException pe) {
+                        pe.printStackTrace();
+                        throw new RuntimeException("Exception whilst printing.");
+                    } finally {
+                        System.out.println("PRINT RETURNED OK.");
+                    }
+                }
+            }
+        });
+
+        Button passButton = new Button("Pass");
+        passButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                testResult = true;
+                countDownLatch.countDown();
+                testFrame.dispose();
+            }
+        });
+
+        Button failButton = new Button("Fail");
+        failButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                testResult = false;
+                countDownLatch.countDown();
+                testFrame.dispose();
+            }
+        });
+
+        Panel buttonPanel = new Panel(new GridLayout(1,3));
+        buttonPanel.add(printButton);
+        buttonPanel.add(passButton);
+        buttonPanel.add(failButton);
+        testFrame.add("South", buttonPanel);
+        testFrame.add("North", getInstructions());
+        testFrame.pack();
+        testFrame.setVisible(true);
+    }
+
+    private static TextArea getInstructions() {
+        String testInstruction = "This is a manual test as it requires that you compare "+
+                "the on-screen rendering with the printed output.\n"+
+                "Select the 'Print' button to print out the test.\n"+
+                "For each image compare the printed one to the on-screen one.\n"+
+                "Press Pass button if the onscreen and printed rendering " +
+                "match else Press fail button";
+        TextArea ta = new TextArea(testInstruction,7, 60,
+                TextArea.SCROLLBARS_NONE);
+        ta.setFont(new Font("Dialog", Font.PLAIN, 11));
+        return ta;
     }
 }
 
@@ -111,7 +159,6 @@ class ImageCanvas extends Component implements Printable {
     int sw=99, sh=99;
 
     void paintImage(BufferedImage bi, Color c1, Color c2) {
-
         GradientPaint tp= new GradientPaint(0.0f, 0.0f, c1, 10f, 8f, c2, true);
         Graphics2D g2d = (Graphics2D)bi.getGraphics();
         g2d.setPaint(tp);
@@ -132,7 +179,6 @@ class ImageCanvas extends Component implements Printable {
     }
 
     ImageCanvas() {
-
         opaqueImg = new BufferedImage(sw, sh, TYPE_INT_RGB);
         Color o1 = new Color(0, 0, 0);
         Color o2 = new Color(255, 255, 255);
@@ -171,9 +217,7 @@ class ImageCanvas extends Component implements Printable {
 
     }
 
-
     public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
-
         if (pgIndex > 0) {
             return Printable.NO_SUCH_PAGE;
         }
@@ -184,7 +228,6 @@ class ImageCanvas extends Component implements Printable {
     }
 
     private void drawImage(Graphics g, int biType, IndexColorModel icm) {
-
         BufferedImage bi;
         if (icm != null) {
             bi = new BufferedImage(sw, sh, biType, icm);
@@ -202,7 +245,6 @@ class ImageCanvas extends Component implements Printable {
     }
 
     public void paint(Graphics g) {
-
         int incX = sw+10, incY = sh+10;
 
         g.translate(10, 10);
@@ -259,14 +301,11 @@ class ImageCanvas extends Component implements Printable {
         g.translate(incX, 0);
     }
 
-
-
-     /* Size is chosen to match default imageable width of a NA letter
-      * page. This means there will be clipping, what is clipped will
-      * depend on PageFormat orientation.
-      */
-     public Dimension getPreferredSize() {
+    /* Size is chosen to match default imageable width of a NA letter
+     * page. This means there will be clipping, what is clipped will
+     * depend on PageFormat orientation.
+     */
+    public Dimension getPreferredSize() {
         return new Dimension(468, 600);
     }
-
 }

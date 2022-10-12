@@ -27,6 +27,7 @@ import javax.sound.midi.MidiUnavailableException;
 
 /**
  * @test
+ * @key sound
  * @bug 4356787
  * @summary MIDI device I/O is not working
  */

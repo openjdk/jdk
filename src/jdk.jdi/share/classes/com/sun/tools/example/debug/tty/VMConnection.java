@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ class VMConnection {
     private final Connector connector;
     private final Map<String, com.sun.jdi.connect.Connector.Argument> connectorArgs;
     private int traceFlags;
+    private final boolean trackVthreads;
 
     synchronized void notifyOutputComplete() {
         outputCompleteCount++;
@@ -304,15 +305,15 @@ class VMConnection {
         return al;
     }
 
-    static private boolean isPreviousCharWhitespace(char[] arr, int curr_pos) {
+    private static boolean isPreviousCharWhitespace(char[] arr, int curr_pos) {
         return isCharWhitespace(arr, curr_pos - 1);
     }
 
-    static private boolean isNextCharWhitespace(char[] arr, int curr_pos) {
+    private static boolean isNextCharWhitespace(char[] arr, int curr_pos) {
         return isCharWhitespace(arr, curr_pos + 1);
     }
 
-    static private boolean isCharWhitespace(char[] arr, int pos) {
+    private static boolean isCharWhitespace(char[] arr, int pos) {
         if (pos < 0 || pos >= arr.length) {
             // outside arraybounds is considered an implicit space
             return true;
@@ -323,11 +324,11 @@ class VMConnection {
         return false;
     }
 
-    static private boolean isLastChar(char[] arr, int pos) {
+    private static boolean isLastChar(char[] arr, int pos) {
         return (pos + 1 == arr.length);
     }
 
-    VMConnection(String connectSpec, int traceFlags, String extraOptions) {
+    VMConnection(String connectSpec, int traceFlags, boolean trackVthreads, String extraOptions) {
         String nameString;
         String argString;
         int index = connectSpec.indexOf(':');
@@ -347,6 +348,7 @@ class VMConnection {
 
         connectorArgs = parseConnectorArgs(connector, argString, extraOptions);
         this.traceFlags = traceFlags;
+        this.trackVthreads = trackVthreads;
     }
 
     public void setTraceFlags(int flags) {
@@ -377,7 +379,7 @@ class VMConnection {
             resolveEventRequests();
         }
         /*
-         * Now that the vm connection is open, fetch the debugee
+         * Now that the vm connection is open, fetch the debuggee
          * classpath and set up a default sourcepath.
          * (Unless user supplied a sourcepath on the command line)
          * (Bug ID 4186582)
@@ -466,8 +468,12 @@ class VMConnection {
             (new StringTokenizer("uncaught java.lang.Throwable"));
 
         ThreadStartRequest tsr = erm.createThreadStartRequest();
-        tsr.enable();
         ThreadDeathRequest tdr = erm.createThreadDeathRequest();
+        if (!trackVthreads) {
+            tsr.addPlatformThreadsOnlyFilter();
+            tdr.addPlatformThreadsOnlyFilter();
+        }
+        tsr.enable();
         tdr.enable();
     }
 

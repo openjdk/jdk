@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -52,6 +52,7 @@ public class MatchPatternIterator extends LocPathIterator
   protected int m_superAxis = -1;
 
   /** The DTM inner traversal class, that corresponds to the super axis. */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   protected DTMAxisTraverser m_traverser;
 
   /** DEBUG flag for diagnostic dumps. */

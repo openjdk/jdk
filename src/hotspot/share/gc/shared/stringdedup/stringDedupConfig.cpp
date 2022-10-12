@@ -116,7 +116,7 @@ size_t StringDedup::Config::desired_table_size(size_t entry_count) {
 bool StringDedup::Config::ergo_initialize() {
   if (!UseStringDeduplication) {
     return true;
-  } else if (!UseG1GC && !UseShenandoahGC) {
+  } else if (!UseG1GC && !UseShenandoahGC && !UseZGC && !UseParallelGC && !UseSerialGC) {
     // String deduplication requested but not supported by the selected GC.
     // Warn and force disable, but don't error except in debug build with
     // incorrect default.
@@ -161,6 +161,6 @@ void StringDedup::Config::initialize() {
   _load_factor_for_shrink = StringDeduplicationShrinkTableLoad;
   _load_factor_target = StringDeduplicationTargetTableLoad;
   _minimum_dead_for_cleanup = StringDeduplicationCleanupDeadMinimum;
-  _dead_factor_for_cleanup = percent_of(StringDeduplicationCleanupDeadPercent, 100);
+  _dead_factor_for_cleanup = StringDeduplicationCleanupDeadPercent / 100.0;
   _hash_seed = initial_hash_seed();
 }

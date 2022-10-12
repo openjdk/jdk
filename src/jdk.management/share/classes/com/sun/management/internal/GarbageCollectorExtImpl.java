@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,10 +70,10 @@ public class GarbageCollectorExtImpl extends GarbageCollectorImpl
         return info;
     }
 
-    private final static String notifName =
+    private static final String notifName =
         "javax.management.Notification";
 
-    private final static String[] gcNotifTypes = {
+    private static final String[] gcNotifTypes = {
         GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION
     };
 

@@ -49,7 +49,7 @@ public abstract class TextUI extends ComponentUI
      * @param t the text component for which this UI is installed
      * @param pos  the local location in the model to translate &gt;= 0
      * @return the coordinates as a {@code Rectangle}
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      *
      * @deprecated replaced by
@@ -66,7 +66,7 @@ public abstract class TextUI extends ComponentUI
      * @param pos  the local location in the model to translate &gt;= 0
      * @param bias the bias for the position
      * @return the coordinates as a {@code Rectangle}
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      *
      * @deprecated replaced by
@@ -86,7 +86,7 @@ public abstract class TextUI extends ComponentUI
      * @param pos  the local location in the model to translate {@code >= 0}
      * @param bias the bias for the position
      * @return the coordinates as a {@code Rectangle2D}
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *            represent a valid location in the associated document
      *
      * @since 9
@@ -178,8 +178,8 @@ public abstract class TextUI extends ComponentUI
      * @param biasRet an array to contain the bias for the returned position
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException for a bad location within a document model
-     * @exception IllegalArgumentException for an invalid direction
+     * @throws BadLocationException for a bad location within a document model
+     * @throws IllegalArgumentException for an invalid direction
      */
     public abstract int getNextVisualPositionFrom(JTextComponent t,
                          int pos, Position.Bias b,

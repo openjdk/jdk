@@ -89,7 +89,12 @@ public class HelloClasslist {
         String CSCSC  = "string" + s + "string" + s + "string";
         String SCSCS  = s + "string" + s + "string" + s;
         String SSCSS  = s + s + "string" + s + s;
-        String SSSSS  = s + s + s + s + s;
+        String S5     = s + s + s + s + s;
+        String S6     = s + s + s + s + s + s;
+        String S7     = s + s + s + s + s + s + s;
+        String S8     = s + s + s + s + s + s + s + s;
+        String S9     = s + s + s + s + s + s + s + s + s;
+        String S10    = s + s + s + s + s + s + s + s + s + s;
 
         String CI     = "string" + i;
         String IC     = i + "string";
@@ -100,6 +105,16 @@ public class HelloClasslist {
         String CIC    = "string" + i + "string";
         String CICI   = "string" + i + "string" + i;
 
+        float f = 0.1f;
+        String CF     = "string" + f;
+        String CFS    = "string" + f + s;
+        String CSCF   = "string" + s + "string" + f;
+
+        char c = 'a';
+        String CC     = "string" + c;
+        String CCS    = "string" + c + s;
+        String CSCC   = "string" + s + "string" + c;
+
         long l = System.currentTimeMillis();
         String CJ     = "string" + l;
         String JC     = l + "string";
@@ -108,6 +123,8 @@ public class HelloClasslist {
         String CJCJC  = "string" + l + "string" + l + "string";
         double d = i / 2.0;
         String CD     = "string" + d;
+        String CDS    = "string" + d + s;
+        String CSCD   = "string" + s + "string" + d;
 
         String newDate = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
                 LocalDateTime.now(ZoneId.of("GMT")));
@@ -115,6 +132,12 @@ public class HelloClasslist {
         String oldDate = String.format("%s%n",
                 DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.ROOT)
                         .format(new Date()));
+
+        // A selection of trivial and common reflection operations
+        var instance = HelloClasslist.class.getConstructor().newInstance();
+        HelloClasslist.class.getMethod("staticMethod_V").invoke(null);
+        var obj = HelloClasslist.class.getMethod("staticMethod_L_L", Object.class).invoke(null, instance);
+        HelloClasslist.class.getField("field").get(instance);
 
         // A selection of trivial and relatively common MH operations
         invoke(MethodHandles.identity(double.class), 1.0);
@@ -126,7 +149,13 @@ public class HelloClasslist {
         LOGGER.log(Level.FINE, "New Date: " + newDate + " - old: " + oldDate);
     }
 
+    public HelloClasslist() {}
+
+    public String field = "someValue";
+
     public static void staticMethod_V() {}
+
+    public static Object staticMethod_L_L(Object o) { return o; }
 
     private static MethodHandle handle(String name, MethodType type) throws Throwable {
         return MethodHandles.lookup().findStatic(HelloClasslist.class, name, type);

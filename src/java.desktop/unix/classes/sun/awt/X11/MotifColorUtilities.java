@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,10 +427,10 @@ class MotifColorUtilities {
 
         for (int i=0;i<8;i++) {
             temp = bfr.readLine();
-            color = temp.substring(1,temp.length());
-            r = Integer.valueOf(color.substring(0,4),16).intValue() >> 8;
-            g = Integer.valueOf(color.substring(4,8),16).intValue() >> 8;
-            b = Integer.valueOf(color.substring(8,12),16).intValue() >> 8;
+            color = temp.substring(1);
+            r = Integer.parseInt(color.substring(0, 4), 16) >> 8;
+            g = Integer.parseInt(color.substring(4, 8), 16) >> 8;
+            b = Integer.parseInt(color.substring(8, 12), 16) >> 8;
             colors[i] = 0xff000000 | r<<16 | g<<8 | b;
             //  System.out.println("color["+i+"]="+Integer.toHexString(colors[i]) + "r = " +r + "g="+g+"b="+b);
         }

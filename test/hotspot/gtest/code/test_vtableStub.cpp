@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "unittest.hpp"
 
+#ifndef ZERO
+
 TEST_VM(code, vtableStubs) {
   // Should be in VM to use locks
   ThreadInVMfromNative ThreadInVMfromNative(JavaThread::current());
@@ -50,3 +52,5 @@ TEST_VM(code, itableStubs) {
   }
   VtableStubs::find_itable_stub((1 << 15) - 1); // max itable index
 }
+
+#endif

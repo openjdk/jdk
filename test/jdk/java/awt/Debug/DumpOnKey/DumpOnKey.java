@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import java.awt.AWTException;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Robot;
 import java.awt.Window;
@@ -58,9 +59,11 @@ public final class DumpOnKey {
         w.setSize(200, 200);
         w.setLocationRelativeTo(null);
         w.setVisible(true);
+        w.toFront();
+        w.requestFocus();
 
         final Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
         robot.setAutoWaitForIdle(true);
         robot.mouseMove(w.getX() + w.getWidth() / 2,
                         w.getY() + w.getHeight() / 2);
@@ -74,7 +77,14 @@ public final class DumpOnKey {
         robot.keyRelease(KeyEvent.VK_SHIFT);
         robot.keyRelease(KeyEvent.VK_CONTROL);
 
-        w.dispose();
+        try {
+            EventQueue.invokeAndWait(() -> {
+                w.dispose();
+            });
+        } catch (Exception e) {}
+
+        robot.delay(2000);
+
         if (dumped != dump) {
             throw new RuntimeException("Exp:" + dump + ", actual:" + dumped);
         }

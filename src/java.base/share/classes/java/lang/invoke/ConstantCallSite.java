@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.internal.vm.annotation.Stable;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public class ConstantCallSite extends CallSite {
+public non-sealed class ConstantCallSite extends CallSite {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     @Stable // should NOT be constant folded during instance initialization (isFrozen == false)

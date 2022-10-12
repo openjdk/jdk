@@ -72,6 +72,10 @@ public class Display {
     public void setDelayLineWrap(boolean v) { delayLineWrap = v; }
 
     public void resize(int rows, int columns) {
+        if (rows == 0 || columns == 0) {
+            columns = Integer.MAX_VALUE - 1;
+            rows = 1;
+        }
         if (this.rows != rows || this.columns != columns) {
             this.rows = rows;
             this.columns = columns;

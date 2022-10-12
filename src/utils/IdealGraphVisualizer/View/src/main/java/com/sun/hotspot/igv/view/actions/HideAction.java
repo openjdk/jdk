@@ -30,6 +30,7 @@ import javax.swing.Action;
 import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
+import org.openide.util.Utilities;
 
 /**
  *
@@ -47,17 +48,13 @@ public final class HideAction extends CallableSystemAction {
 
     public HideAction() {
         putValue(Action.SHORT_DESCRIPTION, "Hide selected nodes");
-        putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_H, Event.CTRL_MASK, false));
+        // D is the Control key on most platforms, the Command (meta) key on Macintosh
+        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-H"));
     }
 
     @Override
     public String getName() {
         return "Hide";
-    }
-
-    @Override
-    protected void initialize() {
-        super.initialize();
     }
 
     @Override

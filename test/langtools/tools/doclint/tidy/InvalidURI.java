@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref InvalidURI.out InvalidURI.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref InvalidURI.out InvalidURI.java
  */
 
 // tidy: Warning: <a> escaping malformed URI reference

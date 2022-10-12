@@ -26,23 +26,41 @@ package gc.epsilon;
 /**
  * @test TestElasticTLAB
  * @key randomness
- * @requires vm.gc.Epsilon & os.maxMemory > 1G
+ * @requires vm.gc.Epsilon
  * @summary Epsilon is able to work with/without elastic TLABs
  * @library /test/lib
  *
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:-EpsilonElasticTLAB                               gc.epsilon.TestElasticTLAB
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=1   gc.epsilon.TestElasticTLAB
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=1.1 gc.epsilon.TestElasticTLAB
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=2.0 gc.epsilon.TestElasticTLAB
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=42  gc.epsilon.TestElasticTLAB
- * @run main/othervm -Xmx1g -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=100 gc.epsilon.TestElasticTLAB
+ * @run main/othervm -Xmx256m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   -XX:-EpsilonElasticTLAB
+ *                   gc.epsilon.TestElasticTLAB
+ *
+ * @run main/othervm -Xmx256m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=1
+ *                   gc.epsilon.TestElasticTLAB
+ *
+ * @run main/othervm -Xmx256m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=1.1
+ *                   gc.epsilon.TestElasticTLAB
+ *
+ * @run main/othervm -Xmx256m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=2.0
+ *                   gc.epsilon.TestElasticTLAB
+ *
+ * @run main/othervm -Xmx256m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   -XX:+EpsilonElasticTLAB -XX:EpsilonTLABElasticity=100
+ *                   gc.epsilon.TestElasticTLAB
  */
 
 import java.util.Random;
 import jdk.test.lib.Utils;
 
 public class TestElasticTLAB {
-  static int COUNT = Integer.getInteger("count", 3000); // ~500 MB allocation
+  static int COUNT = Integer.getInteger("count", 500); // ~100 MB allocation
 
   static byte[][] arr;
 

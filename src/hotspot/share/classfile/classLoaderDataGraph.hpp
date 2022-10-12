@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,8 @@ class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphKlassIteratorStatic;
-  friend class ClassLoaderDataGraphIterator;
+  template <bool keep_alive>
+  friend class ClassLoaderDataGraphIteratorBase;
   friend class VMStructs;
  private:
   // All CLDs (except the null CLD) can be reached by walking _head->_next->...
@@ -81,9 +82,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));
   static void modules_do(void f(ModuleEntry*));
-  static void modules_unloading_do(void f(ModuleEntry*));
   static void packages_do(void f(PackageEntry*));
-  static void packages_unloading_do(void f(PackageEntry*));
   static void loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading();
@@ -96,13 +95,6 @@ class ClassLoaderDataGraph : public AllStatic {
   // Called from VMOperation
   static void walk_metadata_and_clean_metaspaces();
 
-  // dictionary do
-  // Iterate over all klasses in dictionary, but
-  // just the classes from defining class loaders.
-  static void dictionary_classes_do(void f(InstanceKlass*));
-  // Added for initialize_itable_for_klass to handle exceptions.
-  static void dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
-
   // VM_CounterDecay iteration support
   static InstanceKlass* try_get_next_class();
   static void adjust_saved_class(ClassLoaderData* cld);
@@ -111,8 +103,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void verify_dictionary();
   static void print_dictionary(outputStream* st);
   static void print_table_statistics(outputStream* st);
-
-  static int resize_dictionaries();
 
   static bool has_metaspace_oom()           { return _metaspace_oom; }
   static void set_metaspace_oom(bool value) { _metaspace_oom = value; }

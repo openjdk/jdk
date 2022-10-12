@@ -79,7 +79,7 @@ public class hs203t002 extends RedefineAgent {
             Thread.sleep(10000);
             popThreadFrame(mt);
             resumeThread(mt);
-            while(!MyThread.resume2.get());;
+            while(!MyThread.resume2.get());
             Thread.sleep(10000);
                         suspendThread(mt);
             //mt.suspend();

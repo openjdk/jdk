@@ -97,7 +97,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int vtableEntrySize = getFieldValue("CompilerToVM::Data::sizeof_vtableEntry", Integer.class, "int");
     final int vtableEntryMethodOffset = getFieldOffset("vtableEntry::_method", Integer.class, "Method*");
 
-    final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "u1");
+    final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "InstanceKlass::ClassState");
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
@@ -182,7 +182,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodDataOverflowRecompiles = getFieldOffset("MethodData::_compiler_counters._nof_overflow_recompiles", Integer.class, "uint");
     final int methodDataOverflowTraps = getFieldOffset("MethodData::_compiler_counters._nof_overflow_traps", Integer.class, "uint");
 
-    final int nmethodCompLevelOffset = getFieldOffset("nmethod::_comp_level", Integer.class, "int");
+    final int nmethodCompLevelOffset = getFieldOffset("nmethod::_comp_level", Integer.class, "CompLevel");
 
     final int compilationLevelNone = getConstant("CompLevel_none", Integer.class);
     final int compilationLevelSimple = getConstant("CompLevel_simple", Integer.class);
@@ -336,7 +336,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int deoptReasonLoopLimitCheck = getConstant("Deoptimization::Reason_loop_limit_check", Integer.class);
     final int deoptReasonAliasing = getConstant("Deoptimization::Reason_aliasing", Integer.class);
     final int deoptReasonTransferToInterpreter = getConstant("Deoptimization::Reason_transfer_to_interpreter", Integer.class);
-    final int deoptReasonOSROffset = getConstant("Deoptimization::Reason_LIMIT", Integer.class);
+    final int deoptReasonOSROffset = getConstant("Deoptimization::Reason_TRAP_HISTORY_LENGTH", Integer.class);
 
     final int deoptActionNone = getConstant("Deoptimization::Action_none", Integer.class);
     final int deoptActionMaybeRecompile = getConstant("Deoptimization::Action_maybe_recompile", Integer.class);

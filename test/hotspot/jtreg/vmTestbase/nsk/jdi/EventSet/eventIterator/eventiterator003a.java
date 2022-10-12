@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class eventiterator003a {
         log = argHandler.createDebugeeLog();
 
         log1("debuggee started!");
-        thread2 = new Thread2eventiterator003a("thread2");
+        thread2 = JDIThreadFactory.newThread(new Thread2eventiterator003a("thread2"));
         methodForCommunication();
 
         threadStart(thread2);
@@ -112,7 +112,7 @@ public class eventiterator003a {
         return PASSED;
     }
 
-    static class Thread2eventiterator003a extends Thread {
+    static class Thread2eventiterator003a extends NamedTask {
 
         public Thread2eventiterator003a(String threadName) {
             super(threadName);

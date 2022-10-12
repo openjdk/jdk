@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,9 +452,9 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported range
      */
     private static ZonedDateTime create(long epochSecond, int nanoOfSecond, ZoneId zone) {
-        ZoneRules rules = zone.getRules();
-        Instant instant = Instant.ofEpochSecond(epochSecond, nanoOfSecond);  // TODO: rules should be queryable by epochSeconds
-        ZoneOffset offset = rules.getOffset(instant);
+        // nanoOfSecond is in a range that'll not affect epochSecond, validated
+        // by LocalDateTime.ofEpochSecond
+        ZoneOffset offset = zone.getOffset(epochSecond);
         LocalDateTime ldt = LocalDateTime.ofEpochSecond(epochSecond, nanoOfSecond, offset);
         return new ZonedDateTime(ldt, offset, zone);
     }
@@ -2207,7 +2207,8 @@ public final class ZonedDateTime
      * <p>
      * The format consists of the {@code LocalDateTime} followed by the {@code ZoneOffset}.
      * If the {@code ZoneId} is not the same as the offset, then the ID is output.
-     * The output is compatible with ISO-8601 if the offset and ID are the same.
+     * The output is compatible with ISO-8601 if the offset and ID are the same,
+     * and the seconds in the offset are zero.
      *
      * @return a string representation of this date-time, not null
      */

@@ -34,8 +34,6 @@ class G1RemSet;
 // A G1RemSetSummary manages statistical information about the G1RemSet
 
 class G1RemSetSummary {
-  G1CardSetCoarsenStats _coarsenings;
-
   size_t _num_vtimes;
   double* _rs_threads_vtimes;
 
@@ -59,7 +57,7 @@ public:
   // subtract all counters from the other summary, and set them in the current
   void subtract_from(G1RemSetSummary* other);
 
-  void print_on(outputStream* out);
+  void print_on(outputStream* out, bool show_thread_times);
 
   double rs_thread_vtime(uint thread) const;
 

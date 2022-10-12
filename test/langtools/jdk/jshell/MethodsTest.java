@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080357 8167643 8187359 8199762 8080353 8246353 8247456 8267221
+ * @bug 8080357 8167643 8187359 8199762 8080353 8246353 8247456 8267221 8272135
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -383,5 +383,18 @@ public class MethodsTest extends KullaTesting {
         assertEquals(m2.parameterTypes(), "int[]...");
         MethodSnippet m3 = methodKey(assertEval("void m3(int[][] p) { }", added(VALID)));
         assertEquals(m3.parameterTypes(), "int[][]");
+    }
+
+    public void testOverloadCalls() {
+        MethodSnippet orig = methodKey(assertEval("int m(String s) { return 0; }"));
+        MethodSnippet overload = methodKey(assertEval("int m(int i) { return 1; }"));
+        assertEval("m(\"\")", "0");
+        assertEval("m(0)", "1");
+        assertEval("int m(String s) { return m(0); }",
+                   ste(MAIN_SNIPPET, VALID, VALID, true, null),
+                   ste(overload, VALID, VALID, true, MAIN_SNIPPET),
+                   ste(orig, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+        assertEval("m(\"\")", "1");
+        assertEval("m(0)", "1");
     }
 }

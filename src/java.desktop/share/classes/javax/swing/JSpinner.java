@@ -1015,7 +1015,7 @@ public class JSpinner extends JComponent implements Accessible
          * on the new <code>JFormattedTextField</code>.
          *
          * @param spinner the spinner whose model <code>this</code> editor will monitor
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerDateModel</code>
          *
          * @see #getModel
@@ -1039,7 +1039,7 @@ public class JSpinner extends JComponent implements Accessible
          * @param dateFormatPattern the initial pattern for the
          *     <code>SimpleDateFormat</code> object that's used to display
          *     and parse the value of the text field.
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerDateModel</code>
          *
          * @see #getModel
@@ -1064,7 +1064,7 @@ public class JSpinner extends JComponent implements Accessible
          *        will monitor
          * @param format <code>DateFormat</code> object that's used to display
          *     and parse the value of the text field.
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerDateModel</code>
          *
          * @see #getModel
@@ -1202,7 +1202,7 @@ public class JSpinner extends JComponent implements Accessible
          * on the new <code>JFormattedTextField</code>.
          *
          * @param spinner the spinner whose model <code>this</code> editor will monitor
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerNumberModel</code>
          *
          * @see #getModel
@@ -1225,7 +1225,7 @@ public class JSpinner extends JComponent implements Accessible
          * @param decimalFormatPattern the initial pattern for the
          *     <code>DecimalFormat</code> object that's used to display
          *     and parse the value of the text field.
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerNumberModel</code> or if
          *     <code>decimalFormatPattern</code> is not a legal
          *     argument to <code>DecimalFormat</code>
@@ -1251,7 +1251,7 @@ public class JSpinner extends JComponent implements Accessible
          * @param format the initial pattern for the
          *     <code>DecimalFormat</code> object that's used to display
          *     and parse the value of the text field.
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerNumberModel</code>
          *
          * @see #getTextField
@@ -1346,7 +1346,7 @@ public class JSpinner extends JComponent implements Accessible
          * on the new <code>JFormattedTextField</code>.
          *
          * @param spinner the spinner whose model <code>this</code> editor will monitor
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerListModel</code>
          *
          * @see #getModel

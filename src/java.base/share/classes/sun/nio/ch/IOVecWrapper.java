@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 package sun.nio.ch;
 
 import java.nio.ByteBuffer;
-import jdk.internal.ref.CleanerFactory;
 
+import jdk.internal.misc.CarrierThreadLocal;
+import jdk.internal.ref.CleanerFactory;
 
 /**
  * Manipulates a native array of iovec structs on Solaris:
@@ -80,9 +81,8 @@ class IOVecWrapper {
         }
     }
 
-    // per thread IOVecWrapper
-    private static final ThreadLocal<IOVecWrapper> cached =
-        new ThreadLocal<IOVecWrapper>();
+    // per carrier-thread IOVecWrapper
+    private static final CarrierThreadLocal<IOVecWrapper> cached = new CarrierThreadLocal<>();
 
     private IOVecWrapper(int size) {
         this.size      = size;

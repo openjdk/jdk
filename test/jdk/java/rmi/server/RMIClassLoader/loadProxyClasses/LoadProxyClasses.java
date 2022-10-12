@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- *
+ * @bug 8280642
  * @summary functional test for RMIClassLoader.loadProxyClass; test
  * ensures that the default RMI class loader provider implements
  * RMIClassLoader.loadProxyClass correctly.
@@ -48,6 +48,7 @@ import java.rmi.MarshalledObject;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.io.Serializable;
+import java.io.InvalidClassException;
 import java.io.IOException;
 
 import java.util.Arrays;
@@ -205,20 +206,20 @@ public class LoadProxyClasses {
                 currentThread.getContextClassLoader();
             currentThread.setContextClassLoader(nonpublicLoaderB);
 
-            IllegalAccessError illegal = null;
+            InvalidClassException invalid = null;
             try {
                 unmarshalProxyClass(proxy4, fnnLoader2, nonpublicLoaderB,
                                     4, null);
-            } catch (IllegalAccessError e) {
-                illegal = e;
+            } catch (InvalidClassException e) {
+                invalid = e;
             }
 
-            if (illegal == null) {
-                TestLibrary.bomb("case4: IllegalAccessError not thrown " +
+            if (invalid == null) {
+                TestLibrary.bomb("case4: InvalidClassException not thrown " +
                                  "when multiple nonpublic interfaces have \n" +
                                  "different class loaders");
             } else {
-                System.err.println("\ncase4: IllegalAccessError correctly " +
+                System.err.println("\ncase4: InvalidClassException correctly " +
                                    "thrown \n when trying to load proxy " +
                                    "with multiple nonpublic interfaces in \n" +
                                    "  different class loaders");

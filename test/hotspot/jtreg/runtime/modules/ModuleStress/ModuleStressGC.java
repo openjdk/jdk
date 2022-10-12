@@ -25,6 +25,7 @@
  * @test
  * @bug 8159262
  * @summary layers over the boot layer are repeatedly created, during this iteration, GCs are forced to verify correct walk of module and package lists.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile ../CompilerUtils.java

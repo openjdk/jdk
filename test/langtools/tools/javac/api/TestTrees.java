@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,7 @@ public class TestTrees extends AbstractProcessor {
         if (messager != null)
             // annotation processing will happen in a separate instance/classloader
             // so pass the message back to the calling instance.
-            messager.printMessage(Diagnostic.Kind.ERROR, msg);
+            messager.printError(msg);
         else {
             System.err.println(msg);
             errors++;

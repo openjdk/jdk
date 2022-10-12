@@ -35,16 +35,12 @@ public interface Parser {
 
     default String getCommand(final String line) {
         String out = "";
-        Pattern  patternCommand = Pattern.compile("^\\s*" + REGEX_VARIABLE + "=(" + REGEX_COMMAND + ")(\\s+.*|$)");
+        Pattern  patternCommand = Pattern.compile("^\\s*" + REGEX_VARIABLE + "=(" + REGEX_COMMAND + ")(\\s+|$)");
         Matcher matcher = patternCommand.matcher(line);
         if (matcher.find()) {
             out = matcher.group(1);
         } else {
             out = line.trim().split("\\s+")[0];
-            int idx = out.indexOf("=");
-            if (idx > -1) {
-                out = out.substring(idx + 1);
-            }
             if (!out.matches(REGEX_COMMAND)) {
                 out = "";
             }

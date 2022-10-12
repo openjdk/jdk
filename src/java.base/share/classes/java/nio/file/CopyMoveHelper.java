@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,11 +105,28 @@ class CopyMoveHelper {
         LinkOption[] linkOptions = (opts.followLinks) ? new LinkOption[0] :
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
 
+        // retrieve source posix view, null if unsupported
+        final PosixFileAttributeView sourcePosixView =
+            Files.getFileAttributeView(source, PosixFileAttributeView.class);
+
         // attributes of source file
-        BasicFileAttributes attrs = Files.readAttributes(source,
-                                                         BasicFileAttributes.class,
-                                                         linkOptions);
-        if (attrs.isSymbolicLink())
+        BasicFileAttributes sourceAttrs = null;
+        if (sourcePosixView != null) {
+            try {
+                sourceAttrs = Files.readAttributes(source,
+                                                   PosixFileAttributes.class,
+                                                   linkOptions);
+            } catch (SecurityException ignored) {
+                // okay to continue if RuntimePermission("accessUserInformation") not granted
+            }
+        }
+        if (sourceAttrs == null)
+            sourceAttrs = Files.readAttributes(source,
+                                               BasicFileAttributes.class,
+                                               linkOptions);
+        assert sourceAttrs != null;
+
+        if (sourceAttrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
 
         // delete target if it exists and REPLACE_EXISTING is specified
@@ -119,7 +136,7 @@ class CopyMoveHelper {
             throw new FileAlreadyExistsException(target.toString());
 
         // create directory or copy file
-        if (attrs.isDirectory()) {
+        if (sourceAttrs.isDirectory()) {
             Files.createDirectory(target);
         } else {
             try (InputStream in = Files.newInputStream(source)) {
@@ -127,14 +144,33 @@ class CopyMoveHelper {
             }
         }
 
-        // copy basic attributes to target
+        // copy basic and, if supported, POSIX attributes to target
         if (opts.copyAttributes) {
-            BasicFileAttributeView view =
-                Files.getFileAttributeView(target, BasicFileAttributeView.class);
+            BasicFileAttributeView targetView = null;
+            if (sourcePosixView != null) {
+                targetView = Files.getFileAttributeView(target,
+                                                     PosixFileAttributeView.class);
+            }
+
+            // target might not support posix even if source does
+            if (targetView == null) {
+                targetView = Files.getFileAttributeView(target,
+                                                     BasicFileAttributeView.class);
+            }
+
             try {
-                view.setTimes(attrs.lastModifiedTime(),
-                              attrs.lastAccessTime(),
-                              attrs.creationTime());
+                targetView.setTimes(sourceAttrs.lastModifiedTime(),
+                                 sourceAttrs.lastAccessTime(),
+                                 sourceAttrs.creationTime());
+
+                if (sourceAttrs instanceof PosixFileAttributes sourcePosixAttrs &&
+                    targetView instanceof PosixFileAttributeView targetPosixView) {
+                    try {
+                        targetPosixView.setPermissions(sourcePosixAttrs.permissions());
+                    } catch (SecurityException ignored) {
+                        // okay to continue if RuntimePermission("accessUserInformation") not granted
+                    }
+                }
             } catch (Throwable x) {
                 // rollback
                 try {

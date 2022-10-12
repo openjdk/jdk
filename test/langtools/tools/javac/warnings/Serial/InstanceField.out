@@ -1,0 +1,4 @@
+InstanceField.java:16:20: compiler.warn.non.serializable.instance.field
+InstanceField.java:18:22: compiler.warn.non.serializable.instance.field.array: java.lang.Object
+InstanceField.java:20:24: compiler.warn.non.serializable.instance.field.array: java.lang.Thread
+3 warnings

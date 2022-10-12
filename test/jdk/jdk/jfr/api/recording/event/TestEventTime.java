@@ -101,7 +101,7 @@ public class TestEventTime {
         MyEvent event = new MyEvent(id);
         event.begin();
         if (!CommonHelper.hasFastTimeEnabled()) {
-            CommonHelper.waitForSystemCurrentMillisToChange();;
+            CommonHelper.waitForSystemCurrentMillisToChange();
         }
         actualOrder.add(new TimeEvent(id, true));
         return event;
@@ -110,7 +110,7 @@ public class TestEventTime {
     private static void endEvent(MyEvent event) throws Exception {
         event.end();
         if (!CommonHelper.hasFastTimeEnabled()) {
-            CommonHelper.waitForSystemCurrentMillisToChange();;
+            CommonHelper.waitForSystemCurrentMillisToChange();
         }
         event.commit();
         actualOrder.add(new TimeEvent(event.id, false));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,8 +299,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * The returned array represents the union of locales supported by the
      * Java runtime and by installed
      * {@link java.text.spi.DateFormatSymbolsProvider DateFormatSymbolsProvider}
-     * implementations.  It must contain at least a {@code Locale}
-     * instance equal to {@link java.util.Locale#US Locale.US}.
+     * implementations. At a minimum, the returned array must contain a
+     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code DateFormatSymbols} instances are available.
@@ -695,11 +696,6 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     }
 
     // =======================privates===============================
-
-    /**
-     * Useful constant for defining time zone offsets.
-     */
-    static final int millisPerHour = 60*60*1000;
 
     /**
      * Cache to hold DateFormatSymbols instances per Locale.

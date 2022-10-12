@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,12 @@
 #define PRAGMA_STRINGOP_TRUNCATION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-truncation")
 #endif
 
+// Disable -Wstringop-overflow which is introduced in GCC 7.
+// https://gcc.gnu.org/gcc-7/changes.html
+#if !defined(__clang_major__) && (__GNUC__ >= 7)
+#define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
+#endif
+
 #define PRAGMA_NONNULL_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
@@ -62,5 +68,33 @@
 #define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
 
 #endif // clang/gcc version check
+
+#if (__GNUC__ >= 10)
+// TODO: Re-enable warning attribute for Clang once
+// https://github.com/llvm/llvm-project/issues/56519 is fixed and released.
+// || (defined(__clang_major__) && (__clang_major__ >= 14))
+
+// Use "warning" attribute to detect uses of "forbidden" functions.
+//
+// Note: The warning attribute is available since GCC 9, but disabling pragmas
+// does not work reliably in ALLOW_C_FUNCTION. GCC 10+ and up work fine.
+//
+// Note: _FORTIFY_SOURCE transforms calls to certain functions into calls to
+// associated "checking" functions, and that transformation seems to occur
+// *before* the attribute check.  We use fortification in fastdebug builds,
+// so uses of functions that are both forbidden and fortified won't cause
+// forbidden warnings in such builds.
+#define FORBID_C_FUNCTION(signature, alternative) \
+  extern "C" __attribute__((__warning__(alternative))) signature;
+
+// Disable warning attribute over the scope of the affected statement.
+// The name serves only to document the intended function.
+#define ALLOW_C_FUNCTION(name, ...)                     \
+  PRAGMA_DIAG_PUSH                                      \
+  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")     \
+  __VA_ARGS__                                           \
+  PRAGMA_DIAG_POP
+
+#endif // gcc10+
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP

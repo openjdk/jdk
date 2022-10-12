@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,9 +60,4 @@ Register VMRegImpl::as_Register() {
 FloatRegister VMRegImpl::as_FloatRegister() {
   assert(is_FloatRegister(), "must be" );
   return ::as_FloatRegister(value() - ConcreteRegisterImpl::max_gpr);
-}
-
-VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
-  ShouldNotCallThis();
-  return VMRegImpl::Bad();
 }

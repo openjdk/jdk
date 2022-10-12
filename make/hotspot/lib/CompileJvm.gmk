@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,15 @@ else
   OPENJDK_TARGET_CPU_VM_VERSION := $(OPENJDK_TARGET_CPU)
 endif
 
+ifeq ($(VERSION_BUILD), )
+  # Hotspot cannot handle an empty build number
+  VERSION_BUILD := 0
+endif
+
+ifeq ($(HOTSPOT_BUILD_TIME), )
+  HOTSPOT_BUILD_TIME := $(call EpochToISO8601, $(shell $(DATE) +"%s"))
+endif
+
 CFLAGS_VM_VERSION := \
     $(VERSION_CFLAGS) \
     -DHOTSPOT_VERSION_STRING='"$(VERSION_STRING)"' \
@@ -68,11 +77,8 @@ CFLAGS_VM_VERSION := \
     -DHOTSPOT_BUILD_USER='"$(USERNAME)"' \
     -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"' \
     -DCPU='"$(OPENJDK_TARGET_CPU_VM_VERSION)"' \
+    -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"' \
     #
-
-ifneq ($(HOTSPOT_BUILD_TIME), )
-  CFLAGS_VM_VERSION += -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"'
-endif
 
 ################################################################################
 # Disabled warnings
@@ -96,7 +102,7 @@ DISABLED_WARNINGS_clang := tautological-compare \
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
 DISABLED_WARNINGS_microsoft := 4100 4127 4146 4201 4244 4291 4351 \
-    4511 4512 4514 4624 4996
+    4511 4512 4514 4624
 
 ################################################################################
 # Platform specific setup

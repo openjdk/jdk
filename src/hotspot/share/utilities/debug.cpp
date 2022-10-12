@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,15 +43,19 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/os.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/heapDumper.hpp"
+#include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
+#include "services/virtualMemoryTracker.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -237,7 +241,6 @@ void report_vm_error(const char* file, int line, const char* error_msg)
 
 
 static void print_error_for_unit_test(const char* message, const char* detail_fmt, va_list detail_args) {
-#ifdef ASSERT
   if (ExecutingUnitTests) {
     char detail_msg[256];
     if (detail_fmt != NULL) {
@@ -262,7 +265,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
       va_end(detail_args_copy);
     }
   }
-#endif // ASSERT
 }
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
@@ -366,7 +368,7 @@ void report_java_out_of_memory(const char* message) {
 
     if (ExitOnOutOfMemoryError) {
       tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
-      os::exit(3);
+      os::_exit(3); // quick exit with no cleanup hooks run
     }
   }
 }
@@ -414,7 +416,7 @@ extern "C" JNIEXPORT void dump_vtable(address p) {
 
 
 extern "C" JNIEXPORT void nm(intptr_t p) {
-  // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatability)
+  // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatibility)
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
   if (cb == NULL) {
@@ -478,11 +480,31 @@ extern "C" JNIEXPORT void verify() {
 extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
+  if (p == NULL) {
+    tty->print_cr("NULL");
+    return;
+  }
   if (Universe::heap()->is_in(p)) {
     oop obj = cast_to_oop(p);
     obj->print();
   } else {
-    tty->print(PTR_FORMAT, p2i(p));
+    // Ask NMT about this pointer.
+    // GDB note: We will be using SafeFetch to access the supposed malloc header. If the address is
+    // not readable, this will generate a signal. That signal will trip up the debugger: gdb will
+    // catch the signal and disable the pp() command for further use.
+    // In order to avoid that, switch off SIGSEGV handling with "handle SIGSEGV nostop" before
+    // invoking pp()
+    if (MemTracker::enabled()) {
+      // Does it point into a known mmapped region?
+      if (VirtualMemoryTracker::print_containing_region(p, tty)) {
+        return;
+      }
+      // Does it look like the start of a malloced block?
+      if (MallocTracker::print_pointer_information(p, tty)) {
+        return;
+      }
+    }
+    tty->print_cr(PTR_FORMAT, p2i(p));
   }
 }
 
@@ -507,11 +529,13 @@ extern "C" JNIEXPORT void ps() { // print stack
     if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
-    RegisterMap reg_map(p);
+    RegisterMap reg_map(p,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
-    f.pd_ps();
 #endif
   }
 }
@@ -689,6 +713,15 @@ extern "C" JNIEXPORT void pns2() { // print native stack
 }
 #endif
 
+
+// Returns true iff the address p is readable and *(intptr_t*)p != errvalue
+extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
+  return p != NULL && SafeFetchN((intptr_t*)const_cast<void*>(p), errvalue) != errvalue;
+}
+
+extern "C" bool dbg_is_good_oop(oopDesc* o) {
+  return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Test multiple STATIC_ASSERT forms in various scopes.

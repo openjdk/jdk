@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,13 @@
 
 #include "classfile/javaClasses.hpp"
 
+#include "memory/referenceType.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 
 void java_lang_String::set_coder(oop string, jbyte coder) {
   string->byte_field_put(_coder_offset, coder);
@@ -77,7 +80,7 @@ bool java_lang_String::is_latin1(oop java_string) {
 uint8_t* java_lang_String::flags_addr(oop java_string) {
   assert(_initialized, "Must be initialized");
   assert(is_instance(java_string), "Must be java string");
-  return java_string->obj_field_addr<uint8_t>(_flags_offset);
+  return java_string->field_addr<uint8_t>(_flags_offset);
 }
 
 bool java_lang_String::is_flag_set(oop java_string, uint8_t flag_mask) {
@@ -123,17 +126,24 @@ int java_lang_String::length(oop java_string) {
   return length(java_string, value);
 }
 
-bool java_lang_String::is_instance_inlined(oop obj) {
+bool java_lang_String::is_instance(oop obj) {
   return obj != NULL && obj->klass() == vmClasses::String_klass();
 }
 
 // Accessors
 
 oop java_lang_ref_Reference::weak_referent_no_keepalive(oop ref) {
+  assert(java_lang_ref_Reference::is_weak(ref) || java_lang_ref_Reference::is_soft(ref), "must be Weak or Soft Reference");
   return ref->obj_field_access<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
+oop java_lang_ref_Reference::weak_referent(oop ref) {
+  assert(java_lang_ref_Reference::is_weak(ref) || java_lang_ref_Reference::is_soft(ref), "must be Weak or Soft Reference");
+  return ref->obj_field_access<ON_WEAK_OOP_REF>(_referent_offset);
+}
+
 oop java_lang_ref_Reference::phantom_referent_no_keepalive(oop ref) {
+  assert(java_lang_ref_Reference::is_phantom(ref), "must be Phantom Reference");
   return ref->obj_field_access<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
@@ -146,7 +156,7 @@ void java_lang_ref_Reference::clear_referent(oop ref) {
 }
 
 HeapWord* java_lang_ref_Reference::referent_addr_raw(oop ref) {
-  return ref->obj_field_addr<HeapWord>(_referent_offset);
+  return ref->field_addr<HeapWord>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::next(oop ref) {
@@ -162,7 +172,7 @@ void java_lang_ref_Reference::set_next_raw(oop ref, oop value) {
 }
 
 HeapWord* java_lang_ref_Reference::next_addr_raw(oop ref) {
-  return ref->obj_field_addr<HeapWord>(_next_offset);
+  return ref->field_addr<HeapWord>(_next_offset);
 }
 
 oop java_lang_ref_Reference::discovered(oop ref) {
@@ -178,7 +188,7 @@ void java_lang_ref_Reference::set_discovered_raw(oop ref, oop value) {
 }
 
 HeapWord* java_lang_ref_Reference::discovered_addr_raw(oop ref) {
-  return ref->obj_field_addr<HeapWord>(_discovered_offset);
+  return ref->field_addr<HeapWord>(_discovered_offset);
 }
 
 bool java_lang_ref_Reference::is_final(oop ref) {
@@ -188,6 +198,38 @@ bool java_lang_ref_Reference::is_final(oop ref) {
 bool java_lang_ref_Reference::is_phantom(oop ref) {
   return InstanceKlass::cast(ref->klass())->reference_type() == REF_PHANTOM;
 }
+
+bool java_lang_ref_Reference::is_weak(oop ref) {
+  return InstanceKlass::cast(ref->klass())->reference_type() == REF_WEAK;
+}
+
+bool java_lang_ref_Reference::is_soft(oop ref) {
+  return InstanceKlass::cast(ref->klass())->reference_type() == REF_SOFT;
+}
+
+inline oop java_lang_Thread::continuation(oop java_thread) {
+  return java_thread->obj_field(_continuation_offset);
+}
+
+inline int64_t java_lang_Thread::thread_id(oop java_thread) {
+  return java_thread->long_field(_tid_offset);
+}
+
+inline oop java_lang_VirtualThread::vthread_scope() {
+  oop base = vmClasses::VirtualThread_klass()->static_field_base_raw();
+  return base->obj_field(static_vthread_scope_offset);
+}
+
+#if INCLUDE_JFR
+inline u2 java_lang_Thread::jfr_epoch(oop ref) {
+  return ref->short_field(_jfr_epoch_offset);
+}
+
+inline void java_lang_Thread::set_jfr_epoch(oop ref, u2 epoch) {
+  ref->short_field_put(_jfr_epoch_offset, epoch);
+}
+#endif // INCLUDE_JFR
+
 
 inline void java_lang_invoke_CallSite::set_target_volatile(oop site, oop target) {
   site->obj_field_put_volatile(_target_offset, target);
@@ -261,9 +303,9 @@ inline bool java_lang_Class::is_primitive(oop java_class) {
   return is_primitive;
 }
 
-inline int java_lang_Class::oop_size_raw(oop java_class) {
+inline size_t java_lang_Class::oop_size(oop java_class) {
   assert(_oop_size_offset != 0, "must be set");
-  int size = java_class->int_field_raw(_oop_size_offset);
+  int size = java_class->int_field(_oop_size_offset);
   assert(size > 0, "Oop size must be greater than zero, not %d", size);
   return size;
 }

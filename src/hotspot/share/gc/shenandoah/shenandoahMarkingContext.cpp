@@ -40,7 +40,6 @@ ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemReg
   assert(max_queues > 0, "At least one queue");
   for (uint i = 0; i < max_queues; ++i) {
     ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
-    task_queue->initialize();
     _task_queues->register_queue(i, task_queue);
   }
 }

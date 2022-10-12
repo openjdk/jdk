@@ -37,7 +37,6 @@ import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.Blit;
 import sun.java2d.loops.BlitBg;
 import sun.awt.image.SurfaceManager;
-import sun.awt.image.SurfaceManager.FlushableCacheData;
 
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
@@ -74,7 +73,7 @@ public abstract class SurfaceDataProxy
         @SuppressWarnings("removal")
         String manimg = AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.managedimages"));
-        if (manimg != null && manimg.equals("false")) {
+        if ("false".equals(manimg)) {
             cachingAllowed = false;
             System.out.println("Disabling managed images");
         }

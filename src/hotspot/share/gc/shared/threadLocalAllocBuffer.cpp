@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "compiler/compilerDefinitions.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -32,8 +32,8 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/copy.hpp"
 
@@ -471,7 +471,7 @@ void ThreadLocalAllocStats::publish() {
 }
 
 size_t ThreadLocalAllocBuffer::end_reserve() {
-  size_t reserve_size = Universe::heap()->tlab_alloc_reserve();
+  size_t reserve_size = CollectedHeap::lab_alignment_reserve();
   return MAX2(reserve_size, (size_t)_reserve_for_allocation_prefetch);
 }
 

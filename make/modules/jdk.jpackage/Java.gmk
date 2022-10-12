@@ -25,6 +25,6 @@
 
 COPY += .gif .png .txt .spec .script .prerm .preinst \
     .postrm .postinst .list .sh .desktop .copyright .control .plist .template \
-    .icns .scpt .wxs .wxl .wxi .ico .bmp .tiff
+    .icns .scpt .wxs .wxl .wxi .ico .bmp .tiff .service
 
 CLEAN += .properties

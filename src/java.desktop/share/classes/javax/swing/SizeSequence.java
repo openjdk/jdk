@@ -142,7 +142,7 @@ public class SizeSequence {
      * all initialized to have size 0.
      *
      * @param numEntries  the number of sizes to track
-     * @exception NegativeArraySizeException if
+     * @throws NegativeArraySizeException if
      *    <code>numEntries &lt; 0</code>
      */
     public SizeSequence(int numEntries) {
@@ -355,7 +355,7 @@ public class SizeSequence {
      *                in the group
      * @param length  the number of entries in the group
      * @param value   the size to be assigned to each new entry
-     * @exception ArrayIndexOutOfBoundsException if the parameters
+     * @throws ArrayIndexOutOfBoundsException if the parameters
      *   are outside of the range:
      *   (<code>0 &lt;= start &lt; (getSizes().length)) AND (length &gt;= 0)</code>
      */

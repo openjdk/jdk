@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,14 +170,14 @@ public:
   // Machine dependent files, built from architecture definition
   ADLFILE  _DFA_file;          // File for definition of Matcher::DFA
   ADLFILE  _HPP_file;          // File for ArchNode class declarations
-  ADLFILE  _CPP_file;          // File for ArchNode class defintions
-  ADLFILE  _CPP_CLONE_file;    // File for MachNode/Oper clone defintions
+  ADLFILE  _CPP_file;          // File for ArchNode class definitions
+  ADLFILE  _CPP_CLONE_file;    // File for MachNode/Oper clone definitions
   ADLFILE  _CPP_EXPAND_file;   // File for MachNode expand methods
-  ADLFILE  _CPP_FORMAT_file;   // File for MachNode/Oper format defintions
+  ADLFILE  _CPP_FORMAT_file;   // File for MachNode/Oper format definitions
   ADLFILE  _CPP_GEN_file;      // File for MachNode/Oper generator methods
   ADLFILE  _CPP_MISC_file;     // File for miscellaneous MachNode/Oper tables & methods
   ADLFILE  _CPP_PEEPHOLE_file; // File for MachNode peephole methods
-  ADLFILE  _CPP_PIPELINE_file; // File for MachNode pipeline defintions
+  ADLFILE  _CPP_PIPELINE_file; // File for MachNode pipeline definitions
   ADLFILE  _VM_file;           // File for constants needed in VM code
   ADLFILE  _bug_file;          // DFA debugging file
 
@@ -265,7 +265,7 @@ public:
   void  buildMachRegisterNumbers(FILE *fp_hpp);
   // Generate enumeration of machine register encodings
   void  buildMachRegisterEncodes(FILE *fp_hpp);
-  // Generate Regsiter Size Array
+  // Generate Register Size Array
   void  declareRegSizes(FILE *fp_hpp);
   // Generate Pipeline Class information
   void declare_pipe_classes(FILE *fp_hpp);

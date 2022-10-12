@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,9 @@
  * questions.
  */
 
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryLayout;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,9 +32,9 @@ import static org.testng.Assert.assertEquals;
 public class CallArrangerTestBase {
 
     public static void checkArgumentBindings(CallingSequence callingSequence, Binding[][] argumentBindings) {
-        assertEquals(callingSequence.argumentCount(), argumentBindings.length);
+        assertEquals(callingSequence.argumentBindingsCount(), argumentBindings.length);
 
-        for (int i = 0; i < callingSequence.argumentCount(); i++) {
+        for (int i = 0; i < callingSequence.argumentBindingsCount(); i++) {
             List<Binding> actual = callingSequence.argumentBindings(i);
             Binding[] expected = argumentBindings[i];
             assertEquals(actual, Arrays.asList(expected));

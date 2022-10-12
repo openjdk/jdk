@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,31 @@ import java.util.logging.*;
 
 /**
  * @test
- * @bug 8247907
+ * @bug 8247907 8254267
+ * @summary Tests that parameterized log messages (the ones that use "{}") generated
+ * through the use of com.sun.org.slf4j.internal.Logger work as expected and the parameter
+ * values are properly replaced in the logged message.
  * @library /test/lib
  * @modules java.xml.crypto/com.sun.org.slf4j.internal
+ * @run main/othervm LogParameters
  */
 public class LogParameters {
+
+    private static final Logger julLogger = Logger.getLogger(LogParameters.class.getName());
+
     public static void main(String[] args) {
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        Logger.getLogger(String.class.getName()).setLevel(Level.ALL);
+        julLogger.setLevel(Level.ALL);
         Handler h = new StreamHandler(bout, new SimpleFormatter());
         h.setLevel(Level.ALL);
-        Logger.getLogger(String.class.getName()).addHandler(h);
+        julLogger.addHandler(h);
 
+        // now create a com.sun.org.slf4j.internal.Logger for the same class
+        // for which we just configured the java.util.logging.Logger instance
         com.sun.org.slf4j.internal.Logger log =
-                com.sun.org.slf4j.internal.LoggerFactory.getLogger(String.class);
+                com.sun.org.slf4j.internal.LoggerFactory.getLogger(LogParameters.class);
+        // issue a parameterized log message
         log.debug("I have {} {}s.", 10, "apple");
 
         h.flush();

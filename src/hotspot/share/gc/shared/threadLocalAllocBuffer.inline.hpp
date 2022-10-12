@@ -31,8 +31,8 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 
 inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {

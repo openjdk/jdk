@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.security.interfaces.ECKey;
 
 /**
  * @test
- * @bug 8213400 8214179
+ * @bug 8213400 8214179 8267319
  * @summary Support choosing group name in keytool keypair generation
  * @library /test/lib
  */
@@ -48,7 +48,7 @@ public class GroupName {
         gen("b", "-keyalg EC")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("Specifying -keysize for generating EC keys is deprecated");
-        checkCurveName("b", "secp256r1");
+        checkCurveName("b", "secp384r1"); // default; if none specified
 
         gen("c", "-keyalg EC -keysize 256")
                 .shouldHaveExitValue(0)
@@ -67,7 +67,8 @@ public class GroupName {
 
         kt("-list -v")
                 .shouldHaveExitValue(0)
-                .shouldContain("Subject Public Key Algorithm: 256-bit EC (secp256r1) key");
+                .shouldContain("Subject Public Key Algorithm: 256-bit EC (secp256r1) key")
+                .shouldContain("Subject Public Key Algorithm: 384-bit EC (secp384r1) key");
     }
 
     private static void checkCurveName(String a, String name)
