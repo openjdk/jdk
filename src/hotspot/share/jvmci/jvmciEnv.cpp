@@ -1616,6 +1616,7 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
       // nmethod in the code cache.
       set_InstalledCode_address(obj, 0);
       set_InstalledCode_entryPoint(obj, 0);
+      set_HotSpotInstalledCode_codeStart(obj, 0);
     }
     return nm;
   }
