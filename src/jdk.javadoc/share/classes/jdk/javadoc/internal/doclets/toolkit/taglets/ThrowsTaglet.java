@@ -328,8 +328,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             }
             if (utils.typeUtils.isSameType(candidate.asType(), targetException)) {
                 tags.add(tag);
-            } else if (utils.typeUtils.isSubtype(candidate.asType(), targetException)) {
-                tags.add(tag);
             }
         }
         return tags.isEmpty() ? Optional.empty() : Optional.of(new Result(tags, method));
