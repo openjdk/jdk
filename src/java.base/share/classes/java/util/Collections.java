@@ -434,21 +434,12 @@ public class Collections {
 
     /**
      * Randomly permute the specified list using the specified source of
-     * randomness.  All permutations occur with equal likelihood
-     * assuming that the source of randomness is fair.<p>
+     * randomness.<p>
      *
-     * This implementation traverses the list backwards, from the last element
-     * up to the second, repeatedly swapping a randomly selected element into
-     * the "current position".  Elements are randomly selected from the
-     * portion of the list that runs from the first element to the current
-     * position, inclusive.<p>
-     *
-     * This method runs in linear time.  If the specified list does not
-     * implement the {@link RandomAccess} interface and is large, this
-     * implementation dumps the specified list into an array before shuffling
-     * it, and dumps the shuffled array back into the list.  This avoids the
-     * quadratic behavior that would result from shuffling a "sequential
-     * access" list in place.
+     * This method is equivalent to {@link #shuffle(List, RandomGenerator)}
+     * and exists for backward compatibility. The {@link #shuffle(List, RandomGenerator)}
+     * method is preferred, as it is not limited to random generators
+     * that extend the {@link Random} class.
      *
      * @param  list the list to be shuffled.
      * @param  rnd the source of randomness to use to shuffle the list.

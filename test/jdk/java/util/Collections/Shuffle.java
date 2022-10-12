@@ -32,8 +32,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
 import java.util.random.RandomGenerator;
-import java.util.random.RandomGeneratorFactory;
 
 public class Shuffle {
     static final int N = 100;
@@ -56,36 +56,21 @@ public class Shuffle {
                 throw new RuntimeException(list.getClass() + ": does not contain " + i);
             }
         }
-        checkRandom(list);
-        checkRandomGenerator(list);
+        checkRandom(list, l -> Collections.shuffle(l, new Random(1)));
+        RandomGenerator.JumpableGenerator generator = RandomGenerator.JumpableGenerator.of("Xoshiro256PlusPlus");
+        checkRandom(list, l -> Collections.shuffle(l, generator.copy()));
     }
 
-    private static void checkRandomGenerator(List<Integer> list) {
-        RandomGeneratorFactory<RandomGenerator> factory = RandomGeneratorFactory.getDefault();
+    private static void checkRandom(List<Integer> list, Consumer<List<?>> randomizer) {
         list.sort(null);
-        Collections.shuffle(list, factory.create(1));
+        randomizer.accept(list);
         ArrayList<Integer> copy = new ArrayList<>(list);
         list.sort(null);
         if (list.equals(copy)) {
             // Assume that at least one pair of elements must be reordered during shuffle
             throw new RuntimeException(list.getClass() + ": list is not shuffled");
         }
-        Collections.shuffle(list, factory.create(1));
-        if (!list.equals(copy)) {
-            throw new RuntimeException(list.getClass() + ": " + list + " != " + copy);
-        }
-    }
-
-    private static void checkRandom(List<Integer> list) {
-        list.sort(null);
-        Collections.shuffle(list, new Random(1));
-        ArrayList<Integer> copy = new ArrayList<>(list);
-        list.sort(null);
-        if (list.equals(copy)) {
-            // Assume that at least one pair of elements must be reordered during shuffle
-            throw new RuntimeException(list.getClass() + ": list is not shuffled");
-        }
-        Collections.shuffle(list, new Random(1));
+        randomizer.accept(list);
         if (!list.equals(copy)) {
             throw new RuntimeException(list.getClass() + ": " + list + " != " + copy);
         }
