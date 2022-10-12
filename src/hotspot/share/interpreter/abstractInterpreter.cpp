@@ -133,7 +133,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
       case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
       case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
-#ifdef AMD64
+#if defined(AMD64) || defined(AARCH64)
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
 #endif
 #endif // ZERO

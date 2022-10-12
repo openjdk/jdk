@@ -135,12 +135,17 @@ bool Continuation::is_continuation_entry_frame(const frame& f, const RegisterMap
   return m != nullptr && m->intrinsic_id() == vmIntrinsics::_Continuation_enter;
 }
 
+// The parameter `sp` should be the actual sp and not the unextended sp because at
+// least on PPC64 unextended_sp < sp is possible as interpreted frames are trimmed
+// to the actual size of the expression stack before calls. The problem there is
+// that even unextended_sp < entry_sp < sp is possible for an interpreted frame.
 static inline bool is_sp_in_continuation(const ContinuationEntry* entry, intptr_t* const sp) {
+  // entry_sp() returns the unextended_sp which is always greater or equal to the actual sp
   return entry->entry_sp() > sp;
 }
 
 bool Continuation::is_frame_in_continuation(const ContinuationEntry* entry, const frame& f) {
-  return is_sp_in_continuation(entry, f.unextended_sp());
+  return is_sp_in_continuation(entry, f.sp());
 }
 
 ContinuationEntry* Continuation::get_continuation_entry_for_sp(JavaThread* thread, intptr_t* const sp) {
@@ -160,7 +165,7 @@ ContinuationEntry* Continuation::get_continuation_entry_for_entry_frame(JavaThre
 }
 
 bool Continuation::is_frame_in_continuation(JavaThread* thread, const frame& f) {
-  return f.is_heap_frame() || (get_continuation_entry_for_sp(thread, f.unextended_sp()) != nullptr);
+  return f.is_heap_frame() || (get_continuation_entry_for_sp(thread, f.sp()) != nullptr);
 }
 
 static frame continuation_top_frame(const ContinuationWrapper& cont, RegisterMap* map) {
@@ -296,9 +301,8 @@ bool Continuation::unpin(JavaThread* current) {
 
 frame Continuation::continuation_bottom_sender(JavaThread* thread, const frame& callee, intptr_t* sender_sp) {
   assert (thread != nullptr, "");
-  ContinuationEntry* ce = get_continuation_entry_for_sp(thread,
-        callee.is_interpreted_frame() ? callee.interpreter_frame_last_sp() : callee.unextended_sp());
-  assert(ce != nullptr, "callee.unextended_sp(): " INTPTR_FORMAT, p2i(callee.unextended_sp()));
+  ContinuationEntry* ce = get_continuation_entry_for_sp(thread, callee.sp());
+  assert(ce != nullptr, "callee.sp(): " INTPTR_FORMAT, p2i(callee.sp()));
 
   log_develop_debug(continuations)("continuation_bottom_sender: [" JLONG_FORMAT "] [%d] callee: " INTPTR_FORMAT
     " sender_sp: " INTPTR_FORMAT,

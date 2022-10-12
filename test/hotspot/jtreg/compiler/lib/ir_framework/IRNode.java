@@ -151,6 +151,7 @@ public class IRNode {
     public static final String AND = START + "And(I|L)" + MID + END;
     public static final String AND_I = START + "AndI" + MID + END;
     public static final String AND_L = START + "AndL" + MID + END;
+    public static final String XOR = START + "Xor(I|L)" + MID + END;
     public static final String XOR_I = START + "XorI" + MID + END;
     public static final String XOR_L = START + "XorL" + MID + END;
     public static final String LSHIFT = START + "LShift(I|L)" + MID + END;
@@ -201,6 +202,7 @@ public class IRNode {
     public static final String OR_V_MASK = START + "OrVMask" + MID + END;
     public static final String XOR_V_MASK = START + "XorVMask" + MID + END;
 
+    public static final String VECTOR_MASK_CAST = START + "VectorMaskCast" + MID + END;
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
     public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;
     public static final String VECTOR_CAST_I2X = START + "VectorCastI2X" + MID + END;
