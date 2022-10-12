@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8245462 8229822 8254786
- * @summary Tests cancelling the request.
+ * @bug 8294916
+ * @summary Tests that closing a streaming handler (ofInputStream()/ofLines())
+ *      without reading all the bytes unregisters the underlying subscriber.
  * @library /test/lib http2/server
- * @key randomness
  * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
  *        ReferenceTracker CancelStreamedBodyTest
  * @modules java.base/sun.net.www.http
@@ -91,8 +91,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class CancelStreamedBodyTest implements HttpServerAdapters {
-
-    private static final Random random = RandomFactory.getRandom();
 
     SSLContext sslContext;
     HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
@@ -218,7 +216,6 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             //if (!sameClient) continue;
             for (String uri : uris()) {
                 String path = sameClient ? "same" : "new";
-                path = path + "/interruptThread";
                 result[i++] = new Object[]{uri + path, sameClient};
             }
         }
@@ -258,6 +255,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             throws Exception {
         checkSkip();
         HttpClient client = null;
+        uri = uri + "/testAsLines";
         out.printf("%n%s testAsLines(%s, %b)%n", now(), uri, sameClient);
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
@@ -276,7 +274,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
                 }
                 var error = TRACKER.check(500,
                         (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
-                        "subscribers for testInputStream(%s)\n\t step [%s,%s]".formatted(req.uri(), i,j),
+                        "subscribers for testAsLines(%s)\n\t step [%s,%s]".formatted(req.uri(), i,j),
                         false);
                 Reference.reachabilityFence(client);
                 if (error != null) throw error;
@@ -294,7 +292,8 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             throws Exception {
         checkSkip();
         HttpClient client = null;
-        out.printf("%n%s testInpuStream(%s, %b)%n", now(), uri, sameClient);
+        uri = uri + "/testInputStream";
+        out.printf("%n%s testInputStream(%s, %b)%n", now(), uri, sameClient);
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
@@ -310,7 +309,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
                         assertEquals(read, BODY.charAt(k));
                     }
                 }
-                var error = TRACKER.check(500,
+                var error = TRACKER.check(1,
                         (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                         "subscribers for testInputStream(%s)\n\t step [%s,%s]".formatted(req.uri(), i,j),
                         false);
@@ -320,7 +319,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             if (sameClient) continue;
             client = null;
             System.gc();
-            var error = TRACKER.check(500);
+            var error = TRACKER.check(1);
             if (error != null) throw error;
         }
     }
@@ -387,10 +386,6 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         }
     }
 
-    private static boolean isThreadInterrupt(HttpTestExchange t) {
-        return t.getRequestURI().getPath().contains("/interruptThread");
-    }
-
     /**
      * A handler that slowly sends back a body to give time for the
      * the request to get cancelled before the body is fully received.
@@ -402,7 +397,6 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
                 out.println("HTTPSlowHandler received request to " + t.getRequestURI());
                 System.err.println("HTTPSlowHandler received request to " + t.getRequestURI());
 
-                boolean isThreadInterrupt = isThreadInterrupt(t);
                 byte[] req;
                 try (InputStream is = t.getRequestBody()) {
                     req = is.readAllBytes();
