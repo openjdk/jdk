@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef SHARE_GC_Z_ZOBJARRAYALLOCATOR_HPP
-#define SHARE_GC_Z_ZOBJARRAYALLOCATOR_HPP
+#ifndef CPU_X86_PEEPHOLE_X86_64_HPP
+#define CPU_X86_PEEPHOLE_X86_64_HPP
 
-#include "gc/shared/memAllocator.hpp"
+#include "opto/machnode.hpp"
+#include "opto/regalloc.hpp"
 
-class ZObjArrayAllocator : public ObjArrayAllocator {
-private:
-  virtual oop initialize(HeapWord* mem) const override;
-
-  void yield_for_safepoint() const;
-
+class Peephole {
 public:
-  ZObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread);
+  static bool lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                               MachNode* (*new_root)(), uint inst0_rule);
+  static bool lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                               MachNode* (*new_root)(), uint inst0_rule);
 };
 
-#endif // SHARE_GC_Z_ZOBJARRAYALLOCATOR_HPP
+#endif // CPU_X86_PEEPHOLE_X86_64_HPP
