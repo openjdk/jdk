@@ -527,8 +527,8 @@ void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {
     update_rs_length_prediction(rs_length_prediction);
 
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    // We have no measure of the number of cards in the thread buffers, assume
-    // these are very few compared to the ones in the DCQS.
+    // We have no measure of the number of cards in the thread log buffers, assume
+    // these are very few compared to the sum of the two other sources.
     update_young_length_bounds(dcqs.num_cards(), rs_length_prediction);
   }
 }
