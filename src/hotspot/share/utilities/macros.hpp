@@ -161,23 +161,23 @@
 #define NOT_EPSILONGC_RETURN_(code) { return code; }
 #endif // INCLUDE_EPSILONGC
 
-#ifndef INCLUDE_ZEROGC
-#define INCLUDE_ZEROGC 1
-#endif // INCLUDE_ZEROGC
+#ifndef INCLUDE_NOOPGC
+#define INCLUDE_NOOPGC 1
+#endif // INCLUDE_NOOPGC
 
-#if INCLUDE_ZEROGC
-#define ZEROGC_ONLY(x) x
-#define ZEROGC_ONLY_ARG(arg) arg,
-#define NOT_ZEROGC(x)
-#define NOT_ZEROGC_RETURN        /* next token must be ; */
-#define NOT_ZEROGC_RETURN_(code) /* next token must be ; */
+#if INCLUDE_NOOPGC
+#define NOOPGC_ONLY(x) x
+#define NOOPGC_ONLY_ARG(arg) arg,
+#define NOT_NOOPGC(x)
+#define NOT_NOOPGC_RETURN        /* next token must be ; */
+#define NOT_NOOPGC_RETURN_(code) /* next token must be ; */
 #else
-#define ZEROGC_ONLY(x)
-#define ZEROGC_ONLY_ARG(arg)
-#define NOT_ZEROGC(x) x
-#define NOT_ZEROGC_RETURN        {}
-#define NOT_ZEROGC_RETURN_(code) { return code; }
-#endif // INCLUDE_ZEROGC
+#define NOOPGC_ONLY(x)
+#define NOOPGC_ONLY_ARG(arg)
+#define NOT_NOOPGC(x) x
+#define NOT_NOOPGC_RETURN        {}
+#define NOT_NOOPGC_RETURN_(code) { return code; }
+#endif // INCLUDE_NOOPGC
 
 #ifndef INCLUDE_G1GC
 #define INCLUDE_G1GC 1

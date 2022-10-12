@@ -1,14 +1,14 @@
-#ifndef SHARE_GC_ZERO_ZEROHEAP_H
-#define SHARE_GC_ZERO_ZEROHEAP_H
+#ifndef SHARE_GC_NOOP_NOOPHEAP_H
+#define SHARE_GC_NOOP_NOOPHEAP_H
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "services/memoryManager.hpp"
 #include "gc/shared/space.hpp"
 #include "memory/virtualspace.hpp"
-#include "gc/zero/zeroBarrierSet.hpp"
+#include "gc/noop/noopBarrierSet.hpp"
 
-class ZeroHeap: public CollectedHeap {
+class NoopHeap: public CollectedHeap {
     friend class VMStructs;
 private:
     SoftRefPolicy _soft_ref_policy;
@@ -24,18 +24,18 @@ private:
     volatile size_t _last_heap_print;
 
 public:
-    static ZeroHeap* heap();
+    static NoopHeap* heap();
 
-    ZeroHeap() :
-            _memory_manager("Zero Heap", ""),
+    NoopHeap() :
+            _memory_manager("Noop Heap", ""),
             _space(NULL) {};
 
     virtual Name kind() const {
-        return CollectedHeap::Zero;
+        return CollectedHeap::Noop;
     }
 
     virtual const char* name() const {
-        return "Zero";
+        return "Noop";
     }
 
     virtual SoftRefPolicy* soft_ref_policy() {
@@ -116,4 +116,4 @@ public:
 };
 
 
-#endif //SHARE_GC_ZERO_ZEROHEAP_H
+#endif //SHARE_GC_NOOP_NOOPHEAP_H

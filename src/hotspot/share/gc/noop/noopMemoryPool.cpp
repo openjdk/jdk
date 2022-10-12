@@ -1,16 +1,16 @@
 #include "precompiled.hpp"
-#include "gc/zero/zeroHeap.hpp"
-#include "gc/zero/zeroMemoryPool.hpp"
+#include "gc/noop/noopHeap.hpp"
+#include "gc/noop/noopMemoryPool.hpp"
 
-ZeroMemoryPool::ZeroMemoryPool(ZeroHeap* heap) :
-        CollectedMemoryPool("Zero Heap",
+NoopMemoryPool::NoopMemoryPool(NoopHeap* heap) :
+        CollectedMemoryPool("Noop Heap",
                             heap->capacity(),
                             heap->max_capacity(),
                             false),
         _heap(heap) {
 }
 
-MemoryUsage ZeroMemoryPool::get_memory_usage() {
+MemoryUsage NoopMemoryPool::get_memory_usage() {
     size_t initial_size = initial_size();
     size_t max_sz     = max_size();
     size_t used       = used_in_bytes();

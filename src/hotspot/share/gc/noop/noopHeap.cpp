@@ -1,14 +1,14 @@
-#include "gc/zero/zeroHeap.hpp"
+#include "gc/noop/noopHeap.hpp"
 #include "precompiled.hpp"
 #include "memory/universe.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 
-ZeroHeap* ZeroHeap::heap() {
-    return named_heap<ZeroHeap>(CollectedHeap::Zero);
+NoopHeap* NoopHeap::heap() {
+    return named_heap<NoopHeap>(CollectedHeap::Noop);
 }
 
-jint ZeroHeap::initialize() {
+jint NoopHeap::initialize() {
     size_t align = HeapAlignment;
     size_t init_byte_size = align_up(InitialHeapSize, align);
     size_t max_byte_size  = align_up(MaxHeapSize, align);
@@ -25,38 +25,38 @@ jint ZeroHeap::initialize() {
     _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
 
     // Compute constants
-    _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(ZeroMaxTLABSize / HeapWordSize));
-    _step_counter_update = MIN2<size_t>(max_byte_size / 16, ZeroUpdateCountersStep);
-    _step_heap_print = (ZeroPrintHeapSteps == 0) ? SIZE_MAX : (max_byte_size / ZeroPrintHeapSteps);
-    _decay_time_ns = (int64_t) ZeroTLABDecayTime * NANOSECS_PER_MILLISEC;
+    _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(NoopMaxTLABSize / HeapWordSize));
+    _step_counter_update = MIN2<size_t>(max_byte_size / 16, NoopUpdateCountersStep);
+    _step_heap_print = (NoopPrintHeapSteps == 0) ? SIZE_MAX : (max_byte_size / NoopPrintHeapSteps);
+    _decay_time_ns = (int64_t) NoopTLABDecayTime * NANOSECS_PER_MILLISEC;
 
     // Install barrier set
-    BarrierSet::set_barrier_set(new ZeroBarrierSet());
+    BarrierSet::set_barrier_set(new NoopBarrierSet());
 
     // Print out the configuration
-    ZeroInitLogger::print();
+    NoopInitLogger::print();
 
     return JNI_OK;
 }
 
-void ZeroHeap::initialize_serviceability() {
-    _pool = new ZeroMemoryPool(this);
+void NoopHeap::initialize_serviceability() {
+    _pool = new NoopMemoryPool(this);
     _memory_manager.add_pool(_pool);
 }
 
-GrowableArray<GCMemoryManager*> ZeroHeap::memory_managers() {
+GrowableArray<GCMemoryManager*> NoopHeap::memory_managers() {
     GrowableArray<GCMemoryManager*> memory_managers(1);
     memory_managers.append(&_memory_manager);
     return memory_managers;
 }
 
-GrowableArray<MemoryPool*> ZeroHeap::memory_pools() {
+GrowableArray<MemoryPool*> NoopHeap::memory_pools() {
     GrowableArray<MemoryPool*> memory_pools(1);
     memory_pools.append(_pool);
     return memory_pools;
 }
 
-HeapWord* ZeroHeap::allocate_work(size_t size, bool verbose) {
+HeapWord* NoopHeap::allocate_work(size_t size, bool verbose) {
     assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
 
     HeapWord* res = NULL;
@@ -79,7 +79,7 @@ HeapWord* ZeroHeap::allocate_work(size_t size, bool verbose) {
 
             // Expand and loop back if space is available
             size_t space_left = max_capacity() - capacity();
-            size_t want_space = MAX2(size, ZeroMinHeapExpand);
+            size_t want_space = MAX2(size, NoopMinHeapExpand);
 
             if (want_space < space_left) {
                 // Enough space to expand in bulk:
@@ -114,7 +114,7 @@ HeapWord* ZeroHeap::allocate_work(size_t size, bool verbose) {
     return res;
 }
 
-HeapWord* ZeroHeap::allocate_new_tlab(size_t min_size,
+HeapWord* NoopHeap::allocate_new_tlab(size_t min_size,
                                          size_t requested_size,
                                          size_t* actual_size) {
     Thread* thread = Thread::current();
@@ -164,23 +164,23 @@ HeapWord* ZeroHeap::allocate_new_tlab(size_t min_size,
     return res;
 }
 
-HeapWord* ZeroHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
+HeapWord* NoopHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
     *gc_overhead_limit_was_exceeded = false;
     return allocate_work(size);
 }
 
-size_t ZeroHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t NoopHeap::unsafe_max_tlab_alloc(Thread* thr) const {
     // Return max allocatable TLAB size, and let allocation path figure out
     // the actual allocation size. Note: result should be in bytes.
     return _max_tlab_size * HeapWordSize;
 }
 
-void ZeroHeap::collect(GCCause::Cause cause) {
+void NoopHeap::collect(GCCause::Cause cause) {
     switch (cause) {
         case GCCause::_metadata_GC_threshold:
         case GCCause::_metadata_GC_clear_soft_refs:
             // Receiving these causes means the VM itself entered the safepoint for metadata collection.
-            // While Zero does not do GC, it has to perform sizing adjustments, otherwise we would
+            // While Noop does not do GC, it has to perform sizing adjustments, otherwise we would
             // re-enter the safepoint again very soon.
 
             assert(SafepointSynchronize::is_at_safepoint(), "Expected at safepoint");
@@ -193,6 +193,6 @@ void ZeroHeap::collect(GCCause::Cause cause) {
     }
 }
 
-void ZeroHeap::do_full_collection(bool clear_all_soft_refs) {
+void NoopHeap::do_full_collection(bool clear_all_soft_refs) {
     collect(gc_cause());
 }

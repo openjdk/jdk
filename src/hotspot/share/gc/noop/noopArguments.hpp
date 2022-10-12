@@ -1,11 +1,11 @@
-#ifndef SHARE_GC_ZERO_ZEROARGUMENTS_HPP
-#define SHARE_GC_ZERO_ZEROARGUMENTS_HPP
+#ifndef SHARE_GC_NOOP_NOOPARGUMENTS_HPP
+#define SHARE_GC_NOOP_NOOPARGUMENTS_HPP
 
 #include "gc/shared/gcArguments.hpp"
 
 class CollectedHeap;
 
-class ZeroArguments : public GCArguments {
+class NoopArguments : public GCArguments {
 protected:
     virtual void initialize_alignments();
 
@@ -15,4 +15,4 @@ public:
     virtual CollectedHeap* create_heap();
 };
 
-#endif // SHARE_GC_ZERO_ZEROARGUMENTS_HPP
+#endif // SHARE_GC_NOOP_NOOPARGUMENTS_HPP

@@ -193,7 +193,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
     Epsilon,
     Z,
     Shenandoah,
-    Zero
+    Noop
   };
 
  protected:
