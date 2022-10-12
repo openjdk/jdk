@@ -25,7 +25,7 @@
  * @test
  * @bug 8295159
  * @summary DSO created with -ffast-math breaks Java floating-point arithmetic
- * @run main compiler.floatingpoint.TestDenormalFloat
+ * @run main/othervm compiler.floatingpoint.TestDenormalFloat
  */
 
 // gcc -g -ffast-math -shared -Lbuild/linux-x86_64-server-release/jdk/lib -ljava -o libfast-math.so libfast-math.c
