@@ -2093,6 +2093,13 @@ CompilerDirectives* DirectivesStack::_bottom = NULL;
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   task->print_ul();
+  elapsedTimer time;
+
+  DirectiveSet* directive = task->directive();
+  if (directive->PrintCompilationOption) {
+    ResourceMark rm;
+    task->print_tty();
+  }
 
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
@@ -2109,19 +2116,14 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool should_break = false;
   const int task_level = task->comp_level();
   AbstractCompiler* comp = task->compiler();
-
-  DirectiveSet* directive;
   {
     // create the handle inside it's own block so it can't
     // accidentally be referenced once the thread transitions to
     // native.  The NoHandleMark before the transition should catch
     // any cases where this occurs in the future.
     methodHandle method(thread, task->method());
-    assert(!method->is_native(), "no longer compile natives");
 
-    // Look up matching directives
-    directive = DirectivesStack::getMatchingDirective(method, comp);
-    task->set_directive(directive);
+    assert(!method->is_native(), "no longer compile natives");
 
     // Update compile information when using perfdata.
     if (UsePerfData) {
@@ -2130,12 +2132,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, compiler_name(task_level));
   }
-
-  if (task->directive()->PrintCompilationOption) {
-    ResourceMark rm;
-    task->print_tty();
-  }
-  elapsedTimer time;
 
   should_break = directive->BreakAtCompileOption || task->check_break_at_flags();
   if (should_log && !directive->LogOption) {
