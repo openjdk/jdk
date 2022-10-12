@@ -175,10 +175,10 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
       fi
     else
       binutils_cc="$CC $SYSROOT_CFLAGS"
-      if test "x$host" = "x$build"; then
-        binutils_target=""
+      if test "x$COMPILE_TYPE" = xcross; then
+        binutils_target="--host=$OPENJDK_TARGET_AUTOCONF_NAME"
       else
-        binutils_target="--host=$host"
+        binutils_target=""
       fi
     fi
     binutils_cflags="$binutils_cflags $MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
