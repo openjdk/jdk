@@ -563,6 +563,7 @@
   declare_constant(CollectedHeap::Parallel)                               \
   declare_constant(CollectedHeap::G1)                                     \
   declare_constant(CollectedHeap::Epsilon)                                \
+  declare_constant(CollectedHeap::Zero)                                   \
   declare_constant(CollectedHeap::Z)                                      \
   declare_constant(CollectedHeap::Shenandoah)                             \
                                                                           \
