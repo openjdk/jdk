@@ -631,9 +631,21 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             return new ImmutableElement(newLimbs, 0);
         }
 
-	public void addModPowerTwo(IntegerModuloP arg, byte[] result) {
+        public void addModPowerTwo(IntegerModuloP arg, byte[] result) {
             assert IntegerPolynomial.this == arg.getField();
-            Element other = (Element) arg;
+            Element other = (Element)arg;
+
+            // Reduce if required.
+            if (numAdds > 32 - bitsPerLimb) {
+                reduce(limbs);
+                numAdds = 0;
+            }
+
+            if (other.numAdds > 32 - bitsPerLimb) {
+                reduce(other.limbs);
+                other.numAdds = 0;
+            }
+
             addLimbsModPowerTwo(limbs, other.limbs, result);
         }
 
