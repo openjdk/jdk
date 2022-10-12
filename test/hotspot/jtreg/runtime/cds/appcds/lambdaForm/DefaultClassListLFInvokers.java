@@ -34,15 +34,17 @@
  * @run driver DefaultClassListLFInvokers
  */
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Comparator;
 
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import jdk.test.lib.process.OutputAnalyzer;
 
 public class DefaultClassListLFInvokers {
     static final String appClass = DefaultClassListLFInvokersApp.class.getName();
@@ -57,52 +59,59 @@ public class DefaultClassListLFInvokers {
 
     public static void main(String[] args) throws Exception {
         File classListFile = CDSTestUtils.makeClassList(classlist);
-
-        OutputAnalyzer dump =
-            CDSTestUtils.createArchive("-XX:SharedClassListFile=" + classListFile.getPath(),
-                                       "-cp", appJar);
-        CDSTestUtils.checkDump(dump);
-
-        CDSOptions opts = (new CDSOptions())
-            .addSuffix("-showversion", "-Xlog:cds:stderr", "-cp", appJar, appClass)
-            .setUseVersion(false);
-
-        opts.setXShareMode("auto");
-        opts.setUseSystemArchive(false);
-        OutputAnalyzer withcds = CDSTestUtils.run(opts).getOutput();
-        withcds.shouldContain(DefaultClassListLFInvokersApp.FLAG);
-        withcds.shouldHaveExitValue(0);
-
-        opts.setXShareMode("off");
-        opts.setUseSystemArchive(true);
-        OutputAnalyzer nocds = CDSTestUtils.run(opts).getOutput();
-        nocds.shouldContain(DefaultClassListLFInvokersApp.FLAG);
-        withcds.shouldHaveExitValue(0);
+        CDSTestUtils.createArchiveAndCheck("-XX:SharedClassListFile=" + classListFile.getPath(),
+                                           "-cp", appJar);
 
         // Make sure we still have all the LF invoker methods as when CDS is disabled,
         // in which case the XXX$Holder classes are loaded from $JAVA_HOME/lib/modules
-
-        System.out.println("\n\n============================== Checking output: withcds vs nocds");
-        TestCommon.stdoutMustMatch(withcds, nocds);
-
-        opts.setXShareMode("auto");
-        opts.setUseSystemArchive(true);
-        OutputAnalyzer defcds = CDSTestUtils.run(opts).getOutput();
-        defcds.shouldContain(DefaultClassListLFInvokersApp.FLAG);
-        withcds.shouldHaveExitValue(0);
+        Path no_cds_logfile = run(Mode.no_cds);
+        Path custom_cds_logfile = run(Mode.custom_cds);
+        System.out.println("\n\n============================== Checking output: custom_cds vs no_cds");
+        TestCommon.filesMustMatch(custom_cds_logfile, no_cds_logfile);
 
         // We should also have all the LF invoker methods as when the default CDS archive is used
         // in which case the XXX$Holder classes are loaded from the default archive,
         // e.g., $JAVA_HOME/lib/server/classes.jsa
+        Path default_cds_logfile = run(Mode.default_cds);
+        System.out.println("\n\n============================== Checking output: custom_cds vs default_cds");
+        TestCommon.filesMustMatch(custom_cds_logfile, default_cds_logfile);
+    }
 
-        System.out.println("\n\n============================== Checking output: withcds vs defcds");
-        TestCommon.stdoutMustMatch(withcds, defcds);
+    enum Mode {
+        no_cds,
+        default_cds,
+        custom_cds
+    };
+
+    static Path run(Mode mode) throws Exception {
+        File f = new File("log_" + mode.name() + ".txt");
+        CDSOptions opts = (new CDSOptions())
+            .addSuffix("-showversion", "-cp", appJar, appClass, f.toString())
+            .setUseVersion(false);
+
+        switch (mode) {
+        case no_cds:
+            opts.setXShareMode("off");
+            break;
+        case custom_cds:
+            // We will use the archive created by the last CDSTestUtils.createArchiveAndCheck() call
+            opts.setUseSystemArchive(false);
+            opts.setXShareMode("auto");
+            break;
+        case default_cds:
+        default:
+            // We will use the default archive.
+            opts.setUseSystemArchive(true);
+            opts.setXShareMode("auto");
+            break;
+        }
+        CDSTestUtils.run(opts).assertNormalExit(DefaultClassListLFInvokersApp.FLAG);
+        return f.toPath();
     }
 }
 
 class DefaultClassListLFInvokersApp {
     public static final String FLAG = "Test Success!";
-
     static class CompMethods implements Comparator<Method> {
         public int compare(Method a, Method b) {
             return a.toString().compareTo(b.toString());
@@ -111,21 +120,23 @@ class DefaultClassListLFInvokersApp {
     static final CompMethods compMethods = new CompMethods();
 
     public static void main(String[] args) throws Exception {
-        test("java.lang.invoke.Invokers$Holder");
-        test("java.lang.invoke.DirectMethodHandle$Holder");
-        test("java.lang.invoke.DelegatingMethodHandle$Holder");
-        test("java.lang.invoke.LambdaForm$Holder");
-        System.out.println(FLAG);
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(args[0]))) {
+            test(w, "java.lang.invoke.Invokers$Holder");
+            test(w, "java.lang.invoke.DirectMethodHandle$Holder");
+            test(w, "java.lang.invoke.DelegatingMethodHandle$Holder");
+            test(w, "java.lang.invoke.LambdaForm$Holder");
+            System.out.println(FLAG);
+        }
     }
 
-    static void test(String className) throws Exception {
+    static void test(BufferedWriter w, String className) throws Exception {
         Class c = Class.forName(className);
         Method[] methods = c.getDeclaredMethods();
-        System.out.println("Dumping all methods in " + c);
+        w.write("Dumping all methods in " + c + "\n");
         Arrays.sort(methods, 0, methods.length, compMethods);
         for (Method m : methods) {
-            System.out.println(m);
+            w.write(m + "\n");
         }
-        System.out.println("Found " + methods.length + " methods\n\n");
+        w.write("Found " + methods.length + " methods\n\n\n");
     }
 }

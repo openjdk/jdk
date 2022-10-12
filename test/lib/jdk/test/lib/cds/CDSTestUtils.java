@@ -204,10 +204,6 @@ public class CDSTestUtils {
             output.shouldNotHaveExitValue(0);
             return this;
         }
-
-        public OutputAnalyzer getOutput() {
-            return output;
-        }
     }
 
     // A number to be included in the filename of the stdout and the stderr output file.

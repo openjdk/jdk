@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -746,9 +747,9 @@ public class TestCommon extends CDSTestUtils {
         return sb.toString();
     }
 
-    public static void stdoutMustMatch(OutputAnalyzer a, OutputAnalyzer b) {
-        linesMustMatch(a.getStdout().split("\n"),
-                             b.getStdout().split("\n"));
+    public static void filesMustMatch(Path a, Path b) throws IOException {
+        linesMustMatch(Files.readString(a).split("\n"),
+                       Files.readString(b).split("\n"));
     }
 
     public static void linesMustMatch(String a[], String b[]) {
