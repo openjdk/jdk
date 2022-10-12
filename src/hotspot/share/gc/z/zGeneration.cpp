@@ -594,11 +594,13 @@ public:
 void ZGenerationYoung::flip_mark_start() {
   ZGlobalsPointers::flip_young_mark_start();
   ZBarrierSet::assembler()->patch_barriers();
+  ZVerify::on_color_flip();
 }
 
 void ZGenerationYoung::flip_relocate_start() {
   ZGlobalsPointers::flip_young_relocate_start();
   ZBarrierSet::assembler()->patch_barriers();
+  ZVerify::on_color_flip();
 }
 
 void ZGenerationYoung::pause_mark_start() {
@@ -950,11 +952,13 @@ void ZGenerationOld::collect(ConcurrentGCTimer* timer) {
 void ZGenerationOld::flip_mark_start() {
   ZGlobalsPointers::flip_old_mark_start();
   ZBarrierSet::assembler()->patch_barriers();
+  ZVerify::on_color_flip();
 }
 
 void ZGenerationOld::flip_relocate_start() {
   ZGlobalsPointers::flip_old_relocate_start();
   ZBarrierSet::assembler()->patch_barriers();
+  ZVerify::on_color_flip();
 }
 
 void ZGenerationOld::concurrent_mark() {
