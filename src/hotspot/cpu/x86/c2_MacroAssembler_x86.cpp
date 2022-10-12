@@ -4750,6 +4750,61 @@ void C2_MacroAssembler::vector_unsigned_cast(XMMRegister dst, XMMRegister src, i
   }
 }
 
+void C2_MacroAssembler::vector_mask_cast(XMMRegister dst, XMMRegister src,
+                                         BasicType dst_bt, BasicType src_bt, int vlen) {
+  int vlen_enc = vector_length_encoding(MAX2(type2aelembytes(src_bt), type2aelembytes(dst_bt)) * vlen);
+  assert(vlen_enc != AVX_512bit, "");
+
+  int dst_bt_size = type2aelembytes(dst_bt);
+  int src_bt_size = type2aelembytes(src_bt);
+  if (dst_bt_size > src_bt_size) {
+    switch (dst_bt_size / src_bt_size) {
+      case 2: vpmovsxbw(dst, src, vlen_enc); break;
+      case 4: vpmovsxbd(dst, src, vlen_enc); break;
+      case 8: vpmovsxbq(dst, src, vlen_enc); break;
+      default: ShouldNotReachHere();
+    }
+  } else {
+    assert(dst_bt_size < src_bt_size, "");
+    switch (src_bt_size / dst_bt_size) {
+      case 2: {
+        if (vlen_enc == AVX_128bit) {
+          vpacksswb(dst, src, src, vlen_enc);
+        } else {
+          vpacksswb(dst, src, src, vlen_enc);
+          vpermq(dst, dst, 0x08, vlen_enc);
+        }
+        break;
+      }
+      case 4: {
+        if (vlen_enc == AVX_128bit) {
+          vpackssdw(dst, src, src, vlen_enc);
+          vpacksswb(dst, dst, dst, vlen_enc);
+        } else {
+          vpackssdw(dst, src, src, vlen_enc);
+          vpermq(dst, dst, 0x08, vlen_enc);
+          vpacksswb(dst, dst, dst, AVX_128bit);
+        }
+        break;
+      }
+      case 8: {
+        if (vlen_enc == AVX_128bit) {
+          vpshufd(dst, src, 0x08, vlen_enc);
+          vpackssdw(dst, dst, dst, vlen_enc);
+          vpacksswb(dst, dst, dst, vlen_enc);
+        } else {
+          vpshufd(dst, src, 0x08, vlen_enc);
+          vpermq(dst, dst, 0x08, vlen_enc);
+          vpackssdw(dst, dst, dst, AVX_128bit);
+          vpacksswb(dst, dst, dst, AVX_128bit);
+        }
+        break;
+      }
+      default: ShouldNotReachHere();
+    }
+  }
+}
+
 void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                                    bool merge, BasicType bt, int vlen_enc) {
   if (bt == T_INT) {
