@@ -1747,7 +1747,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
   // JDK-8295159: Protect floating-point environment.
   fenv_t curr_fenv;
   int rtn = fegetenv(&curr_fenv);
-  assert(rtn == 0, "must be.");
+  assert(rtn == 0, "fegetnv must succeed");
   void * result = ::dlopen(filename, RTLD_LAZY);
   rtn = fesetenv(&curr_fenv);
   assert(rtn == 0, "fesetenv must succeed");
