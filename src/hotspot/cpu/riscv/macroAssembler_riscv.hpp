@@ -636,7 +636,6 @@ public:
     sd(zr, Address(t0));
   }
 
-public:
   void la_patchable(Register reg1, const Address &dest, int32_t &offset);
 
   virtual void _call_Unimplemented(address call_site) {
