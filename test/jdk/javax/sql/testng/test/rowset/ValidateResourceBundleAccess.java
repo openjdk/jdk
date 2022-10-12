@@ -28,14 +28,21 @@ import org.testng.annotations.Test;
 import util.BaseTest;
 import static org.testng.Assert.*;
 
-public class ValidateResourceBundleAccess extends BaseTest {
 
-    /**
-     * Simple test to sanity check the resource bundle can be accessed
-     * @throws SQLException
-     */
+/**
+ * @test
+ * @bug 8294989
+ * @summary Check that the resource bundle can be accessed
+ * @throws SQLException if an unexpected error occurs
+ */
+public class ValidateResourceBundleAccess{
+    // Expected JDBCResourceBundle message, jdbcrowsetimpl.invalstate
+    private static final String invalidState = "Invalid state";
+    // Expected JDBCResourceBundle message, crsreader.connecterr
+    private static final String rsReaderError = "Internal Error in RowSetReader: no connection or command";
+
     @Test
-    public void rowsetTest() throws SQLException {
+    public void testResourceBundleAccess() throws SQLException {
         var rsr = RowSetProvider.newFactory();
         var crs =rsr.createCachedRowSet();
         var jrs = rsr.createJdbcRowSet();
@@ -45,13 +52,13 @@ public class ValidateResourceBundleAccess extends BaseTest {
         try {
             jrs.getMetaData();
         } catch (SQLException sqe) {
-            assertTrue(sqe.getMessage().equals("Invalid state"));
+            assertTrue(sqe.getMessage().equals(invalidState));
         }
         // Now tests via CachedRowSet
         try {
             crs.execute();
         } catch (SQLException e) {
-            assertTrue(e.getMessage().equals("Internal Error in RowSetReader: no connection or command"));
+            assertTrue(e.getMessage().equals(rsReaderError));
         }
     }
 }
