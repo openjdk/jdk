@@ -128,38 +128,11 @@ void* AnyObj::operator new(size_t size, MEMFLAGS flags) throw() {
   return res;
 }
 
-void* AnyObj::operator new(size_t size, allocation_type type, MEMFLAGS flags) throw() {
-  address res = NULL;
-  switch (type) {
-   case C_HEAP:
-    res = (address)operator new(size, flags);
-    break;
-   case RESOURCE_AREA:
-    // new(size) sets allocation type RESOURCE_AREA.
-    res = (address)operator new(size);
-    break;
-   default:
-    ShouldNotReachHere();
-  }
-  return res;
-}
-
 void* AnyObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
-    allocation_type type, MEMFLAGS flags) throw() {
+    MEMFLAGS flags) throw() {
   // should only call this with std::nothrow, use other operator new() otherwise
-  address res = NULL;
-  switch (type) {
-   case C_HEAP:
-    res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
+    address res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
     DEBUG_ONLY(if (res!= NULL) set_allocation_type(res, C_HEAP);)
-    break;
-   case RESOURCE_AREA:
-    // new(size) sets allocation type RESOURCE_AREA.
-    res = (address)operator new(size, std::nothrow);
-    break;
-   default:
-    ShouldNotReachHere();
-  }
   return res;
 }
 

@@ -142,7 +142,11 @@ class ResourceHashtableBase : public STORAGE {
       (*ptr)->_value = value;
       return false;
     } else {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key, value);
+      } else {
+        *ptr = new Node(hv, key, value);
+      }
       _number_of_entries ++;
       return true;
     }
@@ -157,7 +161,11 @@ class ResourceHashtableBase : public STORAGE {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
     if (*ptr == NULL) {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key);
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key);
+      } else {
+        *ptr = new Node(hv, key);
+      }
       *p_created = true;
       _number_of_entries ++;
     } else {
@@ -175,7 +183,11 @@ class ResourceHashtableBase : public STORAGE {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
     if (*ptr == NULL) {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key, value);
+      } else {
+        *ptr = new Node(hv, key, value);
+      }
       *p_created = true;
       _number_of_entries ++;
     } else {

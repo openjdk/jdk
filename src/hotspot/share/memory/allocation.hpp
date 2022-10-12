@@ -490,28 +490,26 @@ protected:
 #endif // ASSERT
 
  public:
+  // CHeap allocations
   void* operator new(size_t size, MEMFLAGS flags) throw();
   void* operator new [](size_t size, MEMFLAGS flags) throw() = delete;
+  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw();
+  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw() = delete;
 
-  void* operator new(size_t size, allocation_type type, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw() = delete;
-  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags) throw() = delete;
+  // Arena allocations
   void* operator new(size_t size, Arena *arena) throw();
   void* operator new [](size_t size, Arena *arena) throw() = delete;
 
+  // Resource allocations
   void* operator new(size_t size) throw() {
-      address res = (address)resource_allocate_bytes(size);
-      DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
-      return res;
+    address res = (address)resource_allocate_bytes(size);
+    DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
+    return res;
   }
-
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
-      address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-      DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
-      return res;
+    address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
+    DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
+    return res;
   }
 
   void* operator new [](size_t size) throw() = delete;

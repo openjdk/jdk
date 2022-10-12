@@ -751,11 +751,11 @@ public:
   }
 
   void* operator new(size_t size) throw() {
-    return AnyObj::operator new(size, AnyObj::C_HEAP, F);
+    return AnyObj::operator new(size, F);
   }
 
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
-    return AnyObj::operator new(size, nothrow_constant, AnyObj::C_HEAP, F);
+    return AnyObj::operator new(size, nothrow_constant, F);
   }
 };
 
