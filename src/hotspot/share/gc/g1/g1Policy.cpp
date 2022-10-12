@@ -1012,10 +1012,10 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
                                       size_t rs_length) const {
   bool in_young_only_phase = collector_state()->in_young_only_phase();
 
-  size_t remset_cards = _analytics->predict_scan_card_num(rs_length, in_young_only_phase);
+  size_t unique_cards_from_rs = _analytics->predict_scan_card_num(rs_length, in_young_only_phase);
   // Assume that all cards from the log buffers will be scanned, i.e. there are no
   // duplicates in that set.
-  size_t effective_scanned_cards = remset_cards + pending_cards;
+  size_t effective_scanned_cards = unique_cards_from_rs + pending_cards;
 
   double card_merge_time = _analytics->predict_card_merge_time_ms(pending_cards + rs_length, in_young_only_phase);
   double card_scan_time = _analytics->predict_card_scan_time_ms(effective_scanned_cards, in_young_only_phase);
