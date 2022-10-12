@@ -1325,7 +1325,7 @@ void MacroAssembler::resolve_global_jobject(Register value,
   {
     Label valid_global_tag;
     tst(value, JNIHandles::global_tag_value); // Test for global tag.
-    b(valid_local_tag, ne);
+    b(valid_global_tag, ne);
     stop("non global jobject using resolve_global_jobject");
     bind(valid_global_tag);
   }

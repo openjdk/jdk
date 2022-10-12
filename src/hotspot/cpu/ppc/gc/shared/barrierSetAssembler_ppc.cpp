@@ -159,7 +159,7 @@ void BarrierSetAssembler::resolve_global_jobject(MacroAssembler* masm, Register 
     Label valid_global_tag;
     __ andi_(tmp1, value, JNIHandles::global_tag_value);
     __ bne(CCR0, valid_global_tag);       // Test for global tag.
-    stop("non global jobject using resolve_global_jobject");
+    __ stop("non global jobject using resolve_global_jobject");
     __ bind(valid_global_tag);
   }
 #endif
