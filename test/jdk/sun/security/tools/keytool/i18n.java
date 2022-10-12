@@ -61,7 +61,7 @@
  * @run main/manual/othervm -Duser.language=zh -Duser.country=CN i18n
  */
 
-import jdk.test.lib.TestUI;
+import jdk.test.lib.UIBuilder;
 
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
@@ -305,7 +305,7 @@ public class i18n {
     public boolean validate(String command, String instruction, String message) {
         failed = false;
         currentThread = Thread.currentThread();
-        JDialog dialog = new TestUI.DialogBuilder()
+        JDialog dialog = new UIBuilder.DialogBuilder()
                 .setTitle("keytool " + command)
                 .setInstruction(instruction)
                 .setMessage(message)

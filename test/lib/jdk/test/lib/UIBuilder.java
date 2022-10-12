@@ -27,7 +27,21 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class TestUI {
+/**
+ * This is a common library for building UI for testing purposes.
+ */
+public class UIBuilder {
+
+    /**
+     * Creates a {@link javax.swing.JDialog} object with a fixed layout that contains
+     * an instructions {@link javax.swing.JTextArea} and a message
+     * {@link javax.swing.JTextArea} for displaying text contents. Text contents can
+     * be set by using {@code setInstruction} method and {@code setMessage} method.
+     *
+     * The {@link javax.swing.JDialog} object also a pass {@link javax.swing.JButton}
+     * and a fail {@link javax.swing.JButton} to indicate test result. Buttons' action
+     * can be bound by using {@code setPassAction} and {@code setFailAction}.
+     */
     public static class DialogBuilder {
         private JDialog dialog;
         private JTextArea instructionsText;
@@ -35,6 +49,9 @@ public class TestUI {
         private JButton pass;
         private JButton fail;
 
+        /**
+         * Contruct a new DialogBuilder object.
+         */
         public DialogBuilder() {
             dialog = new JDialog(new JFrame());
             dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
@@ -61,31 +78,65 @@ public class TestUI {
             dialog.add("South", buttons);
         }
 
+        /**
+         * Returns this {@code DialogBuilder} setting the dialog's title to a new value.
+         * @param title a string value
+         * @returns this DialogBuilder
+         */
         public DialogBuilder setTitle(String title) {
             dialog.setTitle(title);
             return this;
         }
 
+        /**
+         * Returns this {@code DialogBuilder} setting the instruction text to a new
+         * value.
+         * @param instruction a string value
+         * @returns this DialogBuilder
+         */
         public DialogBuilder setInstruction(String instruction) {
             instructionsText.setText("Test instructions:\n" + instruction);
             return this;
         }
 
+        /**
+         * Returns this {@code DialogBuilder} setting the message text to a new value.
+         * @param message a string value
+         * @returns this DialogBuilder
+         */
         public DialogBuilder setMessage(String message) {
             messageText.setText(message);
             return this;
         }
 
+        /**
+         * Returns this {@code DialogBuilder} setting pass button action to
+         * {@link java.awt.event.ActionListener}.
+         * @param action an action to perform on button click
+         * @returns this DialogBuilder
+         */
         public DialogBuilder setPassAction(ActionListener action) {
             pass.addActionListener(action);
             return this;
         }
 
+        /**
+         * Returns this {@code DialogBuilder} setting fail button action to
+         * {@link java.awt.event.ActionListener}.
+         * @param action an action to perform on button click
+         * @returns this DialogBuilder
+         */
         public DialogBuilder setFailAction(ActionListener action) {
             fail.addActionListener(action);
             return this;
         }
 
+        /**
+         * Returns this {@code DialogBuilder} setting window-closing action to
+         * {@link java.lang.Runnable}.
+         * @param action a runnerable action to perform on window close
+         * @returns this DialogBuilder
+         */
         public DialogBuilder setCloseAction(Runnable action) {
             dialog.addWindowListener(new WindowAdapter() {
                 @Override
@@ -97,6 +148,10 @@ public class TestUI {
             return this;
         }
 
+        /**
+         * Returns a {@link javax.swing.JDialog} window.
+         * @returns a JDialog
+         */
         public JDialog build() {
             dialog.pack();
             return dialog;
