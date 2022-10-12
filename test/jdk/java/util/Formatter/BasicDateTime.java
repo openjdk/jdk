@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,7 +435,7 @@ public class BasicDateTime extends Basic {
         test("%-4c", "i   ", 'i');
         test("%4C",  "   I", 'i');
         test("%-4C", "I   ", 'i');
-        test("%c", "i", new Character('i'));
+        test("%c", "i", Character.valueOf('i'));
         test("%c", "H", (byte) 72);
         test("%c", "i", (short) 105);
         test("%c", "!", (int) 33);
@@ -493,7 +493,7 @@ public class BasicDateTime extends Basic {
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0.5f);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, "hello");
-        tryCatch("%#s", FormatFlagsConversionMismatchException.class, null);
+        tryCatch("%#s", FormatFlagsConversionMismatchException.class, (Object)null);
 
         //---------------------------------------------------------------------
         // %h
@@ -519,6 +519,22 @@ public class BasicDateTime extends Basic {
         tryCatch("%F", UnknownFormatConversionException.class);
 
         tryCatch("%#g", FormatFlagsConversionMismatchException.class);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1687,17 +1703,6 @@ public class BasicDateTime extends Basic {
 
         // Get the supported ids for GMT-08:00 (Pacific Standard Time)
         String[] ids = TimeZone.getAvailableIDs(-8 * 60 * 60 * 1000);
-        // With tzdata2020b, the test fails for the mentioned zones expecting
-        // "PST" but JDK has Zone name "MST" for JRE locale provider.
-        // Therefore excluding them as the test is only looking for a GMT-08:00
-        // time zone ID. See JDK-8254865.
-        final List<String> list =  new ArrayList<String>();
-        Collections.addAll(list, ids);
-        list.remove("America/Dawson");
-        list.remove("America/WhiteHorse");
-        list.remove("Canada/Yukon");
-        ids = list.toArray(new String[list.size()]);
-
         // Create a Pacific Standard Time time zone
         SimpleTimeZone tz = new SimpleTimeZone(-8 * 60 * 60 * 1000, ids[0]);
         // public GregorianCalendar(TimeZone zone, Locale aLocale);
