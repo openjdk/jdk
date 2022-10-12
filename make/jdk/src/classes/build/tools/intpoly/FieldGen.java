@@ -35,7 +35,7 @@ import java.util.*;
 public class FieldGen {
 
     static FieldParams Curve25519 = new FieldParams(
-            "IntegerPolynomial25519", 26, 10, 255,
+            "IntegerPolynomial25519", 26, 10, 1, 255,
             Arrays.asList(
                     new Term(0, -19)
             ),
@@ -65,7 +65,7 @@ public class FieldGen {
     }
 
     static FieldParams Curve448 = new FieldParams(
-            "IntegerPolynomial448", 28, 16, 448,
+            "IntegerPolynomial448", 28, 16, 1, 448,
             Arrays.asList(
                     new Term(224, -1),
                     new Term(0, -1)
@@ -101,7 +101,7 @@ public class FieldGen {
     }
 
     static FieldParams P256 = new FieldParams(
-            "IntegerPolynomialP256", 26, 10, 256,
+            "IntegerPolynomialP256", 26, 10, 2, 256,
             Arrays.asList(
                     new Term(224, -1),
                     new Term(192, 1),
@@ -119,7 +119,7 @@ public class FieldGen {
     }
 
     static FieldParams P384 = new FieldParams(
-            "IntegerPolynomialP384", 28, 14, 384,
+            "IntegerPolynomialP384", 28, 14, 2, 384,
             Arrays.asList(
                     new Term(128, -1),
                     new Term(96, -1),
@@ -137,7 +137,7 @@ public class FieldGen {
     }
 
     static FieldParams P521 = new FieldParams(
-            "IntegerPolynomialP521", 28, 19, 521,
+            "IntegerPolynomialP521", 28, 19, 2, 521,
             Arrays.asList(
                     new Term(0, -1)
             ),
@@ -152,31 +152,31 @@ public class FieldGen {
     }
 
     static FieldParams O256 = new FieldParams(
-            "P256OrderField", 26, 10, 256,
+            "P256OrderField", 26, 10, 1, 256,
             "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
             orderFieldCrSequence(10), orderFieldSmallCrSequence(10)
     );
 
     static FieldParams O384 = new FieldParams(
-            "P384OrderField", 28, 14, 384,
+            "P384OrderField", 28, 14, 1, 384,
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973",
             orderFieldCrSequence(14), orderFieldSmallCrSequence(14)
     );
 
     static FieldParams O521 = new FieldParams(
-            "P521OrderField", 28, 19, 521,
+            "P521OrderField", 28, 19, 1, 521,
             "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA51868783BF2F966B7FCC0148F709A5D03BB5C9B8899C47AEBB6FB71E91386409",
             o521crSequence(19), orderFieldSmallCrSequence(19)
     );
 
     static FieldParams O25519 = new FieldParams(
-            "Curve25519OrderField", 26, 10, 252,
+            "Curve25519OrderField", 26, 10, 1, 252,
             "1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed",
             orderFieldCrSequence(10), orderFieldSmallCrSequence(10)
     );
 
     static FieldParams O448 = new FieldParams(
-            "Curve448OrderField", 28, 16, 446,
+            "Curve448OrderField", 28, 16, 1, 446,
             "3fffffffffffffffffffffffffffffffffffffffffffffffffffffff7cca23e9c44edb49aed63690216cc2728dc58f552378c292ab5844f3",
             //"ffffffffffffffffffffffffffffffffffffffffffffffffffffffff7cca23e9c44edb49aed63690216cc2728dc58f552378c292ab5844f3",
             orderFieldCrSequence(16), orderFieldSmallCrSequence(16)
@@ -296,17 +296,20 @@ public class FieldGen {
         private final String className;
         private final int bitsPerLimb;
         private final int numLimbs;
+        private final int maxAdds;
         private final int power;
         private final Iterable<Term> terms;
         private final List<CarryReduce> crSequence;
         private final List<CarryReduce> smallCrSequence;
 
         public FieldParams(String className, int bitsPerLimb, int numLimbs,
-                int power, Iterable<Term> terms, List<CarryReduce> crSequence,
+                int maxAdds, int power,
+                Iterable<Term> terms, List<CarryReduce> crSequence,
                 List<CarryReduce> smallCrSequence) {
             this.className = className;
             this.bitsPerLimb = bitsPerLimb;
             this.numLimbs = numLimbs;
+            this.maxAdds = maxAdds;
             this.power = power;
             this.terms = terms;
             this.crSequence = crSequence;
@@ -314,11 +317,13 @@ public class FieldGen {
         }
 
         public FieldParams(String className, int bitsPerLimb, int numLimbs,
-                int power, String term, List<CarryReduce> crSequence,
+                int maxAdds, int power,
+                String term, List<CarryReduce> crSequence,
                 List<CarryReduce> smallCrSequence) {
             this.className = className;
             this.bitsPerLimb = bitsPerLimb;
             this.numLimbs = numLimbs;
+            this.maxAdds = maxAdds;
             this.power = power;
             this.crSequence = crSequence;
             this.smallCrSequence = smallCrSequence;
@@ -371,6 +376,10 @@ public class FieldGen {
 
         public int getNumLimbs() {
             return numLimbs;
+        }
+
+        public int getMaxAdds() {
+            return maxAdds;
         }
 
         public int getPower() {
@@ -613,6 +622,8 @@ public class FieldGen {
                 + params.getBitsPerLimb() + ";");
         result.appendLine("private static final int NUM_LIMBS = "
                 + params.getNumLimbs() + ";");
+        result.appendLine("private static final int MAX_ADDS = "
+                + params.getMaxAdds() + ";");
         result.appendLine(
                 "public static final BigInteger MODULUS = evaluateModulus();");
         result.appendLine("private static final long CARRY_ADD = 1 << "
@@ -628,7 +639,7 @@ public class FieldGen {
         result.appendLine();
         result.appendLine("private " + params.getClassName() + "() {");
         result.appendLine();
-        result.appendLine("    super(BITS_PER_LIMB, NUM_LIMBS, MODULUS);");
+        result.appendLine("    super(BITS_PER_LIMB, NUM_LIMBS, MAX_ADDS, MODULUS);");
         result.appendLine();
         result.appendLine("}");
 

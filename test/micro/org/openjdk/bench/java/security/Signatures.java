@@ -22,11 +22,11 @@
  */
 package org.openjdk.bench.java.security;
 
-
 import org.openjdk.jmh.annotations.*;
 
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -41,26 +41,51 @@ public class Signatures {
 
     @Param({"64", "512", "2048", "16384"})
     private int messageLength;
+
+    @Param({"secp256r1", "secp384r1", "secp521r1", "Ed25519", "Ed448"})
+    private String curveName;
+
     private byte[] message;
+
+    record CurveSpec(String curveName, String signName) {
+        // blank
+    }
 
     @Setup
     public void setup() throws Exception {
         message = new byte[messageLength];
         (new Random(System.nanoTime())).nextBytes(message);
 
+        String signName = switch (curveName) {
+            case "secp256r1" -> "Sha256WithECDSA";
+            case "secp384r1" -> "Sha384WithECDSA";
+            case "secp521r1" -> "Sha512WithECDSA";
+            case "Ed25519" -> "Ed25519";
+            case "Ed448" -> "Ed448";
+            default -> throw new RuntimeException();
+        };
 
-        AlgorithmParameters params =
-                AlgorithmParameters.getInstance("EC", "SunEC");
-        params.init(new ECGenParameterSpec("secp256r1"));
-        ECGenParameterSpec ecParams =
-                params.getParameterSpec(ECGenParameterSpec.class);
+        KeyPair kp;
+        if (curveName.startsWith("secp")) {
+            AlgorithmParameters params =
+                    AlgorithmParameters.getInstance("EC", "SunEC");
+            params.init(new ECGenParameterSpec(curveName));
+            ECGenParameterSpec ecParams =
+                    params.getParameterSpec(ECGenParameterSpec.class);
 
-        KeyPairGenerator kpg =
-                KeyPairGenerator.getInstance("EC", "SunEC");
-        kpg.initialize(ecParams);
-        KeyPair kp = kpg.generateKeyPair();
+            KeyPairGenerator kpg =
+                    KeyPairGenerator.getInstance("EC", "SunEC");
+            kpg.initialize(ecParams);
+            kp = kpg.generateKeyPair();
+        } else {
+            KeyPairGenerator kpg =
+                    KeyPairGenerator.getInstance(curveName, "SunEC");
+            NamedParameterSpec spec = new NamedParameterSpec(curveName);
+            kpg.initialize(spec);
+            kp = kpg.generateKeyPair();
+        }
 
-        signer = Signature.getInstance("Sha256WithECDSA", "SunEC");
+        signer = Signature.getInstance(signName, "SunEC");
         signer.initSign(kp.getPrivate());
     }
 
