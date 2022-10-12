@@ -522,13 +522,7 @@ public class BasicLong extends Basic {
 
 
 
-
         long minByte = Byte.MIN_VALUE;   // -128
-
-
-
-
-
 
 
 

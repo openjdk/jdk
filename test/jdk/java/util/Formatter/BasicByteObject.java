@@ -528,13 +528,7 @@ public class BasicByteObject extends Basic {
 
 
 
-
-
-
         Byte minByte = Byte.MIN_VALUE;
-
-
-
 
 
 

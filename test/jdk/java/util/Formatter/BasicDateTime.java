@@ -1671,12 +1671,6 @@ public class BasicDateTime extends Basic {
 
 
 
-
-
-
-
-
-
         //---------------------------------------------------------------------
         // %t
         //
@@ -1713,7 +1707,6 @@ public class BasicDateTime extends Basic {
         list.remove("America/WhiteHorse");
         list.remove("Canada/Yukon");
         ids = list.toArray(new String[list.size()]);
-
         // Create a Pacific Standard Time time zone
         SimpleTimeZone tz = new SimpleTimeZone(-8 * 60 * 60 * 1000, ids[0]);
         // public GregorianCalendar(TimeZone zone, Locale aLocale);

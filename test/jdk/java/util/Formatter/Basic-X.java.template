@@ -521,27 +521,21 @@ public class Basic$Type$ extends Basic {
         tryCatch("%#g", FormatFlagsConversionMismatchException.class);
 
 #if[dec]
-
 #if[prim]
         $type$ minByte = Byte.MIN_VALUE;   // -128
 #else[prim]
-
 #if[Short]
         $type$ minByte = (short) Byte.MIN_VALUE;
 #end[Short]
-
 #if[Byte]
         $type$ minByte = Byte.MIN_VALUE;
 #end[Byte]
-
 #if[Integer]
         $type$ minByte = (int) Byte.MIN_VALUE;
 #end[Integer]
-
 #if[Long]
         $type$ minByte = (long) Byte.MIN_VALUE;
 #end[Long]
-
 #end[prim]
 
         //---------------------------------------------------------------------

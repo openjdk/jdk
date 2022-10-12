@@ -522,13 +522,7 @@ public class BasicByte extends Basic {
 
 
 
-
         byte minByte = Byte.MIN_VALUE;   // -128
-
-
-
-
-
 
 
 

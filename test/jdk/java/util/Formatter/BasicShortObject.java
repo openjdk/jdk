@@ -525,13 +525,7 @@ public class BasicShortObject extends Basic {
 
 
 
-
-
         Short minByte = (short) Byte.MIN_VALUE;
-
-
-
-
 
 
 
