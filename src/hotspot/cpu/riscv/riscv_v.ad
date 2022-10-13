@@ -63,9 +63,6 @@ source %{
       case Op_ExtractS:
       case Op_ExtractUB:
       // Vector API specific
-      case Op_AndReductionV:
-      case Op_OrReductionV:
-      case Op_XorReductionV:
       case Op_LoadVectorGather:
       case Op_StoreVectorScatter:
       case Op_VectorBlend:
@@ -781,6 +778,120 @@ instruct vnegD(vReg dst, vReg src) %{
   ins_encode %{
     __ vsetvli(t0, x0, Assembler::e64);
     __ vfneg_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector and reduction
+
+instruct reduce_andI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (AndReductionV src1 src2));
+  effect(TEMP tmp);
+  ins_cost(VEC_COST);
+  format %{ "vmv.s.x $tmp, $src1\t#@reduce_andI\n\t"
+            "vredand.vs $tmp, $src2, $tmp\n\t"
+            "vmv.x.s  $dst, $tmp" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e32);
+    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
+    __ vredand_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
+                  as_VectorRegister($tmp$$reg));
+    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  match(Set dst (AndReductionV src1 src2));
+  effect(TEMP tmp);
+  ins_cost(VEC_COST);
+  format %{ "vmv.s.x $tmp, $src1\t#@reduce_andL\n\t"
+            "vredand.vs $tmp, $src2, $tmp\n\t"
+            "vmv.x.s  $dst, $tmp" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e64);
+    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
+    __ vredand_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
+                  as_VectorRegister($tmp$$reg));
+    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector or reduction
+
+instruct reduce_orI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (OrReductionV src1 src2));
+  effect(TEMP tmp);
+  ins_cost(VEC_COST);
+  format %{ "vmv.s.x $tmp, $src1\t#@reduce_orI\n\t"
+            "vredor.vs $tmp, $src2, $tmp\n\t"
+            "vmv.x.s  $dst, $tmp" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e32);
+    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
+    __ vredor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
+                  as_VectorRegister($tmp$$reg));
+    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  match(Set dst (OrReductionV src1 src2));
+  effect(TEMP tmp);
+  ins_cost(VEC_COST);
+  format %{ "vmv.s.x $tmp, $src1\t#@reduce_orL\n\t"
+            "vredor.vs $tmp, $src2, $tmp\n\t"
+            "vmv.x.s  $dst, $tmp" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e64);
+    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
+    __ vredor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
+                  as_VectorRegister($tmp$$reg));
+    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector xor reduction
+
+instruct reduce_xorI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (XorReductionV src1 src2));
+  effect(TEMP tmp);
+  ins_cost(VEC_COST);
+  format %{ "vmv.s.x $tmp, $src1\t#@reduce_xorI\n\t"
+            "vredxor.vs $tmp, $src2, $tmp\n\t"
+            "vmv.x.s  $dst, $tmp" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e32);
+    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
+    __ vredxor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
+                  as_VectorRegister($tmp$$reg));
+    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_xorL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  match(Set dst (XorReductionV src1 src2));
+  effect(TEMP tmp);
+  ins_cost(VEC_COST);
+  format %{ "vmv.s.x $tmp, $src1\t#@reduce_xorL\n\t"
+            "vredxor.vs $tmp, $src2, $tmp\n\t"
+            "vmv.x.s  $dst, $tmp" %}
+  ins_encode %{
+    __ vsetvli(t0, x0, Assembler::e64);
+    __ vmv_s_x(as_VectorRegister($tmp$$reg), $src1$$Register);
+    __ vredxor_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
+                  as_VectorRegister($tmp$$reg));
+    __ vmv_x_s($dst$$Register, as_VectorRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
