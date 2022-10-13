@@ -91,7 +91,7 @@ public class PerfDataFile {
             return(platSupport.getLocalVmId(file));
         } catch (NumberFormatException e) { }
 
-        throw new IllegalArgumentException("file name does not match pattern");
+        throw new IllegalArgumentException("Cannot convert '" + file + "' to VM id");
     }
 
     /**
