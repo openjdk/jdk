@@ -3503,6 +3503,48 @@ instruct vmaskcast_same_esize_neon(vReg dst_src) %{
   ins_pipe(pipe_class_empty);
 %}
 
+instruct vmaskcast_extend_neon(vReg dst, vReg src) %{
+  predicate(UseSVE == 0 &&
+            Matcher::vector_length_in_bytes(n) > Matcher::vector_length_in_bytes(n->in(1)));
+  match(Set dst (VectorMaskCast src));
+  format %{ "vmaskcast_extend_neon $dst, $src" %}
+  ins_encode %{
+    BasicType dst_bt = Matcher::vector_element_basic_type(this);
+    if (is_floating_point_type(dst_bt)) {
+      dst_bt = (dst_bt == T_FLOAT) ? T_INT : T_LONG;
+    }
+    uint length_in_bytes_dst = Matcher::vector_length_in_bytes(this);
+    BasicType src_bt = Matcher::vector_element_basic_type(this, $src);
+    if (is_floating_point_type(src_bt)) {
+      src_bt = (src_bt == T_FLOAT) ? T_INT : T_LONG;
+    }
+    __ neon_vector_extend($dst$$FloatRegister, dst_bt, length_in_bytes_dst,
+                          $src$$FloatRegister, src_bt);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmaskcast_narrow_neon(vReg dst, vReg src) %{
+  predicate(UseSVE == 0 &&
+            Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
+  match(Set dst (VectorMaskCast src));
+  format %{ "vmaskcast_narrow_neon $dst, $src" %}
+  ins_encode %{
+    BasicType dst_bt = Matcher::vector_element_basic_type(this);
+    if (is_floating_point_type(dst_bt)) {
+      dst_bt = (dst_bt == T_FLOAT) ? T_INT : T_LONG;
+    }
+    BasicType src_bt = Matcher::vector_element_basic_type(this, $src);
+    if (is_floating_point_type(src_bt)) {
+      src_bt = (src_bt == T_FLOAT) ? T_INT : T_LONG;
+    }
+    uint length_in_bytes_src = Matcher::vector_length_in_bytes(this, $src);
+    __ neon_vector_narrow($dst$$FloatRegister, dst_bt,
+                          $src$$FloatRegister, src_bt, length_in_bytes_src);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmaskcast_same_esize_sve(pReg dst_src) %{
   predicate(UseSVE > 0 &&
             Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
@@ -3513,11 +3555,11 @@ instruct vmaskcast_same_esize_sve(pReg dst_src) %{
   ins_pipe(pipe_class_empty);
 %}
 
-instruct vmaskcast_extend(pReg dst, pReg src) %{
+instruct vmaskcast_extend_sve(pReg dst, pReg src) %{
   predicate(UseSVE > 0 &&
             Matcher::vector_length_in_bytes(n) > Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
-  format %{ "vmaskcast_extend $dst, $src" %}
+  format %{ "vmaskcast_extend_sve $dst, $src" %}
   ins_encode %{
     uint length_in_bytes_dst = Matcher::vector_length_in_bytes(this);
     uint length_in_bytes_src = Matcher::vector_length_in_bytes(this, $src);
@@ -3530,11 +3572,11 @@ instruct vmaskcast_extend(pReg dst, pReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmaskcast_narrow(pReg dst, pReg src) %{
+instruct vmaskcast_narrow_sve(pReg dst, pReg src) %{
   predicate(UseSVE > 0 &&
             Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
-  format %{ "vmaskcast_narrow $dst, $src" %}
+  format %{ "vmaskcast_narrow_sve $dst, $src" %}
   ins_encode %{
     uint length_in_bytes_dst = Matcher::vector_length_in_bytes(this);
     uint length_in_bytes_src = Matcher::vector_length_in_bytes(this, $src);
