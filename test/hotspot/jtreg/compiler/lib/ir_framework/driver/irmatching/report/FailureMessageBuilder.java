@@ -162,7 +162,9 @@ public class FailureMessageBuilder implements MatchResultVisitor {
 
     @Override
     public void visitCountsConstraint(CountsConstraintFailure matchResult) {
+        indentation.add();
         msg.append(new CountsConstraintFailureMessageBuilder(matchResult, indentation).build());
+        indentation.sub();
     }
 
     public String build() {
