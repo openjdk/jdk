@@ -1197,7 +1197,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   // open the shared memory file for the give vmid
   char* filename = get_sharedmem_filename(dirname, vmid, nspid);
 
-  // Handle the exception explicitly so we can free the strings.
+  // We don't use CHECK as we need to free the strings even if an exception occurred.
   int fd = open_sharedmem_file(filename, file_flags, THREAD);
 
   // free the c heap resources that are no longer needed
@@ -1205,8 +1205,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   FREE_C_HEAP_ARRAY(char, dirname);
   FREE_C_HEAP_ARRAY(char, filename);
 
-  if (HAS_PENDING_EXCEPTION) {
-    assert(fd == OS_ERR, " must be");
+  if (fd == OS_ERR || HAS_PENDING_EXCEPTION) {
     return;
   }
 
