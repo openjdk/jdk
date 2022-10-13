@@ -811,7 +811,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
                                       p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSDirtyCards) +
                                       total_log_buffer_cards;
 
-    if (total_cards_merged > G1NumCardsCostSampleThreshold) {
+    if (total_cards_merged >= G1NumCardsCostSampleThreshold) {
       double avg_time_merge_cards = average_time_ms(G1GCPhaseTimes::MergeER) +
                                     average_time_ms(G1GCPhaseTimes::MergeRS) +
                                     average_time_ms(G1GCPhaseTimes::MergeHCC) +
@@ -824,7 +824,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     size_t const total_cards_scanned = p->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRScannedCards) +
                                        p->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRScannedCards);
 
-    if (total_cards_scanned > G1NumCardsCostSampleThreshold) {
+    if (total_cards_scanned >= G1NumCardsCostSampleThreshold) {
       double avg_time_dirty_card_scan = average_time_ms(G1GCPhaseTimes::ScanHR) +
                                         average_time_ms(G1GCPhaseTimes::OptScanHR);
 
