@@ -117,9 +117,9 @@ public final class Security {
         }
         initialSecurityProperties = (Properties) props.clone();
         if (sdebug != null) {
-            for (Map.Entry<Object, Object> entry : props.entrySet()) {
-                sdebug.println("Initial security property: " + entry.getKey() + "=" +
-                    entry.getValue());
+            for (String key : props.stringPropertyNames()) {
+                sdebug.println("Initial security property: " + key + "=" +
+                    props.getProperty(key));
             }
         }
 
