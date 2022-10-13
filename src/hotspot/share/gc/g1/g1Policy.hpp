@@ -137,10 +137,10 @@ public:
     _rs_length = rs_length;
   }
 
-  double predict_base_elapsed_time_ms(size_t num_pending_cards) const;
+  double predict_base_time_ms(size_t pending_cards) const;
 
 private:
-  double predict_base_elapsed_time_ms(size_t num_pending_cards, size_t rs_length) const;
+  double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
   double predict_region_copy_time_ms(HeapRegion* hr) const;
 
@@ -219,7 +219,7 @@ private:
   // Calculates the desired eden length before mixed gc so that after adding the
   // minimum amount of old gen regions from the collection set, the eden fits into
   // the pause time goal.
-  uint calculate_desired_eden_length_before_mixed(double survivor_base_time_ms,
+  uint calculate_desired_eden_length_before_mixed(double base_time_ms,
                                                   uint min_eden_length,
                                                   uint max_eden_length) const;
 

@@ -11,8 +11,8 @@
    This product includes software developed by
    The Apache Software Foundation (http://www.apache.org/).
 
-   Specifically, we only include the XSLTC portion of the source from the Xalan distribution. 
-   The Xalan project has two processors: an interpretive one (Xalan Interpretive) and a 
+   Specifically, we only include the XSLTC portion of the source from the Xalan distribution.
+   The Xalan project has two processors: an interpretive one (Xalan Interpretive) and a
    compiled one (The XSLT Compiler (XSLTC)). We *only* use the XSLTC part of Xalan; We use
    the source from the packages that are part of the XSLTC sources.
 
@@ -234,22 +234,22 @@ limitations under the License.
 
 JLEX COPYRIGHT NOTICE, LICENSE AND DISCLAIMER.
 Copyright 1996-2003 by Elliot Joel Berk and C. Scott Ananian
-Permission to use, copy, modify, and distribute this software and 
-its documentation for any purpose and without fee is hereby granted, 
-provided that the above copyright notice appear in all copies and that 
-both the copyright notice and this permission notice and warranty 
-disclaimer appear in supporting documentation, and that the name of 
-the authors or their employers not be used in advertising or publicity 
-pertaining to distribution of the software without specific, written 
+Permission to use, copy, modify, and distribute this software and
+its documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both the copyright notice and this permission notice and warranty
+disclaimer appear in supporting documentation, and that the name of
+the authors or their employers not be used in advertising or publicity
+pertaining to distribution of the software without specific, written
 prior permission.
-The authors and their employers disclaim all warranties with regard to 
-this software, including all implied warranties of merchantability and 
-fitness. In no event shall the authors or their employers be liable for 
-any special, indirect or consequential damages or any damages whatsoever 
-resulting from loss of use, data or profits, whether in an action of 
-contract, negligence or other tortious action, arising out of or in 
-connection with the use or performance of this software.The portions of 
-JLex output which are hard-coded into the JLex source code are (naturally) 
+The authors and their employers disclaim all warranties with regard to
+this software, including all implied warranties of merchantability and
+fitness. In no event shall the authors or their employers be liable for
+any special, indirect or consequential damages or any damages whatsoever
+resulting from loss of use, data or profits, whether in an action of
+contract, negligence or other tortious action, arising out of or in
+connection with the use or performance of this software.The portions of
+JLex output which are hard-coded into the JLex source code are (naturally)
 covered by this same license.
 
 </pre>

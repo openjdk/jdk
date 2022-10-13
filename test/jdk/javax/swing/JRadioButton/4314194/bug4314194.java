@@ -72,6 +72,7 @@ public class bug4314194 {
             totalPixels++;
         }
 
+        System.out.println("correctColoredPixels " + correctColoredPixels + " totalPixels " + totalPixels);
         return ((double)correctColoredPixels/totalPixels*100) >= tolerance;
     }
 
@@ -90,8 +91,8 @@ public class bug4314194 {
         UIManager.getDefaults().put("CheckBox.disabledText", checkboxColor);
         UIManager.getDefaults().put("RadioButton.disabledText", radioButtonColor);
 
-        checkBox = new JCheckBox("WWWWW");
-        radioButton = new JRadioButton("WWWWW");
+        checkBox = new JCheckBox("\u2588".repeat(5));
+        radioButton = new JRadioButton("\u2588".repeat(5));
         checkBox.setFont(checkBox.getFont().deriveFont(50.0f));
         radioButton.setFont(radioButton.getFont().deriveFont(50.0f));
         checkBox.setEnabled(false);
