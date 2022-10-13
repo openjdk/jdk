@@ -75,10 +75,6 @@ static zpointer reference_referent(zaddress reference) {
   return ZBarrier::load_atomic(reference_referent_addr(reference));
 }
 
-static zpointer* reference_discovered_addr(zaddress reference) {
-  return (zpointer*)java_lang_ref_Reference::discovered_addr_raw(to_oop(reference));
-}
-
 static zaddress reference_discovered(zaddress reference) {
   return to_zaddress(java_lang_ref_Reference::discovered(to_oop(reference)));
 }
@@ -101,15 +97,28 @@ static void soft_reference_update_clock() {
   java_lang_ref_SoftReference::set_clock(now);
 }
 
+static void list_append(zaddress& head, zaddress& tail, zaddress reference) {
+  if (is_null(head)) {
+    // First append - set up the head
+    head = reference;
+  } else {
+    // Not first append, link tail
+    reference_set_discovered(tail, reference);
+  }
+
+  // Always set tail
+  tail = reference;
+}
+
 ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers) :
     _workers(workers),
     _soft_reference_policy(NULL),
     _encountered_count(),
     _discovered_count(),
     _enqueued_count(),
-    _discovered_list(zpointer::null),
-    _pending_list(zpointer::null),
-    _pending_list_tail(_pending_list.addr()) {}
+    _discovered_list(zaddress::null),
+    _pending_list(zaddress::null),
+    _pending_list_tail(zaddress::null) {}
 
 void ZReferenceProcessor::set_soft_reference_policy(bool clear) {
   static AlwaysClearPolicy always_clear_policy;
@@ -237,9 +246,9 @@ void ZReferenceProcessor::discover(zaddress reference, ReferenceType type) {
   // Add reference to discovered list
   assert(ZHeap::heap()->is_old(reference), "Must be old");
   assert(is_null(reference_discovered(reference)), "Already discovered");
-  zpointer* const list = _discovered_list.addr();
-  reference_set_discovered(reference, ZBarrier::load_barrier_on_oop_field(list));
-  *list = ZAddress::store_good(reference);
+  zaddress* const list = _discovered_list.addr();
+  reference_set_discovered(reference, *list);
+  *list = reference;
 }
 
 bool ZReferenceProcessor::discover_reference(oop reference_obj, ReferenceType type) {
@@ -266,79 +275,46 @@ bool ZReferenceProcessor::discover_reference(oop reference_obj, ReferenceType ty
   return true;
 }
 
-zpointer ZReferenceProcessor::drop(zaddress reference, ReferenceType type) {
-  log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", untype(reference), reference_type_name(type));
+void ZReferenceProcessor::process_worker_discovered_list(zaddress discovered_list) {
+  zaddress keep_head = zaddress::null;
+  zaddress keep_tail = zaddress::null;
 
-  // Unlink and return next in list
-  const zaddress next = reference_discovered(reference);
-  reference_set_discovered(reference, zaddress::null);
-  assert(*reference_discovered_addr(reference) != zpointer::null, "No raw nulls");
-  return ZAddress::store_good(next);
-}
-
-zpointer* ZReferenceProcessor::keep(zaddress reference, ReferenceType type) {
-  log_trace(gc, ref)("Enqueued Reference: " PTR_FORMAT " (%s)", untype(reference), reference_type_name(type));
-
-  // Update statistics
-  _enqueued_count.get()[type]++;
-
-  // Return next in list
-  return reference_discovered_addr(reference);
-}
-
-void ZReferenceProcessor::process_worker_discovered_list(zpointer discovered_list) {
-  zpointer* const start = &discovered_list;
-
-  // The list is chained through the discovered field,
-  // but the first entry is not in the heap.
-  auto store_in_list = [&](zpointer* p, zpointer ptr) {
-    if (p != start) {
-      ZBarrier::store_barrier_on_heap_oop_field(p, false /* heal */);
-    }
-    *p = ptr;
-  };
-
-  zpointer* p = start;
-
-  for (;;) {
-    const zaddress reference = ZBarrier::load_barrier_on_oop_field(p);
-
-    if (is_null(reference)) {
-      // End of list
-      break;
-    }
-
+  // Iterate over the discovered list and unlink them as we go, potentially
+  // appending them to the keep list
+  for (zaddress reference = discovered_list; !is_null(reference); ) {
     const ReferenceType type = reference_type(reference);
+    const zaddress next = reference_discovered(reference);
+    reference_set_discovered(reference, zaddress::null);
 
     if (try_make_inactive(reference, type)) {
-      p = keep(reference, type);
+      // Keep reference
+      log_trace(gc, ref)("Enqueued Reference: " PTR_FORMAT " (%s)", untype(reference), reference_type_name(type));
+
+      // Update statistics
+      _enqueued_count.get()[type]++;
+
+      list_append(keep_head, keep_tail, reference);
     } else {
-      store_in_list(p, drop(reference, type));
-      assert(*p != zpointer::null, "No NULL");
+      // Drop reference
+      log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", untype(reference), reference_type_name(type));
     }
 
+    reference = next;
     SuspendibleThreadSet::yield();
   }
 
-  zpointer* end = p;
-
   // Prepend discovered references to internal pending list
 
-  // Anything keept on the list?
-  if (!is_null_any(*start)) {
-    zpointer old_pending_list = Atomic::xchg(_pending_list.addr(), *start);
-
-    // Old list could be empty and contain a raw null, don't store raw nulls.
-    if (old_pending_list == zpointer::null) {
-      old_pending_list = ZAddress::store_good(zaddress::null);
-    }
+  // Anything kept on the list?
+  if (!is_null(keep_head)) {
+    zaddress old_pending_list = Atomic::xchg(_pending_list.addr(), keep_head);
 
     // Concatenate the old list
-    store_in_list(end,  old_pending_list);
+    reference_set_discovered(keep_tail, old_pending_list);
 
-    if (is_null_any(old_pending_list)) {
+    if (is_null(old_pending_list)) {
       // Old list was empty. First to prepend to list, record tail
-      _pending_list_tail = end;
+      _pending_list_tail = keep_tail;
     }
   }
 }
@@ -346,11 +322,11 @@ void ZReferenceProcessor::process_worker_discovered_list(zpointer discovered_lis
 void ZReferenceProcessor::work() {
   SuspendibleThreadSetJoiner sts;
 
-  ZPerWorkerIterator<zpointer> iter(&_discovered_list);
-  for (zpointer* start; iter.next(&start);) {
-    zpointer discovered_list = Atomic::xchg(start, zpointer::null);
+  ZPerWorkerIterator<zaddress> iter(&_discovered_list);
+  for (zaddress* start; iter.next(&start);) {
+    zaddress discovered_list = Atomic::xchg(start, zaddress::null);
 
-    if (discovered_list != zpointer::null) {
+    if (discovered_list != zaddress::null) {
       // Process discovered references
       process_worker_discovered_list(discovered_list);
     }
@@ -359,8 +335,8 @@ void ZReferenceProcessor::work() {
 
 void ZReferenceProcessor::verify_empty() const {
 #ifdef ASSERT
-  ZPerWorkerConstIterator<zpointer> iter(&_discovered_list);
-  for (const zpointer* list; iter.next(&list);) {
+  ZPerWorkerConstIterator<zaddress> iter(&_discovered_list);
+  for (const zaddress* list; iter.next(&list);) {
     assert(is_null(*list), "Discovered list not empty");
   }
 
@@ -471,9 +447,9 @@ void ZReferenceProcessor::verify_pending_references() {
 #ifdef ASSERT
   SuspendibleThreadSetJoiner sts;
 
-  assert(!is_null_any(_pending_list.get()), "Should not contain colored null");
+  assert(!is_null(_pending_list.get()), "Should not contain colored null");
 
-  for (zaddress current = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, _pending_list.get());
+  for (zaddress current = _pending_list.get();
        !is_null(current);
        current = reference_discovered(current))
   {
@@ -490,10 +466,10 @@ void ZReferenceProcessor::verify_pending_references() {
 #endif
 }
 
-zpointer ZReferenceProcessor::swap_pending_list(zpointer pending_list) {
-  oop pending_list_oop = to_oop(ZBarrier::load_barrier_on_oop_field_preloaded(NULL, pending_list));
+zaddress ZReferenceProcessor::swap_pending_list(zaddress pending_list) {
+  oop pending_list_oop = to_oop(pending_list);
   oop prev = Universe::swap_reference_pending_list(pending_list_oop);
-  return ZAddress::store_good(to_zaddress(prev));
+  return to_zaddress(prev);
 }
 
 void ZReferenceProcessor::enqueue_references() {
@@ -512,19 +488,16 @@ void ZReferenceProcessor::enqueue_references() {
     MonitorLocker ml(Heap_lock);
     SuspendibleThreadSetJoiner sts_joiner;
 
-    // Prepend internal pending list to external pending list
-    if (_pending_list_tail != _pending_list.addr()) {
-      // The tail could be a discovered field in the heap; apply store barriers
-      ZBarrier::store_barrier_on_heap_oop_field(_pending_list_tail, false /* heal */);
-    }
+    zaddress prev_list = swap_pending_list(_pending_list.get());
 
-    *_pending_list_tail = swap_pending_list(_pending_list.get());
+    // Link together new and old list
+    reference_set_discovered(_pending_list_tail, prev_list);
 
     // Notify ReferenceHandler thread
     ml.notify_all();
   }
 
   // Reset internal pending list
-  _pending_list.set(zpointer::null);
-  _pending_list_tail = _pending_list.addr();
+  _pending_list.set(zaddress::null);
+  _pending_list_tail = zaddress::null;
 }

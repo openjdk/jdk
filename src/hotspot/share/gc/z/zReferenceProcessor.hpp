@@ -43,9 +43,9 @@ private:
   ZPerWorker<Counters> _encountered_count;
   ZPerWorker<Counters> _discovered_count;
   ZPerWorker<Counters> _enqueued_count;
-  ZPerWorker<zpointer> _discovered_list;
-  ZContended<zpointer> _pending_list;
-  zpointer*            _pending_list_tail;
+  ZPerWorker<zaddress> _discovered_list;
+  ZContended<zaddress> _pending_list;
+  zaddress             _pending_list_tail;
 
   bool is_inactive(zaddress reference, oop referent, ReferenceType type) const;
   bool is_strongly_live(oop referent) const;
@@ -56,16 +56,13 @@ private:
 
   void discover(zaddress reference, ReferenceType type);
 
-  zpointer drop(zaddress reference, ReferenceType type);
-  zpointer* keep(zaddress reference, ReferenceType type);
-
   void verify_empty() const;
 
-  void process_worker_discovered_list(zpointer discovered_list);
+  void process_worker_discovered_list(zaddress discovered_list);
   void work();
   void collect_statistics();
 
-  zpointer swap_pending_list(zpointer pending_list);
+  zaddress swap_pending_list(zaddress pending_list);
 
 public:
   ZReferenceProcessor(ZWorkers* workers);
