@@ -1036,6 +1036,9 @@ public class Compatibility {
         long start = System.currentTimeMillis();
         try {
             String[] cmd;
+
+            cmd = new String[args.length + 3];
+            System.arraycopy(args, 0, cmd, 3, args.length);
             cmd[0] = toolPath;
             cmd[1] = "-J-Duser.language=en";
             cmd[2] = "-J-Duser.country=US";
