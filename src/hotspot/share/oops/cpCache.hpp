@@ -34,6 +34,9 @@
 #include "utilities/constantTag.hpp"
 #include "utilities/growableArray.hpp"
 
+// New stuff
+#include "oops/ResolvedInvokeDynamicInfo.hpp"
+
 // The ConstantPoolCache is not a cache! It is the resolution table that the
 // interpreter uses to avoid going into the runtime and a way to access resolved
 // values.
@@ -402,6 +405,7 @@ class ConstantPoolCache: public MetaspaceObj {
   // must add this field to ConstantPoolCache::metaspace_pointers_do().
   int             _length;
 
+  Array<ResolvedInvokeDynamicInfo>* _resolved_invokedynamic_info_array;
   // The narrowOop pointer to the archived resolved_references. Set at CDS dump
   // time when caching java heap object is supported.
   CDS_JAVA_HEAP_ONLY(int _archived_references_index;) // Gap on LP64
@@ -437,7 +441,9 @@ class ConstantPoolCache: public MetaspaceObj {
   static ConstantPoolCache* allocate(ClassLoaderData* loader_data,
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_cp_cache_map,
-                                     const intStack& invokedynamic_references_map, TRAPS);
+                                     const intStack& invokedynamic_references_map, 
+                                     const GrowableArray<Rewriter::InvokeDynamicInfo>& invokedynamic_info,
+                                     TRAPS);
 
   int length() const                      { return _length; }
   void metaspace_pointers_do(MetaspaceClosure* it);
