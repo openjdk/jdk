@@ -954,7 +954,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                        frame_complete,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
-                                       in_ByteSize(-1),
                                        (OopMapSet*)NULL);
   }
   address native_func = method->native_function();
@@ -1010,7 +1009,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   int klass_slot_offset = 0;
   int klass_offset = -1;
-  int lock_slot_offset = 0;
   bool is_static = false;
 
   if (method->is_static()) {
@@ -1023,7 +1021,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Plus a lock if needed
 
   if (method->is_synchronized()) {
-    lock_slot_offset = stack_slots;
     stack_slots += VMRegImpl::slots_per_word;
   }
 
@@ -1040,8 +1037,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   //      |---------------------|
   //      | 2 slots for moves   |
   //      |---------------------|
-  //      | lock box (if sync)  |
-  //      |---------------------| <- lock_slot_offset
   //      | klass (if static)   |
   //      |---------------------| <- klass_slot_offset
   //      | oopHandle area      |
@@ -1297,47 +1292,15 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (method->is_synchronized()) {
 
-    const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
-
     // Get the handle (the 2nd argument)
     __ mv(oop_handle_reg, c_rarg1);
-
-    // Get address of the box
-
-    __ la(lock_reg, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
 
     // Load the oop from the handle
     __ ld(obj_reg, Address(oop_handle_reg, 0));
 
     if (!UseHeavyMonitors) {
-      // Load (object->mark() | 1) into swap_reg % x10
-      __ ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ ori(swap_reg, t0, 1);
-
-      // Save (object->mark() | 1) into BasicLock's displaced header
-      __ sd(swap_reg, Address(lock_reg, mark_word_offset));
-
-      // src -> dest if dest == x10 else x10 <- dest
-      {
-        Label here;
-        __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, lock_done, /*fallthrough*/NULL);
-      }
-
-      // Test if the oopMark is an obvious stack pointer, i.e.,
-      //  1) (mark & 3) == 0, and
-      //  2) sp <= mark < mark + os::pagesize()
-      // These 3 tests can be done by evaluating the following
-      // expression: ((mark - sp) & (3 - os::vm_page_size())),
-      // assuming both stack pointer and pagesize have their
-      // least significant 2 bits clear.
-      // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
-
-      __ sub(swap_reg, swap_reg, sp);
-      __ andi(swap_reg, swap_reg, 3 - os::vm_page_size());
-
-      // Save the test result, for recursive case, the result is zero
-      __ sd(swap_reg, Address(lock_reg, mark_word_offset));
-      __ bnez(swap_reg, slow_path_lock);
+      __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ fast_lock(obj_reg, old_hdr, swap_reg, tmp, t0, slow_path_lock);
     } else {
       __ j(slow_path_lock);
     }
@@ -1429,28 +1392,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     Label done;
 
-    if (!UseHeavyMonitors) {
-      // Simple recursive lock?
-      __ ld(t0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-      __ beqz(t0, done);
-    }
-
-
     // Must save x10 if if it is live now because cmpxchg must use it
     if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
       save_native_result(masm, ret_type, stack_slots);
     }
 
     if (!UseHeavyMonitors) {
-      // get address of the stack lock
-      __ la(x10, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-      //  get old displaced header
-      __ ld(old_hdr, Address(x10, 0));
-
-      // Atomic swap old header if oop still contains the stack lock
-      Label succeed;
-      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, t0, succeed, &slow_path_unlock);
-      __ bind(succeed);
+      __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ fast_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
     } else {
       __ j(slow_path_unlock);
     }
@@ -1519,11 +1468,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     save_args(masm, total_c_args, c_arg, out_regs);
 
     __ mv(c_rarg0, obj_reg);
-    __ mv(c_rarg1, lock_reg);
-    __ mv(c_rarg2, xthread);
+    __ mv(c_rarg1, xthread);
 
     // Not a leaf but we have last_Java_frame setup as we want
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), 3);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), 2);
     restore_args(masm, total_c_args, c_arg, out_regs);
 
 #ifdef ASSERT
@@ -1545,8 +1493,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    __ mv(c_rarg2, xthread);
-    __ la(c_rarg1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+    __ mv(c_rarg1, xthread);
     __ mv(c_rarg0, obj_reg);
 
     // Save pending exception around call to VM (which contains an EXCEPTION_MARK)
@@ -1650,7 +1597,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                             frame_complete,
                                             stack_slots / VMRegImpl::slots_per_word,
                                             (is_static ? in_ByteSize(klass_offset) : in_ByteSize(receiver_offset)),
-                                            in_ByteSize(lock_slot_offset*VMRegImpl::stack_slot_size),
                                             oop_maps);
   assert(nm != NULL, "create native nmethod fail!");
   return nm;

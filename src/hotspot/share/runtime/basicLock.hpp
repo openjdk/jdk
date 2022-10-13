@@ -40,7 +40,7 @@ class BasicObjectLock {
   friend class VMStructs;
  private:
   oop       _obj;                                     // object holds the lock;
-#ifdef AARCH64
+#if defined(AARCH64) || defined(RISCV)
   // Stack needs to be 16-byte-aligned. Inserting a dummy field here is
   // the simplest way to achieve that.
   intptr_t _dummy;

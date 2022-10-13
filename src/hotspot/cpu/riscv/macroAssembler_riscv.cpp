@@ -2175,12 +2175,6 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
   }
 }
 
-void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                                        Label &succeed, Label *fail) {
-  assert(oopDesc::mark_offset_in_bytes() == 0, "assumption");
-  cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
-}
-
 void MacroAssembler::load_reserved(Register addr,
                                    enum operand_size size,
                                    Assembler::Aqrl acquire) {
@@ -4149,4 +4143,55 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
     la_patchable(tmp, RuntimeAddress(dest), offset);
     jalr(x1, tmp, offset);
   }
+}
+
+// Attempt to fast-lock an object. Fall-through on success, branch to slow label
+// on failure.
+// Registers:
+//  - obj: the object to be locked
+//  - hdr: the header, already loaded from obj, will be destroyed
+//  - t1, t2, t3: temporary registers, will be destroyed
+void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Register t3, Label& slow) {
+  // Check if we would have space on lock-stack for the object.
+  ld(t1, Address(xthread, Thread::lock_stack_current_offset()));
+  ld(t2, Address(xthread, Thread::lock_stack_limit_offset()));
+
+  // Cannot use bge(..., slow) here, because "slow" is too far away.
+  Label ok;
+  blt(t1, t2, ok);
+  j(slow);
+  bind(ok);
+
+  // Load (object->mark() | 1) into hdr
+  ori(hdr, hdr, markWord::unlocked_value);
+  // Clear lock-bits, into t2
+  xori(t2, hdr, markWord::unlocked_value);
+  // Try to swing header from unlocked to locked
+  Label success;
+  cmpxchgptr(hdr, t2, obj, t3, success, &slow);
+  bind(success);
+
+  // After successful lock, push object on lock-stack
+  sd(obj, Address(t1, 0));
+  add(t1, t1, oopSize);
+  sd(t1, Address(xthread, Thread::lock_stack_current_offset()));
+}
+
+void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+  // Load the expected old header (lock-bits cleared to indicate 'locked') into hdr
+  li(t1, ~markWord::lock_mask_in_place);
+  andr(hdr, hdr, t1);
+
+  // Load the new header (unlocked) into t1
+  ori(t1, hdr, markWord::unlocked_value);
+
+  // Try to swing header from locked to unlocked
+  Label success;
+  cmpxchgptr(hdr, t1, obj, t2, success, &slow);
+  bind(success);
+
+  // After successful unlock, pop object from lock-stack
+  ld(t1, Address(xthread, Thread::lock_stack_current_offset()));
+  sub(t1, t1, oopSize);
+  sd(t1, Address(xthread, Thread::lock_stack_current_offset()));
 }
