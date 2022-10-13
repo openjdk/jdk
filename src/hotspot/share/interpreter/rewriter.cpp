@@ -100,7 +100,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   ConstantPoolCache* cache =
       ConstantPoolCache::allocate(loader_data, _cp_cache_map,
                                   _invokedynamic_cp_cache_map,
-                                  _invokedynamic_references_map, CHECK);
+                                  _invokedynamic_references_map, _stuff_to_collect_during_rewriting, CHECK);
 
   // initialize object cache in constant pool
   _pool->set_cache(cache);
@@ -287,8 +287,8 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     _patch_invokedynamic_refs->push(resolved_index);
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
-    struct InvokeDynamicInfo s = {resolved_index, cp_index};
-    _stuff_to_collect_during_rewriting.push(s);
+    //struct InvokeDynamicInfo s = {resolved_index, cp_index};
+    _stuff_to_collect_during_rewriting.push(InvokeDynamicInfo(resolved_index, cp_index));
   } else {
     int cache_index = ConstantPool::decode_invokedynamic_index(
                         Bytes::get_native_u4(p));
@@ -616,8 +616,6 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
   // allocate constant pool cache, now that we've seen all the bytecodes
   make_constant_pool_cache(THREAD);
 
-  // Fill resolvedinvokedynamicinfo array
-  resolved_invokedynamic_info_array = new Array<ResolvedInvokeDynamicInfo>(_stuff_to_collect_during_rewriting.length());
   //printf("RESOLVED INVOKEDYNAMIC INFO SIZE: %d\n", _stuff_to_collect_during_rewriting.length());
 
   // Restore bytecodes to their unrewritten state if there are exceptions

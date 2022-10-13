@@ -676,13 +676,44 @@ void ConstantPoolCacheEntry::verify(outputStream* st) const {
 ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const intStack& index_map,
                                      const intStack& invokedynamic_index_map,
-                                     const intStack& invokedynamic_map, TRAPS) {
+                                     const intStack& invokedynamic_map, 
+                                     const GrowableArray<Rewriter::InvokeDynamicInfo>& invokedynamic_info,
+                                     TRAPS) {
+
 
   const int length = index_map.length() + invokedynamic_index_map.length();
   int size = ConstantPoolCache::size(length);
+  
+  // Fill resolvedinvokedynamicinfo array
+  Array<ResolvedInvokeDynamicInfo>* array = MetadataFactory::new_array<ResolvedInvokeDynamicInfo>(
+                       loader_data, invokedynamic_info.length,
+                       CHECK);
+    for (int i = 0; i < invokedynamic_info.length(); i++) {
+        _resolved_invokedynamic_info_array.at(i) = 
+              ResolvedInvokeDynamicInfo(invokedynamic_info._resolved_info_index, invokedynamic_info._cp_index);
+    }
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
-    ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map);
+    ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map, array);
+}
+
+// Constructor
+inline ConstantPoolCache::ConstantPoolCache(int length,
+                                            const intStack& inverse_index_map,
+                                            const intStack& invokedynamic_inverse_index_map,
+                                            const intStack& invokedynamic_references_map,
+                                            const Array<ResolvedInvokeDynamicInfo>* invokedynamic_info) :
+                                                  _length(length),
+                                                  _constant_pool(NULL),
+                                                  _gc_epoch(0), 
+                                                  _resolved_invokedynamic_info_array(invokedynamic_info) {
+  CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
+  initialize(inverse_index_map, invokedynamic_inverse_index_map,
+             invokedynamic_references_map);
+
+  for (int i = 0; i < length; i++) {
+    assert(entry_at(i)->is_f1_null(), "Failed to clear?");
+  }
 }
 
 void ConstantPoolCache::initialize(const intArray& inverse_index_map,

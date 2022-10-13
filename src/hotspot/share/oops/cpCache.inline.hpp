@@ -83,22 +83,6 @@ inline bool ConstantPoolCacheEntry::indy_resolution_failed() const {
   return (flags & (1 << indy_resolution_failed_shift)) != 0;
 }
 
-// Constructor
-inline ConstantPoolCache::ConstantPoolCache(int length,
-                                            const intStack& inverse_index_map,
-                                            const intStack& invokedynamic_inverse_index_map,
-                                            const intStack& invokedynamic_references_map) :
-                                                  _length(length),
-                                                  _constant_pool(NULL),
-                                                  _gc_epoch(0) {
-  CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
-  initialize(inverse_index_map, invokedynamic_inverse_index_map,
-             invokedynamic_references_map);
-  for (int i = 0; i < length; i++) {
-    assert(entry_at(i)->is_f1_null(), "Failed to clear?");
-  }
-}
-
 inline oop ConstantPoolCache::resolved_references() { return _resolved_references.resolve(); }
 
 #endif // SHARE_OOPS_CPCACHE_INLINE_HPP

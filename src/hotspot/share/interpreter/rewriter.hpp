@@ -28,9 +28,6 @@
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
 
-// New stuff
-#include "oops/ResolvedInvokeDynamicInfo.hpp"
-
 // The Rewriter adds caches to the constant pool and rewrites bytecode indices
 // pointing into the constant pool for better interpreter performance.
 
@@ -61,11 +58,14 @@ class Rewriter: public StackObj {
 
   // Collect data for invokedynamic calls
   struct InvokeDynamicInfo {
-  int resolved_info_index;
-  int cp_index;
+    int _resolved_info_index;
+    int _cp_index;
+
+    InvokeDynamicInfo(int resolved_info_index, int cp_index) : 
+          _resolved_info_index(resolved_info_index), 
+          _cp_index(cp_index) {}
   };
   GrowableArray<struct InvokeDynamicInfo> _stuff_to_collect_during_rewriting;
-  Array<ResolvedInvokeDynamicInfo> resolved_invokedynamic_info_array;
 
   void init_maps(int length) {
     _cp_map.trunc_to(0);
