@@ -668,7 +668,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
     return NULL;
   }
 
-  fileStream* file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
+  fileStream* file = new (mtInternal) fileStream(try_name);
   FREE_C_HEAP_ARRAY(char, try_name);
   if (file->is_open()) {
     return file;
@@ -686,7 +686,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
 
   jio_printf("Warning:  Forcing option -XX:LogFile=%s\n", try_name);
 
-  file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
+  file = new (mtInternal) fileStream(try_name);
   FREE_C_HEAP_ARRAY(char, try_name);
   if (file->is_open()) {
     return file;
@@ -703,7 +703,7 @@ void defaultStream::init_log() {
 
   if (file != NULL) {
     _log_file = file;
-    _outer_xmlStream = new(ResourceObj::C_HEAP, mtInternal) xmlStream(file);
+    _outer_xmlStream = new(mtInternal) xmlStream(file);
     start_log();
   } else {
     // and leave xtty as NULL
@@ -945,7 +945,7 @@ void ttyLocker::break_tty_lock_for_safepoint(intx holder) {
 
 void ostream_init() {
   if (defaultStream::instance == NULL) {
-    defaultStream::instance = new(ResourceObj::C_HEAP, mtInternal) defaultStream();
+    defaultStream::instance = new(mtInternal) defaultStream();
     tty = defaultStream::instance;
 
     // We want to ensure that time stamps in GC logs consider time 0
