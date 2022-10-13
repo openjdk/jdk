@@ -838,11 +838,11 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     // Due to duplicates in the log buffers, the number of scanned cards
     // can be smaller than the cards in the log buffers.
     const size_t scanned_cards_from_rs = (total_cards_scanned > merged_cards_from_log_buffers) ? total_cards_scanned - merged_cards_from_log_buffers : 0;
-    double merge_to_scan_ratio = 0.0;
+    double scan_to_merge_ratio = 0.0;
     if (merged_cards_from_rs > 0) {
-      merge_to_scan_ratio = (double)scanned_cards_from_rs / merged_cards_from_rs;
+      scan_to_merge_ratio = (double)scanned_cards_from_rs / merged_cards_from_rs;
     }
-    _analytics->report_card_merge_to_scan_ratio(merge_to_scan_ratio, is_young_only_pause);
+    _analytics->report_card_scan_to_merge_ratio(scan_to_merge_ratio, is_young_only_pause);
 
     const size_t recorded_rs_length = _collection_set->recorded_rs_length();
     const size_t rs_length_diff = _rs_length > recorded_rs_length ? _rs_length - recorded_rs_length : 0;
