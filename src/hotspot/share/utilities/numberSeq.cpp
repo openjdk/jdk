@@ -170,7 +170,7 @@ void TruncatedSeq::add(double val) {
   if (_num < _length)
     ++_num;
 
-  guarantee(variance() > -1.0, "variance should be >= 0 %f", variance());
+  guarantee( variance() > -1.0, "variance should be >= 0" );
 }
 
 // can't easily keep track of this incrementally...
