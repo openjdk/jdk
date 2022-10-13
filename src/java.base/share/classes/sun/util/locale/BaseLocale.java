@@ -35,7 +35,6 @@ package sun.util.locale;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.ref.SoftReference;
 import java.util.StringJoiner;
