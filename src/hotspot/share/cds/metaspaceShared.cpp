@@ -733,35 +733,39 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 
+void MetaspaceShared::get_default_classlist(char* default_classlist, const size_t buf_size) {
+  // Construct the path to the class list (in jre/lib)
+  // Walk up two directories from the location of the VM and
+  // optionally tack on "lib" (depending on platform)
+  os::jvm_path(default_classlist, (jint)(buf_size));
+  for (int i = 0; i < 3; i++) {
+    char *end = strrchr(default_classlist, *os::file_separator());
+    if (end != NULL) *end = '\0';
+  }
+  size_t classlist_path_len = strlen(default_classlist);
+  if (classlist_path_len >= 3) {
+    if (strcmp(default_classlist + classlist_path_len - 3, "lib") != 0) {
+      if (classlist_path_len < buf_size - 4) {
+        jio_snprintf(default_classlist + classlist_path_len,
+                     buf_size - classlist_path_len,
+                     "%slib", os::file_separator());
+        classlist_path_len += 4;
+      }
+    }
+  }
+  if (classlist_path_len < buf_size - 10) {
+    jio_snprintf(default_classlist + classlist_path_len,
+                 buf_size - classlist_path_len,
+                 "%sclasslist", os::file_separator());
+  }
+}
+
 void MetaspaceShared::preload_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
   const char* classlist_path;
 
+  get_default_classlist(default_classlist, sizeof(default_classlist));
   if (SharedClassListFile == NULL) {
-    // Construct the path to the class list (in jre/lib)
-    // Walk up two directories from the location of the VM and
-    // optionally tack on "lib" (depending on platform)
-    os::jvm_path(default_classlist, sizeof(default_classlist));
-    for (int i = 0; i < 3; i++) {
-      char *end = strrchr(default_classlist, *os::file_separator());
-      if (end != NULL) *end = '\0';
-    }
-    int classlist_path_len = (int)strlen(default_classlist);
-    if (classlist_path_len >= 3) {
-      if (strcmp(default_classlist + classlist_path_len - 3, "lib") != 0) {
-        if (classlist_path_len < JVM_MAXPATHLEN - 4) {
-          jio_snprintf(default_classlist + classlist_path_len,
-                       sizeof(default_classlist) - classlist_path_len,
-                       "%slib", os::file_separator());
-          classlist_path_len += 4;
-        }
-      }
-    }
-    if (classlist_path_len < JVM_MAXPATHLEN - 10) {
-      jio_snprintf(default_classlist + classlist_path_len,
-                   sizeof(default_classlist) - classlist_path_len,
-                   "%sclasslist", os::file_separator());
-    }
     classlist_path = default_classlist;
   } else {
     classlist_path = SharedClassListFile;
@@ -769,9 +773,19 @@ void MetaspaceShared::preload_classes(TRAPS) {
 
   log_info(cds)("Loading classes to share ...");
   _has_error_classes = false;
-  int class_count = parse_classlist(classlist_path, CHECK);
+  int class_count = ClassListParser::parse_classlist(classlist_path,
+                                                     ClassListParser::_parse_all, CHECK);
   if (ExtraSharedClassListFile) {
-    class_count += parse_classlist(ExtraSharedClassListFile, CHECK);
+    class_count += ClassListParser::parse_classlist(ExtraSharedClassListFile,
+                                                    ClassListParser::_parse_all, CHECK);
+  }
+  if (classlist_path != default_classlist) {
+    struct stat statbuf;
+    if (os::stat(default_classlist, &statbuf) == 0) {
+      // File exists, let's use it.
+      class_count += ClassListParser::parse_classlist(default_classlist,
+                                                      ClassListParser::_parse_lambda_forms_invokers_only, CHECK);
+    }
   }
 
   // Exercise the manifest processing code to ensure classes used by CDS at runtime
@@ -812,12 +826,6 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 
   VM_PopulateDumpSharedSpace op;
   VMThread::execute(&op);
-}
-
-
-int MetaspaceShared::parse_classlist(const char* classlist_path, TRAPS) {
-  ClassListParser parser(classlist_path);
-  return parser.parse(THREAD); // returns the number of classes loaded.
 }
 
 // Returns true if the class's status has changed.
