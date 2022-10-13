@@ -435,7 +435,7 @@ typedef unsigned int uint;   NEEDS_CLEANUP
 // All kinds of 'plain' byte addresses
 typedef   signed char s_char;
 typedef unsigned char u_char;
-typedef u_char*       address;
+typedef uint8_t*      address;
 typedef uintptr_t     address_word; // unsigned integer which will hold a pointer
                                     // except for some implementations of a C++
                                     // linkage pointer to function. Should never
