@@ -72,7 +72,8 @@ public class UserInfoTest {
     static class Http2TestHandler implements Http2Handler {
         @Override
         public void handle(Http2TestExchange e) throws IOException {
-            if (e.getRequestURI().getAuthority().contains("user@")) {
+            String authorityHeader = e.getRequestHeaders().firstValue(":authority").orElse(null);
+            if (authorityHeader == null || authorityHeader.contains("user@")) {
                 e.sendResponseHeaders(500, -1);
             } else {
                 e.sendResponseHeaders(200, -1);
