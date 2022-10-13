@@ -184,10 +184,17 @@
   static const bool supports_encode_ascii_array = true;
 
   // Returns pre-selection estimated size of a vector operation.
+  // Currently, it's a rudimentary heuristic based on emitted code size for complex
+  // IR nodes used by unroll policy. Idea is to constrain unrolling factor and prevent
+  // generating bloated loop bodies.
   static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
     switch(vopc) {
       default:
         return 0;
+      case Op_VectorCastF2X: // fall through
+      case Op_VectorCastD2X: {
+        return is_floating_point_type(ety) ? 0 : (is_subword_type(ety) ? 35 : 30);
+      }
       case Op_CountTrailingZerosV:
       case Op_CountLeadingZerosV:
         return VM_Version::supports_avx512cd() && (ety == T_INT || ety == T_LONG) ? 0 : 40;

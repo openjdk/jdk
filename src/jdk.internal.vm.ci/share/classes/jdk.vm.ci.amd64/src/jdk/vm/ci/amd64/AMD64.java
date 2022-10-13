@@ -226,6 +226,7 @@ public class AMD64 extends Architecture {
         FSRM,
         GFNI,
         AVX512_BITALG,
+        F16C,
         AVX512_IFMA,
     }
 

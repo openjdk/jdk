@@ -224,6 +224,12 @@ class methodHandle;
    do_name(     doubleToLongBits_name,                           "doubleToLongBits")                                    \
   do_intrinsic(_longBitsToDouble,         java_lang_Double,       longBitsToDouble_name,    long_double_signature, F_SN)\
    do_name(     longBitsToDouble_name,                           "longBitsToDouble")                                    \
+  do_intrinsic(_float16ToFloat,           java_lang_Float,        float16ToFloat_name,      f16_float_signature, F_S)   \
+   do_name(     float16ToFloat_name,                             "float16ToFloat")                                      \
+   do_signature(f16_float_signature,                             "(S)F")                                                \
+  do_intrinsic(_floatToFloat16,           java_lang_Float,        floatToFloat16_name,      float_f16_signature, F_S)   \
+   do_name(     floatToFloat16_name,                             "floatToFloat16")                                      \
+   do_signature(float_f16_signature,                             "(F)S")                                                \
                                                                                                                         \
   do_intrinsic(_compareUnsigned_i,        java_lang_Integer,      compareUnsigned_name,     int2_int_signature,  F_S)   \
   do_intrinsic(_compareUnsigned_l,        java_lang_Long,         compareUnsigned_name,     long2_int_signature, F_S)   \
