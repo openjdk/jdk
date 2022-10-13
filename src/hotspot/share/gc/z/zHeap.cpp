@@ -345,22 +345,28 @@ void ZHeap::print_extended_on(outputStream* st) const {
 }
 
 bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {
-  if (LocationPrinter::is_valid_obj((void*)addr)) {
-    // Intentionally unchecked cast
-    const zpointer obj = zpointer(addr);
-    const bool uncolored = is_valid(zaddress(addr));
-    const bool colored = is_valid(zpointer(addr));
+  // Intentionally unchecked cast
+  const zpointer obj = zpointer(addr);
+  const bool uncolored = is_valid(zaddress(addr));
+  const bool colored = is_valid(zpointer(addr));
 
-    const char* const desc =  uncolored
-        ? "an uncolored" : !colored
-        ? "an invalid"   : ZPointer::is_load_good(obj)
+  if (colored || uncolored) {
+    const char* const desc       = uncolored
+        ? "an uncolored"         : !colored
+        ? "an invalid"           : ZPointer::is_load_good(obj)
         ? "a good"
         : "a bad";
 
     st->print(PTR_FORMAT " is %s oop: ", addr, desc);
 
-    if (uncolored) {
-      to_oop(zaddress(addr))->print_on(st);
+    const zaddress to_print      = uncolored
+        ? zaddress(addr)         : !colored
+        ? zaddress::null         : ZPointer::is_load_good(obj)
+        ? ZPointer::uncolor(obj)
+        : zaddress::null;
+
+    if (LocationPrinter::is_valid_obj((void*)untype(to_print))) {
+      to_oop(to_print)->print_on(st);
     }
 
     return true;
