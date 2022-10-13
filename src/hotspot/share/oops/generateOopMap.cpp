@@ -1320,9 +1320,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     case Bytecodes::_invokeinterface: {
       int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
       ConstantPool* cp      = method()->constants();
-      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
-      int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
-      Symbol* signature     = cp->symbol_at(signatureIdx);
+      Symbol* signature = cp->signature_ref_at(idx);
       os->print("%s", signature->as_C_string());
     }
     default:
@@ -1936,14 +1934,9 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
   ConstantPool* cp     = method()->constants();
   Symbol* signature = NULL;
   if (UseNewConstantPool) {
-    int cp_index= cp->field_entries()->adr_at(idx - ConstantPool::CPCACHE_INDEX_TAG)->cp_index();
-    int nameAndTypeIdx = cp->uncached_name_and_type_ref_index_at(cp_index);
-    int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
-    signature      = cp->symbol_at(signatureIdx);
+    signature = cp->field_signature_ref_at(idx);
   } else {
-    int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx);
-    int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
-    signature      = cp->symbol_at(signatureIdx);
+    signature = cp->signature_ref_at(idx);
   }
 
   CellTypeState temp[4];

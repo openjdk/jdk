@@ -48,6 +48,21 @@
 // entry is read without a lock, only the resolved state guarantees that
 // the entry in the constant pool is a klass object and not a Symbol*.
 
+class CPSlot {
+ friend class ConstantPool;
+  intptr_t _ptr;
+ public:
+
+  CPSlot(intptr_t ptr): _ptr(ptr) {}
+  CPSlot(Symbol* ptr) : _ptr((intptr_t)ptr) {}
+
+  intptr_t value()   { return _ptr; }
+
+  Symbol* get_symbol() {
+    return (Symbol*)(_ptr);
+  }
+};
+
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
 class CPKlassSlot {
@@ -137,6 +152,7 @@ class ConstantPool : public Metadata {
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
   friend class Rewriter;
+  friend class FieldRefInfo;
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPool::metaspace_pointers_do().
@@ -733,6 +749,14 @@ class ConstantPool : public Metadata {
   Symbol* name_ref_at(int which)                { return impl_name_ref_at(which, false); }
   Symbol* signature_ref_at(int which)           { return impl_signature_ref_at(which, false); }
 
+  Symbol* field_signature_ref_at(int index)     {
+    assert(UseNewConstantPool, "implementation supports only the new cp");
+    int cp_index= field_entries()->adr_at(index - ConstantPool::CPCACHE_INDEX_TAG)->cp_index();
+    int name_and_type_idx = uncached_name_and_type_ref_index_at(cp_index);
+    int signature_idx = signature_ref_index_at(name_and_type_idx);
+    return symbol_at(signature_idx);
+  }
+
   int klass_ref_index_at(int which)               { return impl_klass_ref_index_at(which, false); }
   int name_and_type_ref_index_at(int which)       { return impl_name_and_type_ref_index_at(which, false); }
 
@@ -985,6 +1009,66 @@ class ConstantPool : public Metadata {
   void print_entry_on(int index, outputStream* st);
 
   const char* internal_name() const { return "{constant pool}"; }
+};
+
+class FieldRefInfo {
+  ConstantPool* _cp;
+  // CPFieldEntry* _cpfe;
+  int _index;
+
+ public:
+  FieldRefInfo() : _cp(NULL), _index(-1) { }
+  FieldRefInfo(ConstantPool* cp, int index) {
+    initialize(cp, index);
+  }
+
+  bool initialize(ConstantPool* cp, int index) {
+
+    guarantee(cp->cache() != NULL, "FieldRefInfo can only be used on a rewritten constant pool");
+    assert(!UseNewConstantPool, "not supported yet");
+    int cp_index = cp->remap_instruction_operand_from_cache(index);
+    if (!cp->tag_at(cp_index).is_field()) {
+      _cp = NULL;
+      _index = -1;
+      return false;
+    } else {
+      _cp = cp;
+      _index = index;
+      return true;
+    }
+  }
+
+  constantTag tag() {
+    int cp_index = _cp->remap_instruction_operand_from_cache(_index);
+    return _cp->tag_at(cp_index);
+  }
+
+  Klass* klass(TRAPS) {
+    int cp_index = _cp->remap_instruction_operand_from_cache(_index);
+    jint ref_index = *(_cp->int_at_addr(_index));
+    int klass_index = extract_low_short_from_int(ref_index);
+    return _cp->klass_at(klass_index, CHECK_NULL);
+  }
+  Symbol* klass_name() {
+    int cp_index = _cp->remap_instruction_operand_from_cache(_index);
+    return _cp->klass_name_at(cp_index);
+  }
+
+  Symbol* name() {
+    int cp_index = _cp->remap_instruction_operand_from_cache(_index);
+    jint ref_index = *(_cp->int_at_addr(cp_index));
+    int name_and_type_index =  extract_high_short_from_int(ref_index);
+    int name_index = _cp->name_ref_index_at(name_and_type_index);
+    return _cp->symbol_at(name_index);
+  }
+
+  Symbol* signature() {
+    int cp_index = _cp->remap_instruction_operand_from_cache(_index);
+    jint ref_index = *(_cp->int_at_addr(cp_index));
+    int name_and_type_index =  extract_high_short_from_int(ref_index);
+    int signature_index = _cp->signature_ref_index_at(name_and_type_index);
+    return _cp->symbol_at(signature_index);
+  }
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

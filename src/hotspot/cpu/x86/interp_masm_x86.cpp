@@ -495,8 +495,8 @@ void InterpreterMacroAssembler::get_field_entry(Register cache,
   // Generic code to handle any size of CPFieldEntry
   // Could be optimized later for cases where size is a power of two
   int entry_size = sizeof(CPFieldEntry);
-  imull(rscratch1, index, entry_size);
-  lea(cache, Address(cache, rscratch1, Address::times_1, Array<CPFieldEntry>::base_offset_in_bytes()));
+  imull(tmp, index, entry_size);
+  lea(cache, Address(cache, tmp, Address::times_1, Array<CPFieldEntry>::base_offset_in_bytes()));
 }
 
 void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,

@@ -137,11 +137,6 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
         _pool->set_field_entries(NULL);
       }
     }
-  } else {
-    DEBUG_ONLY(
-    if (DumpSharedSpaces) {
-      cache->verify_just_initialized();
-    })
   }
 }
 

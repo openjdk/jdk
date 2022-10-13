@@ -970,9 +970,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       // Find out the type of the field accessed.
       int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      Symbol* signature = cp->signature_ref_at(cp_index);
       // Simulate the bytecode: pop the address, push the 'value' loaded
       // from the field.
       stack->pop(1 - Bytecodes::depth(code));
@@ -984,9 +982,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_putfield: {
       int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      Symbol* signature = cp->signature_ref_at(cp_index);
       BasicType bt = Signature::basic_type(signature);
       stack->pop(type2size[bt] - Bytecodes::depth(code) - 1);
       break;
@@ -1006,9 +1002,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
         cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       }
 
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      Symbol* signature = cp->signature_ref_at(cp_index);
 
       if ((code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic)) {
         // Pop receiver.
@@ -1134,9 +1128,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
-        int type_index = cp->signature_ref_index_at(name_and_type_index);
-        Symbol* signature = cp->symbol_at(type_index);
+        Symbol* signature = cp->signature_ref_at(cp_index);
         BasicType bt = Signature::basic_type(signature);
         return type2size[bt];
       }
@@ -1145,16 +1137,13 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_invokeinterface: {
         int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
-        int name_index = cp->name_ref_index_at(name_and_type_index);
-        Symbol* name = cp->symbol_at(name_index);
+        Symbol* name = cp->name_ref_at(cp_index);
 
         // Assume the call of a constructor can never cause a NullPointerException
         // (which is true in Java). This is mainly used to avoid generating wrong
         // messages for NullPointerExceptions created explicitly by new in Java code.
         if (name != vmSymbols::object_initializer_name()) {
-          int     type_index = cp->signature_ref_index_at(name_and_type_index);
-          Symbol* signature  = cp->symbol_at(type_index);
+          Symbol* signature = cp->signature_ref_at(cp_index);
           // The 'this' parameter was null. Return the slot of it.
           return ArgumentSizeComputer(signature).size();
         } else {
@@ -1416,9 +1405,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
     case Bytecodes::_getfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
-        int name_index = cp->name_ref_index_at(name_and_type_index);
-        Symbol* name = cp->symbol_at(name_index);
+        Symbol* name = cp->name_ref_at(cp_index);
         os->print("Cannot read field \"%s\"", name->as_C_string());
       } break;
     case Bytecodes::_putfield: {

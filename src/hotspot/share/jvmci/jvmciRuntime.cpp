@@ -1780,9 +1780,7 @@ void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor
   // Get the field's name, signature, and type.
   Symbol* name  = cpool->name_ref_at(index);
 
-  int nt_index = cpool->name_and_type_ref_index_at(index);
-  int sig_index = cpool->signature_ref_index_at(nt_index);
-  Symbol* signature = cpool->symbol_at(sig_index);
+  Symbol* signature = cpool->signature_ref_at(index);
 
   // Get the field's declared holder.
   int holder_index = cpool->klass_ref_index_at(index);

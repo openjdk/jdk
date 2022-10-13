@@ -194,6 +194,12 @@ class LinkInfo : public StackObj {
   void         print()  PRODUCT_RETURN;
 };
 
+class FieldLinkInfo : public LinkInfo {
+ public:
+  FieldLinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS) :
+    LinkInfo(pool, index, current_method, LINKINFO_Field, THREAD) { };
+};
+
 // Link information for getfield/putfield & getstatic/putstatic bytecodes
 // is represented using a fieldDescriptor.
 
