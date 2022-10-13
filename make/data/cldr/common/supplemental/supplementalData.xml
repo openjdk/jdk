@@ -545,7 +545,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="HNL" from="1926-04-03"/>
         </region>
         <region iso3166="HR">
-            <currency iso4217="HRK" from="1994-05-30"/>
+            <currency iso4217="EUR" from="2023-01-01" />
+            <currency iso4217="HRK" from="1994-05-30" to="2023-01-15"/>
             <currency iso4217="HRD" from="1991-12-23" to="1995-01-01"/>
             <currency iso4217="YUN" from="1990-01-01" to="1991-12-23"/>
             <currency iso4217="YUD" from="1966-01-01" to="1990-01-01"/>
