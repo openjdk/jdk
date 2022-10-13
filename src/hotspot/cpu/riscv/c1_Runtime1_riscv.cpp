@@ -883,10 +883,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         assert_cond(map != NULL);
 
         // Called with store_parameter and not C abi
-        f.load_argument(1, x10); // x10: object
-        f.load_argument(0, x11); // x11: lock address
+        f.load_argument(0, x10); // x10: object
 
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, monitorenter), x10, x11);
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, monitorenter), x10);
 
         oop_maps = new OopMapSet();
         assert_cond(oop_maps != NULL);
@@ -905,7 +904,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         assert_cond(map != NULL);
 
         // Called with store_parameter and not C abi
-        f.load_argument(0, x10); // x10: lock address
+        f.load_argument(0, x10); // x10: object
 
         // note: really a leaf routine but must setup last java sp
         //       => use call_RT for now (speed can be improved by
