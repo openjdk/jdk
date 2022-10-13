@@ -4308,7 +4308,7 @@ static void check_pax(void) {
 #ifndef ZERO
   size_t size = os::vm_page_size();
 
-  void* p = ::mmap(NULL, size, PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  void* p = ::mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   if (p == MAP_FAILED) {
     log_debug(os)("os_linux.cpp: check_pax: mmap failed (%s)" , os::strerror(errno));
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "failed to allocate memory for PaX check.");
