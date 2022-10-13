@@ -3398,10 +3398,6 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # The winter time in 2015 started on October 23 at 01:00.
 # https://wafa.ps/ar_page.aspx?id=CgpCdYa670694628582aCgpCdY
 # http://www.palestinecabinet.gov.ps/portal/meeting/details/27583
-#
-# From Paul Eggert (2019-04-10):
-# For now, guess spring-ahead transitions are at 00:00 on the Saturday
-# preceding March's last Sunday (i.e., Sat>=24).
 
 # From P Chan (2021-10-18):
 # http://wafa.ps/Pages/Details/34701
@@ -3417,6 +3413,18 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 
 # From Heba Hamad (2022-03-10):
 # summer time will begin in Palestine from Sunday 03-27-2022, 00:00 AM.
+
+# From Heba Hamad (2022-08-30):
+# winter time will begin in Palestine from Saturday 10-29, 02:00 AM by
+# 60 minutes backwards.  Also the state of Palestine adopted the summer
+# and winter time for the years: 2023,2024,2025,2026 ...
+# https://mm.icann.org/pipermail/tz/attachments/20220830/9f024566/Time-0001.pdf
+# (2022-08-31): ... the Saturday before the last Sunday in March and October
+# at 2:00 AM ,for the years from 2023 to 2026.
+# (2022-09-05): https://mtit.pna.ps/Site/New/1453
+#
+# From Paul Eggert (2022-08-31):
+# For now, assume that this rule will also be used after 2026.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -3448,14 +3456,16 @@ Rule Palestine	2013	only	-	Sep	27	0:00	0	-
 Rule Palestine	2014	only	-	Oct	24	0:00	0	-
 Rule Palestine	2015	only	-	Mar	28	0:00	1:00	S
 Rule Palestine	2015	only	-	Oct	23	1:00	0	-
-Rule Palestine	2016	2018	-	Mar	Sat>=24	1:00	1:00	S
-Rule Palestine	2016	2018	-	Oct	Sat>=24	1:00	0	-
+Rule Palestine	2016	2018	-	Mar	Sat<=30	1:00	1:00	S
+Rule Palestine	2016	2018	-	Oct	Sat<=30	1:00	0	-
 Rule Palestine	2019	only	-	Mar	29	0:00	1:00	S
-Rule Palestine	2019	only	-	Oct	Sat>=24	0:00	0	-
-Rule Palestine	2020	2021	-	Mar	Sat>=24	0:00	1:00	S
+Rule Palestine	2019	only	-	Oct	Sat<=30	0:00	0	-
+Rule Palestine	2020	2021	-	Mar	Sat<=30	0:00	1:00	S
 Rule Palestine	2020	only	-	Oct	24	1:00	0	-
-Rule Palestine	2021	max	-	Oct	Fri>=23	1:00	0	-
-Rule Palestine	2022	max	-	Mar	Sun>=25	0:00	1:00	S
+Rule Palestine	2021	only	-	Oct	29	1:00	0	-
+Rule Palestine	2022	only	-	Mar	27	0:00	1:00	S
+Rule Palestine	2022	max	-	Oct	Sat<=30	2:00	0	-
+Rule Palestine	2023	max	-	Mar	Sat<=30	2:00	1:00	S
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct

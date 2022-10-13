@@ -51,9 +51,6 @@ void ShenandoahIUMode::initialize_flags() const {
     FLAG_SET_DEFAULT(ShenandoahSATBBarrier, false);
   }
 
-  // Disable Loom
-  SHENANDOAH_ERGO_DISABLE_FLAG(VMContinuations);
-
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 

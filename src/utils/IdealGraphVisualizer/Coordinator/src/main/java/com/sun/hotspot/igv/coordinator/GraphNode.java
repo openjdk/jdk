@@ -33,6 +33,7 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.util.PropertiesSheet;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
 import javax.swing.Action;
 import org.openide.actions.OpenAction;
@@ -52,13 +53,28 @@ import org.openide.util.lookup.InstanceContent;
  * @author Thomas Wuerthinger
  */
 public class GraphNode extends AbstractNode {
+
     private InputGraph graph;
+    private boolean selected = false;
 
     /** Creates a new instance of GraphNode */
     public GraphNode(InputGraph graph) {
         this(graph, new InstanceContent());
     }
 
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+        fireDisplayNameChange(null, null);
+        fireIconChange();
+    }
+
+    public String getHtmlDisplayName() {
+        String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
+        if (selected) {
+            htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
+        }
+        return htmlDisplayName;
+    }
     private GraphNode(InputGraph graph, InstanceContent content) {
         super(Children.LEAF, new AbstractLookup(content));
         this.graph = graph;
@@ -102,7 +118,11 @@ public class GraphNode extends AbstractNode {
 
     @Override
     public Image getIcon(int i) {
-        return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph.png");
+        if (selected) {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph_selected.png");
+        } else {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/graph.png");
+        }
     }
 
     @Override

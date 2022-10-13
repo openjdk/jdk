@@ -54,7 +54,9 @@
 volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
-ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
+ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
+  log_info(cds)("Parsing %s%s", file,
+                (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -73,6 +75,7 @@ ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TAB
   _line_no = 0;
   _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (ResourceObj::C_HEAP, mtClass) GrowableArray<const char*>(9, mtClass);
+  _parse_mode = parse_mode;
 
   // _instance should only be accessed by the thread that created _instance.
   assert(_instance == NULL, "must be singleton");
@@ -101,6 +104,10 @@ int ClassListParser::parse(TRAPS) {
     if (lambda_form_line()) {
       // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers,
       // and will be processed later.
+      continue;
+    }
+
+    if (_parse_mode == _parse_lambda_forms_invokers_only) {
       continue;
     }
 
