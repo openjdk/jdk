@@ -4329,20 +4329,18 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   int emcp_method_count = check_methods_and_mark_as_obsolete();
   transfer_old_native_function_registrations(the_class);
 
-  // The class file bytes from before any retransformable agents mucked
-  // with them was cached on the scratch class, move to the_class.
-  // Note: we still want to do this if nothing needed caching since it
-  // should get cleared in the_class too.
-  if (the_class->get_cached_class_file() == 0) {
-    // the_class doesn't have a cache yet so copy it
-    the_class->set_cached_class_file(scratch_class->get_cached_class_file());
-  }
-  else if (scratch_class->get_cached_class_file() !=
-           the_class->get_cached_class_file()) {
-    // The same class can be present twice in the scratch classes list or there
+  if (scratch_class->get_cached_class_file() != the_class->get_cached_class_file()) {
+    // 1. the_class doesn't have a cache yet, scratch_class does have a cache.
+    // 2. The same class can be present twice in the scratch classes list or there
     // are multiple concurrent RetransformClasses calls on different threads.
-    // In such cases we have to deallocate scratch_class cached_class_file.
-    os::free(scratch_class->get_cached_class_file());
+    // the_class and scratch_class have the same cached bytes, but different buffers.
+    // In such cases we need to deallocate one of the buffers.
+    // 3. RedefineClasses and the_class has cached bytes from a previous transformation.
+    // In the case we need to use class bytes from scratch_class.
+    if (the_class->get_cached_class_file() != nullptr) {
+      os::free(the_class->get_cached_class_file());
+    }
+    the_class->set_cached_class_file(scratch_class->get_cached_class_file());
   }
 
   // NULL out in scratch class to not delete twice.  The class to be redefined

@@ -1318,8 +1318,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
-  MacroAssembler::assert_alignment(__ pc());
-  __ nop();
+  {
+    Assembler::IncompressibleRegion ir(&_masm);  // keep the nop as 4 bytes for patching.
+    MacroAssembler::assert_alignment(__ pc());
+    __ nop();  // 4 bytes
+  }
 
   assert_cond(C != NULL);
 
@@ -1680,6 +1683,7 @@ void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 
 void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
+  Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see BoxLockNode::size()
 
   assert_cond(ra_ != NULL);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
@@ -2268,6 +2272,7 @@ encode %{
 
   enc_class riscv_enc_java_static_call(method meth) %{
     C2_MacroAssembler _masm(&cbuf);
+    Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see ret_addr_offset
 
     address addr = (address)$meth$$method;
     address call = NULL;
@@ -2306,6 +2311,7 @@ encode %{
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{
     C2_MacroAssembler _masm(&cbuf);
+    Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see ret_addr_offset
     int method_index = resolved_method_index(cbuf);
     address call = __ ic_call((address)$meth$$method, method_index);
     if (call == NULL) {
@@ -2324,6 +2330,7 @@ encode %{
 
   enc_class riscv_enc_java_to_runtime(method meth) %{
     C2_MacroAssembler _masm(&cbuf);
+    Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see ret_addr_offset
 
     // some calls to generated routines (arraycopy code) are scheduled
     // by C2 as runtime calls. if so we can call them using a jr (they

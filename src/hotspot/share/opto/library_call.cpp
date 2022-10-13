@@ -514,7 +514,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
   case vmIntrinsics::_doubleToLongBits:
-  case vmIntrinsics::_longBitsToDouble:         return inline_fp_conversions(intrinsic_id());
+  case vmIntrinsics::_longBitsToDouble:
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:           return inline_fp_conversions(intrinsic_id());
 
   case vmIntrinsics::_floatIsFinite:
   case vmIntrinsics::_floatIsInfinite:
@@ -4440,6 +4442,8 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
   case vmIntrinsics::_intBitsToFloat:       result = new MoveI2FNode(arg);  break;
   case vmIntrinsics::_doubleToRawLongBits:  result = new MoveD2LNode(arg);  break;
   case vmIntrinsics::_longBitsToDouble:     result = new MoveL2DNode(arg);  break;
+  case vmIntrinsics::_floatToFloat16:       result = new ConvF2HFNode(arg); break;
+  case vmIntrinsics::_float16ToFloat:       result = new ConvHF2FNode(arg); break;
 
   case vmIntrinsics::_doubleToLongBits: {
     // two paths (plus control) merge in a wood

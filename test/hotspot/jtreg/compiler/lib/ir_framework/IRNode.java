@@ -1031,6 +1031,11 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_CAST_S2X, "VectorCastS2X");
     }
 
+    public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
+    }
+
     public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
@@ -1069,6 +1074,11 @@ public class IRNode {
     public static final String VMLS = PREFIX + "VMLS" + POSTFIX;
     static {
         machOnlyNameRegex(VMLS, "vmls");
+    }
+
+    public static final String XOR = PREFIX + "XOR" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(XOR, "Xor(I|L)");
     }
 
     public static final String XOR_I = PREFIX + "XOR_I" + POSTFIX;
