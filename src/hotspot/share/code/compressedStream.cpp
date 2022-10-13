@@ -115,19 +115,19 @@ void CompressedWriteStream::write_long(jlong value) {
 
 
 bool CompressedSparseDataReadStream::read_zero() {
-  if (_buffer[_position] & (1 << (7 - _byte_pos))) {
+  if (_buffer[_position] & (1 << (7 - _bit_pos))) {
     return 0; // not a zero data
   }
-  if (++_byte_pos == 8) {
+  if (++_bit_pos == 8) {
     _position++;
-    _byte_pos = 0;
+    _bit_pos = 0;
   }
   return 1;
 }
 
 uint8_t CompressedSparseDataReadStream::read_byte_impl() {
-  uint8_t b1 = _buffer[_position] << _byte_pos;
-  uint8_t b2 = _buffer[++_position] >> (8 - _byte_pos);
+  uint8_t b1 = _buffer[_position] << _bit_pos;
+  uint8_t b2 = _buffer[++_position] >> (8 - _bit_pos);
   return b1 | b2;
 }
 
@@ -150,28 +150,28 @@ jint CompressedSparseDataReadStream::read_int() {
 }
 
 int CompressedSparseDataWriteStream::position() {
-  if (_byte_pos == 0) {
+  if (_bit_pos == 0) {
     return _position;
   }
   // flush current data and start a new byte
-  write(_curr_byte << (8 - _byte_pos));
+  write(_curr_byte << (8 - _bit_pos));
   _curr_byte = 0;
-  _byte_pos = 0;
+  _bit_pos = 0;
   return _position;
 }
 
 void CompressedSparseDataWriteStream::write_zero() {
   _curr_byte <<= 1; // zero bit represents a zero word
-  if (++_byte_pos == 8) {
+  if (++_bit_pos == 8) {
     write(_curr_byte);
     _curr_byte = 0;
-    _byte_pos = 0;
+    _bit_pos = 0;
   }
 }
 
 void CompressedSparseDataWriteStream::write_byte_impl(uint8_t b) {
-  write((_curr_byte << (8 - _byte_pos)) | (b >> _byte_pos));
-  _curr_byte = (0xff >> (8 - _byte_pos)) & b;
+  write((_curr_byte << (8 - _bit_pos)) | (b >> _bit_pos));
+  _curr_byte = (0xff >> (8 - _bit_pos)) & b;
 }
 
 void CompressedSparseDataWriteStream::write_int(juint val) {
@@ -192,10 +192,7 @@ void CompressedSparseDataWriteStream::write_int(juint val) {
 
 void CompressedSparseDataWriteStream::grow() {
   int nsize = _size * 2;
-  const int min_expansion = UNSIGNED5::MAX_LENGTH;
-  if (nsize < min_expansion*2) {
-    nsize = min_expansion*2;
-  }
+  assert(nsize > _position, "sanity");
   u_char* _new_buffer = NEW_RESOURCE_ARRAY(u_char, nsize);
   memcpy(_new_buffer, _buffer, _position);
   _buffer = _new_buffer;
