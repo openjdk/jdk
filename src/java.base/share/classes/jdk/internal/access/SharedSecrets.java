@@ -349,7 +349,7 @@ public class SharedSecrets {
         javaSecurityPropertiesAccess = jspa;
     }
 
-    public static JavaSecurityPropertiesAccess getJavaSecurityPropertyAccess() {
+    public static JavaSecurityPropertiesAccess getJavaSecurityPropertiesAccess() {
         var access = javaSecurityPropertiesAccess;
         if (access == null) {
             ensureClassInitialized(Security.class);

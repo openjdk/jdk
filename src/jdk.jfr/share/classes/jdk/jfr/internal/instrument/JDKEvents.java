@@ -309,7 +309,7 @@ public final class JDKEvents {
     }
 
     private static void emitInitialSecurityProperties() {
-        Properties p = SharedSecrets.getJavaSecurityPropertyAccess().getInitialProperties();
+        Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getInitialProperties();
         if (p != null) {
             for (String key : p.stringPropertyNames()) {
                 InitialSecurityPropertyEvent e = new InitialSecurityPropertyEvent();
