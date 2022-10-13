@@ -59,7 +59,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
@@ -211,13 +210,14 @@ public class PassFailJFrame {
      *              {@code doRun.run()}
      * @throws InvocationTargetException if an exception is thrown while
      *              running {@code doRun}
+     * @see javax.swing.SwingUtilities#invokeAndWait(Runnable) 
      */
     private static void invokeOnEDT(Runnable doRun)
             throws InterruptedException, InvocationTargetException {
-        if (SwingUtilities.isEventDispatchThread()) {
+        if (isEventDispatchThread()) {
             doRun.run();
         } else {
-            SwingUtilities.invokeAndWait(doRun);
+            invokeAndWait(doRun);
         }
     }
 
