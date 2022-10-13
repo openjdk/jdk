@@ -293,6 +293,7 @@ public:
                      Register limit, Register result, Register chr,
                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
 
+/*
   void arrays_hashcode(Register str1, Register cnt1, Register result,
                        Register i, Register coef, Register tmp, XMMRegister vnext,
                        XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
@@ -306,7 +307,7 @@ public:
   void arrays_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype);
   void arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype);
   void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype);
-
+*/
 
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,

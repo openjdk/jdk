@@ -12030,6 +12030,7 @@ instruct string_equals_evex(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI
   ins_pipe( pipe_slow );
 %}
 
+/*
 // fast string hashCode
 instruct string_hashcodeL(rdi_RegP str1, rsi_RegI cnt1, rbx_RegI result,
                           legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
@@ -12082,6 +12083,7 @@ instruct string_hashcodeU(rdi_RegP str1, rsi_RegI cnt1, rbx_RegI result,
   %}
   ins_pipe( pipe_slow );
 %}
+*/
 
 // fast array equals
 instruct array_equalsB(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
@@ -12148,6 +12150,7 @@ instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
+/*
 instruct array_hashcodeI(rdi_RegP ary1, rax_RegI result,
                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
@@ -12276,7 +12279,7 @@ instruct array_hashcodeF(rdi_RegP ary1, rax_RegI result,
                        $tmp_vec13$$XMMRegister, T_FLOAT, false);
   %}
   ins_pipe( pipe_slow );
-%}
+%}*/
 
 instruct count_positives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
                          legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr,)

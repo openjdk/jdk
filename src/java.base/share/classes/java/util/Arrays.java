@@ -25,6 +25,7 @@
 
 package java.util;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -4266,15 +4267,23 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(long[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
+        }
+        final int len = a.length;
         int result = 1;
-        for (long element : a) {
+        int index = 0;
+        if (len >= 16) {
+            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                    len, 1, ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE, /* unsigned */ false);
+            index = (int)(vresult >> 32);
+            result = (int)vresult;
+        }
+        for (; index < len; index++) {
+            long element = a[index];
             int elementHash = (int)(element ^ (element >>> 32));
             result = 31 * result + elementHash;
         }
-
         return result;
     }
 
@@ -4294,15 +4303,22 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    @IntrinsicCandidate
     public static int hashCode(int[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
+        }
+        final int len = a.length;
         int result = 1;
-        for (int element : a)
-            result = 31 * result + element;
-
+        int index = 0;
+        if (len >= 16) {
+            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_INT_BASE_OFFSET,
+                    len, 1, ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE, /* unsigned */ false);
+            index = (int)(vresult >> 32);
+            result = (int)vresult;
+        }
+        for (; index < len; index++) {
+            result = 31 * result + a[index];
+        }
         return result;
     }
 
@@ -4322,15 +4338,22 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    @IntrinsicCandidate
     public static int hashCode(short[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
+        }
+        final int len = a.length;
         int result = 1;
-        for (short element : a)
-            result = 31 * result + element;
-
+        int index = 0;
+        if (len >= 16) {
+            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_SHORT_BASE_OFFSET,
+                    len, 1, ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE, /* unsigned */ false);
+            index = (int)(vresult >> 32);
+            result = (int)vresult;
+        }
+        for (; index < len; index++) {
+            result = 31 * result + a[index];
+        }
         return result;
     }
 
@@ -4350,15 +4373,22 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    @IntrinsicCandidate
     public static int hashCode(char[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
+        }
+        final int len = a.length;
         int result = 1;
-        for (char element : a)
-            result = 31 * result + element;
-
+        int index = 0;
+        if (len >= 16) {
+            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_CHAR_BASE_OFFSET,
+                    len, 1, ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE, /* unsigned */ true);
+            index = (int)(vresult >> 32);
+            result = (int)vresult;
+        }
+        for (; index < len; index++) {
+            result = 31 * result + a[index];
+        }
         return result;
     }
 
@@ -4378,15 +4408,22 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    @IntrinsicCandidate
     public static int hashCode(byte[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
+        }
+        final int len = a.length;
         int result = 1;
-        for (byte element : a)
-            result = 31 * result + element;
-
+        int index = 0;
+        if (len >= 16) {
+            long vresult = ArraysSupport.vectorizedHashCode(a, Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                    len, result, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE, /* unsigned */ false);
+            index = (int)(vresult >> 32);
+            result = (int)vresult;
+        }
+        for (; index < len; index++) {
+            result = 31 * result + a[index];
+        }
         return result;
     }
 
@@ -4433,7 +4470,6 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
-    @IntrinsicCandidate
     public static int hashCode(float[] a) {
         if (a == null)
             return 0;

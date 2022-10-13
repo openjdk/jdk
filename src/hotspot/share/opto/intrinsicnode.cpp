@@ -83,15 +83,15 @@ Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
-uint AryHashCodeNode::match_edge(uint idx) const {
-  return idx == 2; // AryHashCode ary1
+uint VectorizedHashCodeNode::match_edge(uint idx) const {
+  return idx == 2; // VectorizedHashCodeNode ary1 
 }
 
-Node* AryHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+Node* VectorizedHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
-const Type* AryHashCodeNode::Value(PhaseGVN* phase) const {
+const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
 }

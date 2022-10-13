@@ -221,13 +221,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_equalsL:
     case vmIntrinsics::_equalsU:
     case vmIntrinsics::_equalsC:
-    case vmIntrinsics::_hashCodeL:
-    case vmIntrinsics::_hashCodeU:
-    case vmIntrinsics::_hashCodeI:
-    case vmIntrinsics::_hashCodeS:
-    case vmIntrinsics::_hashCodeC:
-    case vmIntrinsics::_hashCodeB:
-    case vmIntrinsics::_hashCodeF:
+    case vmIntrinsics::_vectorizedHashCode:
     case vmIntrinsics::_getCharStringU:
     case vmIntrinsics::_putCharStringU:
     case vmIntrinsics::_compressStringC:
@@ -528,20 +522,12 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_equalsU:
     if (!SpecialStringEquals) return true;
     break;
-  case vmIntrinsics::_hashCodeL:
-  case vmIntrinsics::_hashCodeU:
-    if (!SpecialStringHashCode) return true;
+  case vmIntrinsics::_vectorizedHashCode:
+    if (!UseVectorizedHashCodeIntrinsic) return true;
     break;
   case vmIntrinsics::_equalsB:
   case vmIntrinsics::_equalsC:
     if (!SpecialArraysEquals) return true;
-    break;
-  case vmIntrinsics::_hashCodeI:
-  case vmIntrinsics::_hashCodeS:
-  case vmIntrinsics::_hashCodeC:
-  case vmIntrinsics::_hashCodeB:
-  case vmIntrinsics::_hashCodeF:
-    if (!SpecialArraysHashCode) return true;
     break;
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeAsciiArray:

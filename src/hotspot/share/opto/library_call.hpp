@@ -195,7 +195,7 @@ class LibraryCallKit : public GraphKit {
                           RegionNode* region, Node* phi, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_equals(StrIntrinsicNode::ArgEnc ae);
-  bool inline_string_hashCode(StrIntrinsicNode::ArgEnc ae);
+  bool inline_vectorizedHashCode();
   bool inline_string_toBytesU();
   bool inline_string_getCharsU();
   bool inline_string_copy(bool compress);
@@ -255,7 +255,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
-  bool inline_array_hashcode(BasicType type);
   bool inline_preconditions_checkIndex(BasicType bt);
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array);
   bool inline_native_clone(bool is_virtual);

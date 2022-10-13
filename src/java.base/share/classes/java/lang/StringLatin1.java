@@ -32,6 +32,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -188,13 +190,22 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
-    @IntrinsicCandidate
     public static int hashCode(byte[] value) {
-        int h = 0;
-        for (byte v : value) {
-            h = 31 * h + (v & 0xff);
+        int len = value.length;
+        int result, index;
+        if (len < 8) {
+            index = 0;
+            result = 0;
+        } else {
+            long vresult = ArraysSupport.vectorizedHashCode(value, Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                    len, 0, 0,  true);
+            index = (int)(vresult >> 32);
+            result = (int)(vresult & 0xffffffffL);
         }
-        return h;
+        for (; index < len; index++) {
+            result = 31 * result + (value[index] & 0xff);
+        }
+        return result;
     }
 
     public static int indexOf(byte[] value, int ch, int fromIndex) {

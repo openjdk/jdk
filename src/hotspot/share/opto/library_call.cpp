@@ -307,8 +307,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
 
-  case vmIntrinsics::_hashCodeL:                 return inline_string_hashCode(StrIntrinsicNode::LL);
-  case vmIntrinsics::_hashCodeU:                 return inline_string_hashCode(StrIntrinsicNode::UU);
+  case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 
   case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
   case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
@@ -494,11 +493,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
-  case vmIntrinsics::_hashCodeI:                return inline_array_hashcode(T_INT);
-  case vmIntrinsics::_hashCodeS:                return inline_array_hashcode(T_SHORT);
-  case vmIntrinsics::_hashCodeC:                return inline_array_hashcode(T_CHAR);
-  case vmIntrinsics::_hashCodeB:                return inline_array_hashcode(T_BYTE);
-  case vmIntrinsics::_hashCodeF:                return inline_array_hashcode(T_FLOAT);
   case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex(T_INT);
   case vmIntrinsics::_Preconditions_checkLongIndex: return inline_preconditions_checkIndex(T_LONG);
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
@@ -1005,26 +999,6 @@ bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-
-//------------------------------inline_string_hashCode------------------------
-bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
-  Node* arg1 = argument(0);
-
-  arg1 = must_be_not_null(arg1, true);
-
-  // Get start addr and length of first argument
-  Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
-  Node* arg1_cnt    = load_array_length(arg1);
-
-  Node* result = new StrHashCodeNode(control(), memory(TypeAryPtr::BYTES),
-                                     arg1_start, arg1_cnt, ae);
-
-  clear_upper_avx();
-
-  set_result(_gvn.transform(result));
-  return true;
-}
-
 //------------------------------inline_string_equals------------------------
 bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg1 = argument(0);
@@ -1086,17 +1060,6 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//------------------------------inline_array_hashcode----------------------------
-bool LibraryCallKit::inline_array_hashcode(BasicType type) {
-  assert(type == T_INT || type == T_SHORT || type == T_CHAR || type == T_BYTE || type == T_FLOAT, "unsupported array types");
-  Node* arg1 = argument(0);
-
-  const TypeAryPtr* mtype = TypeAryPtr::get_array_body_type(type);
-  set_result(_gvn.transform(new AryHashCodeNode(control(), memory(mtype), arg1, type)));
-  clear_upper_avx();
-
-  return true;
-}
 
 //------------------------------inline_countPositives------------------------------
 bool LibraryCallKit::inline_countPositives() {
@@ -5953,6 +5916,30 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   set_control(exit_block);
   set_all_memory(memory_phi);
   set_result(result_phi);
+
+  return true;
+}
+
+//------------------------------inline_vectorizedHashcode----------------------------
+bool LibraryCallKit::inline_vectorizedHashCode() {
+  assert(UseVectorizedHashCodeIntrinsic, "not implemented on this platform");
+
+  assert(callee()->signature()->size() == 8, "vectorizedMismatch has 6 parameters");
+  Node* obj     = argument(0); // Object
+  Node* offset  = argument(1); // long
+  Node* length  = argument(2); // int
+  Node* start   = argument(3); // int
+  Node* scale   = argument(4); // int
+  Node* unsign  = argument(5); // bool
+  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
+
+  if (obj_t == NULL || obj_t->elem() == Type::BOTTOM ||
+      unsign == top()) {
+    return false; // failed input validation
+  }
+
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(obj_t), offset, length, start, scale, unsign)));
+  clear_upper_avx();
 
   return true;
 }

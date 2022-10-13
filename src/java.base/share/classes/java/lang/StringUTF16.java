@@ -32,6 +32,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
@@ -411,14 +413,22 @@ final class StringUTF16 {
         return -StringLatin1.compareToCI_UTF16(other, value);
     }
 
-    @IntrinsicCandidate
     public static int hashCode(byte[] value) {
-        int h = 0;
-        int length = value.length >> 1;
-        for (int i = 0; i < length; i++) {
-            h = 31 * h + getChar(value, i);
+        int len = value.length >> 1;
+        int result, index;
+        if (len < 8) {
+            result = 0;
+            index = 0;
+        } else {
+            long vresult = ArraysSupport.vectorizedHashCode(value, Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                    len, 0, 1, true);
+            index = (int)(vresult >> 32L);
+            result = (int)(vresult & 0xffffffffL);
         }
-        return h;
+        for (; index < len; index++) {
+            result = 31 * result + getChar(value, index);
+        }
+        return result;
     }
 
     public static int indexOf(byte[] value, int ch, int fromIndex) {

@@ -3267,7 +3267,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
 
   bind(DONE_LABEL);
 } // stringL_indexof_char
-
+/*
 int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
   switch (eltype) {
   case T_BYTE:  return sizeof(jbyte);
@@ -3553,7 +3553,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   bind(END);
 
 } // arrays_hashcode
-
+*/
 // helper function for string_compare
 void C2_MacroAssembler::load_next_elements(Register elem1, Register elem2, Register str1, Register str2,
                                            Address::ScaleFactor scale, Address::ScaleFactor scale1,

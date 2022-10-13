@@ -93,7 +93,9 @@ public class StringHashCode {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @State(Scope.Thread)
-    @Fork(jvmArgsAppend = {"--add-exports", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED"})
+    @Warmup(iterations = 5, time = 1)
+    @Measurement(iterations = 5, time = 1)
+    @Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED"})
     public static class Algorithm {
 
         private final static String alphabet = "abcdefghijklmnopqrstuvwxyz";
@@ -119,7 +121,7 @@ public class StringHashCode {
             }
         }
 
-        @Param({"0", "1", "10", "100", "1000", "10000"})
+        @Param({"1", "10", "100", "10000"})
         private int size;
 
         private byte[] latin1;

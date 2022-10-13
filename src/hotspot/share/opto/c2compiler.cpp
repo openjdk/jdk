@@ -221,21 +221,13 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_equalsU:
     if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
     break;
-  case vmIntrinsics::_hashCodeL:
-  case vmIntrinsics::_hashCodeU:
-    if (!Matcher::match_rule_supported(Op_StrHashCode)) return false;
+  case vmIntrinsics::_vectorizedHashCode:
+    if (!Matcher::match_rule_supported(Op_VectorizedHashCode)) return false;
     break;
   case vmIntrinsics::_equalsB:
   case vmIntrinsics::_equalsC:
     if (!Matcher::match_rule_supported(Op_AryEq)) return false;
-    break;
-  case vmIntrinsics::_hashCodeI:
-  case vmIntrinsics::_hashCodeS:
-  case vmIntrinsics::_hashCodeC:
-  case vmIntrinsics::_hashCodeB:
-  case vmIntrinsics::_hashCodeF:
-    if (!Matcher::match_rule_supported(Op_AryHashCode)) return false;
-    break;
+    break; 
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == NULL) return false;
     break;

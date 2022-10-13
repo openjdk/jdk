@@ -556,14 +556,8 @@
   product(bool, SpecialStringEquals, true, DIAGNOSTIC,                      \
           "special version of string equals")                               \
                                                                             \
-  product(bool, SpecialStringHashCode, true, DIAGNOSTIC,                    \
-          "special version of string hashCode")                             \
-                                                                            \
   product(bool, SpecialArraysEquals, true, DIAGNOSTIC,                      \
           "special version of Arrays.equals(char[],char[])")                \
-                                                                            \
-  product(bool, SpecialArraysHashCode, true, DIAGNOSTIC,                    \
-          "special version of Arrays.hashCode")                             \
                                                                             \
   product(bool, SpecialEncodeISOArray, true, DIAGNOSTIC,                    \
           "special version of ISO_8859_1$Encoder.encodeISOArray")           \

@@ -160,6 +160,112 @@ public class ArraysSupport {
         }
     }
 
+    /**
+     * Calculate the hash code for an array in a way that enables efficient
+     * vectorization.
+     *
+     * <p>This method does not perform type checks or bounds checks.  It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * <p>The given offsets, in bytes, need not be aligned according to the
+     * given log<sub>2</sub> size the array elements.  More specifically, an
+     * offset modulus the size need not be zero.
+     *
+     * @param base the array for which to calculate hash code, or {@code null} for
+     * direct memory access
+     * @param offset the relative offset, in bytes, from the base address of
+     * the first array to test from, otherwise if the first array is
+     * {@code null}, an absolute address pointing to the first element to test.
+     * {@code null}, an absolute address pointing to the first element to test.
+     * @param length the number of array elements to test
+     * @param log2ArrayIndexScale log<sub>2</sub> of the array index scale, that
+     * corresponds to the size, in bytes, of an array element.
+     * @return an encoded long value with the fully or partially calculated
+     * hashcode in the lower 32 bits and the next index to evaluate in the upper
+     * 32 bits.
+     */
+    @IntrinsicCandidate
+    public static long vectorizedHashCode(Object base, long offset,
+                                         int length, int start, int log2ArrayIndexScale,
+                                         boolean unsigned) {
+        // assert a.getClass().isArray();
+        // assert 0 < length <= sizeOf(a)
+        // assert 0 <= log2ArrayIndexScale <= 3
+
+        int result = start;
+        int log2ValuesPerWidth = LOG2_ARRAY_LONG_INDEX_SCALE - log2ArrayIndexScale;
+        int wi = 0;
+        int wlen = length >> log2ValuesPerWidth;
+        for (; wi < wlen; wi++) {
+            long bi = ((long) wi) << LOG2_ARRAY_LONG_INDEX_SCALE;
+            result = switch (log2ArrayIndexScale) {
+                case 3 -> {
+                    long v = U.getLongUnaligned(base, offset + bi);
+                    int elementHash = (int)(v ^ (v >>> 32));
+                    yield 31 * result + elementHash;
+                }
+                case 2 -> {
+                    int v0 = U.getIntUnaligned(base, offset + bi);
+                    int v1 = U.getIntUnaligned(base, offset + bi + Unsafe.ARRAY_INT_INDEX_SCALE);
+                    yield 961 * result + 31 * v0 + v1;
+                }
+                case 1 -> {
+                    short v0 = U.getShortUnaligned(base, offset + bi);
+                    short v1 = U.getShortUnaligned(base, offset + bi + 1 * Unsafe.ARRAY_SHORT_INDEX_SCALE);
+                    short v2 = U.getShortUnaligned(base, offset + bi + 2 * Unsafe.ARRAY_SHORT_INDEX_SCALE);
+                    short v3 = U.getShortUnaligned(base, offset + bi + 3 * Unsafe.ARRAY_SHORT_INDEX_SCALE);
+                    if (unsigned) {
+                        yield 923521 * result +
+                                29791 * (v0 & 0xffff) +
+                                961   * (v1 & 0xffff) +
+                                31    * (v2 & 0xffff) +
+                                        (v3 & 0xffff);
+                    } else {
+                        yield 923521 * result +
+                                29791 * v0 +
+                                961   * v1 +
+                                31    * v2 +
+                                        v3;
+                    }
+                }
+                case 0 -> {
+                    byte v0 = U.getByte(base, offset + bi);
+                    byte v1 = U.getByte(base, offset + bi + 1);
+                    byte v2 = U.getByte(base, offset + bi + 2);
+                    byte v3 = U.getByte(base, offset + bi + 3);
+                    byte v4 = U.getByte(base, offset + bi + 4);
+                    byte v5 = U.getByte(base, offset + bi + 5);
+                    byte v6 = U.getByte(base, offset + bi + 6);
+                    byte v7 = U.getByte(base, offset + bi + 7);
+                    if (unsigned) {
+                        yield -1807454463 * result +
+                                1742810335 * (v0 & 0xff) +
+                                887503681  * (v1 & 0xff) +
+                                28629151   * (v2 & 0xff) +
+                                923521     * (v3 & 0xff) +
+                                29791      * (v4 & 0xff) +
+                                961        * (v5 & 0xff) +
+                                31         * (v6 & 0xff) +
+                                             (v7 & 0xff);
+                    } else {
+                        yield -1807454463 * result +
+                                1742810335 * v0 +
+                                887503681  * v1 +
+                                28629151   * v2 +
+                                923521     * v3 +
+                                29791      * v4 +
+                                961        * v5 +
+                                31         * v6 +
+                                             v7;
+                    }
+                }
+                default -> throw new UnsupportedOperationException("Unexpected scale");
+            };
+        }
+        return ((long)wi << (32L + log2ValuesPerWidth)) + (result & 0xffffffffL);
+    }
+
     // Booleans
     // Each boolean element takes up one byte
 
