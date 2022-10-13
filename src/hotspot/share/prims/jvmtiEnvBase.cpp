@@ -703,10 +703,14 @@ JvmtiEnvBase::get_vthread_jvf(oop vthread) {
 javaVFrame*
 JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_p) {
   // Strip vthread frames in case of carrier thread with mounted continuation.
-  javaVFrame *jvf = JvmtiEnvBase::is_cthread_with_continuation(jt) ?
-                        jt->carrier_last_java_vframe(reg_map_p) :
-                        jt->last_java_vframe(reg_map_p);
-  jvf = check_and_skip_hidden_frames(jt, jvf);
+  bool cthread_with_cont = JvmtiEnvBase::is_cthread_with_continuation(jt);
+  javaVFrame *jvf = cthread_with_cont ? jt->carrier_last_java_vframe(reg_map_p)
+                                      : jt->last_java_vframe(reg_map_p);
+  // Skip hidden frames only for carrier threads
+  // which are in non-temporary VTMS transition.
+  if (jt->is_in_VTMS_transition()) {
+    jvf = check_and_skip_hidden_frames(jt, jvf);
+  }
   return jvf;
 }
 
@@ -1666,7 +1670,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
     assert(single_resume || is_virtual, "ResumeAllVirtualThreads should never resume non-virtual threads");
     if (java_thread->is_suspended()) {
       if (!JvmtiSuspendControl::resume(java_thread)) {
-        return JVMTI_ERROR_INTERNAL;
+        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       }
     }
   }

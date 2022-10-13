@@ -39,7 +39,7 @@ public final class SelectBytecodesAction extends CookieAction {
     @Override
     protected void performAction(Node[] activatedNodes) {
         SelectBytecodesCookie c = activatedNodes[0].getCookie(SelectBytecodesCookie.class);
-        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);//Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
+        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
         if (p != null) {
             p.setSelectedNodes(c.getNodes());
         }

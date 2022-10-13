@@ -138,7 +138,7 @@ apply.
 ### JTReg
 
 JTReg tests can be selected either by picking a JTReg test group, or a selection
-of files or directories containing JTReg tests. Documentation can be found at 
+of files or directories containing JTReg tests. Documentation can be found at
 [https://openjdk.org/jtreg/](https://openjdk.org/jtreg/), note especially the
 extensive [FAQ](https://openjdk.org/jtreg/faq.html).
 
@@ -168,6 +168,11 @@ use a fully qualified test descriptor, add `jtreg:`, e.g.
 `jtreg:test/hotspot/jtreg/native_sanity`.
 
 ### Gtest
+
+**Note:** To be able to run the Gtest suite, you need to configure your build to
+be able to find a proper version of the gtest source. For details, see the
+section ["Running Tests" in the build
+documentation](building.html#running-tests).
 
 Since the Hotspot Gtest suite is so quick, the default is to run all tests.
 This is specified by just `gtest`, or as a fully qualified test descriptor
@@ -607,8 +612,8 @@ Note: restart is required to make the settings take effect.
 
 ## Editing this document
 
-If you want to contribute changes to this document, edit `doc/testing.md` and 
-then run `make update-build-docs` to generate the same changes in 
+If you want to contribute changes to this document, edit `doc/testing.md` and
+then run `make update-build-docs` to generate the same changes in
 `doc/testing.html`.
 
 ---

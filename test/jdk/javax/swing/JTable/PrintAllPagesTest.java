@@ -41,7 +41,6 @@ import javax.swing.WindowConstants;
 public class PrintAllPagesTest {
     static JFrame f;
     static JTable table;
-    static volatile boolean ret = false;
 
     static final String INSTRUCTIONS = """
          Note: You must have a printer installed for this test.
@@ -71,13 +70,15 @@ public class PrintAllPagesTest {
             // Arrange the test instruction frame and test frame side by side
             PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
             f.setVisible(true);
+
+            boolean ret;
             try {
                 ret = table.print();
             } catch (PrinterException ex) {
                 ret = false;
             }
             if (!ret) {
-                throw new RuntimeException("Printing cancelled/failed");
+                PassFailJFrame.forceFail("Printing cancelled/failed");
             }
         });
         passFailJFrame.awaitAndCheck();
@@ -108,6 +109,6 @@ public class PrintAllPagesTest {
 
         f = new JFrame("Table test");
         f.add(scrollpane);
-        f.setSize(1000, 800);
+        f.setSize(500, 400);
     }
 }

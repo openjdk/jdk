@@ -138,12 +138,12 @@ final class NewSessionTicket {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"NewSessionTicket\": '{'\n" +
-                            "  \"ticket_lifetime\"      : \"{0}\",\n" +
-                            "  \"ticket\"               : '{'\n" +
-                            "{1}\n" +
-                            "  '}'" +
-                            "'}'",
+                    """
+                            "NewSessionTicket": '{'
+                              "ticket_lifetime"      : "{0}",
+                              "ticket"               : '{'
+                            {1}
+                              '}''}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -267,17 +267,17 @@ final class NewSessionTicket {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"NewSessionTicket\": '{'\n" +
-                "  \"ticket_lifetime\"      : \"{0}\",\n" +
-                "  \"ticket_age_add\"       : \"{1}\",\n" +
-                "  \"ticket_nonce\"         : \"{2}\",\n" +
-                "  \"ticket\"               : '{'\n" +
-                "{3}\n" +
-                "  '}'" +
-                "  \"extensions\"           : [\n" +
-                "{4}\n" +
-                "  ]\n" +
-                "'}'",
+                    """
+                            "NewSessionTicket": '{'
+                              "ticket_lifetime"      : "{0}",
+                              "ticket_age_add"       : "{1}",
+                              "ticket_nonce"         : "{2}",
+                              "ticket"               : '{'
+                            {3}
+                              '}'  "extensions"           : [
+                            {4}
+                              ]
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -360,7 +360,7 @@ final class NewSessionTicket {
                 }
             } else {     // PostHandshakeContext
                 // Check if we have sent a PSK already, then we know it is
-                // using a allowable PSK exchange key mode.
+                // using an allowable PSK exchange key mode.
                 if (!hc.handshakeSession.isPSKable()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(

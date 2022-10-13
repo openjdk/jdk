@@ -1059,7 +1059,9 @@ bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
   Method* method = java_lang_invoke_MemberName::vmtarget(mn);
   if (method->klass_name()->equals("java/lang/invoke/LambdaMetafactory") &&
       method->name()->equals("metafactory") &&
-      method->signature()->equals("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
+      method->signature()->equals("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;"
+            "Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;"
+            "Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
       return true;
   } else {
     if (log.is_enabled()) {
