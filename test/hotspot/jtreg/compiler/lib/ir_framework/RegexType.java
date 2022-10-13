@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework;
 
 /**
- * Enum to denote the default regex type of the associated {@link CompilePhase}.
+ * Enum to denote the regex type of the associated {@link CompilePhase}.
  *
  * @see CompilePhase
  */

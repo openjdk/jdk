@@ -117,12 +117,12 @@ public class IRExample {
 
     // Rules with failOn constraint which all pass.
     @Test
-    @IR(failOn = IRNode.LOAD) // 1 default regex
-    @IR(failOn = {IRNode.LOAD, IRNode.LOOP}) // 2 default regexes
-    @IR(failOn = {IRNode.LOAD, "some regex that does not occur"}, // 1 default regex and a user-defined regex
+    @IR(failOn = IRNode.LOAD) // 1 (pre-defined) IR node
+    @IR(failOn = {IRNode.LOAD, IRNode.LOOP}) // 2 IR nodes
+    @IR(failOn = {IRNode.LOAD, "some regex that does not occur"}, // 1 IR node with a user-defined regex
         phase = CompilePhase.PRINT_IDEAL)
-    // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
-    // second string specifying an additional required information.
+    // Rule with special configurable IR nodes. All IR nodes with a "_OF" postfix expect a second string specifying an
+    // additional required information.
     @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld2", IRNode.LOAD, IRNode.STORE_OF_CLASS, "Foo"})
     // Only apply this rule if the VM flag UseZGC is true
     @IR(applyIf = {"UseZGC", "true"}, failOn = IRNode.LOAD)
@@ -135,15 +135,15 @@ public class IRExample {
 
     // Rules with counts constraint which all pass.
     @Test
-    @IR(counts = {IRNode.STORE, "2"}) // 1 default regex
+    @IR(counts = {IRNode.STORE, "2"}) // 1 (pre-defined) IR node
     @IR(counts = {IRNode.LOAD, "0"}) // equivalent to failOn = IRNode.LOAD
     @IR(counts = {IRNode.STORE, "2",
-                  IRNode.LOAD, "0"}) // 2 default regexes
+                  IRNode.LOAD, "0"}) // 2 IR nodes
     @IR(counts = {IRNode.STORE, "2",
-                  "some regex that does not occur", "0"}, // 1 default regex and a user-defined regex
+                  "some regex that does not occur", "0"}, // 1 IR node and a user-defined regex
         phase = CompilePhase.PRINT_IDEAL)
-    // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
-    // second string specifying an additional required information.
+    // Rule with special configurable IR nodes. All IR nodes with a "_OF" postfix expect a second string specifying an
+    // additional required information.
     @IR(counts = {IRNode.STORE_OF_FIELD, "iFld", "1",
                   IRNode.STORE, "2",
                   IRNode.STORE_OF_CLASS, "IRExample", "2"})
@@ -173,7 +173,7 @@ public class IRExample {
     // Apply IR matching on compile phase AFTER_PARSING and CCP1.
     @IR(counts = {IRNode.ALLOC, "0", IRNode.STORE_I, "1"}, phase = {CompilePhase.AFTER_PARSING, CompilePhase.CCP1})
     // Apply IR matching on compile phase BEFORE_MATCHING by using a custom regex. In this case, a compile phase must
-    // be specified as there is no default compiler phase for user defined regexes.
+    // be specified as there is no default compile phase for user defined regexes.
     @IR(failOn = "LoadI", phase = CompilePhase.BEFORE_MATCHING)
     public void compilePhases() {
         iFld = 42;
@@ -208,8 +208,8 @@ class FailingExamples {
                   IRNode.STORE, "1"}) // Order does not matter
     @IR(counts = {"some regex that does not occur", "1"},
         phase = CompilePhase.PRINT_IDEAL) // user-defined regex does not occur once in PrintIdeal output
-    // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
-    // second string specifying an additional required information.
+    // Rule with special configurable IR nodes. All IR nodes with a "_OF" postfix expect a second string specifying an
+    // additional required information.
     @IR(counts = {IRNode.STORE_OF_FIELD, "iFld", "2", // Only one store to iFld
                   IRNode.LOAD, "2", // Only 1 load
                   IRNode.STORE_OF_CLASS, "Foo", "1"}) // No store to class Foo

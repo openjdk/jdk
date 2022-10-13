@@ -30,9 +30,9 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
 /**
  * Interface to represent a single raw constraint as found in the {@link IR @IR} annotation (i.e. {@link IRNode}
- * placeholder strings are not replaced by default regexes, yet). A raw constraint can be parsed into a
- * {@link Constraint} by calling {@link #parse(CompilePhase, String)}. This replaces the IR node placeholder strings
- * by actual regexes and merge composite nodes together.
+ * placeholder strings are not replaced by regexes, yet). A raw constraint can be parsed into a {@link Constraint} by
+ * calling {@link #parse(CompilePhase, String)}. This replaces the IR node placeholder strings by actual regexes and
+ * merge composite nodes together.
  *
  * @see Constraint
  */

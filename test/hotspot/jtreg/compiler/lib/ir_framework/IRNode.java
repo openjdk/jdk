@@ -64,7 +64,7 @@ import java.util.Map;
  * <p>
  * There are two types of IR nodes:
  * <ul>
- *     <li><p>Normal IR nodes: The IR node placeholder string is directly replaced by a default regex.</li>
+ *     <li><p>Normal IR nodes: The IR node placeholder string is directly replaced by a regex.</li>
  *     <li><p>Composite IR nodes:  The IR node placeholder string contains an additional {@link #COMPOSITE_PREFIX}.
  *                                 Using this IR node expects another user provided string in the constraint list of
  *                                 {@link IR#failOn()} and {@link IR#counts()}. They cannot be used as normal IR nodes.
