@@ -30,9 +30,6 @@
 #include "ErrorHandling.h"
 
 
-#pragma comment(lib, "ole32")
-
-
 Guid::Guid(const std::string& str) {
     *this = Guid(std::wstring(str.begin(), str.end()));
 }
