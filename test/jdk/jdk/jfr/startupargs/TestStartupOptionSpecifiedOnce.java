@@ -77,7 +77,7 @@ public class TestStartupOptionSpecifiedOnce {
         String output = startJfrJvm(option).getOutput();
 
         try {
-            Matcher matcher = Pattern.compile("Option ([a-z-]+) can only be specified once with starting flight recording").matcher(output);
+            Matcher matcher = Pattern.compile("Option ([a-z-]+) can only be specified once").matcher(output);
             matcher.find();
             String outputtedOption = matcher.group(1);
 
@@ -94,7 +94,7 @@ public class TestStartupOptionSpecifiedOnce {
     private static void testMultipleOption(String option) throws Exception{
 
         String output = startJfrJvm(option).getOutput();
-        final String regex = "Option ([a-z-]+) can only be specified once with starting flight recording";
+        final String regex = "Option ([a-z-]+) can only be specified once";
 
         try {
             Matcher matcher = Pattern.compile(regex).matcher(output);
@@ -113,7 +113,7 @@ public class TestStartupOptionSpecifiedOnce {
         String output = startJfrJvm(option).getOutput();
 
         try {
-            Matcher matcher = Pattern.compile("Options ([a-z-]+)((?:, [a-z-]+)*) and ([a-z-]+) can only be specified once with starting flight recording").matcher(output);
+            Matcher matcher = Pattern.compile("Options ([a-z-]+)((?:, [a-z-]+)*) and ([a-z-]+) can only be specified once").matcher(output);
             matcher.find();
 
             Set<String> outputtedOptions = new HashSet<>();

@@ -246,9 +246,4 @@ final class DCmdConfigure extends AbstractDCmd {
     protected void execute(ArgumentParser parser) throws DCmdException {
         throw new InternalError("Should not reach here!");
     }
-
-    @Override
-    public JfrCommand getCommand() {
-        return JfrCommand.CONFIGURE;
-    }
 }

@@ -64,8 +64,6 @@ abstract class AbstractDCmd {
     // Remember to keep the two sides in synch.
     public abstract Argument[] getArgumentInfos();
 
-    public abstract JfrCommand getCommand();
-
     // Called by native
     protected abstract void execute(ArgumentParser parser) throws DCmdException;
 
@@ -78,7 +76,7 @@ abstract class AbstractDCmd {
             if (log) {
                 Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing " + this.getClass().getSimpleName() + ": " + arg);
             }
-            ArgumentParser parser = new ArgumentParser(getArgumentInfos(), arg, delimiter, getCommand());
+            ArgumentParser parser = new ArgumentParser(getArgumentInfos(), arg, delimiter);
             parser.parse();
             if (log) {
                 Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "DCMD options: " + parser.getOptions());

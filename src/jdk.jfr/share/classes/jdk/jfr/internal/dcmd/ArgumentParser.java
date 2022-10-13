@@ -24,12 +24,7 @@
  */
 package jdk.jfr.internal.dcmd;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 final class ArgumentParser {
     private final Map<String, Object> options = new HashMap<>();
@@ -42,17 +37,14 @@ final class ArgumentParser {
     private final Argument[] arguments;
     private int position;
 
-    private final Set<String> conflictedOptions = new HashSet<>();
+    private final List<String> conflictedOptions = new ArrayList<>();
 
-    private final JfrCommand command;
-
-    ArgumentParser(Argument[] arguments, String text, char delimiter, JfrCommand command) {
+    ArgumentParser(Argument[] arguments, String text, char delimiter) {
         this.text = text;
         this.delimiter = delimiter;
         this.arguments = arguments;
         this.keyValueDelimiter = "=" + delimiter;
         this.valueDelimiter = Character.toString(delimiter);
-        this.command = command;
     }
 
     public Map<String, Object> parse() {
@@ -75,36 +67,28 @@ final class ArgumentParser {
     }
 
     protected void checkConflict() {
-        final int conflictedKeyNum = conflictedOptions.size();
-        if (conflictedKeyNum == 0) {
+        if (conflictedOptions.isEmpty()) {
             return;
         }
-        int processedConflictedKeysCount = 0;
-        StringBuilder exceptionMessageBuilder = new StringBuilder();
 
-        if (conflictedOptions.size() == 1) {
-            exceptionMessageBuilder.append("Option ");
-        } else if (conflictedOptions.size() > 1) {
-            exceptionMessageBuilder.append("Options ");
-        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Option");
 
-        // Add conflicted key names
-        for (String conflictedKey : conflictedOptions) {
-            processedConflictedKeysCount++;
-            // Add delimiter
-            if (processedConflictedKeysCount == 1 ) {
-            } else if (processedConflictedKeysCount < conflictedKeyNum) {
-                exceptionMessageBuilder.append(", ");
-            } else if (processedConflictedKeysCount == conflictedKeyNum) {
-                exceptionMessageBuilder.append(" and ");
+        // If multiple options conflict, the following blocks are executed
+        if (conflictedOptions.size() > 1) {
+            sb.append("s ");
+            StringJoiner sj = new StringJoiner(", ");
+            while (conflictedOptions.size() > 1) {
+                sj.add(conflictedOptions.remove(0));
             }
-            // Add a conflicted key name
-            exceptionMessageBuilder.append(conflictedKey);
+            sb.append(sj);
+            sb.append(" and");
         }
 
-        exceptionMessageBuilder.append(" can only be specified once with " + command.getName() + " flight recording");
-
-        throw new IllegalArgumentException(exceptionMessageBuilder.toString());
+        sb.append(" ");
+        sb.append(conflictedOptions.remove(0));
+        sb.append(" can only be specified once.");
+        throw new IllegalArgumentException(sb.toString());
     }
 
     private void checkMandatory() {
@@ -133,7 +117,9 @@ final class ArgumentParser {
                     }
                 } else {
                     if (options.containsKey(key)) {
-                        conflictedOptions.add(key);
+                        if(!conflictedOptions.contains(key)) {
+                            conflictedOptions.add(key);
+                        }
                     } else {
                         options.put(key, v);
                     }

@@ -110,9 +110,4 @@ final class DCmdStop extends AbstractDCmd {
                 "STRING", false, null, false)
         };
     }
-
-    @Override
-    public JfrCommand getCommand() {
-        return JfrCommand.STOPPING;
-    }
 }

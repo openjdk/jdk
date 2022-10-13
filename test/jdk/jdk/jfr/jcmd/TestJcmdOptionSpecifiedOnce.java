@@ -50,63 +50,58 @@ public class TestJcmdOptionSpecifiedOnce {
 
     private static void testCheckingLog() {
 
-        testSpecifiedOption("JFR.start", "name=abc name=def", "starting", "name" );
-        testSpecifiedOptions("JFR.start", "name=abc name=def disk=true disk=false", "starting", Set.of("name", "disk"));
-        testSpecifiedOptions("JFR.start", "name=abc name=def disk=true disk=false delay=1s delay=2s", "starting", Set.of("name", "disk", "delay"));
-        testSpecifiedOptions("JFR.start", "name=abc name=def disk=true disk=false delay=1s delay=2s maxage=1s maxage=2s", "starting", Set.of("name", "disk", "delay", "maxage"));
+        testSpecifiedOption("JFR.start", "name=abc name=def", "name" );
+        testSpecifiedOptions("JFR.start", "name=abc name=def disk=true disk=false", Set.of("name", "disk"));
+        testSpecifiedOptions("JFR.start", "name=abc name=def disk=true disk=false delay=1s delay=2s", Set.of("name", "disk", "delay"));
+        testSpecifiedOptions("JFR.start", "name=abc name=def disk=true disk=false delay=1s delay=2s maxage=1s maxage=2s", Set.of("name", "disk", "delay", "maxage"));
     }
 
     public static void checkStarting() {
 
-        testSpecifiedOption("JFR.start", "name=abc name=def", "starting", "name" );
-        testSpecifiedOption("JFR.start", "disk=true disk=false", "starting", "disk" );
-        testSpecifiedOption("JFR.start", "delay=1s delay=2s", "starting", "delay" );
-        testSpecifiedOption("JFR.start", "duration=1s duration=2s", "starting", "duration" );
-        testSpecifiedOption("JFR.start", "maxage=1s maxage=2s", "starting", "maxage" );
-        testSpecifiedOption("JFR.start", "maxsize=1m maxsize=2m", "starting", "maxsize" );
-        testSpecifiedOption("JFR.start", "flush-interval=1s flush-interval=2s", "starting", "flush-interval" );
-        testSpecifiedOption("JFR.start", "dumponexit=true dumponexit=false", "starting", "dumponexit" );
-        testSpecifiedOption("JFR.start", "filename=filename1 filename=filename2", "starting", "filename" );
-        testSpecifiedOption("JFR.start", "path-to-gc-roots=true path-to-gc-roots=false", "starting", "path-to-gc-roots" );
+        testSpecifiedOption("JFR.start", "name=abc name=def", "name" );
+        testSpecifiedOption("JFR.start", "disk=true disk=false", "disk" );
+        testSpecifiedOption("JFR.start", "delay=1s delay=2s", "delay" );
+        testSpecifiedOption("JFR.start", "duration=1s duration=2s", "duration" );
+        testSpecifiedOption("JFR.start", "maxage=1s maxage=2s", "maxage" );
+        testSpecifiedOption("JFR.start", "maxsize=1m maxsize=2m", "maxsize" );
+        testSpecifiedOption("JFR.start", "flush-interval=1s flush-interval=2s", "flush-interval" );
+        testSpecifiedOption("JFR.start", "dumponexit=true dumponexit=false", "dumponexit" );
+        testSpecifiedOption("JFR.start", "filename=filename1 filename=filename2", "filename" );
+        testSpecifiedOption("JFR.start", "path-to-gc-roots=true path-to-gc-roots=false", "path-to-gc-roots" );
 
         testMultipleOption("JFR.start", "settings=default settings=profile");
     }
 
     public static void checkStopping() {
 
-        testSpecifiedOption("JFR.stop", "filename=filename1 filename=filename2", "stopping", "filename" );
-        testSpecifiedOption("JFR.stop", "name=abc name=def", "stopping", "name" );
+        testSpecifiedOption("JFR.stop", "filename=filename1 filename=filename2", "filename" );
+        testSpecifiedOption("JFR.stop", "name=abc name=def", "name" );
     }
 
     public static void checkDumping() {
 
-        testSpecifiedOption("JFR.dump", "begin=0:00 begin=0:01", "dumping", "begin" );
-        testSpecifiedOption("JFR.dump", "end=1:00 end=1:01", "dumping", "end" );
-        testSpecifiedOption("JFR.dump", "filename=filename1 filename=filename2", "dumping", "filename" );
-        testSpecifiedOption("JFR.dump", "maxage=1s maxage=2s", "dumping", "maxage" );
-        testSpecifiedOption("JFR.dump", "name=abc name=def", "dumping", "name" );
-        testSpecifiedOption("JFR.dump", "path-to-gc-roots=true path-to-gc-roots=false", "dumping", "path-to-gc-roots" );
+        testSpecifiedOption("JFR.dump", "begin=0:00 begin=0:01", "begin" );
+        testSpecifiedOption("JFR.dump", "end=1:00 end=1:01", "end" );
+        testSpecifiedOption("JFR.dump", "filename=filename1 filename=filename2", "filename" );
+        testSpecifiedOption("JFR.dump", "maxage=1s maxage=2s", "maxage" );
+        testSpecifiedOption("JFR.dump", "name=abc name=def", "name" );
+        testSpecifiedOption("JFR.dump", "path-to-gc-roots=true path-to-gc-roots=false", "path-to-gc-roots" );
     }
 
     public static void checkChecking() {
 
-        testSpecifiedOption("JFR.check", "name=abc name=def", "checking", "name" );
-        testSpecifiedOption("JFR.check", "verbose=true verbose=false", "checking", "verbose" );
+        testSpecifiedOption("JFR.check", "name=abc name=def", "name" );
+        testSpecifiedOption("JFR.check", "verbose=true verbose=false", "verbose" );
     }
 
-    private static void testSpecifiedOption(String command, String option, String expectCommand, String expectOption){
+    private static void testSpecifiedOption(String command, String option, String expectOption){
 
         String output = JcmdHelper.jcmd("%s %s".formatted(command, option)).getOutput();
 
         try {
-            Matcher matcher = Pattern.compile("Option ([a-z-]+) can only be specified once with ([a-z]+) flight recording").matcher(output);
+            Matcher matcher = Pattern.compile("Option ([a-z-]+) can only be specified once").matcher(output);
             matcher.find();
             String outputtedOption = matcher.group(1);
-            String outputtedCommand = matcher.group(2);
-
-            if (!outputtedCommand.equals(expectCommand)){
-                throw new RuntimeException("expected command is %s, but actual is %s".formatted(expectCommand, outputtedCommand));
-            }
 
             if (!outputtedOption.equals(expectOption)){
                 throw new RuntimeException("expected option is %s, but actual is %s".formatted(expectOption, outputtedOption));
@@ -135,12 +130,12 @@ public class TestJcmdOptionSpecifiedOnce {
     }
 
 
-    private static void testSpecifiedOptions(String command, String option, String expectCommand, Set<String> expectOptions){
+    private static void testSpecifiedOptions(String command, String option, Set<String> expectOptions){
 
         String output = JcmdHelper.jcmd("%s %s".formatted(command, option)).getOutput();
 
         try {
-            Matcher matcher = Pattern.compile("Options ([a-z-]+)((?:, [a-z-]+)*) and ([a-z-]+) can only be specified once with ([a-z]+) flight recording").matcher(output);
+            Matcher matcher = Pattern.compile("Options ([a-z-]+)((?:, [a-z-]+)*) and ([a-z-]+) can only be specified once").matcher(output);
             matcher.find();
 
             Set<String> outputtedOptions = new HashSet<>();
@@ -153,12 +148,6 @@ public class TestJcmdOptionSpecifiedOnce {
 
             // Mandatory last option
             outputtedOptions.add(matcher.group(3));
-
-            String outputtedCommand = matcher.group(4);
-
-            if (!outputtedCommand.equals(expectCommand)){
-                throw new RuntimeException("expected command is %s, but actual is %s".formatted(expectCommand, outputtedCommand));
-            }
 
             if (!outputtedOptions.equals(expectOptions)){
                 throw new RuntimeException("expected options are %s, but actual are %s".formatted(expectOptions, outputtedOptions));

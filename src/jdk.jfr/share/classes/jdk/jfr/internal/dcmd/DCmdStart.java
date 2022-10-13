@@ -476,9 +476,4 @@ final class DCmdStart extends AbstractDCmd {
                 "BOOLEAN", false, "false", false)
         };
     }
-
-    @Override
-    public JfrCommand getCommand() {
-        return JfrCommand.STARTING;
-    }
 }

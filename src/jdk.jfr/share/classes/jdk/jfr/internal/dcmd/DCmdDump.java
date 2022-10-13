@@ -301,10 +301,5 @@ final class DCmdDump extends AbstractDCmd {
                "BOOLEAN", false, "false", false)
         };
     }
-
-    @Override
-    public JfrCommand getCommand() {
-        return JfrCommand.DUMPING;
-    }
 }
 
