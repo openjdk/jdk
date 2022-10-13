@@ -2,8 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug     8295024
  * @summary Cyclic constructor error is non-deterministic and inconsistent
- * @compile T8295024.java
- * @run main T8295024
  */
 import java.io.*;
 import java.net.*;

@@ -707,11 +707,15 @@ public class TreeInfo {
     /** Find the position for reporting an error about a symbol, where
      *  that symbol is defined somewhere in the given tree. */
     public static DiagnosticPosition diagnosticPositionFor(final Symbol sym, final JCTree tree) {
-        return diagnosticPositionFor(sym, tree, null, false);
+        return diagnosticPositionFor(sym, tree, false);
     }
 
-    public static DiagnosticPosition diagnosticPositionFor(final Symbol sym, final JCTree tree,
-            Predicate<? super JCTree> filter, boolean returnNullIfNotFound) {
+    public static DiagnosticPosition diagnosticPositionFor(final Symbol sym, final JCTree tree, boolean returnNullIfNotFound) {
+        return diagnosticPositionFor(sym, tree, returnNullIfNotFound, null);
+    }
+
+    public static DiagnosticPosition diagnosticPositionFor(final Symbol sym, final JCTree tree, boolean returnNullIfNotFound,
+            Predicate<? super JCTree> filter) {
         class DiagScanner extends DeclScanner {
             DiagScanner(Symbol sym, Predicate<? super JCTree> filter) {
                 super(sym, filter);
@@ -741,6 +745,9 @@ public class TreeInfo {
         final Symbol sym;
         final Predicate<? super JCTree> filter;
 
+        DeclScanner(final Symbol sym) {
+            this(sym, null);
+        }
         DeclScanner(final Symbol sym, Predicate<? super JCTree> filter) {
             this.sym = sym;
             this.filter = filter;
@@ -792,7 +799,7 @@ public class TreeInfo {
     /** Find the declaration for a symbol, where
      *  that symbol is defined somewhere in the given tree. */
     public static JCTree declarationFor(final Symbol sym, final JCTree tree) {
-        DeclScanner s = new DeclScanner(sym, null);
+        DeclScanner s = new DeclScanner(sym);
         tree.accept(s);
         return s.result;
     }
