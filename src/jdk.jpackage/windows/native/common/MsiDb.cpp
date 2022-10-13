@@ -29,9 +29,6 @@
 #include "Log.h"
 
 
-#pragma comment(lib, "msi.lib")
-
-
 namespace msi {
 
 void closeDatabaseView(MSIHANDLE hView) {
