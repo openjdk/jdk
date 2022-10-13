@@ -451,13 +451,11 @@ public class PassFailJFrame {
     }
 
     /**
-     * Dispose all the window(s) i,e both the test instruction frame and
-     * the window(s) that is added via addTestWindow(Window testWindow)
+     * Disposes of all the windows. It disposes of the test instruction frame
+     * and all other windows added via {@link #addTestWindow(Window)}.
      */
     private static synchronized void disposeWindows() {
-        for (Window win : windowList) {
-            win.dispose();
-        }
+        windowList.forEach(Window::dispose);
     }
 
     /**
