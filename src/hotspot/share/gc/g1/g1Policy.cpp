@@ -1010,17 +1010,24 @@ void G1Policy::record_young_gc_pause_end(bool evacuation_failed) {
 
 double G1Policy::predict_base_time_ms(size_t pending_cards,
                                       size_t rs_length) const {
-  size_t effective_scanned_cards = _analytics->predict_scan_card_num(rs_length, collector_state()->in_young_only_phase());
+  bool in_young_only_phase = collector_state()->in_young_only_phase();
 
-  double card_merge_time = _analytics->predict_card_merge_time_ms(pending_cards + rs_length, collector_state()->in_young_only_phase());
-  double card_scan_time = _analytics->predict_card_scan_time_ms(effective_scanned_cards, collector_state()->in_young_only_phase());
+  size_t unique_cards_from_rs = _analytics->predict_scan_card_num(rs_length, in_young_only_phase);
+  // Assume that all cards from the log buffers will be scanned, i.e. there are no
+  // duplicates in that set.
+  size_t effective_scanned_cards = unique_cards_from_rs + pending_cards;
+
+  double card_merge_time = _analytics->predict_card_merge_time_ms(pending_cards + rs_length, in_young_only_phase);
+  double card_scan_time = _analytics->predict_card_scan_time_ms(effective_scanned_cards, in_young_only_phase);
   double constant_other_time = _analytics->predict_constant_other_time_ms();
   double survivor_evac_time = predict_survivor_regions_evac_time();
 
   double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time;
 
-  log_trace(gc, ergo, heap)("Predicted base time: total %f lb_cards %zu rs_length %zu effective_scanned_cards %zu card_merge_time %f card_scan_time %f constant_other_time %f survivor_evac_time %f",
-                            total_time, pending_cards, rs_length, effective_scanned_cards, card_merge_time, card_scan_time, constant_other_time, survivor_evac_time);
+  log_trace(gc, ergo, heap)("Predicted base time: total %f lb_cards %zu rs_length %zu effective_scanned_cards %zu "
+                            "card_merge_time %f card_scan_time %f constant_other_time %f survivor_evac_time %f",
+                            total_time, pending_cards, rs_length, effective_scanned_cards,
+                            card_merge_time, card_scan_time, constant_other_time, survivor_evac_time);
   return total_time;
 }
 
