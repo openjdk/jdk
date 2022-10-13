@@ -31,9 +31,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.WeakHashMap;
-
 import jdk.internal.access.JavaSecurityAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.security.action.GetPropertyAction;
@@ -127,11 +125,6 @@ public class ProtectionDomain {
                     return pd == null ? map.get(null) : map.get(pd.key);
                 }
             };
-        }
-
-        @Override
-        public Properties getInitialProperties() {
-            return Security.getInitialSecurityProperties();
         }
     }
 

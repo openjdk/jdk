@@ -56,7 +56,7 @@ public class TestInitialSecurityPropertyEvent {
             Security.setProperty(SEC_KEY, "false");
             recording.stop();
 
-            Properties p = SharedSecrets.getJavaSecurityAccess().getInitialProperties();
+            Properties p = SharedSecrets.getJavaSecurityPropertyAccess().getInitialProperties();
             List<RecordedEvent> events = Events.fromRecording(recording);
             if (events.size() == 0) {
                 throw new Exception("No security properties - Security class may not have loaded ?");

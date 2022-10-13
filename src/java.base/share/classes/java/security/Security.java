@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
 
+import jdk.internal.access.JavaSecurityPropertiesAccess;
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
 import jdk.internal.access.SharedSecrets;
@@ -81,6 +82,13 @@ public final class Security {
         var dummy = AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
             initialize();
             return null;
+        });
+        // Set up JavaSecurityPropertiesAccess in SharedSecrets
+        SharedSecrets.setJavaSecurityPropertiesAccess(new JavaSecurityPropertiesAccess() {
+            @Override
+            public Properties getInitialProperties() {
+                return initialSecurityProperties;
+            }
         });
     }
 
