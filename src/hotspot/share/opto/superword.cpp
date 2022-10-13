@@ -1933,7 +1933,7 @@ Node* CMoveKit::is_CmpD_candidate(Node* def) const {
 }
 
 bool CMoveKit::is_cmove_pack_candidate(Node_List* cmove_pk) {
-  Node *cmove = cmove_pk->at(0);
+  Node* cmove = cmove_pk->at(0);
   if ((cmove->Opcode() != Op_CMoveF && cmove->Opcode() != Op_CMoveD) ||
       pack(cmove) != NULL /* already in the cmove pack */) {
     return false;
@@ -1944,7 +1944,7 @@ bool CMoveKit::is_cmove_pack_candidate(Node_List* cmove_pk) {
 // Determine if the current pack is an ideal cmove pack, and if its related packs,
 // i.e. bool node pack and cmp node pack, can be successfully merged for vectorization.
 bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
-  Node *cmove = cmove_pk->at(0);
+  Node* cmove = cmove_pk->at(0);
 
   if (cmove->in(0) != NULL) {
     NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::make_cmove_pack: CMove %d has control flow, escaping...", cmove->_idx); cmove->dump();})
@@ -1990,7 +1990,7 @@ bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
 // Create a new cmove pack to substitute the old one, map all info to the
 // new pack and delete the old cmove pack and related packs from the packset.
 void CMoveKit::make_cmove_pack(Node_List* cmove_pk) {
-  Node *cmove = cmove_pk->at(0);
+  Node* cmove = cmove_pk->at(0);
   Node* bol = cmove->as_CMove()->in(CMoveNode::Condition);
   Node_List* bool_pk = _sw->my_pack(bol);
   Node* cmp = bol->in(1);
