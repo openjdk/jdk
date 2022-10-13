@@ -32,9 +32,6 @@
 #include "WinErrorHandling.h"
 
 
-#pragma comment(lib, "msi.lib")
-
-
 namespace msi {
 
 namespace {
