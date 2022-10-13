@@ -63,11 +63,11 @@ jobs:
         run: |
           git push origin ${{ steps.fetch.outputs.tag }}
 
-          git checkout -B master ${{ steps.fetch.outputs.tag }}
-          git push origin master
-
           git checkout -B rivos/merge-upstream ${{ steps.fetch.outputs.tag }}
           git push origin rivos/merge-upstream
+
+          git checkout -B master upstream/master
+          git push origin master
 
       - name: "Create PR"
         run: |
