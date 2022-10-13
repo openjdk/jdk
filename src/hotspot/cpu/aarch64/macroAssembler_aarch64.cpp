@@ -2772,20 +2772,6 @@ ATOMIC_OP(addalw, ldaxrw, addw, subw, ldaddal, stlxrw, Assembler::word)
 
 #undef ATOMIC_OP
 
-// Atomic bitwise OR on word in memory addr with operand op.
-// Note-1: the value in memory addr can be optionally shifted.
-// Note-2: the final computation result is stored in register result as well.
-void MacroAssembler::atomic_orrw(Register addr, Register op, Register result, Register tmp,
-                                 enum shift_kind kind, unsigned shift) {
-  Label retry_load;
-  prfm(Address(addr), PSTL1STRM);
-  bind(retry_load);
-  ldxrw(result, addr);
-  orrw(result, op, result, kind, shift);
-  stxrw(tmp, result, addr);
-  cbnzw(tmp, retry_load);
-}
-
 #define ATOMIC_XCHG(OP, AOP, LDXR, STXR, sz)                            \
 void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { \
   if (UseLSE) {                                                         \

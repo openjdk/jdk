@@ -1991,22 +1991,21 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   // Calculate new index for counter:
   //   _index = (_index >> log2_number_of_codes) |
   //            (bytecode << log2_number_of_codes);
-  Register index_addr = r10;
-  Register index = r11;
-  Label L;
+  Register index_addr = rscratch1;
+  Register index = rscratch2;
   __ mov(index_addr, (address) &BytecodePairHistogram::_index);
-  __ mov(rscratch1,
+  __ ldrw(index, index_addr);
+  __ mov(r10,
          ((int)t->bytecode()) << BytecodePairHistogram::log2_number_of_codes);
-  __ atomic_orrw(index_addr, rscratch1, index,
-                 /* tmp */ rscratch2,
-                 /* kind */ Assembler::LSR,
-                 /* shift */ BytecodePairHistogram::log2_number_of_codes);
+  __ orrw(index, r10, index, Assembler::LSR,
+          BytecodePairHistogram::log2_number_of_codes);
+  __ strw(index, index_addr);
 
   // Bump bucket contents:
   //   _counters[_index] ++;
-  Register counter_addr = r10;
-  __ mov(rscratch1, (address) &BytecodePairHistogram::_counters);
-  __ lea(counter_addr, Address(rscratch1, index, Address::lsl(LogBytesPerInt)));
+  Register counter_addr = rscratch1;
+  __ mov(r10, (address) &BytecodePairHistogram::_counters);
+  __ lea(counter_addr, Address(r10, index, Address::lsl(LogBytesPerInt)));
   __ atomic_addw(noreg, 1, counter_addr);
 }
 

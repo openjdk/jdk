@@ -1062,12 +1062,6 @@ public:
   void atomic_addal(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addalw(Register prev, RegisterOrConstant incr, Register addr);
 
-  // Atomic bitwise OR on word in memory addr with operand op.
-  // Note-1: the value in memory addr can be optionally shifted.
-  // Note-2: the final computation result is stored in register result as well.
-  void atomic_orrw(Register addr, Register op, Register result, Register tmp,
-                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
-
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);
   void atomic_xchgl(Register prev, Register newv, Register addr);
