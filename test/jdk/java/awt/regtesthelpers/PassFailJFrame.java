@@ -593,13 +593,7 @@ public class PassFailJFrame {
             throws InterruptedException, InvocationTargetException {
         final Rectangle[] bounds = {null};
 
-        if (isEventDispatchThread()) {
-            bounds[0] = frame != null ? frame.getBounds() : null;
-        } else {
-            invokeAndWait(() -> {
-                bounds[0] = frame != null ? frame.getBounds() : null;
-            });
-        }
+        invokeOnEDT(() -> bounds[0] = frame != null ? frame.getBounds() : null);
         return bounds[0];
     }
 
