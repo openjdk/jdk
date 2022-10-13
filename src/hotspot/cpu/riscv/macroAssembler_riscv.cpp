@@ -828,7 +828,7 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
   // li -> c.li
   if (do_compress() && (is_imm_in_range(imm, 6, 0) && Rd != x0)) {
     c_li(Rd, imm);
-    return; 
+    return;
   }
 
   int shift = 12;
