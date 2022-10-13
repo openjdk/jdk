@@ -387,6 +387,12 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         print_prop("block", C->cfg()->get_block(0)->_pre_order);
       } else {
         print_prop("block", block->_pre_order);
+        if (node == block->head()) {
+          if (block->_idom != NULL) {
+            print_prop("idom", block->_idom->_pre_order);
+          }
+          print_prop("dom_depth", block->_dom_depth);
+        }
         // Print estimated execution frequency, normalized within a [0,1] range.
         buffer[0] = 0;
         stringStream freq(buffer, sizeof(buffer) - 1);

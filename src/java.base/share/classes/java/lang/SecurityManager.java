@@ -494,7 +494,6 @@ public class SecurityManager {
      * calling thread is not allowed to modify the thread argument.
      * <p>
      * This method is invoked for the current security manager by the
-     * {@code stop}, {@code suspend}, {@code resume},
      * {@code setPriority}, {@code setName}, and
      * {@code setDaemon} methods of class {@code Thread}.
      * <p>
@@ -523,12 +522,9 @@ public class SecurityManager {
      *             permission to modify the thread.
      * @throws     NullPointerException if the thread argument is
      *             {@code null}.
-     * @see        java.lang.Thread#resume() resume
      * @see        java.lang.Thread#setDaemon(boolean) setDaemon
      * @see        java.lang.Thread#setName(java.lang.String) setName
      * @see        java.lang.Thread#setPriority(int) setPriority
-     * @see        java.lang.Thread#stop() stop
-     * @see        java.lang.Thread#suspend() suspend
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     public void checkAccess(Thread t) {
@@ -547,9 +543,8 @@ public class SecurityManager {
      * <p>
      * This method is invoked for the current security manager when a
      * new child thread or child thread group is created, and by the
-     * {@code setDaemon}, {@code setMaxPriority},
-     * {@code stop}, {@code suspend}, {@code resume}, and
-     * {@code destroy} methods of class {@code ThreadGroup}.
+     * {@code setDaemon} and {@code setMaxPriority} methods of class
+     * {@code ThreadGroup}.
      * <p>
      * If the thread group argument is the system thread group (
      * has a {@code null} parent) then
@@ -576,12 +571,8 @@ public class SecurityManager {
      *             permission to modify the thread group.
      * @throws     NullPointerException if the thread group argument is
      *             {@code null}.
-     * @see        java.lang.ThreadGroup#destroy() destroy
-     * @see        java.lang.ThreadGroup#resume() resume
      * @see        java.lang.ThreadGroup#setDaemon(boolean) setDaemon
      * @see        java.lang.ThreadGroup#setMaxPriority(int) setMaxPriority
-     * @see        java.lang.ThreadGroup#stop() stop
-     * @see        java.lang.ThreadGroup#suspend() suspend
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     public void checkAccess(ThreadGroup g) {
