@@ -806,9 +806,10 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   if (update_stats) {
     size_t const total_log_buffer_cards = p->sum_thread_work_items(G1GCPhaseTimes::MergeHCC, G1GCPhaseTimes::MergeHCCDirtyCards) +
                                           p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
-    // Update prediction for card merge; MergeRSDirtyCards includes the cards from the Eager Reclaim phase.
-    size_t const total_cards_merged = p->sum_thread_work_items(G1GCPhaseTimes::MergeRS, G1GCPhaseTimes::MergeRSDirtyCards) +
-                                      p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSDirtyCards) +
+    // Update prediction for card merge; MergeRSCards includes the cards from the Eager Reclaim phase.
+    size_t const total_cards_merged_rs = p->sum_thread_work_items(G1GCPhaseTimes::MergeRS, G1GCPhaseTimes::MergeRSCards) +
+                                         p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSCards);
+    size_t const total_cards_merged = total_cards_merged_rs +
                                       total_log_buffer_cards;
 
     if (total_cards_merged >= G1NumCardsCostSampleThreshold) {
@@ -833,14 +834,12 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
     // Update prediction for the ratio between cards from the remembered
     // sets and actually scanned cards from the remembered sets.
-    // Cards from the remembered sets are all cards not duplicated by cards from
-    // the logs.
     // Due to duplicates in the log buffers, the number of actually scanned cards
     // can be smaller than the cards in the log buffers.
     const size_t from_rs_length_cards = (total_cards_scanned > total_log_buffer_cards) ? total_cards_scanned - total_log_buffer_cards : 0;
     double merge_to_scan_ratio = 0.0;
-    if (total_cards_scanned > 0) {
-      merge_to_scan_ratio = (double) from_rs_length_cards / total_cards_scanned;
+    if (total_cards_merged_rs > 0) {
+      merge_to_scan_ratio = (double)from_rs_length_cards / total_cards_merged_rs;
     }
     _analytics->report_card_merge_to_scan_ratio(merge_to_scan_ratio, is_young_only_pause);
 

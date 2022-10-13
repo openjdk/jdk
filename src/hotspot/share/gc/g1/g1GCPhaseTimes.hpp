@@ -112,7 +112,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeRSHowlArrayOfCards,
     MergeRSHowlBitmap,
     MergeRSHowlFull,
-    MergeRSDirtyCards,
+    MergeRSCards,
     MergeRSContainersSentinel
   };
 
