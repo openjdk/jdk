@@ -260,6 +260,19 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
         return divider;
     }
 
+    private void setDividerDraggingColor(Graphics g, int loc) {
+        if (!isContinuousLayout() && getLastDragLocation() != -1 &&
+               dividerDraggingColor != null) {
+
+            g.setColor(dividerDraggingColor);
+            if (getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
+                g.fillRect(loc, 0, dividerSize - 1, splitPane.getHeight() - 1);
+            } else {
+                g.fillRect(0, loc, splitPane.getWidth() - 1, dividerSize - 1);
+            }
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -269,16 +282,7 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
         return new Canvas() {
             public void paint(Graphics g) {
                 paintDragDivider(g, 0, 0, getWidth(), getHeight());
-                if(!isContinuousLayout() && getLastDragLocation() != -1) {
-                    Dimension      size = splitPane.getSize();
-
-                    g.setColor(dividerDraggingColor);
-                    if(getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
-                        g.fillRect(0, 0, dividerSize - 1, size.height - 1);
-                    } else {
-                        g.fillRect(0, 0, size.width - 1, dividerSize - 1);
-                    }
-                }
+                setDividerDraggingColor(g, 0);
             }
         };
     }
@@ -349,8 +353,6 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
                                    MOUSE_OVER) | PRESSED);
         Shape oldClip = g.getClip();
         g.clipRect(x, y, w, h);
-
-
         context.getPainter().paintSplitPaneDragDivider(context, g, x, y, w, h,
                                            splitPane.getOrientation());
         g.setClip(oldClip);
@@ -361,24 +363,18 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
      */
     @Override
     public void finishedPaintingChildren(JSplitPane jc, Graphics g) {
+
         if(jc == splitPane && getLastDragLocation() != -1 &&
                               !isContinuousLayout() && !draggingHW) {
-            Dimension      size = splitPane.getSize();
 
-            g.setColor(dividerDraggingColor);
             if(jc.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
-
                 paintDragDivider(g, getLastDragLocation(), 0, dividerSize - 1,
                                  splitPane.getHeight() - 1);
-                g.fillRect(getLastDragLocation(), 0, dividerSize - 1,
-                        size.height - 1);
             } else {
-
                 paintDragDivider(g, 0, getLastDragLocation(),
                                  splitPane.getWidth() - 1, dividerSize - 1);
-                g.fillRect(0, getLastDragLocation(), size.width - 1,
-                        dividerSize - 1);
             }
+            setDividerDraggingColor(g, getLastDragLocation());
         }
     }
 }
