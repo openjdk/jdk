@@ -175,7 +175,7 @@ final class Poly1305 {
             int blockMultipleLength = (len/BLOCK_LENGTH) * BLOCK_LENGTH;
             byte[] aBytes = this.a.asByteArray(BLOCK_LENGTH+1);
             byte[] rBytes = this.r.asByteArray(BLOCK_LENGTH);
-    
+
             processMultipleBlocksCheck(input, offset, blockMultipleLength, aBytes, rBytes);
             processMultipleBlocks(input, offset, blockMultipleLength, aBytes, rBytes);
             this.a.setValue(aBytes, 0, aBytes.length, (byte) 0);
