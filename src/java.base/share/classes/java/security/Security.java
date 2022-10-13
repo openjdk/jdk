@@ -65,7 +65,7 @@ public final class Security {
     private static Properties props;
 
     /* cache a copy for recording purposes */
-    static Properties initialSecurityProperties;
+    private static Properties initialSecurityProperties;
 
     // An element in the cache
     private static class ProviderProperty {
@@ -179,10 +179,6 @@ public final class Security {
                 }
             }
         }
-    }
-
-    static Properties getInitialSecurityProperties() {
-        return initialSecurityProperties;
     }
 
     /**
