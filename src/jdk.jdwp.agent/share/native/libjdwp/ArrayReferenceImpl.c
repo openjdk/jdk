@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <stdalign.h>
+
 #include "util.h"
 #include "ArrayReferenceImpl.h"
 #include "inStream.h"
@@ -416,7 +418,7 @@ readLongComponents(JNIEnv *env, PacketInputStream *in,
 {
     int i;
 #ifdef _WIN32
-    _Alignas(8)
+    alignas(8)
 #endif
     jlong component;
 
@@ -447,7 +449,7 @@ readDoubleComponents(JNIEnv *env, PacketInputStream *in,
 {
     int i;
 #ifdef _WIN32
-    _Alignas(8)
+    alignas(8)
 #endif
     jdouble component;
 
