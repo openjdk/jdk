@@ -168,15 +168,26 @@ final class Poly1305 {
             }
         }
 
-        int blockMultipleLength = (len/BLOCK_LENGTH) * BLOCK_LENGTH;
-        byte[] aBytes = this.a.asByteArray(BLOCK_LENGTH+1);
-        byte[] rBytes = this.r.asByteArray(BLOCK_LENGTH);
-
-        processMultipleBlocksCheck(input, offset, blockMultipleLength, aBytes, rBytes);
-        processMultipleBlocks(input, offset, blockMultipleLength, aBytes, rBytes);
-        this.a.setValue(aBytes, 0, aBytes.length, (byte) 0);
-        offset += blockMultipleLength;
-        len -= blockMultipleLength;
+        if (len >= 1024) {
+            // Intrinsic code; need to extract a and r into bytes
+            // Choice of 1024 is arbitrary, need enough data blocks to amortize conversion overhead
+            // and not affect platforms without intrinsic support
+            int blockMultipleLength = (len/BLOCK_LENGTH) * BLOCK_LENGTH;
+            byte[] aBytes = this.a.asByteArray(BLOCK_LENGTH+1);
+            byte[] rBytes = this.r.asByteArray(BLOCK_LENGTH);
+    
+            processMultipleBlocksCheck(input, offset, blockMultipleLength, aBytes, rBytes);
+            processMultipleBlocks(input, offset, blockMultipleLength, aBytes, rBytes);
+            this.a.setValue(aBytes, 0, aBytes.length, (byte) 0);
+            offset += blockMultipleLength;
+            len -= blockMultipleLength;
+        } else {
+            while (len >= BLOCK_LENGTH) {
+                processBlock(input, offset, BLOCK_LENGTH);
+                offset += BLOCK_LENGTH;
+                len -= BLOCK_LENGTH;
+            }
+        }
 
         if (len > 0) { // and len < BLOCK_LENGTH
             System.arraycopy(input, offset, block, 0, len);
@@ -282,6 +293,7 @@ final class Poly1305 {
         keyBytes[8] &= (byte)252;
         keyBytes[12] &= (byte)252;
 
+        // This should be enabled, but Poly1305KAT would fail
         // byte keyIsZero = 0;
         // for (int i = 0; i < RS_LENGTH; i++) {
         //     keyIsZero |= keyBytes[i];

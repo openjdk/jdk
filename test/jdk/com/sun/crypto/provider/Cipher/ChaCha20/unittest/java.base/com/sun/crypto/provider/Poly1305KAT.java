@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Intel Corporation. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +65,7 @@ public class Poly1305KAT {
             "747320696e20494554462073657373696f6e732c2061732077656c6c20617320" +
             "7772697474656e20616e6420656c656374726f6e696320636f6d6d756e696361" +
             "74696f6e73206d61646520617420616e792074696d65206f7220706c6163652c" +
-            "207768696368206172652061646472657373656420746f",                          
+            "207768696368206172652061646472657373656420746f",
             "36e5f6b5c5e06070f0efca96227a863e"));
         add(new TestData("RFC 7539 A.3 Test Vector #3",
             "36e5f6b5c5e06070f0efca96227a863e00000000000000000000000000000000",

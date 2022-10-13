@@ -5020,7 +5020,7 @@ void Assembler::evpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, 
   if (merge) {
     attributes.reset_is_clear_context();
   }
-  
+
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16((unsigned char)0xB4, (0xC0 | encode));
 }

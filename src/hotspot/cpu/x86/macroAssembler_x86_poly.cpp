@@ -1,27 +1,27 @@
 /*
-* Copyright (c) 2022, Intel Corporation. All rights reserved.
-*
-* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-*
-* This code is free software; you can redistribute it and/or modify it
-* under the terms of the GNU General Public License version 2 only, as
-* published by the Free Software Foundation.
-*
-* This code is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-* version 2 for more details (a copy is included in the LICENSE file that
-* accompanied this code).
-*
-* You should have received a copy of the GNU General Public License version
-* 2 along with this work; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-*
-* Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-* or visit www.oracle.com if you need additional information or have any
-* questions.
-*
-*/
+ * Copyright (c) 2022, Intel Corporation. All rights reserved.
+ *
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
 
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
@@ -39,7 +39,7 @@
 //
 // Reduction by 2^130-5 can be expressed as follows:
 //    ( a×2^130 + b ) mod 2^130-5     //i.e. number split along the 130-bit boundary
-//                                 = ( a×2^130 - 5×a + 5×a + b ) mod 2^130-5 
+//                                 = ( a×2^130 - 5×a + 5×a + b ) mod 2^130-5
 //                                 = ( a×(2^130 - 5) + 5×a + b ) mod 2^130-5 // i.e. adding multiples of modulus is a noop
 //                                 = ( 5×a + b ) mod 2^130-5
 // QED: shows mathematically the well known algorithm of 'split the number down the middle, multiply upper and add'
@@ -86,7 +86,7 @@ enum polyCPOffset {
   mask_42 = 128,
 };
 
-// Compute product for 8 16-byte message blocks, 
+// Compute product for 8 16-byte message blocks,
 // i.e. For each block, compute [a2 a1 a0] = [a2 a1 a0] × [r2 r1 r0]
 //
 // Each block/number is represented by 3 44-bit limb digits, start with multiplication
@@ -109,7 +109,7 @@ enum polyCPOffset {
 //                             = ( p2'×2^88 + p2''×2^130 - 5×p2'' + 5×p2'') mod 2^130-5
 //                             = ( p2'×2^88 + p2''×(2^130 - 5) + 5×p2'') mod 2^130-5 // i.e. adding multiples of modulus is a noop
 //                             = ( p2'×2^88 + 5×p2'') mod 2^130-5
-// 
+//
 // Math Note 2: R1P = 4*5*R1 and R2P = 4*5*R2; This precomputation allows simultaneous reduction and multiplication.
 // This is not the standard 'multiply-upper-by-5', here is why the factor is 4*5 instead of 5.
 // For example, partial product (a2×r2):
@@ -124,8 +124,8 @@ enum polyCPOffset {
 //                                    = (a2×R2P × 2^44) mod 2^130-5 // i.e. R2P = 4*5*R2
 //
 void MacroAssembler::poly1305_multiply8_avx512(
-  const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,   
-  const XMMRegister R0, const XMMRegister R1, const XMMRegister R2, const XMMRegister R1P, const XMMRegister R2P, const Register polyCP) 
+  const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+  const XMMRegister R0, const XMMRegister R1, const XMMRegister R2, const XMMRegister R1P, const XMMRegister R2P, const Register polyCP)
 {
   const XMMRegister P0_L = xmm0;
   const XMMRegister P0_H = xmm1;
@@ -165,27 +165,27 @@ void MacroAssembler::poly1305_multiply8_avx512(
   evpmadd52luq(P2_L, A1, R1, Assembler::AVX_512bit);
   evpmadd52huq(P2_H, A1, R1, Assembler::AVX_512bit);
 
-  // Carry propagation:  
+  // Carry propagation:
   // (Not quite aligned)                           | More mathematically correct:
   //          P2_L   P1_L   P0_L                   |                  P2_L×2^88 + P1_L×2^44 + P0_L×2^0
-  // + P2_H   P1_H   P0_H                          |   + P2_H×2^140 + P1_H×2^96 + P0_H×2^52         
+  // + P2_H   P1_H   P0_H                          |   + P2_H×2^140 + P1_H×2^96 + P0_H×2^52
   // ---------------------------                   |   -----------------------------------------------
-  // = P2_H    A2    A1     A0                     |   = P2_H×2^130 +   A2×2^88 +   A1×2^44 +   A0×2^0  
+  // = P2_H    A2    A1     A0                     |   = P2_H×2^130 +   A2×2^88 +   A1×2^44 +   A0×2^0
   //
   vpsrlq(TMP1, P0_L, 44, Assembler::AVX_512bit);
   vpandq(A0, P0_L, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
-  
+
   vpsllq(P0_H, P0_H, 8, Assembler::AVX_512bit);
   vpaddq(P0_H, P0_H, TMP1, Assembler::AVX_512bit);
   vpaddq(P1_L, P1_L, P0_H, Assembler::AVX_512bit);
   vpandq(A1, P1_L, Address(polyCP, mask_44), Assembler::AVX_512bit); // Clear top 20 bits
-  
+
   vpsrlq(TMP1, P1_L, 44, Assembler::AVX_512bit);
   vpsllq(P1_H, P1_H, 8, Assembler::AVX_512bit);
   vpaddq(P1_H, P1_H, TMP1, Assembler::AVX_512bit);
   vpaddq(P2_L, P2_L, P1_H, Assembler::AVX_512bit);
   vpandq(A2, P2_L, Address(polyCP, mask_42), Assembler::AVX_512bit); // Clear top 22 bits
-  
+
   vpsrlq(TMP1, P2_L, 42, Assembler::AVX_512bit);
   vpsllq(P2_H, P2_H, 10, Assembler::AVX_512bit);
   vpaddq(P2_H, P2_H, TMP1, Assembler::AVX_512bit);
@@ -202,7 +202,7 @@ void MacroAssembler::poly1305_multiply8_avx512(
 
 // Compute product for a single 16-byte message blocks
 // - Assumes that r = [r1 r0] is only 128 bits (not 130)
-// - When only128 is set, Input [a2 a1 a0] is 128 bits (i.e. a2==0) 
+// - When only128 is set, Input [a2 a1 a0] is 128 bits (i.e. a2==0)
 // - Output [a2 a1 a0] is at least 130 bits (i.e. a2 is used)
 //
 // Note 1: a2 here is only two bits so anything above is subject of reduction.
@@ -230,8 +230,8 @@ void MacroAssembler::poly1305_multiply_scalar(
   const Register a0, const Register a1, const Register a2,
   const Register r0, const Register r1, const Register c1, bool only128)
 {
-  const Register t1 = r13;    
-  const Register t2 = r14;    
+  const Register t1 = r13;
+  const Register t2 = r14;
   const Register t3 = r15;
   // Note mulq instruction requires/clobers rax, rdx
 
@@ -343,7 +343,7 @@ void MacroAssembler::poly1305_limbs_avx512(
   vpsllq(TMP2, TMP1, 20, Assembler::AVX_512bit);
   vpternlogq(L1, 0xA8, TMP2, Address(polyCP, mask_44), Assembler::AVX_512bit); // (A OR B AND C)
 
-  // Lowest 44-bit limbs of new blocks 
+  // Lowest 44-bit limbs of new blocks
   vpandq(L0, L0, Address(polyCP, mask_44), Assembler::AVX_512bit);
 }
 
@@ -405,7 +405,7 @@ void MacroAssembler::poly1305_limbs_avx512(
 //    B = B × R              // [r^16 r^12 r^15 r^11 r^14 r^10 r^13 r^9]
 //    push(B)
 //    R = r^16 || r^16 || .. // [r^16 r^16 r^16 r^16 r^16 r^16 r^16 r^16]
-// 
+//
 // for (;length>=16; input+=16, length-=16)
 //     BL = limbs(input)
 //     BH = limbs(input+8)
@@ -413,7 +413,7 @@ void MacroAssembler::poly1305_limbs_avx512(
 //     AH = AH × R
 //     AL = AL + BL
 //     AH = AH + BH
-// 
+//
 //  B = pop()
 //  R = pop()
 //  AL = AL × R
@@ -426,7 +426,7 @@ void MacroAssembler::poly1305_limbs_avx512(
 //  T = A >> 1  // 2 ->1 blocks
 //  A = A + T
 //  a = A
-void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const Register length, 
+void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const Register length,
   const Register a0, const Register a1, const Register a2,
   const Register r0, const Register r1, const Register c1)
 {
@@ -486,7 +486,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   andq(a1, Address(polyCP, mask_42)); // Third limb (Acc[129:88])
   movq(C2, a1);
 
-  // To add accumulator, we must unroll first loop iteration 
+  // To add accumulator, we must unroll first loop iteration
 
   // Load first block of data (128 bytes) and pad
   // A0 to have bits 0-43 of all 8 blocks in 8 qwords
@@ -510,7 +510,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   poly1305_limbs_avx512(T0, T1, A3, A4, A5, true, polyCP);
 
   subl(length, 16*16);
-  lea(input, Address(input,16*16)); 
+  lea(input, Address(input,16*16));
 
   // Compute the powers of R^1..R^4 and form 44-bit limbs of each
   // T0 to have bits 0-127 in 4 quadword pairs
@@ -520,7 +520,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   vpinsrq(T2, T2, r1, 1);
   vinserti32x4(T0, T0, T2, 3);
 
-  // Calculate R^2 
+  // Calculate R^2
   movq(a0, r0);
   movq(a1, r1);
   // "Clever": a2 not set because poly1305_multiply_scalar has a flag to indicate 128-bit accumulator
@@ -595,7 +595,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   poly1305_multiply8_avx512(B0, B1, B2,             // ACC=R^4..R^1
                             R0, R1, R2, R1P, R2P,   // R^4..R^4, 4*5*R^4
                             polyCP);
- 
+
   // Interleave powers of R: R^8 R^4 R^7 R^3 R^6 R^2 R^5 R
   vporq(B0, B0, C0, Assembler::AVX_512bit);
   vporq(B1, B1, C1, Assembler::AVX_512bit);
@@ -605,7 +605,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   vpbroadcastq(R0, B0, Assembler::AVX_512bit);
   vpbroadcastq(R1, B1, Assembler::AVX_512bit);
   vpbroadcastq(R2, B2, Assembler::AVX_512bit);
- 
+
   // Generate 4*5*R^8
   vpsllq(R1P, R1, 2, Assembler::AVX_512bit);
   vpsllq(R2P, R2, 2, Assembler::AVX_512bit);
@@ -642,7 +642,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   vpsllq(R1P, R1P, 2, Assembler::AVX_512bit);   // 4*5*R^16
   vpsllq(R2P, R2P, 2, Assembler::AVX_512bit);
 
-  // VECTOR LOOP: process 16 * 16-byte message block at a time 
+  // VECTOR LOOP: process 16 * 16-byte message block at a time
   bind(L_process256Loop);
   cmpl(length, 16*16);
   jcc(Assembler::less, L_process256LoopDone);
@@ -672,7 +672,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   vpaddq(A5, A5, B5, Assembler::AVX_512bit); // Add highest bits from new blocks to accumulator
 
   subl(length, 16*16);
-  lea(input, Address(input,16*16)); 
+  lea(input, Address(input,16*16));
   jmp(L_process256Loop);
 
   bind(L_process256LoopDone);
@@ -686,7 +686,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
   evmovdquq(R0, Address(rsp, 64*0), Assembler::AVX_512bit);
   evmovdquq(R1, Address(rsp, 64*1), Assembler::AVX_512bit);
   evmovdquq(R2, Address(rsp, 64*2), Assembler::AVX_512bit);
-  
+
   // Generate 4*5*[R^16..R^9] (ignore lowest limb)
   vpsllq(T0, B1, 2, Assembler::AVX_512bit);
   vpaddq(B3, B1, T0, Assembler::AVX_512bit); // R1' (R1*5)
@@ -710,9 +710,9 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
                               R0, R1, R2, R1P, R2P,  // R^8-R, R1P, R2P
                               polyCP);
 
-  // Add all blocks (horizontally) 
+  // Add all blocks (horizontally)
   // 16->8 blocks
-  vpaddq(A0, A0, A3, Assembler::AVX_512bit); 
+  vpaddq(A0, A0, A3, Assembler::AVX_512bit);
   vpaddq(A1, A1, A4, Assembler::AVX_512bit);
   vpaddq(A2, A2, A5, Assembler::AVX_512bit);
 
@@ -810,7 +810,7 @@ void MacroAssembler::poly1305_process_blocks_avx512(const Register input, const 
 // This function consumes as many whole 16-byte blocks as available in input
 // After execution, input and length will point at remaining (unprocessed) data
 // and accumulator will point to the current accumulator value
-// 
+//
 void MacroAssembler::poly1305_process_blocks(Register input, Register length, Register accumulator, Register R)
 {
   // Register Map:
@@ -841,16 +841,16 @@ void MacroAssembler::poly1305_process_blocks(Register input, Register length, Re
   movq(a0, Address(accumulator, 0));
   movq(a1, Address(accumulator, 8));
   movzbq(a2, Address(accumulator, 16));
-  
+
   // VECTOR LOOP: Minimum of 256 bytes to run vectorized code
   cmpl(length, 16*16);
   jcc(Assembler::less, L_process16Loop);
 
-  poly1305_process_blocks_avx512(input, length, 
+  poly1305_process_blocks_avx512(input, length,
                                   a0, a1, a2,
                                   r0, r1, c1);
 
-  // SCALAR LOOP: process one 16-byte message block at a time 
+  // SCALAR LOOP: process one 16-byte message block at a time
   bind(L_process16Loop);
   cmpl(length, 16);
   jcc(Assembler::less, L_process16LoopDone);

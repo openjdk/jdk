@@ -968,14 +968,14 @@ public:
 
   void addmq(int disp, Register r1, Register r2);
 
-  void poly1305_process_blocks_avx512(const Register input, const Register length, 
+  void poly1305_process_blocks_avx512(const Register input, const Register length,
                                       const Register A0, const Register A1, const Register A2,
                                       const Register R0, const Register R1, const Register C1);
   void poly1305_limbs_avx512(const XMMRegister D0, const XMMRegister D1,
                       const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG, const Register polyCP);
   void poly1305_multiply_scalar(const Register A0, const Register A1, const Register A2,
                          const Register R0, const Register R1, const Register C1, bool only128);
-  void poly1305_multiply8_avx512(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,   
+  void poly1305_multiply8_avx512(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
                                  const XMMRegister R0, const XMMRegister R1, const XMMRegister R2, const XMMRegister R1P, const XMMRegister R2P, const Register polyCP);
 
  public:

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Intel Corporation. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +35,7 @@ import javax.crypto.spec.SecretKeySpec;
 // If a failure occurs, hardcode the seed to make the test case deterministic
 public class Poly1305IntrinsicFuzzTest {
         public static void main(String[] args) throws Exception {
-                //Note: it might be useful to increase this number during development of Poly1305 intrinsics for other platforms
+                //Note: it might be useful to increase this number during development of new Poly1305 intrinsics
                 final int repeat = 100;
                 for (int i = 0; i < repeat; i++) {
                         run();

@@ -1996,7 +1996,7 @@ address StubGenerator::generate_poly1305_processBlocks() {
   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
   address start = __ pc();
   __ enter();
-  
+
   // Save all 'SOE' registers
   __ push(rbx);
   #ifdef _WIN64
