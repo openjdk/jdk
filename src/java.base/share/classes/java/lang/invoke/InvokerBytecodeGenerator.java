@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,8 +317,15 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
+        Object cd;
+        if (classData.size() == 1) {
+            cd = classData.get(0).value;
+        } else {
+            cd = classDataValues();
+        }
+
         Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of())
-                                      .defineClass(true, classDataValues());
+                                      .defineClass(true, cd);
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }
 
@@ -379,18 +386,23 @@ class InvokerBytecodeGenerator {
         mv.visitLdcInsn(Type.getType("L" + className + ";"));
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/invoke/MethodHandles",
                            "classData", "(Ljava/lang/Class;)Ljava/lang/Object;", false);
-        // we should optimize one single element case that does not need to create a List
-        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/util/List");
-        mv.visitVarInsn(Opcodes.ASTORE, 0);
-        int index = 0;
-        for (ClassData p : classData) {
-            // initialize the static field
-            mv.visitVarInsn(Opcodes.ALOAD, 0);
-            emitIconstInsn(mv, index++);
-            mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/List",
-                               "get", "(I)Ljava/lang/Object;", true);
+        if (classData.size() == 1) {
+            ClassData p = classData.get(0);
             mv.visitTypeInsn(Opcodes.CHECKCAST, p.desc.substring(1, p.desc.length()-1));
             mv.visitFieldInsn(Opcodes.PUTSTATIC, className, p.name, p.desc);
+        } else {
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/util/List");
+            mv.visitVarInsn(Opcodes.ASTORE, 0);
+            int index = 0;
+            for (ClassData p : classData) {
+                // initialize the static field
+                mv.visitVarInsn(Opcodes.ALOAD, 0);
+                emitIconstInsn(mv, index++);
+                mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/List",
+                                   "get", "(I)Ljava/lang/Object;", true);
+                mv.visitTypeInsn(Opcodes.CHECKCAST, p.desc.substring(1, p.desc.length()-1));
+                mv.visitFieldInsn(Opcodes.PUTSTATIC, className, p.name, p.desc);
+            }
         }
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(2, 1);
