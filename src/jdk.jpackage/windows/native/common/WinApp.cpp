@@ -31,8 +31,7 @@
 #include "ErrorHandling.h"
 
 
-// MessageBox
-#pragma comment(lib, "user32")
+// MessageBox - user32
 
 
 namespace {
