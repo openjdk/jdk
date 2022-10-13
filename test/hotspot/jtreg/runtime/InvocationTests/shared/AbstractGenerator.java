@@ -142,23 +142,21 @@ public abstract class AbstractGenerator {
 
         if (executeTests) {
             // Check runtime behavior
+            System.out.printf(caseDescription);
+
             Caller caller = new Caller(loader, checker, paramClass, targetClass);
-            boolean printedCaseDes = false;
             for (String site : callSites) {
                 String callResult = caller.call(site);
+                System.out.printf(" %7s", callResult);
 
                 if (!caller.isPassed()) {
                     isPassed = false;
-                    if (!printedCaseDes) {
-                        System.out.printf(caseDescription);
-                        printedCaseDes = true;
-                    }
-                    System.out.printf(" %7s", callResult);
                 }
             }
             if (!caller.isPassed()) {
-                System.out.println(" |   FAILED");
+                System.out.print(" |   FAILED");
             }
+            System.out.println();
         } else {
             for (String site : callSites) {
                 String result = checker.check(loader.loadClass(site));
