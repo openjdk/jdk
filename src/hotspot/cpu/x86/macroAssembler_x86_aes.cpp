@@ -808,10 +808,13 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     addptr(pos, 1);
     addptr(used, 1);
     decrement(len_reg);
-    jmp(PRELOOP_START);
+    jcc(Assembler::notEqual, PRELOOP_START);
 
     bind(EXIT_PRELOOP);
     movl(Address(used_addr, 0), used);
+
+    cmpl(len_reg, 0);
+    jcc(Assembler::equal, EXIT);
 
     // Calculate number of rounds i.e. 10, 12, 14,  based on key length(128, 192, 256).
     movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
