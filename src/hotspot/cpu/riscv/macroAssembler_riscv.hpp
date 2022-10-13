@@ -397,8 +397,8 @@ class MacroAssembler: public Assembler {
   int load_signed_short(Register dst, Address src);
 
   // Load and store values by size and signed-ness
-  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2 = noreg);
-  void store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2 = noreg);
+  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
+  void store_sized_value(Address dst, Register src, size_t size_in_bytes);
 
  public:
   // Standard pseudoinstruction
