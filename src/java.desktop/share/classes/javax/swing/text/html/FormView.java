@@ -961,10 +961,7 @@ public class FormView extends ComponentView implements ActionListener {
                     } else if (m instanceof OptionListModel) {
                         @SuppressWarnings("unchecked")
                         OptionListModel<?> model = (OptionListModel) m;
-                        int size = model.getSize();
-                        for (int i = 0; i < size; i++) {
-                            model.removeIndexInterval(i, i);
-                        }
+                        model.clearSelection();
                         BitSet selectionRange = model.getInitialSelection();
                         for (int i = 0; i < selectionRange.size(); i++) {
                             if (selectionRange.get(i)) {
