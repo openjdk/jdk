@@ -864,9 +864,9 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
 #define INSN(NAME, REGISTER)                                       \
   void MacroAssembler::NAME(const address dest, Register temp) {   \
     assert_cond(dest != NULL);                                     \
-    int64_t offset = dest - pc();                                  \
-    if (is_imm_in_range(offset, 20, 1)) {                          \
-      Assembler::jal(REGISTER, offset);                            \
+    int64_t distance = dest - pc();                                \
+    if (is_imm_in_range(distance, 20, 1)) {                        \
+      Assembler::jal(REGISTER, distance);                          \
     } else {                                                       \
       assert(temp != noreg, "temp must not be empty register!");   \
       int32_t offset = 0;                                          \
@@ -907,14 +907,14 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
 #define INSN(NAME)                                                                    \
   void MacroAssembler::NAME(Register Rd, const address dest, Register temp) {         \
     assert_cond(dest != NULL);                                                        \
-    int64_t offset = dest - pc();                                                     \
-    if (is_imm_in_range(offset, 20, 1)) {                                             \
-      Assembler::NAME(Rd, offset);                                                    \
+    int64_t distance = dest - pc();                                                   \
+    if (is_imm_in_range(distance, 20, 1)) {                                           \
+      Assembler::NAME(Rd, distance);                                                  \
     } else {                                                                          \
       assert_different_registers(Rd, temp);                                           \
-      int32_t off = 0;                                                                \
-      movptr(temp, dest, off);                                                        \
-      jalr(Rd, temp, off);                                                            \
+      int32_t offset = 0;                                                             \
+      movptr(temp, dest, offset);                                                     \
+      jalr(Rd, temp, offset);                                                         \
     }                                                                                 \
   }                                                                                   \
   void MacroAssembler::NAME(Register Rd, Label &L, Register temp) {                   \

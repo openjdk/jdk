@@ -670,10 +670,10 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \
     assert_cond(dest != NULL);                                                                     \
-    int64_t offset = dest - pc();                                                                  \
-    if (is_offset_in_range(offset, 32)) {                                                          \
-      auipc(Rd, (int32_t)offset + 0x800);                                                          \
-      Assembler::NAME(Rd, Rd, ((int32_t)offset << 20) >> 20);                                      \
+    int64_t distance = dest - pc();                                                                \
+    if (is_offset_in_range(distance, 32)) {                                                        \
+      auipc(Rd, (int32_t)distance + 0x800);                                                        \
+      Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
       movptr(Rd, dest, offset);                                                                    \
@@ -726,10 +726,10 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rd, address dest, Register temp = t0) {                                  \
     assert_cond(dest != NULL);                                                                     \
-    int64_t offset = dest - pc();                                                                  \
-    if (is_offset_in_range(offset, 32)) {                                                          \
-      auipc(temp, (int32_t)offset + 0x800);                                                        \
-      Assembler::NAME(Rd, temp, ((int32_t)offset << 20) >> 20);                                    \
+    int64_t distance = dest - pc();                                                                \
+    if (is_offset_in_range(distance, 32)) {                                                        \
+      auipc(temp, (int32_t)distance + 0x800);                                                      \
+      Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
       movptr(temp, dest, offset);                                                                  \
@@ -786,10 +786,10 @@ public:
   void NAME(Register Rs, address dest, Register temp = t0) {                                       \
     assert_cond(dest != NULL);                                                                     \
     assert_different_registers(Rs, temp);                                                          \
-    int64_t offset = dest - pc();                                                                  \
-    if (is_offset_in_range(offset, 32)) {                                                          \
-      auipc(temp, (int32_t)offset + 0x800);                                                        \
-      Assembler::NAME(Rs, temp, ((int32_t)offset << 20) >> 20);                                    \
+    int64_t distance = dest - pc();                                                                \
+    if (is_offset_in_range(distance, 32)) {                                                        \
+      auipc(temp, (int32_t)distance + 0x800);                                                      \
+      Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
       movptr(temp, dest, offset);                                                                  \
@@ -830,10 +830,10 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != NULL);                                                                     \
-    int64_t offset = dest - pc();                                                                  \
-    if (is_offset_in_range(offset, 32)) {                                                          \
-      auipc(temp, (int32_t)offset + 0x800);                                                        \
-      Assembler::NAME(Rs, temp, ((int32_t)offset << 20) >> 20);                                    \
+    int64_t distance = dest - pc();                                                                \
+    if (is_offset_in_range(distance, 32)) {                                                        \
+      auipc(temp, (int32_t)distance + 0x800);                                                      \
+      Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
       movptr(temp, dest, offset);                                                                  \
