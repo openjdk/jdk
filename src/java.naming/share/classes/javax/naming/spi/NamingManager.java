@@ -106,7 +106,7 @@ public class NamingManager {
      * @see ObjectFactoryBuilder
      * @see java.lang.SecurityManager#checkSetFactory
      */
-    public static synchronized void setObjectFactoryBuilder(
+    public static void setObjectFactoryBuilder(
             ObjectFactoryBuilder builder) throws NamingException {
         NamingManagerHelper.setObjectFactoryBuilder(builder);
     }
@@ -114,7 +114,7 @@ public class NamingManager {
     /**
      * Used for accessing object factory builder.
      */
-    static synchronized ObjectFactoryBuilder getObjectFactoryBuilder() {
+    static ObjectFactoryBuilder getObjectFactoryBuilder() {
         return NamingManagerHelper.getObjectFactoryBuilder();
     }
 

@@ -1382,9 +1382,10 @@ jdk.tls.alpnCharset=ISO_8859_1
 # which will be allowed to instantiate objects from object references returned by
 # naming/directory systems. The factory class named by the reference instance will be
 # matched against this filter. The filter property supports pattern-based filter syntax
-# with the same format as jdk.serialFilter.
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
 #
-# Each pattern is matched against the factory class name to allow or disallow it's
+# Each class name pattern is matched against the factory class name to allow or disallow its
 # instantiation. The access to a factory class is allowed unless the filter returns
 # REJECTED.
 #
@@ -1405,10 +1406,11 @@ jdk.tls.alpnCharset=ISO_8859_1
 # set of object factory classes which will be allowed to instantiate objects from object
 # references bound to LDAP contexts. The factory class named by the reference instance will
 # be matched against this filter. The filter property supports pattern-based filter syntax
-# with the same format as jdk.serialFilter.
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
 #
-# Each pattern is matched against the factory class name to allow or disallow it's
-# instantiation. The access to a factory class is allowed only when its not rejected by this filter
+# Each class name pattern is matched against the factory class name to allow or disallow its
+# instantiation. The access to a factory class is allowed only when it is not rejected by this filter
 # or by the global filter defined by "jdk.jndi.object.factoriesFilter", and at least one of these
 # two filters returns ALLOWED.
 #
@@ -1430,10 +1432,11 @@ jdk.tls.alpnCharset=ISO_8859_1
 # set of object factory classes which will be allowed to instantiate objects from object
 # references bound to RMI names. The factory class named by the reference instance will
 # be matched against this filter. The filter property supports pattern-based filter syntax
-# with the same format as jdk.serialFilter.
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
 #
-# Each pattern is matched against the factory class name to allow or disallow it's
-# instantiation. The access to a factory class is allowed only when its not rejected by this filter
+# Each class name pattern is matched against the factory class name to allow or disallow its
+# instantiation. The access to a factory class is allowed only when it is not rejected by this filter
 # or by the global filter defined by "jdk.jndi.object.factoriesFilter", and at least one of these
 # two filters returns ALLOWED.
 #

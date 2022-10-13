@@ -77,8 +77,11 @@ public class NamingManagerHelper {
                             environment);
                 }
                 // No factory found, so return original refInfo.
-                // Will reach this point if factory class is not in
-                // class path and reference does not contain a URL for it
+                // That could happen if:
+                //  - a factory class is not in a class path and reference does
+                //    not contain a URL for it
+                //  - a factory class is available but object factory filters
+                //    disallow its usage
                 return refInfo;
 
             } else {
@@ -141,8 +144,11 @@ public class NamingManagerHelper {
                             environment);
                 }
                 // No factory found, so return original refInfo.
-                // Will reach this point if factory class is not in
-                // class path and reference does not contain a URL for it
+                // That could happen if:
+                //  - a factory class is not in a class path and reference does
+                //    not contain a URL for it
+                //  - a factory class is available but object factory filters
+                //    disallow its usage
                 return refInfo;
 
             } else {
@@ -411,9 +417,6 @@ public class NamingManagerHelper {
     private static final String DEFAULT_PKG_PREFIX = "com.sun.jndi.url";
     static final VersionHelper helper = VersionHelper.getVersionHelper();
 
-    /**
-     * Package-private; used by DirectoryManager and NamingManager.
-     */
     private static ObjectFactoryBuilder object_factory_builder = null;
 
 }
