@@ -70,6 +70,7 @@ public class ProtectionDomain {
                 "jdk.security.filePermCompat"));
 
     private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
+
         private JavaSecurityAccessImpl() {
         }
 
