@@ -30,8 +30,6 @@
 #include "FileUtils.h"
 #include "WinErrorHandling.h"
 
-#pragma comment(lib, "Shell32")
-
 namespace SysInfo {
 
 tstring getTempDir() {
