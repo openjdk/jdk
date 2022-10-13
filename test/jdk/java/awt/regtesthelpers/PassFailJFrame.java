@@ -33,6 +33,8 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -80,8 +82,10 @@ public class PassFailJFrame {
     private static final String FAILURE_REASON = "Failure Reason:\n";
 
     private static final List<Window> windowList = new ArrayList<>();
-    private static final Timer timer = new Timer(0, null);
+
     private static final CountDownLatch latch = new CountDownLatch(1);
+
+    private static TimeoutHandler timeoutHandler;
 
     private static volatile boolean failed;
     private static volatile boolean timeout;
@@ -227,42 +231,27 @@ public class PassFailJFrame {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
 
+        JLabel testTimeoutLabel = new JLabel("", JLabel.CENTER);
+        timeoutHandler = new TimeoutHandler(testTimeoutLabel, testTimeOut);
+        frame.add(testTimeoutLabel, BorderLayout.NORTH);
+
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
 
-        long tTimeout = TimeUnit.MINUTES.toMillis(testTimeOut);
-
-        final JLabel testTimeoutLabel = new JLabel(String.format("Test " +
-                "timeout: %s", convertMillisToTimeStr(tTimeout)), JLabel.CENTER);
-        final long startTime = System.currentTimeMillis();
-        timer.setDelay(1000);
-        timer.addActionListener((e) -> {
-            long leftTime = tTimeout - (System.currentTimeMillis() - startTime);
-            if ((leftTime < 0) || failed) {
-                timer.stop();
-                testFailedReason = FAILURE_REASON
-                                   + "Timeout User did not perform testing.";
-                timeout = true;
-                latch.countDown();
-            }
-            testTimeoutLabel.setText(String.format("Test timeout: %s", convertMillisToTimeStr(leftTime)));
-        });
-        timer.start();
-        frame.add(testTimeoutLabel, BorderLayout.NORTH);
         frame.add(new JScrollPane(text), BorderLayout.CENTER);
 
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
             latch.countDown();
-            timer.stop();
+            timeoutHandler.stop();
         });
 
         JButton btnFail = new JButton("Fail");
         btnFail.addActionListener((e) -> {
             getFailureReason();
-            timer.stop();
+            timeoutHandler.stop();
         });
 
         JPanel buttonsPanel = new JPanel();
@@ -311,6 +300,54 @@ public class PassFailJFrame {
     @FunctionalInterface
     public interface WindowCreator {
         Window createTestUI();
+    }
+
+
+    private static final class TimeoutHandler implements ActionListener {
+        private final long endTime;
+
+        private final Timer timer;
+
+        private final JLabel label;
+
+        public TimeoutHandler(final JLabel label, final long testTimeOut) {
+            endTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(testTimeOut);
+
+            this.label = label;
+
+            timer = new Timer(1000, this);
+            timer.start();
+            updateTime(testTimeOut);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            long leftTime = endTime - System.currentTimeMillis();
+            if ((leftTime < 0) || failed) {
+                timer.stop();
+                testFailedReason = FAILURE_REASON
+                                   + "Timeout User did not perform testing.";
+                timeout = true;
+                latch.countDown();
+            }
+            updateTime(leftTime);
+        }
+
+        private void updateTime(final long leftTime) {
+            if (leftTime < 0) {
+                label.setText("Test timeout: 00:00:00");
+                return;
+            }
+            long hours = leftTime / 3_600_000;
+            long minutes = (leftTime - hours * 3_600_000) / 60_000;
+            long seconds = (leftTime - hours * 3_600_000 - minutes * 60_000) / 1_000;
+            label.setText(String.format("Test timeout: %02d:%02d:%02d",
+                                        hours, minutes, seconds));
+        }
+
+        public void stop() {
+            timer.stop();
+        }
     }
 
 
@@ -411,16 +448,6 @@ public class PassFailJFrame {
                                       "Screen Captured Successfully",
                                       "Screen Capture",
                                       JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private static String convertMillisToTimeStr(long millis) {
-        if (millis < 0) {
-            return "00:00:00";
-        }
-        long hours = millis / 3_600_000;
-        long minutes = (millis - hours * 3_600_000) / 60_000;
-        long seconds = (millis - hours * 3_600_000 - minutes * 60_000) / 1_000;
-        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     /**
