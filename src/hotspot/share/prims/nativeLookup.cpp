@@ -355,24 +355,6 @@ address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
   return entry; // NULL indicates not found
 }
 
-void* NativeLookup::dll_load(const methodHandle& method) {
-  if (method->has_native_function()) {
-
-    address current_entry = method->native_function();
-
-    char dll_name[JVM_MAXPATHLEN];
-    dll_name[0] = '\0';
-    int offset;
-    bool ret = os::dll_address_to_library_name(current_entry, dll_name, sizeof(dll_name), &offset);
-    if (ret && dll_name[0] != '\0') {
-      char ebuf[32];
-      return os::dll_load(dll_name, ebuf, sizeof(ebuf));
-    }
-  }
-
-  return NULL;
-}
-
 // Check if there are any JVM TI prefixes which have been applied to the native method name.
 // If any are found, remove them before attempting the look up of the
 // native implementation again.

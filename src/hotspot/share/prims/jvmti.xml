@@ -1263,12 +1263,10 @@ jvmtiEnv *jvmti;
             have this state flag set instead of <code>JVMTI_THREAD_STATE_SLEEPING</code>.
           </constant>
           <constant id="JVMTI_THREAD_STATE_SUSPENDED" num="0x100000">
-            Thread suspended.
-            <code>java.lang.Thread.suspend()</code>
-            or a <jvmti/> suspend function
-            (such as <functionlink id="SuspendThread"></functionlink>)
-            has been called on the thread. If this bit
-            is set, the other bits refer to the thread state before suspension.
+            Thread is suspended by a suspend function
+            (such as <functionlink id="SuspendThread"></functionlink>).
+            If this bit is set, the other bits refer to the thread state before
+            suspension.
           </constant>
           <constant id="JVMTI_THREAD_STATE_INTERRUPTED" num="0x200000">
             Thread has been interrupted.
@@ -1780,7 +1778,6 @@ jvmtiEnv *jvmti;
         Any threads currently suspended through
         a <jvmti/> suspend function (eg.
         <functionlink id="SuspendThread"></functionlink>)
-        or <code>java.lang.Thread.suspend()</code>
         will resume execution;
         all other threads are unaffected.
       </description>
@@ -1815,7 +1812,6 @@ jvmtiEnv *jvmti;
         Any thread suspended through
         a <jvmti/> suspend function (eg.
         <functionlink id="SuspendThreadList"></functionlink>)
-        or <code>java.lang.Thread.suspend()</code>
         will resume execution.
       </description>
       <origin>jvmdi</origin>

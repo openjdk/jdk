@@ -831,7 +831,12 @@ public:
   // Import other testl() methods from the parent class or else
   // they will be hidden by the following overriding declaration.
   using Assembler::testl;
+  void testl(Address dst, int32_t imm32);
+  void testl(Register dst, int32_t imm32);
   void testl(Register dst, AddressLiteral src); // requires reachable address
+  using Assembler::testq;
+  void testq(Address dst, int32_t imm32);
+  void testq(Register dst, int32_t imm32);
 
   void orptr(Register dst, Address src) { LP64_ONLY(orq(dst, src)) NOT_LP64(orl(dst, src)); }
   void orptr(Register dst, Register src) { LP64_ONLY(orq(dst, src)) NOT_LP64(orl(dst, src)); }

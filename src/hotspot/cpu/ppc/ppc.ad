@@ -6842,6 +6842,9 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
     n2->_opnds[2] = op_dst;
     n2->_bottom_type = _bottom_type;
 
+    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
+    ra_->set_oop(n2, true);
+
     ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
     ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
