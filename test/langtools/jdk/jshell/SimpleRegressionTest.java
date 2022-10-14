@@ -44,9 +44,16 @@ import static org.testng.Assert.assertTrue;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
 import static jdk.jshell.Snippet.Status.VALID;
+import org.testng.annotations.BeforeMethod;
 
 @Test
 public class SimpleRegressionTest extends KullaTesting {
+
+    @BeforeMethod
+    @Override
+    public void setUp() {
+        setUp(builder -> builder.executionEngine("local"));
+    }
 
     public void testSnippetMemberAssignment() {
         assertEval("class C { int y; }");

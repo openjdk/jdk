@@ -579,10 +579,10 @@ public:
 
   // Mark in the marking bitmap. Used during evacuation failure to
   // remember what objects need handling. Not for use during marking.
-  inline void raw_mark_in_bitmap(oop p);
+  inline void raw_mark_in_bitmap(oop obj);
 
   // Clears marks for all objects in the given region in the marking
-  // bitmap. This should only be used clean the bitmap during a
+  // bitmap. This should only be used to clean the bitmap during a
   // safepoint.
   void clear_bitmap_for_region(HeapRegion* hr);
 

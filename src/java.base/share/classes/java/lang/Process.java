@@ -158,7 +158,7 @@ public abstract class Process {
      * merged standard output and the standard error of the process.
      *
      * @apiNote
-     * Use {@link #getInputStream} and {@link #inputReader} with extreme care.
+     * Use {@link #getInputStream()} and {@link #inputReader()} with extreme care.
      * The {@code BufferedReader} may have buffered input from the input stream.
      *
      * @implNote
@@ -184,8 +184,8 @@ public abstract class Process {
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
      * @apiNote
-     * Use {@link #getInputStream} and {@link #inputReader} with extreme care.
-     * The {@code BufferedReader} may have buffered input from the input stream.
+     * Use {@link #getErrorStream()} and {@link #errorReader()} with extreme care.
+     * The {@code BufferedReader} may have buffered input from the error stream.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned

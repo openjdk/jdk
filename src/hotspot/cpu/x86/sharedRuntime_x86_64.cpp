@@ -1447,11 +1447,9 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
 static void gen_continuation_yield(MacroAssembler* masm,
                                    const VMRegPair* regs,
-                                   int& exception_offset,
                                    OopMapSet* oop_maps,
                                    int& frame_complete,
                                    int& stack_slots,
-                                   int& interpreted_entry_offset,
                                    int& compiled_entry_offset) {
   enum layout {
     rbp_off,
@@ -1585,12 +1583,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
   if (method->is_continuation_native_intrinsic()) {
-    int vep_offset = 0;
-    int exception_offset = 0;
-    int frame_complete = 0;
-    int stack_slots = 0;
+    int exception_offset = -1;
     OopMapSet* oop_maps = new OopMapSet();
+    int frame_complete = -1;
+    int stack_slots = -1;
     int interpreted_entry_offset = -1;
+    int vep_offset = -1;
     if (method->is_continuation_enter_intrinsic()) {
       gen_continuation_enter(masm,
                              in_regs,
@@ -1603,15 +1601,27 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else if (method->is_continuation_yield_intrinsic()) {
       gen_continuation_yield(masm,
                              in_regs,
-                             exception_offset,
                              oop_maps,
                              frame_complete,
                              stack_slots,
-                             interpreted_entry_offset,
                              vep_offset);
     } else {
       guarantee(false, "Unknown Continuation native intrinsic");
     }
+
+#ifdef ASSERT
+    if (method->is_continuation_enter_intrinsic()) {
+      assert(interpreted_entry_offset != -1, "Must be set");
+      assert(exception_offset != -1,         "Must be set");
+    } else {
+      assert(interpreted_entry_offset == -1, "Must be unset");
+      assert(exception_offset == -1,         "Must be unset");
+    }
+    assert(frame_complete != -1,    "Must be set");
+    assert(stack_slots != -1,       "Must be set");
+    assert(vep_offset != -1,        "Must be set");
+#endif
+
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
@@ -2823,7 +2833,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
     __ cmpptr(Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()),
               Deoptimization::Unpack_uncommon_trap);
     __ jcc(Assembler::equal, L);
-    __ stop("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+    __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
     __ bind(L);
   }
 #endif

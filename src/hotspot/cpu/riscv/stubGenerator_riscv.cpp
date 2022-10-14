@@ -329,7 +329,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(c_rarg6, parameters_done);
 
     address loop = __ pc();
-    __ ld(t0, c_rarg5, 0);
+    __ ld(t0, Address(c_rarg5, 0));
     __ addi(c_rarg5, c_rarg5, wordSize);
     __ addi(c_rarg6, c_rarg6, -1);
     __ push_reg(t0);
@@ -651,9 +651,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    int32_t offset = 0;
-    __ movptr_with_offset(t0, CAST_FROM_FN_PTR(address, MacroAssembler::debug64), offset);
-    __ jalr(x1, t0, offset);
+    __ call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
     __ ebreak();
 
     return start;
@@ -3740,9 +3738,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ mv(c_rarg0, xthread);
     BLOCK_COMMENT("call runtime_entry");
-    int32_t offset = 0;
-    __ movptr_with_offset(t0, runtime_entry, offset);
-    __ jalr(x1, t0, offset);
+    __ call(runtime_entry);
 
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
@@ -3804,15 +3800,16 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(c_rarg0, thread);
   }
 
-  static void jfr_epilogue(MacroAssembler* _masm, Register thread) {
+  static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
     Label null_jobject;
     __ beqz(x10, null_jobject);
     DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), c_rarg0, thread);
+    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), t0, t1);
     __ bind(null_jobject);
   }
+
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
@@ -3838,7 +3835,7 @@ class StubGenerator: public StubCodeGenerator {
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, xthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-    jfr_epilogue(_masm, xthread);
+    jfr_epilogue(_masm);
     __ leave();
     __ ret();
 

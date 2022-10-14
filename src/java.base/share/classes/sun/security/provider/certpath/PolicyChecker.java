@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ class PolicyChecker extends PKIXCertPathChecker {
             this.initPolicies = HashSet.newHashSet(1);
             this.initPolicies.add(ANY_POLICY);
         } else {
-            this.initPolicies = new HashSet<String>(initialPolicies);
+            this.initPolicies = new HashSet<>(initialPolicies);
         }
         this.certPathLen = certPathLen;
         this.expPolicyRequired = expPolicyRequired;
@@ -213,7 +213,7 @@ class PolicyChecker extends PKIXCertPathChecker {
                 + "policyTree = " + rootNode);
         }
 
-        X509CertImpl currCertImpl = null;
+        X509CertImpl currCertImpl;
         try {
             currCertImpl = X509CertImpl.toImpl(currCert);
         } catch (CertificateException ce) {
@@ -228,7 +228,7 @@ class PolicyChecker extends PKIXCertPathChecker {
 
         if (!finalCert) {
             explicitPolicy = mergeExplicitPolicy(explicitPolicy, currCertImpl,
-                                                 finalCert);
+                    false);
             policyMapping = mergePolicyMapping(policyMapping, currCertImpl);
             inhibitAnyPolicy = mergeInhibitAnyPolicy(inhibitAnyPolicy,
                                                      currCertImpl);
@@ -430,7 +430,7 @@ class PolicyChecker extends PKIXCertPathChecker {
     {
         boolean policiesCritical = false;
         List<PolicyInformation> policyInfo;
-        PolicyNodeImpl rootNode = null;
+        PolicyNodeImpl rootNode;
         Set<PolicyQualifierInfo> anyQuals = new HashSet<>();
 
         if (origRootNode == null)
@@ -545,8 +545,7 @@ class PolicyChecker extends PKIXCertPathChecker {
         // removing those nodes which would later have
         // been removed by PKIX: Section 6.1.5: Step (g)(iii)
 
-        if ((rootNode != null) && (!initPolicies.contains(ANY_POLICY))
-            && (currCertPolicies != null)) {
+        if (rootNode != null && !initPolicies.contains(ANY_POLICY)) {
             rootNode = removeInvalidNodes(rootNode, certIndex,
                                           initPolicies, currCertPolicies);
 
@@ -561,7 +560,7 @@ class PolicyChecker extends PKIXCertPathChecker {
         if (finalCert) {
             // PKIX: Section 6.1.5: Steps (a) and (b)
             explicitPolicy = mergeExplicitPolicy(explicitPolicy, currCert,
-                                             finalCert);
+                    true);
         }
 
         // PKIX: Section 6.1.3: Step (f)
@@ -610,7 +609,7 @@ class PolicyChecker extends PKIXCertPathChecker {
             // we deleted the anyPolicy node and have nothing to re-add,
             // so we need to prune the tree
             rootNode.prune(certIndex);
-            if (rootNode.getChildren().hasNext() == false) {
+            if (!rootNode.getChildren().hasNext()) {
                 rootNode = null;
             }
         } else {
@@ -648,14 +647,12 @@ class PolicyChecker extends PKIXCertPathChecker {
      * @param matchAny a boolean indicating whether a value of ANY_POLICY
      * in the expected policy set will be considered a match
      * @return a boolean indicating whether a match was found
-     * @exception CertPathValidatorException Exception thrown if error occurs.
      */
     private static boolean processParents(int certIndex,
         boolean policiesCritical, boolean rejectPolicyQualifiers,
         PolicyNodeImpl rootNode, String curPolicy,
         Set<PolicyQualifierInfo> pQuals,
-        boolean matchAny) throws CertPathValidatorException
-    {
+        boolean matchAny) {
         boolean foundMatch = false;
 
         if (debug != null)
@@ -674,10 +671,9 @@ class PolicyChecker extends PKIXCertPathChecker {
                               + "found parent:\n" + curParent.asString());
 
             foundMatch = true;
-            String curParPolicy = curParent.getValidPolicy();
 
             PolicyNodeImpl curNode = null;
-            Set<String> curExpPols = null;
+            Set<String> curExpPols;
 
             if (curPolicy.equals(ANY_POLICY)) {
                 // do step 2
@@ -707,7 +703,7 @@ class PolicyChecker extends PKIXCertPathChecker {
                          policiesCritical, expPols, false);
                 }
             } else {
-                curExpPols = new HashSet<String>();
+                curExpPols = new HashSet<>();
                 curExpPols.add(curPolicy);
 
                 curNode = new PolicyNodeImpl
@@ -750,7 +746,7 @@ class PolicyChecker extends PKIXCertPathChecker {
             debug.println("PolicyChecker.processPolicyMappings() "
                 + "inside policyMapping check");
 
-        List<CertificatePolicyMap> maps = null;
+        List<CertificatePolicyMap> maps;
         try {
             maps = polMappingsExt.get(PolicyMappingsExtension.MAP);
         } catch (IOException e) {
@@ -857,7 +853,7 @@ class PolicyChecker extends PKIXCertPathChecker {
         CertificatePoliciesExtension currCertPolicies)
         throws CertPathValidatorException
     {
-        List<PolicyInformation> policyInfo = null;
+        List<PolicyInformation> policyInfo;
         try {
             policyInfo = currCertPolicies.get(CertificatePoliciesExtension.POLICIES);
         } catch (IOException ioe) {

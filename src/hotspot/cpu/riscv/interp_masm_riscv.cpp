@@ -280,7 +280,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Load pointer for resolved_references[] objArray
   ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
   ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  resolve_oop_handle(result, tmp);
+  resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
@@ -368,12 +368,12 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister r) {
-  flw(r, esp, 0);
+  flw(r, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister r) {
-  fld(r, esp, 0);
+  fld(r, Address(esp, 0));
   addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 

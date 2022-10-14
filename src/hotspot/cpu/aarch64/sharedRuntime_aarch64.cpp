@@ -161,11 +161,8 @@ int RegisterSaver::v0_offset_in_bytes() {
 int RegisterSaver::total_sve_predicate_in_bytes() {
 #ifdef COMPILER2
   if (_save_vectors && Matcher::supports_scalable_vector()) {
-    // The number of total predicate bytes is unlikely to be a multiple
-    // of 16 bytes so we manually align it up.
-    return align_up(Matcher::scalable_predicate_reg_slots() *
-                    VMRegImpl::stack_slot_size *
-                    PRegister::number_of_saved_registers, 16);
+    return (Matcher::scalable_vector_reg_size(T_BYTE) >> LogBitsPerByte) *
+           PRegister::number_of_registers;
   }
 #endif
   return 0;
@@ -249,14 +246,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       sp_offset = FloatRegister::save_slots_per_register * i;
     }
     oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
-  }
-
-  if (_save_vectors && use_sve) {
-    for (int i = 0; i < PRegister::number_of_saved_registers; i++) {
-      PRegister r = as_PRegister(i);
-      int sp_offset = sve_predicate_size_in_slots * i;
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
-    }
   }
 
   return oop_map;
@@ -1126,11 +1115,9 @@ static void gen_continuation_yield(MacroAssembler* masm,
                                    const methodHandle& method,
                                    const BasicType* sig_bt,
                                    const VMRegPair* regs,
-                                   int& exception_offset,
                                    OopMapSet* oop_maps,
                                    int& frame_complete,
                                    int& stack_slots,
-                                   int& interpreted_entry_offset,
                                    int& compiled_entry_offset) {
     enum layout {
       rfp_off1,
@@ -1263,12 +1250,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
   if (method->is_continuation_native_intrinsic()) {
-    int vep_offset = 0;
-    int exception_offset = 0;
-    int frame_complete = 0;
-    int stack_slots = 0;
-    OopMapSet* oop_maps =  new OopMapSet();
+    int exception_offset = -1;
+    OopMapSet* oop_maps = new OopMapSet();
+    int frame_complete = -1;
+    int stack_slots = -1;
     int interpreted_entry_offset = -1;
+    int vep_offset = -1;
     if (method->is_continuation_enter_intrinsic()) {
       gen_continuation_enter(masm,
                              method,
@@ -1285,15 +1272,27 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                              method,
                              in_sig_bt,
                              in_regs,
-                             exception_offset,
                              oop_maps,
                              frame_complete,
                              stack_slots,
-                             interpreted_entry_offset,
                              vep_offset);
     } else {
       guarantee(false, "Unknown Continuation native intrinsic");
     }
+
+#ifdef ASSERT
+    if (method->is_continuation_enter_intrinsic()) {
+      assert(interpreted_entry_offset != -1, "Must be set");
+      assert(exception_offset != -1,         "Must be set");
+    } else {
+      assert(interpreted_entry_offset == -1, "Must be unset");
+      assert(exception_offset == -1,         "Must be unset");
+    }
+    assert(frame_complete != -1,    "Must be set");
+    assert(stack_slots != -1,       "Must be set");
+    assert(vep_offset != -1,        "Must be set");
+#endif
+
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
@@ -2266,10 +2265,9 @@ void SharedRuntime::generate_deopt_blob() {
 
   Label retaddr;
   __ set_last_Java_frame(sp, noreg, retaddr, rscratch1);
-#ifdef ASSERT0
+#ifdef ASSERT
   { Label L;
-    __ ldr(rscratch1, Address(rthread,
-                              JavaThread::last_Java_fp_offset()));
+    __ ldr(rscratch1, Address(rthread, JavaThread::last_Java_fp_offset()));
     __ cbz(rscratch1, L);
     __ stop("SharedRuntime::generate_deopt_blob: last_Java_fp not cleared");
     __ bind(L);
@@ -2541,7 +2539,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
     __ ldrw(rscratch1, Address(r4, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
     __ cmpw(rscratch1, (unsigned)Deoptimization::Unpack_uncommon_trap);
     __ br(Assembler::EQ, L);
-    __ stop("SharedRuntime::generate_deopt_blob: last_Java_fp not cleared");
+    __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
     __ bind(L);
   }
 #endif
