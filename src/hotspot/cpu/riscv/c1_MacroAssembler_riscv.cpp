@@ -41,8 +41,7 @@
 
 void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
                                   FloatRegister freg0, FloatRegister freg1,
-                                  Register result)
-{
+                                  Register result) {
   if (is_float) {
     float_compare(result, freg0, freg1, unordered_result);
   } else {
@@ -375,14 +374,14 @@ typedef void (C1_MacroAssembler::*c1_float_cond_branch_insn)(FloatRegister op1, 
 static c1_cond_branch_insn c1_cond_branch[] =
 {
   /* SHORT branches */
-  (c1_cond_branch_insn)&Assembler::beq,
-  (c1_cond_branch_insn)&Assembler::bne,
-  (c1_cond_branch_insn)&Assembler::blt,
-  (c1_cond_branch_insn)&Assembler::ble,
-  (c1_cond_branch_insn)&Assembler::bge,
-  (c1_cond_branch_insn)&Assembler::bgt,
-  (c1_cond_branch_insn)&Assembler::bleu, // lir_cond_belowEqual
-  (c1_cond_branch_insn)&Assembler::bgeu  // lir_cond_aboveEqual
+  (c1_cond_branch_insn)&MacroAssembler::beq,
+  (c1_cond_branch_insn)&MacroAssembler::bne,
+  (c1_cond_branch_insn)&MacroAssembler::blt,
+  (c1_cond_branch_insn)&MacroAssembler::ble,
+  (c1_cond_branch_insn)&MacroAssembler::bge,
+  (c1_cond_branch_insn)&MacroAssembler::bgt,
+  (c1_cond_branch_insn)&MacroAssembler::bleu, // lir_cond_belowEqual
+  (c1_cond_branch_insn)&MacroAssembler::bgeu  // lir_cond_aboveEqual
 };
 
 static c1_float_cond_branch_insn c1_float_cond_branch[] =
