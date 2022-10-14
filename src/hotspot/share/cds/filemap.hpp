@@ -244,7 +244,6 @@ public:
   unsigned int header_size()              const { return _generic_header._header_size;              }
   unsigned int base_archive_name_offset() const { return _generic_header._base_archive_name_offset; }
   unsigned int base_archive_name_size()   const { return _generic_header._base_archive_name_size;   }
-  unsigned int common_app_classpath_offset() const { return _generic_header._common_app_classpath_offset; }
   unsigned int common_app_classpath_size()   const { return _generic_header._common_app_classpath_size; }
 
   void set_magic(unsigned int m)                    { _generic_header._magic = m;       }
@@ -253,7 +252,6 @@ public:
   void set_header_size(unsigned int s)              { _generic_header._header_size = s;              }
   void set_base_archive_name_offset(unsigned int s) { _generic_header._base_archive_name_offset = s; }
   void set_base_archive_name_size(unsigned int s)   { _generic_header._base_archive_name_size = s;   }
-  void set_common_app_classpath_offset(unsigned int s) { _generic_header._common_app_classpath_offset = s; }
   void set_common_app_classpath_size(unsigned int s)   { _generic_header._common_app_classpath_size = s; }
 
   size_t core_region_alignment()           const { return _core_region_alignment; }
@@ -289,7 +287,6 @@ public:
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void copy_base_archive_name(const char* name);
-  void copy_common_app_classpath(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
@@ -316,7 +313,7 @@ public:
 
   void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
                 size_t base_archive_name_size, size_t base_archive_name_offset,
-                size_t common_app_classpath_size, size_t common_app_classpath_offset, const char* lcp);
+                size_t common_app_classpath_size, size_t common_app_classpath_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
@@ -564,11 +561,11 @@ public:
   GrowableArray<const char*>* create_dumptime_app_classpath_array() NOT_CDS_RETURN_(NULL);
   GrowableArray<const char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);
   bool  classpath_failure(const char* msg, const char* name) NOT_CDS_RETURN_(false);
-  char* longest_common_app_classpath(int num_paths,
-                                     GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(NULL);
+  unsigned int longest_common_app_classpath_len(int num_paths,
+                                       GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(0);
   bool  check_paths_ignoring_common_path(int shared_path_start_idx, int num_paths,
                                          GrowableArray<const char*>* rp_array,
-                                         const char* dumptime_prefix, const char* runtime_prefix)
+                                         unsigned int dumptime_prefix_len, unsigned int runtime_prefix_len)
                                          NOT_CDS_RETURN_(false);
   bool  check_paths(int shared_path_start_idx, int num_paths,
                     GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);

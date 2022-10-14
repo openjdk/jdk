@@ -36,16 +36,38 @@
  */
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import jdk.test.lib.cds.CDSTestUtils;
 
 public class CommonAppClasspath extends DynamicArchiveTestBase {
 
     private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
+    private static final String failedMessage = "shared class paths mismatch";
+    private static final String successMessage1 = "Hello source: shared objects file";
+    private static final String successMessage2 = "HelloMore source: shared objects file";
+
+    private static void runtimeTest(String topArchiveName, String classPath,
+                                    String mainClass, int expectedExitValue,
+                                    String ... checkMessages) throws Exception {
+        CDSTestUtils.Result result = run(topArchiveName,
+            "-Xlog:class+load",
+            "-Xlog:cds+dynamic=debug,cds=debug",
+            "-cp", classPath, mainClass);
+        if (expectedExitValue == 0) {
+            result.assertNormalExit( output -> {
+                for (String s : checkMessages) {
+                    output.shouldContain(s);
+                }
+            });
+        } else {
+            result.assertAbnormalExit( output -> {
+                for (String s : checkMessages) {
+                    output.shouldContain(s);
+                }
+            });
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         runTest(CommonAppClasspath::testDefaultBase);
@@ -72,54 +94,23 @@ public class CommonAppClasspath extends DynamicArchiveTestBase {
                 });
 
         // copy hello.jar to USER_DIR/deploy
-        Path srcPath = Paths.get(appJar);
-        Path newPath = Paths.get(USER_DIR.toString() + File.separator + "deploy");
-        Path destDir = Files.createDirectory(newPath);
-        int idx = appJar.lastIndexOf(File.separator);
-        String jarName = appJar.substring(idx + 1);
-        Path destPath = destDir.resolve(jarName);
-        Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
+        String newDir = USER_DIR.toString() + File.separator + "deploy";
+        Path destPath = CDSTestUtils.copyFile(appJar, newDir);
 
         // copy AppendClasspath_HelloMore.jar to USER_DIR/deploy
-        idx = appJar2.lastIndexOf(File.separator);
-        jarName = appJar2.substring(idx + 1);
-        srcPath = Paths.get(appJar2);
-        Path destPath2 = destDir.resolve(jarName);
-        Files.copy(srcPath, destPath2, REPLACE_EXISTING, COPY_ATTRIBUTES);
+        Path destPath2 = CDSTestUtils.copyFile(appJar2, newDir);
 
         // Run with both jars relocated to USER_DIR/dpeloy - should PASS
         jars = destPath.toString() + File.pathSeparator + destPath2.toString();
-        run(topArchiveName,
-            "-Xlog:class+load",
-            "-Xlog:cds+dynamic=debug,cds=debug",
-            "-cp", jars, mainClass)
-            .assertNormalExit(output -> {
-                    output.shouldContain("Hello source: shared objects file")
-                          .shouldContain("HelloMore source: shared objects file")
-                          .shouldHaveExitValue(0);
-                });
+        runtimeTest(topArchiveName, jars, mainClass, 0, successMessage1, successMessage2);
 
         // Run with relocation of only the second jar - should FAIL
         jars = appJar + File.pathSeparator + destPath2.toString();
-        run(topArchiveName,
-            "-Xlog:class+load",
-            "-Xlog:cds+dynamic=debug,cds=debug",
-            "-cp", jars, mainClass)
-        .assertAbnormalExit(output -> {
-                output.shouldContain("shared class paths mismatch")
-                      .shouldHaveExitValue(1);
-            });
+        runtimeTest(topArchiveName, jars, mainClass, 1, failedMessage);
 
         // Run with relocation of only the first jar - should FAIL
         jars = destPath.toString() + File.pathSeparator + appJar2;
-        run(topArchiveName,
-            "-Xlog:class+load",
-            "-Xlog:cds+dynamic=debug,cds=debug",
-            "-cp", jars, mainClass)
-        .assertAbnormalExit(output -> {
-                output.shouldContain("shared class paths mismatch")
-                      .shouldHaveExitValue(1);
-            });
+        runtimeTest(topArchiveName, jars, mainClass, 1, failedMessage);
 
         // Dump CDS archive with the first jar relocated.
         jars = destPath.toString() + File.pathSeparator + appJar2;
@@ -133,26 +124,45 @@ public class CommonAppClasspath extends DynamicArchiveTestBase {
 
         // Run with first jar relocated - should PASS
         jars = destPath.toString() + File.pathSeparator + appJar2;
-        run(topArchiveName,
-            "-Xlog:class+load",
-            "-Xlog:cds+dynamic=debug,cds=debug",
-            "-cp", jars, mainClass)
-            .assertNormalExit(output -> {
-                    output.shouldContain("Hello source: shared objects file")
-                          .shouldContain("HelloMore source: shared objects file")
-                          .shouldHaveExitValue(0);
-                });
+        runtimeTest(topArchiveName, jars, mainClass, 0, successMessage1, successMessage2);
 
         // Run with both jars relocated - should FAIL
         jars = destPath.toString() + File.pathSeparator + destPath2.toString();
-        run(topArchiveName,
-            "-Xlog:class+load",
-            "-Xlog:cds+dynamic=debug,cds=debug",
-            "-cp", jars, mainClass)
-        .assertAbnormalExit(output -> {
-                output.shouldContain("shared class paths mismatch")
-                      .shouldHaveExitValue(1);
-            });
+        runtimeTest(topArchiveName, jars, mainClass, 1, failedMessage);
 
+        // Copy hello.jar to USER_DIR/a
+        destPath = CDSTestUtils.copyFile(appJar, USER_DIR.toString() + File.separator + "a");
+
+        // copy AppendClasspath_HelloMore.jar to USER_DIR/aa
+        destPath2 = CDSTestUtils.copyFile(appJar2, USER_DIR.toString() + File.separator + "aa");
+
+        // Dump CDS archive with the both jar files relocated
+        // appJar to USER_DIR/a
+        // appJar2 to USER_DIR/aa
+        jars = destPath.toString() + File.pathSeparator + destPath2.toString();
+        dump(topArchiveName,
+             "-Xlog:cds",
+             "-Xlog:cds+dynamic=debug",
+             "-cp", jars, mainClass)
+            .assertNormalExit(output -> {
+                    output.shouldContain("Written dynamic archive 0x");
+                });
+
+        // Copy hello.jar to USER_DIR/x/a
+        Path runPath = CDSTestUtils.copyFile(appJar, USER_DIR.toString() + File.separator + "x" + File.separator + "a");
+
+        // copy AppendClasspath_HelloMore.jar to USER_DIR/x/aa
+        Path runPath2= CDSTestUtils.copyFile(appJar2, USER_DIR.toString() + File.separator + "x" + File.separator + "aa");
+
+        // Run with both jars relocated to USER_DIR/x/a and USER_DIR/x/aa dirs - should PASS
+        jars = runPath.toString() + File.pathSeparator + runPath2.toString();
+        runtimeTest(topArchiveName, jars, mainClass, 0, successMessage1, successMessage2);
+
+        // copy AppendClasspath_HelloMore.jar to USER_DIR/x/a
+        runPath2= CDSTestUtils.copyFile(appJar2, USER_DIR.toString() + File.separator + "x" + File.separator + "a");
+
+        // Run with both jars relocated to USER_DIR/x/a dir - should FAIL
+        jars = runPath.toString() + File.pathSeparator + runPath2.toString();
+        runtimeTest(topArchiveName, jars, mainClass, 1, failedMessage);
     }
 }
