@@ -144,7 +144,7 @@ public:
 
   double predict_concurrent_refine_rate_ms() const;
   double predict_dirtied_cards_rate_ms() const;
-  double predict_dirtied_cards_in_thread_buffers() const;
+  size_t predict_dirtied_cards_in_thread_buffers() const;
 
   // Predict how many of the given remembered set of length rs_length will add to
   // the number of total cards scanned.

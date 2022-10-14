@@ -261,8 +261,8 @@ double G1Analytics::predict_dirtied_cards_rate_ms() const {
   return predict_zero_bounded(_dirtied_cards_rate_ms_seq);
 }
 
-double G1Analytics::predict_dirtied_cards_in_thread_buffers() const {
-  return predict_zero_bounded(_dirtied_cards_in_thread_buffers_seq);
+size_t G1Analytics::predict_dirtied_cards_in_thread_buffers() const {
+  return predict_size(_dirtied_cards_in_thread_buffers_seq);
 }
 
 size_t G1Analytics::predict_scan_card_num(size_t rs_length, bool for_young_only_phase) const {
