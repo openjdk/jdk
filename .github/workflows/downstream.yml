@@ -54,29 +54,42 @@ jobs:
           git remote add upstream https://github.com/openjdk/jdk.git
           git fetch --tags upstream master
 
+      - name: "Configure"
+        id: configure
+        run: |
           TAG=$(git tag | grep --extended-regexp '^jdk\-.*' | sort --version-sort | tail --lines 1 | tr --delete '\n')
           test -n "$TAG"
 
           echo "::set-output name=tag::$TAG"
 
+          if [ -n "$(git merge-tree $(git merge-base $TAG rivos/main) rivos/main $TAG" ]; then
+            echo "::set-output name=diff::true"
+          else
+            echo "::set-output name=diff::false"
+          fi
+
       - name: "Push"
         run: |
-          git push origin ${{ steps.fetch.outputs.tag }}
-
-          git checkout -B rivos/merge-upstream ${{ steps.fetch.outputs.tag }}
-          git push origin rivos/merge-upstream
+          git push origin ${{ steps.configure.outputs.tag }}
 
           git checkout -B master upstream/master
           git push origin master
 
+          if [ "${{ steps.configure.outputs.diff }}" = "true" ]; then
+            git checkout -B rivos/merge-upstream ${{ steps.configure.outputs.tag }}
+            git push origin rivos/merge-upstream
+          fi
+
       - name: "Create PR"
         run: |
-          gh pr create \
-            --repo rivosinc/jdk \
-            --base rivos/main \
-            --head rivos/merge-upstream \
-            --title "Merge ${{ steps.fetch.outputs.tag }} into rivos/main" \
-            --body "" \
-            --reviewer "luhenry" || true
+          if [ "${{ steps.configure.outputs.diff }}" = "true" ]; then
+            gh pr create \
+              --repo rivosinc/jdk \
+              --base rivos/main \
+              --head rivos/merge-upstream \
+              --title "Merge ${{ steps.configure.outputs.tag }} into rivos/main" \
+              --body "" \
+              --reviewer "luhenry" || true
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
