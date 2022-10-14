@@ -194,8 +194,9 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 }
 
 void G1Policy::update_young_length_bounds() {
-  update_young_length_bounds(_analytics->predict_pending_cards(),
-                             _analytics->predict_rs_length());
+  bool for_young_gc = collector_state()->in_young_only_phase();
+  update_young_length_bounds(_analytics->predict_pending_cards(for_young_gc),
+                             _analytics->predict_rs_length(for_young_gc));
 }
 
 void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
@@ -525,14 +526,15 @@ void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {
     update_rs_length_prediction(rs_length_prediction);
 
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    // We have no measure of the number of cards in the thread log buffers, assume
-    // these are very few compared to the sum of the two other sources.
+    // We have no measure of the number of cards in the thread buffers, assume
+    // these are very few compared to the ones in the DCQS.
     update_young_length_bounds(dcqs.num_cards(), rs_length_prediction);
   }
 }
 
 void G1Policy::update_rs_length_prediction() {
-  update_rs_length_prediction(_analytics->predict_rs_length());
+  bool for_young_gc = collector_state()->in_young_only_phase();
+  update_rs_length_prediction(_analytics->predict_rs_length(for_young_gc));
 }
 
 void G1Policy::update_rs_length_prediction(size_t prediction) {
@@ -753,6 +755,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
   G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
+  bool is_young_only_pause = G1GCPauseTypeHelper::is_young_only_pause(this_pause);
 
   if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
     record_concurrent_mark_init_end();
@@ -806,7 +809,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
       maybe_start_marking();
     }
   } else {
-    assert(G1GCPauseTypeHelper::is_young_only_pause(this_pause), "must be");
+    assert(is_young_only_pause, "must be");
   }
 
   _eden_surv_rate_group->start_adding_regions();
@@ -830,8 +833,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
                                     average_time_ms(G1GCPhaseTimes::MergeHCC) +
                                     average_time_ms(G1GCPhaseTimes::MergeLB) +
                                     average_time_ms(G1GCPhaseTimes::OptMergeRS);
-      _analytics->report_cost_per_card_merge_ms(avg_time_merge_cards / total_cards_merged,
-                                                G1GCPauseTypeHelper::is_young_only_pause(this_pause));
+      _analytics->report_cost_per_card_merge_ms(avg_time_merge_cards / total_cards_merged, is_young_only_pause);
     }
 
     // Update prediction for card scan
@@ -842,8 +844,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
       double avg_time_dirty_card_scan = average_time_ms(G1GCPhaseTimes::ScanHR) +
                                         average_time_ms(G1GCPhaseTimes::OptScanHR);
 
-      _analytics->report_cost_per_card_scan_ms(avg_time_dirty_card_scan / total_cards_scanned,
-                                               G1GCPauseTypeHelper::is_young_only_pause(this_pause));
+      _analytics->report_cost_per_card_scan_ms(avg_time_dirty_card_scan / total_cards_scanned, is_young_only_pause);
     }
 
     // Update prediction for the ratio between cards from the remembered
@@ -857,12 +858,11 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     if (total_cards_scanned > 0) {
       merge_to_scan_ratio = (double) from_rs_length_cards / total_cards_scanned;
     }
-    _analytics->report_card_merge_to_scan_ratio(merge_to_scan_ratio,
-                                                G1GCPauseTypeHelper::is_young_only_pause(this_pause));
+    _analytics->report_card_merge_to_scan_ratio(merge_to_scan_ratio, is_young_only_pause);
 
     const size_t recorded_rs_length = _collection_set->recorded_rs_length();
     const size_t rs_length_diff = _rs_length > recorded_rs_length ? _rs_length - recorded_rs_length : 0;
-    _analytics->report_rs_length_diff(rs_length_diff);
+    _analytics->report_rs_length_diff(rs_length_diff, is_young_only_pause);
 
     // Update prediction for copy cost per byte
     size_t copied_bytes = p->sum_thread_work_items(G1GCPhaseTimes::MergePSS, G1GCPhaseTimes::MergePSSCopiedBytes);
@@ -887,11 +887,8 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     // Do not update RS lengths and the number of pending cards with information from mixed gc:
     // these are is wildly different to during young only gc and mess up young gen sizing right
     // after the mixed gc phase.
-    // During mixed gc we do not use them for young gen sizing.
-    if (G1GCPauseTypeHelper::is_young_only_pause(this_pause)) {
-      _analytics->report_pending_cards((double) _pending_cards_at_gc_start);
-      _analytics->report_rs_length((double) _rs_length);
-    }
+    _analytics->report_pending_cards((double) _pending_cards_at_gc_start, is_young_only_pause);
+    _analytics->report_rs_length((double) _rs_length, is_young_only_pause);
   }
 
   assert(!(G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
@@ -1036,7 +1033,8 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards) const {
-  size_t rs_length = _analytics->predict_rs_length();
+  bool for_young_gc = collector_state()->in_young_only_phase();
+  size_t rs_length = _analytics->predict_rs_length(for_young_gc);
   return predict_base_time_ms(pending_cards, rs_length);
 }
 
