@@ -3317,7 +3317,7 @@ public class TreeMap<K,V>
             Comparator<? super K> treeComparator = tree.comparator;
             @SuppressWarnings("unchecked")
             Comparator<Map.Entry<K, V>> entryComparator = treeComparator == null ?
-                    (Comparator) Map.Entry.comparingByKey()
+                    (Comparator) Map.Entry.comparingByKey() :
                     Map.Entry.comparingByKey(treeComparator);
             return entryComparator;
         }
