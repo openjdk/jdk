@@ -137,18 +137,18 @@ public:
     _rs_length = rs_length;
   }
 
-  double predict_base_elapsed_time_ms(size_t num_pending_cards) const;
+  double predict_base_time_ms(size_t pending_cards) const;
 
 private:
-  double predict_base_elapsed_time_ms(size_t num_pending_cards, size_t rs_length) const;
+  double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
   double predict_region_copy_time_ms(HeapRegion* hr) const;
 
 public:
 
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = NULL) const;
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_gc) const;
-  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_gc) const;
+  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
@@ -194,10 +194,10 @@ private:
   double _mark_cleanup_start_sec;
 
   // Updates the internal young gen maximum and target and desired lengths.
-  // If no rs_length parameter is passed, predict the RS length using the
-  // prediction model, otherwise use the given rs_length as the prediction.
+  // If no parameters are passed, predict pending cards and the RS length using
+  // the prediction model.
   void update_young_length_bounds();
-  void update_young_length_bounds(size_t rs_length);
+  void update_young_length_bounds(size_t pending_cards, size_t rs_length);
 
   // Calculate and return the minimum desired eden length based on the MMU target.
   uint calculate_desired_eden_length_by_mmu() const;
@@ -219,13 +219,13 @@ private:
   // Calculates the desired eden length before mixed gc so that after adding the
   // minimum amount of old gen regions from the collection set, the eden fits into
   // the pause time goal.
-  uint calculate_desired_eden_length_before_mixed(double survivor_base_time_ms,
+  uint calculate_desired_eden_length_before_mixed(double base_time_ms,
                                                   uint min_eden_length,
                                                   uint max_eden_length) const;
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t rs_length) const;
+  uint calculate_young_desired_length(size_t pending_cards, size_t rs_length) const;
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
   // The GCLocker might cause us to need more regions than the target. Calculate

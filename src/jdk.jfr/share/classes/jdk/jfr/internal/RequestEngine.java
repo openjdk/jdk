@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
@@ -40,6 +41,7 @@ import jdk.jfr.EventType;
 public final class RequestEngine {
 
     private static final JVM jvm = JVM.getJVM();
+    private static final ReentrantLock lock = new ReentrantLock();
 
     static final class RequestHook {
         private final Runnable hook;
@@ -66,7 +68,7 @@ public final class RequestEngine {
                     if (type.isJDK()) {
                         hook.run();
                     } else {
-                        jvm.emitEvent(type.getId(), JVM.counterTime(), 0);
+                        emitJVMEvent(type);
                     }
                     if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
                         Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Executed periodic hook for " + type.getLogName());
@@ -77,6 +79,18 @@ public final class RequestEngine {
             } catch (Throwable e) {
                 // Prevent malicious user to propagate exception callback in the wrong context
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Exception occurred during execution of period hook for " + type.getLogName());
+            }
+        }
+
+        private void emitJVMEvent(PlatformEventType type) {
+            try {
+                // There should only be one thread in native at a time.
+                // ReentrantLock is used to avoid JavaMonitorBlocked event
+                // from synchronized block.
+                lock.lock();
+                jvm.emitEvent(type.getId(), JVM.counterTime(), 0);
+            } finally {
+                lock.unlock();
             }
         }
 
@@ -221,7 +235,7 @@ public final class RequestEngine {
             long left = 0;
             PlatformEventType es = he.type;
             // Not enabled, skip.
-            if (!es.isEnabled() || es.isEveryChunk()) {
+            if (!es.isEnabled() || es.isChunkTime()) {
                 continue;
             }
             long r_period = es.getPeriod();

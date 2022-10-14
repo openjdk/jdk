@@ -56,6 +56,9 @@
 #include "adfiles/ad_riscv.hpp"
 #include "opto/runtime.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
+#endif
 
 #define __ masm->
 
@@ -208,6 +211,9 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::scalable_vector_reg_size(T_BYTE));
 #else
+#if !INCLUDE_JVMCI
+  assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
+#endif
   __ pop_CPU_state(_save_vectors);
 #endif
   __ leave();
@@ -492,6 +498,18 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // Will jump to the compiled code just as if compiled code was doing it.
   // Pre-load the register-jump target early, to schedule it better.
   __ ld(t1, Address(xmethod, in_bytes(Method::from_compiled_offset())));
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    // check if this call should be routed towards a specific entry point
+    __ ld(t0, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    Label no_alternative_target;
+    __ beqz(t0, no_alternative_target);
+    __ mv(t1, t0);
+    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ bind(no_alternative_target);
+  }
+#endif // INCLUDE_JVMCI
 
   // Now generate the shuffle code.
   for (int i = 0; i < total_args_passed; i++) {
@@ -938,8 +956,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int vep_offset = ((intptr_t)__ pc()) - start;
 
     // First instruction must be a nop as it may need to be patched on deoptimisation
-    MacroAssembler::assert_alignment(__ pc());
-    __ nop();
+    {
+      Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+      MacroAssembler::assert_alignment(__ pc());
+      __ nop();  // 4 bytes
+    }
     gen_special_dispatch(masm,
                          method,
                          in_sig_bt,
@@ -1090,8 +1111,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.
-  MacroAssembler::assert_alignment(__ pc());
-  __ nop();
+  {
+    Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+    MacroAssembler::assert_alignment(__ pc());
+    __ nop();  // 4 bytes
+  }
 
   if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
     Label L_skip_barrier;
@@ -1675,6 +1699,11 @@ void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
   // Setup code generation tools
   int pad = 0;
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    pad += 512; // Increase the buffer size when compiling for JVMCI
+  }
+#endif
   CodeBuffer buffer("deopt_blob", 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words = -1;
@@ -1726,6 +1755,12 @@ void SharedRuntime::generate_deopt_blob() {
   __ j(cont);
 
   int reexecute_offset = __ pc() - start;
+#if INCLUDE_JVMCI && !defined(COMPILER1)
+  if (EnableJVMCI && UseJVMCICompiler) {
+    // JVMCI does not use this kind of deoptimization
+    __ should_not_reach_here();
+  }
+#endif
 
   // Reexecute case
   // return address is the pc describes what bci to do re-execute at
@@ -1735,6 +1770,44 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ mvw(xcpool, Deoptimization::Unpack_reexecute); // callee-saved
   __ j(cont);
+
+#if INCLUDE_JVMCI
+  Label after_fetch_unroll_info_call;
+  int implicit_exception_uncommon_trap_offset = 0;
+  int uncommon_trap_offset = 0;
+
+  if (EnableJVMCI) {
+    implicit_exception_uncommon_trap_offset = __ pc() - start;
+
+    __ ld(ra, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+
+    uncommon_trap_offset = __ pc() - start;
+
+    // Save everything in sight.
+    reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
+    // fetch_unroll_info needs to call last_java_frame()
+    Label retaddr;
+    __ set_last_Java_frame(sp, noreg, retaddr, t0);
+
+    __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ mvw(t0, -1);
+    __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+
+    __ mvw(xcpool, (int32_t)Deoptimization::Unpack_reexecute);
+    __ mv(c_rarg0, xthread);
+    __ orrw(c_rarg2, zr, xcpool); // exec mode
+    int32_t offset = 0;
+    __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)), offset);
+    __ jalr(x1, t0, offset);
+    __ bind(retaddr);
+    oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
+
+    __ reset_last_Java_frame(false);
+
+    __ j(after_fetch_unroll_info_call);
+  } // EnableJVMCI
+#endif // INCLUDE_JVMCI
 
   int exception_offset = __ pc() - start;
 
@@ -1828,6 +1901,12 @@ void SharedRuntime::generate_deopt_blob() {
   oop_maps->add_gc_map(__ pc() - start, map);
 
   __ reset_last_Java_frame(false);
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    __ bind(after_fetch_unroll_info_call);
+  }
+#endif
 
   // Load UnrollBlock* into x15
   __ mv(x15, x10);
@@ -1984,6 +2063,12 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   assert(_deopt_blob != NULL, "create deoptimization blob fail!");
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
+    _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  }
+#endif
 }
 
 // Number of stack slots between incoming argument block and the start of
@@ -2088,8 +2173,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
                       size_of_deoptimized_frame_offset_in_bytes()));
   __ sub(x12, x12, 2 * wordSize);
   __ add(sp, sp, x12);
-  __ ld(fp, sp, 0);
-  __ ld(ra, sp, wordSize);
+  __ ld(fp, Address(sp, 0));
+  __ ld(ra, Address(sp, wordSize));
   __ addi(sp, sp, 2 * wordSize);
   // RA should now be the return address to the caller (3) frame
 
