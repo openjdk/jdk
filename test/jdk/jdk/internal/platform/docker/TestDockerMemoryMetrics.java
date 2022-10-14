@@ -56,6 +56,8 @@ public class TestDockerMemoryMetrics {
         try {
             testMemoryLimit("200m");
             testMemoryLimit("1g");
+            // Memory limit test with additional cgroup fs mounted
+            testMemoryLimit("500m", true /* cgroup fs mount */);
 
             testMemoryAndSwapLimit("200m", "1g");
             testMemoryAndSwapLimit("100m", "200m");
@@ -89,6 +91,10 @@ public class TestDockerMemoryMetrics {
     }
 
     private static void testMemoryLimit(String value) throws Exception {
+        testMemoryLimit(value, false);
+    }
+
+    private static void testMemoryLimit(String value, boolean addCgroupMount) throws Exception {
         Common.logNewTestCase("testMemoryLimit, value = " + value);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
@@ -97,6 +103,10 @@ public class TestDockerMemoryMetrics {
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
                 .addClassOptions("memory", value);
+        if (addCgroupMount) {
+            // Extra cgroup mount should be ignored by product code
+            opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
+        }
         DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
     }
 
