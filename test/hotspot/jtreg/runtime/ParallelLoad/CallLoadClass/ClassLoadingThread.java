@@ -61,11 +61,7 @@ class ClassLoadingThread extends Thread {
             // If you call loadClass directly, this will result in LinkageError
             ThreadPrint.println("Exception is caught: " + e);
             e.printStackTrace();
-            if (e instanceof LinkageError) {
-                success = true;
-            } else {
-                success = true;
-            }
+            success = (e instanceof LinkageError);
         }
     }
 
