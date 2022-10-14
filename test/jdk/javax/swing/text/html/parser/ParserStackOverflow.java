@@ -45,7 +45,7 @@ public class ParserStackOverflow {
         Reader reader = new StringReader(badHtml);
         kit.read(reader, doc, 0); // StackOverflowError here
 
-        System.out.println("Succeeded! (no StackOverflowError");
+        System.out.println("Succeeded! (no StackOverflowError)");
     }
 }
 
