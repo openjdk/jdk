@@ -146,9 +146,9 @@ import jdk.internal.javac.PreviewFeature;
  * operation first advances the position to the end of the file and then writes
  * the requested data.  Whether the advancement of the position and the writing
  * of the data are done in a single atomic operation is system-dependent and
- * therefore unspecified.  In this mode an invocation of the {@linkplain
- * #write(ByteBuffer,long) absolute write} operation leads to unspecified
- * behavior.
+ * therefore unspecified.  In this mode the behavior of the method to
+ * {@linkplain #write(ByteBuffer,long) write at a given position} is also
+ * system-dependent.
  *
  * @see java.io.FileInputStream#getChannel()
  * @see java.io.FileOutputStream#getChannel()
@@ -195,8 +195,8 @@ public abstract class FileChannel
      *     the position to the end of the file and then writes the requested
      *     data. Whether the advancement of the position and the writing of the
      *     data are done in a single atomic operation is system-dependent and
-     *     therefore unspecified. The effect of performing an
-     *     {@linkplain #write(ByteBuffer,long) absolute write} with this option
+     *     therefore unspecified. The effect of {@linkplain
+     *     #write(ByteBuffer,long) writing at a given position} with this option
      *     present is unspecified. This option may not be used in conjunction
      *     with the {@code READ} or {@code TRUNCATE_EXISTING} options. </td>
      * </tr>
