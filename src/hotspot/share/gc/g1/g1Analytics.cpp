@@ -325,7 +325,7 @@ size_t G1Analytics::predict_rs_length(bool for_young_only_phase) const {
 }
 
 size_t G1Analytics::predict_pending_cards(bool for_young_only_phase) const {
-  if  (for_young_only_phase || !enough_samples_available(_mixed_pending_cards_seq)) {
+  if (for_young_only_phase || !enough_samples_available(_mixed_pending_cards_seq)) {
     return predict_size(_young_pending_cards_seq);
   } else {
     return predict_size(_mixed_pending_cards_seq);
