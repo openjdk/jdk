@@ -2,11 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8024809
  * @summary javac, some lambda programs are rejected by flow analysis
- * @compile SelfInitializerInLambdaTestb.java
- * @run main SelfInitializerInLambdaTestb
- *
- * NOTE: Bug 8024809 has been obsoleted by bug 8043179,
- * so this test is now expected to compile successfully.
+ * @compile/fail/ref=SelfInitializerInLambdaTestb.out -XDrawDiagnostics SelfInitializerInLambdaTestb.java
  */
 
 public class SelfInitializerInLambdaTestb {
@@ -17,9 +13,5 @@ public class SelfInitializerInLambdaTestb {
 
     SelfInitializerInLambdaTestb() {
         r1 = ()->System.out.println(r1);
-    }
-
-    public static void main(String[] args) {
-        new SelfInitializerInLambdaTestb();
     }
 }
