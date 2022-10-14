@@ -147,8 +147,8 @@ private:
 public:
 
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = NULL) const;
-  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_gc) const;
-  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_gc) const;
+  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();

@@ -172,32 +172,32 @@ void G1Analytics::report_dirtied_cards_rate_ms(double cards_per_ms) {
   _dirtied_cards_rate_ms_seq->add(cards_per_ms);
 }
 
-void G1Analytics::report_cost_per_card_scan_ms(double cost_per_card_ms, bool for_young_gc) {
-  if (for_young_gc) {
+void G1Analytics::report_cost_per_card_scan_ms(double cost_per_card_ms, bool for_young_only_phase) {
+  if  (for_young_only_phase) {
     _young_cost_per_card_scan_ms_seq->add(cost_per_card_ms);
   } else {
     _mixed_cost_per_card_scan_ms_seq->add(cost_per_card_ms);
   }
 }
 
-void G1Analytics::report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_gc) {
-  if (for_young_gc) {
+void G1Analytics::report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_only_phase) {
+  if  (for_young_only_phase) {
     _young_cost_per_card_merge_ms_seq->add(cost_per_card_ms);
   } else {
     _mixed_cost_per_card_merge_ms_seq->add(cost_per_card_ms);
   }
 }
 
-void G1Analytics::report_card_merge_to_scan_ratio(double merge_to_scan_ratio, bool for_young_gc) {
-  if (for_young_gc) {
+void G1Analytics::report_card_merge_to_scan_ratio(double merge_to_scan_ratio, bool for_young_only_phase) {
+  if  (for_young_only_phase) {
     _young_card_merge_to_scan_ratio_seq->add(merge_to_scan_ratio);
   } else {
     _mixed_card_merge_to_scan_ratio_seq->add(merge_to_scan_ratio);
   }
 }
 
-void G1Analytics::report_rs_length_diff(double rs_length_diff, bool for_young_gc) {
-  if (for_young_gc) {
+void G1Analytics::report_rs_length_diff(double rs_length_diff, bool for_young_only_phase) {
+  if  (for_young_only_phase) {
     _young_rs_length_diff_seq->add(rs_length_diff);
   } else {
     _mixed_rs_length_diff_seq->add(rs_length_diff);
@@ -224,16 +224,16 @@ void G1Analytics::report_constant_other_time_ms(double constant_other_time_ms) {
   _constant_other_time_ms_seq->add(constant_other_time_ms);
 }
 
-void G1Analytics::report_pending_cards(double pending_cards, bool for_young_gc) {
-  if (for_young_gc) {
+void G1Analytics::report_pending_cards(double pending_cards, bool for_young_only_phase) {
+  if  (for_young_only_phase) {
     _young_pending_cards_seq->add(pending_cards);
   } else {
     _mixed_pending_cards_seq->add(pending_cards);
   }
 }
 
-void G1Analytics::report_rs_length(double rs_length, bool for_young_gc) {
-  if (for_young_gc) {
+void G1Analytics::report_rs_length(double rs_length, bool for_young_only_phase) {
+  if  (for_young_only_phase) {
     _young_rs_length_seq->add(rs_length);
   } else {
     _mixed_rs_length_seq->add(rs_length);
@@ -256,24 +256,24 @@ double G1Analytics::predict_dirtied_cards_rate_ms() const {
   return predict_zero_bounded(_dirtied_cards_rate_ms_seq);
 }
 
-size_t G1Analytics::predict_scan_card_num(size_t rs_length, bool for_young_gc) const {
-  if (for_young_gc || !enough_samples_available(_mixed_card_merge_to_scan_ratio_seq)) {
+size_t G1Analytics::predict_scan_card_num(size_t rs_length, bool for_young_only_phase) const {
+  if  (for_young_only_phase || !enough_samples_available(_mixed_card_merge_to_scan_ratio_seq)) {
     return (size_t)(rs_length * predict_in_unit_interval(_young_card_merge_to_scan_ratio_seq));
   } else {
     return (size_t)(rs_length * predict_in_unit_interval(_mixed_card_merge_to_scan_ratio_seq));
   }
 }
 
-double G1Analytics::predict_card_merge_time_ms(size_t card_num, bool for_young_gc) const {
-  if (for_young_gc || !enough_samples_available(_mixed_cost_per_card_merge_ms_seq)) {
+double G1Analytics::predict_card_merge_time_ms(size_t card_num, bool for_young_only_phase) const {
+  if  (for_young_only_phase || !enough_samples_available(_mixed_cost_per_card_merge_ms_seq)) {
     return card_num * predict_zero_bounded(_young_cost_per_card_merge_ms_seq);
   } else {
     return card_num * predict_zero_bounded(_mixed_cost_per_card_merge_ms_seq);
   }
 }
 
-double G1Analytics::predict_card_scan_time_ms(size_t card_num, bool for_young_gc) const {
-  if (for_young_gc || !enough_samples_available(_mixed_cost_per_card_scan_ms_seq)) {
+double G1Analytics::predict_card_scan_time_ms(size_t card_num, bool for_young_only_phase) const {
+  if  (for_young_only_phase || !enough_samples_available(_mixed_cost_per_card_scan_ms_seq)) {
     return card_num * predict_zero_bounded(_young_cost_per_card_scan_ms_seq);
   } else {
     return card_num * predict_zero_bounded(_mixed_cost_per_card_scan_ms_seq);
@@ -316,16 +316,16 @@ double G1Analytics::predict_cleanup_time_ms() const {
   return predict_zero_bounded(_concurrent_mark_cleanup_times_ms);
 }
 
-size_t G1Analytics::predict_rs_length(bool for_young_gc) const {
-  if (for_young_gc || !enough_samples_available(_mixed_rs_length_seq)) {
+size_t G1Analytics::predict_rs_length(bool for_young_only_phase) const {
+  if  (for_young_only_phase || !enough_samples_available(_mixed_rs_length_seq)) {
     return predict_size(_young_rs_length_seq) + predict_size(_young_rs_length_diff_seq);
   } else {
     return predict_size(_mixed_rs_length_seq) + predict_size(_mixed_rs_length_diff_seq);
   }
 }
 
-size_t G1Analytics::predict_pending_cards(bool for_young_gc) const {
-  if (for_young_gc || !enough_samples_available(_mixed_pending_cards_seq)) {
+size_t G1Analytics::predict_pending_cards(bool for_young_only_phase) const {
+  if  (for_young_only_phase || !enough_samples_available(_mixed_pending_cards_seq)) {
     return predict_size(_young_pending_cards_seq);
   } else {
     return predict_size(_mixed_pending_cards_seq);
