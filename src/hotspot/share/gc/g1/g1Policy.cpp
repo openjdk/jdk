@@ -73,7 +73,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _predicted_surviving_bytes_from_survivor(0),
   _predicted_surviving_bytes_from_old(0),
   _rs_length(0),
-  _rs_length_prediction(0),
   _pending_cards_at_gc_start(0),
   _concurrent_start_to_mixed(),
   _collection_set(NULL),
@@ -200,11 +199,16 @@ void G1Policy::update_young_length_bounds() {
 }
 
 void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
+  uint old_young_list_target_length = _young_list_target_length;
+
   _young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
   _young_list_target_length = calculate_young_target_length(_young_list_desired_length);
   _young_list_max_length = calculate_young_max_length(_young_list_target_length);
 
-  log_debug(gc, ergo, heap)("Young list lengths: desired: %u, target: %u, max: %u",
+  log_trace(gc, ergo, heap)("Young list length update: pending cards %zu rs_length %zu old target %u desired: %u target: %u max: %u",
+                            pending_cards,
+                            rs_length,
+                            old_young_list_target_length,
                             _young_list_desired_length,
                             _young_list_target_length,
                             _young_list_max_length);
@@ -517,30 +521,13 @@ G1GCPhaseTimes* G1Policy::phase_times() const {
   return _phase_times;
 }
 
-void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {
+void G1Policy::revise_young_list_target_length(size_t rs_length) {
   guarantee(use_adaptive_young_list_length(), "should not call this otherwise" );
 
-  if (rs_length > _rs_length_prediction) {
-    // add 10% to avoid having to recalculate often
-    size_t rs_length_prediction = rs_length * 1100 / 1000;
-    update_rs_length_prediction(rs_length_prediction);
-
-    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    // We have no measure of the number of cards in the thread buffers, assume
-    // these are very few compared to the ones in the DCQS.
-    update_young_length_bounds(dcqs.num_cards(), rs_length_prediction);
-  }
-}
-
-void G1Policy::update_rs_length_prediction() {
-  bool for_young_only_phase = collector_state()->in_young_only_phase();
-  update_rs_length_prediction(_analytics->predict_rs_length(for_young_only_phase));
-}
-
-void G1Policy::update_rs_length_prediction(size_t prediction) {
-  if (collector_state()->in_young_only_phase() && use_adaptive_young_list_length()) {
-    _rs_length_prediction = prediction;
-  }
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  // We have no measure of the number of cards in the thread buffers, assume
+  // these are very few compared to the ones in the DCQS.
+  update_young_length_bounds(dcqs.num_cards(), rs_length);
 }
 
 void G1Policy::record_full_collection_start() {
@@ -575,7 +562,6 @@ void G1Policy::record_full_collection_end() {
   update_survival_estimates_for_next_collection();
   _survivor_surv_rate_group->reset();
   update_young_length_bounds();
-  update_rs_length_prediction();
 
   _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * HeapRegion::GrainBytes);
 
@@ -899,7 +885,6 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
-  update_rs_length_prediction();
   update_survival_estimates_for_next_collection();
 
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
