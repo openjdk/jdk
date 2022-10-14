@@ -507,7 +507,6 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
-java/io/BufferedInputStream/TransferTo.java                     8294541 generic-all
 java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
 java/io/File/GetXSpace.java                                     8291911 windows-all
 
@@ -665,6 +664,7 @@ javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
 javax/swing/plaf/aqua/CustomComboBoxFocusTest.java 8294254 macosx-all
+javax/swing/JRadioButton/4314194/bug4314194.java 8295006 linux-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
@@ -749,7 +749,6 @@ jdk/jfr/startupargs/TestStartName.java                          8214685 windows-
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
-jdk/jfr/event/runtime/TestActiveSettingEvent.java               8287832 generic-all
 jdk/jfr/api/consumer/TestRecordingFileWrite.java                8287699 linux-x64,macosx-x64
 
 ############################################################################

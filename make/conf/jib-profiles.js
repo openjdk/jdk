@@ -388,7 +388,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "18";
+    common.boot_jdk_version = "19";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -1147,7 +1147,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-12-jdk-asm+1.0",
+            revision: "3.0-13-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },

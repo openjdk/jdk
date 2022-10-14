@@ -243,6 +243,8 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, Register temp);
 
 void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  IncompressibleRegion ir(this);  // Fixed length: see C2_MacroAssembler::entry_barrier_stub_size()
+
   // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
   int alignment_bytes = align(4);
 

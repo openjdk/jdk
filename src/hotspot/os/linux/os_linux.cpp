@@ -2374,7 +2374,7 @@ static bool print_model_name_and_flags(outputStream* st, char* buf, size_t bufle
 }
 
 // additional information about CPU e.g. available frequency ranges
-static void print_sys_devices_cpu_info(outputStream* st, char* buf, size_t buflen) {
+static void print_sys_devices_cpu_info(outputStream* st) {
   _print_ascii_file_h("Online cpus", "/sys/devices/system/cpu/online", st);
   _print_ascii_file_h("Offline cpus", "/sys/devices/system/cpu/offline", st);
 
@@ -2427,7 +2427,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
     _print_ascii_file_h("/proc/cpuinfo", "/proc/cpuinfo", st, false);
   }
   st->cr();
-  print_sys_devices_cpu_info(st, buf, buflen);
+  print_sys_devices_cpu_info(st);
 }
 
 #if defined(AMD64) || defined(IA32) || defined(X32)

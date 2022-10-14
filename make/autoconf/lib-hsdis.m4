@@ -181,8 +181,8 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
       fi
     else
       binutils_cc="$CC $SYSROOT_CFLAGS"
-      if test "x$COMPILE_TYPE" = "xcross"; then
-        binutils_target="--host=$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_LIBC --target=$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_LIBC"
+      if test "x$COMPILE_TYPE" = xcross; then
+        binutils_target="--host=$OPENJDK_TARGET_AUTOCONF_NAME"
       else
         binutils_target=""
       fi

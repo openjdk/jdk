@@ -105,7 +105,7 @@ void ZNMethodsIterator::apply(NMethodClosure* cl) {
 
 ZRootsIterator::ZRootsIterator(int cld_claim) {
   if (cld_claim != ClassLoaderData::_claim_none) {
-    ClassLoaderDataGraph::clear_claimed_marks(cld_claim);
+    ClassLoaderDataGraph::verify_claimed_marks_cleared(cld_claim);
   }
 }
 
