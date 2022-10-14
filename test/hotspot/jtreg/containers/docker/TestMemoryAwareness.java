@@ -63,10 +63,11 @@ public class TestMemoryAwareness {
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
-            testMemoryLimit("100m", "104857600");
-            testMemoryLimit("500m", "524288000");
-            testMemoryLimit("1g", "1073741824");
-            testMemoryLimit("4g", "4294967296");
+            testMemoryLimit("100m", "104857600", false);
+            testMemoryLimit("500m", "524288000", false);
+            testMemoryLimit("1g", "1073741824", false);
+            testMemoryLimit("4g", "4294967296", false);
+            testMemoryLimit("100m", "104857600", true /* additional cgroup mount */);
 
             testMemorySoftLimit("500m", "524288000");
             testMemorySoftLimit("1g", "1073741824");
@@ -98,13 +99,17 @@ public class TestMemoryAwareness {
     }
 
 
-    private static void testMemoryLimit(String valueToSet, String expectedTraceValue)
+    private static void testMemoryLimit(String valueToSet, String expectedTraceValue, boolean addCgmounts)
             throws Exception {
 
         Common.logNewTestCase("memory limit: " + valueToSet);
 
         DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--memory", valueToSet);
+
+        if (addCgmounts) {
+            opts = opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroups-in:ro");
+        }
 
         Common.run(opts)
             .shouldMatch("Memory Limit is:.*" + expectedTraceValue);

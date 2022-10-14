@@ -75,10 +75,11 @@ public class TestCPUAwareness {
             testActiveProcessorCount(2, 2);
 
             // cpu quota and period
-            testCpuQuotaAndPeriod(50*1000, 100*1000);
-            testCpuQuotaAndPeriod(100*1000, 100*1000);
-            testCpuQuotaAndPeriod(150*1000, 100*1000);
-            testCpuQuotaAndPeriod(400*1000, 100*1000);
+            testCpuQuotaAndPeriod(50*1000, 100*1000, false);
+            testCpuQuotaAndPeriod(100*1000, 100*1000, false);
+            testCpuQuotaAndPeriod(150*1000, 100*1000, false);
+            testCpuQuotaAndPeriod(400*1000, 100*1000, false);
+            testCpuQuotaAndPeriod(50*1000, 100*1000, true /* additional cgroup mount */);
 
             testOperatingSystemMXBeanAwareness("0.5", "1");
             testOperatingSystemMXBeanAwareness("1.0", "1");
@@ -174,7 +175,7 @@ public class TestCPUAwareness {
     }
 
 
-    private static void testCpuQuotaAndPeriod(int quota, int period)
+    private static void testCpuQuotaAndPeriod(int quota, int period, boolean addCgmounts)
         throws Exception {
         Common.logNewTestCase("test cpu quota and period: ");
         System.out.println("quota = " + quota);
@@ -187,6 +188,10 @@ public class TestCPUAwareness {
         DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--cpu-period=" + period)
             .addDockerOpts("--cpu-quota=" + quota);
+
+        if (addCgmounts) {
+            opts = opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroups-in:ro");
+        }
 
         Common.run(opts)
             .shouldMatch("CPU Period is.*" + period)
