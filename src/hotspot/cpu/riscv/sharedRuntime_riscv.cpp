@@ -2421,8 +2421,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
                       size_of_deoptimized_frame_offset_in_bytes()));
   __ sub(x12, x12, 2 * wordSize);
   __ add(sp, sp, x12);
-  __ ld(fp, sp, 0);
-  __ ld(ra, sp, wordSize);
+  __ ld(fp, Address(sp, 0));
+  __ ld(ra, Address(sp, wordSize));
   __ addi(sp, sp, 2 * wordSize);
   // RA should now be the return address to the caller (3) frame
 

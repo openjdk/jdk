@@ -33,8 +33,8 @@
  *      file system provider} to enumerate and read the class and resource
  *      files in a run-time image.
  *      The jrt file system can be created by calling
- *      {@link java.nio.file.FileSystems#newFileSystem
- *      FileSystems.newFileSystem(URI.create("jrt:/"))}.
+ *      {@link java.nio.file.FileSystems#getFileSystem
+ *      FileSystems.getFileSystem(URI.create("jrt:/"))}.
  *      </dd>
  * </dl>
  *
