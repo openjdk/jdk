@@ -97,9 +97,7 @@ America/Winnipeg CST CDT
 America/Yakutat AKST AKDT
 America/Yellowknife MST MDT
 Antarctica/Macquarie AEST AEDT
-Asia/Amman EET EEST
 Asia/Beirut EET EEST
-Asia/Damascus EET EEST
 Asia/Famagusta EET EEST
 Asia/Gaza EET EEST
 Asia/Hebron EET EEST

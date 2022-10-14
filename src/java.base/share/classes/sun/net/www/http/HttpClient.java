@@ -29,6 +29,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -127,6 +128,7 @@ public class HttpClient extends NetworkClient {
      *  0: the server specified no keep alive headers
      * -1: the server provided "Connection: keep-alive" but did not specify a
      *     a particular time in a "Keep-Alive:" headers
+     * -2: the server provided "Connection: keep-alive" and timeout=0
      * Positive values are the number of seconds specified by the server
      * in a "Keep-Alive" header
      */
@@ -903,11 +905,19 @@ public class HttpClient extends NetworkClient {
                         if (keepAliveConnections < 0) {
                             keepAliveConnections = usingProxy?50:5;
                         }
-                        keepAliveTimeout = p.findInt("timeout", -1);
-                        if (keepAliveTimeout < -1) {
-                            // if the server specified a negative (invalid) value
-                            // then we set to -1, which is equivalent to no value
+                        OptionalInt timeout = p.findInt("timeout");
+                        if (timeout.isEmpty()) {
                             keepAliveTimeout = -1;
+                        } else {
+                            keepAliveTimeout = timeout.getAsInt();
+                            if (keepAliveTimeout < 0) {
+                                // if the server specified a negative (invalid) value
+                                // then we set to -1, which is equivalent to no value
+                                keepAliveTimeout = -1;
+                            } else if (keepAliveTimeout == 0) {
+                                // handled specially to mean close connection immediately
+                                keepAliveTimeout = -2;
+                            }
                         }
                     }
                 } else if (b[7] != '0') {

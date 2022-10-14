@@ -371,12 +371,12 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister r) {
-  flw(r, esp, 0);
+  flw(r, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister r) {
-  fld(r, esp, 0);
+  fld(r, Address(esp, 0));
   addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 
