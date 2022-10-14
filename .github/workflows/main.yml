@@ -357,15 +357,15 @@ jobs:
       bootjdk-platform: linux-x64
       runs-on: ubuntu-22.04
 
-  test-linux-aarch64:
-    name: linux-aarch64
-    needs:
-      - build-linux-aarch64
-    uses: ./.github/workflows/test-cross-compile.yml
-    with:
-      platform: linux-aarch64
-      bootjdk-platform: linux-x64
-      runs-on: ubuntu-22.04
+  # test-linux-aarch64:
+  #   name: linux-aarch64
+  #   needs:
+  #     - build-linux-aarch64
+  #   uses: ./.github/workflows/test-cross-compile.yml
+  #   with:
+  #     platform: linux-aarch64
+  #     bootjdk-platform: linux-x64
+  #     runs-on: ubuntu-22.04
 
   # test-linux-arm:
   #   name: linux-arm
@@ -451,7 +451,7 @@ jobs:
       - build-windows-aarch64
       - test-linux-x64
       - test-linux-x86
-      - test-linux-aarch64
+      # - test-linux-aarch64
       # - test-linux-arm
       # - test-linux-ppc64le
       - test-linux-riscv64

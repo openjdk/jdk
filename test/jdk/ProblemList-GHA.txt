@@ -23,9 +23,8 @@
 
 # :tier1_part1
 
-java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    0         linux-aarch64
-java/lang/invoke/lambda/LogGeneratedClassesTest.java            0         linux-aarch64,linux-riscv64
-java/lang/ProcessHandle/InfoTest.java                           0         linux-aarch64,linux-riscv64
+java/lang/invoke/lambda/LogGeneratedClassesTest.java            0         linux-riscv64
+java/lang/ProcessHandle/InfoTest.java                           0         linux-riscv64
 
 # :tier1_part2
 
@@ -33,7 +32,3 @@ java/util/concurrent/locks/Lock/TimedAcquireLeak.java           0         linux-
 java/util/concurrent/tck/JSR166TestCase.java                    0         linux-riscv64
 java/util/DoubleSummaryStatistics/NegativeCompensation.java     0         linux-riscv64
 java/util/ServiceLoader/basic/ServiceLoaderBasicTest.java       0         linux-riscv64
-
-# :tier1_part3
-
-java/math/BigInteger/LargeValueExceptions.java                  0         linux-aarch64

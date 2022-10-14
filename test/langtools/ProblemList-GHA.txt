@@ -21,12 +21,9 @@
 # questions.
 #
 
-jdk/javadoc/tool/testLocaleOption/TestLocaleOption.java         0         linux-aarch64,linux-riscv64
-jdk/jshell/CommandCompletionTest.java                           0         linux-aarch64,linux-riscv64
-jdk/jshell/CompletenessTest.java                                0         linux-aarch64
+jdk/javadoc/tool/testLocaleOption/TestLocaleOption.java         0         linux-riscv64
+jdk/jshell/CommandCompletionTest.java                           0         linux-riscv64
 jdk/jshell/ForwardReferenceImportTest.java                      0         linux-riscv64
-jdk/jshell/ModifiersTest.java                                   0         linux-aarch64
-jdk/jshell/ToolProviderTest.java                                0         linux-aarch64,linux-riscv64
-jdk/jshell/ToolTabSnippetTest.java                              0         linux-aarch64,linux-riscv64
+jdk/jshell/ToolProviderTest.java                                0         linux-riscv64
+jdk/jshell/ToolTabSnippetTest.java                              0         linux-riscv64
 tools/javac/ClassPathTest/ClassPathTest.java                    0         linux-riscv64
-tools/javac/main/EnvVariableTest.java                           0         linux-aarch64

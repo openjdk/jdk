@@ -33,37 +33,26 @@ gtest/NMTGtests.java#nmt-summary                                0         linux-
 
 # :tier1_serviceability
 
-serviceability/dcmd/framework/HelpTest.java                     0         linux-aarch64,linux-riscv64
-serviceability/dcmd/framework/InvalidCommandTest.java           0         linux-aarch64,linux-riscv64
-serviceability/dcmd/framework/VMVersionTest.java                0         linux-aarch64,linux-riscv64
-serviceability/tmtools/jstat/GcCapacityTest.java                0         linux-aarch64,linux-riscv64
-serviceability/tmtools/jstat/GcCauseTest01.java                 0         linux-aarch64,linux-riscv64
-serviceability/tmtools/jstat/GcCauseTest02.java                 0         linux-aarch64,linux-riscv64
-serviceability/tmtools/jstat/GcCauseTest03.java                 0         linux-aarch64,linux-riscv64
-serviceability/tmtools/jstat/GcNewTest.java                     0         linux-aarch64,linux-riscv64
-serviceability/tmtools/jstat/GcTest01.java                      0         linux-aarch64,linux-riscv64
-serviceability/tmtools/jstat/GcTest02.java                      0         linux-aarch64,linux-riscv64
+serviceability/dcmd/framework/HelpTest.java                     0         linux-riscv64
+serviceability/dcmd/framework/InvalidCommandTest.java           0         linux-riscv64
+serviceability/dcmd/framework/VMVersionTest.java                0         linux-riscv64
+serviceability/tmtools/jstat/GcCapacityTest.java                0         linux-riscv64
+serviceability/tmtools/jstat/GcCauseTest01.java                 0         linux-riscv64
+serviceability/tmtools/jstat/GcCauseTest02.java                 0         linux-riscv64
+serviceability/tmtools/jstat/GcCauseTest03.java                 0         linux-riscv64
+serviceability/tmtools/jstat/GcNewTest.java                     0         linux-riscv64
+serviceability/tmtools/jstat/GcTest01.java                      0         linux-riscv64
+serviceability/tmtools/jstat/GcTest02.java                      0         linux-riscv64
 
 # :tier1_gc
 
-gc/arguments/TestNewRatioFlag.java                              0         linux-aarch64
-gc/arguments/TestUseCompressedOopsFlagsWithUlimit.java          0         linux-aarch64,linux-riscv64
-gc/g1/humongousObjects/TestHumongousClassLoader.java            0         linux-aarch64,linux-riscv64
-gc/shenandoah/options/TestThreadCounts.java                     0         linux-aarch64
-gc/stringdedup/TestStringDeduplicationAgeThreshold.java#Z       0         linux-aarch64
+gc/arguments/TestUseCompressedOopsFlagsWithUlimit.java          0         linux-riscv64
+gc/g1/humongousObjects/TestHumongousClassLoader.java            0         linux-riscv64
 
 # :tier1_runtime
 
-runtime/cds/CheckDefaultArchiveFile.java                        0         linux-aarch64,linux-riscv64
-runtime/CreateMirror/ArraysNewInstanceBug.java                  0         linux-aarch64
-runtime/LoadClass/LongBCP.java                                  0         linux-aarch64,linux-riscv64
-runtime/NMT/CheckForProperDetailStackTrace.java                 0         linux-aarch64
-runtime/NMT/CommitOverlappingRegions.java                       0         linux-aarch64
-runtime/NMT/NMTInitializationTest.java#default_long-detail      0         linux-aarch64
-runtime/NMT/NMTInitializationTest.java#normal-detail            0         linux-aarch64
-runtime/NMT/PrintNMTStatistics.java                             0         linux-aarch64
-runtime/NMT/VirtualAllocCommitMerge.java                        0         linux-aarch64
-runtime/NMT/VirtualAllocCommitUncommitRecommit.java             0         linux-aarch64
+runtime/cds/CheckDefaultArchiveFile.java                        0         linux-riscv64
+runtime/LoadClass/LongBCP.java                                  0         linux-riscv64
 runtime/os/TestTracePageSizes.java#compiler-options             0         linux-riscv64
 runtime/os/TestTracePageSizes.java#G1                           0         linux-riscv64
 runtime/os/TestTracePageSizes.java#Parallel                     0         linux-riscv64
@@ -72,17 +61,10 @@ runtime/posixSig/TestPosixSig.java                              0         linux-
 
 # :tier1_compiler
 
-compiler/blackhole/BlackholeIntrinsicTest.java                  0         linux-aarch64,linux-riscv64
+compiler/blackhole/BlackholeIntrinsicTest.java                  0         linux-riscv64
 compiler/c2/irTests/TestAutoVectorization2DArray.java           0         linux-riscv64
 compiler/c2/irTests/TestFPComparison.java                       0         linux-riscv64
-compiler/c2/irTests/TestVectorizeURShiftSubword.java            0         linux-aarch64
-compiler/c2/TestShiftRightAndAccumulate.java#id0                0         linux-aarch64
-compiler/c2/TestShiftRightAndAccumulate.java#id0                0         linux-aarch64
 compiler/c2/TestShiftRightAndAccumulate.java#id0                0         linux-riscv64
-compiler/c2/TestStressRecompilation.java                        0         linux-aarch64
-compiler/c2/TestStressRecompilation.java                        0         linux-aarch64
 compiler/c2/TestStressRecompilation.java                        0         linux-riscv64
-compiler/jvmci/compilerToVM/IterateFramesNative.java            0         linux-aarch64
 compiler/loopopts/TestUnreachableInnerLoop.java                 0         linux-riscv64
-compiler/runtime/safepoints/TestRegisterRestoring.java          0         linux-aarch64
 compiler/vectorization/TestAutoVecIntMinMax.java                0         linux-riscv64
