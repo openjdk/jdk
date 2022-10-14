@@ -57,7 +57,7 @@ void G1YoungGCEvacFailureInjector::select_evac_failure_regions() {
   g1h->collection_set_iterate_all(&closure);
 }
 
-bool G1YoungGCEvacFailureInjector::arm_if_needed_for_gc_type(bool for_young_gc,
+bool G1YoungGCEvacFailureInjector::arm_if_needed_for_gc_type(bool for_young_only_phase,
                                                              bool during_concurrent_start,
                                                              bool mark_or_rebuild_in_progress) {
   bool res = false;
@@ -67,7 +67,7 @@ bool G1YoungGCEvacFailureInjector::arm_if_needed_for_gc_type(bool for_young_gc,
   if (during_concurrent_start) {
     res |= G1EvacuationFailureALotDuringConcurrentStart;
   }
-  if (for_young_gc) {
+  if (for_young_only_phase) {
     res |= G1EvacuationFailureALotDuringYoungGC;
   } else {
     // GCs are mixed

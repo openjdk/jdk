@@ -3689,7 +3689,8 @@ public class Check {
      *  constructors.
      */
     void checkCyclicConstructors(JCClassDecl tree) {
-        Map<Symbol,Symbol> callMap = new HashMap<>();
+        // use LinkedHashMap so we generate errors deterministically
+        Map<Symbol,Symbol> callMap = new LinkedHashMap<>();
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
@@ -3718,7 +3719,7 @@ public class Check {
                                         Map<Symbol,Symbol> callMap) {
         if (ctor != null && (ctor.flags_field & ACYCLIC) == 0) {
             if ((ctor.flags_field & LOCKED) != 0) {
-                log.error(TreeInfo.diagnosticPositionFor(ctor, tree),
+                log.error(TreeInfo.diagnosticPositionFor(ctor, tree, false, t -> t.hasTag(IDENT)),
                           Errors.RecursiveCtorInvocation);
             } else {
                 ctor.flags_field |= LOCKED;
