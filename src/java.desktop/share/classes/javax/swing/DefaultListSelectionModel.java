@@ -486,7 +486,8 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * @param index0 one end of the interval.
      * @param index1 other end of the interval
      * @throws IndexOutOfBoundsException if either index is less than {@code -1}
-     *         (and neither index is {@code -1})
+     *         (and neither index is {@code -1}) or
+     *         either index is equal to Integer.MAX_VALUE
      * @see #addListSelectionListener
      */
     public void setSelectionInterval(int index0, int index1) {
