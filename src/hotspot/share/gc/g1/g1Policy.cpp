@@ -194,8 +194,6 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 }
 
 void G1Policy::update_young_length_bounds() {
-  // We have no measure of the number of pending cards in the thread buffers,
-  // assume these are very few.
   update_young_length_bounds(_analytics->predict_pending_cards(),
                              _analytics->predict_rs_length());
 }
