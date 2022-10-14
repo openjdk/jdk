@@ -27,6 +27,7 @@ import java.io.*;
 /**
  * @test
  * @bug 8010464 8027570 8027687 8029354 8114860 8071660 8161291
+ * @run main/othervm -Duser.language=tr URLPermissionTest
  */
 
 public class URLPermissionTest {
@@ -392,7 +393,8 @@ public class URLPermissionTest {
         eqtest("http://michael@foo.com/bar","http://michael@foo.com/bar", true),
         eqtest("http://Michael@foo.com/bar","http://michael@goo.com/bar",false),
         eqtest("http://michael@foo.com/bar","http://george@foo.com/bar", true),
-        eqtest("http://@foo.com/bar","http://foo.com/bar", true)
+        eqtest("http://@foo.com/bar","http://foo.com/bar", true),
+        eqtest("http://www.IOU.com", "http://www.iou.com", true)
     };
 
     static Test[] createTests = {
