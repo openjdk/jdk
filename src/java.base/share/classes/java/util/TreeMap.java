@@ -3315,7 +3315,11 @@ public class TreeMap<K,V>
         public Comparator<Map.Entry<K, V>> getComparator() {
             // Adapt or create a key-based comparator
             Comparator<? super K> treeComparator = tree.comparator;
-            return Map.Entry.comparingByKey(treeComparator == null ? natural() : treeComparator);
+            @SuppressWarnings("unchecked")
+            Comparator<Map.Entry<K, V>> entryComparator = treeComparator == null ?
+                    (Comparator) Map.Entry.comparingByKey()
+                    Map.Entry.comparingByKey(treeComparator);
+            return entryComparator;
         }
     }
 }
