@@ -129,9 +129,11 @@ class SharedRuntime: AllStatic {
   static jfloat  d2f (jdouble x);
   static jfloat  l2f (jlong   x);
   static jdouble l2d (jlong   x);
+  static jfloat  hf2f(jshort  x);
+  static jshort  f2hf(jfloat  x);
+  static jfloat  i2f (jint    x);
 
 #ifdef __SOFTFP__
-  static jfloat  i2f (jint    x);
   static jdouble i2d (jint    x);
   static jdouble f2d (jfloat  x);
 #endif // __SOFTFP__
