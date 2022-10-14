@@ -285,11 +285,11 @@ class InvokerBytecodeGenerator {
         return name;
     }
 
-    List<Object> classDataValues() {
+    private Object classDataValues() {
         final List<ClassData> cd = classData;
         return switch(cd.size()) {
-            case 0 -> List.of();
-            case 1 -> List.of(cd.get(0).value);
+            case 0 -> null;
+            case 1 -> cd.get(0).value;
             case 2 -> List.of(cd.get(0).value, cd.get(1).value);
             case 3 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value);
             case 4 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value, cd.get(3).value);
@@ -317,15 +317,8 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
-        Object cd;
-        if (classData.size() == 1) {
-            cd = classData.get(0).value;
-        } else {
-            cd = classDataValues();
-        }
-
         Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of())
-                                      .defineClass(true, cd);
+                                      .defineClass(true, classDataValues());
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }
 
