@@ -20,15 +20,3 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-
-# :tier1_part1
-
-java/lang/invoke/lambda/LogGeneratedClassesTest.java            0         linux-riscv64
-java/lang/ProcessHandle/InfoTest.java                           0         linux-riscv64
-
-# :tier1_part2
-
-java/util/concurrent/locks/Lock/TimedAcquireLeak.java           0         linux-riscv64
-java/util/concurrent/tck/JSR166TestCase.java                    0         linux-riscv64
-java/util/DoubleSummaryStatistics/NegativeCompensation.java     0         linux-riscv64
-java/util/ServiceLoader/basic/ServiceLoaderBasicTest.java       0         linux-riscv64

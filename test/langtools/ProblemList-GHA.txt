@@ -21,7 +21,6 @@
 # questions.
 #
 
-jdk/javadoc/tool/testLocaleOption/TestLocaleOption.java         0         linux-riscv64
 jdk/jshell/CommandCompletionTest.java                           0         linux-riscv64
 jdk/jshell/ForwardReferenceImportTest.java                      0         linux-riscv64
 jdk/jshell/ToolProviderTest.java                                0         linux-riscv64
