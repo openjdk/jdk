@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/* @test
- * @summary Unit test for formatter
- * @bug 4906370 4962433 4973103 4989961 5005818 5031150 4970931 4989491 5002937
- *      5005104 5007745 5061412 5055180 5066788 5088703 6317248 6318369 6320122
- *      6344623 6369500 6534606 6282094 6286592 6476425 5063507 6469160 6476168
- *      8059175 8204229
- *
- * @run shell/timeout=240 Basic.sh
  */
 
 import static java.lang.System.out;
