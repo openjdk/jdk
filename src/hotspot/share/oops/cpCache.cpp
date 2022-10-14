@@ -677,7 +677,7 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const intStack& index_map,
                                      const intStack& invokedynamic_index_map,
                                      const intStack& invokedynamic_map, 
-                                     const GrowableArray<Rewriter::InvokeDynamicInfo>& invokedynamic_info,
+                                     const GrowableArray<InvokeDynamicInfo>& invokedynamic_info,
                                      TRAPS) {
 
 
@@ -686,12 +686,11 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   
   // Fill resolvedinvokedynamicinfo array
   Array<ResolvedInvokeDynamicInfo>* array = MetadataFactory::new_array<ResolvedInvokeDynamicInfo>(
-                       loader_data, invokedynamic_info.length,
-                       CHECK);
-    for (int i = 0; i < invokedynamic_info.length(); i++) {
-        _resolved_invokedynamic_info_array.at(i) = 
-              ResolvedInvokeDynamicInfo(invokedynamic_info._resolved_info_index, invokedynamic_info._cp_index);
-    }
+                       loader_data, invokedynamic_info.length(), THREAD);
+  for (int i = 0; i < invokedynamic_info.length(); i++) {
+      array->at(i) = ResolvedInvokeDynamicInfo(invokedynamic_info.at(i)._resolved_info_index, 
+            invokedynamic_info.at(i)._cp_index);
+  }
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
     ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map, array);
@@ -702,7 +701,7 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
                                             const intStack& inverse_index_map,
                                             const intStack& invokedynamic_inverse_index_map,
                                             const intStack& invokedynamic_references_map,
-                                            const Array<ResolvedInvokeDynamicInfo>* invokedynamic_info) :
+                                            Array<ResolvedInvokeDynamicInfo>* invokedynamic_info) :
                                                   _length(length),
                                                   _constant_pool(NULL),
                                                   _gc_epoch(0), 
@@ -859,6 +858,7 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstantPoolCache): %p", this);
   it->push(&_constant_pool);
   it->push(&_reference_map);
+  //it->push(&_resolved_invokedynamic_info_array); // Maybe we need this?
 }
 
 // Printing

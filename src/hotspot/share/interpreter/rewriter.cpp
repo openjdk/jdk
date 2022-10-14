@@ -30,7 +30,7 @@
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.hpp"
+//#include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
@@ -287,8 +287,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     _patch_invokedynamic_refs->push(resolved_index);
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
-    //struct InvokeDynamicInfo s = {resolved_index, cp_index};
-    _stuff_to_collect_during_rewriting.push(InvokeDynamicInfo(resolved_index, cp_index));
+    _stuff_to_collect_during_rewriting.push(ConstantPoolCache::InvokeDynamicInfo((u2)resolved_index, (u2)cp_index));
   } else {
     int cache_index = ConstantPool::decode_invokedynamic_index(
                         Bytes::get_native_u4(p));
@@ -615,8 +614,6 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
 
   // allocate constant pool cache, now that we've seen all the bytecodes
   make_constant_pool_cache(THREAD);
-
-  //printf("RESOLVED INVOKEDYNAMIC INFO SIZE: %d\n", _stuff_to_collect_during_rewriting.length());
 
   // Restore bytecodes to their unrewritten state if there are exceptions
   // rewriting bytecodes or allocating the cpCache

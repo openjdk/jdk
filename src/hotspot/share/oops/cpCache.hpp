@@ -400,12 +400,24 @@ class ConstantPoolCacheEntry {
 class ConstantPoolCache: public MetaspaceObj {
   friend class VMStructs;
   friend class MetadataFactory;
+ public:
+ struct InvokeDynamicInfo {
+    u2 _resolved_info_index;
+    u2 _cp_index;
+
+    InvokeDynamicInfo(int resolved_info_index, int cp_index) : 
+          _resolved_info_index(resolved_info_index), 
+          _cp_index(cp_index) {}
+    InvokeDynamicInfo() : 
+          _resolved_info_index(0), 
+          _cp_index(0) {}
+  };
+
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPoolCache::metaspace_pointers_do().
   int             _length;
 
-  Array<ResolvedInvokeDynamicInfo>* _resolved_invokedynamic_info_array;
   // The narrowOop pointer to the archived resolved_references. Set at CDS dump
   // time when caching java heap object is supported.
   CDS_JAVA_HEAP_ONLY(int _archived_references_index;) // Gap on LP64
@@ -422,6 +434,8 @@ class ConstantPoolCache: public MetaspaceObj {
   // RedefineClasses support
   uint64_t             _gc_epoch;
 
+  Array<ResolvedInvokeDynamicInfo>* _resolved_invokedynamic_info_array;
+  
   CDS_ONLY(Array<ConstantPoolCacheEntry>* _initial_entries;)
 
   // Sizing
@@ -431,7 +445,8 @@ class ConstantPoolCache: public MetaspaceObj {
   ConstantPoolCache(int length,
                     const intStack& inverse_index_map,
                     const intStack& invokedynamic_inverse_index_map,
-                    const intStack& invokedynamic_references_map);
+                    const intStack& invokedynamic_references_map,
+                    Array<ResolvedInvokeDynamicInfo>* invokedynamic_info);
 
   // Initialization
   void initialize(const intArray& inverse_index_map,
@@ -442,7 +457,7 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_cp_cache_map,
                                      const intStack& invokedynamic_references_map, 
-                                     const GrowableArray<Rewriter::InvokeDynamicInfo>& invokedynamic_info,
+                                     const GrowableArray<InvokeDynamicInfo>& invokedynamic_info,
                                      TRAPS);
 
   int length() const                      { return _length; }
