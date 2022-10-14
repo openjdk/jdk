@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.*;
 public class LocalVmManager {
     private FilenameFilter userDirFilter;
     private FilenameFilter userDirFileFilter;
+    private FilenameFilter oldtmpFileFilter;
 
     /**
      * Creates a LocalVmManager instance for the local system.
@@ -52,7 +53,7 @@ public class LocalVmManager {
      * has appropriate permissions.
      */
     public LocalVmManager() {
-        // The files are in {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
+        // 1.4.2 and later: The files are in {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
         Pattern userDirPattern = Pattern.compile(PerfDataFile.userDirNamePattern);
         userDirFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
@@ -64,6 +65,15 @@ public class LocalVmManager {
         userDirFileFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return userDirFilePattern.matcher(name).matches();
+            }
+        };
+
+        // 1.4.1 (or earlier?): the files are stored directly under {tmpdir}/ with
+        // the following pattern.
+        Pattern oldtmpFilePattern = Pattern.compile(PerfDataFile.tmpFileNamePattern);
+        oldtmpFileFilter = new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return oldtmpFilePattern.matcher(name).matches();
             }
         };
     }
@@ -90,7 +100,7 @@ public class LocalVmManager {
             }
 
 
-            // Look for the files {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
+            // 1.4.2 and later: Look for the files {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
             // that are readable by the current user.
             File[] dirs = tmpdir.listFiles(userDirFilter);
             for (File subDir : dirs) {
@@ -111,6 +121,20 @@ public class LocalVmManager {
                     }
                 }
             }
+
+            // look for any 1.4.1 files that are readable by the current user.
+            File[] files = tmpdir.listFiles(oldtmpFileFilter);
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile() && file.canRead()) {
+                        int vmid = PerfDataFile.getLocalVmId(file);
+                        if (vmid != -1) {
+                            jvmSet.add(vmid);
+                        }
+                    }
+                }
+            }
+
         }
         return jvmSet;
     }
