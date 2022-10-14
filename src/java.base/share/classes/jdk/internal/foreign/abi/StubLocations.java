@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,34 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.foreign.abi;
 
-#ifndef CPU_S390_VMSTORAGE_S390_INLINE_HPP
-#define CPU_S390_VMSTORAGE_S390_INLINE_HPP
+// must keep in sync with StubLocations in VM code
+public enum StubLocations {
+    TARGET_ADDRESS,
+    RETURN_BUFFER;
 
-#include <cstdint>
-
-#include "asm/register.hpp"
-#include "prims/vmstorageBase.inline.hpp"
-
-enum class StorageType : int8_t {
-  STACK = 0,
-  PLACEHOLDER = 1,
-// special locations used only by native code
-  FRAME_DATA = PLACEHOLDER + 1,
-  INVALID = -1
-};
-
-// need to define this before constructing VMStorage (below)
-constexpr inline bool VMStorage::is_reg(StorageType type) {
-   return false;
+    public VMStorage storage(byte type) {
+        return new VMStorage(type, (short) 8, ordinal());
+    }
 }
-constexpr inline StorageType VMStorage::stack_type() { return StorageType::STACK; }
-constexpr inline StorageType VMStorage::placeholder_type() { return StorageType::PLACEHOLDER; }
-constexpr inline StorageType VMStorage::frame_data_type() { return StorageType::FRAME_DATA; }
-
-inline VMStorage as_VMStorage(VMReg reg) {
-  ShouldNotReachHere();
-  return VMStorage::invalid();
-}
-
-#endif // CPU_S390_VMSTORAGE_S390_INLINE_HPP

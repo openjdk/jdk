@@ -70,8 +70,7 @@ public class CallArranger {
         new VMStorage[] { xmm4, xmm5 },
         16,
         32,
-        r10, // target addr reg
-        r11  // ret buf addr reg
+        r10, r11 // scratch 1 & 2
     );
 
     public record Bindings(
@@ -177,7 +176,7 @@ public class CallArranger {
 
         public VMStorage extraVarargsStorage() {
             assert forArguments;
-            return CWindows.inputStorage[StorageClasses.INTEGER][nRegs - 1];
+            return CWindows.inputStorage[StorageType.INTEGER][nRegs - 1];
         }
     }
 
@@ -199,7 +198,7 @@ public class CallArranger {
             switch (argumentClass) {
                 case STRUCT_REGISTER: {
                     assert carrier == MemorySegment.class;
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.bufferLoad(0, type)
                             .vmStore(storage, type);
@@ -209,28 +208,28 @@ public class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
                             .unboxAddress();
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, long.class);
                     break;
                 }
                 case POINTER: {
                     bindings.unboxAddress();
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, long.class);
                     break;
                 }
                 case INTEGER: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, carrier);
                     break;
                 }
                 case FLOAT: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
                     bindings.vmStore(storage, carrier);
                     break;
                 }
                 case VARARG_FLOAT: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
                     if (!INSTANCE.isStackType(storage.type())) { // need extra for register arg
                         VMStorage extraStorage = storageCalculator.extraVarargsStorage();
                         bindings.dup()
@@ -263,7 +262,7 @@ public class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout)
                             .dup();
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.vmLoad(storage, type)
                             .bufferStore(0, type);
@@ -271,24 +270,24 @@ public class CallArranger {
                 }
                 case STRUCT_REFERENCE: {
                     assert carrier == MemorySegment.class;
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddress(layout);
                     break;
                 }
                 case POINTER: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddressRaw(Utils.pointeeSize(layout));
                     break;
                 }
                 case INTEGER: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, carrier);
                     break;
                 }
                 case FLOAT: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
                     bindings.vmLoad(storage, carrier);
                     break;
                 }

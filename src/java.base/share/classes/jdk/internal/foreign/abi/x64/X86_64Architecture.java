@@ -26,6 +26,7 @@ package jdk.internal.foreign.abi.x64;
 
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Architecture;
+import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.aarch64.AArch64Architecture;
 
@@ -50,26 +51,28 @@ public class X86_64Architecture implements Architecture {
 
     @Override
     public boolean isStackType(int cls) {
-        return cls == StorageClasses.STACK;
+        return cls == StorageType.STACK;
     }
 
     @Override
     public int typeSize(int cls) {
         switch (cls) {
-            case StorageClasses.INTEGER: return INTEGER_REG_SIZE;
-            case StorageClasses.VECTOR: return VECTOR_REG_SIZE;
-            case StorageClasses.X87: return X87_REG_SIZE;
+            case StorageType.INTEGER: return INTEGER_REG_SIZE;
+            case StorageType.VECTOR: return VECTOR_REG_SIZE;
+            case StorageType.X87: return X87_REG_SIZE;
             // STACK is deliberately omitted
         }
 
         throw new IllegalArgumentException("Invalid Storage Class: " +cls);
     }
 
-    public interface StorageClasses {
+    // must keep in sync with StorageType in VM code
+    public interface StorageType {
         byte INTEGER = 0;
         byte VECTOR = 1;
         byte X87 = 2;
         byte STACK = 3;
+        byte PLACEHOLDER = 4;
     }
 
     public static class Regs { // break circular dependency
@@ -125,25 +128,25 @@ public class X86_64Architecture implements Architecture {
     }
 
     private static VMStorage integerRegister(int index, String debugName) {
-        return new VMStorage(StorageClasses.INTEGER, REG64_MASK, index, debugName);
+        return new VMStorage(StorageType.INTEGER, REG64_MASK, index, debugName);
     }
 
     private static VMStorage vectorRegister(int index, String debugName) {
-        return new VMStorage(StorageClasses.VECTOR, XMM_MASK, index, debugName);
+        return new VMStorage(StorageType.VECTOR, XMM_MASK, index, debugName);
     }
 
     public static VMStorage stackStorage(short size, int byteOffset) {
-        return new VMStorage(StorageClasses.STACK, size, byteOffset);
+        return new VMStorage(StorageType.STACK, size, byteOffset);
     }
 
     public static VMStorage x87Storage(int index) {
-        return new VMStorage(StorageClasses.X87, STP_MASK, index, "X87(" + index + ")");
+        return new VMStorage(StorageType.X87, STP_MASK, index, "X87(" + index + ")");
     }
 
     public static ABIDescriptor abiFor(VMStorage[] inputIntRegs, VMStorage[] inputVectorRegs, VMStorage[] outputIntRegs,
                                        VMStorage[] outputVectorRegs, int numX87Outputs, VMStorage[] volatileIntRegs,
                                        VMStorage[] volatileVectorRegs, int stackAlignment, int shadowSpace,
-                                       VMStorage targetAddrStorage, VMStorage retBufAddrStorage) {
+                                       VMStorage scratch1, VMStorage scratch2) {
         return new ABIDescriptor(
             INSTANCE,
             new VMStorage[][] {
@@ -161,7 +164,9 @@ public class X86_64Architecture implements Architecture {
             },
             stackAlignment,
             shadowSpace,
-            targetAddrStorage, retBufAddrStorage);
+            scratch1, scratch2,
+            StubLocations.TARGET_ADDRESS.storage(StorageType.PLACEHOLDER),
+            StubLocations.RETURN_BUFFER.storage(StorageType.PLACEHOLDER));
     }
 
 }

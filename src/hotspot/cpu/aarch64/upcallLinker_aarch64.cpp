@@ -159,10 +159,14 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
   int frame_bottom_offset    = frame_data_offset      + sizeof(UpcallStub::FrameData);
 
+  StubLocations locs;
   int ret_buf_offset = -1;
   if (needs_return_buffer) {
     ret_buf_offset = frame_bottom_offset;
     frame_bottom_offset += ret_buf_size;
+    // use a free register for shuffling code to pick up return
+    // buffer address from
+    locs.set(StubLocations::RETURN_BUFFER, abi._scratch1);
   }
 
   int frame_size = frame_bottom_offset;
@@ -219,9 +223,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   arg_spilller.generate_fill(_masm, arg_save_area_offset);
   if (needs_return_buffer) {
     assert(ret_buf_offset != -1, "no return buffer allocated");
-    __ lea(abi._ret_buf_addr_reg, Address(sp, ret_buf_offset));
+    __ lea(as_Register(locs.get(StubLocations::RETURN_BUFFER)), Address(sp, ret_buf_offset));
   }
-  arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0);
+  arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0, locs);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
@@ -268,10 +272,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     int offset = 0;
     for (int i = 0; i < call_regs._ret_regs.length(); i++) {
       VMStorage reg = call_regs._ret_regs.at(i);
-      if (reg.type() == RegType::INTEGER) {
+      if (reg.type() == StorageType::INTEGER) {
         __ ldr(as_Register(reg), Address(rscratch1, offset));
         offset += 8;
-      } else if (reg.type() == RegType::VECTOR) {
+      } else if (reg.type() == StorageType::VECTOR) {
         __ ldrd(as_FloatRegister(reg), Address(rscratch1, offset));
         offset += 16; // needs to match VECTOR_REG_SIZE in AArch64Architecture (Java)
       } else {

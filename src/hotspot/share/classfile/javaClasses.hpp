@@ -1136,8 +1136,8 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static int _volatileStorage_offset;
   static int _stackAlignment_offset;
   static int _shadowSpace_offset;
-  static int _targetAddrStorage_offset;
-  static int _retBufAddrStorage_offset;
+  static int _scratch1_offset;
+  static int _scratch2_offset;
 
   static void compute_offsets();
 
@@ -1150,8 +1150,8 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static objArrayOop volatileStorage(oop entry);
   static jint        stackAlignment(oop entry);
   static jint        shadowSpace(oop entry);
-  static oop         targetAddrStorage(oop entry);
-  static oop         retBufAddrStorage(oop entry);
+  static oop         scratch1(oop entry);
+  static oop         scratch2(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {

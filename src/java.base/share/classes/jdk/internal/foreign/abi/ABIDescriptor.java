@@ -40,11 +40,15 @@ public class ABIDescriptor {
     final int stackAlignment;
     final int shadowSpace;
 
+    final VMStorage scratch1;
+    final VMStorage scratch2;
+
     final VMStorage targetAddrStorage;
     final VMStorage retBufAddrStorage;
 
     public ABIDescriptor(Architecture arch, VMStorage[][] inputStorage, VMStorage[][] outputStorage,
                          VMStorage[][] volatileStorage, int stackAlignment, int shadowSpace,
+                         VMStorage scratch1, VMStorage scratch2,
                          VMStorage targetAddrStorage, VMStorage retBufAddrStorage) {
         this.arch = arch;
         this.inputStorage = inputStorage;
@@ -52,6 +56,8 @@ public class ABIDescriptor {
         this.volatileStorage = volatileStorage;
         this.stackAlignment = stackAlignment;
         this.shadowSpace = shadowSpace;
+        this.scratch1 = scratch1;
+        this.scratch2 = scratch2;
         this.targetAddrStorage = targetAddrStorage;
         this.retBufAddrStorage = retBufAddrStorage;
     }

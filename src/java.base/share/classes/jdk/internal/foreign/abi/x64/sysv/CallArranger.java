@@ -31,6 +31,7 @@ import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
+import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.VMStorage;
@@ -73,8 +74,7 @@ public class CallArranger {
         new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 },
         16,
         0, //no shadow space
-        r10, // target addr reg
-        r11  // ret buf addr reg
+        r10, r11 // scratch 1 & 2
     );
 
     public record Bindings(
@@ -157,7 +157,7 @@ public class CallArranger {
         }
 
         private int maxRegisterArguments(int type) {
-            return type == StorageClasses.INTEGER ?
+            return type == StorageType.INTEGER ?
                     MAX_INTEGER_ARGUMENT_REGISTERS :
                     MAX_VECTOR_ARGUMENT_REGISTERS;
         }
@@ -203,23 +203,23 @@ public class CallArranger {
             VMStorage[] storage = new VMStorage[(int)(nIntegerReg + nVectorReg)];
             for (int i = 0 ; i < typeClass.classes.size() ; i++) {
                 boolean sse = typeClass.classes.get(i) == ArgumentClassImpl.SSE;
-                storage[i] = nextStorage(sse ? StorageClasses.VECTOR : StorageClasses.INTEGER);
+                storage[i] = nextStorage(sse ? StorageType.VECTOR : StorageType.INTEGER);
             }
             return storage;
         }
 
         int registerCount(int type) {
             return switch (type) {
-                case StorageClasses.INTEGER -> nIntegerReg;
-                case StorageClasses.VECTOR -> nVectorReg;
+                case StorageType.INTEGER -> nIntegerReg;
+                case StorageType.VECTOR -> nVectorReg;
                 default -> throw new IllegalStateException();
             };
         }
 
         void incrementRegisterCount(int type) {
             switch (type) {
-                case StorageClasses.INTEGER -> nIntegerReg++;
-                case StorageClasses.VECTOR -> nVectorReg++;
+                case StorageType.INTEGER -> nIntegerReg++;
+                case StorageType.VECTOR -> nVectorReg++;
                 default -> throw new IllegalStateException();
             }
         }
@@ -257,7 +257,7 @@ public class CallArranger {
                         if (offset + copy < layout.byteSize()) {
                             bindings.dup();
                         }
-                        boolean useFloat = storage.type() == StorageClasses.VECTOR;
+                        boolean useFloat = storage.type() == StorageType.VECTOR;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         bindings.bufferLoad(offset, type)
                                 .vmStore(storage, type);
@@ -266,15 +266,15 @@ public class CallArranger {
                 }
                 case POINTER -> {
                     bindings.unboxAddress();
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, long.class);
                                     }
                 case INTEGER -> {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, carrier);
                 }
                 case FLOAT -> {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
                     bindings.vmStore(storage, carrier);
                 }
                 default -> throw new UnsupportedOperationException("Unhandled class " + argumentClass);
@@ -304,7 +304,7 @@ public class CallArranger {
                         final long copy = Math.min(layout.byteSize() - offset, 8);
                         VMStorage storage = regs[regIndex++];
                         bindings.dup();
-                        boolean useFloat = storage.type() == StorageClasses.VECTOR;
+                        boolean useFloat = storage.type() == StorageType.VECTOR;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         bindings.vmLoad(storage, type)
                                 .bufferStore(offset, type);
@@ -312,16 +312,16 @@ public class CallArranger {
                     }
                 }
                 case POINTER -> {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddressRaw(Utils.pointeeSize(layout));
                 }
                 case INTEGER -> {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, carrier);
                 }
                 case FLOAT -> {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
                     bindings.vmLoad(storage, carrier);
                 }
                 default -> throw new UnsupportedOperationException("Unhandled class " + argumentClass);

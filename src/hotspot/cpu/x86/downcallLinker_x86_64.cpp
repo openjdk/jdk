@@ -149,24 +149,22 @@ void DowncallStubGenerator::generate() {
 
   // in bytes
   int allocated_frame_size = 0;
-  if (_needs_return_buffer) {
-    allocated_frame_size += 8; // store address
-  }
-  allocated_frame_size += arg_shuffle.out_arg_bytes();
   allocated_frame_size += _abi._shadow_space_bytes;
+  allocated_frame_size += arg_shuffle.out_arg_bytes();
 
-  int ret_buf_addr_rsp_offset = -1;
+  StubLocations locs;
+  locs.set(StubLocations::TARGET_ADDRESS, _abi._scratch1);
   if (_needs_return_buffer) {
-    // the above
-    ret_buf_addr_rsp_offset = allocated_frame_size - 8;
+    locs.set_frame_data(StubLocations::RETURN_BUFFER, allocated_frame_size);
+    allocated_frame_size += 8;
   }
 
-  // when we don't use a return buffer we need to spill the return value around our slowpath calls
-  // when we use a return buffer case this SHOULD be unused.
+  // when we don't use a return buffer we need to spill the return value around our slow path calls
+  bool should_save_return_value = !_needs_return_buffer;
   RegSpiller out_reg_spiller(_output_registers);
   int spill_rsp_offset = -1;
 
-  if (!_needs_return_buffer) {
+  if (should_save_return_value) {
     spill_rsp_offset = 0;
     // spill area can be shared with the above, so we take the max of the 2
     allocated_frame_size = out_reg_spiller.spill_size_bytes() > allocated_frame_size
@@ -199,27 +197,21 @@ void DowncallStubGenerator::generate() {
   __ block_comment("} thread java2native");
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes);
-  if (_needs_return_buffer) {
-    // spill our return buffer address
-    assert(ret_buf_addr_rsp_offset != -1, "no return buffer addr spill");
-    __ movptr(Address(rsp, ret_buf_addr_rsp_offset), _abi._ret_buf_addr_reg);
-  }
+  arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes, locs);
   __ block_comment("} argument shuffle");
 
-  __ call(_abi._target_addr_reg);
+  __ call(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));
   // this call is assumed not to have killed r15_thread
 
   if (_needs_return_buffer) {
-    assert(ret_buf_addr_rsp_offset != -1, "no return buffer addr spill");
-    __ movptr(rscratch1, Address(rsp, ret_buf_addr_rsp_offset));
+    __ movptr(rscratch1, Address(rsp, locs.data_offset(StubLocations::RETURN_BUFFER)));
     int offset = 0;
     for (int i = 0; i < _output_registers.length(); i++) {
       VMStorage reg = _output_registers.at(i);
-      if (reg.type() == RegType::INTEGER) {
+      if (reg.type() == StorageType::INTEGER) {
         __ movptr(Address(rscratch1, offset), as_Register(reg));
         offset += 8;
-      } else if (reg.type() == RegType::VECTOR) {
+      } else if (reg.type() == StorageType::VECTOR) {
         __ movdqu(Address(rscratch1, offset), as_XMMRegister(reg));
         offset += 16;
       } else {
@@ -271,7 +263,7 @@ void DowncallStubGenerator::generate() {
   __ bind(L_safepoint_poll_slow_path);
   __ vzeroupper();
 
-  if(!_needs_return_buffer) {
+  if(should_save_return_value) {
     out_reg_spiller.generate_spill(_masm, spill_rsp_offset);
   }
 
@@ -283,7 +275,7 @@ void DowncallStubGenerator::generate() {
   __ mov(rsp, r12); // restore sp
   __ reinit_heapbase();
 
-  if(!_needs_return_buffer) {
+  if(should_save_return_value) {
     out_reg_spiller.generate_fill(_masm, spill_rsp_offset);
   }
 
@@ -296,7 +288,7 @@ void DowncallStubGenerator::generate() {
   __ bind(L_reguard);
   __ vzeroupper();
 
-  if(!_needs_return_buffer) {
+  if(should_save_return_value) {
     out_reg_spiller.generate_spill(_masm, spill_rsp_offset);
   }
 
@@ -307,7 +299,7 @@ void DowncallStubGenerator::generate() {
   __ mov(rsp, r12); // restore sp
   __ reinit_heapbase();
 
-  if(!_needs_return_buffer) {
+  if(should_save_return_value) {
     out_reg_spiller.generate_fill(_masm, spill_rsp_offset);
   }
 

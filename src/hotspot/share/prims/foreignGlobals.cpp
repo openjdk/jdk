@@ -28,6 +28,39 @@
 #include "prims/foreignGlobals.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 
+StubLocations::StubLocations() {
+  for (uint32_t i = 0; i < MAX; i++) {
+    _locs[i] = VMStorage::invalid();
+  }
+}
+
+void StubLocations::set(uint32_t loc, VMStorage storage) {
+  assert(loc < MAX, "oob");
+  _locs[loc] = storage;
+}
+
+void StubLocations::set_frame_data(uint32_t loc, int offset) {
+  set(loc, VMStorage(StorageType::FRAME_DATA, 8, offset));
+}
+
+VMStorage StubLocations::get(uint32_t loc) const {
+  assert(loc < MAX, "oob");
+  VMStorage storage = _locs[loc];
+  assert(storage.is_valid(), "not set");
+  return storage;
+}
+
+VMStorage StubLocations::get(VMStorage placeholder) const {
+  assert(placeholder.type() == StorageType::PLACEHOLDER, "must be");
+  return get(placeholder.index());
+}
+
+int StubLocations::data_offset(uint32_t loc) const {
+  VMStorage storage = get(loc);
+  assert(storage.type() == StorageType::FRAME_DATA, "must be");
+  return storage.offset();
+}
+
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 
 const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
@@ -54,12 +87,7 @@ VMStorage ForeignGlobals::parse_vmstorage(oop storage) {
   jshort segment_mask_or_size = jdk_internal_foreign_abi_VMStorage::segment_mask_or_size(storage);
   jint index_or_offset = jdk_internal_foreign_abi_VMStorage::index_or_offset(storage);
 
-  RegType rType = static_cast<RegType>(type);
-  if (rType == VMStorage::stack_type()) {
-    return VMStorage::stack_storage(segment_mask_or_size, index_or_offset);
-  } else {
-    return VMStorage::reg_storage(rType, segment_mask_or_size, index_or_offset);
-  }
+  return VMStorage(static_cast<StorageType>(type), segment_mask_or_size, index_or_offset);
 }
 
 int RegSpiller::compute_spill_area(const GrowableArray<VMStorage>& regs) {

@@ -46,6 +46,6 @@ void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMStorage reg) {
   Unimplemented();
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
   Unimplemented();
 }

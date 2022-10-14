@@ -31,41 +31,47 @@
 #include "prims/vmstorageBase.inline.hpp"
 
 // keep in sync with jdk/internal/foreign/abi/x64/X86_64Architecture
-enum class RegType : int8_t {
+enum class StorageType : int8_t {
   INTEGER = 0,
   VECTOR = 1,
   X87 = 2,
   STACK = 3,
+  PLACEHOLDER = 4,
+// special locations used only by native code
+  FRAME_DATA = PLACEHOLDER + 1,
   INVALID = -1
 };
 
 // need to define this before constructing VMStorage (below)
-constexpr inline RegType VMStorage::stack_type() {
-  return RegType::STACK;
+constexpr inline bool VMStorage::is_reg(StorageType type) {
+   return type == StorageType::INTEGER || type == StorageType::VECTOR || type == StorageType::X87;
 }
+constexpr inline StorageType VMStorage::stack_type() { return StorageType::STACK; }
+constexpr inline StorageType VMStorage::placeholder_type() { return StorageType::PLACEHOLDER; }
+constexpr inline StorageType VMStorage::frame_data_type() { return StorageType::FRAME_DATA; }
 
 constexpr uint16_t REG64_MASK = 0b0000000000001111;
 constexpr uint16_t XMM_MASK   = 0b0000000000000001;
 
-constexpr VMStorage VMS_RAX = VMStorage::reg_storage(RegType::INTEGER, REG64_MASK, 0);
-constexpr VMStorage VMS_RBX = VMStorage::reg_storage(RegType::INTEGER, REG64_MASK, 3);
-constexpr VMStorage VMS_XMM0 = VMStorage::reg_storage(RegType::VECTOR, XMM_MASK, 0);
+constexpr VMStorage VMS_RAX = VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, 0);
+constexpr VMStorage VMS_RBX = VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, 3);
+constexpr VMStorage VMS_XMM0 = VMStorage::reg_storage(StorageType::VECTOR, XMM_MASK, 0);
 
 inline Register as_Register(VMStorage vms) {
-  assert(vms.type() == RegType::INTEGER, "not the right type");
+  assert(vms.type() == StorageType::INTEGER, "not the right type");
   return ::as_Register(vms.index());
 }
 
 inline XMMRegister as_XMMRegister(VMStorage vms) {
-  assert(vms.type() == RegType::VECTOR, "not the right type");
+  assert(vms.type() == StorageType::VECTOR, "not the right type");
   return ::as_XMMRegister(vms.index());
 }
 
 inline VMReg as_VMReg(VMStorage vms) {
   switch (vms.type()) {
-    case RegType::INTEGER: return as_Register(vms)->as_VMReg();
-    case RegType::VECTOR:  return as_XMMRegister(vms)->as_VMReg();
-    case RegType::STACK: {
+    case StorageType::INTEGER: return as_Register(vms)->as_VMReg();
+    case StorageType::VECTOR:  return as_XMMRegister(vms)->as_VMReg();
+    case StorageType::STACK: {
       assert((vms.index() % VMRegImpl::stack_slot_size) == 0, "can not represent as VMReg");
       return VMRegImpl::stack2reg(vms.index() / VMRegImpl::stack_slot_size);
     }
@@ -74,11 +80,11 @@ inline VMReg as_VMReg(VMStorage vms) {
 }
 
 inline VMStorage as_VMStorage(Register reg) {
-  return VMStorage::reg_storage(RegType::INTEGER, REG64_MASK, reg->encoding());
+  return VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, reg->encoding());
 }
 
 inline VMStorage as_VMStorage(XMMRegister reg) {
-  return VMStorage::reg_storage(RegType::VECTOR, XMM_MASK, reg->encoding());
+  return VMStorage::reg_storage(StorageType::VECTOR, XMM_MASK, reg->encoding());
 }
 
 inline VMStorage as_VMStorage(VMReg reg) {

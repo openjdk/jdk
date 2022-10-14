@@ -4160,17 +4160,17 @@ int jdk_internal_foreign_abi_ABIDescriptor::_outputStorage_offset;
 int jdk_internal_foreign_abi_ABIDescriptor::_volatileStorage_offset;
 int jdk_internal_foreign_abi_ABIDescriptor::_stackAlignment_offset;
 int jdk_internal_foreign_abi_ABIDescriptor::_shadowSpace_offset;
-int jdk_internal_foreign_abi_ABIDescriptor::_targetAddrStorage_offset;
-int jdk_internal_foreign_abi_ABIDescriptor::_retBufAddrStorage_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_scratch1_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_scratch2_offset;
 
 #define ABIDescriptor_FIELDS_DO(macro) \
-  macro(_inputStorage_offset,      k, "inputStorage",      jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
-  macro(_outputStorage_offset,     k, "outputStorage",     jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
-  macro(_volatileStorage_offset,   k, "volatileStorage",   jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
-  macro(_stackAlignment_offset,    k, "stackAlignment",    int_signature, false); \
-  macro(_shadowSpace_offset,       k, "shadowSpace",       int_signature, false); \
-  macro(_targetAddrStorage_offset, k, "targetAddrStorage", jdk_internal_foreign_abi_VMStorage_signature, false); \
-  macro(_retBufAddrStorage_offset, k, "retBufAddrStorage", jdk_internal_foreign_abi_VMStorage_signature, false);
+  macro(_inputStorage_offset,    k, "inputStorage",    jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_outputStorage_offset,   k, "outputStorage",   jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_volatileStorage_offset, k, "volatileStorage", jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_stackAlignment_offset,  k, "stackAlignment",  int_signature, false); \
+  macro(_shadowSpace_offset,     k, "shadowSpace",     int_signature, false); \
+  macro(_scratch1_offset,        k, "scratch1",        jdk_internal_foreign_abi_VMStorage_signature, false); \
+  macro(_scratch2_offset,        k, "scratch2",        jdk_internal_foreign_abi_VMStorage_signature, false);
 
 bool jdk_internal_foreign_abi_ABIDescriptor::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
@@ -4207,12 +4207,12 @@ jint jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(oop entry) {
   return entry->int_field(_shadowSpace_offset);
 }
 
-oop jdk_internal_foreign_abi_ABIDescriptor::targetAddrStorage(oop entry) {
-  return entry->obj_field(_targetAddrStorage_offset);
+oop jdk_internal_foreign_abi_ABIDescriptor::scratch1(oop entry) {
+  return entry->obj_field(_scratch1_offset);
 }
 
-oop jdk_internal_foreign_abi_ABIDescriptor::retBufAddrStorage(oop entry) {
-  return entry->obj_field(_retBufAddrStorage_offset);
+oop jdk_internal_foreign_abi_ABIDescriptor::scratch2(oop entry) {
+  return entry->obj_field(_scratch2_offset);
 }
 
 int jdk_internal_foreign_abi_VMStorage::_type_offset;

@@ -30,39 +30,47 @@
 #include "prims/vmstorageBase.inline.hpp"
 
 // keep in sync with jdk/internal/foreign/abi/aarch64/AArch64Architecture
-enum class RegType : int8_t {
+enum class StorageType : int8_t {
   INTEGER = 0,
   VECTOR = 1,
   STACK = 2,
+  PLACEHOLDER = 3,
+// special locations used only by native code
+  FRAME_DATA = PLACEHOLDER + 1,
+  INVALID = -1
 };
 
-constexpr inline RegType VMStorage::stack_type() {
-  return RegType::STACK;
+// need to define this before constructing VMStorage (below)
+constexpr inline bool VMStorage::is_reg(StorageType type) {
+   return type == StorageType::INTEGER || type == StorageType::VECTOR;
 }
+constexpr inline StorageType VMStorage::stack_type() { return StorageType::STACK; }
+constexpr inline StorageType VMStorage::placeholder_type() { return StorageType::PLACEHOLDER; }
+constexpr inline StorageType VMStorage::frame_data_type() { return StorageType::FRAME_DATA; }
 
 constexpr uint16_t REG64_MASK = 0b0000000000000001;
 constexpr uint16_t V128_MASK  = 0b0000000000000001;
 
-constexpr VMStorage VMS_R0 = VMStorage::reg_storage(RegType::INTEGER, REG64_MASK, 0);
-constexpr VMStorage VMS_R19 = VMStorage::reg_storage(RegType::INTEGER, REG64_MASK, 19);
-constexpr VMStorage VMS_V0 = VMStorage::reg_storage(RegType::VECTOR, V128_MASK, 0);
+constexpr VMStorage VMS_R0 = VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, 0);
+constexpr VMStorage VMS_R19 = VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, 19);
+constexpr VMStorage VMS_V0 = VMStorage::reg_storage(StorageType::VECTOR, V128_MASK, 0);
 
 inline Register as_Register(VMStorage vms) {
-  assert(vms.type() == RegType::INTEGER, "not the right type");
+  assert(vms.type() == StorageType::INTEGER, "not the right type");
   return ::as_Register(vms.index());
 }
 
 inline FloatRegister as_FloatRegister(VMStorage vms) {
-  assert(vms.type() == RegType::VECTOR, "not the right type");
+  assert(vms.type() == StorageType::VECTOR, "not the right type");
   return ::as_FloatRegister(vms.index());
 }
 
 inline VMStorage as_VMStorage(Register reg) {
-  return VMStorage::reg_storage(RegType::INTEGER, REG64_MASK, reg->encoding());
+  return VMStorage::reg_storage(StorageType::INTEGER, REG64_MASK, reg->encoding());
 }
 
 inline VMStorage as_VMStorage(FloatRegister reg) {
-  return VMStorage::reg_storage(RegType::VECTOR, V128_MASK, reg->encoding());
+  return VMStorage::reg_storage(StorageType::VECTOR, V128_MASK, reg->encoding());
 }
 
 inline VMStorage as_VMStorage(VMReg reg) {
