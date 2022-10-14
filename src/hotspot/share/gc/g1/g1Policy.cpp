@@ -194,11 +194,12 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 }
 
 void G1Policy::update_young_length_bounds() {
-  update_young_length_bounds(_analytics->predict_rs_length());
+  update_young_length_bounds(_analytics->predict_pending_cards(),
+                             _analytics->predict_rs_length());
 }
 
-void G1Policy::update_young_length_bounds(size_t rs_length) {
-  _young_list_desired_length = calculate_young_desired_length(rs_length);
+void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
+  _young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
   _young_list_target_length = calculate_young_target_length(_young_list_desired_length);
   _young_list_max_length = calculate_young_max_length(_young_list_target_length);
 
@@ -221,7 +222,7 @@ void G1Policy::update_young_length_bounds(size_t rs_length) {
 // The main reason is revising young length, with or without the GCLocker being
 // active.
 //
-uint G1Policy::calculate_young_desired_length(size_t rs_length) const {
+uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length) const {
   uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
   uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
 
@@ -256,7 +257,6 @@ uint G1Policy::calculate_young_desired_length(size_t rs_length) const {
   if (use_adaptive_young_list_length()) {
     desired_eden_length_by_mmu = calculate_desired_eden_length_by_mmu();
 
-    const size_t pending_cards = _analytics->predict_pending_cards();
     double base_time_ms = predict_base_time_ms(pending_cards, rs_length);
 
     desired_eden_length_by_pause =
@@ -523,7 +523,11 @@ void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {
     // add 10% to avoid having to recalculate often
     size_t rs_length_prediction = rs_length * 1100 / 1000;
     update_rs_length_prediction(rs_length_prediction);
-    update_young_length_bounds(rs_length_prediction);
+
+    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+    // We have no measure of the number of cards in the thread log buffers, assume
+    // these are very few compared to the sum of the two other sources.
+    update_young_length_bounds(dcqs.num_cards(), rs_length_prediction);
   }
 }
 
@@ -914,7 +918,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   } else {
     // Any garbage collection triggered as periodic collection resets the time-to-mixed
     // measurement. Periodic collection typically means that the application is "inactive", i.e.
-    // the marking threads may have received an uncharacterisic amount of cpu time
+    // the marking threads may have received an uncharacteristic amount of cpu time
     // for completing the marking, i.e. are faster than expected.
     // This skews the predicted marking length towards smaller values which might cause
     // the mark start being too late.
