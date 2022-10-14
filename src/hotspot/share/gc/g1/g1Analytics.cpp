@@ -324,12 +324,24 @@ size_t G1Analytics::predict_rs_length(bool for_young_only_phase) const {
   }
 }
 
+<<<<<<< HEAD
 size_t G1Analytics::predict_pending_cards(bool for_young_only_phase) const {
   if  (for_young_only_phase || !enough_samples_available(_young_pending_cards_seq)) {
     return predict_size(_young_pending_cards_seq);
   } else {
     return predict_size(_mixed_pending_cards_seq);
   }
+||||||| 97f1321cb45
+size_t G1Analytics::predict_pending_cards() const {
+  return predict_size(_pending_cards_seq);
+=======
+size_t G1Analytics::predict_pending_cards(bool for_young_only_phase) const {
+  if  (for_young_only_phase || !enough_samples_available(_mixed_pending_cards_seq)) {
+    return predict_size(_young_pending_cards_seq);
+  } else {
+    return predict_size(_mixed_pending_cards_seq);
+  }
+>>>>>>> 1efa93e602455d7a032eb97cffa56da7337dd8f9
 }
 
 double G1Analytics::oldest_known_gc_end_time_sec() const {

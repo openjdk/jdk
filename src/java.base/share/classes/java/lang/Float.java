@@ -1013,7 +1013,7 @@ public final class Float extends Number
      * @param floatBinary16 the binary16 value to convert to {@code float}
      * @since 20
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static float float16ToFloat(short floatBinary16) {
         /*
          * The binary16 format has 1 sign bit, 5 exponent bits, and 10
@@ -1088,7 +1088,7 @@ public final class Float extends Number
      * @param f the {@code float} value to convert to binary16
      * @since 20
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static short floatToFloat16(float f) {
         int doppel = Float.floatToRawIntBits(f);
         short sign_bit = (short)((doppel & 0x8000_0000) >> 16);
