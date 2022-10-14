@@ -62,7 +62,6 @@ import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaSecurityAccess;
 import sun.reflect.misc.ReflectUtil;
-import static java.io.ObjectStreamField.*;
 
 /**
  * Serialization's descriptor for classes.  It contains the name and
@@ -1564,10 +1563,10 @@ public final class ObjectStreamClass implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append('(');
         for (int i = 0; i < paramTypes.length; i++) {
-            appendClassSignature(sb, paramTypes[i]);
+            sb.append(paramTypes[i].descriptorString());
         }
         sb.append(')');
-        appendClassSignature(sb, retType);
+        sb.append(retType.descriptorString());
         return sb.toString();
     }
 
@@ -1881,7 +1880,7 @@ public final class ObjectStreamClass implements Serializable {
         public MemberSignature(Field field) {
             member = field;
             name = field.getName();
-            signature = getClassSignature(field.getType());
+            signature = field.getType().descriptorString();
         }
 
         public MemberSignature(Constructor<?> cons) {
