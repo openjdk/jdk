@@ -1416,31 +1416,32 @@ bool ObjectMonitor::check_owner(TRAPS) {
              "current thread is not owner", false);
 }
 
+static inline bool is_excluded(const Klass* monitor_klass) {
+  assert(monitor_klass != nullptr, "invariant");
+  NOT_JFR_RETURN_(false);
+  JFR_ONLY(return vmSymbols::jfr_chunk_rotation_monitor() == monitor_klass->name());
+}
+
 static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     ObjectMonitor* monitor,
                                     uint64_t notifier_tid,
                                     jlong timeout,
                                     bool timedout) {
-  bool includeEvent = true;
-  Klass* objectMonitorClass;
   assert(event != NULL, "invariant");
   assert(monitor != NULL, "invariant");
-  objectMonitorClass = monitor->object()->klass();
-  if (objectMonitorClass != NULL &&
-      objectMonitorClass->name()->equals("jdk/jfr/internal/FileDeltaChangeLockObject")) {
-    includeEvent = false;
+  const Klass* monitor_klass = monitor->object()->klass();
+  if (is_excluded(monitor_klass)) {
+    return;
   }
-  if (includeEvent) {
-    event->set_monitorClass(objectMonitorClass);
-    event->set_timeout(timeout);
-    // Set an address that is 'unique enough', such that events close in
-    // time and with the same address are likely (but not guaranteed) to
-    // belong to the same object.
-    event->set_address((uintptr_t)monitor);
-    event->set_notifier(notifier_tid);
-    event->set_timedOut(timedout);
-    event->commit();
-  }
+  event->set_monitorClass(monitor_klass);
+  event->set_timeout(timeout);
+  // Set an address that is 'unique enough', such that events close in
+  // time and with the same address are likely (but not guaranteed) to
+  // belong to the same object.
+  event->set_address((uintptr_t)monitor);
+  event->set_notifier(notifier_tid);
+  event->set_timedOut(timedout);
+  event->commit();
 }
 
 // -----------------------------------------------------------------------------
