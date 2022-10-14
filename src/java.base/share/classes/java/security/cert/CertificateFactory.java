@@ -26,7 +26,10 @@
 package java.security.cert;
 
 import java.io.InputStream;
-import java.security.*;
+import java.security.Provider;
+import java.security.Security;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
