@@ -243,6 +243,8 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, Register temp);
 
 void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  IncompressibleRegion ir(this);  // Fixed length: see C2_MacroAssembler::entry_barrier_stub_size()
+
   // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
   int alignment_bytes = align(4);
 
@@ -1205,8 +1207,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
     andi(t0, cnt1, 1);
     beqz(t0, SAME);
     {
-      lbu(tmp1, a1, 0);
-      lbu(tmp2, a2, 0);
+      lbu(tmp1, Address(a1, 0));
+      lbu(tmp2, Address(a2, 0));
       bne(tmp1, tmp2, DONE);
     }
   }
@@ -1227,24 +1229,24 @@ typedef void (MacroAssembler::*float_conditional_branch_insn)(FloatRegister op1,
 static conditional_branch_insn conditional_branches[] =
 {
   /* SHORT branches */
-  (conditional_branch_insn)&Assembler::beq,
-  (conditional_branch_insn)&Assembler::bgt,
+  (conditional_branch_insn)&MacroAssembler::beq,
+  (conditional_branch_insn)&MacroAssembler::bgt,
   NULL, // BoolTest::overflow
-  (conditional_branch_insn)&Assembler::blt,
-  (conditional_branch_insn)&Assembler::bne,
-  (conditional_branch_insn)&Assembler::ble,
+  (conditional_branch_insn)&MacroAssembler::blt,
+  (conditional_branch_insn)&MacroAssembler::bne,
+  (conditional_branch_insn)&MacroAssembler::ble,
   NULL, // BoolTest::no_overflow
-  (conditional_branch_insn)&Assembler::bge,
+  (conditional_branch_insn)&MacroAssembler::bge,
 
   /* UNSIGNED branches */
-  (conditional_branch_insn)&Assembler::beq,
-  (conditional_branch_insn)&Assembler::bgtu,
+  (conditional_branch_insn)&MacroAssembler::beq,
+  (conditional_branch_insn)&MacroAssembler::bgtu,
   NULL,
-  (conditional_branch_insn)&Assembler::bltu,
-  (conditional_branch_insn)&Assembler::bne,
-  (conditional_branch_insn)&Assembler::bleu,
+  (conditional_branch_insn)&MacroAssembler::bltu,
+  (conditional_branch_insn)&MacroAssembler::bne,
+  (conditional_branch_insn)&MacroAssembler::bleu,
   NULL,
-  (conditional_branch_insn)&Assembler::bgeu
+  (conditional_branch_insn)&MacroAssembler::bgeu
 };
 
 static float_conditional_branch_insn float_conditional_branches[] =
