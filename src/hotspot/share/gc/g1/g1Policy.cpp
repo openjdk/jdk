@@ -802,12 +802,14 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   double merge_hcc_time_ms = average_time_ms(G1GCPhaseTimes::MergeHCC);
   if (update_stats) {
-    size_t const total_log_buffer_cards = p->sum_thread_work_items(G1GCPhaseTimes::MergeHCC, G1GCPhaseTimes::MergeHCCDirtyCards) +
-                                          p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
-    // Update prediction for card merge; MergeRSDirtyCards includes the cards from the Eager Reclaim phase.
-    size_t const total_cards_merged = p->sum_thread_work_items(G1GCPhaseTimes::MergeRS, G1GCPhaseTimes::MergeRSDirtyCards) +
-                                      p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSDirtyCards) +
-                                      total_log_buffer_cards;
+    // Update prediction for card merge.
+    size_t const merged_cards_from_log_buffers = p->sum_thread_work_items(G1GCPhaseTimes::MergeHCC, G1GCPhaseTimes::MergeHCCDirtyCards) +
+                                                 p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
+    // MergeRSCards includes the cards from the Eager Reclaim phase.
+    size_t const merged_cards_from_rs = p->sum_thread_work_items(G1GCPhaseTimes::MergeRS, G1GCPhaseTimes::MergeRSCards) +
+                                        p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSCards);
+    size_t const total_cards_merged = merged_cards_from_rs +
+                                      merged_cards_from_log_buffers;
 
     if (total_cards_merged >= G1NumCardsCostSampleThreshold) {
       double avg_time_merge_cards = average_time_ms(G1GCPhaseTimes::MergeER) +
@@ -831,16 +833,14 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
     // Update prediction for the ratio between cards from the remembered
     // sets and actually scanned cards from the remembered sets.
-    // Cards from the remembered sets are all cards not duplicated by cards from
-    // the logs.
-    // Due to duplicates in the log buffers, the number of actually scanned cards
+    // Due to duplicates in the log buffers, the number of scanned cards
     // can be smaller than the cards in the log buffers.
-    const size_t from_rs_length_cards = (total_cards_scanned > total_log_buffer_cards) ? total_cards_scanned - total_log_buffer_cards : 0;
-    double merge_to_scan_ratio = 0.0;
-    if (total_cards_scanned > 0) {
-      merge_to_scan_ratio = (double) from_rs_length_cards / total_cards_scanned;
+    const size_t scanned_cards_from_rs = (total_cards_scanned > merged_cards_from_log_buffers) ? total_cards_scanned - merged_cards_from_log_buffers : 0;
+    double scan_to_merge_ratio = 0.0;
+    if (merged_cards_from_rs > 0) {
+      scan_to_merge_ratio = (double)scanned_cards_from_rs / merged_cards_from_rs;
     }
-    _analytics->report_card_merge_to_scan_ratio(merge_to_scan_ratio, is_young_only_pause);
+    _analytics->report_card_scan_to_merge_ratio(scan_to_merge_ratio, is_young_only_pause);
 
     const size_t recorded_rs_length = _collection_set->recorded_rs_length();
     const size_t rs_length_diff = _rs_length > recorded_rs_length ? _rs_length - recorded_rs_length : 0;
