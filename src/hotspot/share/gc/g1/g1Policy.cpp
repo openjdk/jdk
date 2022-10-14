@@ -194,9 +194,9 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 }
 
 void G1Policy::update_young_length_bounds() {
-  bool for_young_gc = collector_state()->in_young_only_phase();
-  update_young_length_bounds(_analytics->predict_pending_cards(for_young_gc),
-                             _analytics->predict_rs_length(for_young_gc));
+  bool for_young_only_phase = collector_state()->in_young_only_phase();
+  update_young_length_bounds(_analytics->predict_pending_cards(for_young_only_phase),
+                             _analytics->predict_rs_length(for_young_only_phase));
 }
 
 void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
@@ -487,7 +487,7 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
   double predicted_region_evac_time_ms = base_time_ms;
   for (uint i = candidates->cur_idx(); i < min_old_regions_end; i++) {
     HeapRegion* r = candidates->at(i);
-    predicted_region_evac_time_ms += predict_region_total_time_ms(r, false /* for_young_gc */);
+    predicted_region_evac_time_ms += predict_region_total_time_ms(r, false /* for_young_only_phase */);
   }
   uint desired_eden_length_by_min_cset_length =
      calculate_desired_eden_length_before_young_only(predicted_region_evac_time_ms,
@@ -533,8 +533,8 @@ void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {
 }
 
 void G1Policy::update_rs_length_prediction() {
-  bool for_young_gc = collector_state()->in_young_only_phase();
-  update_rs_length_prediction(_analytics->predict_rs_length(for_young_gc));
+  bool for_young_only_phase = collector_state()->in_young_only_phase();
+  update_rs_length_prediction(_analytics->predict_rs_length(for_young_only_phase));
 }
 
 void G1Policy::update_rs_length_prediction(size_t prediction) {
@@ -1033,8 +1033,8 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards) const {
-  bool for_young_gc = collector_state()->in_young_only_phase();
-  size_t rs_length = _analytics->predict_rs_length(for_young_gc);
+  bool for_young_only_phase = collector_state()->in_young_only_phase();
+  size_t rs_length = _analytics->predict_rs_length(for_young_only_phase);
   return predict_base_time_ms(pending_cards, rs_length);
 }
 
@@ -1065,9 +1065,9 @@ double G1Policy::predict_region_copy_time_ms(HeapRegion* hr) const {
 }
 
 double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
-                                                 bool for_young_gc) const {
+                                                 bool for_young_only_phase) const {
   size_t rs_length = hr->rem_set()->occupied();
-  size_t scan_card_num = _analytics->predict_scan_card_num(rs_length, for_young_gc);
+  size_t scan_card_num = _analytics->predict_scan_card_num(rs_length, for_young_only_phase);
 
   double region_elapsed_time_ms =
     _analytics->predict_card_merge_time_ms(rs_length, collector_state()->in_young_only_phase()) +
@@ -1083,8 +1083,8 @@ double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
   return region_elapsed_time_ms;
 }
 
-double G1Policy::predict_region_total_time_ms(HeapRegion* hr, bool for_young_gc) const {
-  return predict_region_non_copy_time_ms(hr, for_young_gc) + predict_region_copy_time_ms(hr);
+double G1Policy::predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const {
+  return predict_region_non_copy_time_ms(hr, for_young_only_phase) + predict_region_copy_time_ms(hr);
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
