@@ -414,17 +414,15 @@ class MacroAssembler: public Assembler {
   void sltz(Register Rd, Register Rs);          // set if < zero
   void sgtz(Register Rd, Register Rs);          // set if > zero
 
-  // Float pseudo instructions
+  // Floating-point data-processing pseudo instructions
   void fmv_s(FloatRegister Rd, FloatRegister Rs);
-  void fabs_s(FloatRegister Rd, FloatRegister Rs);    // single-precision absolute value
+  void fabs_s(FloatRegister Rd, FloatRegister Rs);
   void fneg_s(FloatRegister Rd, FloatRegister Rs);
-
-  // Double pseudo instructions
   void fmv_d(FloatRegister Rd, FloatRegister Rs);
   void fabs_d(FloatRegister Rd, FloatRegister Rs);
   void fneg_d(FloatRegister Rd, FloatRegister Rs);
 
-  // Control pseudo instructions
+  // Control and status pseudo instructions
   void rdinstret(Register Rd);                  // read instruction-retired counter
   void rdcycle(Register Rd);                    // read cycle counter
   void rdtime(Register Rd);                     // read time
@@ -449,6 +447,7 @@ class MacroAssembler: public Assembler {
   void fsflagsi(Register Rd, unsigned imm);
   void fsflagsi(unsigned imm);
 
+  // Control transfer pseudo instructions
   void beqz(Register Rs, const address dest);
   void bnez(Register Rs, const address dest);
   void blez(Register Rs, const address dest);
