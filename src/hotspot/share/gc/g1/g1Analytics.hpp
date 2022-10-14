@@ -49,10 +49,10 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq* _mixed_rs_length_diff_seq;
   TruncatedSeq* _concurrent_refine_rate_ms_seq;
   TruncatedSeq* _dirtied_cards_rate_ms_seq;
-  // The ratio between the number of merged cards and actually scanned cards, for
+  // The ratio between the number of scanned cards and actually merged cards, for
   // young-only and mixed gcs.
-  TruncatedSeq* _young_card_merge_to_scan_ratio_seq;
-  TruncatedSeq* _mixed_card_merge_to_scan_ratio_seq;
+  TruncatedSeq* _young_card_scan_to_merge_ratio_seq;
+  TruncatedSeq* _mixed_card_scan_to_merge_ratio_seq;
 
   // The cost to scan a card during young-only and mixed gcs in ms.
   TruncatedSeq* _young_cost_per_card_scan_ms_seq;
@@ -128,7 +128,7 @@ public:
   void report_dirtied_cards_rate_ms(double cards_per_ms);
   void report_cost_per_card_scan_ms(double cost_per_remset_card_ms, bool for_young_only_phase);
   void report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_only_phase);
-  void report_card_merge_to_scan_ratio(double cards_per_entry_ratio, bool for_young_only_phase);
+  void report_card_scan_to_merge_ratio(double cards_per_entry_ratio, bool for_young_only_phase);
   void report_rs_length_diff(double rs_length_diff, bool for_young_only_phase);
   void report_cost_per_byte_ms(double cost_per_byte_ms, bool mark_or_rebuild_in_progress);
   void report_young_other_cost_per_region_ms(double other_cost_per_region_ms);
