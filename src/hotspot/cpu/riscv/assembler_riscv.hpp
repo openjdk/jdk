@@ -171,6 +171,7 @@ class Address {
  public:
   Address()
     : _base(noreg), _index(noreg), _offset(0), _mode(no_mode), _target(NULL) { }
+
   Address(Register r)
     : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(NULL) { }
 
@@ -180,6 +181,7 @@ class Address {
 
   Address(Register r, ByteSize disp)
     : Address(r, in_bytes(disp)) {}
+
   Address(address target, RelocationHolder const& rspec)
     : _base(noreg),
       _index(noreg),
@@ -187,6 +189,7 @@ class Address {
       _mode(literal),
       _rspec(rspec),
       _target(target) { }
+
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
 
   const Register base() const {
@@ -2412,9 +2415,9 @@ private:
 #undef FUNC
 
 public:
-bool do_compress() const {
-  return UseRVC && in_compressible_region();
-}
+  bool do_compress() const {
+    return UseRVC && in_compressible_region();
+  }
 
 // --------------------------
 // Load/store register
@@ -2720,8 +2723,7 @@ bool do_compress() const {
     return uabs(target - branch) < branch_range;
   }
 
-  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(false) {
-  }
+  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(false) {}
 
   virtual ~Assembler() {}
 };

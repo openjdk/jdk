@@ -42,14 +42,15 @@
 class MacroAssembler: public Assembler {
 
  public:
-  MacroAssembler(CodeBuffer* code) : Assembler(code) {
-  }
+  MacroAssembler(CodeBuffer* code) : Assembler(code) {}
+
   virtual ~MacroAssembler() {}
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
+
   static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
     assert(is_aligned(pc, alignment), "bad alignment");
   }
@@ -271,7 +272,7 @@ class MacroAssembler: public Assembler {
     Register tmp1,                  // temp register
     Register tmp2,                  // temp register
     Label&   slow_case,             // continuation point of fast allocation fails
-    bool is_far = false
+    bool     is_far = false
   );
 
   // Test sub_klass against super_klass, with fast and slow paths.
@@ -472,20 +473,20 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, Label &l, bool is_far = false);
   void bgtz(Register Rs, Label &l, bool is_far = false);
 
-  void beq(Register Rs1, Register Rs2, Label &L, bool is_far = false);
-  void bne(Register Rs1, Register Rs2, Label &L, bool is_far = false);
-  void blt(Register Rs1, Register Rs2, Label &L, bool is_far = false);
-  void bge(Register Rs1, Register Rs2, Label &L, bool is_far = false);
+  void beq (Register Rs1, Register Rs2, Label &L, bool is_far = false);
+  void bne (Register Rs1, Register Rs2, Label &L, bool is_far = false);
+  void blt (Register Rs1, Register Rs2, Label &L, bool is_far = false);
+  void bge (Register Rs1, Register Rs2, Label &L, bool is_far = false);
   void bltu(Register Rs1, Register Rs2, Label &L, bool is_far = false);
   void bgeu(Register Rs1, Register Rs2, Label &L, bool is_far = false);
 
-  void bgt(Register Rs, Register Rt, const address dest);
-  void ble(Register Rs, Register Rt, const address dest);
+  void bgt (Register Rs, Register Rt, const address dest);
+  void ble (Register Rs, Register Rt, const address dest);
   void bgtu(Register Rs, Register Rt, const address dest);
   void bleu(Register Rs, Register Rt, const address dest);
 
-  void bgt(Register Rs, Register Rt, Label &l, bool is_far = false);
-  void ble(Register Rs, Register Rt, Label &l, bool is_far = false);
+  void bgt (Register Rs, Register Rt, Label &l, bool is_far = false);
+  void ble (Register Rs, Register Rt, Label &l, bool is_far = false);
   void bgtu(Register Rs, Register Rt, Label &l, bool is_far = false);
   void bleu(Register Rs, Register Rt, Label &l, bool is_far = false);
 
