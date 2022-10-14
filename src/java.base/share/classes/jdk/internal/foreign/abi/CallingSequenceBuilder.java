@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,14 @@
  */
 package jdk.internal.foreign.abi;
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
+import jdk.internal.foreign.Utils;
 import sun.security.action.GetPropertyAction;
 
+import java.lang.foreign.Addressable;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -36,13 +40,15 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.lang.invoke.MethodType.methodType;
 import static jdk.internal.foreign.abi.Binding.Tag.*;
 
 public class CallingSequenceBuilder {
     private static final boolean VERIFY_BINDINGS = Boolean.parseBoolean(
             GetPropertyAction.privilegedGetProperty("java.lang.foreign.VERIFY_BINDINGS", "true"));
 
-    private boolean isTrivial;
+    private final ABIDescriptor abi;
+
     private final boolean forUpcall;
     private final List<List<Binding>> inputBindings = new ArrayList<>();
     private List<Binding> outputBindings = List.of();
@@ -50,17 +56,22 @@ public class CallingSequenceBuilder {
     private MethodType mt = MethodType.methodType(void.class);
     private FunctionDescriptor desc = FunctionDescriptor.ofVoid();
 
-    public CallingSequenceBuilder(boolean forUpcall) {
+    public CallingSequenceBuilder(ABIDescriptor abi, boolean forUpcall) {
+        this.abi = abi;
         this.forUpcall = forUpcall;
     }
 
     public final CallingSequenceBuilder addArgumentBindings(Class<?> carrier, MemoryLayout layout,
                                                             List<Binding> bindings) {
-        verifyBindings(true, carrier, bindings);
-        inputBindings.add(bindings);
-        mt = mt.appendParameterTypes(carrier);
-        desc = desc.appendArgumentLayouts(layout);
+        addArgumentBinding(inputBindings.size(), carrier, layout, bindings);
         return this;
+    }
+
+    private void addArgumentBinding(int index, Class<?> carrier, MemoryLayout layout, List<Binding> bindings) {
+        verifyBindings(true, carrier, bindings);
+        inputBindings.add(index, bindings);
+        mt = mt.insertParameterTypes(index, carrier);
+        desc = desc.insertArgumentLayouts(index, layout);
     }
 
     public CallingSequenceBuilder setReturnBindings(Class<?> carrier, MemoryLayout layout,
@@ -72,13 +83,97 @@ public class CallingSequenceBuilder {
         return this;
     }
 
-    public CallingSequenceBuilder setTrivial(boolean isTrivial) {
-        this.isTrivial = isTrivial;
-        return this;
+    private boolean needsReturnBuffer() {
+        return outputBindings.stream()
+            .filter(Binding.Move.class::isInstance)
+            .count() > 1;
     }
 
     public CallingSequence build() {
-        return new CallingSequence(mt, desc, isTrivial, inputBindings, outputBindings);
+        boolean needsReturnBuffer = needsReturnBuffer();
+        long returnBufferSize = needsReturnBuffer ? computeReturnBuferSize() : 0;
+        long allocationSize = computeAllocationSize() + returnBufferSize;
+        MethodType callerMethodType;
+        MethodType calleeMethodType;
+        if (!forUpcall) {
+            addArgumentBinding(0, Addressable.class, ValueLayout.ADDRESS, List.of(
+                Binding.unboxAddress(Addressable.class),
+                Binding.vmStore(abi.targetAddrStorage(), long.class)));
+            if (needsReturnBuffer) {
+                addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                    Binding.unboxAddress(MemorySegment.class),
+                    Binding.vmStore(abi.retBufAddrStorage(), long.class)));
+            }
+
+            callerMethodType = mt;
+            calleeMethodType = computeCalleeTypeForDowncall();
+        } else { // forUpcall == true
+            if (needsReturnBuffer) {
+                addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                        Binding.vmLoad(abi.retBufAddrStorage(), long.class),
+                        Binding.boxAddress(),
+                        Binding.toSegment(returnBufferSize)));
+            }
+
+            callerMethodType = computeCallerTypeForUpcall();
+            calleeMethodType = mt;
+        }
+        return new CallingSequence(forUpcall, callerMethodType, calleeMethodType, desc, needsReturnBuffer,
+                returnBufferSize, allocationSize, inputBindings, outputBindings);
+    }
+
+    private MethodType computeCallerTypeForUpcall() {
+        return computeTypeHelper(Binding.VMLoad.class, Binding.VMStore.class);
+    }
+
+    private MethodType computeCalleeTypeForDowncall() {
+        return computeTypeHelper(Binding.VMStore.class, Binding.VMLoad.class);
+    }
+
+    private MethodType computeTypeHelper(Class<? extends Binding.Move> inputVMClass,
+                                         Class<? extends Binding.Move> outputVMClass) {
+        Class<?>[] paramTypes = inputBindings.stream()
+                .flatMap(List::stream)
+                .filter(inputVMClass::isInstance)
+                .map(inputVMClass::cast)
+                .map(Binding.Move::type)
+                .toArray(Class<?>[]::new);
+
+        Binding.Move[] retMoves = outputBindings.stream()
+                .filter(outputVMClass::isInstance)
+                .map(outputVMClass::cast)
+                .toArray(Binding.Move[]::new);
+        Class<?> returnType = retMoves.length == 1 ? retMoves[0].type() : void.class;
+
+        return methodType(returnType, paramTypes);
+    }
+
+    private long computeAllocationSize() {
+        // FIXME: > 16 bytes alignment might need extra space since the
+        // starting address of the allocator might be un-aligned.
+        long size = 0;
+        for (List<Binding> bindings : inputBindings) {
+            for (Binding b : bindings) {
+                if (b instanceof Binding.Copy copy) {
+                    size = Utils.alignUp(size, copy.alignment());
+                    size += copy.size();
+                } else if (b instanceof Binding.Allocate allocate) {
+                    size = Utils.alignUp(size, allocate.alignment());
+                    size += allocate.size();
+                }
+            }
+        }
+        return size;
+    }
+
+    private long computeReturnBuferSize() {
+        return outputBindings.stream()
+                .filter(Binding.Move.class::isInstance)
+                .map(Binding.Move.class::cast)
+                .map(Binding.Move::storage)
+                .map(VMStorage::type)
+                .mapToLong(abi.arch::typeSize)
+                .sum();
     }
 
     private void verifyBindings(boolean forArguments, Class<?> carrier, List<Binding> bindings) {

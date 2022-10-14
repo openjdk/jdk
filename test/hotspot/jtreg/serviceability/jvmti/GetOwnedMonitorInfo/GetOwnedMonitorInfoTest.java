@@ -27,6 +27,7 @@
  * @bug 8185164
  * @summary Checks that a contended monitor does not show up in the list of owned monitors
  * @requires vm.jvmti
+ * @requires vm.continuations
  * @compile --enable-preview -source ${jdk.version} GetOwnedMonitorInfoTest.java
  * @run main/othervm/native --enable-preview -agentlib:GetOwnedMonitorInfoTest GetOwnedMonitorInfoTest
  */

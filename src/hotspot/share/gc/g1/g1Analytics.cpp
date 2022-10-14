@@ -226,7 +226,11 @@ void G1Analytics::report_rs_length(double rs_length) {
 }
 
 double G1Analytics::predict_alloc_rate_ms() const {
-  return predict_zero_bounded(_alloc_rate_ms_seq);
+  if (enough_samples_available(_alloc_rate_ms_seq)) {
+    return predict_zero_bounded(_alloc_rate_ms_seq);
+  } else {
+    return 0.0;
+  }
 }
 
 double G1Analytics::predict_concurrent_refine_rate_ms() const {
@@ -237,13 +241,9 @@ double G1Analytics::predict_dirtied_cards_rate_ms() const {
   return predict_zero_bounded(_dirtied_cards_rate_ms_seq);
 }
 
-double G1Analytics::predict_young_card_merge_to_scan_ratio() const {
-  return predict_in_unit_interval(_young_card_merge_to_scan_ratio_seq);
-}
-
 size_t G1Analytics::predict_scan_card_num(size_t rs_length, bool for_young_gc) const {
   if (for_young_gc || !enough_samples_available(_mixed_card_merge_to_scan_ratio_seq)) {
-    return (size_t)(rs_length * predict_young_card_merge_to_scan_ratio());
+    return (size_t)(rs_length * predict_in_unit_interval(_young_card_merge_to_scan_ratio_seq));
   } else {
     return (size_t)(rs_length * predict_in_unit_interval(_mixed_card_merge_to_scan_ratio_seq));
   }

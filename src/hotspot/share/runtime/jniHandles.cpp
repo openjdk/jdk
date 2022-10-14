@@ -32,9 +32,9 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 

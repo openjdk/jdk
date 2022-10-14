@@ -43,6 +43,7 @@ import java.io.*;
  *     the agent disables the event generation.
  * COMMENTS
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} singlestep03.java
  * @run main/othervm/native --enable-preview -agentlib:singlestep03 singlestep03 platform
@@ -51,14 +52,7 @@ import java.io.*;
 
 public class singlestep03 {
     static {
-        try {
-            System.loadLibrary("singlestep03");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load \"singlestep03\" library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("singlestep03");
     }
 
     static volatile int result;

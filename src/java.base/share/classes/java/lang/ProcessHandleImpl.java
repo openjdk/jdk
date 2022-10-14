@@ -54,7 +54,7 @@ final class ProcessHandleImpl implements ProcessHandle {
     /**
      * Default size of stack for reaper processes.
      */
-    private static long REAPER_DEFAULT_STACKSIZE = 128 * 1024;
+    private static final long REAPER_DEFAULT_STACKSIZE = 128 * 1024;
 
     /**
      * Return value from waitForProcessExit0 indicating the process is not a child.
@@ -218,10 +218,10 @@ final class ProcessHandleImpl implements ProcessHandle {
      * Typically, this is because the OS can not supply it.
      * The process is known to exist but not the exact start time.
      */
-    private final long STARTTIME_ANY = 0L;
+    private static final long STARTTIME_ANY = 0L;
 
     /* The start time of a Process that does not exist. */
-    private final long STARTTIME_PROCESS_UNKNOWN = -1;
+    private static final long STARTTIME_PROCESS_UNKNOWN = -1;
 
     /**
      * Private constructor.  Instances are created by the {@code get(long)} factory.

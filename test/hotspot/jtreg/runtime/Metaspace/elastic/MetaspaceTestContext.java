@@ -1,5 +1,5 @@
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.util.HashSet;
 

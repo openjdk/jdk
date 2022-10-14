@@ -25,11 +25,10 @@
 
 package sun.security.jgss;
 
+import java.io.EOFException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
-import java.io.EOFException;
-import sun.security.util.*;
 
 /**
  * Utilities for processing GSS Tokens.
@@ -70,7 +69,7 @@ public abstract class GSSToken {
     }
 
     public static final void writeBigEndian(int value, byte[] array,
-                                               int pos) {
+                                            int pos) {
         array[pos++] = (byte)((value>>>24));
         array[pos++] = (byte)((value>>>16));
         array[pos++] = (byte)((value>>>8));
@@ -153,7 +152,7 @@ public abstract class GSSToken {
     /**
      * Reads a two byte integer value from a byte array.
      *
-     * @param src the byte arra to read from
+     * @param src the byte array to read from
      * @param pos the offset to start reading from
      * @return the integer value
      */
@@ -203,11 +202,11 @@ public abstract class GSSToken {
         }
     }
 
-    public static final  String getHexBytes(byte[] bytes) {
+    public static final String getHexBytes(byte[] bytes) {
         return getHexBytes(bytes, 0, bytes.length);
     }
 
-    public static final  String getHexBytes(byte[] bytes, int len) {
+    public static final String getHexBytes(byte[] bytes, int len) {
         return getHexBytes(bytes, 0, len);
     }
 

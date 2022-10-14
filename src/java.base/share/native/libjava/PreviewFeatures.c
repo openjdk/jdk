@@ -23,12 +23,12 @@
  * questions.
  */
 
- #include "jni.h"
- #include "jvm.h"
+#include "jni.h"
+#include "jvm.h"
 
- #include "jdk_internal_misc_PreviewFeatures.h"
+#include "jdk_internal_misc_PreviewFeatures.h"
 
- JNIEXPORT jboolean JNICALL
- Java_jdk_internal_misc_PreviewFeatures_isPreviewEnabled(JNIEnv *env, jclass cls) {
-     return JVM_IsPreviewEnabled(env);
- }
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_PreviewFeatures_isPreviewEnabled(JNIEnv *env, jclass cls) {
+    return JVM_IsPreviewEnabled();
+}

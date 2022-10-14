@@ -26,7 +26,6 @@
 package sun.util.locale.provider;
 
 import java.security.AccessController;
-import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -36,15 +35,13 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
-import java.util.ServiceConfigurationError;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.spi.CalendarDataProvider;
@@ -437,7 +434,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
      */
     @Override
     public Locale[] getAvailableLocales() {
-        return AvailableJRELocales.localeList.clone();
+        return AvailableJRELocales.localeList;
     }
 
     public Set<String> getLanguageTagSet(String category) {
@@ -454,16 +451,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
 
     protected Set<String> createLanguageTagSet(String category) {
         String supportedLocaleString = createSupportedLocaleString(category);
-        if (supportedLocaleString == null) {
-            return Collections.emptySet();
-        }
-        StringTokenizer tokens = new StringTokenizer(supportedLocaleString);
-        Set<String> tagset = new HashSet<>((tokens.countTokens() * 4 + 2) / 3);
-        while (tokens.hasMoreTokens()) {
-            tagset.add(tokens.nextToken());
-        }
-
-        return tagset;
+        return supportedLocaleString != null ?
+            Set.of(supportedLocaleString.split("\s+")) :
+            Collections.emptySet();
     }
 
     private static String createSupportedLocaleString(String category) {
@@ -520,28 +510,17 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             throw new InternalError("No available locales for JRE");
         }
 
-        StringTokenizer localeStringTokenizer = new StringTokenizer(supportedLocaleString);
-
-        int length = localeStringTokenizer.countTokens();
-        Locale[] locales = new Locale[length + 1];
-        locales[0] = Locale.ROOT;
-        for (int i = 1; i <= length; i++) {
-            String currentToken = localeStringTokenizer.nextToken();
-            switch (currentToken) {
-                case "ja-JP-JP":
-                    locales[i] = JRELocaleConstants.JA_JP_JP;
-                    break;
-                case "no-NO-NY":
-                    locales[i] = JRELocaleConstants.NO_NO_NY;
-                    break;
-                case "th-TH-TH":
-                    locales[i] = JRELocaleConstants.TH_TH_TH;
-                    break;
-                default:
-                    locales[i] = Locale.forLanguageTag(currentToken);
-            }
-        }
-        return locales;
+        return Arrays.stream(supportedLocaleString.split("\s+"))
+            .map(t -> {
+                return switch (t) {
+                    case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
+                    case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
+                    case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
+                    default -> Locale.forLanguageTag(t);
+                };
+            })
+            .distinct()
+            .toArray(Locale[]::new);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@
 #include "code/relocInfo.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/linkedlist.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -36,6 +39,8 @@ class Compile;
 class BufferBlob;
 class CodeBuffer;
 class Label;
+class ciMethod;
+class SharedStubToInterpRequest;
 
 class CodeOffsets: public StackObj {
 public:
@@ -199,43 +204,43 @@ class CodeSection {
   }
 
   // Code emission
-  void emit_int8(int8_t x1) {
+  void emit_int8(uint8_t x1) {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x1;
     set_end(curr);
   }
 
-  void emit_int16(int16_t x) { *((int16_t*) end()) = x; set_end(end() + sizeof(int16_t)); }
-  void emit_int16(int8_t x1, int8_t x2) {
+  void emit_int16(uint16_t x) { *((uint16_t*) end()) = x; set_end(end() + sizeof(uint16_t)); }
+  void emit_int16(uint8_t x1, uint8_t x2) {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
     set_end(curr);
   }
 
-  void emit_int24(int8_t x1, int8_t x2, int8_t x3)  {
+  void emit_int24(uint8_t x1, uint8_t x2, uint8_t x3)  {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
-    *((int8_t*)  curr++) = x3;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x3;
     set_end(curr);
   }
 
-  void emit_int32(int32_t x) {
+  void emit_int32(uint32_t x) {
     address curr = end();
-    *((int32_t*) curr) = x;
-    set_end(curr + sizeof(int32_t));
+    *((uint32_t*) curr) = x;
+    set_end(curr + sizeof(uint32_t));
   }
-  void emit_int32(int8_t x1, int8_t x2, int8_t x3, int8_t x4)  {
+  void emit_int32(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4)  {
     address curr = end();
-    *((int8_t*)  curr++) = x1;
-    *((int8_t*)  curr++) = x2;
-    *((int8_t*)  curr++) = x3;
-    *((int8_t*)  curr++) = x4;
+    *((uint8_t*)  curr++) = x1;
+    *((uint8_t*)  curr++) = x2;
+    *((uint8_t*)  curr++) = x3;
+    *((uint8_t*)  curr++) = x4;
     set_end(curr);
   }
 
-  void emit_int64( int64_t x)  { *((int64_t*) end()) = x; set_end(end() + sizeof(int64_t)); }
+  void emit_int64( uint64_t x)  { *((uint64_t*) end()) = x; set_end(end() + sizeof(uint64_t)); }
 
   void emit_float( jfloat  x)  { *((jfloat*)  end()) = x; set_end(end() + sizeof(jfloat)); }
   void emit_double(jdouble x)  { *((jdouble*) end()) = x; set_end(end() + sizeof(jdouble)); }
@@ -251,16 +256,19 @@ class CodeSection {
   void relocate(address at, RelocationHolder const& rspec, int format = 0);
   void relocate(address at,    relocInfo::relocType rtype, int format = 0, jint method_index = 0);
 
-  // alignment requirement for starting offset
-  // Requirements are that the instruction area and the
-  // stubs area must start on CodeEntryAlignment, and
-  // the ctable on sizeof(jdouble)
-  int alignment() const             { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
+  static int alignment(int section);
+  int alignment() { return alignment(_index); }
 
   // Slop between sections, used only when allocating temporary BufferBlob buffers.
   static csize_t end_slop()         { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
 
-  csize_t align_at_start(csize_t off) const { return (csize_t) align_up(off, alignment()); }
+  static csize_t align_at_start(csize_t off, int section) {
+    return (csize_t) align_up(off, alignment(section));
+  }
+
+  csize_t align_at_start(csize_t off) const {
+    return align_at_start(off, _index);
+  }
 
   // Ensure there's enough space left in the current section.
   // Return true if there was an expansion.
@@ -342,6 +350,8 @@ class Scrubber {
 };
 #endif // ASSERT
 
+typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
+
 // A CodeBuffer describes a memory space into which assembly
 // code is generated.  This memory space usually occupies the
 // interior of a single BufferBlob, but in some cases it may be
@@ -389,6 +399,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_LIMIT, SECT_NONE = -1
   };
 
+  typedef LinkedListImpl<int> Offsets;
+  typedef ResizeableResourceHashtable<address, Offsets> SharedTrampolineRequests;
+
  private:
   enum {
     sect_bits = 2,      // assert (SECT_LIMIT <= (1<<sect_bits))
@@ -414,6 +427,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
+  SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
+  SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
+  bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
+
 #ifndef PRODUCT
   AsmRemarks   _asm_remarks;
   DbgStrings   _dbg_strings;
@@ -431,6 +448,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _oop_recorder    = NULL;
     _overflow_arena  = NULL;
     _last_insn       = NULL;
+    _finalize_stubs  = false;
+    _shared_stub_to_interp_requests = NULL;
+    _shared_trampoline_requests = NULL;
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
@@ -682,6 +702,12 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // Log a little info about section usage in the CodeBuffer
   void log_section_sizes(const char* name);
 
+  // Make a set of stubs final. It can create/optimize stubs.
+  void finalize_stubs();
+
+  // Request for a shared stub to the interpreter
+  void shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset);
+
 #ifndef PRODUCT
  public:
   // Printing / Decoding
@@ -697,9 +723,41 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
 };
 
+// A Java method can have calls of Java methods which can be statically bound.
+// Calls of Java methods need stubs to the interpreter. Calls sharing the same Java method
+// can share a stub to the interpreter.
+// A SharedStubToInterpRequest is a request for a shared stub to the interpreter.
+class SharedStubToInterpRequest : public ResourceObj {
+ private:
+  ciMethod* _shared_method;
+  CodeBuffer::csize_t _call_offset; // The offset of the call in CodeBuffer
+
+ public:
+  SharedStubToInterpRequest(ciMethod* method = NULL, CodeBuffer::csize_t call_offset = -1) : _shared_method(method),
+      _call_offset(call_offset) {}
+
+  ciMethod* shared_method() const { return _shared_method; }
+  CodeBuffer::csize_t call_offset() const { return _call_offset; }
+};
+
 inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
   if (remaining() < amount) { _outer->expand(this, amount); return true; }
   return false;
+}
+
+inline int CodeSection::alignment(int section) {
+  if (section == CodeBuffer::SECT_CONSTS) {
+    return (int) sizeof(jdouble);
+  }
+  if (section == CodeBuffer::SECT_INSTS) {
+    return (int) CodeEntryAlignment;
+  }
+  if (CodeBuffer::SECT_STUBS) {
+    // CodeBuffer installer expects sections to be HeapWordSize aligned
+    return HeapWordSize;
+  }
+  ShouldNotReachHere();
+  return 0;
 }
 
 #endif // SHARE_ASM_CODEBUFFER_HPP

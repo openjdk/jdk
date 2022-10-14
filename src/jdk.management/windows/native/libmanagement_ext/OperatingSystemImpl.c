@@ -824,7 +824,7 @@ getPdhProcessImageName() {
 
 /*
  * Sets up the supplied MultipleCounterQuery to check on the processors via PDH CPU counters.
- * TODO: Refactor and prettify as with the the SingleCounter queries
+ * TODO: Refactor and prettify as with the SingleCounter queries
  * if more MultipleCounterQueries are discovered/needed.
  *
  * @param multiCounterCPULoad  a pointer to a MultipleCounterQueryS, will be filled in with

@@ -138,13 +138,6 @@ void ParmNode::dump_compact_spec(outputStream *st) const {
     bottom_type()->dump_on(st);
   }
 }
-
-// For a ParmNode, all immediate inputs and outputs are considered relevant
-// both in compact and standard representation.
-void ParmNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
 #endif
 
 uint ParmNode::ideal_reg() const {
@@ -192,13 +185,18 @@ uint ReturnNode::match_edge(uint idx) const {
 
 
 #ifndef PRODUCT
-void ReturnNode::dump_req(outputStream *st) const {
-  // Dump the required inputs, enclosed in '(' and ')'
+void ReturnNode::dump_req(outputStream *st, DumpConfig* dc) const {
+  // Dump the required inputs, after printing "returns"
   uint i;                       // Exit value of loop
   for (i = 0; i < req(); i++) {    // For all required inputs
-    if (i == TypeFunc::Parms) st->print("returns");
-    if (in(i)) st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
-    else st->print("_ ");
+    if (i == TypeFunc::Parms) st->print("returns ");
+    Node* p = in(i);
+    if (p != nullptr) {
+      p->dump_idx(false, st, dc);
+      st->print(" ");
+    } else {
+      st->print("_ ");
+    }
   }
 }
 #endif
@@ -235,13 +233,18 @@ uint RethrowNode::match_edge(uint idx) const {
 }
 
 #ifndef PRODUCT
-void RethrowNode::dump_req(outputStream *st) const {
-  // Dump the required inputs, enclosed in '(' and ')'
+void RethrowNode::dump_req(outputStream *st, DumpConfig* dc) const {
+  // Dump the required inputs, after printing "exception"
   uint i;                       // Exit value of loop
   for (i = 0; i < req(); i++) {    // For all required inputs
-    if (i == TypeFunc::Parms) st->print("exception");
-    if (in(i)) st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
-    else st->print("_ ");
+    if (i == TypeFunc::Parms) st->print("exception ");
+    Node* p = in(i);
+    if (p != nullptr) {
+      p->dump_idx(false, st, dc);
+      st->print(" ");
+    } else {
+      st->print("_ ");
+    }
   }
 }
 #endif
@@ -689,13 +692,18 @@ int JVMState::interpreter_frame_size() const {
 bool CallNode::cmp( const Node &n ) const
 { return _tf == ((CallNode&)n)._tf && _jvms == ((CallNode&)n)._jvms; }
 #ifndef PRODUCT
-void CallNode::dump_req(outputStream *st) const {
+void CallNode::dump_req(outputStream *st, DumpConfig* dc) const {
   // Dump the required inputs, enclosed in '(' and ')'
   uint i;                       // Exit value of loop
   for (i = 0; i < req(); i++) {    // For all required inputs
     if (i == TypeFunc::Parms) st->print("(");
-    if (in(i)) st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
-    else st->print("_ ");
+    Node* p = in(i);
+    if (p != nullptr) {
+      p->dump_idx(false, st, dc);
+      st->print(" ");
+    } else {
+      st->print("_ ");
+    }
   }
   st->print(")");
 }
@@ -1083,11 +1091,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         set_generator(NULL);
       }
     } else if (iid == vmIntrinsics::_linkToNative) {
-      if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP /* NEP */
-          && in(TypeFunc::Parms + 1)->Opcode() == Op_ConL /* address */) {
-        phase->C->prepend_late_inline(cg);
-        set_generator(NULL);
-      }
+      // never retry
     } else {
       assert(callee->has_member_arg(), "wrong type of call?");
       if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
@@ -1223,71 +1227,6 @@ bool CallLeafVectorNode::cmp( const Node &n ) const {
   return CallLeafNode::cmp(call) && _num_bits == call._num_bits;
 }
 
-//=============================================================================
-uint CallNativeNode::size_of() const { return sizeof(*this); }
-bool CallNativeNode::cmp( const Node &n ) const {
-  CallNativeNode &call = (CallNativeNode&)n;
-  return CallNode::cmp(call) && !strcmp(_name,call._name)
-    && _arg_regs == call._arg_regs && _ret_regs == call._ret_regs;
-}
-Node* CallNativeNode::match(const ProjNode *proj, const Matcher *matcher) {
-  switch (proj->_con) {
-    case TypeFunc::Control:
-    case TypeFunc::I_O:
-    case TypeFunc::Memory:
-      return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
-    case TypeFunc::ReturnAdr:
-    case TypeFunc::FramePtr:
-      ShouldNotReachHere();
-    case TypeFunc::Parms: {
-      const Type* field_at_con = tf()->range()->field_at(proj->_con);
-      const BasicType bt = field_at_con->basic_type();
-      OptoReg::Name optoreg = OptoReg::as_OptoReg(_ret_regs.at(proj->_con - TypeFunc::Parms));
-      OptoRegPair regs;
-      if (bt == T_DOUBLE || bt == T_LONG) {
-        regs.set2(optoreg);
-      } else {
-        regs.set1(optoreg);
-      }
-      RegMask rm = RegMask(regs.first());
-      if(OptoReg::is_valid(regs.second()))
-        rm.Insert(regs.second());
-      return new MachProjNode(this, proj->_con, rm, field_at_con->ideal_reg());
-    }
-    case TypeFunc::Parms + 1: {
-      assert(tf()->range()->field_at(proj->_con) == Type::HALF, "Expected HALF");
-      assert(_ret_regs.at(proj->_con - TypeFunc::Parms) == VMRegImpl::Bad(), "Unexpected register for Type::HALF");
-      // 2nd half of doubles and longs
-      return new MachProjNode(this, proj->_con, RegMask::Empty, (uint) OptoReg::Bad);
-    }
-    default:
-      ShouldNotReachHere();
-  }
-  return NULL;
-}
-#ifndef PRODUCT
-void CallNativeNode::print_regs(const GrowableArray<VMReg>& regs, outputStream* st) {
-  st->print("{ ");
-  for (int i = 0; i < regs.length(); i++) {
-    regs.at(i)->print_on(st);
-    if (i < regs.length() - 1) {
-      st->print(", ");
-    }
-  }
-  st->print(" } ");
-}
-
-void CallNativeNode::dump_spec(outputStream *st) const {
-  st->print("# ");
-  st->print("%s ", _name);
-  st->print("_arg_regs: ");
-  print_regs(_arg_regs, st);
-  st->print("_ret_regs: ");
-  print_regs(_ret_regs, st);
-  CallNode::dump_spec(st);
-}
-#endif
-
 //------------------------------calling_convention-----------------------------
 void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
   SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
@@ -1306,40 +1245,6 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
 #endif
 
   SharedRuntime::vector_calling_convention(parm_regs, _num_bits, argcnt);
-}
-
-void CallNativeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
-  assert((tf()->domain()->cnt() - TypeFunc::Parms) == argcnt, "arg counts must match!");
-#ifdef ASSERT
-  for (uint i = 0; i < argcnt; i++) {
-    assert(tf()->domain()->field_at(TypeFunc::Parms + i)->basic_type() == sig_bt[i], "types must match!");
-  }
-#endif
-  for (uint i = 0; i < argcnt; i++) {
-    switch (sig_bt[i]) {
-      case T_BOOLEAN:
-      case T_CHAR:
-      case T_BYTE:
-      case T_SHORT:
-      case T_INT:
-      case T_FLOAT:
-        parm_regs[i].set1(_arg_regs.at(i));
-        break;
-      case T_LONG:
-      case T_DOUBLE:
-        assert((i + 1) < argcnt && sig_bt[i + 1] == T_VOID, "expecting half");
-        parm_regs[i].set2(_arg_regs.at(i));
-        break;
-      case T_VOID: // Halves of longs and doubles
-        assert(i != 0 && (sig_bt[i - 1] == T_LONG || sig_bt[i - 1] == T_DOUBLE), "expecting half");
-        assert(_arg_regs.at(i) == VMRegImpl::Bad(), "expecting bad reg");
-        parm_regs[i].set_bad();
-        break;
-      default:
-        ShouldNotReachHere();
-        break;
-    }
-  }
 }
 
 //=============================================================================
@@ -1461,19 +1366,6 @@ void SafePointNode::dump_spec(outputStream *st) const {
   st->print(" SafePoint ");
   _replaced_nodes.dump(st);
 }
-
-// The related nodes of a SafepointNode are all data inputs, excluding the
-// control boundary, as well as all outputs till level 2 (to include projection
-// nodes and targets). In compact mode, just include inputs till level 1 and
-// outputs as before.
-void SafePointNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-  }
-  this->collect_nodes(out_rel, -2, false, false);
-}
 #endif
 
 const RegMask &SafePointNode::in_RegMask(uint idx) const {
@@ -1547,6 +1439,12 @@ Node *SafePointNode::peek_monitor_obj() const {
   return monitor_obj(jvms(), mon);
 }
 
+Node* SafePointNode::peek_operand(uint off) const {
+  assert(jvms()->sp() > 0, "must have an operand");
+  assert(off < jvms()->sp(), "off is out-of-range");
+  return stack(jvms(), jvms()->sp() - off - 1);
+}
+
 // Do we Match on this edge index or not?  Match no edges
 uint SafePointNode::match_edge(uint idx) const {
   return (TypeFunc::Parms == idx);
@@ -1556,7 +1454,7 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   assert(Opcode() == Op_SafePoint, "only value for safepoint in loops");
   int nb = igvn->C->root()->find_prec_edge(this);
   if (nb != -1) {
-    igvn->C->root()->rm_prec(nb);
+    igvn->delete_precedence_of(igvn->C->root(), nb);
   }
 }
 
@@ -1704,13 +1602,16 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
              "narrow type must be narrower than length type");
 
       // Return NULL if new nodes are not allowed
-      if (!allow_new_nodes) return NULL;
+      if (!allow_new_nodes) {
+        return NULL;
+      }
       // Create a cast which is control dependent on the initialization to
       // propagate the fact that the array length must be positive.
       InitializeNode* init = initialization();
-      assert(init != NULL, "initialization not found");
-      length = new CastIINode(length, narrow_length_type);
-      length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
+      if (init != NULL) {
+        length = new CastIINode(length, narrow_length_type);
+        length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
+      }
     }
   }
 
@@ -2036,16 +1937,6 @@ void AbstractLockNode::dump_spec(outputStream* st) const {
 
 void AbstractLockNode::dump_compact_spec(outputStream* st) const {
   st->print("%s", _kind_names[_kind]);
-}
-
-// The related set of lock nodes includes the control boundary.
-void AbstractLockNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-      this->collect_nodes(in_rel, 1, false, false);
-    } else {
-      this->collect_nodes_in_all_data(in_rel, true);
-    }
-    this->collect_nodes(out_rel, -2, false, false);
 }
 #endif
 

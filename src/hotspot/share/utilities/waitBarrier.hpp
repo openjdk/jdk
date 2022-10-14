@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_WAITBARRIER_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/waitBarrier_generic.hpp"

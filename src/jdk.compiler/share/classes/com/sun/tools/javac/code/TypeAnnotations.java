@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1362,7 +1362,7 @@ public class TypeAnnotations {
             scan(tree.typeargs);
             if (tree.def == null) {
                 scan(tree.clazz);
-            } // else super type will already have been scanned in the context of the anonymous class.
+            } // else supertype will already have been scanned in the context of the anonymous class.
             scan(tree.args);
 
             // The class body will already be scanned.

@@ -27,8 +27,9 @@
 #include "prims/jvmtiRawMonitor.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 
 JvmtiRawMonitor::QNode::QNode(Thread* thread) : _next(NULL), _prev(NULL),
                                                 _event(thread->_ParkEvent),

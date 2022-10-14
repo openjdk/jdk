@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8167108 8266130 8283467 8284632
+ * @bug 8167108 8266130 8283467 8284632 8286830
  * @summary Stress test JVM/TI StopThread() at thread exit.
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:StopAtExit StopAtExit
@@ -72,7 +72,32 @@ public class StopAtExit extends Thread {
                 usage();
             }
         }
+        timeMax /= 2;  // Split time between the two sub-tests.
 
+        test(timeMax);
+
+        // Fire-up deamon that just creates new threads. This generates contention on
+        // Threads_lock while worker tries to exit, creating more places where target
+        // can be seen as handshake safe.
+        Thread threadCreator = new Thread() {
+            @Override
+            public void run() {
+                while (true) {
+                    Thread dummyThread = new Thread(() -> {});
+                    dummyThread.start();
+                    try {
+                        dummyThread.join();
+                    } catch(InterruptedException ie) {
+                    }
+                }
+            }
+        };
+        threadCreator.setDaemon(true);
+        threadCreator.start();
+        test(timeMax);
+    }
+
+    public static void test(int timeMax) {
         System.out.println("About to execute for " + timeMax + " seconds.");
 
         long count = 0;

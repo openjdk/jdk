@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8284161 8287008
  * @summary Basic test for jcmd Thread.dump_to_file
  * @library /test/lib
  * @run testng/othervm ThreadDumpToFileTest
@@ -34,6 +35,8 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.threaddump.ThreadDump;
+
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -65,13 +68,17 @@ public class ThreadDumpToFileTest {
         Path file = genThreadDumpPath(".json");
         threadDump(file, "-format=json").shouldMatch("Created");
 
-        // test that the threadDump object is present
-        assertTrue(find(file, "threadDump"), "`threadDump` not found in " + file);
+        // parse the JSON text
+        String jsonText = Files.readString(file);
+        ThreadDump threadDump = ThreadDump.parse(jsonText);
 
-        // test that thread dump contains the id of the current thread
-        long tid = Thread.currentThread().threadId();
-        String expected = "\"tid\": " + tid;
-        assertTrue(find(file, expected), expected + " not found in " + file);
+        // test that the process id is this process
+        assertTrue(threadDump.processId() == ProcessHandle.current().pid());
+
+        // test that the current thread is in the root thread container
+        var rootContainer = threadDump.rootThreadContainer();
+        var tid = Thread.currentThread().threadId();
+        rootContainer.findThread(tid).orElseThrow();
     }
 
     /**

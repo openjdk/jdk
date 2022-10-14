@@ -359,7 +359,7 @@ class Universe: AllStatic {
   static bool should_verify_subset(uint subset);
   static void verify(VerifyOption option, const char* prefix);
   static void verify(const char* prefix) {
-    verify(VerifyOption_Default, prefix);
+    verify(VerifyOption::Default, prefix);
   }
   static void verify() {
     verify("");

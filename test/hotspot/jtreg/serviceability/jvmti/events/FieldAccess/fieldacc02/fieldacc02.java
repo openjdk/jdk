@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -37,6 +35,7 @@ import java.io.PrintStream;
  *     Fixed according to 4669812 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} fieldacc02.java
  * @run main/othervm/native --enable-preview -agentlib:fieldacc02 fieldacc02
@@ -46,17 +45,8 @@ import java.io.PrintStream;
 
 public class fieldacc02 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("fieldacc02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldacc02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldacc02");
     }
 
     static volatile int result;

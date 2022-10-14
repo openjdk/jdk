@@ -23,18 +23,21 @@
 
 /**
  * @test
+ * @bug 8284161 8287008
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
- * @compile --enable-preview -source ${jdk.version} DumpThreads.java
- * @run testng/othervm --enable-preview DumpThreads
- * @run testng/othervm --enable-preview -Djdk.trackAllThreads DumpThreads
- * @run testng/othervm --enable-preview -Djdk.trackAllThreads=true DumpThreads
- * @run testng/othervm --enable-preview -Djdk.trackAllThreadds=false DumpThreads
+ * @enablePreview
+ * @library /test/lib
+ * @run testng/othervm DumpThreads
+ * @run testng/othervm -Djdk.trackAllThreads DumpThreads
+ * @run testng/othervm -Djdk.trackAllThreads=true DumpThreads
+ * @run testng/othervm -Djdk.trackAllThreadds=false DumpThreads
  */
 
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
+import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,6 +45,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.HotSpotDiagnosticMXBean.ThreadDumpFormat;
+import jdk.test.lib.threaddump.ThreadDump;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -103,21 +107,37 @@ public class DumpThreads {
                 mbean.dumpThreads(file.toString(), ThreadDumpFormat.JSON);
                 cat(file);
 
-                assertTrue(count(file, "threadDump") >= 1L);
-                assertTrue(count(file, "time") >= 1L);
-                assertTrue(count(file, "runtimeVersion") >= 1L);
-                assertTrue(count(file, "threadContainers") >= 1L);
-                assertTrue(count(file, "threads") >= 1L);
+                // parse the JSON text
+                String jsonText = Files.readString(file);
+                ThreadDump threadDump = ThreadDump.parse(jsonText);
 
-                // virtual thread should be found
-                assertTrue(isJsonPresent(file, vthread));
+                // test threadDump/processId
+                assertTrue(threadDump.processId() == ProcessHandle.current().pid());
 
-                // if the current thread is a platform thread then it should be included
+                // test threadDump/time can be parsed
+                ZonedDateTime.parse(threadDump.time());
+
+                // test threadDump/runtimeVersion
+                assertEquals(threadDump.runtimeVersion(), Runtime.version().toString());
+
+                // test root container
+                var rootContainer = threadDump.rootThreadContainer();
+                assertFalse(rootContainer.owner().isPresent());
+                assertFalse(rootContainer.parent().isPresent());
+
+                // if the current thread is a platform thread then it will be in root container
                 Thread currentThread = Thread.currentThread();
                 if (!currentThread.isVirtual() || TRACK_ALL_THREADS) {
-                    assertTrue(isJsonPresent(file, currentThread));
+                    rootContainer.findThread(currentThread.threadId()).orElseThrow();
                 }
 
+                // find the thread container for the executor. The name of this executor
+                // is its String representaiton in this case.
+                String name = executor.toString();
+                var container = threadDump.findThreadContainer(name).orElseThrow();
+                assertFalse(container.owner().isPresent());
+                assertTrue(container.parent().get() == rootContainer);
+                container.findThread(vthread.threadId()).orElseThrow();
             } finally {
                 LockSupport.unpark(vthread);
             }
@@ -185,14 +205,6 @@ public class DumpThreads {
      */
     private static boolean isPresent(Path file, Thread thread) throws Exception {
         String expect = "#" + thread.threadId();
-        return count(file, expect) > 0;
-    }
-
-    /**
-     * Returns true if the file contains "tid": <tid>
-     */
-    private static boolean isJsonPresent(Path file, Thread thread) throws Exception {
-        String expect = "\"tid\": " + thread.threadId();
         return count(file, expect) > 0;
     }
 

@@ -34,8 +34,8 @@ package gc.arguments;
  * @modules java.management
  * @library /test/lib
  * @library /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.arguments.TestVerifyBeforeAndAfterGCFlags
  */
 
@@ -44,7 +44,7 @@ import java.util.Collections;
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestVerifyBeforeAndAfterGCFlags {
 

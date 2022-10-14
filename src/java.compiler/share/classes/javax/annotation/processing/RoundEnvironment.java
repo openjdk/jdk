@@ -70,7 +70,7 @@ public interface RoundEnvironment {
     Set<? extends Element> getRootElements();
 
     /**
-     * Returns the elements annotated with the given annotation type.
+     * Returns the elements annotated with the given annotation interface.
      * The annotation may appear directly or be inherited.  Only
      * package elements, module elements, and type elements <i>included</i> in this
      * round of annotation processing, or declarations of members,
@@ -84,21 +84,21 @@ public interface RoundEnvironment {
      * simply because a {@code module-info} file for that module was
      * created.
      *
-     * @param a  annotation type being requested
-     * @return the elements annotated with the given annotation type,
+     * @param a  annotation interface being requested
+     * @return the elements annotated with the given annotation interface,
      * or an empty set if there are none
      * @throws IllegalArgumentException if the argument does not
-     * represent an annotation type
+     * represent an annotation interface
      */
     Set<? extends Element> getElementsAnnotatedWith(TypeElement a);
 
     /**
      * Returns the elements annotated with one or more of the given
-     * annotation types.
+     * annotation interfaces.
      *
      * @apiNote This method may be useful when processing repeating
-     * annotations by looking for an annotation type and its
-     * containing annotation type at the same time.
+     * annotations by looking for an annotation interface and its
+     * containing annotation interface at the same time.
      *
      * @implSpec The default implementation of this method creates an
      * empty result set, iterates over the annotations in the argument
@@ -107,11 +107,11 @@ public interface RoundEnvironment {
      * set. Finally, the contents of the result set are returned as an
      * unmodifiable set.
      *
-     * @param annotations  annotation types being requested
+     * @param annotations  annotation interfaces being requested
      * @return the elements annotated with one or more of the given
-     * annotation types, or an empty set if there are none
+     * annotation interfaces, or an empty set if there are none
      * @throws IllegalArgumentException if the any elements of the
-     * argument set do not represent an annotation type
+     * argument set do not represent an annotation interface
      * @jls 9.6.3 Repeatable Annotation Interfaces
      * @since 9
      */
@@ -125,7 +125,7 @@ public interface RoundEnvironment {
     }
 
     /**
-     * Returns the elements annotated with the given annotation type.
+     * Returns the elements annotated with the given annotation interface.
      * The annotation may appear directly or be inherited.  Only
      * package elements, module elements, and type elements <i>included</i> in this
      * round of annotation processing, or declarations of members,
@@ -141,21 +141,21 @@ public interface RoundEnvironment {
      *
      * <p> Note: An implementation of this method typically performs
      * an internal conversion from the runtime reflective
-     * representation of an annotation type as a {@code Class} object
+     * representation of an annotation interface as a {@code Class} object
      * to a different representation used for annotation
-     * processing. The set of annotation types present in the runtime
-     * context may differ from the set of annotation types present in
+     * processing. The set of annotation interfaces present in the runtime
+     * context may differ from the set of annotation interfaces present in
      * the context of annotation processing in a particular
-     * environmental configuration. If an runtime annotation type is
+     * environmental configuration. If an runtime annotation interface is
      * not present in the annotation processing context, the situation
      * is not treated as an error and no elements are found for that
-     * annotation type.
+     * annotation interface.
      *
-     * @param a  annotation type being requested
-     * @return the elements annotated with the given annotation type,
+     * @param a  annotation interface being requested
+     * @return the elements annotated with the given annotation interface,
      * or an empty set if there are none
      * @throws IllegalArgumentException if the argument does not
-     * represent an annotation type
+     * represent an annotation interface
      *
      * @see javax.lang.model.AnnotatedConstruct#getAnnotation(Class)
      * @see javax.lang.model.AnnotatedConstruct#getAnnotationsByType(Class)
@@ -164,23 +164,23 @@ public interface RoundEnvironment {
 
     /**
      * Returns the elements annotated with one or more of the given
-     * annotation types.
+     * annotation interfaces.
      *
      * <p> Note: An implementation of this method typically performs
      * an internal conversion from the runtime reflective
-     * representation of an annotation type as a {@code Class} object
+     * representation of an annotation interface as a {@code Class} object
      * to a different representation used for annotation
-     * processing. The set of annotation types present in the runtime
-     * context may differ from the set of annotation types present in
+     * processing. The set of annotation interfaces present in the runtime
+     * context may differ from the set of annotation interfaces present in
      * the context of annotation processing in a particular
-     * environmental configuration. If an runtime annotation type is
+     * environmental configuration. If an runtime annotation interface is
      * not present in the annotation processing context, the situation
      * is not treated as an error and no elements are found for that
-     * annotation type.
+     * annotation interface.
      *
      * @apiNote This method may be useful when processing repeating
-     * annotations by looking for an annotation type and its
-     * containing annotation type at the same time.
+     * annotations by looking for an annotation interface and its
+     * containing annotation interface at the same time.
      *
      * @implSpec The default implementation of this method creates an
      * empty result set, iterates over the annotations in the argument
@@ -189,11 +189,11 @@ public interface RoundEnvironment {
      * set. Finally, the contents of the result set are returned as an
      * unmodifiable set.
      *
-     * @param annotations  annotation types being requested
+     * @param annotations  annotation interfaces being requested
      * @return the elements annotated with one or more of the given
-     * annotation types, or an empty set if there are none
+     * annotation interfaces, or an empty set if there are none
      * @throws IllegalArgumentException if the any elements of the
-     * argument set do not represent an annotation type
+     * argument set do not represent an annotation interface
      * @jls 9.6.3 Repeatable Annotation Interfaces
      *
      * @see javax.lang.model.AnnotatedConstruct#getAnnotation(Class)

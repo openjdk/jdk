@@ -148,7 +148,7 @@ class RuleBasedBreakIteratorBuilder {
 
     /**
      * Looping states actually have to be backfilled later in the process
-     * than everything else.  This is where a the list of states to backfill
+     * than everything else.  This is where the list of states to backfill
      * is accumulated.  This is also used to handle .*?
      */
     protected Vector<Integer> statesToBackfill = null;
@@ -1300,7 +1300,7 @@ class RuleBasedBreakIteratorBuilder {
             newValues[(int)(pendingChars.charAt(i)) - 0x100] = newValue;
 
         // go through the list of rows to update, and update them by calling
-        // mergeStates() to merge them the the dummy state we created
+        // mergeStates() to merge them the dummy state we created
         for (int i = 0; i < rows.size(); i++) {
             mergeStates(rows.elementAt(i).intValue(), newValues, rows);
         }
@@ -1881,7 +1881,7 @@ class RuleBasedBreakIteratorBuilder {
         // we have to merge the resulting state table with the auto-generated one
         // above.  First copy the populated cells from row 1 over the populated
         // cells in the auto-generated table.  Then copy values from row 1 of the
-        // auto-generated table into all of the the unpopulated cells of the
+        // auto-generated table into all of the unpopulated cells of the
         // rule-based table.
         if (backTableOffset > 1) {
 

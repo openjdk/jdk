@@ -91,6 +91,17 @@ public class TestResolvedJavaType extends TypeUniverse {
     public TestResolvedJavaType() {
     }
 
+    @Test
+    public void equalsTest() {
+        for (ResolvedJavaType t : javaTypes) {
+            for (ResolvedJavaType that : javaTypes) {
+                boolean expect = t == that;
+                boolean actual = t.equals(that);
+                assertEquals(expect, actual);
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static Class<? extends Annotation> findPolymorphicSignatureClass() {
         Class<? extends Annotation> signaturePolyAnnotation = null;

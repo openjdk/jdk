@@ -66,6 +66,7 @@ abstract public class TestScaffold extends TargetAdapter {
     final String[] args;
     protected boolean testFailed = false;
     protected long startTime;
+    public static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
 
     static private class ArgInfo {
         String targetVMArgs = "";
@@ -359,10 +360,10 @@ abstract public class TestScaffold extends TargetAdapter {
     }
 
     protected void startUp(String targetName) {
-        List argList = new ArrayList(Arrays.asList(args));
+        List<String> argList = new ArrayList(Arrays.asList(args));
         argList.add(targetName);
         println("run args: " + argList);
-        connect((String[]) argList.toArray(args));
+        connect(argList.toArray(args));
         waitForVMStart();
     }
 
@@ -452,6 +453,10 @@ abstract public class TestScaffold extends TargetAdapter {
 
     protected void failure(String str) {
         println(str);
+        StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement traceElement : trace) {
+            System.err.println("\tat " + traceElement);
+        }
         testFailed = true;
     }
 
@@ -460,6 +465,9 @@ abstract public class TestScaffold extends TargetAdapter {
         String mainWrapper = System.getProperty("main.wrapper");
         if ("Virtual".equals(mainWrapper)) {
             argInfo.targetAppCommandLine = TestScaffold.class.getName() + " " + mainWrapper + " ";
+            argInfo.targetVMArgs += "--enable-preview ";
+        } else if ("true".equals(System.getProperty("test.enable.preview"))) {
+            // the test specified @enablePreview.
             argInfo.targetVMArgs += "--enable-preview ";
         }
 
@@ -843,6 +851,14 @@ abstract public class TestScaffold extends TargetAdapter {
         return (Location)locs.get(0);
     }
 
+    public Location findMethodLocation(ReferenceType rt, String methodName,
+                                       String methodSignature, int methodLineNumber)
+        throws AbsentInformationException {
+        Method m = findMethod(rt, methodName, methodSignature);
+        int lineNumber = m.location().lineNumber() + methodLineNumber - 1;
+        return findLocation(rt, lineNumber);
+    }
+
     public BreakpointEvent resumeTo(String clsName, String methodName,
                                          String methodSignature) {
         return resumeTo(clsName, methodName, methodSignature, false /* suspendThread */);
@@ -969,6 +985,8 @@ abstract public class TestScaffold extends TargetAdapter {
                     tg.uncaughtThrowable = error;
                 }
             });
+            Thread.currentThread().setName(OLD_MAIN_THREAD_NAME);
+            vthread.setName("main");
             vthread.join();
         } else if (wrapper.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();

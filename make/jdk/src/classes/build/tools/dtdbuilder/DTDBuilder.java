@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.BufferedInputStream;
-import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.BitSet;
-import java.util.StringTokenizer;
 import java.util.Enumeration;
-import java.util.Properties;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Deflater;
-import java.net.URL;
 
 /**
  * The representation of an SGML DTD. This is produced by the DTDParser.
@@ -58,8 +49,7 @@ import java.net.URL;
  * @author Arthur van Hoff
  * @author Guy Abossolo Foh
  */
-public
-class DTDBuilder extends DTD {
+public class DTDBuilder extends DTD {
 
     static PublicMapping mapping = null;
 
@@ -131,7 +121,7 @@ class DTDBuilder extends DTD {
     }
 
     //
-    // The the id of a name from the list of names
+    // The id of a name from the list of names
     //
     private short getNameId(String name)  {
         Integer o = namesHash.get(name);

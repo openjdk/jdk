@@ -1156,7 +1156,7 @@ public class XMLEntityScanner implements XMLLocator  {
             c = fCurrentEntity.ch[fCurrentEntity.position];
             if ((c == quote &&
                     (!fCurrentEntity.literal || isExternal)) ||
-                    c == '%' || !XMLChar.isContent(c)) {
+                    c == '%' || !XMLChar.isContent(c) || c == '\r' && !isExternal) {
                 break;
             }
             if (whiteSpaceInfoNeeded && c == '\t') {

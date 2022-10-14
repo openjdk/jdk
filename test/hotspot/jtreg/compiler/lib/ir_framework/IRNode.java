@@ -26,7 +26,7 @@ package compiler.lib.ir_framework;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import compiler.lib.ir_framework.shared.*;
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -141,6 +141,9 @@ public class IRNode {
     public static final String MEMBAR_STORESTORE = START + "MemBarStoreStore" + MID + END;
     public static final String SAFEPOINT = START + "SafePoint" + MID + END;
 
+    public static final String CMOVEI = START + "CMoveI" + MID + END;
+    public static final String CMOVEVF = START + "CMoveVF" + MID + END;
+    public static final String CMOVEVD = START + "CMoveVD" + MID + END;
     public static final String ABS_I = START + "AbsI" + MID + END;
     public static final String ABS_L = START + "AbsL" + MID + END;
     public static final String ABS_F = START + "AbsF" + MID + END;
@@ -148,6 +151,7 @@ public class IRNode {
     public static final String AND = START + "And(I|L)" + MID + END;
     public static final String AND_I = START + "AndI" + MID + END;
     public static final String AND_L = START + "AndL" + MID + END;
+    public static final String XOR = START + "Xor(I|L)" + MID + END;
     public static final String XOR_I = START + "XorI" + MID + END;
     public static final String XOR_L = START + "XorL" + MID + END;
     public static final String LSHIFT = START + "LShift(I|L)" + MID + END;
@@ -156,6 +160,8 @@ public class IRNode {
     public static final String RSHIFT = START + "RShift(I|L)" + MID + END;
     public static final String RSHIFT_I = START + "RShiftI" + MID + END;
     public static final String RSHIFT_L = START + "RShiftL" + MID + END;
+    public static final String RSHIFT_VB = START + "RShiftVB" + MID + END;
+    public static final String RSHIFT_VS = START + "RShiftVS" + MID + END;
     public static final String URSHIFT = START + "URShift(B|S|I|L)" + MID + END;
     public static final String URSHIFT_I = START + "URShiftI" + MID + END;
     public static final String URSHIFT_L = START + "URShiftL" + MID + END;
@@ -163,23 +169,40 @@ public class IRNode {
     public static final String ADD_I = START + "AddI" + MID + END;
     public static final String ADD_L = START + "AddL" + MID + END;
     public static final String ADD_VD = START + "AddVD" + MID + END;
+    public static final String ADD_VI = START + "AddVI" + MID + END;
     public static final String SUB = START + "Sub(I|L|F|D)" + MID + END;
     public static final String SUB_I = START + "SubI" + MID + END;
     public static final String SUB_L = START + "SubL" + MID + END;
     public static final String SUB_F = START + "SubF" + MID + END;
     public static final String SUB_D = START + "SubD" + MID + END;
+    public static final String CMP_U = START + "CmpU" + MID + END;
+    public static final String CMP_UL = START + "CmpUL" + MID + END;
+    public static final String CMP_U3 = START + "CmpU3" + MID + END;
+    public static final String CMP_UL3 = START + "CmpUL3" + MID + END;
+    public static final String CMP_I = START + "CmpI" + MID + END;
     public static final String MUL = START + "Mul(I|L|F|D)" + MID + END;
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
     public static final String MUL_F = START + "MulF" + MID + END;
-    public static final String DIV = START + "(NoOvf)?Div(I|L|F|D)" + MID + END;
-    public static final String DIV_L = START + "(NoOvf)?DivL" + MID + END;
+    public static final String DIV = START + "Div(I|L|F|D)" + MID + END;
+    public static final String DIV_L = START + "DivL" + MID + END;
     public static final String CON_I = START + "ConI" + MID + END;
     public static final String CON_L = START + "ConL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
     public static final String CONV_L2I = START + "ConvL2I" + MID + END;
+    public static final String CAST_II = START + "CastII" + MID + END;
+    public static final String CAST_LL = START + "CastLL" + MID + END;
     public static final String POPCOUNT_L = START + "PopCountL" + MID + END;
+    public static final String PHI = START + "Phi" + MID + END;
 
+    public static final String AND_V = START + "AndV" + MID + END;
+    public static final String OR_V = START + "OrV" + MID + END;
+    public static final String XOR_V = START + "XorV" + MID + END;
+    public static final String AND_V_MASK = START + "AndVMask" + MID + END;
+    public static final String OR_V_MASK = START + "OrVMask" + MID + END;
+    public static final String XOR_V_MASK = START + "XorVMask" + MID + END;
+
+    public static final String VECTOR_MASK_CAST = START + "VectorMaskCast" + MID + END;
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
     public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;
     public static final String VECTOR_CAST_I2X = START + "VectorCastI2X" + MID + END;
@@ -190,9 +213,24 @@ public class IRNode {
     public static final String VECTOR_UCAST_S2X = START + "VectorUCastS2X" + MID + END;
     public static final String VECTOR_UCAST_I2X = START + "VectorUCastI2X" + MID + END;
     public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
+    public static final String VECTOR_BLEND = START + "VectorBlend" + MID + END;
+    public static final String REVERSE_BYTES_V = START + "ReverseBytesV" + MID + END;
+
+    public static final String Min_I = START + "MinI" + MID + END;
+    public static final String Max_I = START + "MaxI" + MID + END;
+    public static final String Min_V = START + "MinV" + MID + END;
+    public static final String Max_V = START + "MaxV" + MID + END;
+    public static final String MUL_VL = START + "MulVL" + MID + END;
+
+    public static final String ADD_REDUCTION_VF = START + "AddReductionVF" + MID + END;
+    public static final String ADD_REDUCTION_VD = START + "AddReductionVD" + MID + END;
+    public static final String MUL_REDUCTION_VF = START + "MulReductionVF" + MID + END;
+    public static final String MUL_REDUCTION_VD = START + "MulReductionVD" + MID + END;
 
     public static final String FAST_LOCK   = START + "FastLock" + MID + END;
     public static final String FAST_UNLOCK = START + "FastUnlock" + MID + END;
+
+    public static final String POPULATE_INDEX = START + "PopulateIndex" + MID + END;
 
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.

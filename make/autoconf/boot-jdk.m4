@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -126,16 +126,18 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
 AC_DEFUN([BOOTJDK_CHECK_ARGUMENTS],
 [
   if test "x$with_boot_jdk" != x; then
-    if test -d "$with_boot_jdk"; then
-      BOOT_JDK=$with_boot_jdk
+    BOOT_JDK_ARG="$with_boot_jdk"
+    UTIL_FIXUP_PATH(BOOT_JDK_ARG)
+    if test -d "$BOOT_JDK_ARG"; then
+      BOOT_JDK=$BOOT_JDK_ARG
       BOOT_JDK_FOUND=maybe
-    elif test -f "$with_boot_jdk"; then
-      case "$with_boot_jdk" in
+    elif test -f "$BOOT_JDK_ARG"; then
+      case "$BOOT_JDK_ARG" in
         *.tar.gz )
             BOOT_JDK_SUPPORT_DIR=$CONFIGURESUPPORT_OUTPUTDIR/boot-jdk
             $RM -rf $BOOT_JDK_SUPPORT_DIR
             $MKDIR -p $BOOT_JDK_SUPPORT_DIR
-            $GUNZIP -c $with_boot_jdk | $TAR xf - -C $BOOT_JDK_SUPPORT_DIR
+            $GUNZIP -c $BOOT_JDK_ARG | $TAR xf - -C $BOOT_JDK_SUPPORT_DIR
 
             # Try to find javac to determine BOOT_JDK path
             BOOT_JDK_JAVAC_PATH=`$FIND $BOOT_JDK_SUPPORT_DIR | $GREP "/bin/javac"`

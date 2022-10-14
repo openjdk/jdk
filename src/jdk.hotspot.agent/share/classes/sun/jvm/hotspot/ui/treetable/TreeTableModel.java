@@ -61,7 +61,7 @@ public interface TreeTableModel extends TreeModel
     public Object getValueAt(Object node, int column);
 
     /**
-     * Indicates whether the the value for node <code>node</code>,
+     * Indicates whether the value for node <code>node</code>,
      * at column number <code>column</code> is editable.
      */
     public boolean isCellEditable(Object node, int column);

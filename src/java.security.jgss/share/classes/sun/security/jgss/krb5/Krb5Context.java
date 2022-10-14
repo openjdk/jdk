@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,7 @@ import sun.security.krb5.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.security.Provider;
-import java.security.AccessController;
-import java.security.Key;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.security.*;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.ServicePermission;
 import javax.security.auth.kerberos.KerberosCredMessage;
@@ -88,7 +84,6 @@ class Krb5Context implements GSSContextSpi {
     private boolean isConstrainedDelegationTried = false;
 
     private int mySeqNumber;
-    private int peerSeqNumber;
     private int keySrc;
     private TokenTracker peerTokenTracker;
 
@@ -103,14 +98,14 @@ class Krb5Context implements GSSContextSpi {
      * checking of per-message tokens is enabled.
      */
 
-    private Object mySeqNumberLock = new Object();
-    private Object peerSeqNumberLock = new Object();
+    private final Object mySeqNumberLock = new Object();
+    private final Object peerSeqNumberLock = new Object();
 
     private EncryptionKey key;
     private Krb5NameElement myName;
     private Krb5NameElement peerName;
     private int lifetime;
-    private boolean initiator;
+    private final boolean initiator;
     private ChannelBinding channelBinding;
 
     private Krb5CredElement myCred;
@@ -366,7 +361,7 @@ class Krb5Context implements GSSContextSpi {
      * MessageToken.init()
      */
     final CipherHelper getCipherHelper(EncryptionKey ckey) throws GSSException {
-         EncryptionKey cipherKey = null;
+         EncryptionKey cipherKey;
          if (cipherHelper == null) {
             cipherKey = (getKey() == null) ? ckey: getKey();
             cipherHelper = new CipherHelper(cipherKey);
@@ -399,8 +394,7 @@ class Krb5Context implements GSSContextSpi {
                                + seqNumber);
         }
         synchronized (peerSeqNumberLock) {
-            peerSeqNumber = seqNumber;
-            peerTokenTracker = new TokenTracker(peerSeqNumber);
+            peerTokenTracker = new TokenTracker(seqNumber);
         }
     }
 
@@ -415,7 +409,7 @@ class Krb5Context implements GSSContextSpi {
         return keySrc;
     }
 
-    private final EncryptionKey getKey() {
+    private EncryptionKey getKey() {
         return key;
     }
 
@@ -707,11 +701,7 @@ class Krb5Context implements GSSContextSpi {
                             @SuppressWarnings("removal")
                             final Subject subject =
                                 AccessController.doPrivilegedWithCombiner(
-                                new java.security.PrivilegedAction<Subject>() {
-                                    public Subject run() {
-                                        return (Subject.current());
-                                    }
-                                });
+                                        (PrivilegedAction<Subject>) Subject::current);
                             if (subject != null &&
                                 !subject.isReadOnly()) {
                                 /*
@@ -725,12 +715,10 @@ class Krb5Context implements GSSContextSpi {
                                         Krb5Util.credsToTicket(serviceCreds);
                                 @SuppressWarnings("removal")
                                 var dummy = AccessController.doPrivileged (
-                                    new java.security.PrivilegedAction<Void>() {
-                                      public Void run() {
-                                        subject.getPrivateCredentials().add(kt);
-                                        return null;
-                                      }
-                                    });
+                                        (PrivilegedAction<Void>) () -> {
+                                          subject.getPrivateCredentials().add(kt);
+                                          return null;
+                                        });
                             } else {
                                 // log it for debugging purpose
                                 if (DEBUG) {
@@ -904,7 +892,7 @@ class Krb5Context implements GSSContextSpi {
     /*
      * Per-message calls depend on the sequence number. The sequence number
      * synchronization is at a finer granularity because wrap and getMIC
-     * care about the local sequence number (mySeqNumber) where are unwrap
+     * care about the local sequence number (mySeqNumber) whereas unwrap
      * and verifyMIC care about the remote sequence number (peerSeqNumber).
      */
 
@@ -938,7 +926,6 @@ class Krb5Context implements GSSContextSpi {
             }
             return encToken;
         } catch (IOException e) {
-            encToken = null;
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
             gssException.initCause(e);
@@ -972,7 +959,6 @@ class Krb5Context implements GSSContextSpi {
             }
             return retVal;
         } catch (IOException e) {
-            retVal = 0;
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
             gssException.initCause(e);
@@ -1187,7 +1173,6 @@ class Krb5Context implements GSSContextSpi {
             }
             return retVal;
         } catch (IOException e) {
-            retVal = 0;
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
             gssException.initCause(e);
@@ -1196,7 +1181,7 @@ class Krb5Context implements GSSContextSpi {
     }
 
     /*
-     * Checksum calculation requires a byte[]. Hence might as well pass
+     * Checksum calculation requires a byte[]. Hence, might as well pass
      * a byte[] into the MicToken constructor. However, writing the
      * token can be optimized for cases where the application passed in
      * an OutputStream.
@@ -1385,7 +1370,7 @@ class Krb5Context implements GSSContextSpi {
     }
 
     GSSCaller getCaller() {
-        // Currently used by InitialToken only
+        // Currently, used by InitialToken only
         return caller;
     }
 

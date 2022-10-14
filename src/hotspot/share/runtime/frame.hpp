@@ -120,8 +120,6 @@ class frame {
   address raw_pc() const;
 
   void set_pc(address newpc);
-  void set_pc_preserve_deopt(address newpc);
-  void set_pc_preserve_deopt(address newpc, CodeBlob* cb);
 
   intptr_t* sp() const           { assert_absolute(); return _sp; }
   void set_sp( intptr_t* newsp ) { _sp = newsp; }
@@ -188,7 +186,7 @@ class frame {
   bool is_compiled_frame()       const;
   bool is_safepoint_blob_frame() const;
   bool is_deoptimized_frame()    const;
-  bool is_optimized_entry_frame()  const;
+  bool is_upcall_stub_frame()    const;
   bool is_heap_frame()             const { return _on_heap; }
 
   // testers
@@ -200,7 +198,7 @@ class frame {
 
   // is this frame doing a call using the compiled calling convention?
   bool is_compiled_caller() const {
-    return is_compiled_frame() || is_optimized_entry_frame();
+    return is_compiled_frame() || is_upcall_stub_frame();
   }
 
   // tells whether this frame is marked for deoptimization
@@ -228,7 +226,7 @@ class frame {
   // returns the sender, but skips conversion frames
   frame real_sender(RegisterMap* map) const;
 
-  // returns the the sending Java frame, skipping any intermediate C frames
+  // returns the sending Java frame, skipping any intermediate C frames
   // NB: receiver must not be first frame
   frame java_sender() const;
 
@@ -238,7 +236,7 @@ class frame {
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
-  frame sender_for_optimized_entry_frame(RegisterMap* map) const;
+  frame sender_for_upcall_stub_frame(RegisterMap* map) const;
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
@@ -420,7 +418,7 @@ class frame {
 
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
-  bool optimized_entry_frame_is_first() const;
+  bool upcall_stub_frame_is_first() const;
 
   // Safepoints
 

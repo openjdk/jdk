@@ -36,8 +36,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/g1/c1/g1BarrierSetC1.hpp"

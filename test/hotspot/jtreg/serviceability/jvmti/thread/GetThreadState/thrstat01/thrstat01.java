@@ -72,6 +72,7 @@
  *       - rearranged synchronization of tested thread
  *       - enhanced descripton
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} thrstat01.java
  * @run main/othervm/native --enable-preview -agentlib:thrstat01 thrstat01

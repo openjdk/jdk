@@ -28,13 +28,30 @@
 #include "runtime/continuationEntry.hpp"
 
 #include "oops/access.hpp"
+#include "runtime/frame.hpp"
+#include "utilities/align.hpp"
 
 #include CPU_HEADER_INLINE(continuationEntry)
+
+inline intptr_t* ContinuationEntry::bottom_sender_sp() const {
+  intptr_t* sp = entry_sp() - argsize();
+#ifdef _LP64
+  sp = align_down(sp, frame::frame_alignment);
+#endif
+  return sp;
+}
 
 inline oop ContinuationEntry::cont_oop() const {
   oop snapshot = _cont;
   return NativeAccess<>::oop_load(&snapshot);
 }
 
+inline oop ContinuationEntry::cont_oop_or_null(const ContinuationEntry* ce) {
+  return ce == nullptr ? nullptr : ce->cont_oop();
+}
+
+inline oop ContinuationEntry::scope() const {
+  return Continuation::continuation_scope(cont_oop());
+}
 
 #endif // SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP

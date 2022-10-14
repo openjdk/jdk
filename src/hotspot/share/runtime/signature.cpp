@@ -235,14 +235,14 @@ void Fingerprinter::do_type_calling_convention(BasicType type) {
   case T_BYTE:
   case T_SHORT:
   case T_INT:
-#if defined(PPC64)
+#if defined(PPC64) || defined(S390)
     if (_int_args < Argument::n_int_register_parameters_j) {
       _int_args++;
     } else {
       _stack_arg_slots += 1;
     }
     break;
-#endif // defined(PPC64)
+#endif // defined(PPC64) || defined(S390)
   case T_LONG:
   case T_OBJECT:
   case T_ARRAY:
@@ -251,23 +251,25 @@ void Fingerprinter::do_type_calling_convention(BasicType type) {
       _int_args++;
     } else {
       PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
       _stack_arg_slots += 2;
     }
     break;
   case T_FLOAT:
-#if defined(PPC64)
+#if defined(PPC64) || defined(S390)
     if (_fp_args < Argument::n_float_register_parameters_j) {
       _fp_args++;
     } else {
       _stack_arg_slots += 1;
     }
     break;
-#endif // defined(PPC64)
+#endif // defined(PPC64) || defined(S390)
   case T_DOUBLE:
     if (_fp_args < Argument::n_float_register_parameters_j) {
       _fp_args++;
     } else {
       PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
       _stack_arg_slots += 2;
     }
     break;
@@ -336,6 +338,11 @@ inline int SignatureStream::scan_type(BasicType type) {
 
   case T_ARRAY:
     while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
+    // If we discovered only the string of '[', this means something is wrong.
+    if (end >= limit) {
+      assert(false, "Invalid type detected");
+      return limit;
+    }
     _array_prefix = end - _end;  // number of '[' chars just skipped
     if (Signature::has_envelope(base[end])) {
       tem = (const u1 *) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
@@ -505,7 +512,7 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
   } else if (failure_mode == CachedOrNull) {
     NoSafepointVerifier nsv;  // no loading, now, we mean it!
     assert(!HAS_PENDING_EXCEPTION, "");
-    k = SystemDictionary::find_instance_klass(name, class_loader, protection_domain);
+    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader, protection_domain);
     // SD::find does not trigger loading, so there should be no throws
     // Still, bad things can happen, so we CHECK_NULL and ask callers
     // to do likewise.

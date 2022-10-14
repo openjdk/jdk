@@ -34,8 +34,8 @@
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
-#include "runtime/thread.inline.hpp"
 
 ContinuationWrapper::ContinuationWrapper(const RegisterMap* map)
   : _thread(map->thread()),

@@ -34,7 +34,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/stack.inline.hpp"
 
 static jobject empty_java_util_arraylist = NULL;

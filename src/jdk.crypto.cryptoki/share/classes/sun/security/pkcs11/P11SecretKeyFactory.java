@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         addKeyType("AES",      CKK_AES);
         addKeyType("Blowfish", CKK_BLOWFISH);
         addKeyType("ChaCha20", CKK_CHACHA20);
+        addKeyType("ChaCha20-Poly1305", CKK_CHACHA20);
 
         // we don't implement RC2 or IDEA, but we want to be able to generate
         // keys for those SSL/TLS ciphersuites.

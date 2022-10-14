@@ -662,16 +662,14 @@ public class KeyStoreLoginModule implements LoginModule {
             principal = certificate.getSubjectX500Principal();
 
             // if token, privateKeyPassword will be null
-            Key privateKey = keyStore.getKey(keyStoreAlias, privateKeyPassword);
-            if (privateKey == null
-                || !(privateKey instanceof PrivateKey))
-            {
+            Key key = keyStore.getKey(keyStoreAlias, privateKeyPassword);
+            if (!(key instanceof PrivateKey privateKey)) {
                 throw new FailedLoginException(
                     "Unable to recover key from keystore");
             }
 
             privateCredential = new X500PrivateCredential(
-                certificate, (PrivateKey) privateKey, keyStoreAlias);
+                certificate, privateKey, keyStoreAlias);
         } catch (KeyStoreException | NoSuchAlgorithmException e) {
             LoginException le = new LoginException("Error using keystore");
             le.initCause(e);
@@ -853,23 +851,25 @@ public class KeyStoreLoginModule implements LoginModule {
             certP = null;
             status = INITIALIZED;
             // destroy the private credential
-            Iterator<Object> it = subject.getPrivateCredentials().iterator();
-            while (it.hasNext()) {
-                Object obj = it.next();
-                if (privateCredential.equals(obj)) {
-                    privateCredential = null;
-                    try {
-                        ((Destroyable)obj).destroy();
-                        if (debug)
-                            debugPrint("Destroyed private credential, " +
-                                       obj.getClass().getName());
-                        break;
-                    } catch (DestroyFailedException dfe) {
-                        LoginException le = new LoginException
-                            ("Unable to destroy private credential, "
-                             + obj.getClass().getName());
-                        le.initCause(dfe);
-                        throw le;
+            if (privateCredential != null) {
+                Iterator<Object> it = subject.getPrivateCredentials().iterator();
+                while (it.hasNext()) {
+                    Object obj = it.next();
+                    if (privateCredential.equals(obj)) {
+                        privateCredential = null;
+                        try {
+                            ((Destroyable) obj).destroy();
+                            if (debug)
+                                debugPrint("Destroyed private credential, " +
+                                        obj.getClass().getName());
+                            break;
+                        } catch (DestroyFailedException dfe) {
+                            LoginException le = new LoginException
+                                    ("Unable to destroy private credential, "
+                                            + obj.getClass().getName());
+                            le.initCause(dfe);
+                            throw le;
+                        }
                     }
                 }
             }

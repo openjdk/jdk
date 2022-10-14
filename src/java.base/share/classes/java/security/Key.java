@@ -26,8 +26,8 @@
 package java.security;
 
 /**
- * The Key interface is the top-level interface for all keys. It
- * defines the functionality shared by all key objects. All keys
+ * The {@code Key} interface is the top-level interface for all keys. It
+ * defines the functionality shared by all {@code Key} objects. All keys
  * have three characteristics:
  *
  * <UL>
@@ -113,7 +113,7 @@ public interface Key extends java.io.Serializable {
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = 6603384152749567654L;
+   long serialVersionUID = 6603384152749567654L;
 
     /**
      * Returns the standard algorithm name for this key. For
@@ -126,11 +126,11 @@ public interface Key extends java.io.Serializable {
      *
      * @return the name of the algorithm associated with this key.
      */
-    public String getAlgorithm();
+    String getAlgorithm();
 
     /**
      * Returns the name of the primary encoding format of this key,
-     * or null if this key does not support encoding.
+     * or {@code null} if this key does not support encoding.
      * The primary encoding format is
      * named in terms of the appropriate ASN.1 data format, if an
      * ASN.1 specification for this key exists.
@@ -145,14 +145,14 @@ public interface Key extends java.io.Serializable {
      *
      * @return the primary encoding format of the key.
      */
-    public String getFormat();
+    String getFormat();
 
     /**
-     * Returns the key in its primary encoding format, or null
+     * Returns the key in its primary encoding format, or {@code null}
      * if this key does not support encoding.
      *
-     * @return the encoded key, or null if the key does not support
+     * @return the encoded key, or {@code null} if the key does not support
      * encoding.
      */
-    public byte[] getEncoded();
+    byte[] getEncoded();
 }

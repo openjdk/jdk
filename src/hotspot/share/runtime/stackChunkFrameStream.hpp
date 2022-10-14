@@ -27,12 +27,13 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/frame.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 class CodeBlob;
+class frame;
 class ImmutableOopMap;
+class RegisterMap;
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
 

@@ -55,6 +55,7 @@
  *     For more information see bugs #5041847, #4980307 and J2SE 5.0+ JVMTI spec.
  * COMMENTS
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} thrstat05.java
  * @run main/othervm/native --enable-preview -agentlib:thrstat05 thrstat05

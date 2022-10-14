@@ -98,7 +98,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   };
 
   friend class ClassLoaderDataGraph;
-  friend class ClassLoaderDataGraphIterator;
+  template <bool keep_alive>
+  friend class ClassLoaderDataGraphIteratorBase;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphKlassIteratorStatic;
   friend class ClassLoaderDataGraphMetaspaceIterator;
@@ -208,6 +209,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   };
   void clear_claim() { _claim = 0; }
   void clear_claim(int claim);
+  void verify_not_claimed(int claim) NOT_DEBUG_RETURN;
   bool claimed() const { return _claim != 0; }
   bool claimed(int claim) const { return (_claim & claim) == claim; }
   bool try_claim(int claim);
@@ -248,11 +250,14 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool is_builtin_class_loader_data() const;
   bool is_permanent_class_loader_data() const;
 
+  OopHandle class_loader_handle() const { return _class_loader; }
+
   // The Metaspace is created lazily so may be NULL.  This
   // method will allocate a Metaspace if needed.
   ClassLoaderMetaspace* metaspace_non_null();
 
   inline oop class_loader() const;
+  inline oop class_loader_no_keepalive() const;
 
   // Returns true if this class loader data is for a loader going away.
   // Note that this is only safe after the GC has computed if the CLD is

@@ -4,7 +4,3 @@
 [[KERNEL]]
         Assert.assertEquals(a, r);
     }
-
-
-
-

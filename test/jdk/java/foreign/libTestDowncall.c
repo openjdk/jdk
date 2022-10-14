@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,7 @@
  * questions.
  */
 
-#include "libTestDowncall.h"
-#ifdef __clang__
-#pragma clang optimize off
-#elif defined __GNUC__
-#pragma GCC optimize ("O0")
-#elif defined _MSC_BUILD
-#pragma optimize( "", off )
-#endif
+#include "shared.h"
 
 EXPORT void f0_V__(void) { }
 EXPORT void f0_V_I_(int p0) { }

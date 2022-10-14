@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,18 +53,19 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
 
     /**
      * This method creates (or overrides, if exists) the JMOD file,
-     * returning the the output stream to write to the JMOD file.
+     * returning the output stream to write to the JMOD file.
      */
-    static JmodOutputStream newOutputStream(Path file, LocalDateTime date) throws IOException {
+    static JmodOutputStream newOutputStream(Path file, LocalDateTime date, int compressLevel) throws IOException {
         OutputStream out = Files.newOutputStream(file);
         BufferedOutputStream bos = new BufferedOutputStream(out);
-        return new JmodOutputStream(bos, date);
+        return new JmodOutputStream(bos, date, compressLevel);
     }
 
     private final ZipOutputStream zos;
     private final LocalDateTime date;
-    private JmodOutputStream(OutputStream out, LocalDateTime date) {
+    private JmodOutputStream(OutputStream out, LocalDateTime date, int compressLevel) {
         this.zos = new ZipOutputStream(out);
+        this.zos.setLevel(compressLevel);
         this.date = date;
         try {
             JmodFile.writeMagicNumber(out);
@@ -153,4 +154,3 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         zos.close();
     }
 }
-

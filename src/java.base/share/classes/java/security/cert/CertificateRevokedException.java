@@ -187,8 +187,8 @@ public class CertificateRevokedException extends CertificateException {
     /**
      * Serialize this {@code CertificateRevokedException} instance.
      *
-     * @serialData the size of the extensions map (int), followed by all of
-     * the extensions in the map, in no particular order. For each extension,
+     * @serialData the size of the extensions map (int), followed by all the
+     * extensions in the map, in no particular order. For each extension,
      * the following data is emitted: the OID String (Object), the criticality
      * flag (boolean), the length of the encoded extension value byte array
      * (int), and the encoded extension value bytes.
@@ -245,7 +245,7 @@ public class CertificateRevokedException extends CertificateException {
         } else if (size < 0) {
             throw new IOException("size cannot be negative");
         } else {
-            extensions = HashMap.newHashMap(size > 20 ? 20 : size);
+            extensions = HashMap.newHashMap(Math.min(size, 20));
         }
 
         // Read in the extensions and put the mappings in the extensions map

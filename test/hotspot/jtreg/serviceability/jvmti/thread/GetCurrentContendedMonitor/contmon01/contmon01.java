@@ -59,6 +59,7 @@
  *       - rearranged synchronization of tested thread
  *       - enhanced descripton
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} contmon01.java
  * @run main/othervm/native --enable-preview -agentlib:contmon01 contmon01

@@ -39,11 +39,6 @@
 
 import jdk.test.lib.jvmti.DebugeeClass;
 
-import java.io.PrintStream;
-
-
-
-
 public class suspendthrdlst02 extends DebugeeClass {
 
     // load native library if required
@@ -51,15 +46,11 @@ public class suspendthrdlst02 extends DebugeeClass {
         System.loadLibrary("suspendthrdlst02");
     }
 
-    // run test from command line
     public static void main(String argv[]) {
-        // JCK-compatible exit
-        System.exit(run(argv, System.out) + 95);
-    }
-
-    // run test from JCK-compatible environment
-    public static int run(String argv[], PrintStream out) {
-        return new suspendthrdlst02().runIt(argv, out);
+        int result = new suspendthrdlst02().runIt();
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 
     /* =================================================================== */
@@ -74,7 +65,7 @@ public class suspendthrdlst02 extends DebugeeClass {
     suspendthrdlst02Thread threads[] = null;
 
     // run debuggee
-    public int runIt(String argv[], PrintStream out) {
+    public int runIt() {
         timeout = 60 * 1000; // milliseconds
 
         // create tested threads

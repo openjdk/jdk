@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,36 +400,40 @@ OptoReg::Name ZBarrierSetAssembler::refine_register(const Node* node, OptoReg::N
 #define __ _masm->
 
 class ZSaveLiveRegisters {
-
- private:
   MacroAssembler* _masm;
   RegMask _reg_mask;
   Register _result_reg;
+  int _frame_size;
 
  public:
   ZSaveLiveRegisters(MacroAssembler *masm, ZLoadBarrierStubC2 *stub)
       : _masm(masm), _reg_mask(stub->live()), _result_reg(stub->ref()) {
 
-    const int total_regs_amount = iterate_over_register_mask(ACTION_SAVE);
+    const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
+    _frame_size = align_up(register_save_size, frame::alignment_in_bytes)
+                  + frame::abi_reg_args_size;
 
     __ save_LR_CR(R0);
-    __ push_frame_reg_args(total_regs_amount * BytesPerWord, R0);
+    __ push_frame(_frame_size, R0);
+
+    iterate_over_register_mask(ACTION_SAVE, _frame_size);
   }
 
   ~ZSaveLiveRegisters() {
-    __ pop_frame();
-    __ restore_LR_CR(R0);
+    iterate_over_register_mask(ACTION_RESTORE, _frame_size);
 
-    iterate_over_register_mask(ACTION_RESTORE);
+    __ addi(R1_SP, R1_SP, _frame_size);
+    __ restore_LR_CR(R0);
   }
 
  private:
   enum IterationAction : int {
-    ACTION_SAVE = 0,
-    ACTION_RESTORE = 1
+    ACTION_SAVE,
+    ACTION_RESTORE,
+    ACTION_COUNT_ONLY
   };
 
-  int iterate_over_register_mask(IterationAction action) {
+  int iterate_over_register_mask(IterationAction action, int offset = 0) {
     int reg_save_index = 0;
     RegMaskIterator live_regs_iterator(_reg_mask);
 
@@ -454,11 +458,11 @@ class ZSaveLiveRegisters {
           reg_save_index++;
 
           if (action == ACTION_SAVE) {
-            _masm->std(std_reg, (intptr_t) -reg_save_index * BytesPerWord, R1_SP);
+            _masm->std(std_reg, offset - reg_save_index * BytesPerWord, R1_SP);
           } else if (action == ACTION_RESTORE) {
-            _masm->ld(std_reg, (intptr_t) -reg_save_index * BytesPerWord, R1_SP);
+            _masm->ld(std_reg, offset - reg_save_index * BytesPerWord, R1_SP);
           } else {
-            fatal("Sanity");
+            assert(action == ACTION_COUNT_ONLY, "Sanity");
           }
         }
       } else if (vm_reg->is_FloatRegister()) {
@@ -467,19 +471,34 @@ class ZSaveLiveRegisters {
           reg_save_index++;
 
           if (action == ACTION_SAVE) {
-            _masm->stfd(fp_reg, (intptr_t) -reg_save_index * BytesPerWord, R1_SP);
+            _masm->stfd(fp_reg, offset - reg_save_index * BytesPerWord, R1_SP);
           } else if (action == ACTION_RESTORE) {
-            _masm->lfd(fp_reg, (intptr_t) -reg_save_index * BytesPerWord, R1_SP);
+            _masm->lfd(fp_reg, offset - reg_save_index * BytesPerWord, R1_SP);
           } else {
-            fatal("Sanity");
+            assert(action == ACTION_COUNT_ONLY, "Sanity");
           }
         }
       } else if (vm_reg->is_ConditionRegister()) {
         // NOP. Conditions registers are covered by save_LR_CR
+      } else if (vm_reg->is_VectorSRegister()) {
+        assert(SuperwordUseVSX, "or should not reach here");
+        VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
+        if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
+          reg_save_index += 2;
+
+          Register spill_addr = R0;
+          if (action == ACTION_SAVE) {
+            _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
+            _masm->stxvd2x(vs_reg, spill_addr);
+          } else if (action == ACTION_RESTORE) {
+            _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
+            _masm->lxvd2x(vs_reg, spill_addr);
+          } else {
+            assert(action == ACTION_COUNT_ONLY, "Sanity");
+          }
+        }
       } else {
-        if (vm_reg->is_VectorRegister()) {
-          fatal("Vector registers are unsupported. Found register %s", vm_reg->name());
-        } else if (vm_reg->is_SpecialRegister()) {
+        if (vm_reg->is_SpecialRegister()) {
           fatal("Special registers are unsupported. Found register %s", vm_reg->name());
         } else {
           fatal("Register type is not known");
@@ -495,7 +514,6 @@ class ZSaveLiveRegisters {
 #define __ _masm->
 
 class ZSetupArguments {
- private:
   MacroAssembler* const _masm;
   const Register        _ref;
   const Address         _ref_addr;

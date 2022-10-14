@@ -38,16 +38,14 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/pair.hpp"
-#include "utilities/resourceHash.hpp"
 
 typedef enum { QUALIFIED, DISQUALIFIED } QualifiedState;
 

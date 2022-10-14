@@ -58,7 +58,6 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  void set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr);
   Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
                    const Type* value_type, BasicType bt);
   Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
@@ -207,6 +206,15 @@ public:
   bool expand_macro_nodes();
 
   PhaseIterGVN &igvn() const { return _igvn; }
+
+#ifndef PRODUCT
+    static int _objs_scalar_replaced_counter;
+    static int _monitor_objects_removed_counter;
+    static int _GC_barriers_removed_counter;
+    static int _memory_barriers_removed_counter;
+    static void print_statistics();
+    static int count_MemBar(Compile *C);
+#endif
 
   // Members accessed from BarrierSetC2
   void replace_node(Node* source, Node* target) { _igvn.replace_node(source, target); }

@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/threadCritical.hpp"
 
 // OS-includes here

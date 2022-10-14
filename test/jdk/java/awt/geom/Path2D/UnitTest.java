@@ -49,6 +49,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.QuadCurve2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
+import java.util.Random;
 import java.util.NoSuchElementException;
 
 public class UnitTest {
@@ -89,7 +90,10 @@ public class UnitTest {
         return at;
     }
 
-    public static void init() {
+    Random random;
+
+    public UnitTest(long randomSeed) {
+        this.random = new Random(randomSeed);
         TestShapes = new Shape[] {
             EmptyShapeNonZero,
             EmptyShapeEvenOdd,
@@ -156,7 +160,7 @@ public class UnitTest {
         while (i < types.length) {
             int t;
             do {
-                t = (int) (Math.random() * 5);
+                t = (int) (random.nextDouble() * 5);
             } while (t == prevt &&
                      (t == PathIterator.SEG_MOVETO ||
                       t == PathIterator.SEG_CLOSE));
@@ -190,7 +194,7 @@ public class UnitTest {
                                             types.length, numcoords);
     }
 
-    public static GeneralPath makeGeneralPath(int windingrule, double sign) {
+    public GeneralPath makeGeneralPath(int windingrule, double sign) {
         GeneralPath gp = new GeneralPath(windingrule);
         gp.moveTo((float) (sign * rpc()), (float) (sign * rpc()));
         gp.lineTo((float) (sign * rpc()), (float) (sign * rpc()));
@@ -227,29 +231,29 @@ public class UnitTest {
 
     // Random positive coordinate (10 -> 110)
     // rpc + rd gives a total range of (30 -> 170)
-    public static double rpc() {
-        return (Math.random() * 100.0) + 10.0;
+    public double rpc() {
+        return (random.nextDouble() * 100.0) + 10.0;
     }
 
     // Random negative coordinate (-200 -> -100)
     // rnc + rd gives a total range of (-180 -> -40)
-    public static double rnc() {
-        return (Math.random() * 100.0) - 200.0;
+    public double rnc() {
+        return (random.nextDouble() * 100.0) - 200.0;
     }
 
     // Random dimension (20 -> 60)
-    public static double rd() {
-        return (Math.random() * 40.0) + 20.0;
+    public double rd() {
+        return (random.nextDouble() * 40.0) + 20.0;
     }
 
     // Random arc width/height (0.1 -> 5.1)
-    public static double ra() {
-        return (Math.random() * 5.0) + 0.1;
+    public double ra() {
+        return (random.nextDouble() * 5.0) + 0.1;
     }
 
     // Random arc angle (theta) (PI/4 => 5PI/4)
-    public static double rt() {
-        return (Math.random() * Math.PI) + Math.PI/4;
+    public double rt() {
+        return (random.nextDouble() * Math.PI) + Math.PI/4;
     }
 
     public static int fltulpdiff(double v1, double v2) {
@@ -999,14 +1003,14 @@ public class UnitTest {
         }
     }
 
-    public static void checkHits(Shape stest, Shape sref) {
+    public void checkHits(Shape stest, Shape sref) {
         for (int i = 0; i < 10; i++) {
-            double px = Math.random() * 500 - 250;
-            double py = Math.random() * 500 - 250;
+            double px = random.nextDouble() * 500 - 250;
+            double py = random.nextDouble() * 500 - 250;
             Point2D pnt = new Point2D.Double(px, py);
 
-            double rw = Math.random()*10+0.4;
-            double rh = Math.random()*10+0.4;
+            double rw = random.nextDouble()*10+0.4;
+            double rh = random.nextDouble()*10+0.4;
             double rx = px - rw/2;
             double ry = py - rh/2;
             Rectangle2D rect = new Rectangle2D.Double(rx, ry, rw, rh);
@@ -1168,7 +1172,7 @@ public class UnitTest {
         }
     }
 
-    public static void test(Creator c) {
+    public void test(Creator c) {
         testConstructors(c);
         testPathConstruction(c);
         testAppend(c);
@@ -1402,7 +1406,7 @@ public class UnitTest {
         }
     }
 
-    public static void testHits(Creator c) {
+    public void testHits(Creator c) {
         for (int i = 0; i < TestShapes.length; i++) {
             Shape sref = TestShapes[i];
             if (verbose) System.out.println("hit testing "+sref);
@@ -1416,7 +1420,7 @@ public class UnitTest {
         //testHits(c, LongSampleEvenOdd);
     }
 
-    public static void testHits(Creator c, SampleShape ref) {
+    public void testHits(Creator c, SampleShape ref) {
         if (verbose) System.out.println("hit testing "+ref);
         if (c.supportsFloatCompose()) {
             checkHits(ref.makeFloatPath(c), ref);
@@ -1425,16 +1429,39 @@ public class UnitTest {
     }
 
     public static void main(String argv[]) {
-        int limit = (argv.length > 0) ? 10000 : 1;
+        // as specific failures come up we can add them to this array to make sure they're frequently tested:
+        long[] previousBugSeeds = new long[] {
+
+            // these are all failures related to JDK-8176501
+            4603421469924484958L,
+            4596019360892069260L,
+            4604586530476373958L,
+            4603766396818608126L
+
+        };
+
         verbose = (argv.length > 1);
-        for (int i = 0; i < limit; i++) {
-            if (limit > 1) {
-                System.out.println("loop #"+(i+1));
-            }
-            init();
-            test(new GPCreator());
-            test(new FltCreator());
-            test(new DblCreator());
+
+        for (long seed : previousBugSeeds) {
+            test("", seed);
         }
+
+        int limit = (argv.length > 0) ? 10000 : 1;
+        for (int i = 0; i < limit; i++) {
+            long seed = Double.doubleToLongBits(Math.random());
+            test("loop #" + (i + 1), seed);
+        }
+    }
+
+    private static void test(String logPrefix, long seed) {
+        String msg = "seed = " + seed;
+        if (!logPrefix.isEmpty())
+            msg = logPrefix + ", " + msg;
+        System.out.println(msg);
+
+        UnitTest t = new UnitTest(seed);
+        t.test(new GPCreator());
+        t.test(new FltCreator());
+        t.test(new DblCreator());
     }
 }

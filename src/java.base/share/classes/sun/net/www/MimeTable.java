@@ -27,21 +27,27 @@ package sun.net.www;
 
 import jdk.internal.util.StaticProperty;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.net.FileNameMap;
-import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
 public class MimeTable implements FileNameMap {
+    /** Hash mark introducing a URI fragment */
+    private static final int HASH_MARK = '#';
+
     /** Keyed by content type, returns MimeEntries */
-    private Hashtable<String, MimeEntry> entries
-        = new Hashtable<>();
+    private Hashtable<String, MimeEntry> entries = new Hashtable<>();
 
     /** Keyed by file extension (with the .), returns MimeEntries */
-    private Hashtable<String, MimeEntry> extensionMap
-        = new Hashtable<>();
+    private Hashtable<String, MimeEntry> extensionMap = new Hashtable<>();
 
     // Will be reset if in the platform-specific data file
     @SuppressWarnings("removal")
@@ -84,9 +90,6 @@ public class MimeTable implements FileNameMap {
         return DefaultInstanceHolder.defaultInstance;
     }
 
-    /**
-     *
-     */
     public static FileNameMap loadTable() {
         MimeTable mt = getDefaultTable();
         return mt;
@@ -151,28 +154,52 @@ public class MimeTable implements FileNameMap {
     }
 
     /**
-     * Locate a MimeEntry by the file extension that has been associated
-     * with it. Parses general file names, and URLs.
+     * Extracts the file extension and uses it to look up the entry.
      */
-    public MimeEntry findByFileName(String fname) {
-        String ext = "";
-
-        int i = fname.lastIndexOf('#');
-
-        if (i > 0) {
-            fname = fname.substring(0, i - 1);
-        }
-
-        i = fname.lastIndexOf('.');
+    private MimeEntry findViaFileExtension(String fname) {
+        int i = fname.lastIndexOf('.');
         // REMIND: OS specific delimiters appear here
         i = Math.max(i, fname.lastIndexOf('/'));
         i = Math.max(i, fname.lastIndexOf('?'));
 
+        String ext = "";
         if (i != -1 && fname.charAt(i) == '.') {
             ext = fname.substring(i).toLowerCase();
         }
 
         return findByExt(ext);
+    }
+
+    /**
+     * Locate a MimeEntry by its associated file extension.
+     * Parses general file names, and URLs.
+     *
+     * @param fname the file name
+     *
+     * @return the MIME entry associated with the file name or {@code null}
+     */
+    public MimeEntry findByFileName(String fname) {
+        MimeEntry entry = null;
+
+        // If an optional fragment introduced by a hash mark is
+        // present, then strip it and use the prefix
+        int hashIndex = fname.lastIndexOf(HASH_MARK);
+        if (hashIndex > 0) {
+            entry = findViaFileExtension(fname.substring(0, hashIndex));
+            if (entry != null) {
+                return entry;
+            }
+        }
+
+        assert entry == null;
+
+        // If either no optional fragment was present, or the entry was not
+        // found with the fragment stripped, then try again with the full name
+        if (entry == null) {
+            entry = findViaFileExtension(fname);
+        }
+
+        return entry;
     }
 
     /**

@@ -77,7 +77,7 @@ inline void frame::setup(address pc) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
     assert(_cb == NULL || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
-           "original PC must be in the main code section of the the compiled method (or must be immediately following it)");
+           "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
       _deopt_state = is_deoptimized;
@@ -165,10 +165,8 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   DEBUG_ONLY(_frame_index = -1;)
 
   // Here's a sticky one. This constructor can be called via AsyncGetCallTrace
-  // when last_Java_sp is non-null but the pc fetched is junk. If we are truly
-  // unlucky the junk value could be to a zombied method and we'll die on the
-  // find_blob call. This is also why we can have no asserts on the validity
-  // of the pc we find here. AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
+  // when last_Java_sp is non-null but the pc fetched is junk.
+  // AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
   // -> pd_last_frame should use a specialized version of pd_last_frame which could
   // call a specilaized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious
@@ -336,19 +334,13 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 // Compiled frames
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
-  PRAGMA_DIAG_PUSH
-  PRAGMA_NONNULL_IGNORED
   oop* result_adr = (oop *)map->location(r0->as_VMReg(), sp());
-  PRAGMA_DIAG_POP
   guarantee(result_adr != NULL, "bad register save location");
   return *result_adr;
 }
 
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
-  PRAGMA_DIAG_PUSH
-  PRAGMA_NONNULL_IGNORED
   oop* result_adr = (oop *)map->location(r0->as_VMReg(), sp());
-  PRAGMA_DIAG_POP
   guarantee(result_adr != NULL, "bad register save location");
 
   *result_adr = obj;
@@ -397,9 +389,9 @@ inline frame frame::sender_raw(RegisterMap* map) const {
     return map->stack_chunk()->sender(*this, map);
   }
 
-  if (is_entry_frame())           return sender_for_entry_frame(map);
-  if (is_optimized_entry_frame()) return sender_for_optimized_entry_frame(map);
-  if (is_interpreted_frame())     return sender_for_interpreter_frame(map);
+  if (is_entry_frame())       return sender_for_entry_frame(map);
+  if (is_upcall_stub_frame()) return sender_for_upcall_stub_frame(map);
+  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
 
   assert(_cb == CodeCache::find_blob(pc()), "Must be the same");
   if (_cb != NULL) return sender_for_compiled_frame(map);
@@ -418,7 +410,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   // in C2 code but it will have been pushed onto the stack. so we
   // have to find it relative to the unextended sp
 
-  assert(_cb->frame_size() >= 0, "must have non-zero frame size");
+  assert(_cb->frame_size() > 0, "must have non-zero frame size");
   intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted) ? unextended_sp() + _cb->frame_size()
                                                                     : sender_sp();
   assert(!_sp_is_trusted || l_sender_sp == real_fp(), "");
@@ -444,7 +436,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
       assert(oop_map() == NULL || !oop_map()->has_any(OopMapValue::callee_saved_value), "callee-saved value in compiled frame");
     }
 
-    // Since the prolog does the save and restore of EBP there is no oopmap
+    // Since the prolog does the save and restore of FP there is no oopmap
     // for it so we must fill in its location as if there was an oopmap entry
     // since if our caller was compiled code there could be live jvm state in it.
     update_map_with_saved_link(map, saved_fp_addr);
@@ -464,14 +456,11 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 
 template <typename RegisterMapT>
 void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) {
-  // The interpreter and compiler(s) always save EBP/RBP in a known
-  // location on entry. We must record where that location is
-  // so this if EBP/RBP was live on callout from c2 we can find
-  // the saved copy no matter what it called.
+  // The interpreter and compiler(s) always save FP in a known
+  // location on entry. C2-compiled code uses FP as an allocatable
+  // callee-saved register. We must record where that location is so
+  // that if FP was live on callout from c2 we can find the saved copy.
 
-  // Since the interpreter always saves EBP/RBP if we record where it is then
-  // we don't have to always save EBP/RBP on entry and exit to c2 compiled
-  // code, on entry will be enough.
   map->set_location(rfp->as_VMReg(), (address) link_addr);
   // this is weird "H" ought to be at a higher address however the
   // oopMaps seems to have the "H" regs at the same address and the

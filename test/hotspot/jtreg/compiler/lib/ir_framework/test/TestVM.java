@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.shared.*;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

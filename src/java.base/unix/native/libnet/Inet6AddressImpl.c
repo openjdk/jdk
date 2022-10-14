@@ -81,8 +81,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6, int cha
     jobjectArray result = NULL;
     char myhostname[NI_MAXHOST + 1];
     struct ifaddrs *ifa = NULL;
-    int familyOrder = 0;
-    int count = 0, i, j;
+    int i, j;
     int addrs4 = 0, addrs6 = 0, numV4Loopbacks = 0, numV6Loopbacks = 0;
     jboolean includeLoopback = JNI_FALSE;
     jobject name;

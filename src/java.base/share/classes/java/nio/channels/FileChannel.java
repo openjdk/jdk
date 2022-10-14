@@ -372,6 +372,10 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ReadableByteChannel} interface. </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
@@ -383,6 +387,10 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -394,6 +402,10 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -412,6 +424,10 @@ public abstract class FileChannel
      *
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
@@ -429,6 +445,10 @@ public abstract class FileChannel
      *
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -446,6 +466,10 @@ public abstract class FileChannel
      *
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
@@ -942,7 +966,7 @@ public abstract class FileChannel
      *         The size of the region to be mapped; must be non-negative and
      *         no greater than {@link java.lang.Integer#MAX_VALUE}
      *
-     * @return  The mapped byte buffer
+     * @return The mapped byte buffer
      *
      * @throws NonReadableChannelException
      *         If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
@@ -997,59 +1021,63 @@ public abstract class FileChannel
      *           of mapped memory associated with the returned mapped memory
      *           segment is unspecified and should not be relied upon.
      *
-     * @param mode
-     *        The file mapping mode, see
-     *        {@link FileChannel#map(FileChannel.MapMode, long, long)};
-     *        the mapping mode might affect the behavior of the returned memory
-     *        mapped segment (see {@link MemorySegment#force()}).
+     * @implSpec The default implementation of this method throws
+     *           {@code UnsupportedOperationException}.
      *
-     * @param offset
-     *        The offset (expressed in bytes) within the file at which the
-     *        mapped segment is to start.
+     * @param   mode
+     *          The file mapping mode, see
+     *          {@link FileChannel#map(FileChannel.MapMode, long, long)};
+     *          the mapping mode might affect the behavior of the returned
+     *          memory mapped segment (see {@link MemorySegment#force()}).
      *
-     * @param size
-     *        The size (in bytes) of the mapped memory backing the memory
-     *        segment.
-
-     * @param session
-     *        The segment memory session.
+     * @param   offset
+     *          The offset (expressed in bytes) within the file at which the
+     *          mapped segment is to start.
      *
-     * @return A new mapped memory segment.
+     * @param   size
+     *          The size (in bytes) of the mapped memory backing the memory
+     *          segment.
      *
-     * @throws IllegalArgumentException
-     *         If {@code offset < 0}, {@code size < 0} or
-     *         {@code offset + size} overflows the range of {@code long}.
+     * @param   session
+     *          The segment memory session.
      *
-     * @throws IllegalStateException
-     *         If the {@code session} is not
-     *         {@linkplain MemorySession#isAlive() alive}, or if access occurs
-     *         from a thread other than the thread
-     *         {@linkplain MemorySession#ownerThread() owning} the
-     *         {@code session}.
+     * @return  A new mapped memory segment.
      *
-     * @throws NonReadableChannelException
-     *         If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
-     *         an implementation specific map mode requiring read access,
-     *         but this channel was not opened for reading.
+     * @throws  IllegalArgumentException
+     *          If {@code offset < 0}, {@code size < 0} or
+     *          {@code offset + size} overflows the range of {@code long}.
      *
-     * @throws NonWritableChannelException
-     *         If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
-     *         {@link MapMode#PRIVATE PRIVATE} or an implementation specific
-     *         map mode requiring write access, but this channel was not
-     *         opened for both reading and writing.
+     * @throws  IllegalStateException
+     *          If the {@code session} is not
+     *          {@linkplain MemorySession#isAlive() alive}.
      *
-     * @throws IOException
-     *         If some other I/O error occurs.
+     * @throws  WrongThreadException
+     *          If this method is called from a thread other than the thread
+     *          {@linkplain MemorySession#ownerThread() owning} the
+     *          {@code session}.
      *
-     * @throws UnsupportedOperationException
-     *         If an unsupported map mode is specified.
+     * @throws  NonReadableChannelException
+     *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
+     *          an implementation specific map mode requiring read access,
+     *          but this channel was not opened for reading.
      *
-     * @since 19
+     * @throws  NonWritableChannelException
+     *          If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
+     *          {@link MapMode#PRIVATE PRIVATE} or an implementation specific
+     *          map mode requiring write access, but this channel was not
+     *          opened for both reading and writing.
+     *
+     * @throws  IOException
+     *          If some other I/O error occurs.
+     *
+     * @throws  UnsupportedOperationException
+     *          If an unsupported map mode is specified.
+     *
+     * @since   19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    public MemorySegment map(MapMode mode, long offset, long size,
-                                      MemorySession session)
-            throws IOException
+    public MemorySegment map(MapMode mode, long offset, long size, MemorySession session)
+        throws IOException
     {
         throw new UnsupportedOperationException();
     }

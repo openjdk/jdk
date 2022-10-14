@@ -1104,7 +1104,7 @@ typedef struct {
                     The following capability
                   </xsl:when>
                   <xsl:otherwise>
-                    One of the following capabilities
+                    The following capabilities
                   </xsl:otherwise>
                 </xsl:choose>
                 (as returned by <a href="#GetCapabilities"><code>GetCapabilities</code></a>)
@@ -1172,7 +1172,7 @@ typedef struct {
     </tr>
     <xsl:for-each select="//capabilityfield">
       <xsl:variable name="capa" select="@id"/>
-      <xsl:variable name="events" select="//event[capabilities/required/@id=$capa]"/>
+      <xsl:variable name="events" select="//event[capabilities/required/@id=$capa and not(ancestor::elide)]"/>
       <xsl:if test="count($events)">
         <tr>
           <th scope="row">

@@ -245,6 +245,19 @@ public enum HtmlStyle {
      * the class for the {@code section} element for the enum constants of an enum class.
      */
     constantsSummary,
+
+    /**
+     * The class for a {@code ul} element in various summary pages containing links to the
+     * contents of the page.
+     */
+    contentsList,
+
+    /**
+     * The class for a {@code ul} element in the preview summary page containing information
+     * about the preview features in the current release.
+     */
+    previewFeatureList,
+
     //</editor-fold>
 
     //<editor-fold desc="details">
@@ -402,6 +415,13 @@ public enum HtmlStyle {
 
     /**
      * The class of a {@code div} element whose content should be rendered as a table
+     * with three columns where the middle column requires less space as it only contains
+     * a release name.
+     */
+    threeColumnReleaseSummary,
+
+    /**
+     * The class of a {@code div} element whose content should be rendered as a table
      * with four columns.
      */
     fourColumnSummary,
@@ -429,6 +449,12 @@ public enum HtmlStyle {
      * inactive tab above the table.
      */
     caption,
+
+    /**
+     * The class for a {@code div} element containing a row of checkboxes to select
+     * items to view in summary tables.
+     */
+    checkboxes,
 
     /**
      * The class of an element that is part of a table header.
@@ -656,11 +682,6 @@ public enum HtmlStyle {
     // The following constants are used for items in the static and interactive search indexes.
 
     /**
-     * The class for a {@code button} in the search page to copy the search URL to the clipboard.
-     */
-    copyUrl,
-
-    /**
      * The class for a {@code details} element in the search page to show additional information.
      */
     pageSearchDetails,
@@ -734,6 +755,11 @@ public enum HtmlStyle {
      * The class of the {@code body} element for a "doc-file" page..
      */
     docFilePage,
+
+    /**
+     * The class of the {@code body} element for the "external specifications" page.
+     */
+    externalSpecsPage,
 
     /**
      * The class of the {@code body} element for the "help" page.
@@ -891,6 +917,8 @@ public enum HtmlStyle {
      */
     highlighted,
 
+    //</editor-fold>
+
     //<editor-fold desc="miscellaneous">
     //
     // The following constants are used in various places across a variety of pages.
@@ -914,6 +942,11 @@ public enum HtmlStyle {
      * The class of a {@code ul} element listing classes in the uses page.
      */
     classUses,
+
+    /**
+     * The class for a {@code button} element to copy some page content to the clipboard.
+     */
+    copy,
 
     /**
      * The class of an {@code a} element for a link with an external target.
@@ -993,6 +1026,11 @@ public enum HtmlStyle {
      * the package uses page.
      */
     packageUses,
+
+    /**
+     * The class for the list of references to an external specification.
+     */
+    refList,
 
     /**
      * The class of a {@code section} element for a package in the serialized

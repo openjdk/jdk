@@ -223,10 +223,8 @@ define SetupJarArchiveBody
   # If reproducible build and the boot jdk jar supports --date option
   # then specify the --date using SOURCE_DATE in ISO-8601
   $1_JAR_OPTIONS :=
-  ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
-    ifeq ($$(BOOT_JDK_JAR_SUPPORTS_DATE), true)
-      $1_JAR_OPTIONS += --date $(SOURCE_DATE_ISO_8601)
-    endif
+  ifeq ($$(BOOT_JDK_JAR_SUPPORTS_DATE), true)
+    $1_JAR_OPTIONS += --date $(SOURCE_DATE_ISO_8601)
   endif
   ifneq (,$$($1_CHECK_COMPRESS_JAR))
     ifneq ($(COMPRESS_JARS), true)

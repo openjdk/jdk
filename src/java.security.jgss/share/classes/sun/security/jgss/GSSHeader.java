@@ -52,9 +52,9 @@ import sun.security.util.*;
 
 public class GSSHeader {
 
-    private ObjectIdentifier mechOid = null;
-    private byte[] mechOidBytes = null;
-    private int mechTokenLength = 0;
+    private final ObjectIdentifier mechOid;
+    private final byte[] mechOidBytes;
+    private final int mechTokenLength;
 
     /**
      * The tag defined in the GSS-API mechanism independent token
@@ -80,7 +80,7 @@ public class GSSHeader {
     }
 
     /**
-     * Reads in a GSSHeader from an InputStream. Typically this would be
+     * Reads in a GSSHeader from an InputStream. Typically, this would be
      * used as part of reading the complete token from an InputStream
      * that is obtained from a socket.
      */
@@ -159,7 +159,7 @@ public class GSSHeader {
             DerOutputStream temp = new DerOutputStream();
             temp.putOID(mechOid);
             mechOidBytesSize = temp.toByteArray().length;
-        } catch (IOException e) {
+        } catch (IOException ignored) {
         }
 
         // Subtract bytes needed for 0x60 tag and mechOidBytes
@@ -196,7 +196,7 @@ public class GSSHeader {
      * the length field of the GSSHeader.
      */
     private int getLenFieldSize(int len) {
-        int retVal = 1;
+        int retVal;
         if (len < 128) {
             retVal=1;
         } else if (len < (1 << 8)) {
@@ -261,10 +261,9 @@ public class GSSHeader {
              */
             if (tmp == 0)
                 return -1;
-            if (tmp < 0 || tmp > 4)
+            if (tmp > 4)
                 throw new IOException("DerInputStream.getLength(): lengthTag="
-                                      + tmp + ", "
-                                      + ((tmp < 0) ? "incorrect DER encoding." : "too big."));
+                                      + tmp + ", too big.");
 
             for (value = 0; tmp > 0; tmp --) {
                 value <<= 8;
@@ -287,7 +286,7 @@ public class GSSHeader {
      */
     // Shameless lifted from sun.security.util.DerOutputStream.
     private int putLength(int len, OutputStream out) throws IOException {
-        int retVal = 0;
+        int retVal;
         if (len < 128) {
             out.write((byte)len);
             retVal=1;
@@ -333,7 +332,7 @@ public class GSSHeader {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < len; i++) {
 
-            int b1 = (bytes[i]>>4) & 0x0f;
+            int b1 = (bytes[i] >> 4) & 0x0f;
             int b2 = bytes[i] & 0x0f;
 
             sb.append(Integer.toHexString(b1));

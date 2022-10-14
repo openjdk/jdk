@@ -25,6 +25,7 @@
  * @test
  * @bug 8234808
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @run main/othervm JdbOptions
  */

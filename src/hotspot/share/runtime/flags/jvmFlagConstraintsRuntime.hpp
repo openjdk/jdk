@@ -34,7 +34,7 @@
  */
 
 #define RUNTIME_CONSTRAINTS(f)                        \
-  f(intx,   ObjectAlignmentInBytesConstraintFunc)     \
+  f(int,    ObjectAlignmentInBytesConstraintFunc)     \
   f(intx,   ContendedPaddingWidthConstraintFunc)      \
   f(intx,   PerfDataSamplingIntervalFunc)             \
   f(intx,   ExtentLocalCacheSizeConstraintFunc)        \

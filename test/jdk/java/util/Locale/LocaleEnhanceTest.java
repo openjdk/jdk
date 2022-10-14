@@ -44,7 +44,7 @@ import java.util.Set;
 /**
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
- *    7044019 8008577 8176853 8255086 8263202
+ *    7044019 8008577 8176853 8255086 8263202 8287868
  * @summary test API changes to Locale
  * @library /java/text/testlib
  * @modules jdk.localedata
@@ -619,7 +619,7 @@ public class LocaleEnhanceTest extends IntlTest {
 
         Locale.setDefault(Locale.GERMANY);
         assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript());
-        assertEquals("hans DE", "Vereinfachte Chinesische Schrift", hansLocale.getDisplayScript());
+        assertEquals("hans DE", "Vereinfacht", hansLocale.getDisplayScript());
 
         Locale.setDefault(oldLocale);
     }
@@ -632,7 +632,7 @@ public class LocaleEnhanceTest extends IntlTest {
         assertEquals("hans US", "Simplified", hansLocale.getDisplayScript(Locale.US));
 
         assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript(Locale.GERMANY));
-        assertEquals("hans DE", "Vereinfachte Chinesische Schrift", hansLocale.getDisplayScript(Locale.GERMANY));
+        assertEquals("hans DE", "Vereinfacht", hansLocale.getDisplayScript(Locale.GERMANY));
     }
 
     public void testGetDisplayName() {
@@ -664,15 +664,15 @@ public class LocaleEnhanceTest extends IntlTest {
 
         final String[] displayNameSimplifiedChinese = {
                 "",
-                "\u82f1\u6587",
-                "\u82f1\u6587 (\u7f8e\u56fd)",
+                "\u82f1\u8bed",
+                "\u82f1\u8bed (\u7f8e\u56fd)",
                 "\u7f8e\u56fd",
-                "\u632a\u5a01\u6587 (\u632a\u5a01,Nynorsk)",
+                "\u632a\u5a01\u8bed (\u632a\u5a01,Nynorsk)",
                 "Nynorsk",
-                "\u4e2d\u6587 (\u7b80\u4f53\u4e2d\u6587)",
-                "\u4e2d\u6587 (\u7e41\u4f53\u4e2d\u6587)",
-                "\u4e2d\u6587 (\u7b80\u4f53\u4e2d\u6587,\u4e2d\u56fd)",
-                "\u7b80\u4f53\u4e2d\u6587",
+                "\u4e2d\u6587 (\u7b80\u4f53)",
+                "\u4e2d\u6587 (\u7e41\u4f53)",
+                "\u4e2d\u6587 (\u7b80\u4f53,\u4e2d\u56fd)",
+                "\u7b80\u4f53",
         };
 
         for (int i = 0; i < testLocales.length; i++) {

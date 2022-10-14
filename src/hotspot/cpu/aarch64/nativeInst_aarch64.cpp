@@ -160,7 +160,7 @@ address NativeCall::destination() const {
   address destination = instruction_address() + displacement();
 
   // Do we use a trampoline stub for this call?
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // Else we get assertion if nmethod is zombie.
+  CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
   if (nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
@@ -456,7 +456,7 @@ bool NativeInstruction::is_movk() {
   return Instruction_aarch64::extract(int_at(0), 30, 23) == 0b11100101;
 }
 
-bool NativeInstruction::is_sigill_zombie_not_entrant() {
+bool NativeInstruction::is_sigill_not_entrant() {
   return uint_at(0) == 0xd4bbd5a1; // dcps1 #0xdead
 }
 
@@ -471,13 +471,13 @@ bool NativeInstruction::is_stop() {
 //-------------------------------------------------------------------
 
 // MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant_or_zombie)
+// nmethod::make_not_entrant)
 
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
   assert(nativeInstruction_at(verified_entry)->is_jump_or_nop()
-         || nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
+         || nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
          "Aarch64 cannot replace non-jump with jump");
 
   // Patch this nmethod atomically.
@@ -488,8 +488,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
     unsigned int insn = (0b000101 << 26) | ((disp >> 2) & 0x3ffffff);
     *(unsigned int*)verified_entry = insn;
   } else {
-    // We use an illegal instruction for marking a method as
-    // not_entrant or zombie.
+    // We use an illegal instruction for marking a method as not_entrant.
     NativeIllegalInstruction::insert(verified_entry);
   }
 
@@ -549,8 +548,24 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
+#ifdef ASSERT
+static bool is_movk_to_zr(uint32_t insn) {
+  return ((insn & 0xffe0001f) == 0xf280001f);
+}
+#endif
+
 void NativePostCallNop::patch(jint diff) {
-  // unsupported for now
+#ifdef ASSERT
+  assert(diff != 0, "must be");
+  uint32_t insn1 = uint_at(4);
+  uint32_t insn2 = uint_at(8);
+  assert (is_movk_to_zr(insn1) && is_movk_to_zr(insn2), "must be");
+#endif
+
+  uint32_t lo = diff & 0xffff;
+  uint32_t hi = (uint32_t)diff >> 16;
+  Instruction_aarch64::patch(addr_at(4), 20, 5, lo);
+  Instruction_aarch64::patch(addr_at(8), 20, 5, hi);
 }
 
 void NativeDeoptInstruction::verify() {

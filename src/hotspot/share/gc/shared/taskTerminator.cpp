@@ -29,8 +29,8 @@
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;

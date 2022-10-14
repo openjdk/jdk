@@ -56,10 +56,10 @@ class SharedSession extends MemorySessionImpl {
             value = (int) STATE.getVolatile(this);
             if (value < OPEN) {
                 //segment is not open!
-                throw new IllegalStateException("Already closed");
+                throw alreadyClosed();
             } else if (value == MAX_FORKS) {
                 //overflow
-                throw new IllegalStateException("Session acquire limit exceeded");
+                throw tooManyAcquires();
             }
         } while (!STATE.compareAndSet(this, value, value + 1));
     }
@@ -72,7 +72,7 @@ class SharedSession extends MemorySessionImpl {
             value = (int) STATE.getVolatile(this);
             if (value <= OPEN) {
                 //cannot get here - we can't close segment twice
-                throw new IllegalStateException("Already closed");
+                throw alreadyClosed();
             }
         } while (!STATE.compareAndSet(this, value, value - 1));
     }
@@ -80,20 +80,15 @@ class SharedSession extends MemorySessionImpl {
     void justClose() {
         int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSING);
         if (prevState < 0) {
-            throw new IllegalStateException("Already closed");
+            throw alreadyClosed();
         } else if (prevState != OPEN) {
-            throw new IllegalStateException("Session is acquired by " + prevState + " clients");
+            throw alreadyAcquired(prevState);
         }
         boolean success = SCOPED_MEMORY_ACCESS.closeScope(this);
         STATE.setVolatile(this, success ? CLOSED : OPEN);
         if (!success) {
-            throw new IllegalStateException("Session is acquired by 1 client");
+            throw alreadyAcquired(1);
         }
-    }
-
-    @Override
-    public boolean isAlive() {
-        return (int) STATE.getVolatile(this) != CLOSED;
     }
 
     /**
@@ -117,7 +112,7 @@ class SharedSession extends MemorySessionImpl {
                 ResourceCleanup prev = (ResourceCleanup) FST.getVolatile(this);
                 if (prev == ResourceCleanup.CLOSED_LIST) {
                     // too late
-                    throw new IllegalStateException("Already closed");
+                    throw alreadyClosed();
                 }
                 cleanup.next = prev;
                 if (FST.compareAndSet(this, prev, cleanup)) {
@@ -144,7 +139,7 @@ class SharedSession extends MemorySessionImpl {
                 }
                 cleanup(prev);
             } else {
-                throw new IllegalStateException("Attempt to cleanup an already closed resource list");
+                throw alreadyClosed();
             }
         }
     }

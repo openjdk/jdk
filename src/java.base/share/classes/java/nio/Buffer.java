@@ -37,7 +37,6 @@ import jdk.internal.vm.annotation.ForceInline;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.util.Objects;
 import java.util.Spliterator;
 
@@ -771,11 +770,7 @@ public abstract sealed class Buffer
     final void checkSession() {
         MemorySessionImpl session = session();
         if (session != null) {
-            try {
-                session.checkValidState();
-            } catch (ScopedMemoryAccess.ScopedAccessError e) {
-                throw new IllegalStateException("This segment is already closed");
-            }
+            session.checkValidState();
         }
     }
 
@@ -804,19 +799,19 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public Object getBufferBase(ByteBuffer bb) {
-                    return bb.base();
+                public Object getBufferBase(Buffer buffer) {
+                    return buffer.base();
                 }
 
                 @Override
-                public long getBufferAddress(ByteBuffer bb) {
-                    return bb.address;
+                public long getBufferAddress(Buffer buffer) {
+                    return buffer.address;
                 }
 
                 @Override
-                public UnmapperProxy unmapper(ByteBuffer bb) {
-                    if (bb instanceof MappedByteBuffer) {
-                        return ((MappedByteBuffer)bb).unmapper();
+                public UnmapperProxy unmapper(Buffer buffer) {
+                    if (buffer instanceof MappedByteBuffer mbb) {
+                        return mbb.unmapper();
                     } else {
                         return null;
                     }

@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
@@ -85,6 +86,7 @@ public class Navigation {
         CONSTANT_VALUES,
         DEPRECATED,
         DOC_FILE,
+        EXTERNAL_SPECS,
         HELP,
         INDEX,
         MODULE,
@@ -100,11 +102,11 @@ public class Navigation {
     }
 
     /**
-     * An interface to provide links for the sub-navigation area.
+     * An interface to provide links for the subnavigation area.
      */
     public interface SubNavLinks {
         /**
-         * {@return a list of links to display in the sub-navigation area}
+         * {@return a list of links to display in the subnavigation area}
          * Links should be wrapped in {@code HtmlTree.LI} elements as they are
          * displayed within an unordered list.
          */
@@ -316,6 +318,7 @@ public class Navigation {
             case ALL_CLASSES:
             case ALL_PACKAGES:
             case CONSTANT_VALUES:
+            case EXTERNAL_SPECS:
             case SERIALIZED_FORM:
             case SEARCH:
             case SYSTEM_PROPERTIES:
@@ -350,9 +353,9 @@ public class Navigation {
     }
 
     /**
-     * Adds the summary links to the sub-navigation.
+     * Adds the summary links to the subnavigation.
      *
-     * @param target the content to which the sub-navigation will be added
+     * @param target the content to which the subnavigation will be added
      * @param nested whether to create a flat or nested list
      */
     private void addSummaryLinks(Content target, boolean nested) {
@@ -381,7 +384,7 @@ public class Navigation {
     }
 
     /**
-     * Adds the detail links to sub-navigation.
+     * Adds the detail links to subnavigation.
      *
      * @param target the content to which the links will be added
      * @param nested whether to create a flat or nested list
@@ -614,7 +617,8 @@ public class Navigation {
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
-        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).addUnchecked(Text.EMPTY);
+        // The mobile menu button uses three empty spans to produce its animated icon
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
         navDiv.setStyle(HtmlStyle.topNav)
                 .setId(HtmlIds.NAVBAR_TOP)
                 .add(new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)

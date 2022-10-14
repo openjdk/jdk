@@ -1066,7 +1066,8 @@
        */
       if ( face->sbit_table_type == TT_SBIT_TABLE_TYPE_CBLC ||
            face->sbit_table_type == TT_SBIT_TABLE_TYPE_SBIX ||
-           face->colr                                       )
+           face->colr                                       ||
+           face->svg                                        )
         flags |= FT_FACE_FLAG_COLOR;      /* color glyphs */
 
       if ( has_outline == TRUE )

@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -540,7 +541,8 @@ public final class PrettyWriter extends EventPrintWriter {
     private void printThread(RecordedThread thread, String postFix) {
         long javaThreadId = thread.getJavaThreadId();
         if (javaThreadId > 0) {
-            println("\"" + thread.getJavaName() + "\" (javaThreadId = " + thread.getJavaThreadId() + ", virtual = " + thread.isVirtual() + ")" + postFix);
+            String virtualText = thread.isVirtual() ? ", virtual" : "";
+            println("\"" + thread.getJavaName() + "\" (javaThreadId = " + javaThreadId + virtualText + ")" + postFix);
         } else {
             println("\"" + thread.getOSName() + "\" (osThreadId = " + thread.getOSThreadId() + ")" + postFix);
         }
@@ -550,6 +552,10 @@ public final class PrettyWriter extends EventPrintWriter {
         if (value instanceof Duration d) {
             if (d.getSeconds() == Long.MIN_VALUE && d.getNano() == 0)  {
                 println("N/A");
+                return true;
+            }
+            if (d.equals(ChronoUnit.FOREVER.getDuration())) {
+                println("Forever");
                 return true;
             }
             println(Utils.formatDuration(d));

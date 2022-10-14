@@ -160,6 +160,11 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
 void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
   BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_gc_barrier(this, p2x);
+#ifndef PRODUCT
+  if (PrintOptoStatistics) {
+    Atomic::inc(&PhaseMacroExpand::_GC_barriers_removed_counter);
+  }
+#endif
 }
 
 // Search for a memory operation for the specified memory slice.
@@ -1112,23 +1117,6 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   return true;
 }
 
-//---------------------------set_eden_pointers-------------------------
-void PhaseMacroExpand::set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr) {
-  if (UseTLAB) {                // Private allocation: load from TLS
-    Node* thread = transform_later(new ThreadLocalNode());
-    int tlab_top_offset = in_bytes(JavaThread::tlab_top_offset());
-    int tlab_end_offset = in_bytes(JavaThread::tlab_end_offset());
-    eden_top_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_top_offset);
-    eden_end_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_end_offset);
-  } else {                      // Shared allocation: load from globals
-    CollectedHeap* ch = Universe::heap();
-    address top_adr = (address)ch->top_addr();
-    address end_adr = (address)ch->end_addr();
-    eden_top_adr = makecon(TypeRawPtr::make(top_adr));
-    eden_end_adr = basic_plus_adr(eden_top_adr, end_adr - top_adr);
-  }
-}
-
 
 Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
@@ -1239,7 +1227,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
   }
 
-  if (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!UseTLAB) {
     // Force slow-path allocation
     expand_fast_path = false;
     initial_slow_test = NULL;
@@ -1638,7 +1626,7 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
     int size = TypeFunc::Parms + 2;
     CallLeafNode *call = new CallLeafNode(OptoRuntime::dtrace_object_alloc_Type(),
                                           CAST_FROM_FN_PTR(address,
-                                          static_cast<int (*)(Thread*, oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
+                                          static_cast<int (*)(JavaThread*, oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
                                           "dtrace_object_alloc",
                                           TypeRawPtr::BOTTOM);
 
@@ -2209,29 +2197,11 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
 
-  Node* thread = transform_later(new ThreadLocalNode());
-  if (Continuations::enabled()) {
-    // held_monitor_count increased in slowpath (complete_monitor_locking_C_inc_held_monitor_count), need compensate a decreament here
-    // this minimizes control flow changes here and add redundant count updates only in slowpath
-    Node* dec_count = make_load(slow_ctrl, memproj, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* new_dec_count = transform_later(new SubINode(dec_count, intcon(1)));
-    Node *compensate_dec = make_store(slow_ctrl, memproj, thread, in_bytes(JavaThread::held_monitor_count_offset()), new_dec_count, T_INT);
-    mem_phi->init_req(1, compensate_dec);
-  } else {
-    mem_phi->init_req(1, memproj);
-  }
+  mem_phi->init_req(1, memproj);
+
   transform_later(mem_phi);
 
-  if (Continuations::enabled()) {
-    // held_monitor_count increases in all path's post-dominate
-    Node* inc_count = make_load(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* new_inc_count = transform_later(new AddINode(inc_count, intcon(1)));
-    Node *store = make_store(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), new_inc_count, T_INT);
-
-    _igvn.replace_node(_callprojs.fallthrough_memproj, store);
-  } else {
-    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
-  }
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 //------------------------------expand_unlock_node----------------------
@@ -2286,15 +2256,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   mem_phi->init_req(2, mem);
   transform_later(mem_phi);
 
-  if (Continuations::enabled()) {
-    Node* count = make_load(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* newcount = transform_later(new SubINode(count, intcon(1)));
-    Node *store = make_store(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), newcount, T_INT);
-
-    _igvn.replace_node(_callprojs.fallthrough_memproj, store);
-  } else {
-    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
-  }
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
@@ -2339,6 +2301,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
+  NOT_PRODUCT(int membar_before = count_MemBar(C);)
 
   // Before elimination may re-mark (change to Nested or NonEscObj)
   // all associated (same box and obj) lock and unlock nodes.
@@ -2364,6 +2327,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
+#ifndef PRODUCT
+        if (success && PrintOptoStatistics) {
+          Atomic::inc(&PhaseMacroExpand::_monitor_objects_removed_counter);
+        }
+#endif
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
@@ -2382,6 +2350,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
         success = eliminate_allocate_node(n->as_Allocate());
+#ifndef PRODUCT
+        if (success && PrintOptoStatistics) {
+          Atomic::inc(&PhaseMacroExpand::_objs_scalar_replaced_counter);
+        }
+#endif
         break;
       case Node::Class_CallStaticJava:
         success = eliminate_boxing_node(n->as_CallStaticJava());
@@ -2411,6 +2384,12 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       progress = progress || success;
     }
   }
+#ifndef PRODUCT
+  if (PrintOptoStatistics) {
+    int membar_after = count_MemBar(C);
+    Atomic::add(&PhaseMacroExpand::_memory_barriers_removed_counter, membar_before - membar_after);
+  }
+#endif
 }
 
 //------------------------------expand_macro_nodes----------------------
@@ -2599,3 +2578,38 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   _igvn.set_delay_transform(false);
   return false;
 }
+
+#ifndef PRODUCT
+int PhaseMacroExpand::_objs_scalar_replaced_counter = 0;
+int PhaseMacroExpand::_monitor_objects_removed_counter = 0;
+int PhaseMacroExpand::_GC_barriers_removed_counter = 0;
+int PhaseMacroExpand::_memory_barriers_removed_counter = 0;
+
+void PhaseMacroExpand::print_statistics() {
+  tty->print("Objects scalar replaced = %d, ", Atomic::load(&_objs_scalar_replaced_counter));
+  tty->print("Monitor objects removed = %d, ", Atomic::load(&_monitor_objects_removed_counter));
+  tty->print("GC barriers removed = %d, ", Atomic::load(&_GC_barriers_removed_counter));
+  tty->print_cr("Memory barriers removed = %d", Atomic::load(&_memory_barriers_removed_counter));
+}
+
+int PhaseMacroExpand::count_MemBar(Compile *C) {
+  if (!PrintOptoStatistics) {
+    return 0;
+  }
+  Unique_Node_List ideal_nodes;
+  int total = 0;
+  ideal_nodes.map(C->live_nodes(), NULL);
+  ideal_nodes.push(C->root());
+  for (uint next = 0; next < ideal_nodes.size(); ++next) {
+    Node* n = ideal_nodes.at(next);
+    if (n->is_MemBar()) {
+      total++;
+    }
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* m = n->fast_out(i);
+      ideal_nodes.push(m);
+    }
+  }
+  return total;
+}
+#endif

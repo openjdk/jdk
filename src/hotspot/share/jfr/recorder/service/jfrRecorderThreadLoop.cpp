@@ -32,8 +32,8 @@
 #include "logging/log.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
 
 //
 // Entry point for "JFR Recorder Thread" message loop.

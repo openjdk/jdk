@@ -25,8 +25,6 @@
 #ifndef CPU_ARM_FRAME_ARM_HPP
 #define CPU_ARM_FRAME_ARM_HPP
 
-#include "runtime/synchronizer.hpp"
-
  public:
   enum {
     pc_return_offset                                 =  0,
@@ -105,7 +103,7 @@
 
   frame(intptr_t* sp, intptr_t* fp);
 
-  void init(intptr_t* sp, intptr_t* fp, address pc);
+  void init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
   // accessors for the instance variables
   // Note: not necessarily the real 'frame pointer' (see real_fp)

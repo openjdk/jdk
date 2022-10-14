@@ -165,7 +165,7 @@ class Feedback {
     }
 
     public void markModesReadOnly() {
-        modeMap.values().stream()
+        modeMap.values()
                 .forEach(m -> m.readOnly = true);
     }
 

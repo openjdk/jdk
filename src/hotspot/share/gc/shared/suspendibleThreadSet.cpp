@@ -25,9 +25,9 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/semaphore.hpp"
-#include "runtime/thread.inline.hpp"
 
 uint   SuspendibleThreadSet::_nthreads            = 0;
 uint   SuspendibleThreadSet::_nthreads_stopped    = 0;

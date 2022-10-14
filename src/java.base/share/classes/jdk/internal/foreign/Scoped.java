@@ -25,6 +25,14 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.foreign.MemorySession;
+
 public interface Scoped {
-    MemorySessionImpl sessionImpl();
+    @ForceInline
+    default MemorySessionImpl sessionImpl() {
+        return MemorySessionImpl.toSessionImpl(session());
+    }
+    MemorySession session();
 }

@@ -354,7 +354,7 @@ class BitMap {
 #endif
 };
 
-// A concrete implementation of the the "abstract" BitMap class.
+// A concrete implementation of the "abstract" BitMap class.
 //
 // The BitMapView is used when the backing storage is managed externally.
 class BitMapView : public BitMap {

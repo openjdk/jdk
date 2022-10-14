@@ -25,17 +25,14 @@
  */
 package java.lang.foreign;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-
+import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
-import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
-import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
-import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code from foreign functions.
@@ -63,7 +60,7 @@ import jdk.internal.reflect.Reflection;
  * is currently executing. This linker also provides access, via its {@linkplain #defaultLookup() default lookup},
  * to the native libraries loaded with the Java runtime.
  *
- * <h2><a id = "downcall-method-handles">Downcall method handles</a></h2>
+ * <h2 id="downcall-method-handles">Downcall method handles</h2>
  *
  * {@linkplain #downcallHandle(FunctionDescriptor) Linking a foreign function} is a process which requires a function descriptor,
  * a set of memory layouts which, together, specify the signature of the foreign function to be linked, and returns,
@@ -94,7 +91,7 @@ import jdk.internal.reflect.Reflection;
  * memory region associated with the struct returned by the downcall method handle.</li>
  * </ul>
  *
- * <h2><a id = "upcall-stubs">Upcall stubs</a></h2>
+ * <h2 id="upcall-stubs">Upcall stubs</h2>
  *
  * {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, MemorySession) Creating an upcall stub} requires a method
  * handle and a function descriptor; in this case, the set of memory layouts in the function descriptor
@@ -117,7 +114,7 @@ import jdk.internal.reflect.Reflection;
  * downcall method handles (as {@link MemorySegment} implements the {@link Addressable} interface) and,
  * when no longer required, they can be {@linkplain MemorySession#close() released}, via their associated {@linkplain MemorySession session}.
  *
- * <h2>Safety considerations</h2>
+ * <h2 id="safety">Safety considerations</h2>
  *
  * Creating a downcall method handle is intrinsically unsafe. A symbol in a foreign library does not, in general,
  * contain enough signature information (e.g. arity and types of foreign function parameters). As a consequence,
@@ -130,7 +127,7 @@ import jdk.internal.reflect.Reflection;
  *     <li>The memory session of {@code R} is {@linkplain MemorySession#isAlive() alive}. Otherwise, the invocation throws
  *     {@link IllegalStateException};</li>
  *     <li>The invocation occurs in same thread as the one {@linkplain MemorySession#ownerThread() owning} the memory session of {@code R},
- *     if said session is confined. Otherwise, the invocation throws {@link IllegalStateException}; and</li>
+ *     if said session is confined. Otherwise, the invocation throws {@link WrongThreadException}; and</li>
  *     <li>The memory session of {@code R} is {@linkplain MemorySession#whileAlive(Runnable) kept alive} (and cannot be closed) during the invocation.</li>
  *</ul>
  * <p>
@@ -148,7 +145,7 @@ import jdk.internal.reflect.Reflection;
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public sealed interface Linker permits Windowsx64Linker, SysVx64Linker, LinuxAArch64Linker, MacOsAArch64Linker {
+public sealed interface Linker permits AbstractLinker {
 
     /**
      * Returns a linker for the ABI associated with the underlying native platform. The underlying native platform
@@ -215,7 +212,7 @@ public sealed interface Linker permits Windowsx64Linker, SysVx64Linker, LinuxAAr
      *
      * @param symbol the address of the target function.
      * @param function the function descriptor of the target function.
-     * @return a downcall method handle. The method handle type is <a href="CLinker.html#downcall-method-handles"><em>inferred</em></a>
+     * @return a downcall method handle. The method handle type is <a href="Linker.html#downcall-method-handles"><em>inferred</em></a>
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * or if the symbol is {@link MemoryAddress#NULL}
      */
@@ -238,7 +235,7 @@ public sealed interface Linker permits Windowsx64Linker, SysVx64Linker, LinuxAAr
      * associated with the {@link MemoryAddress#NULL} address, or a {@link NullPointerException} if that parameter is {@code null}.
      *
      * @param function the function descriptor of the target function.
-     * @return a downcall method handle. The method handle type is <a href="CLinker.html#downcall-method-handles"><em>inferred</em></a>
+     * @return a downcall method handle. The method handle type is <a href="Linker.html#downcall-method-handles"><em>inferred</em></a>
      * from the provided function descriptor.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      */
@@ -264,9 +261,10 @@ public sealed interface Linker permits Windowsx64Linker, SysVx64Linker, LinuxAAr
      * @return a zero-length segment whose base address is the address of the upcall stub.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception, or if the target method handle
-     * has a type that does not match the upcall stub <a href="CLinker.html#upcall-stubs"><em>inferred type</em></a>.
-     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}, or if access occurs from
-     * a thread other than the thread {@linkplain MemorySession#ownerThread() owning} {@code session}.
+     * has a type that does not match the upcall stub <a href="Linker.html#upcall-stubs"><em>inferred type</em></a>.
+     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread other than the thread
+     * {@linkplain MemorySession#ownerThread() owning} {@code session}.
      */
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, MemorySession session);
 

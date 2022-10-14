@@ -47,10 +47,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class Krb5NameElement
     implements GSSNameSpi {
 
-    private PrincipalName krb5PrincipalName;
+    private final PrincipalName krb5PrincipalName;
 
-    private String gssNameStr = null;
-    private Oid gssNameType = null;
+    private final String gssNameStr;
+    private final Oid gssNameType;
 
     private Krb5NameElement(PrincipalName principalName,
                             String gssNameStr,
@@ -185,7 +185,7 @@ public class Krb5NameElement
     private static String getHostBasedInstance(String serviceName,
                                                String hostName)
         throws GSSException {
-            StringBuffer temp = new StringBuffer(serviceName);
+            StringBuilder temp = new StringBuilder(serviceName);
 
             try {
                 // A lack of "@" defaults to the service being on the local
@@ -199,7 +199,7 @@ public class Krb5NameElement
             }
             hostName = hostName.toLowerCase(Locale.ENGLISH);
 
-            temp = temp.append('/').append(hostName);
+            temp.append('/').append(hostName);
             return temp.toString();
     }
 
@@ -222,9 +222,8 @@ public class Krb5NameElement
         if (other == this)
             return true;
 
-        if (other instanceof Krb5NameElement) {
-                Krb5NameElement that = (Krb5NameElement) other;
-                return (this.krb5PrincipalName.getName().equals(
+        if (other instanceof Krb5NameElement that) {
+            return (this.krb5PrincipalName.getName().equals(
                             that.krb5PrincipalName.getName()));
         }
         return false;

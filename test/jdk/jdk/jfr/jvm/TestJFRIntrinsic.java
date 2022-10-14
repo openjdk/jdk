@@ -32,9 +32,9 @@
  *          java.base/jdk.internal.misc
  *          java.management
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -ea -Xmixed -Xbatch -XX:TieredStopAtLevel=4 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      jdk.jfr.jvm.TestJFRIntrinsic
@@ -50,8 +50,8 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import jdk.jfr.internal.JVM;
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.NMethod;
 
 public class TestJFRIntrinsic {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();

@@ -27,7 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.invoke.NativeEntryPoint;
+import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -973,7 +973,7 @@ abstract class MethodHandleImpl {
         int arity = type.parameterCount();
         if (arity > 1) {
             MethodHandle mh = throwException(type.dropParameterTypes(1, arity));
-            mh = MethodHandles.dropArguments(mh, 1, Arrays.copyOfRange(type.parameterArray(), 1, arity));
+            mh = MethodHandles.dropArgumentsTrusted(mh, 1, Arrays.copyOfRange(type.ptypes(), 1, arity));
             return mh;
         }
         return makePairwiseConvert(getFunction(NF_throwException).resolvedHandle(), type, false, true);
@@ -1580,18 +1580,13 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public void ensureCustomized(MethodHandle mh) {
-                mh.customize();
-            }
-
-            @Override
             public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
                 return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
             }
 
             @Override
-            public MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback) {
-                return NativeMethodHandle.make(nep, fallback);
+            public MethodHandle nativeMethodHandle(NativeEntryPoint nep) {
+                return NativeMethodHandle.make(nep);
             }
 
             @Override
@@ -1946,7 +1941,7 @@ abstract class MethodHandleImpl {
      *
      * @return a handle on the constructed {@code try-finally} block.
      */
-    static MethodHandle makeTryFinally(MethodHandle target, MethodHandle cleanup, Class<?> rtype, List<Class<?>> argTypes) {
+    static MethodHandle makeTryFinally(MethodHandle target, MethodHandle cleanup, Class<?> rtype, Class<?>[] argTypes) {
         MethodType type = MethodType.methodType(rtype, argTypes);
         LambdaForm form = makeTryFinallyForm(type.basicType());
 

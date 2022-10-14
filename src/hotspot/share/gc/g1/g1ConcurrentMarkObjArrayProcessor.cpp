@@ -59,7 +59,7 @@ size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
 
   HeapWord* const start_address = r->is_humongous() ?
                                   r->humongous_start_region()->bottom() :
-                                  g1h->block_start(slice);
+                                  r->block_start(slice);
 
   assert(cast_to_oop(start_address)->is_objArray(), "Address " PTR_FORMAT " does not refer to an object array ", p2i(start_address));
   assert(start_address < slice,

@@ -85,7 +85,7 @@ public final class MetadataRepository {
                 // annotations, such as Period and Threshold.
                 if (pEventType.hasPeriod()) {
                     pEventType.setEventHook(true);
-                    if (!(Type.EVENT_NAME_PREFIX + "ExecutionSample").equals(type.getName())) {
+                    if (!pEventType.isMethodSampling()) {
                         requestHooks.add(new RequestHook(pEventType));
                     }
                 }
@@ -158,7 +158,7 @@ public final class MetadataRepository {
         configuration.getPlatformEventType().setRegistered(true);
         typeLibrary.addType(configuration.getPlatformEventType());
         if (jvm.isRecording()) {
-            settingsManager.setEventControl(configuration.getEventControl(), true);
+            settingsManager.setEventControl(configuration.getEventControl(), true, JVM.counterTime());
             settingsManager.updateRetransform(Collections.singletonList((eventClass)));
        }
        setStaleMetadata();
@@ -188,15 +188,15 @@ public final class MetadataRepository {
         return Utils.getConfiguration(eventClass);
     }
 
-    private EventConfiguration newEventConfiguration(EventType eventType, EventControl ec, SettingControl[] settings) {
+    private EventConfiguration newEventConfiguration(EventType eventType, EventControl ec) {
         try {
             if (cachedEventConfigurationConstructor == null) {
-                var argClasses = new Class<?>[] { EventType.class, EventControl.class, SettingControl[].class };
+                var argClasses = new Class<?>[] { EventType.class, EventControl.class};
                 Constructor<EventConfiguration> c = EventConfiguration.class.getDeclaredConstructor(argClasses);
                 SecuritySupport.setAccessible(c);
                 cachedEventConfigurationConstructor = c;
             }
-            return cachedEventConfigurationConstructor.newInstance(eventType, ec, settings);
+            return cachedEventConfigurationConstructor.newInstance(eventType, ec);
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             throw new InternalError(e);
         }
@@ -209,16 +209,11 @@ public final class MetadataRepository {
         }
         EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
         EventControl ec = new EventControl(pEventType, eventClass);
-        List<SettingInfo> settingInfos = ec.getSettingInfos();
-        SettingControl[] settings = new SettingControl[settingInfos.size()];
-        int index = 0;
-        for (var settingInfo : settingInfos) {
-            settings[index++] = settingInfo.settingControl();
-        }
-        EventConfiguration configuration = newEventConfiguration(eventType, ec, settings);
+        EventConfiguration configuration = newEventConfiguration(eventType, ec);
         PlatformEventType pe = configuration.getPlatformEventType();
         pe.setRegistered(true);
-        if (jvm.isInstrumented(eventClass)) {
+        // If class is instrumented or should not be instrumented, mark as instrumented.
+        if (jvm.isInstrumented(eventClass) || !Utils.shouldInstrument(pe.isJDK(), pe.getName())) {
             pe.setInstrumented();
         }
         Utils.setConfiguration(eventClass, configuration);

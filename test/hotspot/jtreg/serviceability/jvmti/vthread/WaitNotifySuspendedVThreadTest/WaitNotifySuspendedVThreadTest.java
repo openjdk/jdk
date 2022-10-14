@@ -39,6 +39,7 @@
  *  -- update properties to run jvmti stress tests non-concurrently?
  *
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} WaitNotifySuspendedVThreadTest.java
  * @run main/othervm/native

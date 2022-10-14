@@ -37,7 +37,6 @@ import java.util.zip.ZipEntry;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import sun.net.www.ParseUtil;
@@ -53,8 +52,6 @@ public class URLJarFile extends JarFile {
 
     /* Controller of the Jar File's closing */
     private URLJarFileCloseController closeController = null;
-
-    private static int BUF_SIZE = 2048;
 
     private Manifest superMan;
     private Attributes superAttr;
@@ -165,7 +162,7 @@ public class URLJarFile extends JarFile {
     /* If close controller is set the notify the controller about the pending close */
     public void close() throws IOException {
         if (closeController != null) {
-                closeController.close(this);
+            closeController.close(this);
         }
         super.close();
     }
@@ -189,8 +186,8 @@ public class URLJarFile extends JarFile {
      * Given a URL, retrieves a JAR file, caches it to disk, and creates a
      * cached JAR file object.
      */
-     @SuppressWarnings("removal")
-     private static JarFile retrieve(final URL url, final URLJarFileCloseController closeController) throws IOException {
+    @SuppressWarnings("removal")
+    private static JarFile retrieve(final URL url, final URLJarFileCloseController closeController) throws IOException {
         /*
          * See if interface is set, then call retrieve function of the class
          * that implements URLJarFileCallBack interface (sun.plugin - to
@@ -253,7 +250,7 @@ public class URLJarFile extends JarFile {
 
         URLJarFileEntry(JarEntry je) {
             super(je);
-            this.je=je;
+            this.je = je;
         }
 
         public Attributes getAttributes() throws IOException {

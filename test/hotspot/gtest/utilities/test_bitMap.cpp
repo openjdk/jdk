@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "unittest.hpp"
@@ -95,6 +96,21 @@ class BitMapTest {
     EXPECT_TRUE(map.is_same(map2)) << "With init_size " << init_size;
   }
 
+#ifdef ASSERT
+
+  static void testPrintOn(BitMap::idx_t size) {
+    ResourceMark rm;
+
+    ResourceBitMap map(size);
+    if (size > 0) {
+      map.set_bit(size / 2);
+    }
+
+    LogStreamHandle(Info, test) stream;
+    map.print_on(&stream);
+  }
+
+#endif
 };
 
 TEST_VM(BitMap, resize_grow) {
@@ -148,3 +164,13 @@ TEST_VM(BitMap, reinitialize) {
   BitMapTest::testReinitialize(BitMapTest::BITMAP_SIZE >> 3);
   BitMapTest::testReinitialize(BitMapTest::BITMAP_SIZE);
 }
+
+#ifdef ASSERT
+
+TEST_VM(BitMap, print_on) {
+  BitMapTest::testPrintOn(0);
+  BitMapTest::testPrintOn(BitMapTest::BITMAP_SIZE >> 3);
+  BitMapTest::testPrintOn(BitMapTest::BITMAP_SIZE);
+}
+
+#endif

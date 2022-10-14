@@ -217,6 +217,16 @@ abstract class ExchangeImpl<T> {
     abstract void cancel(IOException cause);
 
     /**
+     * Invoked whenever there is a (HTTP) protocol error when dealing with the response
+     * from the server. The implementations of {@code ExchangeImpl} are then expected to
+     * take necessary action that is expected by the corresponding specifications whenever
+     * a protocol error happens. For example, in HTTP/1.1, such protocol error would result
+     * in the connection being closed.
+     * @param cause The cause of the protocol violation
+     */
+    abstract void onProtocolError(IOException cause);
+
+    /**
      * Called when the exchange is released, so that cleanup actions may be
      * performed - such as deregistering callbacks.
      * Typically released is called during upgrade, when an HTTP/2 stream
@@ -250,4 +260,8 @@ abstract class ExchangeImpl<T> {
     // Needed to handle cancellation during the upgrade from
     // Http1Exchange to Stream
     void upgraded() { }
+
+    // Called when server returns non 100 response to
+    // an Expect-Continue
+    void expectContinueFailed(int rcode) { }
 }

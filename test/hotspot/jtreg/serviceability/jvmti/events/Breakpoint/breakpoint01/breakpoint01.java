@@ -38,6 +38,7 @@ import java.io.*;
  *     SetBreakpoint().
  * COMMENTS
  *
+ * @requires vm.continuations
  * @library /test/lib
  *
  * @comment make sure breakpoint01 is compiled with full debug info
@@ -56,14 +57,7 @@ import java.io.*;
  */
 public class breakpoint01 {
     static {
-        try {
-            System.loadLibrary("breakpoint01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load \"breakpoint01\" library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("breakpoint01");
     }
 
     native int check();

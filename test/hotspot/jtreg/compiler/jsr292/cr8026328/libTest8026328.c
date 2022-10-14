@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ Agent_OnLoad(JavaVM* vm,
              void* reserved) {
 
     jvmtiCapabilities capa;
-    jvmtiEventCallbacks cbs = {0};
+    jvmtiEventCallbacks cbs;
 
     (*vm)->GetEnv(vm, (void**)&jvmti, JVMTI_VERSION_1_0);
 
@@ -110,6 +110,7 @@ Agent_OnLoad(JavaVM* vm,
     capa.can_generate_single_step_events = 1;
     (*jvmti)->AddCapabilities(jvmti, &capa);
 
+    memset(&cbs, 0, sizeof(cbs));
     cbs.ClassPrepare = classprepare;
     cbs.Breakpoint = breakpoint;
     (*jvmti)->SetEventCallbacks(jvmti, &cbs, sizeof(cbs));

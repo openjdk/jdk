@@ -27,7 +27,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "oops/array.hpp"
 #include "oops/metadata.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "unittest.hpp"
 
 class MyMetaData : public MetaspaceObj {

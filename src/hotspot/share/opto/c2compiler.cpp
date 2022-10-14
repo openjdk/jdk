@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "opto/c2compiler.hpp"
@@ -243,6 +244,14 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_bitCount_l:
     if (!Matcher::match_rule_supported(Op_PopCountL)) return false;
     break;
+  case vmIntrinsics::_compress_i:
+  case vmIntrinsics::_compress_l:
+    if (!Matcher::match_rule_supported(Op_CompressBits)) return false;
+    break;
+  case vmIntrinsics::_expand_i:
+  case vmIntrinsics::_expand_l:
+    if (!Matcher::match_rule_supported(Op_ExpandBits)) return false;
+    break;
   case vmIntrinsics::_numberOfLeadingZeros_i:
     if (!Matcher::match_rule_supported(Op_CountLeadingZerosI)) return false;
     break;
@@ -254,6 +263,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     break;
   case vmIntrinsics::_numberOfTrailingZeros_l:
     if (!Matcher::match_rule_supported(Op_CountTrailingZerosL)) return false;
+    break;
+  case vmIntrinsics::_reverse_i:
+    if (!Matcher::match_rule_supported(Op_ReverseI)) return false;
+    break;
+  case vmIntrinsics::_reverse_l:
+    if (!Matcher::match_rule_supported(Op_ReverseL)) return false;
     break;
   case vmIntrinsics::_reverseBytes_c:
     if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return false;
@@ -267,6 +282,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_reverseBytes_l:
     if (!Matcher::match_rule_supported(Op_ReverseBytesL)) return false;
     break;
+  case vmIntrinsics::_compareUnsigned_i:
+    if (!Matcher::match_rule_supported(Op_CmpU3)) return false;
+    break;
+  case vmIntrinsics::_compareUnsigned_l:
+    if (!Matcher::match_rule_supported(Op_CmpUL3)) return false;
+    break;
   case vmIntrinsics::_divideUnsigned_i:
     if (!Matcher::match_rule_supported(Op_UDivI)) return false;
     break;
@@ -278,6 +299,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     break;
   case vmIntrinsics::_remainderUnsigned_l:
     if (!Matcher::match_rule_supported(Op_UModL)) return false;
+    break;
+  case vmIntrinsics::_float16ToFloat:
+    if (!Matcher::match_rule_supported(Op_ConvHF2F)) return false;
+    break;
+  case vmIntrinsics::_floatToFloat16:
+    if (!Matcher::match_rule_supported(Op_ConvF2HF)) return false;
     break;
 
   /* CompareAndSet, Object: */
@@ -518,6 +545,18 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_fsignum:
     if (!Matcher::match_rule_supported(Op_SignumF)) return false;
     break;
+  case vmIntrinsics::_floatIsInfinite:
+    if (!Matcher::match_rule_supported(Op_IsInfiniteF)) return false;
+    break;
+  case vmIntrinsics::_floatIsFinite:
+    if (!Matcher::match_rule_supported(Op_IsFiniteF)) return false;
+    break;
+  case vmIntrinsics::_doubleIsInfinite:
+    if (!Matcher::match_rule_supported(Op_IsInfiniteD)) return false;
+    break;
+  case vmIntrinsics::_doubleIsFinite:
+    if (!Matcher::match_rule_supported(Op_IsFiniteD)) return false;
+    break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
   case vmIntrinsics::_getClass:
@@ -712,9 +751,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_getObjectSize:
-  case vmIntrinsics::_Continuation_doYield:
     break;
 
+  case vmIntrinsics::_VectorCompressExpand:
   case vmIntrinsics::_VectorUnaryOp:
   case vmIntrinsics::_VectorBinaryOp:
   case vmIntrinsics::_VectorTernaryOp:

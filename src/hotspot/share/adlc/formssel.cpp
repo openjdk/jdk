@@ -65,7 +65,7 @@ InstructForm::InstructForm(const char *id, InstructForm *instr, MatchRule *rule)
   : _ident(id), _ideal_only(false),
     _localNames(instr->_localNames),
     _effects(instr->_effects),
-    _is_mach_constant(false),
+    _is_mach_constant(instr->_is_mach_constant),
     _needs_constant_base(false),
     _has_call(false)
 {
@@ -420,8 +420,6 @@ Form::CallType InstructForm::is_ideal_call() const {
   if(_matrule->find_type("CallLeafNoFP",idx))     return Form::JAVA_LEAF;
   idx = 0;
   if(_matrule->find_type("CallLeafVector",idx))   return Form::JAVA_LEAF;
-  idx = 0;
-  if(_matrule->find_type("CallNative",idx))       return Form::JAVA_NATIVE;
   idx = 0;
 
   return Form::invalid_type;
@@ -1142,9 +1140,6 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if( is_ideal_call() == Form::JAVA_LEAF ) {
     return "MachCallLeafNode";
-  }
-  else if( is_ideal_call() == Form::JAVA_NATIVE ) {
-    return "MachCallNativeNode";
   }
   else if (is_ideal_return()) {
     return "MachReturnNode";
@@ -3518,8 +3513,6 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreVector", "LoadVector", "LoadVectorMasked", "StoreVectorMasked",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
-    "LoadPLocked",
-    "StorePConditional", "StoreIConditional", "StoreLConditional",
     "CompareAndSwapB", "CompareAndSwapS", "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
     "WeakCompareAndSwapB", "WeakCompareAndSwapS", "WeakCompareAndSwapI", "WeakCompareAndSwapL", "WeakCompareAndSwapP", "WeakCompareAndSwapN",
     "CompareAndExchangeB", "CompareAndExchangeS", "CompareAndExchangeI", "CompareAndExchangeL", "CompareAndExchangeP", "CompareAndExchangeN",
@@ -4097,12 +4090,6 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
         strcmp(opType,"ReverseBytesS")==0 ||
-        strcmp(opType,"ReplicateB")==0 ||
-        strcmp(opType,"ReplicateS")==0 ||
-        strcmp(opType,"ReplicateI")==0 ||
-        strcmp(opType,"ReplicateL")==0 ||
-        strcmp(opType,"ReplicateF")==0 ||
-        strcmp(opType,"ReplicateD")==0 ||
         strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
@@ -4118,8 +4105,9 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"OrReductionV")==0 ||
         strcmp(opType,"XorReductionV")==0 ||
         strcmp(opType,"MaskAll")==0 ||
-        0 /* 0 to line up columns nicely */ )
+        0 /* 0 to line up columns nicely */ ) {
       return 1;
+    }
   }
   return 0;
 }
@@ -4217,6 +4205,7 @@ bool MatchRule::is_vector() const {
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "MaxV", "MinV",
+    "CompressV", "ExpandV", "CompressM",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
     "MulReductionVI", "MulReductionVL",
@@ -4228,7 +4217,7 @@ bool MatchRule::is_vector() const {
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
-    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD","PopulateIndex",
+    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD","ReverseV","ReverseBytesV",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
@@ -4237,7 +4226,8 @@ bool MatchRule::is_vector() const {
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD","FmaVF","PopCountVI", "PopCountVL", "SignumVF", "SignumVD", "VectorLongToMask",
+    "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
+    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     "RoundVF", "RoundVD",

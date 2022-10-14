@@ -26,8 +26,8 @@
 
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 
 const jint ShenandoahEvacOOMHandler::OOM_MARKER_MASK = 0x80000000;
 

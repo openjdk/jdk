@@ -35,6 +35,7 @@
 #include "ci/ciArray.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -336,18 +337,6 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   LIR_Opr obj_temp = new_register(T_INT);
   set_no_result(x);
   monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
-}
-
-void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
-  BasicTypeList signature(0);
-  CallingConvention* cc = frame_map()->java_calling_convention(&signature, true);
-
-  const LIR_Opr result_reg = result_register_for(x->type());
-  address entry = StubRoutines::cont_doYield();
-  LIR_Opr result = rlock_result(x);
-  CodeEmitInfo* info = state_for(x, x->state());
-  __ call_runtime(entry, LIR_OprFact::illegalOpr, result_reg, cc->args(), info);
-  __ move(result_reg, result);
 }
 
 void LIRGenerator::do_NegateOp(NegateOp* x) {
@@ -917,7 +906,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   assert(UseCRC32Intrinsics, "why are we here?");
   // Make all state_for calls early since they can emit code
   LIR_Opr result = rlock_result(x);
-  int flags = 0;
   switch (x->id()) {
     case vmIntrinsics::_updateCRC32: {
       LIRItem crc(x->argument_at(0), this);
@@ -942,9 +930,9 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 
       LIR_Opr index = off.result();
       int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
-      if(off.result()->is_constant()) {
+      if (off.result()->is_constant()) {
         index = LIR_OprFact::illegalOpr;
-       offset += off.result()->as_jint();
+        offset += off.result()->as_jint();
       }
       LIR_Opr base_op = buf.result();
 
@@ -994,7 +982,6 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
   assert(UseCRC32CIntrinsics, "why are we here?");
   // Make all state_for calls early since they can emit code
   LIR_Opr result = rlock_result(x);
-  int flags = 0;
   switch (x->id()) {
     case vmIntrinsics::_updateBytesCRC32C:
     case vmIntrinsics::_updateDirectByteBufferCRC32C: {

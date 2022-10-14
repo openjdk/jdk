@@ -33,7 +33,7 @@ class JavaThread;
 class Symbol;
 
 // Execute code before all handles are released and thread is killed; prologue to vm_exit
-extern void before_exit(JavaThread * thread);
+extern void before_exit(JavaThread * thread, bool halt = false);
 
 // Forced VM exit (i.e, internal error or JVM_Exit)
 extern void vm_exit(int code);

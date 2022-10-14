@@ -36,6 +36,7 @@
  * COMMENTS
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} getstacktr07.java
  * @run main/othervm/native --enable-preview -agentlib:getstacktr07 getstacktr07

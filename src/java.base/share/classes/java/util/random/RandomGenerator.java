@@ -540,10 +540,7 @@ public interface RandomGenerator {
      *
      * @throws IllegalArgumentException if {@code origin} is not finite,
      *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than or equal to {@code bound}, or
-     *         the difference between {@code bound} and {@code origin}
-     *         is so large that it cannot be represented as a finite
-     *         {@code float} value
+     *         is greater than or equal to {@code bound}
      *
      * @implSpec The default implementation verifies that the {@code origin}
      *           and {@code bound} are valid then invokes {@code nextFloat()}
@@ -606,11 +603,8 @@ public interface RandomGenerator {
      *
      * @throws IllegalArgumentException if {@code origin} is not finite,
      *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than or equal to {@code bound}, or
-     *         the difference between {@code bound} and {@code origin}
-     *         is so large that it cannot be represented as a finite
-     *         {@code double} value
-     *
+     *         is greater than or equal to {@code bound}
+
      * @implSpec The default implementation verifies that the {@code origin}
      *           and {@code bound} are valid, then invokes {@code nextDouble()}
      *           scaling and translating the result to fit between {@code origin}

@@ -98,7 +98,7 @@ class SpaceMangler: public CHeapObj<mtGC> {
   // Return true if q matches the mangled pattern.
   static bool is_mangled(HeapWord* q) PRODUCT_RETURN0;
 
-  // Used to save the an address in a space for later use during mangling.
+  // Used to save the address in a space for later use during mangling.
   void set_top_for_allocations(HeapWord* v);
 
   // Overwrites the unused portion of this space.

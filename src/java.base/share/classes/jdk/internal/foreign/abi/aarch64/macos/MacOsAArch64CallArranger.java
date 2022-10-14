@@ -38,4 +38,9 @@ public class MacOsAArch64CallArranger extends CallArranger {
         return true;
     }
 
+    @Override
+    protected boolean requiresSubSlotStackPacking() {
+        return true;
+    }
+
 }

@@ -27,8 +27,8 @@
 #include "oops/oop.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stack.inline.hpp"
 

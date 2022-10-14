@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,7 @@ public final class DLSSoundbankReader extends SoundbankReader {
             throws InvalidMidiDataException, IOException {
         try {
             return new DLSSoundbank(url);
-        } catch (RIFFInvalidFormatException e) {
-            return null;
-        } catch(IOException ioe) {
+        } catch (IOException e) {
             return null;
         }
     }

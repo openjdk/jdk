@@ -35,8 +35,8 @@ import java.util.stream.Stream;
  * @requires vm.compiler2.enabled & vm.flagless
  * @summary Test basics of the framework. This test runs directly the test VM which normally does not happen.
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -Xbatch ir_framework.tests.TestBasics
  */

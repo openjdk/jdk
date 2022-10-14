@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,10 +202,8 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                         sequencer.open();
                         sequencer.setSequence(sequence);
 
-                    } catch (InvalidMidiDataException e1) {
-                        if (Printer.err) e1.printStackTrace();
-                    } catch (MidiUnavailableException e2) {
-                        if (Printer.err) e2.printStackTrace();
+                    } catch (InvalidMidiDataException | MidiUnavailableException e) {
+                        if (Printer.err) e.printStackTrace();
                     }
                 }
                 sequencer.addMetaEventListener(this);

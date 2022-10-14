@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
  *                   -XX:-SegmentedCodeCache
@@ -44,8 +44,8 @@ package compiler.whitebox;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.InfiniteLoop;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.BlobType;
 
 import java.lang.management.MemoryPoolMXBean;
 import java.util.ArrayList;
@@ -58,10 +58,10 @@ public class AllocationCodeBlobTest {
     private static final int SIZE = 1;
 
     public static void main(String[] args) {
-        // check that Sweeper handels dummy blobs correctly
+        // check that code unloading handles dummy blobs correctly
         Thread t = new Thread(
-                new InfiniteLoop(WHITE_BOX::forceNMethodSweep, 1L),
-                "ForcedSweeper");
+                new InfiniteLoop(WHITE_BOX::fullGC, 1L),
+                "ForcedGC");
         t.setDaemon(true);
         System.out.println("Starting " + t.getName());
         t.start();

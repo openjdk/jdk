@@ -505,6 +505,20 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitSpec(SpecTree node, Void p) {
+        try {
+            printTagName(node);
+            print(" ");
+            print(node.getURL());
+            print(" ");
+            print(node.getTitle());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitStartElement(StartElementTree node, Void p) {
         try {
             print("<");
@@ -632,6 +646,10 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         try {
             print("{");
             printTagName(node);
+            if (node.getFormat() != null) {
+                print(" ");
+                print(node.getFormat());
+            }
             if (node.getReference() != null) {
                 print(" ");
                 print(node.getReference());

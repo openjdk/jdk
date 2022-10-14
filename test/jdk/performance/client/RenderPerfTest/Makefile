@@ -1,5 +1,6 @@
 #
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, JetBrains s.r.o.. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,13 +29,11 @@ DIST=dist
 RESOURCES=resources
 
 RENDERPERF_CLASSES = $(CLASSES)/renderperf/RenderPerfTest.class
-RENDERPERFLCD_CLASSES = $(CLASSES)/renderperf/RenderPerfLCDTest.class
 RENDERPERF_SOURCES = $(SOURCEPATH)/renderperf/RenderPerfTest.java
-RENDERPERFLCD_SOURCES = $(SOURCEPATH)/renderperf/RenderPerfLCDTest.java
 
 RENDERPERF_RESOURCES = $(CLASSES)/renderperf/images/duke.png
 
-all: mkdirs $(DIST)/RenderPerfTest.jar $(DIST)/RenderPerfLCDTest.jar
+all: mkdirs $(DIST)/RenderPerfTest.jar
 
 run: mkdirs $(DIST)/RenderPerfTest.jar
 	java -jar $(DIST)/RenderPerfTest.jar
@@ -44,20 +43,12 @@ $(DIST)/RenderPerfTest.jar: \
 	$(CLASSES)/renderperf.manifest
 	jar cvmf $(CLASSES)/renderperf.manifest $(DIST)/RenderPerfTest.jar -C $(CLASSES) .
 
-$(DIST)/RenderPerfLCDTest.jar: \
-	$(RENDERPERFLCD_CLASSES) $(RENDERPERFLCD_RESOURCES) \
-	$(CLASSES)/renderperflcd.manifest
-	jar cvmf $(CLASSES)/renderperflcd.manifest $(DIST)/RenderPerfLCDTest.jar -C $(CLASSES) .
-
 $(CLASSES)/renderperf/images/%: $(RESOURCES)/renderperf/images/%
 	cp -r $< $@
 
 
 $(CLASSES)/renderperf.manifest:
 	echo "Main-Class: renderperf.RenderPerfTest" > $@
-
-$(CLASSES)/renderperflcd.manifest:
-	echo "Main-Class: renderperf.RenderPerfLCDTest" > $@
 
 $(DIST):
 	mkdir  $(DIST)

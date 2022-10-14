@@ -22,7 +22,6 @@
  */
 
 import jdk.test.lib.jvmti.DebugeeClass;
-import java.io.PrintStream;
 
 /*
  * @test
@@ -44,18 +43,14 @@ public class threadend02 extends DebugeeClass {
 
     // run test from command line
     public static void main(String argv[]) {
-        int result = run(argv, System.out);
+        int result = new threadend02().runIt();
         if (result != 0) {
             throw new RuntimeException("Unexpected status: " + result);
         }
     }
 
-    public static int run(String argv[], PrintStream out) {
-        return new threadend02().runIt(argv, out);
-    }
-
     // run debuggee
-    public int runIt(String argv[], PrintStream out) {
+    public int runIt() {
 
         int status = threadend02.checkStatus(DebugeeClass.TEST_PASSED);
 

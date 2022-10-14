@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ class WrapToken extends MessageToken {
     /*
      * A token may come in either in an InputStream or as a
      * byte[]. Store a reference to it in either case and process
-     * it's data only later when getData() is called and
+     * its data only later when getData() is called and
      * decryption/copying is needed to be done. Note that JCE can
      * decrypt both from a byte[] and from an InputStream.
      */
@@ -96,13 +96,13 @@ class WrapToken extends MessageToken {
     private int dataLen = 0;
 
     // the len of the token data: (confounder || data || padding)
-    private int dataSize = 0;
+    private final int dataSize;
 
     // Accessed by CipherHelper
     byte[] confounder = null;
     byte[] padding = null;
 
-    private boolean privacy = false;
+    private final boolean privacy;
 
     /**
      * Constructs a WrapToken from token bytes obtained from the
@@ -303,8 +303,6 @@ class WrapToken extends MessageToken {
     private void getDataFromStream(byte[] dataBuf, int dataBufOffset)
         throws GSSException {
 
-        GSSHeader gssHeader = getGSSHeader();
-
         // Don't check the token length. Data will be read on demand from
         // the InputStream.
 
@@ -385,7 +383,7 @@ class WrapToken extends MessageToken {
      * @return the padding to be applied
      */
     private byte[] getPadding(int len) {
-        int padSize = 0;
+        int padSize;
         // For RC4-HMAC, all padding is rounded up to 1 byte.
         // One byte is needed to say that there is 1 byte of padding.
         if (cipherHelper.isArcFour()) {

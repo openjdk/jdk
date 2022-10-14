@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
 /*
  * @test
  * @summary Test the OutputAnalyzer utility class
- * @modules java.management
  * @library /test/lib
  * @run main OutputAnalyzerTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class OutputAnalyzerTest {
 
@@ -214,6 +214,32 @@ public class OutputAnalyzerTest {
             String result = output.firstMatch(aa_grouped_aa, 1);
             if (!aa.equals(result)) {
                 throw new Exception("firstMatch(String, int) failed to match. Expected: " + aa + " got: " + result);
+            }
+        }
+
+        {
+            try {
+                // Verify the exception message
+                OutputAnalyzer out = ProcessTools.executeProcess("true");
+                out.shouldHaveExitValue(1);
+                throw new RuntimeException("'shouldHaveExitValue' should have thrown an exception");
+            } catch (Throwable ex) {
+                if (!ex.getMessage().equals("Expected to get exit value of [1], exit value is: [0]")) {
+                    throw new RuntimeException("Unexpected message: " + ex.getMessage());
+                }
+            }
+        }
+
+        {
+            try {
+                // Verify the exception message
+                OutputAnalyzer out = ProcessTools.executeProcess("true");
+                out.shouldNotHaveExitValue(0);
+                throw new RuntimeException("'shouldNotHaveExitValue' should have thrown an exception");
+            } catch (Throwable ex) {
+                if (!ex.getMessage().equals("Unexpected to get exit value of [0]")) {
+                    throw new RuntimeException("Unexpected message: " + ex.getMessage());
+                }
             }
         }
     }

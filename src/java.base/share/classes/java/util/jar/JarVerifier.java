@@ -199,8 +199,6 @@ class JarVerifier {
 
         // don't compute the digest for this entry
         mev.setEntry(null, je);
-
-        return;
     }
 
     /**
@@ -430,8 +428,8 @@ class JarVerifier {
         manDig = null;
         // MANIFEST.MF is always treated as signed and verified,
         // move its signers from sigFileSigners to verifiedSigners.
-        if (sigFileSigners.containsKey(manifestName)) {
-            CodeSigner[] codeSigners = sigFileSigners.remove(manifestName);
+        CodeSigner[] codeSigners = sigFileSigners.remove(manifestName);
+        if (codeSigners != null) {
             verifiedSigners.put(manifestName, codeSigners);
         }
     }
@@ -837,7 +835,6 @@ class JarVerifier {
     private List<CodeSigner[]> jarCodeSigners;
 
     private synchronized List<CodeSigner[]> getJarCodeSigners() {
-        CodeSigner[] signers;
         if (jarCodeSigners == null) {
             HashSet<CodeSigner[]> set = new HashSet<>();
             set.addAll(signerMap().values());
@@ -861,8 +858,6 @@ class JarVerifier {
     }
 
     public CodeSource getCodeSource(URL url, JarFile jar, JarEntry je) {
-        CodeSigner[] signers;
-
         return mapSignersToCodeSource(url, getCodeSigners(jar, je));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,14 @@
  */
 package javax.swing.border;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
 import java.beans.ConstructorProperties;
 
 /**
@@ -119,6 +122,22 @@ public class EtchedBorder extends AbstractBorder
         this.shadow = shadow;
     }
 
+    private void paintBorderHighlight(Graphics g, Color c, int w, int h, int stkWidth) {
+        g.setColor(c);
+        g.drawRect(stkWidth/2, stkWidth/2, w-(2*stkWidth), h-(2*stkWidth));
+    }
+
+    private void paintBorderShadow(Graphics g, Color c, int w, int h, int stkWidth) {
+        g.setColor(c);
+        g.drawLine(((3*stkWidth)/2), h-((3*stkWidth)/2), ((3*stkWidth)/2), ((3*stkWidth)/2)); // left line
+        g.drawLine(((3*stkWidth)/2), ((3*stkWidth)/2), w-((3*stkWidth)/2), ((3*stkWidth)/2)); // top line
+
+        g.drawLine((stkWidth/2), h-(stkWidth-stkWidth/2),
+                w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2)); // bottom line
+        g.drawLine(w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2),
+                w-(stkWidth-stkWidth/2), stkWidth/2); // right line
+    }
+
     /**
      * Paints the border for the specified component with the
      * specified position and size.
@@ -131,22 +150,59 @@ public class EtchedBorder extends AbstractBorder
      * @param height the height of the painted border
      */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        int w = width;
-        int h = height;
+        // We remove any initial transforms to prevent rounding errors
+        // when drawing in non-integer scales
+        AffineTransform at = null;
+        Stroke oldStk = null;
+        int stkWidth = 1;
+        boolean resetTransform = false;
+        if (g instanceof Graphics2D) {
+            Graphics2D g2d = (Graphics2D) g;
+            at = g2d.getTransform();
+            oldStk = g2d.getStroke();
+            // if m01 or m10 is non-zero, then there is a rotation or shear
+            // skip resetting the transform
+            resetTransform = (at.getShearX() == 0) && (at.getShearY() == 0);
+            if (resetTransform) {
+                g2d.setTransform(new AffineTransform());
+                stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
+                g2d.setStroke(new BasicStroke((float) stkWidth));
+            }
+        }
 
-        g.translate(x, y);
+        int w;
+        int h;
+        int xtranslation;
+        int ytranslation;
+        if (resetTransform) {
+            w = (int) Math.floor(at.getScaleX() * width - 1);
+            h = (int) Math.floor(at.getScaleY() * height - 1);
+            xtranslation = (int) Math.ceil(at.getScaleX()*x+at.getTranslateX());
+            ytranslation = (int) Math.ceil(at.getScaleY()*y+at.getTranslateY());
+        } else {
+            w = width;
+            h = height;
+            xtranslation = x;
+            ytranslation = y;
+        }
 
-        g.setColor(etchType == LOWERED? getShadowColor(c) : getHighlightColor(c));
-        g.drawRect(0, 0, w-2, h-2);
+        g.translate(xtranslation, ytranslation);
 
-        g.setColor(etchType == LOWERED? getHighlightColor(c) : getShadowColor(c));
-        g.drawLine(1, h-3, 1, 1);
-        g.drawLine(1, 1, w-3, 1);
+        paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
+                                                   : getShadowColor(c),
+                          w, h, stkWidth);
+        paintBorderHighlight(g, (etchType == LOWERED) ? getShadowColor(c)
+                                                      : getHighlightColor(c),
+                             w, h, stkWidth);
 
-        g.drawLine(0, h-1, w-1, h-1);
-        g.drawLine(w-1, h-1, w-1, 0);
+        g.translate(-xtranslation, -ytranslation);
 
-        g.translate(-x, -y);
+        // Set the transform we removed earlier
+        if (resetTransform) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setTransform(at);
+            g2d.setStroke(oldStk);
+        }
     }
 
     /**

@@ -182,6 +182,16 @@ char* CgroupV2Subsystem::mem_swp_limit_val() {
   return os::strdup(mem_swp_limit_str);
 }
 
+// memory.swap.current : total amount of swap currently used by the cgroup and its descendants
+char* CgroupV2Subsystem::mem_swp_current_val() {
+  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.swap.current",
+                         "Swap currently used is: %s", "%s", mem_swp_current_str, 1024);
+  if (mem_swp_current_str == NULL) {
+    return NULL;
+  }
+  return os::strdup(mem_swp_current_str);
+}
+
 /* memory_limit_in_bytes
  *
  * Return the limit of available memory for this process.
@@ -212,18 +222,24 @@ char* CgroupV2Subsystem::mem_limit_val() {
   return os::strdup(mem_limit_str);
 }
 
+void CgroupV2Subsystem::print_version_specific_info(outputStream* st) {
+  char* mem_swp_current_str = mem_swp_current_val();
+  jlong swap_current = limit_from_str(mem_swp_current_str);
+
+  char* mem_swp_limit_str = mem_swp_limit_val();
+  jlong swap_limit = limit_from_str(mem_swp_limit_str);
+
+  OSContainer::print_container_helper(st, swap_current, "memory_swap_current_in_bytes");
+  OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");
+}
+
 char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
-  char buf[MAXPATHLEN+1];
-  int buflen;
-  strncpy(buf, mount_path, MAXPATHLEN);
-  buf[MAXPATHLEN] = '\0';
-  buflen = strlen(buf);
-  if ((buflen + strlen(cgroup_path)) > MAXPATHLEN) {
-    return NULL;
+  stringStream ss;
+  ss.print_raw(mount_path);
+  if (strcmp(cgroup_path, "/") != 0) {
+    ss.print_raw(cgroup_path);
   }
-  strncat(buf, cgroup_path, MAXPATHLEN-buflen);
-  buf[MAXPATHLEN] = '\0';
-  return os::strdup(buf);
+  return os::strdup(ss.base());
 }
 
 char* CgroupV2Subsystem::pids_max_val() {

@@ -548,22 +548,4 @@ abstract class AESCipher extends CipherSpi {
         return core.unwrap(wrappedKey, wrappedKeyAlgorithm,
                            wrappedKeyType);
     }
-
-    /**
-     * Finalize crypto operation with ByteBuffers
-     *
-     * @param input the input ByteBuffer
-     * @param output the output ByteBuffer
-     *
-     * @return output length
-     * @throws ShortBufferException
-     * @throws IllegalBlockSizeException
-     * @throws BadPaddingException
-     */
-    @Override
-    protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
-        throws ShortBufferException, IllegalBlockSizeException,
-        BadPaddingException {
-        return super.engineDoFinal(input, output);
-    }
 }

@@ -99,6 +99,27 @@ public @interface IR {
     String[] applyIf() default {};
 
     /**
+     * Accepts a single feature pair which is composed of CPU feature string followed by a true/false
+     * value where a true value necessities existence of CPU feature and vice-versa.
+     * IR verifications checks are enforced only if the specified feature constraint is met.
+     */
+    String[] applyIfCPUFeature() default {};
+
+    /**
+     * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
+     * value where a true value necessities existence of target feature and vice-versa.
+     * IR verifications checks are enforced only if all the specified feature constraints are met.
+     */
+    String[] applyIfCPUFeatureAnd() default {};
+
+     /**
+     * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
+     * value where a true value necessities existence of target feature and vice-versa.
+     * IR verifications checks are enforced if any of the specified feature constraint is met.
+     */
+    String[] applyIfCPUFeatureOr() default {};
+
+    /**
      * Define a single VM flag precondition which <i>must <b>not</b> hold</i> when applying the IR rule. If, however,
      * the VM flag precondition holds, then the IR rule is not applied. This could also be defined as <i>negative</i>
      * precondition. This is useful if a commonly used flag alters the IR in such a way that an IR rule would fail.

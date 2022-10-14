@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.IOException;
 import java.nio.file.Files;

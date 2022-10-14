@@ -318,33 +318,28 @@ class UnixNativeDispatcher {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             long comp = Blocker.begin();
             try {
-                stat0(buffer.address(), attrs);
+                int errno = stat0(buffer.address(), attrs);
+                if (errno != 0) {
+                    throw new UnixException(errno);
+                }
             } finally {
                 Blocker.end(comp);
             }
         }
     }
-    private static native void stat0(long pathAddress, UnixFileAttributes attrs)
-        throws UnixException;
 
-
-    /**
-     * stat(const char* path, struct stat* buf)
-     *
-     * @return st_mode (file type and mode) or 0 if an error occurs.
-     */
-    static int stat(UnixPath path) {
+    static int stat2(UnixPath path, UnixFileAttributes attrs) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             long comp = Blocker.begin();
             try {
-                return stat1(buffer.address());
+                return stat0(buffer.address(), attrs);
             } finally {
                 Blocker.end(comp);
             }
         }
     }
-    private static native int stat1(long pathAddress);
 
+    private static native int stat0(long pathAddress, UnixFileAttributes attrs);
 
     /**
      * lstat(const char* path, struct stat* buf)

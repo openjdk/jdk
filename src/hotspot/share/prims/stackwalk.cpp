@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -32,15 +31,17 @@
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "prims/stackwalk.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/stackWatermarkSet.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -429,8 +430,11 @@ oop StackWalk::walk(Handle stackStream, jlong mode, int skip_frames, Handle cont
   // Setup traversal onto my stack.
   if (live_frame_info(mode)) {
     assert(use_frames_array(mode), "Bad mode for get live frame");
-    RegisterMap regMap = cont.is_null() ? RegisterMap(jt, true, true, true)
-                                        : RegisterMap(cont(), true);
+    RegisterMap regMap = cont.is_null() ? RegisterMap(jt,
+                                                      RegisterMap::UpdateMap::include,
+                                                      RegisterMap::ProcessFrames::include,
+                                                      RegisterMap::WalkContinuation::include)
+                                        : RegisterMap(cont(), RegisterMap::UpdateMap::include);
     LiveFrameStream stream(jt, &regMap, cont_scope, cont);
     return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count,
                            start_index, frames_array, THREAD);

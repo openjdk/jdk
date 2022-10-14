@@ -123,7 +123,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_pc == NULL || sender_blob == NULL) {
       return false;
     }
@@ -146,10 +146,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
       frame sender(sender_sp, saved_fp, sender_pc);
 
       return sender.is_interpreted_frame_valid(thread);
-    }
-
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
-      return false;
     }
 
     // Could just be some random pointer within the codeBlob
@@ -311,12 +307,12 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
-OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
   ShouldNotCallThis();
   return nullptr;
 }
 
-bool frame::optimized_entry_frame_is_first() const {
+bool frame::upcall_stub_frame_is_first() const {
   ShouldNotCallThis();
   return false;
 }
@@ -338,7 +334,7 @@ void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp
 
   address original_pc = nm->get_original_pc(&fr);
   assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the the compiled method (or must be immediately following it)");
+         "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   assert(nm->is_method_handle_return(original_pc) == is_method_handle_return, "must be");
 }
 #endif
@@ -518,7 +514,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
 
 // This is a generic constructor which is only used by pns() in debug.cpp.
 frame::frame(void* sp, void* fp, void* pc) {
-  init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
+  init((intptr_t*)sp, (intptr_t*)sp, (intptr_t*)fp, (address)pc);
 }
 
 #endif

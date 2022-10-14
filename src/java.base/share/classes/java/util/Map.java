@@ -737,23 +737,18 @@ public interface Map<K, V> {
      *
      * @param function the function to apply to each entry
      * @throws UnsupportedOperationException if the {@code set} operation
-     * is not supported by this map's entry set iterator.
+     *         is not supported by this map's entry set iterator.
      * @throws ClassCastException if the class of a replacement value
-     * prevents it from being stored in this map
-     * @throws NullPointerException if the specified function is null, or the
-     * specified replacement value is null, and this map does not permit null
-     * values
-     * @throws ClassCastException if a replacement value is of an inappropriate
-     *         type for this map
+     *         prevents it from being stored in this map
      *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
-     * @throws NullPointerException if function or a replacement value is null,
-     *         and this map does not permit null keys or values
+     * @throws NullPointerException if the specified function is null, or if a
+     *         replacement value is null and this map does not permit null values
      *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws IllegalArgumentException if some property of a replacement value
      *         prevents it from being stored in this map
      *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws ConcurrentModificationException if an entry is found to be
-     * removed during iteration
+     *         removed during iteration
      * @since 1.8
      */
     default void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {

@@ -243,7 +243,7 @@ public class TestMemorySession {
         try {
             t.join();
             assertNotNull(failure.get());
-            assertEquals(failure.get().getClass(), IllegalStateException.class);
+            assertEquals(failure.get().getClass(), WrongThreadException.class);
         } catch (Throwable ex) {
             throw new AssertionError(ex);
         }
@@ -370,8 +370,8 @@ public class TestMemorySession {
     }
 
     private void keepAlive(MemorySession child, MemorySession parent) {
-        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(parent);
-        sessionImpl.acquire0();
-        child.addCloseAction(sessionImpl::release0);
+        MemorySessionImpl parentImpl = MemorySessionImpl.toSessionImpl(parent);
+        parentImpl.acquire0();
+        child.addCloseAction(parentImpl::release0);
     }
 }

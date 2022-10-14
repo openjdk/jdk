@@ -37,6 +37,7 @@ import java.net.Authenticator;
 import java.net.ConnectException;
 import java.net.CookieHandler;
 import java.net.InetAddress;
+import java.net.ProtocolException;
 import java.net.ProxySelector;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
@@ -501,6 +502,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         assert facadeRef.get() != null;
     }
 
+    // called when the facade is GC'ed.
+    // Just wakes up the selector to cleanup...
+    void facadeCleanup() {
+        SelectorManager selmgr = this.selmgr;
+        if (selmgr != null) selmgr.wakeupSelector();
+    }
+
     void onSubmitFailure(Runnable command, Throwable failure) {
         selmgr.abort(failure);
     }
@@ -733,7 +741,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
         @Override
         public boolean isFacadeReferenced() {
-            return reference.get() != null;
+            return !reference.refersTo(null);
         }
         @Override
         public boolean isSelectorAlive() { return isAlive.get(); }
@@ -759,8 +767,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // Called by the SelectorManager thread to figure out whether it's time
     // to terminate.
     boolean isReferenced() {
-        HttpClient facade = facade();
-        return facade != null || referenceCount() > 0;
+        return !facadeRef.refersTo(null) || referenceCount() > 0;
     }
 
     /**
@@ -853,6 +860,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 // any other SSLException is wrapped in a plain
                 // SSLException
                 throw new SSLException(msg, throwable);
+            } else if (throwable instanceof ProtocolException) {
+                throw new ProtocolException(msg);
             } else if (throwable instanceof IOException) {
                 throw new IOException(msg, throwable);
             } else {

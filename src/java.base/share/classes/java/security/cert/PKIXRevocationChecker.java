@@ -25,14 +25,7 @@
 package java.security.cert;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A {@code PKIXCertPathChecker} for checking the revocation status of
@@ -100,7 +93,7 @@ import java.util.Set;
 public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     private URI ocspResponder;
     private X509Certificate ocspResponderCert;
-    private List<Extension> ocspExtensions = Collections.<Extension>emptyList();
+    private List<Extension> ocspExtensions = Collections.emptyList();
     private Map<X509Certificate, byte[]> ocspResponses = Collections.emptyMap();
     private Set<Option> options = Collections.emptySet();
 
@@ -170,7 +163,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     public void setOcspExtensions(List<Extension> extensions)
     {
         this.ocspExtensions = (extensions == null)
-                              ? Collections.<Extension>emptyList()
+                              ? Collections.emptyList()
                               : new ArrayList<>(extensions);
     }
 
@@ -196,7 +189,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     public void setOcspResponses(Map<X509Certificate, byte[]> responses)
     {
         if (responses == null) {
-            this.ocspResponses = Collections.<X509Certificate, byte[]>emptyMap();
+            this.ocspResponses = Collections.emptyMap();
         } else {
             Map<X509Certificate, byte[]> copy = HashMap.newHashMap(responses.size());
             for (Map.Entry<X509Certificate, byte[]> e : responses.entrySet()) {
@@ -232,7 +225,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
      */
     public void setOptions(Set<Option> options) {
         this.options = (options == null)
-                       ? Collections.<Option>emptySet()
+                       ? Collections.emptySet()
                        : new HashSet<>(options);
     }
 

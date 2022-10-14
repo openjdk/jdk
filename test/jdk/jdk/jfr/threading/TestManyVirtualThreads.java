@@ -40,7 +40,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @summary Tests starting virtual threads from a set of ordinary threads
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  * @compile --enable-preview -source ${jdk.version} TestManyVirtualThreads.java

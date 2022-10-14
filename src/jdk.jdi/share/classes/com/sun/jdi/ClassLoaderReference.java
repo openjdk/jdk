@@ -93,7 +93,7 @@ public interface ClassLoaderReference extends ObjectReference {
      * classes which this class loader can find by name. The list
      * has length 0 if no classes are visible to this classloader.
      *
-     * @see <a href="{@docRoot}/../specs/jvmti/jvmti.html#GetClassLoaderClasses">
+     * @see <a href="{@docRoot}/../specs/jvmti.html#GetClassLoaderClasses">
      *     JVM TI GetClassLoaderClasses</a>
      */
     List<ReferenceType> visibleClasses();

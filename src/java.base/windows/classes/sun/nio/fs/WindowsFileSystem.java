@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ class WindowsFileSystem
     @Override
     public PathMatcher getPathMatcher(String syntaxAndInput) {
         int pos = syntaxAndInput.indexOf(':');
-        if (pos <= 0 || pos == syntaxAndInput.length())
+        if (pos <= 0)
             throw new IllegalArgumentException();
         String syntax = syntaxAndInput.substring(0, pos);
         String input = syntaxAndInput.substring(pos+1);

@@ -55,23 +55,23 @@ enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
   err = jvmti->SetEventNotificationMode(enable, event, NULL);
   if (err != JVMTI_ERROR_NONE) {
     set_agent_fail_status();
-    return NSK_FALSE;
+    return JNI_FALSE;
   }
 
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 /* ============================================================================= */
 
 int checkEvents() {
 
-  int result = NSK_TRUE;
+  int result = JNI_TRUE;
 
   if (eventCount == 0) {
     set_agent_fail_status();
     COMPLAIN("Number of THREAD_END events must be greater than 0\n");
     set_agent_fail_status();
-    result = NSK_FALSE;
+    result = JNI_FALSE;
   }
 
   return result;
@@ -89,10 +89,10 @@ setCallBacks() {
 
   err = jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks));
   if (err != JVMTI_ERROR_NONE) {
-    return NSK_FALSE;
+    return JNI_FALSE;
   }
 
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 /* ============================================================================= */

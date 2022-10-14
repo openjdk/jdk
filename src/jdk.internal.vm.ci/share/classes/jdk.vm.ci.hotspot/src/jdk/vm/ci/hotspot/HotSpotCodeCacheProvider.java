@@ -136,7 +136,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
             resultInstalledCode = nmethod;
         }
 
-        int result = runtime.getCompilerToVM().installCode(target, (HotSpotCompiledCode) compiledCode, resultInstalledCode, failedSpeculationsAddress, speculations);
+        int result = runtime.getCompilerToVM().installCode(hsCompiledCode, resultInstalledCode, failedSpeculationsAddress, speculations);
         if (result != config.codeInstallResultOk) {
             String resultDesc = config.getCodeInstallResultDescription(result);
             if (hsCompiledNmethod != null) {
@@ -157,7 +157,8 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
     @Override
     public void invalidateInstalledCode(InstalledCode installedCode) {
         if (installedCode instanceof HotSpotNmethod) {
-            runtime.getCompilerToVM().invalidateHotSpotNmethod((HotSpotNmethod) installedCode);
+            HotSpotNmethod nmethod = (HotSpotNmethod) installedCode;
+            nmethod.invalidate(true);
         } else {
             throw new IllegalArgumentException("Cannot invalidate a " + Objects.requireNonNull(installedCode).getClass().getName());
         }

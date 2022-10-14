@@ -101,6 +101,7 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -124,7 +125,6 @@ import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
  * Utilities Class for Doclets.
@@ -777,13 +777,13 @@ public class Utils {
     }
 
     /**
-     * Returns all the implemented super-interfaces of a given type,
-     * in the case of classes, include all the super-interfaces of
-     * the supertype. The super-interfaces are collected before the
-     * super-interfaces of the supertype.
+     * Returns all the implemented superinterfaces of a given type,
+     * in the case of classes, include all the superinterfaces of
+     * the supertype. The superinterfaces are collected before the
+     * superinterfaces of the supertype.
      *
-     * @param  te the type element to get the super-interfaces for.
-     * @return the list of super-interfaces.
+     * @param  te the type element to get the superinterfaces for.
+     * @return the list of superinterfaces.
      */
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
@@ -903,22 +903,6 @@ public class Utils {
                     : configuration.workArounds.searchClass(encl, className);
         }
         return searchResult;
-    }
-
-    /**
-     * Parse the package name.  We only want to display package name up to
-     * 2 levels.
-     */
-    public String parsePackageName(PackageElement p) {
-        String pkgname = p.isUnnamed() ? "" : getPackageName(p);
-        int index = -1;
-        for (int j = 0; j < MAX_CONSTANT_VALUE_INDEX_LENGTH; j++) {
-            index = pkgname.indexOf(".", index + 1);
-        }
-        if (index != -1) {
-            pkgname = pkgname.substring(0, index);
-        }
-        return pkgname;
     }
 
     /**
@@ -1102,9 +1086,9 @@ public class Utils {
     }
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      * @param type the TypeMirror to be interrogated
-     * @return  the closest visible super class.  Return null if it cannot
+     * @return  the closest visible superclass.  Return null if it cannot
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
@@ -1113,10 +1097,10 @@ public class Utils {
 
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      *
      * @param te the TypeElement to be interrogated
-     * @return the closest visible super class.  Return null if it cannot
+     * @return the closest visible superclass.  Return null if it cannot
      *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
@@ -1252,32 +1236,6 @@ public class Utils {
         return result.toString();
     }
 
-    public CharSequence normalizeNewlines(CharSequence text) {
-        StringBuilder sb = new StringBuilder();
-        final int textLength = text.length();
-        final String NL = DocletConstants.NL;
-        int pos = 0;
-        for (int i = 0; i < textLength; i++) {
-            char ch = text.charAt(i);
-            switch (ch) {
-                case '\n' -> {
-                    sb.append(text, pos, i);
-                    sb.append(NL);
-                    pos = i + 1;
-                }
-                case '\r' -> {
-                    sb.append(text, pos, i);
-                    sb.append(NL);
-                    if (i + 1 < textLength && text.charAt(i + 1) == '\n')
-                        i++;
-                    pos = i + 1;
-                }
-            }
-        }
-        sb.append(text, pos, textLength);
-        return sb;
-    }
-
     /**
      * Returns a locale independent lower cased String. That is, it
      * always uses US locale, this is a clone of the one in StringUtils.
@@ -1308,7 +1266,7 @@ public class Utils {
      * @return true if the given Element is deprecated for removal.
      */
     public boolean isDeprecatedForRemoval(Element e) {
-        Object forRemoval = getDeprecatedElement(e, "forRemoval");
+        Object forRemoval = getAnnotationElement(e, getDeprecatedType(), "forRemoval");
         return forRemoval != null && (boolean) forRemoval;
     }
 
@@ -1319,21 +1277,31 @@ public class Utils {
      * @return the Deprecated.since value for e, or null.
      */
     public String getDeprecatedSince(Element e) {
-        return (String) getDeprecatedElement(e, "since");
+        return (String) getAnnotationElement(e, getDeprecatedType(), "since");
+    }
+
+    /**
+     * Returns the value of the internal {@code PreviewFeature.feature} element.
+     *
+     * @param e the Element to check
+     * @return the PreviewFeature.feature for e, or null
+     */
+    public Object getPreviewFeature(Element e) {
+        return getAnnotationElement(e, getSymbol("jdk.internal.javac.PreviewFeature"), "feature");
     }
 
     /**
      * Returns the Deprecated annotation element value of the given element, or null.
      */
-    private Object getDeprecatedElement(Element e, String elementName) {
+    private Object getAnnotationElement(Element e, TypeMirror annotationType, String annotationElementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
         JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
-            if (jctypes.isSameType(anno.getAnnotationType().asElement().asType(), getDeprecatedType())) {
+            if (jctypes.isSameType(anno.getAnnotationType(), annotationType)) {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {
-                        if (element.getSimpleName().contentEquals(elementName)) {
+                        if (element.getSimpleName().contentEquals(annotationElementName)) {
                             return (pairs.get(element)).getValue();
                         }
                     }
@@ -1434,26 +1402,6 @@ public class Utils {
             filteredOutClasses.add(e);
         }
         return filteredOutClasses;
-    }
-
-    /**
-     * Compares two elements.
-     * @param e1 first Element
-     * @param e2 second Element
-     * @return a true if they are the same, false otherwise.
-     */
-    public boolean elementsEqual(Element e1, Element e2) {
-        if (e1.getKind() != e2.getKind()) {
-            return false;
-        }
-        String s1 = getSimpleName(e1);
-        String s2 = getSimpleName(e2);
-        if (compareStrings(s1, s2) == 0) {
-            String f1 = getFullyQualifiedName(e1, true);
-            String f2 = getFullyQualifiedName(e2, true);
-            return compareStrings(f1, f2) == 0;
-        }
-        return false;
     }
 
     /**
@@ -2193,18 +2141,6 @@ public class Utils {
         return mdle.getQualifiedName().toString();
     }
 
-    public boolean isStartElement(DocTree doctree) {
-        return isKind(doctree, START_ELEMENT);
-    }
-
-    public boolean isText(DocTree doctree) {
-        return isKind(doctree, TEXT);
-    }
-
-    private boolean isKind(DocTree doctree, DocTree.Kind match) {
-        return  doctree.getKind() == match;
-    }
-
     private final CommentHelperCache commentHelperCache = new CommentHelperCache(this);
 
     public CommentHelper getCommentHelper(Element element) {
@@ -2230,7 +2166,7 @@ public class Utils {
                 .toList();
     }
 
-    public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+    public <T extends DocTree> List<T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
@@ -2477,21 +2413,25 @@ public class Utils {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
     }
 
-    public List<? extends ThrowsTree> getThrowsTrees(Element element) {
+    public List<? extends SpecTree> getSpecTrees(Element element) {
+        return getBlockTags(element, SPEC, SpecTree.class);
+    }
+
+    public List<ThrowsTree> getThrowsTrees(Element element) {
         return getBlockTags(element,
                 t -> switch (t.getKind()) { case EXCEPTION, THROWS -> true; default -> false; },
                 ThrowsTree.class);
     }
 
-    public List<? extends ParamTree> getTypeParamTrees(Element element) {
+    public List<ParamTree> getTypeParamTrees(Element element) {
         return getParamTrees(element, true);
     }
 
-    public List<? extends ParamTree> getParamTrees(Element element) {
+    public List<ParamTree> getParamTrees(Element element) {
         return getParamTrees(element, false);
     }
 
-    private  List<? extends ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
+    private  List<ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
         return getBlockTags(element,
                 t -> t.getKind() == PARAM && ((ParamTree) t).isTypeParameter() == isTypeParameters,
                 ParamTree.class);
@@ -2810,7 +2750,7 @@ public class Utils {
     }
 
     /**
-     * An element can have flags that place it into some sub-categories, like
+     * An element can have flags that place it into some subcategories, like
      * being a preview or a deprecated element.
      */
     public enum ElementFlag {

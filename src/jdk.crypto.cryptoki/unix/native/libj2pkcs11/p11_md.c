@@ -79,7 +79,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     jstring jGetFunctionList) {
 
     void *hModule;
-    char *error;
     int i;
     CK_ULONG ulCount = 0;
     CK_C_GetInterfaceList C_GetInterfaceList = NULL;

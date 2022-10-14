@@ -27,12 +27,12 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.*;
 import java.util.concurrent.TimeUnit;
 
-@Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
-@Fork(value=1)
+@Fork(value=2)
 public class AutoVectorization2DArray {
     @Param({"16", "32", "64"})
     private int LEN;

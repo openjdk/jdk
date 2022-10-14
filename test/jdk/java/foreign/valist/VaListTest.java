@@ -53,6 +53,8 @@ import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -60,9 +62,14 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static jdk.internal.foreign.PlatformLayouts.*;
 import static org.testng.Assert.*;
 
@@ -132,15 +139,15 @@ public class VaListTest extends NativeTestHelper {
             = (builder) -> VaList.make(builder, MemorySession.openConfined());
 
     private static final BiFunction<Consumer<VaList.Builder>, MemorySession, VaList> winVaListScopedFactory
-            = (builder, session) -> Windowsx64Linker.newVaList(builder, session);
+            = Windowsx64Linker::newVaList;
     private static final BiFunction<Consumer<VaList.Builder>, MemorySession, VaList> sysvVaListScopedFactory
-            = (builder, session) -> SysVx64Linker.newVaList(builder, session);
+            = SysVx64Linker::newVaList;
     private static final BiFunction<Consumer<VaList.Builder>, MemorySession, VaList> linuxAArch64VaListScopedFactory
-            = (builder, session) -> LinuxAArch64Linker.newVaList(builder, session);
+            = LinuxAArch64Linker::newVaList;
     private static final BiFunction<Consumer<VaList.Builder>, MemorySession, VaList> macAArch64VaListScopedFactory
-            = (builder, session) -> MacOsAArch64Linker.newVaList(builder, session);
+            = MacOsAArch64Linker::newVaList;
     private static final BiFunction<Consumer<VaList.Builder>, MemorySession, VaList> platformVaListScopedFactory
-            = (builder, session) -> VaList.make(builder, session);
+            = VaList::make;
 
     @DataProvider
     @SuppressWarnings("unchecked")
@@ -815,4 +822,87 @@ public class VaListTest extends NativeTestHelper {
             }
         }
     }
+
+    @DataProvider
+    public static Object[][] overflow() {
+        List<Function<Consumer<VaList.Builder>, VaList>> factories = List.of(
+            winVaListFactory,
+            sysvVaListFactory,
+            linuxAArch64VaListFactory,
+            macAArch64VaListFactory
+        );
+        List<List<MemoryLayout>> contentsCases = List.of(
+            List.of(JAVA_INT),
+            List.of(JAVA_LONG),
+            List.of(JAVA_DOUBLE),
+            List.of(ADDRESS),
+            List.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG,
+                    JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG,
+                    JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE,
+                    JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE,
+                    JAVA_INT, JAVA_LONG, JAVA_DOUBLE, ADDRESS)
+        );
+        List<MemoryLayout> overflowCases = List.of(
+            JAVA_INT,
+            JAVA_LONG,
+            JAVA_DOUBLE,
+            ADDRESS
+        );
+        return factories.stream()
+                .<Object[]>mapMulti((factory, sink) -> {
+                    for (List<MemoryLayout> content : contentsCases) {
+                        for (MemoryLayout overflow : overflowCases) {
+                            sink.accept(new Object[]{ factory, content, overflow });
+                        }
+                    }
+                })
+                .toArray(Object[][]::new);
+    }
+
+    private static void buildVaList(VaList.Builder builder, List<MemoryLayout> contents) {
+        for (MemoryLayout layout : contents) {
+            if (layout instanceof ValueLayout.OfInt ofInt) {
+                 builder.addVarg(ofInt, 1);
+            } else if (layout instanceof ValueLayout.OfLong ofLong) {
+                 builder.addVarg(ofLong, 1L);
+            } else if (layout instanceof ValueLayout.OfDouble ofDouble) {
+                 builder.addVarg(ofDouble, 1D);
+            } else if (layout instanceof ValueLayout.OfAddress ofAddress) {
+                 builder.addVarg(ofAddress, MemoryAddress.ofLong(1));
+            }
+        }
+    }
+
+    @Test(dataProvider = "overflow")
+    public void testSkipOverflow(Function<Consumer<VaList.Builder>, VaList> vaListFactory,
+                                 List<MemoryLayout> contents,
+                                 MemoryLayout skipped) {
+        VaList vaList = vaListFactory.apply(b -> buildVaList(b, contents));
+        vaList.skip(contents.toArray(MemoryLayout[]::new));
+        assertThrows(NoSuchElementException.class, () -> vaList.skip(skipped));
+    }
+
+    private static void nextVarg(VaList vaList, MemoryLayout layout) {
+        if (layout instanceof ValueLayout.OfInt ofInt) {
+            assertEquals(vaList.nextVarg(ofInt), 1);
+        } else if (layout instanceof ValueLayout.OfLong ofLong) {
+            assertEquals(vaList.nextVarg(ofLong), 1L);
+        } else if (layout instanceof ValueLayout.OfDouble ofDouble) {
+            assertEquals(vaList.nextVarg(ofDouble), 1D);
+        } else if (layout instanceof ValueLayout.OfAddress ofAddress) {
+            assertEquals(vaList.nextVarg(ofAddress), MemoryAddress.ofLong(1));
+        }
+    }
+
+    @Test(dataProvider = "overflow")
+    public void testVargOverflow(Function<Consumer<VaList.Builder>, VaList> vaListFactory,
+                                 List<MemoryLayout> contents,
+                                 MemoryLayout next) {
+        VaList vaList = vaListFactory.apply(b -> buildVaList(b, contents));
+        for (MemoryLayout layout : contents) {
+            nextVarg(vaList, layout);
+        }
+        assertThrows(NoSuchElementException.class, () -> nextVarg(vaList, next));
+    }
+
 }

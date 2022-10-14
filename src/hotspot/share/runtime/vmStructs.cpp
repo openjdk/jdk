@@ -91,6 +91,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/notificationThread.hpp"
@@ -101,13 +102,11 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
@@ -238,7 +237,7 @@
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
   nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
-  nonstatic_field(InstanceKlass,               _init_state,                                   u1)                                    \
+  nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
   nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
   nonstatic_field(InstanceKlass,               _reference_type,                               u1)                                    \
@@ -288,7 +287,6 @@
   nonstatic_field(DataLayout,                  _header._struct._bci,                          u2)                                    \
   nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
   nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
-  nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
@@ -662,10 +660,8 @@
   nonstatic_field(nmethod,                     _entry_point,                                  address)                               \
   nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
-  volatile_nonstatic_field(nmethod,            _lock_count,                                   jint)                                  \
-  volatile_nonstatic_field(nmethod,            _stack_traversal_mark,                         int64_t)                               \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
-  nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
+  nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
@@ -1318,7 +1314,6 @@
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
-        declare_type(CodeCacheSweeperThread, JavaThread)                  \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
@@ -1500,7 +1495,6 @@
   declare_c2_type(CallDynamicJavaNode, CallJavaNode)                      \
   declare_c2_type(CallRuntimeNode, CallNode)                              \
   declare_c2_type(CallLeafNode, CallRuntimeNode)                          \
-  declare_c2_type(CallNativeNode, CallNode)                               \
   declare_c2_type(CallLeafNoFPNode, CallLeafNode)                         \
   declare_c2_type(CallLeafVectorNode, CallLeafNode)                       \
   declare_c2_type(AllocateNode, CallNode)                                 \
@@ -1588,23 +1582,17 @@
   declare_c2_type(DivDNode, Node)                                         \
   declare_c2_type(UDivINode, Node)                                        \
   declare_c2_type(UDivLNode, Node)                                        \
-  declare_c2_type(NoOvfDivINode, DivINode)                                \
-  declare_c2_type(NoOvfDivLNode, DivLNode)                                \
   declare_c2_type(ModINode, Node)                                         \
   declare_c2_type(ModLNode, Node)                                         \
   declare_c2_type(ModFNode, Node)                                         \
   declare_c2_type(ModDNode, Node)                                         \
   declare_c2_type(UModINode, Node)                                        \
   declare_c2_type(UModLNode, Node)                                        \
-  declare_c2_type(NoOvfModINode, ModINode)                                \
-  declare_c2_type(NoOvfModLNode, ModLNode)                                \
   declare_c2_type(DivModNode, MultiNode)                                  \
   declare_c2_type(DivModINode, DivModNode)                                \
   declare_c2_type(DivModLNode, DivModNode)                                \
   declare_c2_type(UDivModINode, DivModNode)                               \
   declare_c2_type(UDivModLNode, DivModNode)                               \
-  declare_c2_type(NoOvfDivModINode, DivModINode)                          \
-  declare_c2_type(NoOvfDivModLNode, DivModLNode)                          \
   declare_c2_type(BoxLockNode, Node)                                      \
   declare_c2_type(LoopNode, RegionNode)                                   \
   declare_c2_type(CountedLoopNode, LoopNode)                              \
@@ -1630,7 +1618,6 @@
   declare_c2_type(MachCallStaticJavaNode, MachCallJavaNode)               \
   declare_c2_type(MachCallDynamicJavaNode, MachCallJavaNode)              \
   declare_c2_type(MachCallRuntimeNode, MachCallNode)                      \
-  declare_c2_type(MachCallNativeNode, MachCallNode)                       \
   declare_c2_type(MachHaltNode, MachReturnNode)                           \
   declare_c2_type(MachTempNode, MachNode)                                 \
   declare_c2_type(MemNode, Node)                                          \
@@ -1661,11 +1648,8 @@
   declare_c2_type(StoreNNode, StoreNode)                                  \
   declare_c2_type(StoreNKlassNode, StoreNode)                             \
   declare_c2_type(StoreCMNode, StoreNode)                                 \
-  declare_c2_type(LoadPLockedNode, LoadPNode)                             \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
   declare_c2_type(LoadStoreNode, Node)                                    \
-  declare_c2_type(StorePConditionalNode, LoadStoreNode)                   \
-  declare_c2_type(StoreLConditionalNode, LoadStoreNode)                   \
   declare_c2_type(CompareAndSwapNode, LoadStoreConditionalNode)           \
   declare_c2_type(CompareAndSwapBNode, CompareAndSwapNode)                \
   declare_c2_type(CompareAndSwapSNode, CompareAndSwapNode)                \
@@ -1716,11 +1700,13 @@
   declare_c2_type(CmpNode, SubNode)                                       \
   declare_c2_type(CmpINode, CmpNode)                                      \
   declare_c2_type(CmpUNode, CmpNode)                                      \
+  declare_c2_type(CmpU3Node, CmpUNode)                                    \
   declare_c2_type(CmpPNode, CmpNode)                                      \
   declare_c2_type(CmpNNode, CmpNode)                                      \
   declare_c2_type(CmpLNode, CmpNode)                                      \
   declare_c2_type(CmpULNode, CmpNode)                                     \
   declare_c2_type(CmpL3Node, CmpLNode)                                    \
+  declare_c2_type(CmpUL3Node, CmpULNode)                                  \
   declare_c2_type(CmpFNode, CmpNode)                                      \
   declare_c2_type(CmpF3Node, CmpFNode)                                    \
   declare_c2_type(CmpDNode, CmpNode)                                      \
@@ -1783,6 +1769,9 @@
   declare_c2_type(FmaVFNode, VectorNode)                                  \
   declare_c2_type(CMoveVFNode, VectorNode)                                \
   declare_c2_type(CMoveVDNode, VectorNode)                                \
+  declare_c2_type(CompressVNode, VectorNode)                              \
+  declare_c2_type(CompressMNode, VectorNode)                              \
+  declare_c2_type(ExpandVNode, VectorNode)                                \
   declare_c2_type(MulReductionVDNode, ReductionNode)                      \
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
@@ -1852,6 +1841,10 @@
   declare_c2_type(CopySignFNode, Node)                                    \
   declare_c2_type(SignumDNode, Node)                                      \
   declare_c2_type(SignumFNode, Node)                                      \
+  declare_c2_type(IsInfiniteFNode, Node)                                  \
+  declare_c2_type(IsInfiniteDNode, Node)                                  \
+  declare_c2_type(IsFiniteFNode, Node)                                    \
+  declare_c2_type(IsFiniteDNode, Node)                                    \
   declare_c2_type(LoadVectorGatherNode, LoadVectorNode)                   \
   declare_c2_type(StoreVectorScatterNode, StoreVectorNode)                \
   declare_c2_type(VectorLoadMaskNode, VectorNode)                         \
@@ -1874,6 +1867,10 @@
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \
   declare_c2_type(VectorMaskCastNode, VectorNode)                         \
+  declare_c2_type(CountLeadingZerosVNode, VectorNode)                     \
+  declare_c2_type(CountTrailingZerosVNode, VectorNode)                    \
+  declare_c2_type(ReverseBytesVNode, VectorNode)                          \
+  declare_c2_type(ReverseVNode, VectorNode)                               \
   declare_c2_type(MaskAllNode, VectorNode)                                \
   declare_c2_type(AndVMaskNode, VectorNode)                               \
   declare_c2_type(OrVMaskNode, VectorNode)                                \
@@ -1971,6 +1968,8 @@
   declare_integer_type(AccessFlags)  /* FIXME: wrong type (not integer) */\
   declare_toplevel_type(address)      /* FIXME: should this be an integer type? */\
   declare_integer_type(BasicType)   /* FIXME: wrong type (not integer) */ \
+                                                                          \
+  declare_integer_type(CompLevel)                                         \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \
@@ -2279,6 +2278,7 @@
                                                                           \
   declare_constant(InstanceKlass::allocated)                              \
   declare_constant(InstanceKlass::loaded)                                 \
+  declare_constant(InstanceKlass::being_linked)                           \
   declare_constant(InstanceKlass::linked)                                 \
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
@@ -2549,9 +2549,8 @@
   /* Calling convention constants */                                      \
   /********************************/                                      \
                                                                           \
-  declare_constant(RegisterImpl::number_of_registers)                     \
   declare_constant(ConcreteRegisterImpl::number_of_registers)             \
-  declare_preprocessor_constant("REG_COUNT", REG_COUNT)                \
+  declare_preprocessor_constant("REG_COUNT", REG_COUNT)                   \
   declare_c2_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT) \
   declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT) \
                                                                           \

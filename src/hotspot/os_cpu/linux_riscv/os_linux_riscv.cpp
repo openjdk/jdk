@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,8 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
-#include "os_share_linux.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -41,12 +42,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
@@ -144,6 +145,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* frame_sp = NULL;
   intptr_t* frame_fp = NULL;
   address epc = fetch_frame_from_context(ucVoid, &frame_sp, &frame_fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(frame_sp, frame_fp, epc);
 }
 
@@ -207,9 +214,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
       // Handle signal from NativeJump::patch_verified_entry().
       if ((sig == SIGILL || sig == SIGTRAP)
-          && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+          && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
+          tty->print_cr("trap: not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
         }
         stub = SharedRuntime::get_handle_wrong_method_stub();
       } else if (sig == SIGSEGV && SafepointMechanism::is_poll_address((address)info->si_addr)) {
@@ -218,7 +225,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // BugId 4454115: A read from a MappedByteBuffer can fault
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
@@ -333,35 +340,36 @@ static const char* reg_abi_names[] = {
 };
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) {
-    return;
-  }
+  if (context == NULL) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
+
   st->print_cr("Registers:");
   for (int r = 0; r < 32; r++) {
-    st->print("%-*.*s=", 8, 8, reg_abi_names[r]);
-    print_location(st, uc->uc_mcontext.__gregs[r]);
+    st->print_cr("%-*.*s=" INTPTR_FORMAT, 8, 8, reg_abi_names[r], (uintptr_t)uc->uc_mcontext.__gregs[r]);
   }
   st->cr();
+}
 
-  intptr_t *frame_sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(frame_sp));
-  print_hex_dump(st, (address)frame_sp, (address)(frame_sp + 64), sizeof(intptr_t));
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
+
+  address sp = (address)os::Linux::ucontext_get_sp(uc);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, UseRVC ? sizeof(char) : 4/*non-compressed native instruction size*/);
+  address pc = os::fetch_frame_from_context(uc).pc();
+  print_instructions(st, pc, UseRVC ? sizeof(char) : (int)NativeInstruction::instruction_size);
   st->cr();
 }
 
 void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) {
-    return;
-  }
+  if (context == NULL) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
 
@@ -374,8 +382,10 @@ void os::print_register_info(outputStream *st, const void *context) {
 
   // this is only for the "general purpose" registers
 
-  for (int r = 0; r < 32; r++)
-    st->print_cr("%-*.*s=" INTPTR_FORMAT, 8, 8, reg_abi_names[r], (uintptr_t)uc->uc_mcontext.__gregs[r]);
+  for (int r = 0; r < 32; r++) {
+    st->print("%-*.*s=", 8, 8, reg_abi_names[r]);
+    print_location(st, uc->uc_mcontext.__gregs[r]);
+  }
   st->cr();
 }
 
@@ -390,6 +400,10 @@ void os::verify_stack_alignment() {
 
 int os::extra_bang_size_in_bytes() {
   return 0;
+}
+
+static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  *(jlong *) dst = *(const jlong *) src;
 }
 
 extern "C" {
@@ -427,18 +441,19 @@ extern "C" {
       }
     }
   }
+
   void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end) {
-        os::atomic_copy64(from++, to++);
+        atomic_copy64(from++, to++);
       }
     } else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end) {
-        os::atomic_copy64(from--, to--);
+        atomic_copy64(from--, to--);
       }
     }
   }

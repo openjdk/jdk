@@ -60,18 +60,10 @@ import jdk.jfr.internal.event.EventWriter;
  */
 public final class EventInstrumentation {
 
-    record SettingInfo(String fieldName, int index, Type paramType, String methodName, SettingControl settingControl) {
-        /**
-         * A malicious user must never be able to run a callback in the wrong
-         * context. Methods on SettingControl must therefore never be invoked directly
-         * by JFR, instead use jdk.jfr.internal.Control.
-         */
-        public SettingControl settingControl() {
-            return this.settingControl;
-        }
+    record SettingInfo(Type paramType, String methodName) {
     }
 
-    record FieldInfo(String fieldName, String fieldDescriptor, String internalClassName) {
+    record FieldInfo(String name, String descriptor) {
     }
 
     public static final String FIELD_EVENT_THREAD = "eventThread";
@@ -102,6 +94,8 @@ public final class EventInstrumentation {
     private static final Method METHOD_EVENT_CONFIGURATION_GET_SETTING = new Method("getSetting", TYPE_SETTING_CONTROL, new Type[] { Type.INT_TYPE });
     private static final Method METHOD_DURATION = new Method("duration", Type.LONG_TYPE, new Type[] { Type.LONG_TYPE });
     private static final Method METHOD_RESET = new Method("reset", "()V");
+    private static final Method METHOD_ENABLED = new Method("enabled", Type.BOOLEAN_TYPE, new Type[0]);
+    private static final Method METHOD_SHOULD_COMMIT_LONG = new Method("shouldCommit", Type.BOOLEAN_TYPE, new Type[] { Type.LONG_TYPE });
 
     private final ClassNode classNode;
     private final List<SettingInfo> settingInfos;
@@ -112,8 +106,9 @@ public final class EventInstrumentation {
     private final Method staticCommitMethod;
     private final long eventTypeId;
     private final boolean guardEventConfiguration;
+    private final boolean isJDK;
 
-    EventInstrumentation(Class<?> superClass, byte[] bytes, long id, boolean bootClass, boolean guardEventConfiguration) {
+    EventInstrumentation(Class<?> superClass, byte[] bytes, long id, boolean isJDK, boolean guardEventConfiguration) {
         this.eventTypeId = id;
         this.superClass = superClass;
         this.classNode = createClassNode(bytes);
@@ -121,19 +116,20 @@ public final class EventInstrumentation {
         this.fieldInfos = buildFieldInfos(superClass, classNode);
         String n = annotationValue(classNode, ANNOTATION_NAME_DESCRIPTOR, String.class);
         this.eventName = n == null ? classNode.name.replace("/", ".") : n;
-        this.staticCommitMethod = bootClass ? findStaticCommitMethod(classNode, fieldInfos) : null;
+        this.staticCommitMethod = isJDK ? findStaticCommitMethod(classNode, fieldInfos) : null;
         this.untypedEventConfiguration = hasUntypedConfiguration();
         // Corner case when we are forced to generate bytecode (bytesForEagerInstrumentation)
         // We can't reference EventConfiguration::isEnabled() before event class has been registered,
         // so we add a guard against a null reference.
         this.guardEventConfiguration = guardEventConfiguration;
+        this.isJDK = isJDK;
     }
 
     public static Method findStaticCommitMethod(ClassNode classNode, List<FieldInfo> fields) {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
-        for (FieldInfo v : fields) {
-            sb.append(v.fieldDescriptor);
+        for (FieldInfo field : fields) {
+            sb.append(field.descriptor);
         }
         sb.append(")V");
         Method m = new Method("commit", sb.toString());
@@ -240,10 +236,8 @@ public final class EventInstrumentation {
                             Type[] args = Type.getArgumentTypes(m.desc);
                             if (args.length == 1) {
                                 Type paramType = args[0];
-                                String fieldName = EventControl.FIELD_SETTING_PREFIX + settingInfos.size();
-                                int index = settingInfos.size();
                                 methodSet.add(m.name);
-                                settingInfos.add(new SettingInfo(fieldName, index, paramType, m.name, null));
+                                settingInfos.add(new SettingInfo(paramType, m.name));
                             }
                         }
                     }
@@ -259,10 +253,8 @@ public final class EventInstrumentation {
                             if (method.getParameterCount() == 1) {
                                 Parameter param = method.getParameters()[0];
                                 Type paramType = Type.getType(param.getType());
-                                String fieldName = EventControl.FIELD_SETTING_PREFIX + settingInfos.size();
-                                int index = settingInfos.size();
                                 methodSet.add(method.getName());
-                                settingInfos.add(new SettingInfo(fieldName, index, paramType, method.getName(), null));
+                                settingInfos.add(new SettingInfo(paramType, method.getName()));
                             }
                         }
                     }
@@ -281,11 +273,11 @@ public final class EventInstrumentation {
         // control in which order they occur and we can add @Name, @Description
         // in Java, instead of in native. It also means code for adding implicit
         // fields for native can be reused by Java.
-        fieldInfos.add(new FieldInfo("startTime", Type.LONG_TYPE.getDescriptor(), classNode.name));
-        fieldInfos.add(new FieldInfo("duration", Type.LONG_TYPE.getDescriptor(), classNode.name));
+        fieldInfos.add(new FieldInfo("startTime", Type.LONG_TYPE.getDescriptor()));
+        fieldInfos.add(new FieldInfo("duration", Type.LONG_TYPE.getDescriptor()));
         for (FieldNode field : classNode.fields) {
             if (!fieldSet.contains(field.name) && isValidField(field.access, Type.getType(field.desc).getClassName())) {
-                FieldInfo fi = new FieldInfo(field.name, field.desc, classNode.name);
+                FieldInfo fi = new FieldInfo(field.name, field.desc);
                 fieldInfos.add(fi);
                 fieldSet.add(field.name);
             }
@@ -299,7 +291,7 @@ public final class EventInstrumentation {
                         if (!fieldSet.contains(fieldName)) {
                             Type fieldType = Type.getType(field.getType());
                             String internalClassName = ASMToolkit.getInternalName(c.getName());
-                            fieldInfos.add(new FieldInfo(fieldName, fieldType.getDescriptor(), internalClassName));
+                            fieldInfos.add(new FieldInfo(fieldName, fieldType.getDescriptor()));
                             fieldSet.add(fieldName);
                         }
                     }
@@ -334,22 +326,8 @@ public final class EventInstrumentation {
     }
 
     private void makeInstrumented() {
-        updateMethod(METHOD_IS_ENABLED, methodVisitor -> {
-            Label nullLabel = new Label();
-            if (guardEventConfiguration) {
-                getEventConfiguration(methodVisitor);
-                methodVisitor.visitJumpInsn(Opcodes.IFNULL, nullLabel);
-            }
-            getEventConfiguration(methodVisitor);
-            invokeVirtual(methodVisitor, TYPE_EVENT_CONFIGURATION, METHOD_IS_ENABLED);
-            methodVisitor.visitInsn(Opcodes.IRETURN);
-            if (guardEventConfiguration) {
-                methodVisitor.visitLabel(nullLabel);
-                methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-                methodVisitor.visitInsn(Opcodes.ICONST_0);
-                methodVisitor.visitInsn(Opcodes.IRETURN);
-            }
-        });
+        // MyEvent#isEnabled()
+        updateEnabledMethod(METHOD_IS_ENABLED);
 
         // MyEvent#begin()
         updateMethod(METHOD_BEGIN, methodVisitor -> {
@@ -584,7 +562,7 @@ public final class EventInstrumentation {
                     // stack: [EW] [EW]
                     methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                     // stack: [EW] [EW] [this]
-                    methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), field.fieldName, field.fieldDescriptor);
+                    methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), field.name, field.descriptor);
                     // stack: [EW] [EW] <T>
                     EventWriterMethod eventMethod = EventWriterMethod.lookupMethod(field);
                     invokeVirtual(methodVisitor, TYPE_EVENT_WRITER, eventMethod.asmMethod);
@@ -643,8 +621,8 @@ public final class EventInstrumentation {
             methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_DURATION, "J");
             invokeVirtual(methodVisitor, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT);
             methodVisitor.visitJumpInsn(Opcodes.IFEQ, fail);
-            int index = 0;
-            for (SettingInfo si : settingInfos) {
+            for (int index = 0; index < settingInfos.size(); index++) {
+                SettingInfo si = settingInfos.get(index);
                 // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
                 methodVisitor.visitIntInsn(Opcodes.ALOAD, 0);
                 if (untypedEventConfiguration) {
@@ -658,7 +636,6 @@ public final class EventInstrumentation {
                 methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, si.paramType().getInternalName());
                 methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), si.methodName, "(" + si.paramType().getDescriptor() + ")Z", false);
                 methodVisitor.visitJumpInsn(Opcodes.IFEQ, fail);
-                index++;
             }
             // return true
             methodVisitor.visitInsn(Opcodes.ICONST_1);
@@ -668,6 +645,74 @@ public final class EventInstrumentation {
             methodVisitor.visitInsn(Opcodes.ICONST_0);
             methodVisitor.visitInsn(Opcodes.IRETURN);
         });
+
+        if (isJDK) {
+            if (hasStaticMethod(METHOD_ENABLED)) {
+                updateEnabledMethod(METHOD_ENABLED);
+            };
+            updateIfStaticMethodExists(METHOD_SHOULD_COMMIT_LONG, methodVisitor -> {
+                Label fail = new Label();
+                if (guardEventConfiguration) {
+                    // if (eventConfiguration == null) goto fail;
+                    getEventConfiguration(methodVisitor);
+                    methodVisitor.visitJumpInsn(Opcodes.IFNULL, fail);
+                }
+                // return eventConfiguration.shouldCommit(duration);
+                getEventConfiguration(methodVisitor);
+                methodVisitor.visitVarInsn(Opcodes.LLOAD, 0);
+                invokeVirtual(methodVisitor, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT);
+                methodVisitor.visitInsn(Opcodes.IRETURN);
+                // fail:
+                methodVisitor.visitLabel(fail);
+                // return false
+                methodVisitor.visitInsn(Opcodes.ICONST_0);
+                methodVisitor.visitInsn(Opcodes.IRETURN);
+                methodVisitor.visitMaxs(0, 0);
+                methodVisitor.visitEnd();
+            });
+            updateIfStaticMethodExists(METHOD_TIME_STAMP, methodVisitor -> {
+                invokeStatic(methodVisitor, TYPE_EVENT_CONFIGURATION.getInternalName(), METHOD_TIME_STAMP);
+                methodVisitor.visitInsn(Opcodes.LRETURN);
+                methodVisitor.visitMaxs(0, 0);
+                methodVisitor.visitEnd();
+            });
+        }
+    }
+
+    private void updateEnabledMethod(Method method) {
+        updateMethod(method, methodVisitor -> {
+            Label nullLabel = new Label();
+            if (guardEventConfiguration) {
+                getEventConfiguration(methodVisitor);
+                methodVisitor.visitJumpInsn(Opcodes.IFNULL, nullLabel);
+            }
+            getEventConfiguration(methodVisitor);
+            invokeVirtual(methodVisitor, TYPE_EVENT_CONFIGURATION, METHOD_IS_ENABLED);
+            methodVisitor.visitInsn(Opcodes.IRETURN);
+            if (guardEventConfiguration) {
+                methodVisitor.visitLabel(nullLabel);
+                methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+                methodVisitor.visitInsn(Opcodes.ICONST_0);
+                methodVisitor.visitInsn(Opcodes.IRETURN);
+            }
+            methodVisitor.visitMaxs(0, 0);
+            methodVisitor.visitEnd();
+        });
+    }
+
+    private void updateIfStaticMethodExists(Method method, Consumer<MethodVisitor> code) {
+        if (hasStaticMethod(method)) {
+            updateMethod(method, code);
+        }
+    }
+
+    private boolean hasStaticMethod(Method method) {
+        for (MethodNode m : classNode.methods) {
+            if (m.name.equals(method.getName()) && m.desc.equals(method.getDescriptor())) {
+                return Modifier.isStatic(m.access);
+            }
+        }
+        return false;
     }
 
     private void getEventWriter(MethodVisitor mv) {

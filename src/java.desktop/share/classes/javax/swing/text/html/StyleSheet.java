@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1818,8 +1818,6 @@ public class StyleSheet extends StyleContext {
     }
 
 
-    static final Border noBorder = new EmptyBorder(0,0,0,0);
-
     /**
      * Class to carry out some of the duties of
      * CSS formatting.  Implementations of this
@@ -2519,7 +2517,6 @@ public class StyleSheet extends StyleContext {
         private boolean checkedForStart;
         private int start;
         private CSS.Value type;
-        URL imageurl;
         private StyleSheet ss = null;
         Icon img = null;
         private int bulletgap = 5;
@@ -2821,17 +2818,18 @@ public class StyleSheet extends StyleContext {
         }
 
         Object doGetAttribute(Object key) {
-            if (key == CSS.Attribute.FONT_SIZE && !isDefined(key)) {
+            Object retValue = super.getAttribute(key);
+            if (retValue != null) {
+                return retValue;
+            }
+
+            if (key == CSS.Attribute.FONT_SIZE) {
                 // CSS.FontSize represents a specified value and we need
                 // to inherit a computed value so don't resolve percentage
                 // value from parent.
                 return fontSizeInherit();
             }
 
-            Object retValue = super.getAttribute(key);
-            if (retValue != null) {
-                return retValue;
-            }
             // didn't find it... try parent if it's a css attribute
             // that is inherited.
             if (key instanceof CSS.Attribute) {
@@ -3221,8 +3219,6 @@ public class StyleSheet extends StyleContext {
 
 
     // ---- Variables ---------------------------------------------
-
-    static final int DEFAULT_FONT_SIZE = 3;
 
     private transient Object fontSizeInherit;
 

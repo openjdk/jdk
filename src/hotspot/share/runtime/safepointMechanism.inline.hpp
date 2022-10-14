@@ -31,7 +31,6 @@
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"
-#include "runtime/thread.inline.hpp"
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_page(uintptr_t poll_value) {

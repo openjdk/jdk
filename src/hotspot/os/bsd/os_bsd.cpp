@@ -37,7 +37,6 @@
 #include "oops/oop.inline.hpp"
 #include "os_bsd.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -47,16 +46,18 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
@@ -121,7 +122,6 @@ mach_timebase_info_data_t os::Bsd::_timebase_info = {0, 0};
 volatile uint64_t         os::Bsd::_max_abstime   = 0;
 #endif
 pthread_t os::Bsd::_main_thread;
-int os::Bsd::_page_size = -1;
 
 #if defined(__APPLE__) && defined(__x86_64__)
 static const int processor_id_unassigned = -1;
@@ -710,9 +710,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) pthread_self());
-
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), (uintx) pthread_self(),
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
   return true;
 }
 
@@ -943,7 +944,6 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
-// ported from solaris version
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
   // buf is not optional, but offset is optional
@@ -979,7 +979,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -994,7 +994,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   return NULL;
@@ -1008,7 +1008,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -1025,7 +1025,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   int diag_msg_max_length=ebuflen-strlen(ebuf);
@@ -1473,28 +1473,8 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
-
-int os::vm_page_size() {
-  // Seems redundant as all get out
-  assert(os::Bsd::page_size() != -1, "must call os::init");
-  return os::Bsd::page_size();
-}
-
-// Solaris allocates memory by pages.
-int os::vm_allocation_granularity() {
-  assert(os::Bsd::page_size() != -1, "must call os::init");
-  return os::Bsd::page_size();
-}
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
@@ -1673,7 +1653,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
 
 static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // Bsd wants the mprotect address argument to be page aligned.
-  char* bottom = (char*)align_down((intptr_t)addr, os::Bsd::page_size());
+  char* bottom = (char*)align_down((intptr_t)addr, os::vm_page_size());
 
   // According to SUSv3, mprotect() should only be used with mappings
   // established by mmap(), and mmap() always maps whole pages. Unaligned
@@ -1682,7 +1662,7 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // caller if you hit this assert.
   assert(addr == bottom, "sanity check");
 
-  size = align_up(pointer_delta(addr, bottom, 1) + size, os::Bsd::page_size());
+  size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
@@ -1785,13 +1765,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return NULL;
-}
-
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
 }
 
 // Used to convert frequent JVM_Yield() to nops
@@ -1943,11 +1916,13 @@ extern void report_error(char* file_name, int line_no, char* title,
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  Bsd::set_page_size(getpagesize());
-  if (Bsd::page_size() == -1) {
-    fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
+  int page_size = getpagesize();
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+  if (os::vm_page_size() <= 0) {
+    fatal("os_bsd.cpp: os::init: getpagesize() failed (%s)", os::strerror(errno));
   }
-  _page_sizes.add(Bsd::page_size());
+  _page_sizes.add(os::vm_page_size());
 
   Bsd::initialize_system_info();
 
@@ -1997,15 +1972,18 @@ jint os::init_2(void) {
       log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
       nbr_files.rlim_cur = nbr_files.rlim_max;
-
-#ifdef __APPLE__
-      // Darwin returns RLIM_INFINITY for rlim_max, but fails with EINVAL if
-      // you attempt to use RLIM_INFINITY. As per setrlimit(2), OPEN_MAX must
-      // be used instead
-      nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
-#endif
-
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+#ifdef __APPLE__
+      if (status != 0 && errno == EINVAL) {
+        // On macOS >= 10.6 if we define _DARWIN_UNLIMITED_STREAMS or _DARWIN_C_SOURCE
+        // (we define _DARWIN_C_SOURCE) we can ask for RLIM_INFINITY,
+        // however, on macOS < 10.6 Darwin returns RLIM_INFINITY for rlim_max,
+        // but fails with EINVAL if you attempt to use RLIM_INFINITY.
+        // As per setrlimit(2), OPEN_MAX must be used instead.
+        nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
+        status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      }
+#endif // __APPLE__
       if (status != 0) {
         log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
@@ -2164,28 +2142,6 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value,
   f(value, method, args, thread);
 }
 
-void os::print_statistics() {
-}
-
-bool os::message_box(const char* title, const char* message) {
-  int i;
-  fdStream err(defaultStream::error_fd());
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-  err.print_raw_cr(title);
-  for (i = 0; i < 78; i++) err.print_raw("-");
-  err.cr();
-  err.print_raw_cr(message);
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-
-  char buf[16];
-  // Prevent process from exiting upon "read error" without consuming all CPU
-  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
-
-  return buf[0] == 'y' || buf[0] == 'Y';
-}
-
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);
@@ -2205,25 +2161,6 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
     return filetime1.tv_nsec - filetime2.tv_nsec;
   }
   return diff;
-}
-
-// Is a (classpath) directory empty?
-bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
-  struct dirent *ptr;
-
-  dir = opendir(path);
-  if (dir == NULL) return true;
-
-  // Scan the directory
-  bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
-    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
-      result = false;
-    }
-  }
-  closedir(dir);
-  return result;
 }
 
 // This code originates from JDK's sysOpen and open64_w

@@ -40,6 +40,7 @@
 #include "logging/logStream.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
@@ -48,14 +49,17 @@
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/smallRegisterMap.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackOverflow.hpp"
@@ -145,7 +149,7 @@ Address |   |                            |    |   Caller is still in the chunk.
 
 static const bool TEST_THAW_ONE_CHUNK_FRAME = false; // force thawing frames one-at-a-time for testing
 
-#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation peformance debugging only
+#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation performance debugging only
 #if CONT_JFR
   #define CONT_JFR_ONLY(code) code
 #else
@@ -217,7 +221,7 @@ template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thr
 
 
 // Entry point to freeze. Transitions are handled manually
-// Called from generate_cont_doYield() in stubGenerator_<cpu>.cpp through Continuation::freeze_entry();
+// Called from gen_continuation_yield() in sharedRuntime_<cpu>.cpp through Continuation::freeze_entry();
 template<typename ConfigT>
 static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* sp))
   assert(sp == current->frame_anchor()->last_Java_sp(), "");
@@ -378,6 +382,10 @@ public:
 
   inline int size_if_fast_freeze_available();
 
+#ifdef ASSERT
+  bool interpreted_native_or_deoptimized_on_stack();
+#endif
+
 protected:
   inline void init_rest();
   void freeze_fast_init_cont_data(intptr_t* frame_sp);
@@ -422,7 +430,7 @@ private:
   static inline void relativize_interpreted_frame_metadata(const frame& f, const frame& hf);
 
 protected:
-  void freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp);
+  void freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_JFR_ONLY(COMMA bool chunk_is_allocated));
   bool freeze_fast_new_chunk(stackChunkOop chunk);
 
 #ifdef ASSERT
@@ -477,7 +485,7 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
   assert(_cont.chunk_invariant(), "");
   assert(!Interpreter::contains(_cont.entryPC()), "");
   static const int doYield_stub_frame_size = frame::metadata_words;
-  assert(StubRoutines::cont_doYield_stub()->frame_size() == doYield_stub_frame_size, "");
+  assert(SharedRuntime::cont_doYield_stub()->frame_size() == doYield_stub_frame_size, "");
 
   // properties of the continuation on the stack; all sizes are in words
   _cont_stack_top    = frame_sp + doYield_stub_frame_size; // we don't freeze the doYield stub frame
@@ -532,11 +540,6 @@ freeze_result Freeze<ConfigT>::try_freeze_fast() {
     return freeze_exception;
   }
 
-  EventContinuationFreezeOld e;
-  if (e.should_commit()) {
-    e.set_id(cast_from_oop<u8>(_cont.continuation()));
-    e.commit();
-  }
   // TODO R REMOVE when deopt change is fixed
   assert(!_thread->cont_fastpath() || _barriers, "");
   log_develop_trace(continuations)("-- RETRYING SLOW --");
@@ -551,7 +554,7 @@ int FreezeBase::size_if_fast_freeze_available() {
     return 0;
   }
 
-  assert(StubRoutines::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
+  assert(SharedRuntime::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
 
   int total_size_needed = cont_size();
 
@@ -602,7 +605,7 @@ void FreezeBase::freeze_fast_existing_chunk() {
     patch_stack_pd(bottom_sp, chunk->sp_address());
     // we don't patch the return pc at this time, so as not to make the stack unwalkable for async walks
 
-    freeze_fast_copy(chunk, chunk_start_sp);
+    freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
   } else { // the chunk is empty
     DEBUG_ONLY(_empty = true;)
     const int chunk_start_sp = chunk->sp();
@@ -612,7 +615,7 @@ void FreezeBase::freeze_fast_existing_chunk() {
     chunk->set_max_thawing_size(cont_size());
     chunk->set_argsize(_cont.argsize());
 
-    freeze_fast_copy(chunk, chunk_start_sp);
+    freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA false));
   }
 }
 
@@ -635,15 +638,14 @@ bool FreezeBase::freeze_fast_new_chunk(stackChunkOop chunk) {
   const int chunk_start_sp = cont_size() + frame::metadata_words;
   assert(chunk_start_sp == chunk->stack_size(), "");
 
-  DEBUG_ONLY(CONT_JFR_ONLY(chunk_is_allocated = true;))
   DEBUG_ONLY(_orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
 
-  freeze_fast_copy(chunk, chunk_start_sp);
+  freeze_fast_copy(chunk, chunk_start_sp CONT_JFR_ONLY(COMMA true));
 
   return true;
 }
 
-void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp) {
+void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_JFR_ONLY(COMMA bool chunk_is_allocated)) {
   assert(chunk != nullptr, "");
   assert(!chunk->has_mixed_frames(), "");
   assert(!chunk->is_gc_mode(), "");
@@ -698,11 +700,11 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp) {
   chunk->verify();
 
 #if CONT_JFR
-  EventContinuationFreezeYoung e;
+  EventContinuationFreezeFast e;
   if (e.should_commit()) {
     e.set_id(cast_from_oop<u8>(chunk));
     DEBUG_ONLY(e.set_allocate(chunk_is_allocated);)
-    e.set_size(cont_size << LogBytesPerWord);
+    e.set_size(cont_size() << LogBytesPerWord);
     e.commit();
   }
 #endif
@@ -715,6 +717,14 @@ NOINLINE freeze_result FreezeBase::freeze_slow() {
 
   log_develop_trace(continuations)("freeze_slow  #" INTPTR_FORMAT, _cont.hash());
   assert(_thread->thread_state() == _thread_in_vm || _thread->thread_state() == _thread_blocked, "");
+
+#if CONT_JFR
+  EventContinuationFreezeSlow e;
+  if (e.should_commit()) {
+    e.set_id(cast_from_oop<u8>(_cont.continuation()));
+    e.commit();
+  }
+#endif
 
   init_rest();
 
@@ -742,7 +752,6 @@ NOINLINE freeze_result FreezeBase::freeze_slow() {
 frame FreezeBase::freeze_start_frame() {
   frame f = _thread->last_frame();
   if (LIKELY(!_preempt)) {
-    assert(StubRoutines::cont_doYield_stub()->contains(f.pc()), "");
     return freeze_start_frame_yield_stub(f);
   } else {
     return freeze_start_frame_safepoint_stub(f);
@@ -750,8 +759,9 @@ frame FreezeBase::freeze_start_frame() {
 }
 
 frame FreezeBase::freeze_start_frame_yield_stub(frame f) {
-  assert(StubRoutines::cont_doYield_stub()->contains(f.pc()), "must be");
-  f = sender<ContinuationHelper::StubFrame>(f);
+  assert(SharedRuntime::cont_doYield_stub()->contains(f.pc()), "must be");
+  f = sender<ContinuationHelper::NonInterpretedUnknownFrame>(f);
+  assert(Continuation::is_frame_in_continuation(_thread->last_continuation(), f), "");
   return f;
 }
 
@@ -769,6 +779,7 @@ frame FreezeBase::freeze_start_frame_safepoint_stub(frame f) {
       f = sender<ContinuationHelper::StubFrame>(f); // Safepoint stub in interpreter
     }
   }
+  assert(Continuation::is_frame_in_continuation(_thread->last_continuation(), f), "");
   return f;
 }
 
@@ -1142,7 +1153,10 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_stub_frame(frame& f, frame& ca
   NOT_PRODUCT(_frames++;)
   _freeze_size += fsize;
 
-  RegisterMap map(_cont.thread(), true, false, false);
+  RegisterMap map(_cont.thread(),
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   ContinuationHelper::update_register_map<ContinuationHelper::StubFrame>(f, &map);
   f.oop_map()->update_register_map(&f, &map); // we have callee-save registers in this case
@@ -1199,7 +1213,6 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
     // old chunks are all in GC mode.
     assert(!UseG1GC, "G1 can not deal with allocating outside of eden");
     assert(!UseZGC, "ZGC can not deal with allocating chunks visible to marking");
-    assert(!UseShenandoahGC, "Shenandoah can not deal with allocating chunks visible to marking");
     ContinuationGCSupport::transform_stack_chunk(_cont.tail());
     // For objects in the old generation we must maintain the remembered set
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>();
@@ -1277,10 +1290,15 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   assert(chunk->is_gc_mode() == false, "");
 
   // fields are uninitialized
-  chunk->set_parent_raw<typename ConfigT::OopT>(_cont.last_nonempty_chunk());
-  chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
+  chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
+  chunk->set_cont_access<IS_DEST_UNINITIALIZED>(_cont.continuation());
 
   assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
+
+  // Shenandoah: even continuation is good, it does not mean it is deeply good.
+  if (UseShenandoahGC && chunk->requires_barriers()) {
+    fast_oop = nullptr;
+  }
 
   if (fast_oop != nullptr) {
     assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
@@ -1332,7 +1350,10 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
 #ifdef ASSERT
 static bool monitors_on_stack(JavaThread* thread) {
   ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread, true, false, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
     if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
@@ -1343,11 +1364,14 @@ static bool monitors_on_stack(JavaThread* thread) {
   return false;
 }
 
-static bool interpreted_native_or_deoptimized_on_stack(JavaThread* thread) {
-  ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread, false, false, false);
+bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
+  ContinuationEntry* ce = _thread->last_continuation();
+  RegisterMap map(_thread,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
-  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
+  for (frame f = freeze_start_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
     if (f.is_interpreted_frame() || f.is_native_frame() || f.is_deoptimized_frame()) {
       return true;
     }
@@ -1401,7 +1425,8 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   assert(entry->is_virtual_thread() == (entry->scope() == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(monitors_on_stack(current) == (current->held_monitor_count() > 0), "");
+  assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
+         "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
 
   if (entry->is_pinned() || current->held_monitor_count() > 0) {
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
@@ -1417,11 +1442,11 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
   // adapter or called Deoptimization::unpack_frames. Calls from native frames also go through the interpreter
   // (see JavaCalls::call_helper).
   assert(!current->cont_fastpath()
-         || (current->cont_fastpath_thread_state() && !interpreted_native_or_deoptimized_on_stack(current)), "");
+         || (current->cont_fastpath_thread_state() && !freeze.interpreted_native_or_deoptimized_on_stack()), "");
   bool fast = UseContinuationFastPath && current->cont_fastpath();
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
-    CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
+    CONT_JFR_ONLY(freeze.jfr_info().post_jfr_event(&event, oopCont, current);)
     freeze_epilog(current, cont);
     return 0;
   }
@@ -1435,7 +1460,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
     freeze_result res = fast ? freeze.try_freeze_fast() : freeze.freeze_slow();
 
-    CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
+    CONT_JFR_ONLY(freeze.jfr_info().post_jfr_event(&event, oopCont, current);)
     freeze_epilog(current, cont, res);
     cont.done(); // allow safepoint in the transition back to Java
     return res;
@@ -1453,7 +1478,10 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
     return freeze_pinned_monitor;
   }
 
-  RegisterMap map(thread, true, false, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   frame f = thread->last_frame();
 
@@ -1789,7 +1817,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   assert(_cont.chunk_invariant(), "");
 
 #if CONT_JFR
-  EventContinuationThawYoung e;
+  EventContinuationThawFast e;
   if (e.should_commit()) {
     e.set_id(cast_from_oop<u8>(chunk));
     e.set_size(thaw_size << LogBytesPerWord);
@@ -1822,12 +1850,13 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
     chunk->print_on(true, &ls);
   }
 
-  // Does this need ifdef JFR around it? Or can we remove all the conditional JFR inclusions (better)?
-  EventContinuationThawOld e;
+#if CONT_JFR
+  EventContinuationThawSlow e;
   if (e.should_commit()) {
     e.set_id(cast_from_oop<u8>(_cont.continuation()));
     e.commit();
   }
+#endif
 
   DEBUG_ONLY(_frames = 0;)
   _align_size = 0;
@@ -1961,6 +1990,10 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
+  } else {
+    // caller might have been deoptimized during thaw but we've overwritten the return address when copying f from the heap.
+    // If the caller is not deoptimized, pc is unchanged.
+    ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());
   }
 
   patch_pd(f, caller);
@@ -2057,6 +2090,9 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     _align_size += frame::align_wiggle; // we add one whether or not we've aligned because we add it in freeze_interpreted_frame
   }
 
+  // new_stack_frame must construct the resulting frame using hf.pc() rather than hf.raw_pc() because the frame is not
+  // yet laid out in the stack, and so the original_pc is not stored in it.
+  // As a result, f.is_deoptimized_frame() is always false and we must test hf to know if the frame is deoptimized.
   frame f = new_stack_frame<ContinuationHelper::CompiledFrame>(hf, caller, is_bottom_frame);
   intptr_t* const stack_frame_top = f.sp();
   intptr_t* const heap_frame_top = hf.unextended_sp();
@@ -2078,7 +2114,9 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
 
   patch(f, caller, is_bottom_frame);
 
-  if (f.is_deoptimized_frame()) {
+  // f.is_deoptimized_frame() is always false and we must test hf.is_deoptimized_frame() (see comment above)
+  assert(!f.is_deoptimized_frame(), "");
+  if (hf.is_deoptimized_frame()) {
     maybe_set_fastpath(f.sp());
   } else if (_thread->is_interp_only_mode()
               || (_cont.is_preempted() && f.cb()->as_compiled_method()->is_marked_for_deoptimization())) {
@@ -2110,7 +2148,10 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
   DEBUG_ONLY(_frames++;)
 
   {
-    RegisterMap map(nullptr, true, false, false);
+    RegisterMap map(nullptr,
+                    RegisterMap::UpdateMap::include,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
     map.set_include_argument_oops(false);
     _stream.next(&map);
     assert(!_stream.is_done(), "");
@@ -2138,7 +2179,10 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
                   fsize + frame::metadata_words);
 
   { // can only fix caller once this frame is thawed (due to callee saved regs)
-    RegisterMap map(nullptr, true, false, false); // map.clear();
+    RegisterMap map(nullptr,
+                    RegisterMap::UpdateMap::include,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip); // map.clear();
     map.set_include_argument_oops(false);
     f.oop_map()->update_register_map(&f, &map);
     ContinuationHelper::update_register_map_with_callee(caller, &map);
@@ -2238,7 +2282,7 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   assert(is_aligned(sp, frame::frame_alignment), "");
 
   // All the frames have been thawed so we know they don't hold any monitors
-  thread->reset_held_monitor_count();
+  assert(thread->held_monitor_count() == 0, "Must be");
 
 #ifdef ASSERT
   intptr_t* sp0 = sp;
@@ -2276,7 +2320,7 @@ static void do_deopt_after_thaw(JavaThread* thread) {
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->cb()->is_compiled()) {
       CompiledMethod* cm = fst.current()->cb()->as_compiled_method();
-      if (!cm->method()->is_continuation_enter_intrinsic()) {
+      if (!cm->method()->is_continuation_native_intrinsic()) {
         cm->make_deoptimized();
       }
     }
@@ -2367,7 +2411,10 @@ static void log_frames(JavaThread* thread) {
     ls.print_cr("NO ANCHOR!");
   }
 
-  RegisterMap map(thread, true, true, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
 
   if (false) {
@@ -2405,8 +2452,11 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
   FrameValues values;
   assert(f.get_cb() != nullptr, "");
   RegisterMap map(f.is_heap_frame() ?
-                  (JavaThread*)nullptr :
-                  JavaThread::current(), true, false, false);
+                    (JavaThread*)nullptr :
+                    JavaThread::current(),
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   map.set_skip_missing(true);
   if (callee_complete) {
@@ -2460,10 +2510,10 @@ private:
   static void resolve() {
     typedef Config<use_compressed ? oop_kind::NARROW : oop_kind::WIDE, BarrierSetT> SelectedConfigT;
 
-    freeze_entry = (address)(void*)freeze<SelectedConfigT>;
+    freeze_entry = (address)freeze<SelectedConfigT>;
 
     // If we wanted, we could templatize by kind and have three different thaw entries
-    thaw_entry   = (address)(void*)thaw<SelectedConfigT>;
+    thaw_entry   = (address)thaw<SelectedConfigT>;
   }
 };
 

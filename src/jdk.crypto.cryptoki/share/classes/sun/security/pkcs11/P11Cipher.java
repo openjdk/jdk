@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -814,13 +814,21 @@ final class P11Cipher extends CipherSpi {
                 if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
-                        startOff = padBufferLen;
+                        // call C_EncryptUpdate first if the padBuffer is full
+                        // to make room for padding bytes
+                        if (padBufferLen == padBuffer.length) {
+                            k = token.p11.C_EncryptUpdate(session.id(),
+                                0, padBuffer, 0, padBufferLen,
+                                0, out, outOfs, outLen);
+                        } else {
+                            startOff = padBufferLen;
+                        }
                     }
                     int actualPadLen = paddingObj.setPaddingBytes(padBuffer,
                             startOff, requiredOutLen - bytesBuffered);
-                    k = token.p11.C_EncryptUpdate(session.id(),
+                    k += token.p11.C_EncryptUpdate(session.id(),
                             0, padBuffer, 0, startOff + actualPadLen,
-                            0, out, outOfs, outLen);
+                            0, out, outOfs + k, outLen - k);
                 }
                 // Some implementations such as the NSS Software Token do not
                 // cancel the operation upon a C_EncryptUpdate failure (as
@@ -902,13 +910,21 @@ final class P11Cipher extends CipherSpi {
                 if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
-                        startOff = padBufferLen;
+                        // call C_EncryptUpdate first if the padBuffer is full
+                        // to make room for padding bytes
+                        if (padBufferLen == padBuffer.length) {
+                            k = token.p11.C_EncryptUpdate(session.id(),
+                                0, padBuffer, 0, padBufferLen,
+                                outAddr, outArray, outOfs, outLen);
+                        } else {
+                            startOff = padBufferLen;
+                        }
                     }
                     int actualPadLen = paddingObj.setPaddingBytes(padBuffer,
                             startOff, requiredOutLen - bytesBuffered);
-                    k = token.p11.C_EncryptUpdate(session.id(),
+                    k += token.p11.C_EncryptUpdate(session.id(),
                             0, padBuffer, 0, startOff + actualPadLen,
-                            outAddr, outArray, outOfs, outLen);
+                            outAddr, outArray, outOfs + k, outLen - k);
                 }
                 // Some implementations such as the NSS Software Token do not
                 // cancel the operation upon a C_EncryptUpdate failure (as

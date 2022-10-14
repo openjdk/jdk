@@ -57,7 +57,6 @@ import static jdk.internal.foreign.PlatformLayouts.Win64.C_POINTER;
 //            :  *(t* )((ap += sizeof(__int64)) - sizeof(__int64)))
 //
 public non-sealed class WinVaList implements VaList, Scoped {
-    public static final Class<?> CARRIER = MemoryAddress.class;
     private static final long VA_SLOT_SIZE_BYTES = 8;
     private static final VarHandle VH_address = C_POINTER.varHandle();
 
@@ -77,38 +76,39 @@ public non-sealed class WinVaList implements VaList, Scoped {
 
     @Override
     public int nextVarg(ValueLayout.OfInt layout) {
-        return (int) read(int.class, layout);
+        return (int) read(layout);
     }
 
     @Override
     public long nextVarg(ValueLayout.OfLong layout) {
-        return (long) read(long.class, layout);
+        return (long) read(layout);
     }
 
     @Override
     public double nextVarg(ValueLayout.OfDouble layout) {
-        return (double) read(double.class, layout);
+        return (double) read(layout);
     }
 
     @Override
     public MemoryAddress nextVarg(ValueLayout.OfAddress layout) {
-        return (MemoryAddress) read(MemoryAddress.class, layout);
+        return (MemoryAddress) read(layout);
     }
 
     @Override
     public MemorySegment nextVarg(GroupLayout layout, SegmentAllocator allocator) {
         Objects.requireNonNull(allocator);
-        return (MemorySegment) read(MemorySegment.class, layout, allocator);
+        return (MemorySegment) read(layout, allocator);
     }
 
-    private Object read(Class<?> carrier, MemoryLayout layout) {
-        return read(carrier, layout, SharedUtils.THROWING_ALLOCATOR);
+    private Object read(MemoryLayout layout) {
+        return read(layout, SharedUtils.THROWING_ALLOCATOR);
     }
 
-    private Object read(Class<?> carrier, MemoryLayout layout, SegmentAllocator allocator) {
+    private Object read(MemoryLayout layout, SegmentAllocator allocator) {
         Objects.requireNonNull(layout);
         Object res;
-        if (carrier == MemorySegment.class) {
+        checkElement(layout);
+        if (layout instanceof GroupLayout) {
             TypeClass typeClass = TypeClass.typeClassFor(layout, false);
             res = switch (typeClass) {
                 case STRUCT_REFERENCE -> {
@@ -130,12 +130,21 @@ public non-sealed class WinVaList implements VaList, Scoped {
         return res;
     }
 
+    private void checkElement(MemoryLayout layout) {
+        if (segment.byteSize() < VA_SLOT_SIZE_BYTES) {
+            throw SharedUtils.newVaListNSEE(layout);
+        }
+    }
+
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        MemorySessionImpl.toSessionImpl(session()).checkValidStateSlow();
-        Stream.of(layouts).forEach(Objects::requireNonNull);
-        segment = segment.asSlice(layouts.length * VA_SLOT_SIZE_BYTES);
+        sessionImpl().checkValidState();
+        for (MemoryLayout layout : layouts) {
+            Objects.requireNonNull(layout);
+            checkElement(layout);
+            segment = segment.asSlice(VA_SLOT_SIZE_BYTES);
+        }
     }
 
     static WinVaList ofAddress(MemoryAddress addr, MemorySession session) {
@@ -153,13 +162,8 @@ public non-sealed class WinVaList implements VaList, Scoped {
     }
 
     @Override
-    public MemorySessionImpl sessionImpl() {
-        return MemorySessionImpl.toSessionImpl(session());
-    }
-
-    @Override
     public VaList copy() {
-        MemorySessionImpl.toSessionImpl(session).checkValidStateSlow();
+        sessionImpl().checkValidState();
         return new WinVaList(segment, session);
     }
 
@@ -174,40 +178,40 @@ public non-sealed class WinVaList implements VaList, Scoped {
         private final List<SimpleVaArg> args = new ArrayList<>();
 
         public Builder(MemorySession session) {
-            MemorySessionImpl.toSessionImpl(session).checkValidStateSlow();
+            MemorySessionImpl.toSessionImpl(session).checkValidState();
             this.session = session;
         }
 
-        private Builder arg(Class<?> carrier, MemoryLayout layout, Object value) {
+        private Builder arg(MemoryLayout layout, Object value) {
             Objects.requireNonNull(layout);
             Objects.requireNonNull(value);
-            args.add(new SimpleVaArg(carrier, layout, value));
+            args.add(new SimpleVaArg(layout, value));
             return this;
         }
 
         @Override
         public Builder addVarg(ValueLayout.OfInt layout, int value) {
-            return arg(int.class, layout, value);
+            return arg(layout, value);
         }
 
         @Override
         public Builder addVarg(ValueLayout.OfLong layout, long value) {
-            return arg(long.class, layout, value);
+            return arg(layout, value);
         }
 
         @Override
         public Builder addVarg(ValueLayout.OfDouble layout, double value) {
-            return arg(double.class, layout, value);
+            return arg(layout, value);
         }
 
         @Override
         public Builder addVarg(ValueLayout.OfAddress layout, Addressable value) {
-            return arg(MemoryAddress.class, layout, value.address());
+            return arg(layout, value.address());
         }
 
         @Override
         public Builder addVarg(GroupLayout layout, MemorySegment value) {
-            return arg(MemorySegment.class, layout, value);
+            return arg(layout, value);
         }
 
         public VaList build() {
@@ -216,19 +220,16 @@ public non-sealed class WinVaList implements VaList, Scoped {
             }
             SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
             MemorySegment segment = allocator.allocate(VA_SLOT_SIZE_BYTES * args.size());
-            List<MemorySegment> attachedSegments = new ArrayList<>();
-            attachedSegments.add(segment);
             MemorySegment cursor = segment;
 
             for (SimpleVaArg arg : args) {
-                if (arg.carrier == MemorySegment.class) {
+                if (arg.layout instanceof GroupLayout) {
                     MemorySegment msArg = ((MemorySegment) arg.value);
                     TypeClass typeClass = TypeClass.typeClassFor(arg.layout, false);
                     switch (typeClass) {
                         case STRUCT_REFERENCE -> {
                             MemorySegment copy = allocator.allocate(arg.layout);
                             copy.copyFrom(msArg); // by-value
-                            attachedSegments.add(copy);
                             VH_address.set(cursor, copy.address());
                         }
                         case STRUCT_REGISTER ->

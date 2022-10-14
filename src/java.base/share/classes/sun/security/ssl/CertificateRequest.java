@@ -30,14 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509ExtendedKeyManager;
@@ -66,7 +59,7 @@ final class CertificateRequest {
         new T13CertificateRequestProducer();
 
     // TLS 1.2 and prior versions
-    private static enum ClientCertificateType {
+    private enum ClientCertificateType {
         // RFC 2246
         RSA_SIGN            ((byte)0x01, "rsa_sign", List.of("RSA"), true),
         DSS_SIGN            ((byte)0x02, "dss_sign", List.of("DSA"), true),
@@ -100,11 +93,11 @@ final class CertificateRequest {
         final List<String> keyAlgorithm;
         final boolean isAvailable;
 
-        private ClientCertificateType(byte id, String name) {
+        ClientCertificateType(byte id, String name) {
             this(id, name, null, false);
         }
 
-        private ClientCertificateType(byte id, String name,
+        ClientCertificateType(byte id, String name,
                 List<String> keyAlgorithm, boolean isAvailable) {
             this.id = id;
             this.name = name;
@@ -247,10 +240,11 @@ final class CertificateRequest {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"CertificateRequest\": '{'\n" +
-                    "  \"certificate types\": {0}\n" +
-                    "  \"certificate authorities\": {1}\n" +
-                    "'}'",
+                    """
+                            "CertificateRequest": '{'
+                              "certificate types": {0}
+                              "certificate authorities": {1}
+                            '}'""",
                     Locale.ENGLISH);
 
             List<String> typeNames = new ArrayList<>(types.length);
@@ -370,7 +364,7 @@ final class CertificateRequest {
             // update
             //
 
-            // An empty client Certificate handshake message may be allow.
+            // An empty client Certificate handshake message may be allowed.
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);
 
@@ -475,7 +469,7 @@ final class CertificateRequest {
             }
 
             byte[] algs = Record.getBytes16(m);
-            if (algs == null || algs.length == 0 || (algs.length & 0x01) != 0) {
+            if (algs.length == 0 || (algs.length & 0x01) != 0) {
                 throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid CertificateRequest handshake message: " +
                         "incomplete signature algorithms");
@@ -565,11 +559,12 @@ final class CertificateRequest {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"CertificateRequest\": '{'\n" +
-                    "  \"certificate types\": {0}\n" +
-                    "  \"supported signature algorithms\": {1}\n" +
-                    "  \"certificate authorities\": {2}\n" +
-                    "'}'",
+                    """
+                            "CertificateRequest": '{'
+                              "certificate types": {0}
+                              "supported signature algorithms": {1}
+                              "certificate authorities": {2}
+                            '}'""",
                     Locale.ENGLISH);
 
             List<String> typeNames = new ArrayList<>(types.length);
@@ -619,8 +614,7 @@ final class CertificateRequest {
                             shc.algorithmConstraints, shc.activeProtocols);
             }
 
-            if (shc.localSupportedSignAlgs == null ||
-                    shc.localSupportedSignAlgs.isEmpty()) {
+            if (shc.localSupportedSignAlgs.isEmpty()) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No supported signature algorithm");
             }
@@ -706,7 +700,7 @@ final class CertificateRequest {
             // update
             //
 
-            // An empty client Certificate handshake message may be allow.
+            // An empty client Certificate handshake message may be allowed.
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);
 
@@ -715,7 +709,7 @@ final class CertificateRequest {
                             chc.sslConfig,
                             chc.algorithmConstraints, chc.negotiatedProtocol,
                             crm.algorithmIds);
-            if (sss == null || sss.isEmpty()) {
+            if (sss.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");
             }
@@ -741,7 +735,7 @@ final class CertificateRequest {
         }
 
         private static SSLPossession choosePossession(HandshakeContext hc,
-                T12CertificateRequestMessage crm) throws IOException {
+                T12CertificateRequestMessage crm) {
             if (hc.peerRequestedCertSignSchemes == null ||
                     hc.peerRequestedCertSignSchemes.isEmpty()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -760,59 +754,28 @@ final class CertificateRequest {
                 crKeyTypes.add("RSASSA-PSS");
             }
 
-            Collection<String> checkedKeyTypes = new HashSet<>();
-            List<String> supportedKeyTypes = new ArrayList<>();
-            for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
-                if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unsupported authentication scheme: " + ss.name);
-                    }
-                    continue;
-                }
-                checkedKeyTypes.add(ss.keyAlgorithm);
-
-                // Don't select a signature scheme unless we will be able to
-                // produce a CertificateVerify message later
-                if (SignatureScheme.getPreferableAlgorithm(
-                        hc.algorithmConstraints,
-                        hc.peerRequestedSignatureSchemes,
-                        ss, hc.negotiatedProtocol) == null) {
-
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unable to produce CertificateVerify for " +
-                            "signature scheme: " + ss.name);
-                    }
-                    continue;
-                }
-
-                X509Authentication ka = X509Authentication.valueOf(ss);
-                if (ka == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unsupported authentication scheme: " + ss.name);
-                    }
-                    continue;
-                } else {
-                    // Any auth object will have a set of allowed key types.
-                    // This set should share at least one common algorithm with
-                    // the CR's allowed key types.
-                    if (Collections.disjoint(crKeyTypes,
-                            Arrays.asList(ka.keyTypes))) {
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                            SSLLogger.warning(
-                                    "Unsupported authentication scheme: " +
-                                            ss.name);
-                        }
-                        continue;
-                    }
-                }
-                supportedKeyTypes.add(ss.keyAlgorithm);
-            }
+            String[] supportedKeyTypes = hc.peerRequestedCertSignSchemes
+                    .stream()
+                    .map(ss -> ss.keyAlgorithm)
+                    .distinct()
+                    .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
+                            hc.algorithmConstraints,                        //  we will be able to produce
+                            hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
+                            ka, hc.negotiatedProtocol) != null
+                            || SSLLogger.logWarning("ssl,handshake",
+                                    "Unable to produce CertificateVerify for key algorithm: " + ka))
+                    .filter(ka -> {
+                        var xa = X509Authentication.valueOfKeyAlgorithm(ka);
+                        // Any auth object will have a set of allowed key types.
+                        // This set should share at least one common algorithm with
+                        // the CR's allowed key types.
+                        return xa != null && !Collections.disjoint(crKeyTypes, Arrays.asList(xa.keyTypes))
+                                || SSLLogger.logWarning("ssl,handshake", "Unsupported key algorithm: " + ka);
+                    })
+                    .toArray(String[]::new);
 
             SSLPossession pos = X509Authentication
-                    .createPossession(hc, supportedKeyTypes.toArray(String[]::new));
+                    .createPossession(hc, supportedKeyTypes);
             if (pos == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning("No available authentication scheme");
@@ -830,7 +793,7 @@ final class CertificateRequest {
         private final SSLExtensions extensions;
 
         T13CertificateRequestMessage(
-                HandshakeContext handshakeContext) throws IOException {
+                HandshakeContext handshakeContext) {
             super(handshakeContext);
 
             this.requestContext = new byte[0];
@@ -885,12 +848,13 @@ final class CertificateRequest {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"CertificateRequest\": '{'\n" +
-                "  \"certificate_request_context\": \"{0}\",\n" +
-                "  \"extensions\": [\n" +
-                "{1}\n" +
-                "  ]\n" +
-                "'}'",
+                    """
+                            "CertificateRequest": '{'
+                              "certificate_request_context": "{0}",
+                              "extensions": [
+                            {1}
+                              ]
+                            '}'""",
                 Locale.ENGLISH);
             Object[] messageFields = {
                 Utilities.toHexString(requestContext),

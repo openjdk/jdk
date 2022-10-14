@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
 /*
  * @test
  *
@@ -43,6 +42,7 @@ import java.io.PrintStream;
  *     Ported from JVMDI.
  *     Fixed the 5004632 bug.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile mexit02a.jasm
  * @compile --enable-preview -source ${jdk.version} mexit02.java
@@ -54,14 +54,7 @@ import java.io.PrintStream;
 public class mexit02 {
 
     static {
-        try {
-            System.loadLibrary("mexit02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load mexit02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("mexit02");
     }
 
     static volatile int result;

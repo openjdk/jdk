@@ -552,7 +552,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
         List<? extends SerialTree> serial = utils.getSerialTrees(element);
         if (!serial.isEmpty()) {
             CommentHelper ch = utils.getCommentHelper(element);
-            String serialtext = Utils.toLowerCase(ch.getText(serial.get(0)));
+            // look for `@serial include|exclude`
+            String serialtext = Utils.toLowerCase(serial.get(0).toString());
             if (serialtext.contains("exclude")) {
                 return false;
             } else if (serialtext.contains("include")) {

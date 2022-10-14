@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.Events;
  * @summary Tests emitting an event, both in Java and native, in a virtual
  *          thread with the maximum number of allowed stack frames for JFR
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  * @compile --enable-preview -source ${jdk.version} TestDeepVirtualStackTrace.java

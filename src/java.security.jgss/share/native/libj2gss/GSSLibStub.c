@@ -48,7 +48,6 @@ Java_sun_security_jgss_wrapper_GSSLibStub_init(JNIEnv *env,
                                                jboolean jDebug) {
     const char *libName;
     int failed;
-    char *error = NULL;
 
     if (!jDebug) {
       JGSS_DEBUG = 0;

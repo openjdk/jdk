@@ -43,6 +43,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 

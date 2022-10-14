@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,6 @@ protected:
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
-  int         inline_level()      const { return stack_depth(); }
   int         stack_depth()       const { return _caller_jvms ? _caller_jvms->depth() : 0; }
   const char* msg()               const { return _msg; }
   void        set_msg(const char* msg)  { _msg = msg; }
@@ -124,6 +123,7 @@ public:
   ciMethod   *method()            const { return _method; }
   int         caller_bci()        const { return _caller_jvms ? _caller_jvms->bci() : InvocationEntryBci; }
   uint        count_inline_bcs()  const { return _count_inline_bcs; }
+  int         inline_level()      const { return stack_depth(); }
 
 #ifndef PRODUCT
 private:
@@ -141,7 +141,7 @@ public:
   // Count number of nodes in this subtree
   int         count() const;
   // Dump inlining replay data to the stream.
-  void dump_replay_data(outputStream* out);
+  void dump_replay_data(outputStream* out, int depth_adjust = 0);
 };
 
 
@@ -462,8 +462,7 @@ class Parse : public GraphKit {
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);
 
   // Parse this bytecode, and alter the Parsers JVM->Node mapping
-  void do_one_bytecode_common();
-  bool do_one_bytecode_targeted();
+  void do_one_bytecode();
 
   // helper function to generate array store check
   void array_store_check();
@@ -535,10 +534,6 @@ class Parse : public GraphKit {
   void do_jsr();
   void do_ret();
 
-  // implementation of div/rem bytecodes for handling of special case
-  // min_jint / -1
-  void do_divmod_fixup();
-
   float   dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* test);
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci, Node* test);
   bool    seems_never_taken(float prob) const;
@@ -548,8 +543,7 @@ class Parse : public GraphKit {
   void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
   int     repush_if_args();
-  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
-                              Block* path, Block* other_path);
+  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path);
   void    sharpen_type_after_if(BoolTest::mask btest,
                                 Node* con, const Type* tcon,
                                 Node* val, const Type* tval);
@@ -565,8 +559,6 @@ class Parse : public GraphKit {
   void    jump_switch_ranges(Node* a, SwitchRange* lo, SwitchRange* hi, int depth = 0);
   bool    create_jump_tables(Node* a, SwitchRange* lo, SwitchRange* hi);
   void    linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchRange*& hi);
-
-  void decrement_age();
 
   // helper function for call statistics
   void count_compiled_calls(bool at_method_entry, bool is_inline) PRODUCT_RETURN;
@@ -606,6 +598,43 @@ class Parse : public GraphKit {
   void dump();
   void dump_bci(int bci);
 #endif
+};
+
+// Specialized uncommon_trap of unstable_if. C2 uses next_bci of path to update the live locals of it.
+class UnstableIfTrap {
+  CallStaticJavaNode* const _unc;
+  bool _modified;            // modified locals based on next_bci()
+  int _next_bci;
+
+public:
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _modified(false) {
+    assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
+          "invalid uncommon_trap call!");
+    _next_bci = path != nullptr ? path->start() : -1;
+  }
+
+  // The starting point of the pruned block, where control goes when
+  // deoptimization does happen.
+  int next_bci() const {
+    return _next_bci;
+  }
+
+  bool modified() const {
+    return _modified;
+  }
+
+  void set_modified() {
+    _modified = true;
+  }
+
+  CallStaticJavaNode* uncommon_trap() const {
+    return _unc;
+  }
+
+  inline void* operator new(size_t x) throw() {
+    Compile* C = Compile::current();
+    return C->comp_arena()->AmallocWords(x);
+  }
 };
 
 #endif // SHARE_OPTO_PARSE_HPP

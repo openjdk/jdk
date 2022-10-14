@@ -502,6 +502,15 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         cancelImpl(cause);
     }
 
+    @Override
+    void onProtocolError(final IOException cause) {
+        if (debug.on()) {
+            debug.log("cancelling exchange due to protocol error: %s", cause.getMessage());
+        }
+        Log.logError("cancelling exchange due to protocol error: {0}\n", cause);
+        cancelImpl(cause);
+    }
+
     private void cancelImpl(Throwable cause) {
         LinkedList<CompletableFuture<?>> toComplete = null;
         int count = 0;
@@ -851,5 +860,15 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     String dbgString() {
         return "Http1Exchange";
+    }
+
+    @Override
+    void expectContinueFailed(int rcode) {
+        var response = this.response;
+        if (response != null) {
+            // Sets a flag which closes the connection locally when
+            // onFinished() is called
+            response.closeWhenFinished();
+        }
     }
 }

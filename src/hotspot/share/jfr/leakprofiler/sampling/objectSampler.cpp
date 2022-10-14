@@ -42,9 +42,9 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 // Timestamp of when the gc last processed the set of sampled objects.
 // Atomic access to prevent word tearing on 32-bit platforms.

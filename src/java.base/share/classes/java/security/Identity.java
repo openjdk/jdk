@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,17 +34,17 @@ import java.util.*;
  * their public keys. Identities may also be more abstract (or concrete)
  * constructs, such as daemon threads or smart cards.
  *
- * <p>All Identity objects have a name and a public key. Names are
- * immutable. Identities may also be scoped. That is, if an Identity is
+ * <p>All {@code Identity} objects have a name and a public key. Names are
+ * immutable. Identities may also be scoped. That is, if an {@code Identity} is
  * specified to have a particular scope, then the name and public
- * key of the Identity are unique within that scope.
+ * key of the {@code Identity} are unique within that scope.
  *
- * <p>An Identity also has a set of certificates (all certifying its own
+ * <p>An {@code Identity} also has a set of certificates (all certifying its own
  * public key). The Principal names specified in these certificates need
  * not be the same, only the key.
  *
- * <p>An Identity can be subclassed, to include postal and email addresses,
- * telephone numbers, images of faces and logos, and so on.
+ * <p>An {@code Identity} can be subclassed, to include postal and email
+ * addresses, telephone numbers, images of faces and logos, and so on.
  *
  * @see IdentityScope
  * @see Signer
@@ -66,35 +66,35 @@ public abstract class Identity implements Principal, Serializable {
     private static final long serialVersionUID = 3609922007826600659L;
 
     /**
-     * The name for this identity.
+     * The name for this {@code Identity}.
      *
      * @serial
      */
     private String name;
 
     /**
-     * The public key for this identity.
+     * The public key for this {@code Identity}.
      *
      * @serial
      */
     private PublicKey publicKey;
 
     /**
-     * Generic, descriptive information about the identity.
+     * Generic, descriptive information about the {@code Identity}.
      *
      * @serial
      */
     String info = "No further information available.";
 
     /**
-     * The scope of the identity.
+     * The scope of the {@code Identity}.
      *
      * @serial
      */
     IdentityScope scope;
 
     /**
-     * The certificates for this identity.
+     * The certificates for this {@code Identity}.
      *
      * @serial
      */
@@ -108,12 +108,12 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Constructs an identity with the specified name and scope.
+     * Constructs an {@code Identity} with the specified name and scope.
      *
-     * @param name the identity name.
-     * @param scope the scope of the identity.
+     * @param name the {@code Identity} name.
+     * @param scope the scope of the {@code Identity}.
      *
-     * @throws    KeyManagementException if there is already an identity
+     * @throws    KeyManagementException if there is already an {@code Identity}
      * with the same name in the scope.
      */
     public Identity(String name, IdentityScope scope) throws
@@ -126,7 +126,7 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Constructs an identity with the specified name and no scope.
+     * Constructs an {@code Identity} with the specified name and no scope.
      *
      * @param name the identity name.
      */
@@ -137,7 +137,7 @@ public abstract class Identity implements Principal, Serializable {
     /**
      * Returns this identity's name.
      *
-     * @return the name of this identity.
+     * @return the name of this {@code Identity}.
      */
     public final String getName() {
         return name;
@@ -146,7 +146,7 @@ public abstract class Identity implements Principal, Serializable {
     /**
      * Returns this identity's scope.
      *
-     * @return the scope of this identity.
+     * @return the scope of this {@code Identity}.
      */
     public final IdentityScope getScope() {
         return scope;
@@ -155,7 +155,7 @@ public abstract class Identity implements Principal, Serializable {
     /**
      * Returns this identity's public key.
      *
-     * @return the public key for this identity.
+     * @return the public key for this {@code Identity}.
      *
      * @see #setPublicKey
      */
@@ -171,7 +171,7 @@ public abstract class Identity implements Principal, Serializable {
      * method is called with {@code "setIdentityPublicKey"}
      * as its argument to see if it's ok to set the public key.
      *
-     * @param key the public key for this identity.
+     * @param key the public key for this {@code Identity}.
      *
      * @throws    KeyManagementException if another identity in the
      * identity's scope has the same public key, or if another exception occurs.
@@ -192,7 +192,7 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Specifies a general information string for this identity.
+     * Specifies a general information string for this {@code Identity}.
      *
      * <p>First, if there is a security manager, its {@code checkSecurityAccess}
      * method is called with {@code "setIdentityInfo"}
@@ -213,9 +213,9 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Returns general information previously specified for this identity.
+     * Returns general information previously specified for this {@code Identity}.
      *
-     * @return general information about this identity.
+     * @return general information about this {@code Identity}.
      *
      * @see #setInfo
      */
@@ -224,9 +224,9 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Adds a certificate for this identity. If the identity has a public
+     * Adds a certificate for this {@code Identity}. If the {@code Identity} has a public
      * key, the public key in the certificate must be the same, and if
-     * the identity does not have a public key, the identity's
+     * the {@code Identity} does not have a public key, the identity's
      * public key is set to be that specified in the certificate.
      *
      * <p>First, if there is a security manager, its {@code checkSecurityAccess}
@@ -278,7 +278,7 @@ public abstract class Identity implements Principal, Serializable {
 
 
     /**
-     * Removes a certificate from this identity.
+     * Removes a certificate from this {@code Identity}.
      *
      * <p>First, if there is a security manager, its {@code checkSecurityAccess}
      * method is called with {@code "removeIdentityCertificate"}
@@ -304,9 +304,9 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Returns a copy of all the certificates for this identity.
+     * Returns a copy of all the certificates for this {@code Identity}.
      *
-     * @return a copy of all the certificates for this identity.
+     * @return a copy of all the certificates for this {@code Identity}.
      */
     public Certificate[] certificates() {
         if (certificates == null) {
@@ -319,17 +319,20 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Tests for equality between the specified object and this identity.
+     * Tests for equality between the specified object and this
+     * {@code Identity}.
      * This first tests to see if the entities actually refer to the same
-     * object, in which case it returns true. Next, it checks to see if
+     * object, in which case it returns {@code true}. Next, it checks to see if
      * the entities have the same name and the same scope. If they do,
-     * the method returns true. Otherwise, it calls
+     * the method returns {@code true}. Otherwise, it calls
      * {@link #identityEquals(Identity) identityEquals}, which subclasses should
      * override.
      *
-     * @param identity the object to test for equality with this identity.
+     * @param identity the object to test for equality with this
+     * {@code Identity}.
      *
-     * @return true if the objects are considered equal, false otherwise.
+     * @return {@code true} if the objects are considered equal,
+     * {@code false} otherwise.
      *
      * @see #identityEquals
      */
@@ -343,15 +346,17 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Tests for equality between the specified identity and this identity.
+     * Tests for equality between the specified {@code Identity} and this
+     * {@code Identity}.
      * This method should be overridden by subclasses to test for equality.
-     * The default behavior is to return true if the names and public keys
-     * are equal.
+     * The default behavior is to return {@code true} if the names and public
+     * keys are equal.
      *
-     * @param identity the identity to test for equality with this identity.
+     * @param identity the identity to test for equality with this
+     * {@code identity}.
      *
-     * @return true if the identities are considered equal, false
-     * otherwise.
+     * @return {@code true} if the identities are considered equal,
+     * {@code false} otherwise.
      *
      * @see #equals
      */
@@ -371,7 +376,7 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Returns a parsable name for identity: identityName.scopeName
+     * Returns a parsable name for {@code Identity}: identityName.scopeName
      */
     String fullName() {
         String parsable = name;
@@ -382,19 +387,19 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Returns a short string describing this identity, telling its
+     * Returns a short string describing this {@code Identity}, telling its
      * name and its scope (if any).
      *
      * <p>First, if there is a security manager, its {@code checkSecurityAccess}
      * method is called with {@code "printIdentity"}
      * as its argument to see if it's ok to return the string.
      *
-     * @return information about this identity, such as its name and the
+     * @return information about this {@code Identity}, such as its name and the
      * name of its scope (if any).
      *
      * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
-     * returning a string describing this identity.
+     * returning a string describing this {@code Identity}.
      *
      * @see SecurityManager#checkSecurityAccess
      */
@@ -408,7 +413,7 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Returns a string representation of this identity, with
+     * Returns a string representation of this {@code Identity}, with
      * optionally more details than that provided by the
      * {@code toString} method without any arguments.
      *
@@ -418,13 +423,13 @@ public abstract class Identity implements Principal, Serializable {
      *
      * @param detailed whether or not to provide detailed information.
      *
-     * @return information about this identity. If {@code detailed}
-     * is true, then this method returns more information than that
+     * @return information about this {@code Identity}. If {@code detailed}
+     * is {@code true}, then this method returns more information than that
      * provided by the {@code toString} method without any arguments.
      *
      * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
-     * returning a string describing this identity.
+     * returning a string describing this {@code Identity}.
      *
      * @see #toString
      * @see SecurityManager#checkSecurityAccess
@@ -473,9 +478,9 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Returns a hashcode for this identity.
+     * Returns a hashcode for this {@code Identity}.
      *
-     * @return a hashcode for this identity.
+     * @return a hashcode for this {@code Identity}.
      */
     public int hashCode() {
         return name.hashCode();

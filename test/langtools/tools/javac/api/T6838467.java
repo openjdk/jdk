@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ public class T6838467 {
 
             // If the directories or zip files match, we expect "n" matches in
             // the "n-squared" comparisons to come, where "n" is the number of
-            // entries in the the directories or zip files.
+            // entries in the directories or zip files.
             // If the directories or zip files don't themselves match,
             // we obviously don't expect any of their contents to match either.
             int expectEqualCount = (f1.getCanonicalFile().equals(f2.getCanonicalFile()) ? paths.length : 0);
@@ -254,4 +254,3 @@ public class T6838467 {
     int errors;
     Set<String> foundClasses = new HashSet<>();
 }
-

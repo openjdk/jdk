@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
@@ -471,13 +472,24 @@ public final class LinuxHelper {
                 "Failed to locate system .desktop files folder"));
     }
 
+    private static void withTestFileAssociationsFile(FileAssociations fa,
+            ThrowingConsumer<Path> consumer) {
+        boolean iterated[] = new boolean[] { false };
+        PackageTest.withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
+            if (!iterated[0]) {
+                iterated[0] = true;
+                consumer.accept(testFiles.get(0));
+            }
+        });
+    }
+
     static void addFileAssociationsVerifier(PackageTest test, FileAssociations fa) {
         test.addInstallVerifier(cmd -> {
             if (cmd.isPackageUnpacked("Not running file associations checks")) {
                 return;
             }
 
-            PackageTest.withTestFileAssociationsFile(fa, testFile -> {
+            withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertEquals(fa.getMime(), mimeType, String.format(
@@ -501,7 +513,7 @@ public final class LinuxHelper {
         });
 
         test.addUninstallVerifier(cmd -> {
-            PackageTest.withTestFileAssociationsFile(fa, testFile -> {
+            withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertNotEquals(fa.getMime(), mimeType, String.format(

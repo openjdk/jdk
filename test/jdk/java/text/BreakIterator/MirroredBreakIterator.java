@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class MirroredBreakIterator extends BreakIterator {
 
     @Override
     public boolean isBoundary(int offset) {
-        // Call the default impelementation in BreakIterator
+        // Call the default implementation in BreakIterator
         return super.isBoundary(offset);
     }
 

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
@@ -53,6 +54,7 @@
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/nmtCommon.hpp"
@@ -117,7 +119,7 @@ SystemProperty *Arguments::_jdk_boot_class_path_append = NULL;
 SystemProperty *Arguments::_vm_info = NULL;
 
 GrowableArray<ModulePatchPath*> *Arguments::_patch_mod_prefix = NULL;
-PathString *Arguments::_system_boot_class_path = NULL;
+PathString *Arguments::_boot_class_path = NULL;
 bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
@@ -389,10 +391,10 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
 
-  // Set up _system_boot_class_path which is not a property but
+  // Set up _boot_class_path which is not a property but
   // relies heavily on argument processing and the jdk.boot.class.path.append
-  // property. It is used to store the underlying system boot class path.
-  _system_boot_class_path = new PathString(NULL);
+  // property. It is used to store the underlying boot class path.
+  _boot_class_path = new PathString(NULL);
 
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                            "Java Virtual Machine Specification",  false));
@@ -536,13 +538,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-#ifdef PRODUCT
-  { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-#endif
-  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
-  { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
-  { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
-  { "AliasLevel",                   JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -551,9 +546,12 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-  { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-  { "PrefetchFieldsAhead",          JDK_Version::undefined(), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "AliasLevel",                   JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "UseCodeAging",                 JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -3876,15 +3874,20 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 }
 
 static void apply_debugger_ergo() {
+#ifndef PRODUCT
+  // UseDebuggerErgo is notproduct
   if (ReplayCompiles) {
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo, true);
   }
+#endif
 
+#ifndef PRODUCT
   if (UseDebuggerErgo) {
     // Turn on sub-flags
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
   }
+#endif
 
   if (UseDebuggerErgo2) {
     // Debugging with limited number of CPUs
@@ -4147,11 +4150,6 @@ jint Arguments::apply_ergo() {
 #ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
-
-  if (LogTouchedMethods) {
-    warning("LogTouchedMethods is not supported for Zero");
-    FLAG_SET_DEFAULT(LogTouchedMethods, false);
-  }
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
@@ -4408,4 +4406,79 @@ bool Arguments::copy_expand_pid(const char* src, size_t srclen,
   }
   *b = '\0';
   return (p == src_end); // return false if not all of the source was copied
+}
+
+bool Arguments::parse_malloc_limit_size(const char* s, size_t* out) {
+  julong limit = 0;
+  Arguments::ArgsRange range = parse_memory_size(s, &limit, 1, SIZE_MAX);
+  switch (range) {
+  case ArgsRange::arg_in_range:
+    *out = (size_t)limit;
+    return true;
+  case ArgsRange::arg_too_big: // only possible on 32-bit
+    vm_exit_during_initialization("MallocLimit: too large", s);
+    break;
+  case ArgsRange::arg_too_small:
+    vm_exit_during_initialization("MallocLimit: limit must be > 0");
+    break;
+  default:
+    break;
+  }
+  return false;
+}
+
+// Helper for parse_malloc_limits
+void Arguments::parse_single_category_limit(char* expression, size_t limits[mt_number_of_types]) {
+  // <category>:<limit>
+  char* colon = ::strchr(expression, ':');
+  if (colon == nullptr) {
+    vm_exit_during_initialization("MallocLimit: colon missing", expression);
+  }
+  *colon = '\0';
+  MEMFLAGS f = NMTUtil::string_to_flag(expression);
+  if (f == mtNone) {
+    vm_exit_during_initialization("MallocLimit: invalid nmt category", expression);
+  }
+  if (parse_malloc_limit_size(colon + 1, limits + (int)f) == false) {
+    vm_exit_during_initialization("Invalid MallocLimit size", colon + 1);
+  }
+}
+
+void Arguments::parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]) {
+
+  // Reset output to 0
+  *total_limit = 0;
+  for (int i = 0; i < mt_number_of_types; i ++) {
+    limits[i] = 0;
+  }
+
+  // We are done if the option is not given.
+  if (MallocLimit == nullptr) {
+    return;
+  }
+
+  // Global form?
+  if (parse_malloc_limit_size(MallocLimit, total_limit)) {
+    return;
+  }
+
+  // No. So it must be in category-specific form: MallocLimit=<nmt category>:<size>[,<nmt category>:<size> ..]
+  char* copy = os::strdup(MallocLimit);
+  if (copy == nullptr) {
+    vm_exit_out_of_memory(strlen(MallocLimit), OOM_MALLOC_ERROR, "MallocLimit");
+  }
+
+  char* p = copy, *q;
+  do {
+    q = p;
+    p = ::strchr(q, ',');
+    if (p != nullptr) {
+      *p = '\0';
+      p ++;
+    }
+    parse_single_category_limit(q, limits);
+  } while (p != nullptr);
+
+  os::free(copy);
+
 }

@@ -81,7 +81,7 @@ public class TestLoopUnswitching {
                 res += UNSAFE.getInt(a, F_OFFSET);
             }
             if (flag2) {
-                // Opaque4 node here is out of the loop but Bool is in the the loop
+                // Opaque4 node here is out of the loop but Bool is in the loop
                 res += UNSAFE.getInt(a, F_OFFSET);
                 break;
             }

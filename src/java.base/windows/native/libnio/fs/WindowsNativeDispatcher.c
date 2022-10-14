@@ -683,7 +683,6 @@ Java_sun_nio_fs_WindowsNativeDispatcher_SetFileSecurity0(JNIEnv* env, jclass thi
 {
     LPCWSTR lpFileName = jlong_to_ptr(pathAddress);
     PSECURITY_DESCRIPTOR pSecurityDescriptor = jlong_to_ptr(descAddress);
-    DWORD lengthNeeded = 0;
 
     BOOL res = SetFileSecurityW(lpFileName,
                                 (SECURITY_INFORMATION)requestedInformation,
@@ -1256,7 +1255,6 @@ Java_sun_nio_fs_WindowsNativeDispatcher_ReadDirectoryChangesW(JNIEnv* env, jclas
 {
     BOOL res;
     BOOL subtree = (watchSubTree == JNI_TRUE) ? TRUE : FALSE;
-    LPOVERLAPPED ov = (LPOVERLAPPED)jlong_to_ptr(pOverlapped);
 
     res = ReadDirectoryChangesW((HANDLE)jlong_to_ptr(hDirectory),
                                 (LPVOID)jlong_to_ptr(bufferAddress),

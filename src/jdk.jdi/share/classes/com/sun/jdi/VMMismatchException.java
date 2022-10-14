@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.jdi;
 
 /**
  * Thrown to indicate that the requested operation cannot be
- * completed because the a mirror from one target VM is being
+ * completed because the mirror from one target VM is being
  * combined with a mirror from another target VM.
  *
  * @author Gordon Hirsch

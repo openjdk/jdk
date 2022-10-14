@@ -36,16 +36,16 @@ package sun.security.provider;
  * number of times the VM manages to loop in a given period. This number
  * roughly reflects the machine load at that point in time.
  * The samples are translated using a permutation (s-box)
- * and then XORed together. This process is non linear and
+ * and then XORed together. This process is non-linear and
  * should prevent the samples from "averaging out". The s-box
- * was designed to have even statistical distribution; it's specific
+ * was designed to have even statistical distribution; its specific
  * values are not crucial for the security of the seed.
  * We also create a number of sleeper threads which add entropy
  * to the system by keeping the scheduler busy.
  * Twenty such samples should give us roughly 160 bits of randomness.
  * <p>
  * These values are gathered in the background by a daemon thread
- * thus allowing the system to continue performing it's different
+ * thus allowing the system to continue performing its different
  * activities, which in turn add entropy to the random seed.
  * <p>
  * The class also gathers miscellaneous system information, some
@@ -186,7 +186,7 @@ abstract class SeedGenerator {
                             DirectoryStream<Path> stream =
                                 Files.newDirectoryStream(f.toPath())) {
                             // We use a Random object to choose what file names
-                            // should be used. Otherwise on a machine with too
+                            // should be used. Otherwise, on a machine with too
                             // many files, the same first 1024 files always get
                             // used. Any, We make sure the first 512 files are
                             // always used.
@@ -269,7 +269,7 @@ abstract class SeedGenerator {
     private static class ThreadedSeedGenerator extends SeedGenerator
             implements Runnable {
         // Queue is used to collect seed bytes
-        private byte[] pool;
+        private final byte[] pool;
         private int start, end, count;
 
         // Thread group for our threads
@@ -359,7 +359,7 @@ abstract class SeedGenerator {
                         int latch = 0;
                         long startTime = System.nanoTime();
                         while (System.nanoTime() - startTime < 250000000) {
-                            synchronized(this){};
+                            synchronized(this){}
                             // Mask the sign bit and keep latch non-negative
                             latch = (latch + 1) & 0x1FFFFFFF;
                         }
@@ -485,7 +485,7 @@ abstract class SeedGenerator {
 
     static class URLSeedGenerator extends SeedGenerator {
 
-        private String deviceName;
+        private final String deviceName;
         private InputStream seedStream;
 
         /**

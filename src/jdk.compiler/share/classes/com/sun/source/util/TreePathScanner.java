@@ -39,6 +39,12 @@ import com.sun.source.tree.*;
  * In order to initialize the "current path", the scan must be
  * started by calling one of the {@code scan} methods.
  *
+ * @param <R> the return type of this visitor's methods.  Use {@link
+ *            Void} for visitors that do not need to return results.
+ * @param <P> the type of the additional parameter to this visitor's
+ *            methods.  Use {@code Void} for visitors that do not need an
+ *            additional parameter.
+ *
  * @author Jonathan Gibbons
  * @since 1.6
  */

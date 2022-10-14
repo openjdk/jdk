@@ -31,6 +31,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/registerMap.hpp"
@@ -51,14 +52,16 @@ inline bool stackChunkOopDesc::is_parent_null() const          { return jdk_inte
 inline void stackChunkOopDesc::set_parent(stackChunkOop value) { jdk_internal_vm_StackChunk::set_parent(this, value); }
 template<typename P>
 inline void stackChunkOopDesc::set_parent_raw(oop value)       { jdk_internal_vm_StackChunk::set_parent_raw<P>(this, value); }
+template<DecoratorSet decorators>
+inline void stackChunkOopDesc::set_parent_access(oop value)    { jdk_internal_vm_StackChunk::set_parent_access<decorators>(this, value); }
 
 inline int stackChunkOopDesc::stack_size() const        { return jdk_internal_vm_StackChunk::size(as_oop()); }
 
 inline int stackChunkOopDesc::sp() const                { return jdk_internal_vm_StackChunk::sp(as_oop()); }
 inline void stackChunkOopDesc::set_sp(int value)        { jdk_internal_vm_StackChunk::set_sp(this, value); }
 
-inline address stackChunkOopDesc::pc() const            { return (address)jdk_internal_vm_StackChunk::pc(as_oop()); }
-inline void stackChunkOopDesc::set_pc(address value)    { jdk_internal_vm_StackChunk::set_pc(this, (intptr_t)value); }
+inline address stackChunkOopDesc::pc() const            { return jdk_internal_vm_StackChunk::pc(as_oop()); }
+inline void stackChunkOopDesc::set_pc(address value)    { jdk_internal_vm_StackChunk::set_pc(this, value); }
 
 inline int stackChunkOopDesc::argsize() const           { return jdk_internal_vm_StackChunk::argsize(as_oop()); }
 inline void stackChunkOopDesc::set_argsize(int value)   { jdk_internal_vm_StackChunk::set_argsize(as_oop(), value); }
@@ -89,9 +92,11 @@ inline oop stackChunkOopDesc::cont() const              {
   obj = (oop)NativeAccess<>::oop_load(&obj);
   return obj;
 }
-inline void stackChunkOopDesc::set_cont(oop value)      { jdk_internal_vm_StackChunk::set_cont(this, value); }
+inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
-inline void stackChunkOopDesc::set_cont_raw(oop value)  {  jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+inline void stackChunkOopDesc::set_cont_raw(oop value)    {  jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+template<DecoratorSet decorators>
+inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
 inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize(); }
 
@@ -107,7 +112,7 @@ inline intptr_t* stackChunkOopDesc::sp_address()  const { return start_address()
 inline int stackChunkOopDesc::to_offset(intptr_t* p) const {
   assert(is_in_chunk(p)
     || (p >= start_address() && (p - start_address()) <= stack_size() + frame::metadata_words),
-    "p: " INTPTR_FORMAT " start: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
+    "p: " PTR_FORMAT " start: " PTR_FORMAT " end: " PTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
   return p - start_address();
 }
 
@@ -197,7 +202,10 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
   bool should_continue = true;
 
   if (f.is_stub()) {
-    RegisterMap full_map((JavaThread*)nullptr, true, false, true);
+    RegisterMap full_map((JavaThread*)nullptr,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::skip,
+                         RegisterMap::WalkContinuation::include);
     full_map.set_include_argument_oops(false);
 
     f.next(&full_map);
@@ -307,30 +315,38 @@ inline intptr_t* stackChunkOopDesc::interpreter_frame_local_at(const frame& fr, 
 }
 
 inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t* to, int size) {
-  log_develop_trace(continuations)("Copying from v: " INTPTR_FORMAT " - " INTPTR_FORMAT " (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying from v: " PTR_FORMAT " - " PTR_FORMAT " (%d words, %d bytes)",
     p2i(from), p2i(from + size), size, size << LogBytesPerWord);
-  log_develop_trace(continuations)("Copying to h: " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying to h: " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
     p2i(to), to - start_address(), relative_base() - to, p2i(to + size), to + size - start_address(),
     relative_base() - (to + size), size, size << LogBytesPerWord);
 
   assert(to >= start_address(), "Chunk underflow");
   assert(to + size <= end_address(), "Chunk overflow");
 
+#if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
+  // Suppress compilation warning-as-error on unimplemented architectures
+  // that stub out arch-specific methods. Some compilers are smart enough
+  // to figure out the argument is always null and then warn about it.
+  if (to != nullptr)
+#endif
   memcpy(to, from, size << LogBytesPerWord);
 }
 
 inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t* to, int size) {
-  log_develop_trace(continuations)("Copying from h: " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying from h: " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
     p2i(from), from - start_address(), relative_base() - from, p2i(from + size), from + size - start_address(),
     relative_base() - (from + size), size, size << LogBytesPerWord);
-  log_develop_trace(continuations)("Copying to v: " INTPTR_FORMAT " - " INTPTR_FORMAT " (%d words, %d bytes)", p2i(to),
+  log_develop_trace(continuations)("Copying to v: " PTR_FORMAT " - " PTR_FORMAT " (%d words, %d bytes)", p2i(to),
     p2i(to + size), size, size << LogBytesPerWord);
 
   assert(from >= start_address(), "");
   assert(from + size <= end_address(), "");
 
 #if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
-  // Suppress compilation error from dummy function (somewhere).
+  // Suppress compilation warning-as-error on unimplemented architectures
+  // that stub out arch-specific methods. Some compilers are smart enough
+  // to figure out the argument is always null and then warn about it.
   if (to != nullptr)
 #endif
   memcpy(to, from, size << LogBytesPerWord);

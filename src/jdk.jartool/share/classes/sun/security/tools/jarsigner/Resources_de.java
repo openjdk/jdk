@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,8 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "[-providerClass <Klasse>     F\u00FCgt einen Sicherheitsprovider nach vollqualifiziertem Klassennamen hinzu"},
         {".providerArg.option.2",
                 "  [-providerArg <Argument>]] ... Konfiguriert Argument f\u00FCr -providerClass"},
+        {".providerPath.option",
+                "[-providerPath <list>]      Provider-Classpath"},
         {".strict.treat.warnings.as.errors",
                 "[-strict]                   Behandelt Warnungen als Fehler"},
         {".conf.url.specify.a.pre.configured.options.file",
@@ -172,10 +174,14 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"history.nobk", "- Blockdatei f\u00FCr signaturbezogene Datei META-INF/%s.SF fehlt"},
 
         {"with.weak", "%s (schwach)"},
+        {"with.algparams.weak", "%1$s mit %2$s (schwach)"},
         {"with.disabled", "%s (deaktiviert)"},
+        {"with.algparams.disabled", "%1$s mit %2$s (deaktiviert)"},
         {"key.bit", "%d-Bit-Schl\u00FCssel"},
         {"key.bit.weak", "%d-Bit-Schl\u00FCssel (schwach)"},
+        {"key.bit.eccurve.weak", "%1$d-Bit-%2$s-Schl\u00FCssel (schwach)"},
         {"key.bit.disabled", "%d-Bit-Schl\u00FCssel (deaktiviert)"},
+        {"key.bit.eccurve.disabled", "%1$d-Bit-%2$s-Schl\u00FCssel (deaktiviert)"},
         {"unknown.size", "unbekannte Gr\u00F6\u00DFe"},
         {"extra.attributes.detected", "POSIX-Dateiberechtigung und/oder Symlink-Attribute erkannt. Diese Attribute werden bei der Signatur ignoriert und sind nicht durch die Signatur gesch\u00FCtzt."},
 

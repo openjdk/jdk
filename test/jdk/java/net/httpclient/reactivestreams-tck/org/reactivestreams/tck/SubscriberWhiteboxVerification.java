@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -814,7 +814,7 @@ public abstract class SubscriberWhiteboxVerification<T> extends WithHelperPublis
      * requested that many elements.
      * <p>
      * This does not necessarily have to correlate 1:1 with a {@code Subscription.request(elements)} call, but the sum
-     * of the elements requested by your {@code Subscriber} must eventually be at least the the sum of the elements
+     * of the elements requested by your {@code Subscriber} must eventually be at least the sum of the elements
      * triggered to be requested by all the invocations of this method.
      * <p>
      * Additionally, subscribers are permitted to delay requesting elements until previous requests for elements have

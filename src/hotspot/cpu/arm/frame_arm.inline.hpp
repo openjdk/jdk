@@ -40,6 +40,7 @@ inline frame::frame() {
   _cb = NULL;
   _deopt_state = unknown;
   _on_heap = false;
+  _oop_map = NULL;
   DEBUG_ONLY(_frame_index = -1;)
 }
 
@@ -47,31 +48,7 @@ inline frame::frame(intptr_t* sp) {
   Unimplemented();
 }
 
-inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
-  _sp = sp;
-  _unextended_sp = sp;
-  _fp = fp;
-  _pc = pc;
-  assert(pc != NULL, "no pc?");
-  _cb = CodeCache::find_blob(pc);
-  adjust_unextended_sp();
-  DEBUG_ONLY(_frame_index = -1;)
-
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
-    _pc = original_pc;
-    _deopt_state = is_deoptimized;
-  } else {
-    _deopt_state = not_deoptimized;
-  }
-  _on_heap = false;
-}
-
-inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
-  init(sp, fp, pc);
-}
-
-inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc) {
+inline void frame::init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc) {
   _sp = sp;
   _unextended_sp = unextended_sp;
   _fp = fp;
@@ -91,28 +68,21 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
     _deopt_state = not_deoptimized;
   }
   _on_heap = false;
+  _oop_map = NULL;
 }
 
+inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
+  init(sp, sp, fp, pc);
+}
+
+inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc) {
+  init(sp, unextended_sp, fp, pc);
+}
 
 inline frame::frame(intptr_t* sp, intptr_t* fp) {
-  _sp = sp;
-  _unextended_sp = sp;
-  _fp = fp;
-  assert(sp != NULL,"null SP ?");
-  _pc = (address)(sp[-1]);
-  // assert(_pc != NULL, "no pc?"); // see comments in x86
-  _cb = CodeCache::find_blob(_pc);
-  adjust_unextended_sp();
-  DEBUG_ONLY(_frame_index = -1;)
-
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
-    _pc = original_pc;
-    _deopt_state = is_deoptimized;
-  } else {
-    _deopt_state = not_deoptimized;
-  }
-  _on_heap = false;
+  assert(sp != NULL, "null SP?");
+  address pc = (address)(sp[-1]);
+  init(sp, sp, fp, pc);
 }
 
 
@@ -226,6 +196,10 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 
 // Compiled frames
 
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   oop* result_adr = (oop*) map->location(R0->as_VMReg(), nullptr);
   guarantee(result_adr != NULL, "bad register save location");
@@ -237,13 +211,23 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   guarantee(result_adr != NULL, "bad register save location");
   *result_adr = obj;
 }
+PRAGMA_DIAG_POP
 
 inline int frame::frame_size() const {
   return sender_sp() - sp();
 }
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
-  Unimplemented();
+  if (_cb == NULL) return NULL;
+  if (_cb->oop_maps() != NULL) {
+    NativePostCallNop* nop = nativePostCallNop_at(_pc);
+    if (nop != NULL && nop->displacement() != 0) {
+      int slot = ((nop->displacement() >> 24) & 0xff);
+      return _cb->oop_map_for_slot(slot, _pc);
+    }
+    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
+    return oop_map;
+  }
   return NULL;
 }
 
@@ -296,7 +280,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
 
   // frame owned by optimizing compiler
-  assert(_cb->frame_size() >= 0, "must have non-zero frame size");
+  assert(_cb->frame_size() > 0, "must have non-zero frame size");
   intptr_t* sender_sp = unextended_sp() + _cb->frame_size();
   intptr_t* unextended_sp = sender_sp;
 

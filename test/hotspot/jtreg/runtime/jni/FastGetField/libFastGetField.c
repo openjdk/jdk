@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 SAP SE and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022 SAP SE and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ static void JNICALL onFieldAccess(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread 
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
   jvmtiCapabilities capa;
-  jvmtiEventCallbacks cbs = {0};
+  jvmtiEventCallbacks cbs;
 
   (*vm)->GetEnv(vm, (void**)&jvmti, JVMTI_VERSION_1_0);
 
@@ -127,6 +127,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
   capa.can_generate_field_access_events = 1;
   (*jvmti)->AddCapabilities(jvmti, &capa);
 
+  memset(&cbs, 0, sizeof(cbs));
   cbs.FieldAccess = &onFieldAccess;
   (*jvmti)->SetEventCallbacks(jvmti, &cbs, sizeof(cbs));
   (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL);

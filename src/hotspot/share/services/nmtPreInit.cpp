@@ -33,9 +33,9 @@
 
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
 // raw malloc; to make this very clear, wrap them.
-static void* raw_malloc(size_t s)               { return ::malloc(s); }
-static void* raw_realloc(void* old, size_t s)   { return ::realloc(old, s); }
-static void  raw_free(void* p)                  { ::free(p); }
+static void* raw_malloc(size_t s)               { ALLOW_C_FUNCTION(::malloc, return ::malloc(s);) }
+static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
+static void  raw_free(void* p)                  { ALLOW_C_FUNCTION(::free, ::free(p);) }
 
 // We must ensure that the start of the payload area of the nmt lookup table nodes is malloc-aligned
 static const size_t malloc_alignment = 2 * sizeof(void*); // could we use max_align_t?

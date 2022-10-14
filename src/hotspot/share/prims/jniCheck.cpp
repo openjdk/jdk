@@ -40,9 +40,9 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/utf8.hpp"
 

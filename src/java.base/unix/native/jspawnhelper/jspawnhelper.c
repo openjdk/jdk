@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -71,9 +72,6 @@ void shutItDown() {
  * - the data strings for fields in ChildStuff
  */
 void initChildStuff (int fdin, int fdout, ChildStuff *c) {
-    int n;
-    int argvBytes, nargv, envvBytes, nenvv;
-    int dirlen;
     char *buf;
     SpawnInfo sp;
     int bufsize, offset=0;
@@ -132,10 +130,10 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 
 int main(int argc, char *argv[]) {
     ChildStuff c;
-    int t;
     struct stat buf;
     /* argv[0] contains the fd number to read all the child info */
     int r, fdin, fdout;
+    sigset_t unblock_signals;
 
     r = sscanf (argv[argc-1], "%d:%d", &fdin, &fdout);
     if (r == 2 && fcntl(fdin, F_GETFD) != -1) {
@@ -145,6 +143,11 @@ int main(int argc, char *argv[]) {
     } else {
         shutItDown();
     }
+
+    // Reset any mask signals from parent
+    sigemptyset(&unblock_signals);
+    sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+
     initChildStuff (fdin, fdout, &c);
 
     childProcess (&c);

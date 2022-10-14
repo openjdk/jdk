@@ -151,9 +151,9 @@ class ZipFileSystem extends FileSystem {
         this.forceEnd64 = isTrue(env, "forceZIP64End");
         this.defaultCompressionMethod = getDefaultCompressionMethod(env);
         this.supportPosix = isTrue(env, PROPERTY_POSIX);
-        this.defaultOwner = initOwner(zfpath, env);
-        this.defaultGroup = initGroup(zfpath, env);
-        this.defaultPermissions = initPermissions(env);
+        this.defaultOwner = supportPosix ? initOwner(zfpath, env) : null;
+        this.defaultGroup = supportPosix ? initGroup(zfpath, env) : null;
+        this.defaultPermissions = supportPosix ? initPermissions(env) : null;
         this.supportedFileAttributeViews = supportPosix ?
             Set.of("basic", "posix", "zip") : Set.of("basic", "zip");
         if (Files.notExists(zfpath)) {
@@ -441,7 +441,7 @@ class ZipFileSystem extends FileSystem {
     @Override
     public PathMatcher getPathMatcher(String syntaxAndInput) {
         int pos = syntaxAndInput.indexOf(':');
-        if (pos <= 0 || pos == syntaxAndInput.length()) {
+        if (pos <= 0) {
             throw new IllegalArgumentException();
         }
         String syntax = syntaxAndInput.substring(0, pos);
@@ -3309,7 +3309,7 @@ class ZipFileSystem extends FileSystem {
         public Optional<Set<PosixFilePermission>> storedPermissions() {
             Set<PosixFilePermission> perms = null;
             if (posixPerms != -1) {
-                perms = new HashSet<>(PosixFilePermission.values().length);
+                perms = HashSet.newHashSet(PosixFilePermission.values().length);
                 for (PosixFilePermission perm : PosixFilePermission.values()) {
                     if ((posixPerms & ZipUtils.permToFlag(perm)) != 0) {
                         perms.add(perm);

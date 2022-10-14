@@ -436,21 +436,24 @@ else # $(HAS_SPEC)=true
 
   define PrintFailureReports
 	$(if $(filter none, $(LOG_REPORT)), , \
+	  $(RM) $(MAKESUPPORT_OUTPUTDIR)/failure-summary.log ; \
 	  $(if $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*.log), \
-	    $(PRINTF) "\n=== Output from failing command(s) repeated here ===\n" $(NEWLINE) \
-	    $(foreach logfile, $(sort $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*.log)), \
-	        $(PRINTF) "* For target $(notdir $(basename $(logfile))):\n" $(NEWLINE) \
-	        $(if $(filter all, $(LOG_REPORT)), \
-	          $(GREP) -v -e "^Note: including file:" <  $(logfile) || true $(NEWLINE) \
-	        , \
-	          ($(GREP) -v -e "^Note: including file:" <  $(logfile) || true) | $(HEAD) -n 15 $(NEWLINE) \
-	          if test `$(WC) -l < $(logfile)` -gt 15; then \
-	            $(ECHO) "   ... (rest of output omitted)" ; \
-	          fi $(NEWLINE) \
-	        ) \
-	    ) \
-	    $(PRINTF) "\n* All command lines available in $(MAKESUPPORT_OUTPUTDIR)/failure-logs.\n" $(NEWLINE) \
-	    $(PRINTF) "=== End of repeated output ===\n" \
+	    ( \
+	      $(PRINTF) "\n=== Output from failing command(s) repeated here ===\n" ;  \
+	      $(foreach logfile, $(sort $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*.log)), \
+	          $(PRINTF) "* For target $(notdir $(basename $(logfile))):\n" ; \
+	          $(if $(filter all, $(LOG_REPORT)), \
+	            $(GREP) -v -e "^Note: including file:" <  $(logfile) || true ; \
+	          , \
+	            ($(GREP) -v -e "^Note: including file:" <  $(logfile) || true) | $(HEAD) -n 15 ; \
+	            if test `$(WC) -l < $(logfile)` -gt 15; then \
+	              $(ECHO) "   ... (rest of output omitted)" ; \
+	            fi ; \
+	          ) \
+	      ) \
+	      $(PRINTF) "\n* All command lines available in $(MAKESUPPORT_OUTPUTDIR)/failure-logs.\n" ; \
+	      $(PRINTF) "=== End of repeated output ===\n" ; \
+	    )  >> $(MAKESUPPORT_OUTPUTDIR)/failure-summary.log  \
 	  ) \
 	)
   endef
@@ -465,7 +468,8 @@ else # $(HAS_SPEC)=true
 	  else \
 	    $(PRINTF) "\nNo indication of failed target found.\n" ; \
 	    $(PRINTF) "HELP: Try searching the build log for '] Error'.\n" ; \
-	  fi \
+	  fi >> $(MAKESUPPORT_OUTPUTDIR)/failure-summary.log ; \
+	  $(CAT) $(MAKESUPPORT_OUTPUTDIR)/failure-summary.log \
 	)
   endef
 

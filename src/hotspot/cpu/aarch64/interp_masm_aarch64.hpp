@@ -82,6 +82,31 @@ class InterpreterMacroAssembler: public MacroAssembler {
     ldr(rcpool, Address(rfp, frame::interpreter_frame_cache_offset * wordSize));
   }
 
+  void restore_sp_after_call() {
+    Label L;
+    ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+#ifdef ASSERT
+    cbnz(rscratch1, L);
+    stop("SP is null");
+#endif
+    bind(L);
+    mov(sp, rscratch1);
+  }
+
+  void check_extended_sp(const char* msg = "check extended SP") {
+#ifdef ASSERT
+    Label L;
+    ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    cmp(sp, rscratch1);
+    br(EQ, L);
+    stop(msg);
+    bind(L);
+#endif
+  }
+
+#define check_extended_sp()                                             \
+  check_extended_sp("SP does not match extended SP in frame at " __FILE__ ":" XSTR(__LINE__))
+
   void get_dispatch();
 
   // Helpers for runtime call arguments/results

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class Krb5AcceptCredential
         final String serverPrinc = (name == null? null:
             name.getKrb5PrincipalName().getName());
 
-        ServiceCreds creds = null;
+        ServiceCreds creds;
         try {
             creds = AccessController.doPrivilegedWithCombiner(
                         new PrivilegedExceptionAction<ServiceCreds>() {
@@ -178,7 +178,7 @@ public class Krb5AcceptCredential
 
     /**
      * Impersonation is only available on the initiator side. The
-     * service must starts as an initiator to get an initial TGT to complete
+     * service must start as an initiator to get an initial TGT to complete
      * the S4U2self protocol.
      */
     @Override

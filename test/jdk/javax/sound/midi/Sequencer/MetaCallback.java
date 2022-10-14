@@ -36,7 +36,7 @@ import javax.sound.midi.Track;
  * @test
  * @bug 4347135
  * @summary MIDI MetaMessage callback inconsistent
- * @key intermittent
+ * @key intermittent sound
  * @run main/othervm MetaCallback
  */
 public class MetaCallback implements MetaEventListener {

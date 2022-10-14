@@ -131,7 +131,7 @@ public class HtmlLinkInfo extends LinkInfo {
         EXECUTABLE_MEMBER_PARAM,
 
         /**
-         * Super interface links.
+         * Superinterface links.
          */
         SUPER_INTERFACES,
 

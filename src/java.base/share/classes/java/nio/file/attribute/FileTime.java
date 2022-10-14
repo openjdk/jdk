@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,7 @@ public final class FileTime
      * @since 1.8
      */
     public Instant toInstant() {
+        Instant instant = this.instant;
         if (instant == null) {
             long secs = 0L;
             int nanos = 0;
@@ -269,6 +270,8 @@ public final class FileTime
                 instant = Instant.MAX;
             else
                 instant = Instant.ofEpochSecond(secs, nanos);
+
+            this.instant = instant;
         }
         return instant;
     }
@@ -409,6 +412,7 @@ public final class FileTime
      */
     @Override
     public String toString() {
+        String valueAsString = this.valueAsString;
         if (valueAsString == null) {
             long secs = 0L;
             int  nanos = 0;
@@ -469,6 +473,7 @@ public final class FileTime
             }
             sb.append('Z');
             valueAsString = sb.toString();
+            this.valueAsString = valueAsString;
         }
         return valueAsString;
     }

@@ -26,6 +26,7 @@
 
 #include "runtime/stackChunkFrameStream.hpp"
 
+#include "code/codeCache.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
@@ -35,6 +36,7 @@
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include CPU_HEADER_INLINE(stackChunkFrameStream)
@@ -204,8 +206,6 @@ inline void StackChunkFrameStream<frame_kind>::get_cb() {
 
   assert(_cb != nullptr, "");
   assert(is_interpreted() || ((is_stub() || is_compiled()) && _cb->frame_size() > 0), "");
-  assert(is_interpreted() || cb()->is_alive(),
-    "not alive - not_entrant: %d zombie: %d unloaded: %d", _cb->is_not_entrant(), _cb->is_zombie(), _cb->is_unloaded());
 }
 
 template <ChunkFrames frame_kind>

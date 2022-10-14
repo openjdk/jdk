@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1036,12 +1036,9 @@ final class DirectAudioDevice extends AbstractMixer {
                     try {
                         // use DirectDL's open method to open it
                         open(format, (int) Toolkit.millis2bytes(format, CLIP_BUFFER_TIME)); // one second buffer
-                    } catch (LineUnavailableException lue) {
+                    } catch (LineUnavailableException | IllegalArgumentException e) {
                         audioData = null;
-                        throw lue;
-                    } catch (IllegalArgumentException iae) {
-                        audioData = null;
-                        throw iae;
+                        throw e;
                     }
 
                     // if we got this far, we can instanciate the thread

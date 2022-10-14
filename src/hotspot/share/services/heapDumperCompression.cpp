@@ -26,9 +26,9 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "runtime/arguments.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/heapDumperCompression.hpp"
 
 

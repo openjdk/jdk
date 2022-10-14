@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package example1;
+package jdk.jfr.snippets;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.ValueDescriptor;

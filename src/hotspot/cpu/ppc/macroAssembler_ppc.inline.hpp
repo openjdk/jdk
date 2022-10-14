@@ -34,6 +34,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"

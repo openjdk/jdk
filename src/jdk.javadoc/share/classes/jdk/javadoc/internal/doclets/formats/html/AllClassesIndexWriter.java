@@ -137,9 +137,6 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         target.add(headerDiv);
         if (!table.isEmpty()) {
             target.add(table);
-            if (table.needsScript()) {
-                getMainBodyScript().append(table.getScript());
-            }
         }
     }
 

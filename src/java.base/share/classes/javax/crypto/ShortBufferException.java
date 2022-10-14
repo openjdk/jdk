@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ public class ShortBufferException extends GeneralSecurityException {
     private static final long serialVersionUID = 8427718640832943747L;
 
     /**
-     * Constructs a ShortBufferException with no detail
-     * message. A detail message is a String that describes this
+     * Constructs a {@code ShortBufferException} with no detail
+     * message. A detail message is a {@code String}  that describes this
      * particular exception.
      */
     public ShortBufferException() {
@@ -51,7 +51,7 @@ public class ShortBufferException extends GeneralSecurityException {
     }
 
     /**
-     * Constructs a ShortBufferException with the specified
+     * Constructs a {@code ShortBufferException} with the specified
      * detail message.
      *
      * @param msg the detail message.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
@@ -99,7 +99,11 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
   if (thread->is_Java_thread()) {
     ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
     ShenandoahThreadLocalData::initialize_gclab(thread);
-    ShenandoahThreadLocalData::set_disarmed_value(thread, ShenandoahCodeRoots::disarmed_value());
+
+    BarrierSetNMethod* bs_nm = barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      thread->set_nmethod_disarm_value(bs_nm->disarmed_value());
+    }
 
     if (ShenandoahStackWatermarkBarrier) {
       JavaThread* const jt = JavaThread::cast(thread);

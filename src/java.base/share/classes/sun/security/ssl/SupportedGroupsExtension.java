@@ -29,11 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.action.GetPropertyAction;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
@@ -95,7 +91,7 @@ final class SupportedGroupsExtension {
                     "Invalid supported_groups extension: unknown extra data"));
             }
 
-            if ((ngs == null) || (ngs.length == 0) || (ngs.length % 2 != 0)) {
+            if (ngs.length == 0 || ngs.length % 2 != 0) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid supported_groups extension: incomplete data"));
@@ -327,7 +323,7 @@ final class SupportedGroupsExtension {
      * the ClientHello handshake message.
      */
     private static final class CHSupportedGroupsProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
         // Prevent instantiation of this class.
         private CHSupportedGroupsProducer() {
             // blank
@@ -385,7 +381,7 @@ final class SupportedGroupsExtension {
 
             // Update the context.
             chc.clientRequestedNamedGroups =
-                    Collections.<NamedGroup>unmodifiableList(namedGroups);
+                    Collections.unmodifiableList(namedGroups);
             chc.handshakeExtensions.put(CH_SUPPORTED_GROUPS,
                     new SupportedGroupsSpec(namedGroups));
 
@@ -472,7 +468,7 @@ final class SupportedGroupsExtension {
      * the EncryptedExtensions handshake message.
      */
     private static final class EESupportedGroupsProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
 
         // Prevent instantiation of this class.
         private EESupportedGroupsProducer() {
@@ -534,7 +530,7 @@ final class SupportedGroupsExtension {
 
             // Update the context.
             shc.conContext.serverRequestedNamedGroups =
-                    Collections.<NamedGroup>unmodifiableList(namedGroups);
+                    Collections.unmodifiableList(namedGroups);
             SupportedGroupsSpec spec = new SupportedGroupsSpec(namedGroups);
             shc.handshakeExtensions.put(EE_SUPPORTED_GROUPS, spec);
 

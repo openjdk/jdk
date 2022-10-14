@@ -24,15 +24,16 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
+#include "include/jvm_io.h"
 #include "runtime/arguments.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "compiler/compilerDefinitions.hpp"
-#include "gc/shared/gcConfig.hpp"
 #include "utilities/defaultStream.hpp"
 
 const char* compilertype2name_tab[compiler_number_of_types] = {
@@ -131,11 +132,18 @@ intx CompilerConfig::scaled_compile_threshold(intx threshold, double scale) {
   } else {
     double v = threshold * scale;
     assert(v >= 0, "must be");
-    if (v > max_intx) {
+    if (g_isnan(v) || !g_isfinite(v)) {
       return max_intx;
-    } else {
-      return (intx)(v);
     }
+    int exp;
+    (void) frexp(v, &exp);
+    int max_exp = sizeof(intx) * BitsPerByte - 1;
+    if (exp > max_exp) {
+      return max_intx;
+    }
+    intx r = (intx)(v);
+    assert(r >= 0, "must be");
+    return r;
   }
 }
 
@@ -213,10 +221,6 @@ bool CompilerConfig::is_compilation_mode_selected() {
          !FLAG_IS_DEFAULT(CompilationMode)
          JVMCI_ONLY(|| !FLAG_IS_DEFAULT(EnableJVMCI)
                     || !FLAG_IS_DEFAULT(UseJVMCICompiler));
-}
-
-bool CompilerConfig::is_interpreter_only() {
-  return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
 }
 
 static bool check_legacy_flags() {
@@ -585,13 +589,6 @@ void CompilerConfig::ergo_initialize() {
   // Do JVMCI specific settings
   set_jvmci_specific_flags();
 #endif
-
-  if (FLAG_IS_DEFAULT(SweeperThreshold)) {
-    if ((SweeperThreshold * ReservedCodeCacheSize / 100) > (1.2 * M)) {
-      // Cap default SweeperThreshold value to an equivalent of 1.2 Mb
-      FLAG_SET_ERGO(SweeperThreshold, (1.2 * M * 100) / ReservedCodeCacheSize);
-    }
-  }
 
   if (UseOnStackReplacement && !UseLoopCounter) {
     warning("On-stack-replacement requires loop counters; enabling loop counters");

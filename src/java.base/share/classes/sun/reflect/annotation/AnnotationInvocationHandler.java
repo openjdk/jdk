@@ -85,8 +85,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (result == null)
             throw new IncompleteAnnotationException(type, member);
 
-        if (result instanceof ExceptionProxy)
-            throw ((ExceptionProxy) result).generateException();
+        if (result instanceof ExceptionProxy exceptProxy)
+            throw exceptProxy.generateException();
 
         if (result.getClass().isArray() && Array.getLength(result) != 0)
             result = cloneArray(result);
@@ -410,8 +410,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private AnnotationInvocationHandler asOneOfUs(Object o) {
         if (Proxy.isProxyClass(o.getClass())) {
             InvocationHandler handler = Proxy.getInvocationHandler(o);
-            if (handler instanceof AnnotationInvocationHandler)
-                return (AnnotationInvocationHandler) handler;
+            if (handler instanceof AnnotationInvocationHandler annotationHandler)
+                return annotationHandler;
         }
         return null;
     }

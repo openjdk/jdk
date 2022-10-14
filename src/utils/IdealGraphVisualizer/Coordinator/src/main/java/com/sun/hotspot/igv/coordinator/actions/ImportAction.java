@@ -42,36 +42,22 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.Action;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
 import org.openide.util.Exceptions;
 import org.openide.util.RequestProcessor;
-import org.openide.awt.ActionID;
-import org.openide.awt.ActionReference;
-import org.openide.awt.ActionReferences;
-import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
-import org.openide.util.actions.SystemAction;
+import org.openide.util.actions.CallableSystemAction;
+import org.openide.util.Utilities;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
 
-@ActionID(
-        category = "File",
-        id = "com.sun.hotspot.igv.coordinator.actions.ImportAction"
-)
-@ActionRegistration(
-        iconBase = "com/sun/hotspot/igv/coordinator/images/import.png",
-        displayName = "#CTL_ImportAction"
-)
-@ActionReferences({
-    @ActionReference(path = "Menu/File", position = 0),
-    @ActionReference(path = "Shortcuts", name = "C-O")
-})
-public final class ImportAction extends SystemAction {
+public final class ImportAction extends CallableSystemAction {
     private static final int WORKUNITS = 10000;
 
     public static FileFilter getFileFilter() {
@@ -90,7 +76,7 @@ public final class ImportAction extends SystemAction {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void performAction() {
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(ImportAction.getFileFilter());
         fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
@@ -170,13 +156,24 @@ public final class ImportAction extends SystemAction {
         return NbBundle.getMessage(ImportAction.class, "CTL_ImportAction");
     }
 
-    @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/coordinator/images/import.png";
+    public ImportAction() {
+        putValue(Action.SHORT_DESCRIPTION, "Open");
+        // D is the Control key on most platforms, the Command (meta) key on Macintosh
+        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-O"));
     }
 
     @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
+    }
+
+    @Override
+    protected boolean asynchronous() {
+        return false;
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/coordinator/images/import.png";
     }
 }

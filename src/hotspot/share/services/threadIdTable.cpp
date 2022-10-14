@@ -27,7 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/threadIdTable.hpp"
@@ -80,12 +80,6 @@ class ThreadIdTableConfig : public AllStatic {
     }
 };
 
-static size_t ceil_log2(size_t val) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < val; ++ret);
-  return ret;
-}
-
 // Lazily creates the table and populates it with the given
 // thread list
 void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
@@ -108,7 +102,7 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
         MutexLocker ml(Threads_lock);
         if (!thread->is_exiting()) {
           // Must be inside the lock to ensure that we don't add a thread to the table
-          // that has just passed the removal point in ThreadsSMRSupport::remove_thread()
+          // that has just passed the removal point in Threads::remove().
           add_thread(java_tid, thread);
         }
       }
@@ -122,7 +116,8 @@ void ThreadIdTable::create_table(size_t size) {
   size_t start_size_log =
       size_log > DEFAULT_TABLE_SIZE_LOG ? size_log : DEFAULT_TABLE_SIZE_LOG;
   _current_size = (size_t)1 << start_size_log;
-  _local_table = new ThreadIdTableHash(start_size_log, END_SIZE);
+  _local_table =
+      new ThreadIdTableHash(start_size_log, END_SIZE, ThreadIdTableHash::DEFAULT_GROW_HINT);
 }
 
 void ThreadIdTable::item_added() {

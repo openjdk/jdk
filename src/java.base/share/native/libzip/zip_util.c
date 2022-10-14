@@ -1552,7 +1552,6 @@ JNIEXPORT jboolean
 ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg)
 {
     z_stream strm;
-    int i = 0;
     memset(&strm, 0, sizeof(z_stream));
 
     *pmsg = 0; /* Reset error message */

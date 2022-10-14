@@ -144,6 +144,16 @@ void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   workers()->run_task(cl, num_workers);
 }
 
+uint G1CollectedHeap::get_chunks_per_region() {
+  uint log_region_size = HeapRegion::LogOfHRGrainBytes;
+  // Limit the expected input values to current known possible values of the
+  // (log) region size. Adjust as necessary after testing if changing the permissible
+  // values for region size.
+  assert(log_region_size >= 20 && log_region_size <= 29,
+         "expected value in [20,29], but got %u", log_region_size);
+  return 1u << (log_region_size / 2 - 4);
+}
+
 HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
   return new HeapRegion(hrs_index, bot(), mr, &_card_set_config);
@@ -284,8 +294,6 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
 
   assert(hr->bottom() < obj_top && obj_top <= hr->end(),
          "obj_top should be in last region");
-
-  _verifier->check_bitmaps("Humongous Region Allocation", first_hr);
 
   assert(words_not_fillable == 0 ||
          first_hr->bottom() + word_size_sum - words_not_fillable == hr->top(),
@@ -436,7 +444,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
     if (should_try_gc) {
       GCCause::Cause gc_cause = preventive_collection_required ? GCCause::_g1_preventive_collection
-                                                              : GCCause::_g1_inc_collection_pause;
+                                                               : GCCause::_g1_inc_collection_pause;
       bool succeeded;
       result = do_collection_pause(word_size, gc_count_before, &succeeded, gc_cause);
       if (result != NULL) {
@@ -985,15 +993,7 @@ void G1CollectedHeap::print_heap_after_full_collection() {
   }
 }
 
-void G1CollectedHeap::abort_concurrent_cycle() {
-  // If we start the compaction before the CM threads finish
-  // scanning the root regions we might trip them over as we'll
-  // be moving objects / updating references. So let's wait until
-  // they are done. By telling them to abort, they should complete
-  // early.
-  _cm->root_regions()->abort();
-  _cm->root_regions()->wait_until_scan_finished();
-
+bool G1CollectedHeap::abort_concurrent_cycle() {
   // Disable discovery and empty the discovered lists
   // for the CM ref processor.
   _ref_processor_cm->disable_discovery();
@@ -1002,7 +1002,7 @@ void G1CollectedHeap::abort_concurrent_cycle() {
 
   // Abandon current iterations of concurrent marking and concurrent
   // refinement, if any are in progress.
-  concurrent_mark()->concurrent_cycle_abort();
+  return concurrent_mark()->concurrent_cycle_abort();
 }
 
 void G1CollectedHeap::prepare_heap_for_full_collection() {
@@ -1027,7 +1027,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   }
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
-  _verifier->check_bitmaps("Full GC Start");
+  _verifier->verify_bitmap_clear(true /* above_tams_only */);
 }
 
 void G1CollectedHeap::prepare_heap_for_mutators() {
@@ -1058,7 +1058,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  if (_hot_card_cache->use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     _hot_card_cache->reset_hot_cache();
   }
 
@@ -1076,9 +1076,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
   _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
-
-  // This call implicitly verifies that the next bitmap is clear after Full GC.
-  _verifier->check_bitmaps("Full GC End");
+  _verifier->verify_bitmap_clear(false /* above_tams_only */);
 
   // At this point there should be no regions in the
   // entire heap tagged as young.
@@ -1111,7 +1109,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
 
   G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
 
   collector.prepare_collection();
   collector.collect();
@@ -1336,13 +1334,13 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   uint num_regions_removed = _hrm.shrink_by(num_regions_to_remove);
   size_t shrunk_bytes = num_regions_removed * HeapRegion::GrainBytes;
 
-  log_debug(gc, ergo, heap)("Shrink the heap. requested shrinking amount: " SIZE_FORMAT "B aligned shrinking amount: " SIZE_FORMAT "B attempted shrinking amount: " SIZE_FORMAT "B",
+  log_debug(gc, ergo, heap)("Shrink the heap. requested shrinking amount: " SIZE_FORMAT "B aligned shrinking amount: " SIZE_FORMAT "B actual amount shrunk: " SIZE_FORMAT "B",
                             shrink_bytes, aligned_shrink_bytes, shrunk_bytes);
   if (num_regions_removed > 0) {
     log_debug(gc, heap)("Uncommittable regions after shrink: %u", num_regions_removed);
     policy()->record_new_heap_size(num_regions());
   } else {
-    log_debug(gc, ergo, heap)("Did not expand the heap (heap shrinking operation failed)");
+    log_debug(gc, ergo, heap)("Did not shrink the heap (heap shrinking operation failed)");
   }
 }
 
@@ -1452,7 +1450,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
   _old_evac_stats("Old", OldPLABSize, PLABWeight),
   _monitoring_support(nullptr),
-  _humongous_reclaim_candidates(),
   _num_humongous_objects(0),
   _num_humongous_reclaim_candidates(0),
   _hr_printer(),
@@ -1628,7 +1625,7 @@ jint G1CollectedHeap::initialize() {
                        heap_rs.size());
   heap_storage->set_mapping_changed_listener(&_listener);
 
-  // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
+  // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmap.
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block Offset Table",
                              G1BlockOffsetTable::compute_size(heap_rs.size() / HeapWordSize),
@@ -1645,12 +1642,10 @@ jint G1CollectedHeap::initialize() {
                              G1CardCounts::heap_map_factor());
 
   size_t bitmap_size = G1CMBitMap::compute_size(heap_rs.size());
-  G1RegionToSpaceMapper* prev_bitmap_storage =
-    create_aux_memory_mapper("Prev Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
-  G1RegionToSpaceMapper* next_bitmap_storage =
-    create_aux_memory_mapper("Next Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
+  G1RegionToSpaceMapper* bitmap_storage =
+    create_aux_memory_mapper("Mark Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
 
-  _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
+  _hrm.initialize(heap_storage, bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   _card_table->initialize(cardtable_storage);
 
   // Do later initialization work for concurrent refinement.
@@ -1684,7 +1679,6 @@ jint G1CollectedHeap::initialize() {
     size_t granularity = HeapRegion::GrainBytes;
 
     _region_attr.initialize(reserved(), granularity);
-    _humongous_reclaim_candidates.initialize(reserved(), granularity);
   }
 
   _workers = new WorkerThreads("GC Thread", ParallelGCThreads);
@@ -1697,7 +1691,7 @@ jint G1CollectedHeap::initialize() {
 
   // Create the G1ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_[reserved_]regions" is defined.)
-  _cm = new G1ConcurrentMark(this, prev_bitmap_storage, next_bitmap_storage);
+  _cm = new G1ConcurrentMark(this, bitmap_storage);
   _cm_thread = _cm->cm_thread();
 
   // Now expand into the initial heap size.
@@ -1896,6 +1890,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     case GCCause::_wb_breakpoint:           return true;
+    case GCCause::_codecache_GC_aggressive: return true;
     case GCCause::_codecache_GC_threshold:  return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
@@ -2234,7 +2229,7 @@ void G1CollectedHeap::start_concurrent_gc_for_metadata_allocation(GCCause::Cause
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  return is_in_reserved(p) && _hrm.is_available(addr_to_region((HeapWord*)p));
+  return is_in_reserved(p) && _hrm.is_available(addr_to_region(p));
 }
 
 // Iteration functions.
@@ -2287,6 +2282,10 @@ void G1CollectedHeap::keep_alive(oop obj) {
 }
 
 void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
+  _hrm.iterate(cl);
+}
+
+void G1CollectedHeap::heap_region_iterate(HeapRegionIndexClosure* cl) const {
   _hrm.iterate(cl);
 }
 
@@ -2348,12 +2347,18 @@ void G1CollectedHeap::par_iterate_regions_array(HeapRegionClosure* cl,
 
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
   HeapRegion* hr = heap_region_containing(addr);
+  // The CollectedHeap API requires us to not fail for any given address within
+  // the heap. HeapRegion::block_start() has been optimized to not accept addresses
+  // outside of the allocated area.
+  if (addr >= hr->top()) {
+    return nullptr;
+  }
   return hr->block_start(addr);
 }
 
 bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
   HeapRegion* hr = heap_region_containing(addr);
-  return hr->block_is_obj(addr);
+  return hr->block_is_obj(addr, hr->parsable_bottom_acquire());
 }
 
 size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
@@ -2408,9 +2413,9 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const HeapRegion* hr,
                                        const VerifyOption vo) const {
   switch (vo) {
-  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
-  case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj, hr);
-  default:                            ShouldNotReachHere();
+    case VerifyOption::G1UseConcMarking: return is_obj_dead(obj, hr);
+    case VerifyOption::G1UseFullMarking: return is_obj_dead_full(obj, hr);
+    default:                             ShouldNotReachHere();
   }
   return false; // keep some compilers happy
 }
@@ -2418,9 +2423,9 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
 bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const VerifyOption vo) const {
   switch (vo) {
-  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
-  case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj);
-  default:                            ShouldNotReachHere();
+    case VerifyOption::G1UseConcMarking: return is_obj_dead(obj);
+    case VerifyOption::G1UseFullMarking: return is_obj_dead_full(obj);
+    default:                             ShouldNotReachHere();
   }
   return false; // keep some compilers happy
 }
@@ -2468,7 +2473,8 @@ void G1CollectedHeap::print_regions_on(outputStream* st) const {
                "HS=humongous(starts), HC=humongous(continues), "
                "CS=collection set, F=free, "
                "OA=open archive, CA=closed archive, "
-               "TAMS=top-at-mark-start (previous, next)");
+               "TAMS=top-at-mark-start, "
+               "PB=parsable bottom");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
 }
@@ -2521,7 +2527,7 @@ public:
     if (occupied == 0) {
       tty->print_cr("  RSet is empty");
     } else {
-      hrrs->print();
+      tty->print_cr("hrrs " PTR_FORMAT, p2i(hrrs));
     }
     tty->print_cr("----------");
     return false;
@@ -2573,7 +2579,8 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
   return G1EvacSummary(stats->allocated(), stats->wasted(), stats->undo_wasted(),
                        stats->unused(), stats->used(), stats->region_end_waste(),
-                       stats->regions_filled(), stats->direct_allocated(),
+                       stats->regions_filled(), stats->num_plab_filled(),
+                       stats->direct_allocated(), stats->num_direct_allocated(),
                        stats->failure_used(), stats->failure_waste());
 }
 
@@ -2681,9 +2688,7 @@ bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const 
   // the assumption that such objects are likely still live.
   HeapRegionRemSet* rem_set = r->rem_set();
 
-  return G1EagerReclaimHumongousObjectsWithStaleRefs ?
-         rem_set->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold) :
-         G1EagerReclaimHumongousObjects && rem_set->is_empty();
+  return rem_set->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold);
 }
 
 #ifndef PRODUCT
@@ -2754,7 +2759,6 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
     heap_region_iterate(&v_cl);
   }
   _verifier->verify_before_gc(type);
-  _verifier->check_bitmaps("GC Start");
   verify_numa_regions("GC Start");
   phase_times()->record_verify_before_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
@@ -2770,7 +2774,6 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
     heap_region_iterate(&v_cl);
   }
   _verifier->verify_after_gc(type);
-  _verifier->check_bitmaps("GC End");
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
   phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
@@ -2803,7 +2806,9 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
 
 G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_transition(g1h) {
   // This summary needs to be printed before incrementing total collections.
-  _g1h->rem_set()->print_periodic_summary_info("Before GC RS summary", _g1h->total_collections());
+  _g1h->rem_set()->print_periodic_summary_info("Before GC RS summary",
+                                               _g1h->total_collections(),
+                                               true /* show_thread_times */);
   _g1h->print_heap_before_gc();
   _g1h->print_heap_regions();
 }
@@ -2812,7 +2817,9 @@ G1HeapPrinterMark::~G1HeapPrinterMark() {
   _g1h->policy()->print_age_table();
   _g1h->rem_set()->print_coarsen_stats();
   // We are at the end of the GC. Total collections has already been increased.
-  _g1h->rem_set()->print_periodic_summary_info("After GC RS summary", _g1h->total_collections() - 1);
+  _g1h->rem_set()->print_periodic_summary_info("After GC RS summary",
+                                               _g1h->total_collections() - 1,
+                                               false /* show_thread_times */);
 
   _heap_transition.print();
   _g1h->print_heap_regions();
@@ -2838,8 +2845,8 @@ G1JFRTracerMark::~G1JFRTracerMark() {
 void G1CollectedHeap::prepare_tlabs_for_mutator() {
   Ticks start = Ticks::now();
 
-  _survivor_evac_stats.adjust_desired_plab_sz();
-  _old_evac_stats.adjust_desired_plab_sz();
+  _survivor_evac_stats.adjust_desired_plab_size();
+  _old_evac_stats.adjust_desired_plab_size();
 
   allocate_dummy_regions();
 
@@ -2861,7 +2868,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   GCIdMark gc_id_mark;
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
 
-  GCTraceCPUTime tcpu;
+  GCTraceCPUTime tcpu(_gc_tracer_stw);
 
   _bytes_used_during_gc = 0;
 
@@ -2879,6 +2886,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   // without its logging output interfering with the logging output
   // that came from the pause.
   if (should_start_concurrent_mark_operation) {
+    verifier()->verify_bitmap_clear(true /* above_tams_only */);
     // CAUTION: after the start_concurrent_cycle() call below, the concurrent marking
     // thread(s) could be running concurrently with us. Make sure that anything
     // after this point does not assume that we are the only GC thread running.
@@ -2889,10 +2897,9 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   }
 }
 
-void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
-                                        bool class_unloading_occurred) {
+void G1CollectedHeap::complete_cleaning(bool class_unloading_occurred) {
   uint num_workers = workers()->active_workers();
-  G1ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred);
+  G1ParallelCleaningTask unlink_task(num_workers, class_unloading_occurred);
   workers()->run_task(&unlink_task);
 }
 
@@ -2910,21 +2917,9 @@ void G1CollectedHeap::make_pending_list_reachable() {
     oop pll_head = Universe::reference_pending_list();
     if (pll_head != NULL) {
       // Any valid worker id is fine here as we are in the VM thread and single-threaded.
-      _cm->mark_in_next_bitmap(0 /* worker_id */, pll_head);
+      _cm->mark_in_bitmap(0 /* worker_id */, pll_head);
     }
   }
-}
-
-static bool do_humongous_object_logging() {
-  return log_is_enabled(Debug, gc, humongous);
-}
-
-bool G1CollectedHeap::should_do_eager_reclaim() const {
-  // As eager reclaim logging also gives information about humongous objects in
-  // the heap in general, always do the eager reclaim pass even without known
-  // candidates.
-  return (G1EagerReclaimHumongousObjects &&
-          (has_humongous_reclaim_candidates() || do_humongous_object_logging()));
 }
 
 void G1CollectedHeap::set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates) {
@@ -2953,19 +2948,14 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
                                                create_g1_evac_summary(&_old_evac_stats));
 }
 
-void G1CollectedHeap::clear_prev_bitmap_for_region(HeapRegion* hr) {
-  MemRegion mr(hr->bottom(), hr->end());
-  concurrent_mark()->clear_range_in_prev_bitmap(mr);
+void G1CollectedHeap::clear_bitmap_for_region(HeapRegion* hr) {
+  concurrent_mark()->clear_bitmap_for_region(hr);
 }
 
 void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
   assert(!hr->is_free(), "the region should not be free");
   assert(!hr->is_empty(), "the region should not be empty");
   assert(_hrm.is_available(hr->hrm_index()), "region should be committed");
-
-  if (G1VerifyBitmaps) {
-    clear_prev_bitmap_for_region(hr);
-  }
 
   // Clear the card counts for this region.
   // Note: we only need to do this if the region is not young
@@ -3214,7 +3204,6 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
     if (new_alloc_region != NULL) {
       set_region_short_lived_locked(new_alloc_region);
       _hr_printer.alloc(new_alloc_region, !should_allocate);
-      _verifier->check_bitmaps("Mutator Region Allocation", new_alloc_region);
       _policy->remset_tracker()->update_at_allocate(new_alloc_region);
       return new_alloc_region;
     }
@@ -3271,11 +3260,9 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionA
     if (type.is_survivor()) {
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
-      _verifier->check_bitmaps("Survivor Region Allocation", new_alloc_region);
       register_new_survivor_region_with_region_attr(new_alloc_region);
     } else {
       new_alloc_region->set_old();
-      _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);
     }
     _policy->remset_tracker()->update_at_allocate(new_alloc_region);
     register_region_with_region_attr(new_alloc_region);
@@ -3298,7 +3285,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
 
   bool const during_im = collector_state()->in_concurrent_start_gc();
   if (during_im && allocated_bytes > 0) {
-    _cm->root_regions()->add(alloc_region->next_top_at_mark_start(), alloc_region->top());
+    _cm->add_root_region(alloc_region);
   }
   _hr_printer.retire(alloc_region);
 }
@@ -3317,15 +3304,16 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
   return NULL;
 }
 
-void G1CollectedHeap::mark_evac_failure_object(const oop obj, uint worker_id) const {
-  // All objects failing evacuation are live. What we'll do is
-  // that we'll update the prev marking info so that they are
-  // all under PTAMS and explicitly marked.
-  _cm->par_mark_in_prev_bitmap(obj);
+void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+  assert(!_cm->is_marked_in_bitmap(obj), "must be");
+
+  _cm->raw_mark_in_bitmap(obj);
+  if (collector_state()->in_concurrent_start_gc()) {
+    _cm->add_to_liveness(worker_id, obj, obj_size);
+  }
 }
 
 // Optimized nmethod scanning
-
 class RegisterNMethodOopClosure: public OopClosure {
   G1CollectedHeap* _g1h;
   nmethod* _nm;
@@ -3398,7 +3386,7 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
     assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   } else {
-    // The "used" of the the collection set have already been subtracted
+    // The "used" of the collection set have already been subtracted
     // when they were freed.  Add in the bytes used.
     increase_used(_bytes_used_during_gc);
   }
@@ -3406,7 +3394,6 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
 void G1CollectedHeap::reset_hot_card_cache() {
   _hot_card_cache->reset_hot_cache();
-  _hot_card_cache->set_use_cache(true);
 }
 
 void G1CollectedHeap::purge_code_root_memory() {
@@ -3457,14 +3444,14 @@ void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, boo
 }
 
 void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
-  if (!Continuations::is_gc_marking_cycle_active()) {
+  if (!CodeCache::is_gc_marking_cycle_active()) {
     // This is the normal case when we do not call collect when a
     // concurrent mark is ongoing. We then start a new code marking
     // cycle. If, on the other hand, a concurrent mark is ongoing, we
     // will be conservative and use the last code marking cycle. Code
     // caches marked between the two concurrent marks will live a bit
     // longer than needed.
-    Continuations::on_gc_marking_cycle_start();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_start();
+    CodeCache::arm_all_nmethods();
   }
 }

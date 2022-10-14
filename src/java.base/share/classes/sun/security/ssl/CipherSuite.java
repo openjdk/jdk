@@ -887,20 +887,20 @@ enum CipherSuite {
     }
 
     // known but unsupported cipher suite
-    private CipherSuite(String name, int id) {
+    CipherSuite(String name, int id) {
         this(id, false, name, "",
                 ProtocolVersion.PROTOCOLS_EMPTY, null, null, null, null);
     }
 
     // TLS 1.3 cipher suite
-    private CipherSuite(int id, boolean isDefaultEnabled,
+    CipherSuite(int id, boolean isDefaultEnabled,
             String name, ProtocolVersion[] supportedProtocols,
             SSLCipher bulkCipher, HashAlg hashAlg) {
         this(id, isDefaultEnabled, name, "",
                 supportedProtocols, null, bulkCipher, M_NULL, hashAlg);
     }
 
-    private CipherSuite(int id, boolean isDefaultEnabled,
+    CipherSuite(int id, boolean isDefaultEnabled,
             String name, String aliases,
             ProtocolVersion[] supportedProtocols,
             KeyExchange keyExchange, SSLCipher cipher,
@@ -1081,7 +1081,7 @@ enum CipherSuite {
     /**
      * An SSL/TLS key exchange algorithm.
      */
-    static enum KeyExchange {
+    enum KeyExchange {
         K_NULL          ("NULL",           false, true,   NAMED_GROUP_NONE),
         K_RSA           ("RSA",            true,  false,  NAMED_GROUP_NONE),
         K_RSA_EXPORT    ("RSA_EXPORT",     true,  false,  NAMED_GROUP_NONE),
@@ -1152,7 +1152,7 @@ enum CipherSuite {
      * Also contains a factory method to obtain an initialized MAC
      * for this algorithm.
      */
-    static enum MacAlg {
+    enum MacAlg {
         M_NULL      ("NULL",     0,   0,   0),
         M_MD5       ("MD5",     16,  64,   9),
         M_SHA       ("SHA",     20,  64,   9),
@@ -1191,7 +1191,7 @@ enum CipherSuite {
      * Note that TLS 1.1- uses a single MD5/SHA1-based PRF algorithm for
      * generating the necessary material.
      */
-    static enum HashAlg {
+    enum HashAlg {
         H_NONE      ("NONE",    0,    0),
         H_SHA256    ("SHA-256", 32,  64),
         H_SHA384    ("SHA-384", 48, 128);

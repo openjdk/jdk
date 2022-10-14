@@ -62,7 +62,6 @@ Java_sun_nio_ch_NativeThread_init(JNIEnv *env, jclass cl)
      * should somehow be unified, perhaps within the VM.
      */
 
-    sigset_t ss;
     struct sigaction sa, osa;
     sa.sa_handler = nullHandler;
     sa.sa_flags = 0;

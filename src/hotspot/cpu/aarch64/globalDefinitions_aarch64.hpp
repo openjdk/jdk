@@ -34,6 +34,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#define SUPPORT_MONITOR_COUNT
+
 // Aarch64 was not originally defined to be multi-copy-atomic, but now
 // is.  See: "Simplifying ARM Concurrency: Multicopy-atomic Axiomatic
 // and Operational Models for ARMv8"

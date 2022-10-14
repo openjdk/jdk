@@ -314,7 +314,7 @@ static bool check_compare_clipping( bool less_than, IfNode *iff, ConNode *limit,
 }
 
 //------------------------------is_unreachable_region--------------------------
-// Find if the Region node is reachable from the root.
+// Check if the RegionNode is part of an unsafe loop and unreachable from root.
 bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
   Node* top = phase->C->top();
   assert(req() == 2 || (req() == 3 && in(1) != NULL && in(2) == top), "sanity check arguments");
@@ -373,7 +373,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   VectorSet visited;
 
   // Mark all control nodes reachable from root outputs
-  Node *n = (Node*)phase->C->root();
+  Node* n = (Node*)phase->C->root();
   nstack.push(n);
   visited.set(n->_idx);
   while (nstack.size() != 0) {
@@ -475,7 +475,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Remove TOP or NULL input paths. If only 1 input path remains, this Region
   // degrades to a copy.
-  bool add_to_worklist = false;
+  bool add_to_worklist = true;
   bool modified = false;
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
@@ -501,7 +501,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
       }
       if( phase->type(n) == Type::TOP ) {
-        set_req(i, NULL);       // Ignore TOP inputs
+        set_req_X(i, NULL, phase); // Ignore TOP inputs
         modified = true;
         i--;
         continue;
@@ -532,7 +532,8 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
         }
       }
-      add_to_worklist = true;
+      add_to_worklist = false;
+      phase->is_IterGVN()->add_users_to_worklist(this);
       i--;
     }
   }
@@ -547,44 +548,50 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ((this->is_Loop() && (del_it == LoopNode::EntryControl ||
                              (del_it == 0 && is_unreachable_region(phase)))) ||
         (!this->is_Loop() && has_phis && is_unreachable_region(phase))) {
-      // Yes,  the region will be removed during the next step below.
-      // Cut the backedge input and remove phis since no data paths left.
-      // We don't cut outputs to other nodes here since we need to put them
-      // on the worklist.
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if (in(1)->outcnt() == 1) {
-        igvn->_worklist.push(in(1));
-      }
-      del_req(1);
-      cnt = 0;
-      assert( req() == 1, "no more inputs expected" );
-      uint max = outcnt();
-      bool progress = true;
-      Node *top = phase->C->top();
-      DUIterator j;
-      while(progress) {
-        progress = false;
-        for (j = outs(); has_out(j); j++) {
-          Node *n = out(j);
-          if( n->is_Phi() ) {
-            assert(n->in(0) == this, "");
-            assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
-            // Break dead loop data path.
-            // Eagerly replace phis with top to avoid regionless phis.
-            igvn->replace_node(n, top);
-            if( max != outcnt() ) {
-              progress = true;
-              j = refresh_out_pos(j);
-              max = outcnt();
+      // This region and therefore all nodes on the input control path(s) are unreachable
+      // from root. To avoid incomplete removal of unreachable subgraphs, walk up the CFG
+      // and aggressively replace all nodes by top.
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      Node* top = phase->C->top();
+      ResourceMark rm;
+      Node_List nstack;
+      VectorSet visited;
+      nstack.push(this);
+      visited.set(_idx);
+      while (nstack.size() != 0) {
+        Node* n = nstack.pop();
+        for (uint i = 0; i < n->req(); ++i) {
+          Node* m = n->in(i);
+          assert(m != (Node*)phase->C->root(), "Should be unreachable from root");
+          if (m != NULL && m->is_CFG() && !visited.test_set(m->_idx)) {
+            nstack.push(m);
+          }
+        }
+        if (n->is_Region()) {
+          // Eagerly replace phis with top to avoid regionless phis.
+          n->set_req(0, NULL);
+          bool progress = true;
+          uint max = n->outcnt();
+          DUIterator j;
+          while (progress) {
+            progress = false;
+            for (j = n->outs(); n->has_out(j); j++) {
+              Node* u = n->out(j);
+              if (u->is_Phi()) {
+                igvn->replace_node(u, top);
+                if (max != n->outcnt()) {
+                  progress = true;
+                  j = n->refresh_out_pos(j);
+                  max = n->outcnt();
+                }
+              }
             }
           }
         }
+        igvn->replace_node(n, top);
       }
-      add_to_worklist = true;
+      return NULL;
     }
-  }
-  if (add_to_worklist) {
-    phase->is_IterGVN()->add_users_to_worklist(this); // Revisit collapsed Phis
   }
 
   if( cnt <= 1 ) {              // Only 1 path in?
@@ -629,8 +636,9 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         assert(parent_ctrl != NULL, "Region is a copy of some non-null control");
         assert(parent_ctrl != this, "Close dead loop");
       }
-      if (!add_to_worklist)
+      if (add_to_worklist) {
         igvn->add_users_to_worklist(this); // Check for further allowed opts
+      }
       for (DUIterator_Last imin, i = last_outs(imin); i >= imin; --i) {
         Node* n = last_out(i);
         igvn->hash_delete(n); // Remove from worklist before modifying edges
@@ -2165,7 +2173,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           doit = false;
           break;
         }
-        if (in(i)->in(AddPNode::Offset) != base) {
+        if (in(i)->in(AddPNode::Base) != base) {
           base = NULL;
         }
         if (in(i)->in(AddPNode::Offset) != offset) {
@@ -2573,14 +2581,6 @@ const RegMask &PhiNode::out_RegMask() const {
 }
 
 #ifndef PRODUCT
-void PhiNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  // For a PhiNode, the set of related nodes includes all inputs till level 2,
-  // and all outputs till level 1. In compact mode, inputs till level 1 are
-  // collected.
-  this->collect_nodes(in_rel, compact ? 1 : 2, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
-
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
   if (is_tripcount(T_INT) || is_tripcount(T_LONG)) {
@@ -2605,32 +2605,10 @@ const RegMask &GotoNode::out_RegMask() const {
   return RegMask::Empty;
 }
 
-#ifndef PRODUCT
-//-----------------------------related-----------------------------------------
-// The related nodes of a GotoNode are all inputs at level 1, as well as the
-// outputs at level 1. This is regardless of compact mode.
-void GotoNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
-#endif
-
-
 //=============================================================================
 const RegMask &JumpNode::out_RegMask() const {
   return RegMask::Empty;
 }
-
-#ifndef PRODUCT
-//-----------------------------related-----------------------------------------
-// The related nodes of a JumpNode are all inputs at level 1, as well as the
-// outputs at level 2 (to include actual jump targets beyond projection nodes).
-// This is regardless of compact mode.
-void JumpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -2, false, false);
-}
-#endif
 
 //=============================================================================
 const RegMask &JProjNode::out_RegMask() const {
@@ -2691,12 +2669,6 @@ void JumpProjNode::dump_spec(outputStream *st) const {
 void JumpProjNode::dump_compact_spec(outputStream *st) const {
   ProjNode::dump_compact_spec(st);
   st->print("(%d)%d@%d", _switch_val, _proj_no, _dest_bci);
-}
-
-void JumpProjNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  // The related nodes of a JumpProjNode are its inputs and outputs at level 1.
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
 }
 #endif
 

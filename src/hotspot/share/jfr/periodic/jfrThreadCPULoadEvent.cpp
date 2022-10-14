@@ -29,8 +29,8 @@
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 
 jlong JfrThreadCPULoadEvent::get_wallclock_time() {
   return os::javaTimeNanos();

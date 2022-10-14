@@ -311,6 +311,13 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
   printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
+  if test "x$DEVKIT_NAME" != x; then
+    printf "* Devkit:         $DEVKIT_NAME ($DEVKIT_ROOT)\n"
+  elif test "x$DEVKIT_ROOT" != x; then
+    printf "* Devkit:         $DEVKIT_ROOT\n"
+  elif test "x$SYSROOT" != x; then
+    printf "* Sysroot:        $SYSROOT\n"
+  fi
   printf "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC#"$FIXPATH "})\n"
   printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX#"$FIXPATH "})\n"
 

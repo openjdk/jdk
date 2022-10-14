@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
+        map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
@@ -419,6 +420,17 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
+    }
+
+    /**
+     * @return "true" if this VM supports continuations.
+     */
+    protected String vmContinuations() {
+        if (WB.getBooleanVMFlag("VMContinuations")) {
+            return "true";
+        } else {
+            return "false";
+        }
     }
 
     /**

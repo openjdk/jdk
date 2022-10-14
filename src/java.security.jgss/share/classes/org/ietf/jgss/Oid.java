@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import sun.security.util.ObjectIdentifier;
  */
 public class Oid {
 
-    private ObjectIdentifier oid;
+    private final ObjectIdentifier oid;
     private byte[] derEncoding;
 
     /**
@@ -100,7 +100,7 @@ public class Oid {
      * Creates an Oid object from its ASN.1 DER encoding.  This refers to
      * the full encoding including tag and length.  The structure and
      * encoding of Oids is defined in ISOIEC-8824 and ISOIEC-8825.  This
-     * method is identical in functionality to its InputStream conterpart.
+     * method is identical in functionality to its InputStream counterpart.
      *
      * @param data byte array containing the DER encoded oid
      * @exception GSSException may be thrown when the DER encoding does not

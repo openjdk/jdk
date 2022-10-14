@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,65 +89,65 @@ import java.security.Provider;
 
 public interface GSSContextSpi {
 
-    public Provider getProvider();
+    Provider getProvider();
 
     // The specification for the following methods mirrors the
     // specification of the same methods in the GSSContext interface, as
     // defined in RFC 2853.
 
-    public void requestLifetime(int lifetime) throws GSSException;
+    void requestLifetime(int lifetime) throws GSSException;
 
-    public void requestMutualAuth(boolean state) throws GSSException;
+    void requestMutualAuth(boolean state) throws GSSException;
 
-    public void requestReplayDet(boolean state) throws GSSException;
+    void requestReplayDet(boolean state) throws GSSException;
 
-    public void requestSequenceDet(boolean state) throws GSSException;
+    void requestSequenceDet(boolean state) throws GSSException;
 
-    public void requestCredDeleg(boolean state) throws GSSException;
+    void requestCredDeleg(boolean state) throws GSSException;
 
-    public void requestAnonymity(boolean state) throws GSSException;
+    void requestAnonymity(boolean state) throws GSSException;
 
-    public void requestConf(boolean state) throws GSSException;
+    void requestConf(boolean state) throws GSSException;
 
-    public void requestInteg(boolean state) throws GSSException;
+    void requestInteg(boolean state) throws GSSException;
 
-    public void requestDelegPolicy(boolean state) throws GSSException;
+    void requestDelegPolicy(boolean state) throws GSSException;
 
-    public void setChannelBinding(ChannelBinding cb) throws GSSException;
+    void setChannelBinding(ChannelBinding cb) throws GSSException;
 
-    public boolean getCredDelegState();
+    boolean getCredDelegState();
 
-    public boolean getMutualAuthState();
+    boolean getMutualAuthState();
 
-    public boolean getReplayDetState();
+    boolean getReplayDetState();
 
-    public boolean getSequenceDetState();
+    boolean getSequenceDetState();
 
-    public boolean getAnonymityState();
+    boolean getAnonymityState();
 
-    public boolean getDelegPolicyState();
+    boolean getDelegPolicyState();
 
-    public boolean isTransferable() throws GSSException;
+    boolean isTransferable() throws GSSException;
 
-    public boolean isProtReady();
+    boolean isProtReady();
 
-    public boolean isInitiator();
+    boolean isInitiator();
 
-    public boolean getConfState();
+    boolean getConfState();
 
-    public boolean getIntegState();
+    boolean getIntegState();
 
-    public int getLifetime();
+    int getLifetime();
 
-    public boolean isEstablished();
+    boolean isEstablished();
 
-    public GSSNameSpi getSrcName() throws GSSException;
+    GSSNameSpi getSrcName() throws GSSException;
 
-    public GSSNameSpi getTargName() throws GSSException;
+    GSSNameSpi getTargName() throws GSSException;
 
-    public Oid getMech() throws GSSException;
+    Oid getMech() throws GSSException;
 
-    public GSSCredentialSpi getDelegCred() throws GSSException;
+    GSSCredentialSpi getDelegCred() throws GSSException;
 
     /**
      * Initiator context establishment call. This method may be
@@ -163,9 +163,9 @@ public interface GSSContextSpi {
      * with this mechanism level initSecContext. Since the output token
      * from this method is a fixed size, not exceedingly large, and a one
      * time deal, an overloaded form that takes an OutputStream has not
-     * been defined. The GSS-Framwork can write the returned byte[] to any
+     * been defined. The GSS-Framework can write the returned byte[] to any
      * application provided OutputStream. Similarly, any application input
-     * int he form of byte arrays will be wrapped in an input stream by the
+     * in the form of byte arrays will be wrapped in an input stream by the
      * GSS-Framework and then passed here.
      * <p>
      * <strong>
@@ -187,7 +187,7 @@ public interface GSSContextSpi {
      * the way out.
      * @exception GSSException may be thrown
      */
-    public byte[] initSecContext(InputStream is, int mechTokenSize)
+    byte[] initSecContext(InputStream is, int mechTokenSize)
                         throws GSSException;
 
     /**
@@ -204,9 +204,9 @@ public interface GSSContextSpi {
      * with this mechanism level acceptSecContext. Since the output token
      * from this method is a fixed size, not exceedingly large, and a one
      * time deal, an overloaded form that takes an OutputStream has not
-     * been defined. The GSS-Framwork can write the returned byte[] to any
+     * been defined. The GSS-Framework can write the returned byte[] to any
      * application provided OutputStream. Similarly, any application input
-     * int he form of byte arrays will be wrapped in an input stream by the
+     * in the form of byte arrays will be wrapped in an input stream by the
      * GSS-Framework and then passed here.
      * <p>
      * <strong>
@@ -227,12 +227,12 @@ public interface GSSContextSpi {
      * the way out.
      * @exception GSSException may be thrown
      */
-    public byte[] acceptSecContext(InputStream is, int mechTokenSize)
+    byte[] acceptSecContext(InputStream is, int mechTokenSize)
                         throws GSSException;
 
     /**
      * Queries the context for largest data size to accommodate
-     * the specified protection and for the token to remain less then
+     * the specified protection and for the token to remain less than
      * maxTokSize.
      *
      * @param qop the quality of protection that the context will be
@@ -245,28 +245,28 @@ public interface GSSContextSpi {
      *    requirements are met.
      * @exception GSSException may be thrown
      */
-    public int getWrapSizeLimit(int qop, boolean confReq, int maxTokSize)
+    int getWrapSizeLimit(int qop, boolean confReq, int maxTokSize)
                         throws GSSException;
 
     /**
      * Provides per-message token encapsulation.
      *
      * @param is the user-provided message to be protected
-     * @param os the token to be sent to the peer. It includes
+     * @param is the token to be sent to the peer. It includes
      *    the message from <i>is</i> with the requested protection.
-     * @param msgProp on input it contains the requested qop and
+     * @param msgProp on input, contains the requested qop and
      *    confidentiality state, on output, the applied values
      * @exception GSSException may be thrown
      * @see unwrap
      */
-    public void wrap(InputStream is, OutputStream os, MessageProp msgProp)
+    void wrap(InputStream is, OutputStream os, MessageProp msgProp)
         throws GSSException;
 
     /**
      * For apps that want simplicity and don't care about buffer copies.
      */
-    public byte[] wrap(byte[] inBuf, int offset, int len,
-                       MessageProp msgProp) throws GSSException;
+    byte[] wrap(byte[] inBuf, int offset, int len,
+                MessageProp msgProp) throws GSSException;
 
     /**
      * For apps that care about buffer copies but either cannot use streams
@@ -308,14 +308,14 @@ public interface GSSContextSpi {
      * @exception GSSException may be thrown
      * @see wrap
      */
-    public void unwrap(InputStream is, OutputStream os,
-                        MessageProp msgProp) throws GSSException;
+    void unwrap(InputStream is, OutputStream os,
+                MessageProp msgProp) throws GSSException;
 
     /**
      * For apps that want simplicity and don't care about buffer copies.
      */
-    public byte[] unwrap(byte[] inBuf, int offset, int len,
-                         MessageProp msgProp) throws GSSException;
+    byte[] unwrap(byte[] inBuf, int offset, int len,
+                  MessageProp msgProp) throws GSSException;
 
     /**
      * For apps that care about buffer copies but either cannot use streams
@@ -352,12 +352,12 @@ public interface GSSContextSpi {
      * @param msgProp on input the desired QOP and output the applied QOP
      * @exception GSSException
      */
-    public void getMIC(InputStream is, OutputStream os,
-                        MessageProp msgProp)
+    void getMIC(InputStream is, OutputStream os,
+                MessageProp msgProp)
                 throws GSSException;
 
-    public byte[] getMIC(byte[] inMsg, int offset, int len,
-                         MessageProp msgProp) throws GSSException;
+    byte[] getMIC(byte[] inMsg, int offset, int len,
+                  MessageProp msgProp) throws GSSException;
 
     /**
      * Checks the integrity of the supplied tokens.
@@ -369,12 +369,12 @@ public interface GSSContextSpi {
      *    states of the token as well as any informatory status codes
      * @exception GSSException may be thrown
      */
-    public void verifyMIC(InputStream is, InputStream msgStr,
-                           MessageProp mProp) throws GSSException;
+    void verifyMIC(InputStream is, InputStream msgStr,
+                   MessageProp mProp) throws GSSException;
 
-    public void verifyMIC(byte[] inTok, int tokOffset, int tokLen,
-                          byte[] inMsg, int msgOffset, int msgLen,
-                          MessageProp msgProp) throws GSSException;
+    void verifyMIC(byte[] inTok, int tokOffset, int tokLen,
+                   byte[] inMsg, int msgOffset, int msgLen,
+                   MessageProp msgProp) throws GSSException;
 
     /**
      * Produces a token representing this context. After this call
@@ -384,7 +384,7 @@ public interface GSSContextSpi {
      * @return exported context token
      * @exception GSSException may be thrown
      */
-    public byte[] export() throws GSSException;
+    byte[] export() throws GSSException;
 
     /**
      * Releases context resources and terminates the
@@ -392,7 +392,7 @@ public interface GSSContextSpi {
      *
      * @exception GSSException may be thrown
      */
-    public void dispose() throws GSSException;
+    void dispose() throws GSSException;
 
     /**
      * Return the mechanism-specific attribute associated with {@code type}.
@@ -402,6 +402,6 @@ public interface GSSContextSpi {
      * @throws GSSException see {@link ExtendedGSSContext#inquireSecContext}
      * for details
      */
-    public Object inquireSecContext(String type)
+    Object inquireSecContext(String type)
             throws GSSException;
 }

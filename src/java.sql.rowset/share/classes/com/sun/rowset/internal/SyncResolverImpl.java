@@ -596,7 +596,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * object.
      * <P>
      * <b>Note</b>In the reference implementation an optimistic concurrency implementation
-     * is provided as a sample implementation of a the {@code SyncProvider}
+     * is provided as a sample implementation of the {@code SyncProvider}
      * abstract class.
      * <P>
      * This method fails if any of the updates cannot be propagated back
@@ -698,7 +698,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
     /**
      * Immediately removes the current row from this
      * {@code CachedRowSetImpl} object if the row has been inserted, and
-     * also notifies listeners the a row has changed.  An exception is thrown
+     * also notifies listeners the row has changed.  An exception is thrown
      * if the row is not a row that has been inserted or the cursor is before
      * the first row, after the last row, or on the insert row.
      * <P>

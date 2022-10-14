@@ -254,6 +254,14 @@ if [ -z "$run_all_tests" ]; then
   jtreg_args+=(-Djpackage.test.SQETest=yes)
 fi
 
+if [ -n "$APPDATA" ]; then
+  # Looks like this is Windows.
+  # Explicitly add LOCALAPPDATA and APPDATA environment variables to the list
+  # of environment variables jtreg will pass to tests as by default it will not.
+  # This is needed for PerUserCfgTest test.
+  jtreg_args+=("-e:LOCALAPPDATA,APPDATA")
+fi
+
 jtreg_args+=("$test_actions")
 
 # Drop arguments separator

@@ -49,6 +49,7 @@ public class Continuation {
     private static final boolean PRESERVE_EXTENT_LOCAL_CACHE;
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static {
+        ContinuationSupport.ensureSupported();
         PreviewFeatures.ensureEnabled();
 
         StackChunk.init(); // ensure StackChunk class is initialized
@@ -304,7 +305,7 @@ public class Continuation {
     }
 
     @IntrinsicCandidate
-    private static int doYield() { throw new Error("Intrinsic not installed"); }
+    private native static int doYield();
 
     @IntrinsicCandidate
     private native static void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);
