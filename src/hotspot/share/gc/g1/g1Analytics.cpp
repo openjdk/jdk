@@ -189,7 +189,7 @@ void G1Analytics::report_cost_per_card_merge_ms(double cost_per_card_ms, bool fo
 }
 
 void G1Analytics::report_card_scan_to_merge_ratio(double merge_to_scan_ratio, bool for_young_only_phase) {
-  if  (for_young_only_phase) {
+  if (for_young_only_phase) {
     _young_card_scan_to_merge_ratio_seq->add(merge_to_scan_ratio);
   } else {
     _mixed_card_scan_to_merge_ratio_seq->add(merge_to_scan_ratio);
@@ -257,7 +257,7 @@ double G1Analytics::predict_dirtied_cards_rate_ms() const {
 }
 
 size_t G1Analytics::predict_scan_card_num(size_t rs_length, bool for_young_only_phase) const {
-  if  (for_young_only_phase || !enough_samples_available(_mixed_card_scan_to_merge_ratio_seq)) {
+  if (for_young_only_phase || !enough_samples_available(_mixed_card_scan_to_merge_ratio_seq)) {
     return (size_t)(rs_length * predict_in_unit_interval(_young_card_scan_to_merge_ratio_seq));
   } else {
     return (size_t)(rs_length * predict_in_unit_interval(_mixed_card_scan_to_merge_ratio_seq));
@@ -325,7 +325,7 @@ size_t G1Analytics::predict_rs_length(bool for_young_only_phase) const {
 }
 
 size_t G1Analytics::predict_pending_cards(bool for_young_only_phase) const {
-  if  (for_young_only_phase || !enough_samples_available(_young_pending_cards_seq)) {
+  if (for_young_only_phase || !enough_samples_available(_mixed_pending_cards_seq)) {
     return predict_size(_young_pending_cards_seq);
   } else {
     return predict_size(_mixed_pending_cards_seq);
