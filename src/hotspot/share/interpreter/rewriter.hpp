@@ -26,6 +26,7 @@
 #define SHARE_INTERPRETER_REWRITER_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/constantPool.hpp"
 #include "utilities/growableArray.hpp"
 
 // The Rewriter adds caches to the constant pool and rewrites bytecode indices
@@ -56,16 +57,7 @@ class Rewriter: public StackObj {
   GrowableArray<address>* _patch_invokedynamic_bcps;
   GrowableArray<int>*     _patch_invokedynamic_refs;
 
-  // Collect data for invokedynamic calls
-  struct InvokeDynamicInfo {
-    int _resolved_info_index;
-    int _cp_index;
-
-    InvokeDynamicInfo(int resolved_info_index, int cp_index) : 
-          _resolved_info_index(resolved_info_index), 
-          _cp_index(cp_index) {}
-  };
-  GrowableArray<struct InvokeDynamicInfo> _stuff_to_collect_during_rewriting;
+  GrowableArray<ConstantPoolCache::InvokeDynamicInfo> _stuff_to_collect_during_rewriting;
 
   void init_maps(int length) {
     _cp_map.trunc_to(0);

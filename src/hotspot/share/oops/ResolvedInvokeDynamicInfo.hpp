@@ -19,9 +19,20 @@ class ResolvedInvokeDynamicInfo : public MetaspaceObj {
      u1 _return_type;
      bool _has_appendix;
 public:
+    ResolvedInvokeDynamicInfo() :
+        _method(nullptr),
+        _resolved_references_index(0),
+        _cpool_index(0),
+        _number_of_parameters(0),
+        _return_type(0), 
+        _has_appendix(0) {}
     ResolvedInvokeDynamicInfo(u2 resolved_references_index, u2 cpool_index) : 
+                _method(nullptr),
                 _resolved_references_index(resolved_references_index),
-                _cpool_index(cpool_index) {}
+                _cpool_index(cpool_index),
+                _number_of_parameters(0),
+                _return_type(0), 
+                _has_appendix(0) {}
     bool has_local_signature() const { return true; }
     bool is_final() const { return true; }
     bool is_resolved() const { return _method != nullptr; }
