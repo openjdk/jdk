@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package java.nio.file;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Set;
 import java.util.EnumSet;
 import java.security.SecureRandom;
@@ -35,6 +33,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import static java.nio.file.attribute.PosixFilePermission.*;
+
 import jdk.internal.util.StaticProperty;
 
 /**
@@ -47,13 +46,6 @@ class TempFileHelper {
 
     // temporary directory location
     private static final Path tmpdir = Path.of(StaticProperty.javaIoTmpDir());
-
-    // print out the error message for java.io.tmpdir setting
-    static {
-        if (!Files.isDirectory(tmpdir)) {
-            System.err.println("WARNING: java.io.tmpdir location does not exist");
-        }
-    }
 
     private static final boolean isPosix =
         FileSystems.getDefault().supportedFileAttributeViews().contains("posix");

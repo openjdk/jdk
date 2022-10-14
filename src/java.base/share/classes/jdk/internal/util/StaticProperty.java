@@ -25,6 +25,9 @@
 
 package jdk.internal.util;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 import java.nio.charset.Charset;
 
@@ -65,6 +68,11 @@ public final class StaticProperty {
         USER_DIR  = getProperty(props, "user.dir");
         USER_NAME = getProperty(props, "user.name");
         JAVA_IO_TMPDIR = getProperty(props, "java.io.tmpdir");
+
+        if (!(new File(JAVA_IO_TMPDIR)).isDirectory()) {
+            System.err.println("WARNING: java.io.tmpdir location does not exist");
+        }
+
         JAVA_LIBRARY_PATH = getProperty(props, "java.library.path", "");
         SUN_BOOT_LIBRARY_PATH = getProperty(props, "sun.boot.library.path", "");
         JDK_SERIAL_FILTER = getProperty(props, "jdk.serialFilter", null);

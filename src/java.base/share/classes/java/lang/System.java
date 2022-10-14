@@ -2166,8 +2166,6 @@ public final class System {
             props.setProperty("sun.jnu.encoding", "UTF-8");
         }
 
-        StaticProperty.javaHome();          // Load StaticProperty to cache the property values
-
         lineSeparator = props.getProperty("line.separator");
 
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
@@ -2179,6 +2177,8 @@ public final class System {
         // of those properties default to native.encoding
         setOut0(newPrintStream(fdOut, props.getProperty("stdout.encoding")));
         setErr0(newPrintStream(fdErr, props.getProperty("stderr.encoding")));
+
+        StaticProperty.javaHome();          // Load StaticProperty to cache the property values
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();

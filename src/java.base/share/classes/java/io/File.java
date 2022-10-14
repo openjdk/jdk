@@ -35,8 +35,8 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import sun.security.action.GetPropertyAction;
-import sun.security.util.SecurityProperties;
+
+import jdk.internal.util.StaticProperty;
 
 /**
  * An abstract representation of file and directory pathnames.
@@ -1985,15 +1985,7 @@ public class File
         private TempDirectory() { }
 
         // temporary directory location
-        private static final File tmpdir = new File(
-                GetPropertyAction.privilegedGetProperty("java.io.tmpdir"));
-
-        // print out the error message for java.io.tmpdir setting
-        static {
-            if (tmpdir.isInvalid() || !fs.hasBooleanAttributes(tmpdir, FileSystem.BA_DIRECTORY)) {
-                System.err.println("WARNING: java.io.tmpdir location does not exist");
-            }
-        }
+        private static final File tmpdir = new File(StaticProperty.javaIoTmpDir());
 
         static File location() {
             return tmpdir;
