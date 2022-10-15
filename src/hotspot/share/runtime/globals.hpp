@@ -683,6 +683,10 @@ const int ObjectAlignmentInBytes = 8;
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
                                                                             \
+  product(bool, SynchronizeLoadClass, true, DIAGNOSTIC,                     \
+          "Tell the VM to call the ClassLoader method to lock and "         \
+          "synchronize class loading with the ClassLoader lock.")           \
+                                                                            \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \

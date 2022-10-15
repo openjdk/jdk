@@ -301,12 +301,6 @@ public abstract class ClassLoader {
     // is parallel capable and the appropriate lock object for class loading.
     private final ConcurrentHashMap<String, Object> parallelLockMap;
 
-    // Synchronization for class loading when the current class loader is NOT
-    // parallel capable.  The non-parallel capable class loader locks
-    // the ClassLoader object. This maps a class name to the thread that is currently
-    // loading the class in case the ClassLoader lock is broken.
-    private final ConcurrentHashMap<String, Thread> threadLoadingClassMap;
-
     // Maps packages to certs
     private final ConcurrentHashMap<String, Certificate[]> package2certs;
 
@@ -387,12 +381,10 @@ public abstract class ClassLoader {
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
             assertionLock = new Object();
-            threadLoadingClassMap = null;
         } else {
             // no finer-grained lock; lock on the classloader instance
             parallelLockMap = null;
             assertionLock = this;
-            threadLoadingClassMap = new ConcurrentHashMap<>();
         }
         this.package2certs = new ConcurrentHashMap<>();
         this.nameAndId = nameAndId(this);
@@ -759,86 +751,6 @@ public abstract class ClassLoader {
             } catch (ClassNotFoundException ignore) { }
         }
         return null;
-    }
-
-    // The threadLoadingClassMap is a concurrent hashtable that keeps track of the threads
-    // that are currently loading each class by this class loader.  The class name is mapped to
-    // the thread that is first seen loading that class, then removed when loading is complete
-    // for that class.
-    private final Thread threadLoadingClass(String name, Thread thread) {
-        return threadLoadingClassMap.putIfAbsent(name, thread);
-    }
-
-    private final void removeThreadLoadingClass(String name) {
-        threadLoadingClassMap.remove(name);
-        // Notify threads waiting on the class loader lock
-        // that this class has been loaded or failed.
-        notifyAll();
-    }
-
-    // We only get here if the application has released the
-    // class loader lock (wait) in the middle of loading a
-    // superclass/superinterface for this class, and now
-    // this thread is also trying to load this class.
-    // To minimize surprises, this thread waits while the first thread
-    // that started to load a class completes the loading or fails.
-    @SuppressWarnings("removal")
-    private Thread waitForThreadLoadingClass(String name, Thread currentThread) {
-        Thread thread;
-        boolean interrupted = false;
-        while ((thread = threadLoadingClass(name, currentThread)) != null) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                interrupted = true;
-                // keep waiting, must be uninterruptible
-            }
-        }
-        if (interrupted) {
-            // reassert the interrupt status before exiting.
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    currentThread.interrupt();
-                    return null;
-                }
-            });
-        }
-        return thread;
-    }
-
-    // This method is called by VM to load a class for a non-parallel capable ClassLoader.
-    // It checks if another thread has released the class loader lock (wait) while loading a class
-    // by this name, and will notify the other thread to continue to complete loading the class.
-    // For class circularity checks to be detected, the same thread must completely load the class and
-    // its superclasses.
-    private final synchronized Class<?> loadClassInternal(String name)
-        throws ClassNotFoundException
-    {
-        // The JVM calls loadClass directly for parallel-capable class loaders
-        assert (parallelLockMap == null);
-        Thread currentThread = Thread.currentThread();
-        Thread thread = threadLoadingClass(name, currentThread);
-        // Another thread is loading the class.
-        if (thread != null && thread != currentThread) {
-            // notify loading thread once
-            notifyAll();
-            thread = waitForThreadLoadingClass(name, currentThread);
-        }
-        // Now load class if no other thread is loading it.
-        if (thread == null) {
-            Class<?> loadedClass = null;
-            try {
-                loadedClass = loadClass(name);
-            } finally {
-                removeThreadLoadingClass(name);
-            }
-            return loadedClass;
-        } else {
-            // A class circularity error is detected while loading this class
-            assert(thread == currentThread);
-            removeThreadLoadingClass(name);
-            throw new ClassCircularityError(name);
-        }
     }
 
     /**

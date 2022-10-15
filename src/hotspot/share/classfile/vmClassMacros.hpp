@@ -99,6 +99,7 @@
   do_klass(reflect_Parameter_klass,                     java_lang_reflect_Parameter                           ) \
   do_klass(reflect_Method_klass,                        java_lang_reflect_Method                              ) \
   do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor                         ) \
+  do_klass(SynchronizedLoader_klass,                    jdk_internal_loader_SynchronizedLoader                ) \
                                                                                                                 \
   do_klass(Runnable_klass,                              java_lang_Runnable                                    ) \
   do_klass(ContinuationScope_klass,                     jdk_internal_vm_ContinuationScope                     ) \

@@ -1913,7 +1913,7 @@ JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   // Make sure the caller is operating on behalf of the VM or is
   // running VM code (state == _thread_in_vm).
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
-         JavaThread::current()->thread_state() == _thread_in_vm,
+         JavaThread::current()->thread_state() == _thread_in_vm || Debugging,
          "Java Thread is not running in vm");
   oop holder = java_lang_Thread::holder(java_thread);
   if (holder == NULL) {

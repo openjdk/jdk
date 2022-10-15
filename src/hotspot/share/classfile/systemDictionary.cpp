@@ -1290,7 +1290,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
 
     InstanceKlass* spec_klass = vmClasses::ClassLoader_klass();
 
-    if (is_parallelCapable(class_loader)) {
+    if (is_parallelCapable(class_loader) || !SynchronizeLoadClass) {
       // Call public unsynchronized loadClass(String) directly for parallel capable class loaders.
       JavaCalls::call_virtual(&result,
                               class_loader,
@@ -1300,15 +1300,16 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
                               string,
                               CHECK_NULL);
     } else {
-      // Call private synchronized loadClassInternal(String) for other class loaders.
-      // loadClassInternal synchronizes parallel loading for this class.
-      JavaCalls::call_virtual(&result,
-                              class_loader,
-                              spec_klass,
-                              vmSymbols::loadClassInternal_name(),
-                              vmSymbols::string_class_signature(),
-                              string,
-                              CHECK_NULL);
+      // Call private static SynchronizedLoader.loadClass(ClassLoader, String) for other class loaders.
+      // This version of loadClass synchronizes parallel loading for this class.
+      JavaCallArguments args;
+      args.push_oop(class_loader);
+      args.push_oop(string);
+      JavaCalls::call_static(&result,
+                         vmClasses::SynchronizedLoader_klass(),
+                         vmSymbols::loadClass_name(),
+                         vmSymbols::classloader_string_class_signature(),
+                         &args, CHECK_NULL);
     }
 
     assert(result.get_type() == T_OBJECT, "just checking");

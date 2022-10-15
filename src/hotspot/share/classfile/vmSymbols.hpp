@@ -72,6 +72,7 @@
   template(java_lang_ClassLoader,                     "java/lang/ClassLoader")                    \
   template(java_lang_ThreadDeath,                     "java/lang/ThreadDeath")                    \
   template(java_lang_Runnable,                        "java/lang/Runnable")                       \
+  template(jdk_internal_loader_SynchronizedLoader,    "jdk/internal/loader/SynchronizedLoader")   \
   template(jdk_internal_vm_ContinuationScope,         "jdk/internal/vm/ContinuationScope")        \
   template(jdk_internal_vm_StackChunk,                "jdk/internal/vm/StackChunk")               \
   template(java_lang_Boolean,                         "java/lang/Boolean")                        \
@@ -616,6 +617,7 @@
   template(string_string_string_signature,            "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;") \
   template(string_string_signature,                   "(Ljava/lang/String;)Ljava/lang/String;")                   \
   template(classloader_string_long_signature,         "(Ljava/lang/ClassLoader;Ljava/lang/String;)J")             \
+  template(classloader_string_class_signature,        "(Ljava/lang/ClassLoader;Ljava/lang/String;)Ljava/lang/Class;") \
   template(byte_array_void_signature,                 "([B)V")                                                    \
   template(char_array_void_signature,                 "([C)V")                                                    \
   template(int_int_void_signature,                    "(II)V")                                                    \
