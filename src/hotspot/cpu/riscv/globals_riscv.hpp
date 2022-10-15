@@ -82,6 +82,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
                                                                                  \
   product(bool, NearCpool, true,                                                 \
          "constant pool is close to instructions")                               \
+  product(bool, UseBlockZeroing, false,                                           \
+          "Use Zicboz for block zeroing")                                        \
   product(intx, BlockZeroingLowLimit, 256,                                       \
           "Minimum size in bytes when block zeroing will be used")               \
           range(1, max_jint)                                                     \
@@ -95,6 +97,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseRVC, false, EXPERIMENTAL, "Use RVC instructions")             \
   product(bool, UseZba, false, EXPERIMENTAL, "Use Zba instructions")             \
   product(bool, UseZbb, false, EXPERIMENTAL, "Use Zbb instructions")             \
+  product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
+  product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
+  product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
           "Use RVV instructions for left/right shift of BigInteger")
 

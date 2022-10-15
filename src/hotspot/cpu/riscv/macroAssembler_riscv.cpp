@@ -3744,6 +3744,44 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
   bind(fini);
 }
 
+// Zero blocks of memory by using CBO.ZERO.
+//
+// Aligns the base address first sufficiently for CBO.ZERO, then uses
+// CBO.ZERO repeatedly for every full block.  cnt is the size to be
+// zeroed in HeapWords.  Returns the count of words left to be zeroed
+// in cnt.
+//
+// NOTE: This is intended to be used in the zero_blocks() stub.  If
+// you want to use it elsewhere, note that cnt must be >= 2*zva_length.
+void MacroAssembler::zero_dcache_blocks(Register base, Register cnt) {
+  Label initial_table_end, loop_cbo_zero;
+
+  // Align base with cache line size.
+  neg(t0, base);
+  andi(t0, t0, VM_Version::cache_line_size() - 1);
+
+  // t0: the number of bytes to be filled to align the base with cache line size.
+  add(base, base, t0);
+  srai(t1, t0, 3);
+  sub(cnt, cnt, t1);
+  add(t2, zr, zr);
+  wrap_label(t2, initial_table_end, (Assembler::jal_jalr_insn)&MacroAssembler::movptr);
+  srli(t1, t0, 1);
+  sub(t1, t2, t1);
+  j(t1);
+  for (int i = -VM_Version::cache_line_size() + 8; i < 0; i += 8) {
+    sd(zr, Address(base, i));
+  }
+  bind(initial_table_end);
+
+  li(t0, VM_Version::cache_line_size() >> 3);
+  bind(loop_cbo_zero);
+  cbo_zero(base);
+  sub(cnt, cnt, t0);
+  add(base, base, VM_Version::cache_line_size());
+  bge(cnt, t0, loop_cbo_zero);
+}
+
 #define FCVT_SAFE(FLOATCVT, FLOATEQ)                                                             \
 void MacroAssembler:: FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {           \
   Label L_Okay;                                                                                  \

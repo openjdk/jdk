@@ -31,6 +31,7 @@
 #include "utilities/macros.hpp"
 
 const char* VM_Version::_uarch = "";
+uint32_t VM_Version::_cache_line_size;
 uint32_t VM_Version::_initial_vector_length = 0;
 
 void VM_Version::initialize() {
@@ -125,6 +126,18 @@ void VM_Version::initialize() {
     }
   } else {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+  }
+
+  if (UseZicboz) {
+    if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
+      FLAG_SET_DEFAULT(UseBlockZeroing, true);
+    }
+    if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * VM_Version::cache_line_size());
+    }
+  } else if (UseBlockZeroing) {
+    warning("Zicboz is not available on this CPU");
+    FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
   char buf[512];
