@@ -631,7 +631,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     //    These class loaders lock a per-class object lock when ClassLoader.loadClass()
     //    is called. A LOAD_INSTANCE placeholder isn't used for mutual exclusion.
     // case 3. traditional classloaders that rely on the classloader object lock
-    //    There is no need for need for LOAD_INSTANCE, since the loadClassInternal code
+    //    There is no need for need for LOAD_INSTANCE, since the SynchronizedLoader.loadClass
     //    will take out the placeholder equivalent in Java code.
     //    For these classloaders, we ensure that the first requestor
     //    completes the load and other requestors wait for completion.
