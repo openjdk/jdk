@@ -24,10 +24,13 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -271,6 +274,46 @@ uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
     // activated).  This happens during startup, when we don't bother with
     // refinement.
     return 0;
+  }
+}
+
+class G1ConcurrentRefine::RemSetSamplingClosure : public HeapRegionClosure {
+  G1CollectionSet* _cset;
+  size_t _sampled_rs_length;
+
+public:
+  RemSetSamplingClosure(G1CollectionSet* cset) :
+    _cset(cset), _sampled_rs_length(0) {}
+
+  bool do_heap_region(HeapRegion* r) override {
+    size_t rs_length = r->rem_set()->occupied();
+    _sampled_rs_length += rs_length;
+    // Update the collection set policy information for this region.
+    _cset->update_young_region_prediction(r, rs_length);
+    return false;
+  }
+
+  size_t sampled_rs_length() const { return _sampled_rs_length; }
+};
+
+// Adjust the target length (in regions) of the young gen, based on the the
+// current length of the remembered sets.
+//
+// At the end of the GC G1 determines the length of the young gen based on
+// how much time the next GC can take, and when the next GC may occur
+// according to the MMU.
+//
+// The assumption is that a significant part of the GC is spent on scanning
+// the remembered sets (and many other components), so this thread constantly
+// reevaluates the prediction for the remembered set scanning costs, and potentially
+// G1Policy resizes the young gen. This may do a premature GC or even
+// increase the young gen size to keep pause time length goal.
+void G1ConcurrentRefine::adjust_young_list_target_length() {
+  if (_policy->use_adaptive_young_list_length()) {
+    G1CollectionSet* cset = G1CollectedHeap::heap()->collection_set();
+    RemSetSamplingClosure cl{cset};
+    cset->iterate(&cl);
+    _policy->revise_young_list_target_length(cl.sampled_rs_length());
   }
 }
 
