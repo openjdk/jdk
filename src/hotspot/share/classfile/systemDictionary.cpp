@@ -1306,10 +1306,10 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
       args.push_oop(class_loader);
       args.push_oop(string);
       JavaCalls::call_static(&result,
-                         vmClasses::SynchronizedLoader_klass(),
-                         vmSymbols::loadClass_name(),
-                         vmSymbols::classloader_string_class_signature(),
-                         &args, CHECK_NULL);
+                             vmClasses::SynchronizedLoader_klass(),
+                             vmSymbols::loadClass_name(),
+                             vmSymbols::classloader_string_class_signature(),
+                             &args, CHECK_NULL);
     }
 
     assert(result.get_type() == T_OBJECT, "just checking");
