@@ -525,10 +525,10 @@ G1GCPhaseTimes* G1Policy::phase_times() const {
 void G1Policy::revise_young_list_target_length(size_t rs_length) {
   guarantee(use_adaptive_young_list_length(), "should not call this otherwise" );
 
+  size_t thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  // We have no measure of the number of cards in the thread buffers, assume
-  // these are very few compared to the ones in the DCQS.
-  update_young_length_bounds(dcqs.num_cards(), rs_length);
+  size_t pending_cards = dcqs.num_cards() + thread_buffer_cards;
+  update_young_length_bounds(pending_cards, rs_length);
 }
 
 void G1Policy::record_full_collection_start() {
