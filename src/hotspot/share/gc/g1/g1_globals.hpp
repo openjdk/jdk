@@ -168,11 +168,6 @@
           "Size of an update buffer")                                       \
           range(1, NOT_LP64(32*M) LP64_ONLY(1*G))                           \
                                                                             \
-  product(uintx, G1ConcRefinementServiceIntervalMillis, 300,                \
-          "The G1 service thread wakes up every specified number of "       \
-          "milliseconds to do miscellaneous work.")                         \
-          range(0, max_jint)                                                \
-                                                                            \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
           "processing remembered set update buffers during the collection " \
