@@ -1108,16 +1108,14 @@ bool G1Policy::use_adaptive_young_list_length() const {
   return _young_gen_sizer.use_adaptive_young_list_length();
 }
 
-size_t G1Policy::estimate_available_eden_bytes_locked() const {
+size_t G1Policy::estimate_used_young_bytes_locked() const {
   assert_lock_strong(Heap_lock);
   G1Allocator* allocator = _g1h->allocator();
   uint used = _g1h->young_regions_count();
   uint alloc = allocator->num_nodes();
   uint full = used - MIN2(used, alloc);
-  uint target = young_list_target_length();
-  uint remaining = target - MIN2(target, full);
-  size_t bytes = remaining * HeapRegion::GrainBytes;
-  return bytes - MIN2(bytes, allocator->used_in_alloc_regions());
+  size_t bytes_used = full * HeapRegion::GrainBytes;
+  return bytes_used + allocator->used_in_alloc_regions();
 }
 
 size_t G1Policy::desired_survivor_size(uint max_regions) const {

@@ -282,7 +282,7 @@ class G1ConcurrentRefine::RemSetSamplingClosure : public HeapRegionClosure {
   size_t _sampled_rs_length;
 
 public:
-  RemSetSamplingClosure(G1CollectionSet* cset) :
+  explicit RemSetSamplingClosure(G1CollectionSet* cset) :
     _cset(cset), _sampled_rs_length(0) {}
 
   bool do_heap_region(HeapRegion* r) override {
@@ -330,15 +330,18 @@ bool G1ConcurrentRefine::adjust_threads_periodically() {
 
   // If needed, try to adjust threads wanted.
   if (_needs_adjust) {
-    // Getting available eden requires holding Heap_lock.  But we can't use
+    // Getting used young bytes requires holding Heap_lock.  But we can't use
     // normal lock and block until available.  Blocking on the lock could
     // deadlock with a GC VMOp that is holding the lock and requesting a
     // safepoint.  Instead try to lock, and if fail then skip adjustment for
     // this iteration of the thread, do some refinement work, and retry the
     // adjustment later.
     if (Heap_lock->try_lock()) {
-      size_t available_bytes = _policy->estimate_available_eden_bytes_locked();
+      size_t used_bytes = _policy->estimate_used_young_bytes_locked();
       Heap_lock->unlock();
+      adjust_young_list_target_length();
+      size_t young_bytes = _policy->young_list_target_length() * HeapRegion::GrainBytes;
+      size_t available_bytes = young_bytes - MIN2(young_bytes, used_bytes);
       adjust_threads_wanted(available_bytes);
       _needs_adjust = false;
       _last_adjust = Ticks::now();

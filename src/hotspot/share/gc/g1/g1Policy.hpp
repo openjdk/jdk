@@ -392,9 +392,9 @@ public:
 
   bool use_adaptive_young_list_length() const;
 
-  // Return an estimate of the number of bytes remaining in eden space.
+  // Return an estimate of the number of bytes used in young gen.
   // precondition: holding Heap_lock
-  size_t estimate_available_eden_bytes_locked() const;
+  size_t estimate_used_young_bytes_locked() const;
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 
