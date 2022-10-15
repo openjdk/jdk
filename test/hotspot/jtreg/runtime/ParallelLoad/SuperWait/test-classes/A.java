@@ -22,7 +22,7 @@
  */
 
 // A extends B in other Class loader.
-public class A  extends B {
+public class A extends B {
   static { System.out.println("A called"); }
   public A() { System.out.println("A.<init> called"); }
 }
