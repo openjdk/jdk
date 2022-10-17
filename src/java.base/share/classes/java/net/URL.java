@@ -171,14 +171,17 @@ import sun.security.action.GetPropertyAction;
  * href="https://tools.ietf.org/html/rfc3986#section-7">RFC3986,
  * Section 7, Security Considerations</a>.
  * <p>
- * All {@code URL} constructors may additionally throw
- * {@link MalformedURLException} if the underlying {@link URLStreamHandler}
- * implementation rejects, or is known to reject, any of the parameters.
- * In particular when the stream handler's {@linkplain
- * URLStreamHandler#parseURL(URL, String, int, int) parseURL method} is
- * called during URL construction and it throws {@code IllegalArgumentException}.
- * However, which checks are performed is implementation dependent, and
- * callers should not rely on such checks for full URL validation.
+ * All {@code URL} constructors may throw {@link MalformedURLException}.
+ * In particular, if the underlying {@link URLStreamHandler}
+ * implementation rejects, or is known to reject, any of the parameters,
+ * {@link MalformedURLException} may be thrown.
+ * Typically, a constructor that calls the stream handler's {@linkplain
+ * URLStreamHandler#parseURL(URL, String, int, int) parseURL method} may
+ * throw {@code MalformedURLException} if the underlying stream handler
+ * implementation of that method throws {@code IllegalArgumentException}.
+ * However, which checks are performed, or not, by the stream handlers
+ * is implementation dependent, and callers should not rely on such
+ * checks for full URL validation.
  *
  * @author  James Gosling
  * @since 1.0
@@ -525,7 +528,10 @@ public final class URL implements java.io.Serializable {
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol.
+     *               of the associated protocol. In particular, if the
+     *               underlying stream handler's {@linkplain
+     *               URLStreamHandler#parseURL parseURL method} throws
+     *               {@code IllegalArgumentException}
      * @see        java.net.URL#URL(java.net.URL, java.lang.String)
      */
     public URL(String spec) throws MalformedURLException {
@@ -574,7 +580,10 @@ public final class URL implements java.io.Serializable {
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol.
+     *               of the associated protocol. In particular, if the
+     *               underlying stream handler's {@linkplain
+     *               URLStreamHandler#parseURL parseURL method} throws
+     *               {@code IllegalArgumentException}
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *                  int, java.lang.String)
      * @see        java.net.URLStreamHandler
@@ -596,7 +605,10 @@ public final class URL implements java.io.Serializable {
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol.
+     *               of the associated protocol.  In particular, if the
+     *               underlying stream handler's {@linkplain
+     *               URLStreamHandler#parseURL parseURL method} throws
+     *               {@code IllegalArgumentException}
      * @throws     SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow
