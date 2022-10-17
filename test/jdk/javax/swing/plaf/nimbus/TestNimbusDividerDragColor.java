@@ -47,13 +47,13 @@ public class TestNimbusDividerDragColor {
 
     private static final String INSTRUCTIONS =
         "Drag the dividers of the splitpanes (both top and bottom).\n " +
-	" If the divider color is green while dragging\n " +
-	" then test passes, otherwise test fails";
+        " If the divider color is green while dragging\n " +
+        " then test passes, otherwise test fails";
 
     public static void init() {
         UIManager.put("SplitPaneDivider.draggingColor", Color.green);
 
-	frame = new JFrame();
+        frame = new JFrame();
         Box box = new Box(BoxLayout.Y_AXIS);
         frame.getContentPane().add(box);
 
@@ -62,7 +62,7 @@ public class TestNimbusDividerDragColor {
         JPanel jright = new JPanel();
         jright.setBackground(Color.darkGray);
         JSplitPane jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jleft, jright);
-	jsp.setContinuousLayout(false);
+        jsp.setContinuousLayout(false);
         box.add(jsp);
 
         box.add(Box.createVerticalStrut(5));
@@ -83,13 +83,13 @@ public class TestNimbusDividerDragColor {
 
 
     public static void main(String[] argv) throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");        	   
+        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         PassFailJFrame passFailJFrame = new PassFailJFrame(
-                "JFileChooser Test Instructions", INSTRUCTIONS, 5);	    
+                "JFileChooser Test Instructions", INSTRUCTIONS, 5);
         SwingUtilities.invokeAndWait(() -> init());
-	PassFailJFrame.addTestWindow(frame);
-	PassFailJFrame.positionTestWindow(
+        PassFailJFrame.addTestWindow(frame);
+        PassFailJFrame.positionTestWindow(
                 frame, PassFailJFrame.Position.HORIZONTAL);
-	passFailJFrame.awaitAndCheck();
+        passFailJFrame.awaitAndCheck();
     }
 }
