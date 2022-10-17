@@ -42,7 +42,7 @@
 #include "WinErrorHandling.h"
 
 
-// AllowSetForegroundWindow - user32
+// AllowSetForegroundWindow - Requires linking with user32
 
 
 namespace {
