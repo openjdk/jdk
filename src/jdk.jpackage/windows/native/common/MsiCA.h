@@ -297,4 +297,6 @@ private:
     #define JP_CA_MANGLED_NAME(name) "_" #name "@4"
 #endif
 
+#undef Pragma
+
 #endif // #ifndef MsiCA_h
