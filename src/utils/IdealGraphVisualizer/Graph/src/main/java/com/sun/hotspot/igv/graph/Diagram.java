@@ -70,7 +70,7 @@ public class Diagram {
         int curId = 0;
 
         for (InputBlock b : graph.getBlocks()) {
-            blocks.put(b,  new Block(b, this));
+            blocks.put(b, new Block(b, this));
         }
 
         Collection<InputNode> nodes = graph.getNodes();
