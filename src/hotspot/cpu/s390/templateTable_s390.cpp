@@ -452,7 +452,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
   const Register index = Z_tmp_2;
-  int            index_size = wide ? sizeof(u2) : sizeof(u1);
+  int            index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
   Label          L_do_resolve, L_resolved;
 
   // We are resolved if the resolved reference cache entry contains a

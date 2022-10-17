@@ -384,7 +384,7 @@ void TemplateTable::fast_aldc(LdcType type)
   Register tmp = r1;
   Register rarg = r2;
 
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
 
