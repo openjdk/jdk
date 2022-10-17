@@ -187,7 +187,7 @@ public final class StackMapGenerator {
     private final ConstantPoolBuilder cp;
     private final boolean isStatic;
     private final LabelContext labelContext;
-    private final List<AbstractInstruction.ExceptionCatchImpl> exceptionTable;
+    private final List<AbstractPseudoInstruction.ExceptionCatchImpl> exceptionTable;
     private final ClassHierarchyImpl classHierarchy;
     private final boolean patchDeadCode;
     private List<Frame> frames;
@@ -217,7 +217,7 @@ public final class StackMapGenerator {
                      boolean isStatic,
                      ByteBuffer bytecode,
                      ConstantPoolBuilder cp,
-                     List<AbstractInstruction.ExceptionCatchImpl> handlers) {
+                     List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
         this.thisType = Type.referenceType(thisClass);
         this.methodName = methodName;
         this.methodDesc = methodDesc;
@@ -334,21 +334,21 @@ public final class StackMapGenerator {
                   //cut from left
                   Label newStart = labelContext.newLabel();
                   labelContext.setLabelTarget(newStart, rangeEnd);
-                  it.set(new AbstractInstruction.ExceptionCatchImpl(e.handler(), newStart, e.tryEnd(), e.catchType()));
+                  it.set(new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), newStart, e.tryEnd(), e.catchType()));
               }
             } else if (rangeEnd >= handlerEnd) {
                 //cut from right
                 Label newEnd = labelContext.newLabel();
                 labelContext.setLabelTarget(newEnd, rangeStart);
-                it.set(new AbstractInstruction.ExceptionCatchImpl(e.handler(), e.tryStart(), newEnd, e.catchType()));
+                it.set(new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), e.tryStart(), newEnd, e.catchType()));
             } else {
                 //split
                 Label newStart = labelContext.newLabel();
                 labelContext.setLabelTarget(newStart, rangeEnd);
                 Label newEnd = labelContext.newLabel();
                 labelContext.setLabelTarget(newEnd, rangeStart);
-                it.set(new AbstractInstruction.ExceptionCatchImpl(e.handler(), e.tryStart(), newEnd, e.catchType()));
-                it.add(new AbstractInstruction.ExceptionCatchImpl(e.handler(), newStart, e.tryEnd(), e.catchType()));
+                it.set(new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), e.tryStart(), newEnd, e.catchType()));
+                it.add(new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), newStart, e.tryEnd(), e.catchType()));
             }
         }
     }

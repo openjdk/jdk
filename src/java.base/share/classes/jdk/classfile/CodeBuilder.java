@@ -83,6 +83,7 @@ import jdk.classfile.instruction.ThrowInstruction;
 import jdk.classfile.instruction.TypeCheckInstruction;
 
 import static java.util.Objects.requireNonNull;
+import jdk.classfile.impl.AbstractPseudoInstruction;
 import static jdk.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
 import jdk.classfile.impl.TransformingCodeBuilder;
 
@@ -237,7 +238,7 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder ifThen(Opcode opcode,
                                Consumer<BlockCodeBuilder> thenHandler) {
-        if (opcode.kind() != CodeElement.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -288,7 +289,7 @@ public sealed interface CodeBuilder
     default CodeBuilder ifThenElse(Opcode opcode,
                                    Consumer<BlockCodeBuilder> thenHandler,
                                    Consumer<BlockCodeBuilder> elseHandler) {
-        if (opcode.kind() != CodeElement.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -643,12 +644,12 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder characterRange(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
-        with(new AbstractInstruction.UnboundCharacterRange(startScope, endScope, characterRangeStart, characterRangeEnd, flags));
+        with(new AbstractPseudoInstruction.UnboundCharacterRange(startScope, endScope, characterRangeStart, characterRangeEnd, flags));
         return this;
     }
 
     default CodeBuilder localVariable(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
-        with(new AbstractInstruction.UnboundLocalVariable(slot, nameEntry, descriptorEntry,
+        with(new AbstractPseudoInstruction.UnboundLocalVariable(slot, nameEntry, descriptorEntry,
                                                           startScope, endScope));
         return this;
     }
@@ -661,7 +662,7 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder localVariableType(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
-        with(new AbstractInstruction.UnboundLocalVariableType(slot, nameEntry, signatureEntry,
+        with(new AbstractPseudoInstruction.UnboundLocalVariableType(slot, nameEntry, signatureEntry,
                                                               startScope, endScope));
         return this;
     }

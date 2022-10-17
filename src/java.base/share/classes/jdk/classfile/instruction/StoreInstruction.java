@@ -36,7 +36,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models a local variable store instruction in the {@code code} array of a
  * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
- * {@link CodeElement.Kind#STORE}.  Delivered as a {@link CodeElement} when
+ * {@link Opcode.Kind#STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
 sealed public interface StoreInstruction extends Instruction
@@ -62,7 +62,7 @@ sealed public interface StoreInstruction extends Instruction
      * @param slot the local varaible slot to store to
      */
     static StoreInstruction of(Opcode op, int slot) {
-        Util.checkKind(op, Kind.STORE);
+        Util.checkKind(op, Opcode.Kind.STORE);
         return new AbstractInstruction.UnboundStoreInstruction(op, slot);
     }
 }

@@ -235,7 +235,7 @@ public final class CodeImpl
                     ClassEntry catchTypeEntry = c == 0
                                                              ? null
                                                              : (ClassEntry) constantPool().entryByIndex(c);
-                    exceptionTable.add(new AbstractInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchTypeEntry));
+                    exceptionTable.add(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchTypeEntry));
                 }
             });
             exceptionTable = Collections.unmodifiableList(exceptionTable);
@@ -353,7 +353,7 @@ public final class CodeImpl
                 ClassEntry catchType = c == 0
                                                     ? null
                                                     : (ClassEntry) classReader.entryByIndex(c);
-                consumer.accept(new AbstractInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchType));
+                consumer.accept(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchType));
             }
         });
     }

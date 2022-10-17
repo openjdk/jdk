@@ -81,6 +81,7 @@ public class LDCTest {
                 .orElseThrow();
         var opcodes = code.elementList().stream()
                           .filter(e -> e instanceof Instruction)
+                          .map(e -> (Instruction)e)
                           .toList();
 
         Assert.assertEquals(opcodes.size(), 4);

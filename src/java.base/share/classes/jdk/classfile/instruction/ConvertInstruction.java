@@ -36,7 +36,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models a primitive conversion instruction in the {@code code} array of a
  * {@code Code} attribute, such as {@code i2l}.  Corresponding opcodes will have
- * a {@code kind} of {@link CodeElement.Kind#CONVERT}.  Delivered as a {@link
+ * a {@code kind} of {@link Opcode.Kind#CONVERT}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  */
 sealed public interface ConvertInstruction extends Instruction
@@ -68,7 +68,7 @@ sealed public interface ConvertInstruction extends Instruction
      *           which must be of kind {@link Kind#CONVERT}
      */
     static ConvertInstruction of(Opcode op) {
-        Util.checkKind(op, Kind.CONVERT);
+        Util.checkKind(op, Opcode.Kind.CONVERT);
         return new AbstractInstruction.UnboundConvertInstruction(op);
     }
 }

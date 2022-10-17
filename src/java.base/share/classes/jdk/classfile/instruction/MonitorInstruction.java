@@ -46,7 +46,7 @@ sealed public interface MonitorInstruction extends Instruction
      *           which must be of kind {@link Kind#MONITOR}
      */
     static MonitorInstruction of(Opcode op) {
-        Util.checkKind(op, Kind.MONITOR);
+        Util.checkKind(op, Opcode.Kind.MONITOR);
         return new AbstractInstruction.UnboundMonitorInstruction(op);
     }
 }

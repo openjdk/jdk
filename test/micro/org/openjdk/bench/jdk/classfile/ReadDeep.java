@@ -27,10 +27,10 @@ package org.openjdk.bench.jdk.classfile;
 import jdk.classfile.ClassModel;
 import jdk.classfile.Classfile;
 import jdk.classfile.ClassfileElement;
-import jdk.classfile.CodeElement;
 import jdk.classfile.CodeModel;
 import jdk.classfile.CompoundElement;
 import jdk.classfile.MethodModel;
+import jdk.classfile.instruction.LoadInstruction;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -107,7 +107,7 @@ public class ReadDeep extends AbstractCorpusBenchmark {
                     mm.forEachElement(me -> {
                         if (me instanceof CodeModel xm) {
                             xm.forEachElement(xe -> {
-                                if (xe.codeKind() == CodeElement.Kind.LOAD) {
+                                if (xe instanceof LoadInstruction) {
                                     ++count[0];
                                 }
                             });

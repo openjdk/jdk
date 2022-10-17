@@ -40,6 +40,7 @@ import jdk.classfile.MethodTransform;
 import jdk.classfile.Opcode;
 import static jdk.classfile.Opcode.*;
 import jdk.classfile.instruction.ConstantInstruction;
+import jdk.classfile.instruction.NopInstruction;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
@@ -226,7 +227,7 @@ public class ShortJumpsFixTest {
         return ClassTransform.transformingMethods(
                         MethodTransform.transformingCode(
                                 (cob, coe) -> {
-                                    if (coe.opcode() == NOP)
+                                    if (coe instanceof NopInstruction)
                                         for (int i = 0; i < 40000; i++) //cause label overflow during transform
                                             cob.nopInstruction();
                                     cob.with(coe);

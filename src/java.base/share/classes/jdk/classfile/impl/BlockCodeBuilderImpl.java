@@ -26,12 +26,13 @@ package jdk.classfile.impl;
 
 import jdk.classfile.CodeBuilder;
 import jdk.classfile.CodeElement;
+import jdk.classfile.Instruction;
 import jdk.classfile.Label;
-import jdk.classfile.Opcode;
 import jdk.classfile.TypeKind;
 import jdk.classfile.instruction.LabelTarget;
 
 import java.util.Objects;
+import jdk.classfile.Instruction;
 
 /**
  * BlockCodeBuilder
@@ -85,16 +86,15 @@ public final class BlockCodeBuilderImpl
 
     @Override
     public CodeBuilder with(CodeElement element) {
-        Opcode op = element.opcode();
         parent.with(element);
 
-        hasInstructions |= !op.isPseudo();
+        hasInstructions |= element instanceof Instruction;
 
         if (reachable) {
-            if (op.isUnconditionalBranch())
+            if (element instanceof Instruction i && i.opcode().isUnconditionalBranch())
                 reachable = false;
         }
-        else if (op == Opcode.LABEL_TARGET) {
+        else if (element instanceof LabelTarget) {
             reachable = true;
         }
         return this;

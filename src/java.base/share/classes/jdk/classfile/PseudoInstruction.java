@@ -31,6 +31,7 @@ import jdk.classfile.instruction.LabelTarget;
 import jdk.classfile.instruction.LineNumber;
 import jdk.classfile.instruction.LocalVariable;
 import jdk.classfile.instruction.LocalVariableType;
+import jdk.classfile.impl.AbstractPseudoInstruction;
 
 /**
  * Models metadata about a {@link CodeAttribute}, such as entries in the
@@ -42,6 +43,5 @@ import jdk.classfile.instruction.LocalVariableType;
  */
 public sealed interface PseudoInstruction
         extends CodeElement
-        permits CharacterRange, ExceptionCatch, LabelTarget, LineNumber, LocalVariable, LocalVariableType {
-
+        permits CharacterRange, ExceptionCatch, LabelTarget, LineNumber, LocalVariable, LocalVariableType, AbstractPseudoInstruction {
 }

@@ -34,7 +34,7 @@ import jdk.classfile.PseudoInstruction;
 import jdk.classfile.Signature;
 import jdk.classfile.attribute.LocalVariableTypeTableAttribute;
 import jdk.classfile.constantpool.Utf8Entry;
-import jdk.classfile.impl.AbstractInstruction;
+import jdk.classfile.impl.AbstractPseudoInstruction;
 import jdk.classfile.impl.BoundLocalVariableType;
 
 /**
@@ -44,7 +44,7 @@ import jdk.classfile.impl.BoundLocalVariableType;
  * the {@link Classfile.Option.Key#PROCESS_DEBUG} option.
  */
 sealed public interface LocalVariableType extends PseudoInstruction
-        permits AbstractInstruction.UnboundLocalVariableType, BoundLocalVariableType {
+        permits AbstractPseudoInstruction.UnboundLocalVariableType, BoundLocalVariableType {
     /**
      * {@return the local variable slot}
      */

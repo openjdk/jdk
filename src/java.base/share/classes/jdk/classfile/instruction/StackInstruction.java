@@ -34,7 +34,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models a stack manipulation instruction in the {@code code} array of a
  * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
- * {@link CodeElement.Kind#STACK}.  Delivered as a {@link CodeElement} when
+ * {@link Opcode.Kind#STACK}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
 sealed public interface StackInstruction extends Instruction
@@ -47,7 +47,7 @@ sealed public interface StackInstruction extends Instruction
      *           which must be of kind {@link Kind#STACK}
      */
     static StackInstruction of(Opcode op) {
-        Util.checkKind(op, Kind.STACK);
+        Util.checkKind(op, Opcode.Kind.STACK);
         return new AbstractInstruction.UnboundStackInstruction(op);
     }
 }

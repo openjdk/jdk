@@ -35,7 +35,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models a branching instruction (conditional or unconditional) in the {@code
  * code} array of a {@code Code} attribute.  Corresponding opcodes will have a
- * {@code kind} of {@link CodeElement.Kind#BRANCH}.  Delivered as a {@link
+ * {@code kind} of {@link Opcode.Kind#BRANCH}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  */
 sealed public interface BranchInstruction extends Instruction
@@ -53,7 +53,7 @@ sealed public interface BranchInstruction extends Instruction
      *           which must be of kind {@link Kind#BRANCH}
      */
     static BranchInstruction of(Opcode op, Label target) {
-        Util.checkKind(op, Kind.BRANCH);
+        Util.checkKind(op, Opcode.Kind.BRANCH);
         return new AbstractInstruction.UnboundBranchInstruction(op, target);
     }
 }

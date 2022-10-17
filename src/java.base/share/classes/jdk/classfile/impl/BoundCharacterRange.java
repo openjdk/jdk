@@ -42,11 +42,6 @@ public final class BoundCharacterRange
         this.offset = offset;
     }
 
-    @Override
-    public Opcode opcode() {
-        return Opcode.CHARACTER_RANGE;
-    }
-
     int startPc() {
         return code.classReader.readU2(offset);
     }
@@ -83,16 +78,6 @@ public final class BoundCharacterRange
     @Override
     public void writeTo(DirectCodeBuilder builder) {
         builder.addCharacterRange(this);
-    }
-
-    @Override
-    public Kind codeKind() {
-        return CodeElement.Kind.CHARACTER_RANGE;
-    }
-
-    @Override
-    public int sizeInBytes() {
-        return 0;
     }
 
     @Override

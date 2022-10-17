@@ -41,7 +41,7 @@ import jdk.classfile.impl.Util;
  * Code} attribute, including "intrinsic constant" instructions (e.g., {@code
  * aload_0}), "argument constant" instructions (e.g., {@code bipush}), and "load
  * constant" instructions (e.g., {@code LDC}).  Corresponding opcodes will have
- * a {@code kind} of {@link CodeElement.Kind#CONSTANT}.  Delivered as a {@link
+ * a {@code kind} of {@link Opcode.Kind#CONSTANT}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  */
 sealed public interface ConstantInstruction extends Instruction {
@@ -118,7 +118,7 @@ sealed public interface ConstantInstruction extends Instruction {
      *           which must be of kind {@link Kind#CONSTANT}
      */
     static IntrinsicConstantInstruction ofIntrinsic(Opcode op) {
-        Util.checkKind(op, Kind.CONSTANT);
+        Util.checkKind(op, Opcode.Kind.CONSTANT);
         if (op.constantValue() == null)
             throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected xCONST_val", op));
         return new AbstractInstruction.UnboundIntrinsicConstantInstruction(op);
@@ -132,7 +132,7 @@ sealed public interface ConstantInstruction extends Instruction {
      * @param value the constant value
      */
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
-        Util.checkKind(op, Kind.CONSTANT);
+        Util.checkKind(op, Opcode.Kind.CONSTANT);
         if (op != Opcode.BIPUSH && op != Opcode.SIPUSH)
             throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected BIPUSH or SIPUSH", op, op.kind()));
         return new AbstractInstruction.UnboundArgumentConstantInstruction(op, value);
@@ -146,7 +146,7 @@ sealed public interface ConstantInstruction extends Instruction {
      * @param constant the constant value
      */
     static LoadConstantInstruction ofLoad(Opcode op, LoadableConstantEntry constant) {
-        Util.checkKind(op, Kind.CONSTANT);
+        Util.checkKind(op, Opcode.Kind.CONSTANT);
         if (op != Opcode.LDC && op != Opcode.LDC_W && op != Opcode.LDC2_W)
             throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected LDC, LDC_W or LDC2_W", op, op.kind()));
         return new AbstractInstruction.UnboundLoadConstantInstruction(op, constant);

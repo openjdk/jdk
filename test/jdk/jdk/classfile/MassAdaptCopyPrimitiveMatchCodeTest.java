@@ -148,17 +148,17 @@ public class MassAdaptCopyPrimitiveMatchCodeTest {
                     CodeElement[] oima = new Instruction[len];
                     int bci = 0;
                     for (CodeElement im : codeModel) {
-                        if (!(im instanceof Instruction))
-                            continue;
-                        rima[bci] = im;
-                        bci += im.sizeInBytes();
+                        if (im instanceof Instruction i) {
+                            rima[bci] = im;
+                            bci += i.sizeInBytes();
+                        }
                     }
                     bci = 0;
                     for (CodeElement im : ((CodeModel) ocal)) {
-                        if (!(im instanceof Instruction))
-                            continue;
-                        oima[bci] = im;
-                        bci += im.sizeInBytes();
+                        if (im instanceof Instruction i) {
+                            oima[bci] = im;
+                            bci += i.sizeInBytes();
+                        }
                     }
                     // find first bad BCI and instruction
                     int bciCurrentInstruction = -1;

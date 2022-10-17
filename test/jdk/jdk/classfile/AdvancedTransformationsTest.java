@@ -36,6 +36,7 @@ import jdk.classfile.Classfile;
 import jdk.classfile.CodeElement;
 import jdk.classfile.CodeModel;
 import jdk.classfile.MethodModel;
+import jdk.classfile.Opcode;
 import jdk.classfile.TypeKind;
 import jdk.classfile.impl.StackMapGenerator;
 import jdk.classfile.components.ClassRemapper;
@@ -59,6 +60,7 @@ import jdk.classfile.attribute.ModuleAttribute;
 import jdk.classfile.impl.AbstractInstruction;
 import jdk.classfile.impl.RawBytecodeHelper;
 import jdk.classfile.instruction.InvokeInstruction;
+import jdk.classfile.instruction.ReturnInstruction;
 import jdk.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
 import jdk.classfile.components.CodeRelabeler;
@@ -68,6 +70,7 @@ import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import jdk.classfile.impl.AbstractPseudoInstruction;
 
 public class AdvancedTransformationsTest {
 
@@ -107,7 +110,7 @@ public class AdvancedTransformationsTest {
     public void testRemapClass() throws Exception {
         var map = Map.of(
                 ConstantDescs.CD_List, ClassDesc.of("remapped.List"),
-                ClassDesc.ofDescriptor(AbstractInstruction.ExceptionCatchImpl.class.descriptorString()), ClassDesc.of("remapped.ExceptionCatchImpl"),
+                ClassDesc.ofDescriptor(AbstractPseudoInstruction.ExceptionCatchImpl.class.descriptorString()), ClassDesc.of("remapped.ExceptionCatchImpl"),
                 ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode"),
                 ClassDesc.ofDescriptor(StackMapGenerator.class.descriptorString()), ClassDesc.of("remapped.StackMapGenerator")
         );
@@ -330,7 +333,7 @@ public class AdvancedTransformationsTest {
                                                         .andThen(CodeRelabeler.of())
                                                         .andThen((innerBuilder, shiftedTargetCode) -> {
                                                             //returns must be replaced with jump to the end of the inlined method
-                                                            if (shiftedTargetCode.codeKind() == CodeElement.Kind.RETURN)
+                                                            if (shiftedTargetCode instanceof ReturnInstruction)
                                                                 innerBuilder.goto_(inlinedBlockBuilder.breakLabel());
                                                             else
                                                                 innerBuilder.with(shiftedTargetCode);

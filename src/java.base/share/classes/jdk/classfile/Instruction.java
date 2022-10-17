@@ -63,6 +63,15 @@ public sealed interface Instruction extends CodeElement
                 NewObjectInstruction, NewPrimitiveArrayInstruction, NewReferenceArrayInstruction,
                 NopInstruction, OperatorInstruction, ReturnInstruction,
                 StackInstruction, TableSwitchInstruction,
-                ThrowInstruction, TypeCheckInstruction {
+                ThrowInstruction, TypeCheckInstruction, AbstractInstruction {
 
+    /**
+     * {@return the opcode of this instruction}
+     */
+    Opcode opcode();
+
+    /**
+     * {@return the size in bytes of this instruction}
+     */
+    int sizeInBytes();
 }

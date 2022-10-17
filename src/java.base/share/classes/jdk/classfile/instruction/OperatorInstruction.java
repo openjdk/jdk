@@ -35,7 +35,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models an arithmetic operator instruction in the {@code code} array of a
  * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
- * {@link CodeElement.Kind#OPERATOR}.  Delivered as a {@link CodeElement} when
+ * {@link Opcode.Kind#OPERATOR}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
 sealed public interface OperatorInstruction extends Instruction
@@ -52,7 +52,7 @@ sealed public interface OperatorInstruction extends Instruction
      *           which must be of kind {@link Kind#OPERATOR}
      */
     static OperatorInstruction of(Opcode op) {
-        Util.checkKind(op, Kind.OPERATOR);
+        Util.checkKind(op, Opcode.Kind.OPERATOR);
         return new AbstractInstruction.UnboundOperatorInstruction(op);
     }
 }

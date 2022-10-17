@@ -36,7 +36,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models a return-from-method instruction in the {@code code} array of a
  * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
- * {@link CodeElement.Kind#RETURN}.  Delivered as a {@link CodeElement} when
+ * {@link Opcode.Kind#RETURN}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
 sealed public interface ReturnInstruction extends Instruction
@@ -59,7 +59,7 @@ sealed public interface ReturnInstruction extends Instruction
      *           which must be of kind {@link Kind#RETURN}
      */
     static ReturnInstruction of(Opcode op) {
-        Util.checkKind(op, Kind.RETURN);
+        Util.checkKind(op, Opcode.Kind.RETURN);
         return new AbstractInstruction.UnboundReturnInstruction(op);
     }
 }

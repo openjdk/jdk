@@ -82,9 +82,8 @@ public class AdaptCodeTest {
         ClassModel cm = Classfile.parse(testClassPath);
 
         var transform = ClassTransform.transformingMethodBodies((codeB, codeE) -> {
-            switch (codeE.codeKind()) {
-                case CONSTANT -> {
-                    ConstantInstruction i = (ConstantInstruction) codeE;
+            switch (codeE) {
+                case ConstantInstruction i -> {
                     ConstantDesc val = i.constantValue();
                     if ((val instanceof Integer) && ((Integer) val) == 13) {
                         val = 7;

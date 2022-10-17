@@ -41,7 +41,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models a field access instruction in the {@code code} array of a {@code Code}
  * attribute.  Corresponding opcodes will have a {@code kind} of {@link
- * CodeElement.Kind#FIELD_ACCESS}.  Delivered as a {@link CodeElement} when
+ * Opcode.Kind#FIELD_ACCESS}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
 sealed public interface FieldInstruction extends Instruction
@@ -87,7 +87,7 @@ sealed public interface FieldInstruction extends Instruction
      * @param field a constant pool entry describing the field
      */
     static FieldInstruction of(Opcode op, FieldRefEntry field) {
-        Util.checkKind(op, Kind.FIELD_ACCESS);
+        Util.checkKind(op, Opcode.Kind.FIELD_ACCESS);
         return new AbstractInstruction.UnboundFieldInstruction(op, field);
     }
 
