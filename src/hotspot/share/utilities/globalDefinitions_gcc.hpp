@@ -153,7 +153,7 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 
 // Inlining support
 #define NOINLINE     [[gnu::noinline]]
-#define ALWAYSINLINE inline [[gnu::always_inline]]
+#define ALWAYSINLINE [[gnu::always_inline]] inline
 #define ATTRIBUTE_FLATTEN [[gnu::flatten]]
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
