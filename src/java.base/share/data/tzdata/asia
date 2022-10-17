@@ -2254,6 +2254,17 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # From the Arabic version, it seems to say it would be at midnight
 # (assume 24:00) on the last Thursday in February, starting from 2022.
 
+# From Issam Al-Zuwairi (2022-10-05):
+# The Council of Ministers in Jordan decided Wednesday 5th October 2022,
+# that daylight saving time (DST) will be throughout the year....
+#
+# From Brian Inglis (2022-10-06):
+# https://petra.gov.jo/Include/InnerPage.jsp?ID=45567&lang=en&name=en_news
+#
+# From Paul Eggert (2022-10-05):
+# Like Syria, model this as a transition from EEST +03 (DST) to plain +03
+# (non-DST) at the point where DST would otherwise have ended.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Jordan	1973	only	-	Jun	6	0:00	1:00	S
 Rule	Jordan	1973	1975	-	Oct	1	0:00	0	-
@@ -2285,11 +2296,12 @@ Rule	Jordan	2005	only	-	Sep	lastFri	0:00s	0	-
 Rule	Jordan	2006	2011	-	Oct	lastFri	0:00s	0	-
 Rule	Jordan	2013	only	-	Dec	20	0:00	0	-
 Rule	Jordan	2014	2021	-	Mar	lastThu	24:00	1:00	S
-Rule	Jordan	2014	max	-	Oct	lastFri	0:00s	0	-
-Rule	Jordan	2022	max	-	Feb	lastThu	24:00	1:00	S
+Rule	Jordan	2014	2022	-	Oct	lastFri	0:00s	0	-
+Rule	Jordan	2022	only	-	Feb	lastThu	24:00	1:00	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Amman	2:23:44 -	LMT	1931
-			2:00	Jordan	EE%sT
+			2:00	Jordan	EE%sT	2022 Oct 28 0:00s
+			3:00	-	+03
 
 
 # Kazakhstan
@@ -3838,19 +3850,27 @@ Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 # Our brief summary:
 # https://www.timeanddate.com/news/time/syria-dst-2012.html
 
-# From Arthur David Olson (2012-03-27):
-# Assume last Friday in March going forward XXX.
+# From Steffen Thorsen (2022-10-05):
+# Syria is adopting year-round DST, starting this autumn....
+# From https://www.enabbaladi.net/archives/607812
+# "This [the decision] came after the weekly government meeting today,
+# Tuesday 4 October ..."
+#
+# From Paul Eggert (2022-10-05):
+# Like Jordan, model this as a transition from EEST +03 (DST) to plain +03
+# (non-DST) at the point where DST would otherwise have ended.
 
 Rule	Syria	2008	only	-	Apr	Fri>=1	0:00	1:00	S
 Rule	Syria	2008	only	-	Nov	1	0:00	0	-
 Rule	Syria	2009	only	-	Mar	lastFri	0:00	1:00	S
 Rule	Syria	2010	2011	-	Apr	Fri>=1	0:00	1:00	S
-Rule	Syria	2012	max	-	Mar	lastFri	0:00	1:00	S
-Rule	Syria	2009	max	-	Oct	lastFri	0:00	0	-
+Rule	Syria	2012	2022	-	Mar	lastFri	0:00	1:00	S
+Rule	Syria	2009	2022	-	Oct	lastFri	0:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Damascus	2:25:12 -	LMT	1920 # Dimashq
-			2:00	Syria	EE%sT
+			2:00	Syria	EE%sT	2022 Oct 28 0:00
+			3:00	-	+03
 
 # Tajikistan
 # From Shanks & Pottenger.
