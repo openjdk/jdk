@@ -66,7 +66,7 @@ static bool is_disabled(outputStream* output) {
   return false;
 }
 
-static bool invalid_state(outputStream *out, TRAPS) {
+static bool invalid_state(outputStream* out, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   if (is_disabled(out)) {
     return false;
@@ -81,7 +81,7 @@ static bool invalid_state(outputStream *out, TRAPS) {
       assert(throwable != nullptr, "invariant");
       oop msg = java_lang_Throwable::message(throwable);
       if (msg != nullptr) {
-        char *text = java_lang_String::as_utf8_string(msg);
+        char* text = java_lang_String::as_utf8_string(msg);
         if (text != nullptr) {
           log_debug(jfr, startup)("Flight Recorder can not be enabled. %s", text);
         }
