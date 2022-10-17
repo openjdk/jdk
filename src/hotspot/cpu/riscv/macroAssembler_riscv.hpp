@@ -494,7 +494,8 @@ class MacroAssembler: public Assembler {
   result_type header {                                                      \
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
-    relocate(InternalAddress(dest).rspec());
+    relocate(InternalAddress(dest).rspec());                                \
+    IncompressibleRegion ir(this);  /* relocations */
 
 #define INSN(NAME)                                                                                       \
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
@@ -665,7 +666,8 @@ public:
   result_type header {                                                      \
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
-    relocate(InternalAddress(dest).rspec());
+    relocate(InternalAddress(dest).rspec());                                \
+    IncompressibleRegion ir(this);  /* relocations */
 
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \
@@ -686,8 +688,9 @@ public:
   void NAME(Register Rd, const Address &adr, Register temp = t0) {                                 \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        relocate(adr.rspec());                                                                     \
-        NAME(Rd, adr.target());                                                                    \
+        relocate(adr.rspec(), [&] {                                                                \
+          NAME(Rd, adr.target());                                                                  \
+        });                                                                                        \
         break;                                                                                     \
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
@@ -743,8 +746,9 @@ public:
   void NAME(FloatRegister Rd, const Address &adr, Register temp = t0) {                            \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        relocate(adr.rspec());                                                                     \
-        NAME(Rd, adr.target(), temp);                                                              \
+        relocate(adr.rspec(), [&] {                                                                \
+          NAME(Rd, adr.target(), temp);                                                            \
+        });                                                                                        \
         break;                                                                                     \
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
@@ -800,8 +804,9 @@ public:
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
         assert_different_registers(Rs, temp);                                                      \
-        relocate(adr.rspec());                                                                     \
-        NAME(Rs, adr.target(), temp);                                                              \
+        relocate(adr.rspec(), [&] {                                                                \
+          NAME(Rs, adr.target(), temp);                                                            \
+        });                                                                                        \
         break;                                                                                     \
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
@@ -843,8 +848,9 @@ public:
   void NAME(FloatRegister Rs, const Address &adr, Register temp = t0) {                            \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        relocate(adr.rspec());                                                                     \
-        NAME(Rs, adr.target(), temp);                                                              \
+        relocate(adr.rspec(), [&] {                                                                \
+          NAME(Rs, adr.target(), temp);                                                            \
+        });                                                                                        \
         break;                                                                                     \
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
@@ -1242,9 +1248,12 @@ private:
     if (NearCpool) {
       ld(dest, const_addr);
     } else {
-      int32_t offset = 0;
-      la_patchable(dest, InternalAddress(const_addr.target()), offset);
-      ld(dest, Address(dest, offset));
+      InternalAddress target(const_addr.target());
+      relocate(target.rspec(), [&] {
+        int32_t offset;
+        la_patchable(dest, target, offset);
+        ld(dest, Address(dest, offset));
+      });
     }
   }
 
