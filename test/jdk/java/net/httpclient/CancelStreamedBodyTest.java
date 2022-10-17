@@ -209,10 +209,8 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
     public Object[][] alltests() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
-        //Object[][] result = new Object[uris.length][];
         int i = 0;
         for (boolean sameClient : List.of(false, true)) {
-            //if (!sameClient) continue;
             for (String uri : uris()) {
                 String path = sameClient ? "same" : "new";
                 result[i++] = new Object[]{uri + path, sameClient};
@@ -222,24 +220,29 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         return result;
     }
 
-    private HttpClient makeNewClient(boolean shared) {
+    private HttpClient makeNewClient() {
         clientCount.incrementAndGet();
         var client = HttpClient.newBuilder()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
                 .build();
-        return shared ? client : TRACKER.track(client);
+        // It is OK to even track the shared client here:
+        // the test methods will verify that the client has shut down
+        // only if it's not the shared client.
+        // Only the teardown() method verify that the shared client
+        // has shut down in this test.
+        return TRACKER.track(client);
     }
 
     HttpClient newHttpClient(boolean share) {
-        if (!share) return makeNewClient(share);
+        if (!share) return makeNewClient();
         HttpClient shared = sharedClient;
         if (shared != null) return shared;
         synchronized (this) {
             shared = sharedClient;
             if (shared == null) {
-                shared = sharedClient = makeNewClient(share);
+                shared = sharedClient = makeNewClient();
             }
             return shared;
         }
@@ -258,29 +261,33 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
+            var tracker = TRACKER.getTracker(client);
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .GET()
                     .build();
-            Exception failed = null;
-            List<String> lines = null;
+            List<String> lines;
             for (int j = 0; j < 2; j++) {
                 try (Stream<String> body = client.send(req, BodyHandlers.ofLines()).body()) {
                     lines = body.limit(j).toList();
                     assertEquals(lines, BODY.replaceAll("\\||\\?", "")
                             .lines().limit(j).toList());
                 }
-                var error = TRACKER.check(500,
+                // Only check our still alive client for outstanding operations
+                // and outstanding subscribers here: it should have none.
+                var error = TRACKER.check(tracker, 500,
                         (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                         "subscribers for testAsLines(%s)\n\t step [%s,%s]".formatted(req.uri(), i,j),
                         false);
                 Reference.reachabilityFence(client);
                 if (error != null) throw error;
             }
+            // The shared client is only shut down at the end.
+            // Skip shutdown check for the shared client.
             if (sameClient) continue;
             client = null;
             System.gc();
-            var error = TRACKER.check(500);
+            var error = TRACKER.check(tracker, 500);
             if (error != null) throw error;
         }
     }
@@ -295,6 +302,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
+            var tracker = TRACKER.getTracker(client);
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .GET()
@@ -307,17 +315,21 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
                         assertEquals(read, BODY.charAt(k));
                     }
                 }
-                var error = TRACKER.check(1,
+                // Only check our still alive client for outstanding operations
+                // and outstanding subscribers here: it should have none.
+                var error = TRACKER.check(tracker, 1,
                         (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                         "subscribers for testInputStream(%s)\n\t step [%s,%s]".formatted(req.uri(), i,j),
                         false);
                 Reference.reachabilityFence(client);
                 if (error != null) throw error;
             }
+            // The shared client is only shut down at the end.
+            // Skip shutdown check for the shared client.
             if (sameClient) continue;
             client = null;
             System.gc();
-            var error = TRACKER.check(1);
+            var error = TRACKER.check(tracker, 1);
             if (error != null) throw error;
         }
     }
@@ -365,8 +377,10 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
     public void teardown() throws Exception {
         String sharedClientName =
                 sharedClient == null ? null : sharedClient.toString();
-        TRACKER.track(sharedClient);
         sharedClient = null;
+        // check that the shared client (and any other client) have
+        // properly shut down
+        System.gc();
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(500);
         try {
@@ -399,7 +413,11 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
                 try (InputStream is = t.getRequestBody()) {
                     req = is.readAllBytes();
                 }
-                t.sendResponseHeaders(200, -1); // chunked/variable
+
+                // we're not expecting a request body.
+                // if we receive any, pretend we're a teapot.
+                int status = req.length == 0 ? 200 : 418;
+                t.sendResponseHeaders(status, -1); // chunked/variable
                 try (OutputStream os = t.getResponseBody()) {
                     // lets split the response in several chunks...
                     String msg = (req != null && req.length != 0)
@@ -410,12 +428,12 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
                         req = s.getBytes(UTF_8);
                         os.write(req);
                         os.flush();
+                        out.printf("Server wrote %d bytes%n", req.length);
                         try {
                             Thread.sleep(SERVER_LATENCY);
                         } catch (InterruptedException x) {
                             // OK
                         }
-                        out.printf("Server wrote %d bytes%n", req.length);
                     }
                 }
             } catch (Throwable e) {

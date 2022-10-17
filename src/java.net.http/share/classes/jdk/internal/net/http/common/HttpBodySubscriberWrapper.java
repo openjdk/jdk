@@ -68,7 +68,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
         this.userSubscriber = userSubscriber;
     }
 
-    class SubscriptionWrapper implements Subscription {
+    private class SubscriptionWrapper implements Subscription {
         final Subscription subscription;
         SubscriptionWrapper(Subscription s) {
             this.subscription = Objects.requireNonNull(s);
@@ -80,7 +80,12 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
 
         @Override
         public void cancel() {
-            HttpBodySubscriberWrapper.this.cancel(subscription);
+            try {
+                subscription.cancel();
+                onCancel();
+            } catch (Throwable t) {
+                onError(t);
+            }
         }
     }
 
@@ -114,9 +119,13 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
         }
     }
 
-    protected void cancel(Subscription subscription) {
-        subscription.cancel();
-    }
+    /**
+     * Called when the subscriber cancels its subscription.
+     * @apiNote
+     * This method may be used by subclasses to perform cleanup
+     * actions after a subscription has been cancelled.
+     */
+    protected void onCancel() { }
 
     /**
      * Complete the subscriber, either normally or exceptionally
@@ -177,6 +186,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     @Override
     public void onNext(List<ByteBuffer> item) {
         if (completed.get()) {
+            SubscriptionWrapper subscription = this.subscription;
             if (subscription != null) {
                 subscription.subscription.cancel();
             }

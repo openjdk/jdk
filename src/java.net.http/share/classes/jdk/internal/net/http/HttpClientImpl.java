@@ -638,7 +638,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long httpCount = pendingHttpOperationsCount.decrementAndGet();
         final long http2Count = pendingHttp2StreamCount.get();
         final long webSocketCount = pendingWebSocketCount.get();
-        if (count == 0 && facade() == null) {
+        if (count == 0 && facadeRef.refersTo(null)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";
@@ -660,7 +660,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long http2Count = pendingHttp2StreamCount.decrementAndGet();
         final long httpCount = pendingHttpOperationsCount.get();
         final long webSocketCount = pendingWebSocketCount.get();
-        if (count == 0 && facade() == null) {
+        if (count == 0 && facadeRef.refersTo(null)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";
@@ -682,7 +682,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long webSocketCount = pendingWebSocketCount.decrementAndGet();
         final long httpCount = pendingHttpOperationsCount.get();
         final long http2Count = pendingHttp2StreamCount.get();
-        if (count == 0 && facade() == null) {
+        if (count == 0 && facadeRef.refersTo(null)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";

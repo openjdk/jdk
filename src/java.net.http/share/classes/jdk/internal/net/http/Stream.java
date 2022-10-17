@@ -1547,12 +1547,8 @@ class Stream<T> extends ExchangeImpl<T> {
             }
         }
         @Override
-        protected void cancel(Subscription subscription) {
-            try {
-                super.cancel(subscription);
-            } finally {
-                Stream.this.unregisterResponseSubscriber(this);
-            }
+        protected void onCancel() {
+            Stream.this.unregisterResponseSubscriber(this);
         }
     }
 
