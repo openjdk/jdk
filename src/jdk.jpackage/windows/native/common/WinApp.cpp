@@ -31,7 +31,7 @@
 #include "ErrorHandling.h"
 
 
-// MessageBox - user32
+// MessageBox - Requires linking with user32
 
 
 namespace {
