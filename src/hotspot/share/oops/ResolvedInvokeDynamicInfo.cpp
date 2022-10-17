@@ -19,3 +19,12 @@ void ResolvedInvokeDynamicInfo::print_on(outputStream* st) const {
         appendix->print_on(st);
     }*/
 }
+
+void ResolvedInvokeDynamicInfo::print() const {
+    printf("ResolvedInvokeDynamicInfo:");
+    printf(" - Resolved References Index: %d", resolved_references_index());
+    printf(" - CP Index: %d", cpool_index());
+    printf(" - Num Parameters: %d", num_parameters());
+    printf(" - Return type: %s", type2name(as_BasicType((TosState)return_type())));
+    printf(" - Has Appendix: %d", has_appendix());
+}
