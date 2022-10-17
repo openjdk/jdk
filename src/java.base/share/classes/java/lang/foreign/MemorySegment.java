@@ -66,7 +66,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * Heap segments can be obtained by calling one of the {@link MemorySegment#ofArray(int[])} factory methods.
  * These methods return a memory segment backed by the on-heap region that holds the specified Java array.
  * <p>
- * Native segments can be obtained by calling one of the {@link MemorySegment#allocateNative(long, long)}
+ * Native segments can be obtained by calling one of the {@link MemorySegment#allocateNative(long, long, MemorySession)}
  * factory methods, which return a memory segment backed by a newly allocated off-heap region with the given size
  * and aligned to the given alignment constraint. Alternatively, native segments can be obtained by
  * {@link FileChannel#map(MapMode, long, long, MemorySession) mapping} a file into a new off-heap region
@@ -94,8 +94,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * Every memory segment has a {@linkplain #byteSize() size}. The size of a heap segment is derived from the Java array
  * from which it is obtained. This size is predictable across Java runtimes.
  * The size of a native segment is either passed explicitly
- * (as in {@link MemorySegment#allocateNative(long)}) or derived from a {@link MemoryLayout}
- * (as in {@link MemorySegment#allocateNative(MemoryLayout)}). The size of a memory segment is typically
+ * (as in {@link MemorySegment#allocateNative(long, MemorySession)}) or derived from a {@link MemoryLayout}
+ * (as in {@link MemorySegment#allocateNative(MemoryLayout, MemorySession)}). The size of a memory segment is typically
  * a positive number but may be <a href="#wrapping-addresses">zero</a>, but never negative.
  * <p>
  * The address and size of a memory segment jointly ensure that access operations on the segment cannot fall
@@ -244,8 +244,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * <p>
  * The alignment constraint used to access a segment is typically dictated by the shape of the data structure stored
  * in the segment. For example, if the programmer wishes to store a sequence of 8-byte values in a native segment, then
- * the segment should be allocated by specifying a 8-byte alignment constraint, either via {@link #allocateNative(long, long)}
- * or {@link #allocateNative(MemoryLayout)}. These factories ensure that the off-heap region of memory backing
+ * the segment should be allocated by specifying a 8-byte alignment constraint, either via {@link #allocateNative(long, long, MemorySession)}
+ * or {@link #allocateNative(MemoryLayout, MemorySession)}. These factories ensure that the off-heap region of memory backing
  * the returned segment has a starting address that is 8-byte aligned. Subsequently, the programmer can access the
  * segment at the offsets of interest -- 0, 8, 16, 24, etc -- in the knowledge that every such access is aligned.
  * <p>
@@ -509,7 +509,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Returns {@code true} if this segment is a native segment. A native segment is
-     * created e.g. using the {@link #allocateNative(long)} (and related) factory, or by
+     * created e.g. using the {@link #allocateNative(long, MemorySession)} (and related) factory, or by
      * {@linkplain #ofBuffer(Buffer) wrapping} a {@linkplain ByteBuffer#allocateDirect(int) direct buffer}.
      * @return {@code true} if this segment is native segment.
      */
@@ -1114,54 +1114,54 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     }
 
     /**
-     * Creates a native segment with the given layout.
+     * Creates a native segment with the given layout and memory session.
+     * <p>
+     * Clients are responsible for ensuring that the memory session associated with the returned segment is
+     * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
+     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a Cleaner
+     * (such as {@linkplain MemorySession#openImplicit()}) can be used, allowing the returned segment to be
+     * automatically released some unspecified time after the session is no longer referenced.
      * <p>
      * The {@linkplain #address() address} of the returned memory segment is the starting address of
      * the newly allocated off-heap region backing the segment. Moreover, the {@linkplain #address() address}
      * of the returned segment will be aligned according to the alignment constraint of the provided layout.
      * <p>
-     * The returned memory segment is associated with a new {@linkplain MemorySession#openImplicit implicit}
-     * memory session. As such, the off-heap region which backs the returned segment is
-     * freed <em>automatically</em>, some unspecified time after it is no longer referenced.
-     * <p>
-     * Native segments featuring deterministic deallocation can be obtained using the
-     * {@link MemorySession#allocate(MemoryLayout)} method.
-     * <p>
      * This is equivalent to the following code:
      * {@snippet lang=java :
-     * MemorySession.openImplicit()
-     *         .allocate(layout.bytesSize(), layout.bytesAlignment());
+     * session.allocate(layout.bytesSize(), layout.bytesAlignment());
      * }
      * <p>
      * The region of off-heap region backing the returned native segment is initialized to zero.
      *
      * @param layout the layout of the off-heap memory region backing the native segment.
+     * @param session the session to which the returned segment is associated.
      * @return a new native segment.
+     * @throws IllegalStateException if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws WrongThreadException  if this method is invoked by a thread other than the
+     *                               {@linkplain MemorySession#ownerThread() owner thread} (if any).
      * @see MemorySession#allocate(MemoryLayout)
      */
-    static MemorySegment allocateNative(MemoryLayout layout) {
+    static MemorySegment allocateNative(MemoryLayout layout, MemorySession session) {
         Objects.requireNonNull(layout);
-        return allocateNative(layout.byteSize(), layout.byteAlignment());
+        return session.allocate(layout.byteSize(), layout.byteAlignment());
     }
 
     /**
-     * Creates a native segment with the given size (in bytes).
+     * Creates a native segment with the given size (in bytes) and memory session.
+     * <p>
+     * Clients are responsible for ensuring that the memory session associated with the returned segment is
+     * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
+     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a Cleaner
+     * (such as {@linkplain MemorySession#openImplicit()}) can be used, allowing the returned segment to be
+     * automatically released some unspecified time after the session is no longer referenced.
      * <p>
      * The {@linkplain #address() address} of the returned memory segment is the starting address of
      * the newly allocated off-heap region backing the segment. Moreover, the {@linkplain #address() address}
      * of the returned segment is guaranteed to be at least 1-byte aligned.
      * <p>
-     * The returned memory segment is associated with a new {@linkplain MemorySession#openImplicit implicit}
-     * memory session. As such, the off-heap region which backs the returned segment is
-     * freed <em>automatically</em>, some unspecified time after it is no longer referenced.
-     * <p>
-     * Native segments featuring deterministic deallocation can be obtained using the
-     * {@link MemorySession#allocate(long)} method.
-     * <p>
      * This is equivalent to the following code:
      * {@snippet lang=java :
-     * MemorySession.openImplicit()
-     *     .allocate(byteSize, 1)
+     * session.allocate(byteSize, 1);
      * }
      * <p>
      * The region of off-heap region backing the returned native segment is initialized to zero.
@@ -1169,17 +1169,28 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * This method corresponds to the {@link ByteBuffer#allocateDirect(int)} method and has similar behavior.
      *
      * @param byteSize the size (in bytes) of the off-heap memory region of memory backing the native memory segment.
+     * @param session the session to which the returned segment is associated.
      * @return a new native memory segment.
      * @throws IllegalArgumentException if {@code byteSize < 0}.
+     * @throws IllegalStateException if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws WrongThreadException  if this method is invoked by a thread other than the
+     *                               {@linkplain MemorySession#ownerThread() owner thread} (if any).
      * @see ByteBuffer#allocateDirect(int)
      * @see MemorySession#allocate(long)
      */
-    static MemorySegment allocateNative(long byteSize) {
-        return allocateNative(byteSize, 1L);
+    static MemorySegment allocateNative(long byteSize, MemorySession session) {
+        Utils.checkAllocationSizeAndAlign(byteSize, 1L);
+        return session.allocate(byteSize, 1L);
     }
 
     /**
-     * Creates a native segment with the given size (in bytes) and alignment (in bytes).
+     * Creates a native segment with the given size (in bytes), alignment (in bytes) and session.
+     * <p>
+     * Clients are responsible for ensuring that the memory session associated with the returned segment is
+     * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
+     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a Cleaner
+     * (such as {@linkplain MemorySession#openImplicit()}) can be used, allowing the returned segment to be
+     * automatically released some unspecified time after the session is no longer referenced.
      * <p>
      * The {@linkplain #address() address} of the returned memory segment is the starting address of
      * the newly allocated off-heap region backing the segment. Moreover, the {@linkplain #address() address}
@@ -1189,28 +1200,27 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * memory session. As such, the off-heap region which backs the returned segment is
      * freed <em>automatically</em>, some unspecified time after it is no longer referenced.
      * <p>
-     * Native segments featuring deterministic deallocation can be obtained using the
-     * {@link MemorySession#allocate(long,long)} method.
-     * <p>
      * This is equivalent to the following code:
      * {@snippet lang=java :
-     * MemorySession.openImplicit()
-     *     .allocate(byteSize, byteAlignment)
+     * session.allocate(byteSize, byteAlignment);
      * }
      * <p>
      * The region of off-heap region backing the returned native segment is initialized to zero.
      *
      * @param byteSize the size (in bytes) of the off-heap region of memory backing the native memory segment.
      * @param byteAlignment the alignment constraint (in bytes) of the off-heap region of memory backing the native memory segment.
+     * @param session the session to which the returned segment is associated.
      * @return a new native memory segment.
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0}, or if {@code byteAlignment}
-     * is not a power of 2.
+     *                                  is not a power of 2.
+     * @throws IllegalStateException    if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws WrongThreadException     if this method is invoked by a thread other than the
+     *                                  {@linkplain MemorySession#ownerThread() owner thread} (if any).
      * @see MemorySession#allocate(long, long)
      */
-    static MemorySegment allocateNative(long byteSize, long byteAlignment) {
+    static MemorySegment allocateNative(long byteSize, long byteAlignment, MemorySession session) {
         Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return MemorySession.openImplicit()
-                .allocate(byteSize, byteAlignment);
+        return session.allocate(byteSize, byteAlignment);
     }
 
     /**

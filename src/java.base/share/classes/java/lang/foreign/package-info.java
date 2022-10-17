@@ -42,7 +42,7 @@
  * and fill it with values ranging from {@code 0} to {@code 9}, we can use the following code:
  *
  * {@snippet lang=java :
- * MemorySegment segment = MemorySegment.allocateNative(10 * 4);
+ * MemorySegment segment = MemorySegment.allocateNative(10 * 4, session);
  * for (int i = 0 ; i < 10 ; i++) {
  *     segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
  * }

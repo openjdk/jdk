@@ -69,8 +69,8 @@ public class MemorySegmentVectorAccess {
 
   @Setup
   public void setup() {
-    nativeIn = MemorySegment.allocateNative(size);
-    nativeOut = MemorySegment.allocateNative(size);
+    nativeIn = MemorySegment.allocateNative(size, MemorySession.openImplicit());
+    nativeOut = MemorySegment.allocateNative(size, MemorySession.openImplicit());
 
     byteIn = new byte[size];
     byteOut = new byte[size];

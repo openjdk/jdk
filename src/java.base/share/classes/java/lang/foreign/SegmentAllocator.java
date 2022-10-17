@@ -454,14 +454,16 @@ public interface SegmentAllocator {
      * Returns an allocator which allocates native segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
      * Equivalent to (but likely more efficient than) the following code:
      * {@snippet lang=java :
-     * SegmentAllocator implicitAllocator = MemorySegment::allocateNative;
+     * SegmentAllocator implicitAllocator = (byteSize, byteAlignment) ->
+     *         MemorySegment.allocateNative(byteSize, byteAlignment, MemorySession.openImplicit());
      * }
      *
      * @return an allocator which allocates native segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
      */
     static SegmentAllocator implicitAllocator() {
         final class Holder {
-            static final SegmentAllocator IMPLICIT_ALLOCATOR = MemorySegment::allocateNative;
+            static final SegmentAllocator IMPLICIT_ALLOCATOR = (byteSize, byteAlignment) -> MemorySession.openImplicit()
+                    .allocate(byteSize, byteAlignment);
         }
         return Holder.IMPLICIT_ALLOCATOR;
     }
