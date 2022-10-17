@@ -475,7 +475,8 @@ public class LingeredApp {
         int count = 0;
         FilenameFilter filter = (dir, file) -> (file.startsWith("hs_err_pid") || file.startsWith("core") || file.endsWith("mdmp"));
         for (File f : new File(".").listFiles(filter)) {
-            System.out.println(f + " " + f.length() + " bytes");
+            long fileSize = f.length();
+            System.out.println(f + " " + (fileSize / 1024 / 1024) + "mb (" + fileSize + " bytes)");
             count++;
         }
         if (count == 0) {
