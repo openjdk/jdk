@@ -345,7 +345,9 @@ public class TreeMap<K,V>
         Objects.requireNonNull(key);
         @SuppressWarnings("unchecked")
         Comparable<? super K> k = (Comparable<? super K>) key;
-        return getEntryUsingComparator(k, natural());
+        @SuppressWarnings("unchecked")
+        Comparator<? super K> cpr = (Comparator<? super K>) Comparator.naturalOrder();
+        return getEntryUsingComparator(k, cpr);
     }
 
     /**
@@ -2946,11 +2948,6 @@ public class TreeMap<K,V>
 
     final Spliterator<K> descendingKeySpliterator() {
         return new DescendingKeySpliterator<>(this, null, null, 0, -2, 0);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <K> Comparator<? super K> natural() {
-        return (Comparator<? super K>) Comparator.naturalOrder();
     }
 
     /**
