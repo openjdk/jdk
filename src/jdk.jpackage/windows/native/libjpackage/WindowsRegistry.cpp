@@ -27,6 +27,8 @@
 #include "FileUtils.h"
 #include "ErrorHandling.h"
 
+// Requires linking with advapi32
+
 namespace {
 
 std::wstring GetLongPath(const std::wstring& path) {
