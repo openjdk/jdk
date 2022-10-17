@@ -31,6 +31,11 @@ AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
   AC_SUBST(CONFIGURE_COMMAND_LINE)
+  # We might have the original command line if the wrapper was called by some
+  # other script.
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_SHORT)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_FULL)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_LINE)
   # AUTOCONF might be set in the environment by the user. Preserve for "make reconfigure".
   AC_SUBST(AUTOCONF)
   # Save the path variable before it gets changed
