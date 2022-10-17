@@ -164,4 +164,6 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 //
 #define ATTRIBUTE_ALIGNED(x) __attribute__((aligned(x)))
 
+#define ATTRIBUTE_ARTIFICIAL __attribute__((artificial))
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP

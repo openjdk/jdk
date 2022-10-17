@@ -75,6 +75,7 @@
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #endif
+#include "lsan/lsan.hpp"
 
 // Helper class for printing in CodeCache
 class CodeBlob_sizes {
@@ -328,6 +329,8 @@ void CodeCache::initialize_heaps() {
   ReservedSpace rest                = rs.last_part(profiled_size);
   ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
   ReservedSpace non_profiled_space  = rest.last_part(non_nmethod_size);
+
+  Lsan::register_root_region(rs.base(), rs.size());
 
   // Non-nmethods (stubs, adapters, ...)
   add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);

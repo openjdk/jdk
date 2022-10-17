@@ -148,6 +148,8 @@ class CodeHeap : public CHeapObj<mtCode> {
  public:
   CodeHeap(const char* name, const CodeBlobType code_blob_type);
 
+  ~CodeHeap();
+
   // Heap extents
   bool  reserve(ReservedSpace rs, size_t committed_size, size_t segment_size);
   bool  expand_by(size_t size);                  // expands committed memory by size

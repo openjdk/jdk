@@ -30,6 +30,7 @@
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "lsan/lsan.hpp"
 
 // Implementation of Heap
 
@@ -51,6 +52,11 @@ CodeHeap::CodeHeap(const char* name, const CodeBlobType code_blob_type)
   _adapter_count                = 0;
   _full_count                   = 0;
   _fragmentation_count          = 0;
+}
+
+CodeHeap::~CodeHeap() {
+  // Unregister memory region related to Code Cache.
+  Lsan::unregister_root_region(_memory.low_boundary(), _memory.reserved_size());
 }
 
 // Dummy initialization of template array.
@@ -218,6 +224,10 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
     return false;
   }
 
+  // Register memory region related to Code Cache. It sometimes contains immediate values which are
+  // pointers to malloc memory.
+  Lsan::register_root_region(_memory.low_boundary(), _memory.reserved_size());
+
   on_code_mapping(_memory.low(), _memory.committed_size());
   _number_of_committed_segments = size_to_segments(_memory.committed_size());
   _number_of_reserved_segments  = size_to_segments(_memory.reserved_size());
@@ -256,7 +266,13 @@ bool CodeHeap::expand_by(size_t size) {
       dm = _memory.uncommitted_size();
     }
     char* base = _memory.low() + _memory.committed_size();
-    if (!_memory.expand_by(dm)) return false;
+    // Unregister and register memory region related to Code Cache.
+    Lsan::unregister_root_region(_memory.low_boundary(), _memory.reserved_size());
+    if (!_memory.expand_by(dm)) {
+      Lsan::register_root_region(_memory.low_boundary(), _memory.reserved_size());
+      return false;
+    }
+    Lsan::register_root_region(_memory.low_boundary(), _memory.reserved_size());
     on_code_mapping(base, dm);
     size_t i = _number_of_committed_segments;
     _number_of_committed_segments = size_to_segments(_memory.committed_size());

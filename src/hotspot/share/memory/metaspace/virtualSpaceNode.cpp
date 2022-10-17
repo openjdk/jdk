@@ -48,6 +48,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "lsan/lsan.hpp"
 
 namespace metaspace {
 
@@ -233,6 +234,10 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
   // Update reserved counter in vslist
   _total_reserved_words_counter->increment_by(_word_size);
 
+  // Register memory region related to Metaspace. The Metaspace contains lots of pointers to malloc
+  // memory.
+  Lsan::register_root_region(rs.base(), rs.size());
+
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
   assert_is_aligned(_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
 
@@ -275,6 +280,10 @@ VirtualSpaceNode::~VirtualSpaceNode() {
   ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
 
   UL(debug, ": dies.");
+
+  // Unregister memory region related to Metaspace.
+  Lsan::unregister_root_region(_rs.base(), _rs.size());
+
   if (_owns_rs) {
     _rs.release();
   }

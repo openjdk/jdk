@@ -60,6 +60,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/exceptions.hpp"
+#include "lsan/lsan.hpp"
 
 
 /*
@@ -983,6 +984,8 @@ void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm,
     }
     jio_snprintf(qname, len, "MethodHandle::interpreter_entry::%s%s", name, suffix);
     trace_method_handle(_masm, qname);
+    // LSan appears unable to keep track of qname, ignore it.
+    Lsan::ignore_leak(qname);
     // Note:  Don't free the allocated char array because it's used
     // during runtime.
   }

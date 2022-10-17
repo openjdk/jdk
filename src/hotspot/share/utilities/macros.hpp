@@ -265,6 +265,14 @@
 #define NOT_JFR_RETURN_(code) { return code; }
 #endif
 
+#ifdef LEAK_SANITIZER
+#define LSAN_ONLY(code) code
+#define NOT_LSAN(code)
+#else
+#define LSAN_ONLY(code)
+#define NOT_LSAN(code) code
+#endif
+
 #ifndef INCLUDE_JVMCI
 #define INCLUDE_JVMCI 1
 #endif

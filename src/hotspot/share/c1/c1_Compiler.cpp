@@ -42,6 +42,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
+#include "lsan/lsan.hpp"
 
 
 Compiler::Compiler() : AbstractCompiler(compiler_c1) {
@@ -50,6 +51,8 @@ Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 void Compiler::init_c1_runtime() {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
   Arena* arena = new (mtCompiler) Arena(mtCompiler);
+  // Ignore leaked arena, it is used by ValueType and Interval during initialization.
+  Lsan::ignore_leak(arena);
   Runtime1::initialize(buffer_blob);
   FrameMap::initialize();
   // initialize data structures

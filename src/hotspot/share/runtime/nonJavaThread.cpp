@@ -39,6 +39,7 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#include "lsan/lsan.hpp"
 
 // List of all NonJavaThreads and safe iteration over that list.
 
@@ -285,6 +286,7 @@ void WatcherThread::run() {
   // Signal that it is terminated
   {
     MutexLocker mu(Terminator_lock, Mutex::_no_safepoint_check_flag);
+    Lsan::ignore_leak(_watcher_thread);
     _watcher_thread = nullptr;
     Terminator_lock->notify_all();
   }

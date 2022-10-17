@@ -83,6 +83,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
+#include "lsan/lsan.hpp"
 
 // Known objects
 Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { NULL /*, NULL...*/ };
@@ -751,7 +752,9 @@ bool Universe::contains_non_oop_word(void* p) {
 }
 
 static void initialize_global_behaviours() {
-  CompiledICProtectionBehaviour::set_current(new DefaultICProtectionBehaviour());
+  // Ignore leak of DefaultICProtectionBehaviour. It is overriden by some GC implementations and the
+  // pointer is leaked once.
+  CompiledICProtectionBehaviour::set_current(Lsan::ignore_leak(new DefaultICProtectionBehaviour()));
 }
 
 jint universe_init() {

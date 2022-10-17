@@ -46,6 +46,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/events.hpp"
+#include "lsan/lsan.hpp"
 
 
 // Every time a compiled IC is changed or its type is being accessed,
@@ -272,6 +273,9 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
       needs_ic_stub_refill = true;
       return false;
     }
+    // LSan appears unable to follow malloc-based memory consistently when embedded as an immediate
+    // in generated machine code. So we have to ignore it.
+    Lsan::ignore_leak(holder);
   } else {
     assert(call_info->call_kind() == CallInfo::vtable_call, "either itable or vtable");
     // Can be different than selected_method->vtable_index(), due to package-private etc.
@@ -442,6 +446,9 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
         delete holder;
         return false;
       }
+      // LSan appears unable to follow malloc-based memory consistently when embedded as an
+      // immediate in generated machine code. So we have to ignore it.
+      Lsan::ignore_leak(holder);
       if (TraceICs) {
          ResourceMark rm(thread);
          tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to interpreter via icholder ", p2i(instruction_address()));

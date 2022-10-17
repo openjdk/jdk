@@ -28,6 +28,8 @@
 #include "code/icBuffer.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcHeapSummary.hpp"
+#include "lsan/lsan.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/universe.hpp"
@@ -123,6 +125,12 @@ jint init_globals() {
   if (status != JNI_OK)
     return status;
 
+  {
+    // Register the Java heap with LSan.
+    VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
+    Lsan::register_root_region(summary.start(), summary.reserved_size());
+  }
+
   AsyncLogWriter::initialize();
   gc_barrier_stubs_init();  // depends on universe_init, must be before interpreter_init
   continuations_init(); // must precede continuation stub generation
@@ -183,6 +191,11 @@ void exit_globals() {
       StringTable::dump(tty);
     }
     ostream_exit();
+    {
+      // Unregister the Java heap with LSan.
+      VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
+      Lsan::unregister_root_region(summary.start(), summary.reserved_size());
+    }
   }
 }
 
