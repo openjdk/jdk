@@ -30,6 +30,9 @@
 #include "ErrorHandling.h"
 
 
+// Code in this file requires linking with ole32
+
+
 Guid::Guid(const std::string& str) {
     *this = Guid(std::wstring(str.begin(), str.end()));
 }
