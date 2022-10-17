@@ -31,6 +31,7 @@
  * @run testng/othervm InconsistentEntries
  */
 
+import org.testng.Assert;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -89,13 +90,7 @@ public class InconsistentEntries {
 
         Security.setProperty("crypto.policy", "testlimited");
 
-        try {
-            int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
-            throw new RuntimeException(
-                    "Should fail due to inconsistent entries in policy file");
-        } catch (ExceptionInInitializerError e) {
-            e.printStackTrace();
-            System.out.println("Test completed successfully");
-        }
+        Assert.assertThrows(ExceptionInInitializerError.class,
+                () -> Cipher.getMaxAllowedKeyLength("AES"));
     }
 }
