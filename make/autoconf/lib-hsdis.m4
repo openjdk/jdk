@@ -134,7 +134,7 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
   BINUTILS_SRC="$with_binutils_src"
   UTIL_FIXUP_PATH(BINUTILS_SRC)
 
-  BINUTILS_DIR="${OUTPUTDIR}/binutils"
+  BINUTILS_DIR="$CONFIGURESUPPORT_OUTPUTDIR/binutils"
 
   if ! test -d $BINUTILS_SRC; then
     AC_MSG_ERROR([--with-binutils-src is not pointing to a directory])
