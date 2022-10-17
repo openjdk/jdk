@@ -44,10 +44,6 @@ JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj){
   _wh = WeakHandle(JvmtiExport::weak_tag_storage(), obj);
 }
 
-JvmtiTagMapEntry::JvmtiTagMapEntry(oop obj) {
-  _released = false;
-  _wh = WeakHandle(JvmtiExport::weak_tag_storage(), obj);
-}
 
 JvmtiTagMapEntry::~JvmtiTagMapEntry(){
   release();
@@ -105,47 +101,9 @@ bool JvmtiTagMapTable::add(oop obj, jlong tag) {
   return is_added;
 }
 
-<<<<<<< HEAD
 void JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapEntry jtme(obj);
   _rrht_table->remove(jtme);
-=======
-bool JvmtiTagMapTable::remove(oop obj) {
-
-  JvmtiTagMapEntry jtme(obj,0);
-  jlong* found = _rrht_table.get(jtme);
-  if (found == NULL) {
-    jtme.release();
-    return ;
-  }
-  if( _rrht_table.remove(jtme)) {
-    jtme.release();
-    return;
-  } else {
-    assert(false,"removing object failed.");
-  }
-  jtme.release();
-}
-int JvmtiTagMapTable::add_update_remove(oop obj, jlong tag){
-
-  JvmtiTagMapEntry entry (obj,tag);
-  bool found = find(entry, obj);
-  bool new_tag = tag != 0 ;
-  bool to_be_removed = !new_tag;
-  if (!found && new_tag ) {
-    add(obj, tag);
-    return AddUpdateRemove::Added;
-  }
-  if ( found && to_be_removed){
-    remove(obj);
-    return AddUpdateRemove::Removed;
-  }
-  if (found && new_tag ){
-    _rrht_table.put(entry, tag);
-    return AddUpdateRemove::Updated;
-  }
-  return AddUpdateRemove::Failed;
->>>>>>> a9b7f953b0c (step 5)
 }
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapEntryClosure* closure) {
   _rrht_table->iterate(closure);

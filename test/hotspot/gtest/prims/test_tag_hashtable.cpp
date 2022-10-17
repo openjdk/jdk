@@ -40,9 +40,10 @@ class EntryClosure : public JvmtiTagMapEntryClosure
 {
  public:
     int count=0;
-    void do_entry(JvmtiTagMapEntry* entry)
+    bool do_entry(JvmtiTagMapEntry& entry, jlong &tag)
     {
         count++;
+        return true;
     }
 };
 TEST_VM(Jvmti_TagMapTable, AddUpdateRemove){
@@ -67,25 +68,23 @@ TEST_VM(Jvmti_TagMapTable, AddUpdateRemove){
     t.add( p, 100);
 
 
-    JvmtiTagMapEntry* entry = t.find(p);
+    jlong entry = t.find(p);
 
-    ASSERT_TRUE(entry != NULL);
-    ASSERT_TRUE(entry->tag() == 100 ) ;
+
+    ASSERT_TRUE(entry == 100 ) ;
 
 
     t.add( p, 110);
 
     entry  = t.find( p);
 
-    ASSERT_TRUE(entry != NULL);
-    ASSERT_TRUE(entry->tag() == 110 ) ;
+
+    ASSERT_TRUE(entry == 110 ) ;
 
     t.remove(p);
     entry = t.find(p);
 
-    ASSERT_TRUE(entry == NULL);
-
-
+    ASSERT_TRUE(entry == 0);
 
 }
 
@@ -118,28 +117,24 @@ TEST_VM(Jvmti_TagMapTable, CallingAllAPI){
     ASSERT_TRUE(!t.is_empty());
 
 
-    JvmtiTagMapEntry *entry = t.find(p);
+    jlong entry = t.find(p);
 
-    ASSERT_TRUE(entry != NULL);
-    ASSERT_TRUE(entry->tag() == 100 ) ;
+    ASSERT_TRUE(entry == 100 ) ;
 
     entry = t.find(q);
 
-    ASSERT_TRUE(entry != NULL);
-    ASSERT_TRUE(entry->tag() == 200 ) ;
+
+    ASSERT_TRUE(entry == 200 ) ;
 
     t.remove(q);
     entry = t.find(q);
-    ASSERT_TRUE(entry == NULL);
+    ASSERT_TRUE(entry == 0);
 
     t.remove(p);
     entry = t.find(p);
-    ASSERT_TRUE(entry == NULL) ;
+    ASSERT_TRUE(entry == 0) ;
 
     ASSERT_TRUE(t.is_empty());
-
-
-    t.rehash();
 
     t.add(p, 1000);
     t.add(q, 2000);
