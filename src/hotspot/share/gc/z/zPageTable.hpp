@@ -56,8 +56,10 @@ private:
 
   // Optimization aid for faster old pages iteration
   struct FoundOld {
-    CHeapBitMap _bitmaps[2];
-    int         _current;
+    CHeapBitMap   _allocated_bitmap_0;
+    CHeapBitMap   _allocated_bitmap_1;
+    BitMap* const _bitmaps[2];
+    int           _current;
 
     FoundOld();
 
@@ -66,8 +68,8 @@ private:
 
     void register_page(ZPage* page);
 
-    CHeapBitMap* current_bitmap();
-    CHeapBitMap* previous_bitmap();
+    BitMap* current_bitmap();
+    BitMap* previous_bitmap();
   } _found_old;
 
 public:
@@ -82,7 +84,7 @@ public:
   void remove(ZPage* page);
   void replace(ZPage* old_page, ZPage* new_page);
 
-  // Old pages iteration optimzation aid
+  // Old pages iteration optimization aid
   void flip_found_old_sets();
   void clear_found_old_previous_set();
   void register_found_old(ZPage* page);

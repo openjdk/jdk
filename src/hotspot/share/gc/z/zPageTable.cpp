@@ -37,7 +37,7 @@
 // have been shown to have scalability issues.
 //
 // So, we have the "found old" optimization, which allows us to perform much
-// fewer claimes (order of old pages, instead of order of slots in the page
+// fewer claims (order of old pages, instead of order of slots in the page
 // table), and it allows us to read fewer pages.
 //
 // The set of "found old pages" isn't precise, and can contain stale entries
@@ -54,8 +54,12 @@
 // active set.
 
 ZPageTable::FoundOld::FoundOld() :
-    _bitmaps{{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
-             {ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */}},
+    // Array initialization requires copy constructors, which CHeapBitMap
+    // doesn't provide. Instantiate two instances, and populate an array
+    // with pointers to the two instances.
+    _allocated_bitmap_0{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
+    _allocated_bitmap_1{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
+    _bitmaps{&_allocated_bitmap_0, &_allocated_bitmap_1},
     _current{0} {}
 
 void ZPageTable::FoundOld::flip() {
@@ -71,12 +75,12 @@ void ZPageTable::FoundOld::register_page(ZPage* page) {
   current_bitmap()->par_set_bit(untype(page->start()) >> ZGranuleSizeShift, memory_order_relaxed);
 }
 
-CHeapBitMap* ZPageTable::FoundOld::current_bitmap() {
-  return &_bitmaps[_current];
+BitMap* ZPageTable::FoundOld::current_bitmap() {
+  return _bitmaps[_current];
 }
 
-CHeapBitMap* ZPageTable::FoundOld::previous_bitmap() {
-  return &_bitmaps[_current ^ 1];
+BitMap* ZPageTable::FoundOld::previous_bitmap() {
+  return _bitmaps[_current ^ 1];
 }
 
 ZOldPagesParallelIterator::ZOldPagesParallelIterator(ZPageTable* page_table) :
