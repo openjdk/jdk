@@ -1201,6 +1201,9 @@ private:
   void evcvtpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
 
+  // Convert vector double to int
+  void vcvttpd2dq(XMMRegister dst, XMMRegister src, int vector_len);
+
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovdw(XMMRegister dst, XMMRegister src, int vector_len);
@@ -2516,11 +2519,11 @@ private:
   void pmuludq(XMMRegister dst, XMMRegister src);
   void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void vpmullq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpmullq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmuludq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-  void vpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulhuw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Minimum of packed integers
