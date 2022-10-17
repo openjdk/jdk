@@ -29,6 +29,9 @@
 #include "Log.h"
 
 
+// Code in this file requires linking with msi.lib
+
+
 namespace msi {
 
 void closeDatabaseView(MSIHANDLE hView) {
