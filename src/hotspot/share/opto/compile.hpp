@@ -347,6 +347,7 @@ class Compile : public Phase {
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
+  Arena*                _parser_arena;          // Arena with lifttime equivalent to the top-level parser.
   void*                 _barrier_set_state;     // Potential GC barrier state for Compile
   ciEnv*                _env;                   // CI interface
   DirectiveSet*         _directive;             // Compiler directive
@@ -755,6 +756,7 @@ class Compile : public Phase {
 
   // Compilation environment.
   Arena*      comp_arena()           { return &_comp_arena; }
+  Arena*      parser_arena()         { return comp_arena(); } // for the time being, just return comp_arena.
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
   bool        failing() const        { return _env->failing() || _failure_reason != NULL; }

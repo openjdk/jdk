@@ -280,6 +280,11 @@ void Parse::do_new() {
   if (C->eliminate_boxing() && klass->is_box_klass()) {
     C->set_has_boxed_value(true);
   }
+
+  if (DoPartialEscapeAnalysis) {
+    // obj is a CheckCastPP Node, aka. cooked oop.
+    block()->state().add_new_allocation(obj);
+  }
 }
 
 #ifndef PRODUCT
@@ -302,3 +307,94 @@ void Parse::dump_map_adr_mem() const {
 }
 
 #endif
+
+//
+// Partial Escape Analysis
+// Stadler, Lukas, Thomas Würthinger, and Hanspeter Mössenböck. "Partial escape analysis and scalar replacement for Java."
+//
+// Our adaption to C2.
+// https://gist.github.com/navyxliu/62a510a5c6b0245164569745d758935b
+//
+VirtualState::VirtualState(uint nfields): _lockCount(0) {
+  Compile* C = Compile::current();
+  _entries = NEW_ARENA_ARRAY(C->parser_arena(), Node*, nfields);
+}
+
+void PEAState::add_new_allocation(Node* obj) {
+  int nfields;
+  const TypeOopPtr* oop_type = obj->as_Type()->type()->is_oopptr();
+
+  if (oop_type->isa_aryptr()) {
+    const TypeAryPtr* ary_type = oop_type->is_aryptr();
+    const TypeInt* size = ary_type->size();
+    if (size->is_con() && size->get_con() <= EliminateAllocationArraySizeLimit) {
+      nfields = size->get_con();
+    } else {
+      // length of array is too long or unknown
+      return;
+    }
+  } else {
+    const TypeInstPtr* inst_type = oop_type->is_instptr();
+    nfields = inst_type->instance_klass()->nof_nonstatic_fields();
+  }
+
+  if (nfields >= 0) {
+    AllocateNode* alloc = obj->in(1)->in(0)->as_Allocate();
+    bool result = _state.put(alloc, new VirtualState(nfields));
+    assert(result, "the key existed in _state");
+    result = _alias.put(obj, alloc);
+    assert(result, "the key existed in _alias");
+  }
+}
+
+PEAState& PEAState::operator=(const PEAState& init) {
+  assert(0 == _state.number_of_entries(), "invalid state");
+  assert(0 == _alias.number_of_entries(), "invalid state");
+
+  init._state.iterate([&](AllocateNode* key, ObjectState* value) {
+    _state.put(key, value);
+    return true;
+  });
+
+  init._alias.iterate([&](Node* key, AllocateNode* value) {
+    _alias.put(key, value);
+    return true;
+  });
+
+  return *this;
+}
+
+EscapedState* PEAState::materialize(GraphKit* parser, AllocateNode* alloc, Node* ctrl) {
+  Node* obj = nullptr;
+  // identity
+  _alias.iterate([&](Node* key, AllocateNode* value) {
+    if (value == alloc) {
+      obj = key;
+      return false;
+    } else {
+      return true;
+    }
+  });
+
+  JVMState* jvms = parser->sync_jvms();
+  SafePointNode* map = jvms->map();
+  parser->kill_dead_locals();
+  parser->clean_stack(jvms->sp());
+  jvms->set_should_reexecute(false);
+
+  // clean up map/jvms before we clone a new AllocateNode.
+  AllocateNode* allocx  = new AllocateNode(parser->C, alloc->tf(), map->control(), alloc->memory(), alloc->i_o(),
+                                            alloc->in(AllocateNode::AllocSize),
+                                            alloc->in(AllocateNode::KlassNode),
+                                            alloc->in(AllocateNode::InitialTest));
+
+  const TypeOopPtr* oop_type = obj->as_Type()->type()->is_oopptr();
+  Node* objx = parser->set_output_for_allocation(allocx, oop_type);
+
+  if (allocx->in(0) != ctrl) {
+    allocx->set_req(0, ctrl);
+  }
+  EscapedState* escaped = new EscapedState(objx);
+  _state.put(alloc, escaped);
+  return escaped;
+}

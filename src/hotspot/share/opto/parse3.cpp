@@ -224,6 +224,26 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
       field_type = Type::BOTTOM;
     }
   }
+
+  // if val is invalid and current path ijn't dead
+  if (DoPartialEscapeAnalysis && is_obj && !val->is_top() && !stopped()) {
+    // val is escaped if obj is escaped or is not trackable.
+    PEAState& state = block()->state();
+    AllocateNode* lhs_alloc = state.is_alias(val);
+    AllocateNode* rhs_alloc;
+    if (lhs_alloc != nullptr && state.get_object_state(lhs_alloc)->is_virtual()
+        // put_static_field || unknown object || obj is not virtual
+        && (!is_field || (rhs_alloc=state.is_alias(obj)) == nullptr || !state.get_object_state(rhs_alloc)->is_virtual())) {
+#ifndef PRODUCT
+        if (TraceOptoParse) {
+          tty->print_cr("materialize: %d %s", lhs_alloc->_idx, lhs_alloc->Name());
+        }
+#endif /*PRODUCT*/
+        EscapedState* escaped = state.materialize(this, lhs_alloc, control());
+        val = escaped->get_materialized_value();
+    }
+  }
+
   access_store_at(obj, adr, adr_type, val, field_type, bt, decorators);
 
   if (is_field) {

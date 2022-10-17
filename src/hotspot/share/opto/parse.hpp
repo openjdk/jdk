@@ -31,6 +31,7 @@
 #include "libadt/vectset.hpp"
 #include "oops/generateOopMap.hpp"
 #include "opto/graphKit.hpp"
+#include "opto/partialEscape.hpp"
 #include "opto/subnode.hpp"
 
 class BytecodeParseHistogram;
@@ -167,6 +168,7 @@ class Parse : public GraphKit {
     int                _num_successors; // Includes only normal control flow.
     int                _all_successors; // Include exception paths also.
     Block**            _successors;
+    PEAState           _state; // Keep track all allocations
 
    public:
 
@@ -190,6 +192,7 @@ class Parse : public GraphKit {
     // True after any predecessor flows control into this block
     bool is_merged() const                 { return _start_map != NULL; }
 
+    PEAState& state()                      { return _state; }
 #ifdef ASSERT
     // True after backedge predecessor flows control into this block
     bool has_merged_backedge() const       { return _has_merged_backedge; }

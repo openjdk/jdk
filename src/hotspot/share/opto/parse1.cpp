@@ -1487,6 +1487,11 @@ void Parse::Block::record_state(Parse* p) {
   assert(!is_merged(), "can only record state once, on 1st inflow");
   assert(start_sp() == p->sp(), "stack pointer must agree with ciTypeFlow");
   set_start_map(p->stop());
+
+  // it looks like op->block() is null only when the current method is java.lang.Object.<init>
+  if (p->block() != nullptr) {
+    _state = p->block()->state();
+  }
 }
 
 
