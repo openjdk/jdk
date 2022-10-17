@@ -28,7 +28,7 @@
 #define PRAGMA_DIAG_PUSH _Pragma("warning(push)")
 #define PRAGMA_DIAG_POP  _Pragma("warning(pop)")
 
-#define PRAGMA_DISABLE_COMPILER_WARNING(num) PRAGMA(warning(disable : num))
+#define PRAGMA_DISABLE_VISCPP_WARNING(num) PRAGMA(warning(disable : num))
 
 // The Visual Studio implementation of FORBID_C_FUNCTION explicitly does
 // nothing, because there doesn't seem to be a way to implement it for Visual
@@ -61,7 +61,7 @@
 
 #define ALLOW_C_FUNCTION(name, ...)             \
   PRAGMA_DIAG_PUSH                              \
-  PRAGMA_DISABLE_COMPILER_WARNING(4996)         \
+  PRAGMA_DISABLE_VISCPP_WARNING(4996)           \
   __VA_ARGS__                                   \
   PRAGMA_DIAG_POP
 
