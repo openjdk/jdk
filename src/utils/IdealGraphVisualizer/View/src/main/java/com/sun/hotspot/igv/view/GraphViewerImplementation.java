@@ -25,14 +25,9 @@ package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GraphViewer;
+import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.settings.Settings;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.openide.windows.Mode;
-import org.openide.windows.TopComponent;
-import org.openide.windows.WindowManager;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -43,24 +38,28 @@ import org.openide.util.lookup.ServiceProvider;
 public class GraphViewerImplementation implements GraphViewer {
 
     @Override
-    public void view(InputGraph graph, boolean clone) {
+    public void viewDifference(InputGraph firstGraph, InputGraph secondGraph) {
+        if (firstGraph.getGroup() != secondGraph.getGroup()) {
+            InputGraph diffGraph = Difference.createDiffGraph(firstGraph, secondGraph);
+            view(diffGraph, true);
+        } else {
+            view(firstGraph, true);
+            EditorTopComponent etc = EditorTopComponent.findEditorForGraph(firstGraph);
+            if (etc != null) {
+                etc.getModel().selectDiffGraph(secondGraph);
+                etc.requestActive();
+            }
+        }
+    }
 
+    @Override
+    public void view(InputGraph graph, boolean clone) {
         if (!clone) {
-            WindowManager manager = WindowManager.getDefault();
-            for (Mode m : manager.getModes()) {
-                List<TopComponent> l = new ArrayList<>();
-                l.add(m.getSelectedTopComponent());
-                l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
-                for (TopComponent t : l) {
-                    if (t instanceof EditorTopComponent) {
-                        EditorTopComponent etc = (EditorTopComponent) t;
-                        if (etc.getModel().getGroup().getGraphs().contains(graph)) {
-                            etc.getModel().selectGraph(graph);
-                            t.requestActive();
-                            return;
-                        }
-                    }
-                }
+            EditorTopComponent etc = EditorTopComponent.findEditorForGraph(graph);
+            if (etc != null) {
+                etc.getModel().selectGraph(graph);
+                etc.requestActive();
+                return;
             }
         }
 

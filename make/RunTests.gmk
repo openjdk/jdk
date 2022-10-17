@@ -863,7 +863,7 @@ define SetupRunJtregTestBody
           -dir:$$(JTREG_TOPDIR) \
           -reportDir:$$($1_TEST_RESULTS_DIR) \
           -workDir:$$($1_TEST_SUPPORT_DIR) \
-          -status:$$$${JTREG_STATUS} \
+          $$$${JTREG_STATUS} \
           $$(JTREG_OPTIONS) \
           $$(JTREG_FAILURE_HANDLER_OPTIONS) \
           $$(JTREG_COV_OPTIONS) \
@@ -1194,13 +1194,11 @@ ifeq ($(TEST_OPTS_JCOV), true)
     JCOV_SOURCE_DIFF := $(JCOV_OUTPUT_DIR)/source_diff
     JCOV_DIFF_COVERAGE_REPORT := $(JCOV_OUTPUT_DIR)/diff_coverage_report
 
-    ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
-      DIFF_COMMAND := $(HG) -R $(TOPDIR) diff -r $(TEST_OPTS_JCOV_DIFF_CHANGESET) > $(JCOV_SOURCE_DIFF)
-    else ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
+    ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
       DIFF_COMMAND := $(GIT) -C $(TOPDIR) diff $(TEST_OPTS_JCOV_DIFF_CHANGESET) > $(JCOV_SOURCE_DIFF)
     else
-      $(info Error: Must be either hg or git source tree for diff coverage.)
-      $(error Neither hg nor git source tree.)
+      $(info Error: Must be a git source tree for diff coverage.)
+      $(error No git source tree.)
     endif
 
     jcov-gen-diffcoverage: jcov-stop-grabber

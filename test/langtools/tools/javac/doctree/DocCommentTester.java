@@ -600,6 +600,18 @@ public class DocCommentTester {
             }
 
             @Override
+            public Void visitSpec(SpecTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("url", node.getURL());
+                print("title", node.getTitle());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
+            @Override
             public Void visitSnippet(SnippetTree node, Void p) {
                 header(node);
                 indent(+1);

@@ -3889,7 +3889,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return true;
         if (!w.testBit(0) || w.equals(ONE))
             return false;
-
+        if (w.bitLength() > PRIME_SEARCH_BIT_LENGTH_LIMIT + 1) {
+            throw new ArithmeticException("Primality test implementation restriction on bitLength");
+        }
         return w.primeToCertainty(certainty, null);
     }
 

@@ -6,7 +6,7 @@ See [JEP](https://bugs.openjdk.java.net/browse/JDK-8280389)
 or [online API documentation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/openjdk/jdk-sandbox/classfile-api-javadoc-branch/doc/classfile-api/javadoc/jdk/classfile/package-summary.html)
 for more information about Classfile Processing API.
 
-See <https://openjdk.java.net/> for more information about
+See <https://openjdk.org/> for more information about
 the OpenJDK Community and the JDK.
 
 ### Sources
@@ -18,7 +18,7 @@ Classfile Processing API source are a part of java.base JDK module sources:
 ### Building
 
 For build instructions please see the
-[online documentation](https://openjdk.java.net/groups/build/doc/building.html),
+[online documentation](https://openjdk.org/groups/build/doc/building.html),
 or either of these files:
 
 - [doc/building.html](doc/building.html) (html version)
