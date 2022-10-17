@@ -47,8 +47,6 @@
 #define SECURITY_WIN32
 #include <sspi.h>
 
-#pragma comment(lib, "secur32.lib")
-
 // Otherwise an exception will be thrown
 #define new new (std::nothrow)
 
