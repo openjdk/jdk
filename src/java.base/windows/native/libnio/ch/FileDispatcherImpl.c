@@ -34,7 +34,7 @@
 #include "java_lang_Integer.h"
 #include "sun_nio_ch_FileDispatcherImpl.h"
 
-#include <Mswsock.h>
+#include <Mswsock.h> // Requires Mswsock.lib
 
 /**************************************************************
  * FileDispatcherImpl.c
