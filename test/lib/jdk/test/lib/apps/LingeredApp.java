@@ -270,8 +270,7 @@ public class LingeredApp {
         timeout = Utils.adjustTimeout(timeout) * 1000;
         long here = epoch();
         while (true) {
-            // Make sure process didn't already exit:
-            // check this now, and immediately after sleeping for spinDelay each loop.
+            // Check for crash or lock modification now, and immediately after sleeping for spinDelay each loop.
             if (!appProcess.isAlive()) {
                 if (forceCrash) {
                     return; // This is expected. Just return.
@@ -280,17 +279,16 @@ public class LingeredApp {
                 }
             }
 
-            long timeTaken = epoch() - here;
-            if (timeTaken > timeout) {
-                throw new IOException("Timeout: app not started or crashed in " + timeTaken + "ms");
-            }
-
             // Live process should touch lock file every second
             long lm = lastModified(lockFileName);
             if (lm > lockCreationTime) {
                 break;
             }
 
+            long timeTaken = epoch() - here;
+            if (timeTaken > timeout) {
+                throw new IOException("Timeout: app not started or crashed in " + timeTaken + "ms");
+            }
             try {
                 Thread.sleep(spinDelay);
             } catch (InterruptedException ex) {
