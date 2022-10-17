@@ -40,7 +40,7 @@
   #elif defined(AARCH64)
   #define SYS_membarrier 283
   #elif defined(ALPHA)
-  #define SYS_membarrier 283
+  #define SYS_membarrier 517
   #else
   #error define SYS_membarrier for the arch
   #endif
