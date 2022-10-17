@@ -543,7 +543,7 @@ public final class URL implements java.io.Serializable {
      *
      * The new URL is created from the given context URL and the spec
      * argument as described in
-     * RFC2396 &quot;Uniform Resource Identifiers : Generic * Syntax&quot; :
+     * RFC2396 &quot;Uniform Resource Identifiers : Generic Syntax&quot; :
      * <blockquote><pre>
      *          &lt;scheme&gt;://&lt;authority&gt;&lt;path&gt;?&lt;query&gt;#&lt;fragment&gt;
      * </pre></blockquote>
@@ -575,6 +575,10 @@ public final class URL implements java.io.Serializable {
      * <p>
      * For a more detailed description of URL parsing, refer to RFC2396.
      *
+     * @implSpec Parsing the URL involves calling the {@link
+     * URLStreamHandler#parseURL(URL, String, int, int) parseURL} method on the
+     * selected handler.
+     *
      * @param      context   the context in which to parse the specification.
      * @param      spec      the {@code String} to parse as a URL.
      * @throws     MalformedURLException  if no protocol is specified, or an
@@ -599,6 +603,10 @@ public final class URL implements java.io.Serializable {
      * within a specified context. If the handler is null, the parsing
      * occurs as with the two argument constructor.
      *
+     * @implSpec Parsing the URL involves calling the {@link
+     * URLStreamHandler#parseURL(URL, String, int, int) parseURL} method on the
+     * selected handler.
+     *
      * @param      context   the context in which to parse the specification.
      * @param      spec      the {@code String} to parse as a URL.
      * @param      handler   the stream handler for the URL.
@@ -607,8 +615,8 @@ public final class URL implements java.io.Serializable {
      *               or the parsed URL fails to comply with the specific syntax
      *               of the associated protocol.  In particular, if the
      *               underlying stream handler's {@linkplain
-     *               URLStreamHandler#parseURL parseURL method} throws
-     *               {@code IllegalArgumentException}
+     *               URLStreamHandler#parseURL(URL, String, int, int)
+     *               parseURL method} throws {@code IllegalArgumentException}
      * @throws     SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow
