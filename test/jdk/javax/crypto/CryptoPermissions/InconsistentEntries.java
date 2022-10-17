@@ -28,14 +28,16 @@
  * @bug 8286779
  * @summary Test limited/default_local.policy containing inconsistent entries
  * @library /test/lib
- * @run driver InconsistentEntries
+ * @run testng/othervm InconsistentEntries
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 import javax.crypto.*;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,60 +52,50 @@ public class InconsistentEntries {
             "policy", "testlimited");
     private static final Path POLICY_FILE = Paths.get(TEST_SRC, "default_local.policy");
 
-    public static void main(String[] args) throws Exception {
+    Path targetFile = null;
+
+    @BeforeTest
+    public void setUp() throws IOException {
         if (!POLICY_DIR.toFile().exists()) {
             Files.createDirectory(POLICY_DIR);
         }
 
-        Path targetFile = POLICY_DIR.resolve(POLICY_FILE.getFileName());
+        targetFile = POLICY_DIR.resolve(POLICY_FILE.getFileName());
         Files.copy(POLICY_FILE, targetFile, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @AfterTest
+    public void cleanUp() throws IOException {
+        Files.delete(targetFile);
+    }
+
+    @Test
+    public void test() throws Exception {
+        String JAVA_HOME = System.getProperty("java.home");
+        String FS = System.getProperty("file.separator");
+        Path testlimited = Path.of(JAVA_HOME + FS + "conf" + FS + "security" +
+                FS + "policy" + FS + "testlimited");
+        if (!Files.exists(testlimited)) {
+            throw new RuntimeException(
+                    "custom policy subdirectory: testlimited does not exist");
+        }
+
+        File testpolicy = new File(JAVA_HOME + FS + "conf" + FS + "security" +
+                FS + "policy" + FS + "testlimited" + FS + "default_local.policy");
+        if (testpolicy.length() == 0) {
+            throw new RuntimeException(
+                    "policy: default_local.policy does not exist or is empty");
+        }
+
+        Security.setProperty("crypto.policy", "testlimited");
 
         try {
-            test();
-        } finally {
-            Files.delete(targetFile);
-        }
-    }
-
-    private static void test() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                InconsistentEntriesTest.class.getName()
-        );
-
-        Process proc = pb.start();
-        OutputAnalyzer output = new OutputAnalyzer(proc);
-        output.shouldContain("Test completed successfully");
-        System.out.println("Test passed.");
-    }
-
-    class InconsistentEntriesTest {
-        public static void main(String[] args) throws Exception {
-            String JAVA_HOME = System.getProperty("java.home");
-            String FS = System.getProperty("file.separator");
-            Path testlimited = Path.of(JAVA_HOME + FS + "conf" + FS + "security" +
-                    FS + "policy" + FS + "testlimited");
-            if (!Files.exists(testlimited)) {
-                throw new RuntimeException(
-                        "custom policy subdirectory: testlimited does not exist");
-            }
-
-            File testpolicy = new File(JAVA_HOME + FS + "conf" + FS + "security" +
-                    FS + "policy" + FS + "testlimited" + FS + "default_local.policy");
-            if (testpolicy.length() == 0) {
-                throw new RuntimeException(
-                        "policy: default_local.policy does not exist or is empty");
-            }
-
-            Security.setProperty("crypto.policy", "testlimited");
-
-            try {
-                int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
-                throw new RuntimeException(
-                        "Should fail due to inconsistent entries in policy file");
-            } catch (ExceptionInInitializerError e) {
-                e.printStackTrace();
-                System.out.println("Test completed successfully");
-            }
+            int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
+            throw new RuntimeException(
+                    "Should fail due to inconsistent entries in policy file");
+        } catch (ExceptionInInitializerError e) {
+            e.printStackTrace();
+            System.out.println("Test completed successfully");
         }
     }
 }

@@ -27,12 +27,15 @@
  * @summary User Policy Setting is not recognized on Netscape 6
  *          when invoked as root.
  * @library /test/lib
- * @run driver Root
+ * @run testng/othervm Root
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,35 +47,21 @@ public class Root {
     private static final String ROOT = System.getProperty("user.home");
     private static final Path SOURCE = Paths.get(SRC, "Root.policy");
     private static final Path TARGET = Paths.get(ROOT, ".java.policy");
-    public static void main(String[] args) throws Exception {
+
+    @BeforeTest
+    public void setup() throws IOException {
         Files.copy(SOURCE, TARGET, StandardCopyOption.REPLACE_EXISTING);
-        try {
-            test();
-        } finally {
-            Files.delete(TARGET);
-        }
     }
 
-    private static void test() throws Exception{
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                RootTest.class.getName()
-        );
-
-        Process proc = pb.start();
-        OutputAnalyzer output = new OutputAnalyzer(proc);
-        output.stdoutShouldNotBeEmpty();
-        output.shouldContain("Test succeeded");
-        System.out.println("Test passed.");
+    @AfterTest
+    public void cleanUp() throws IOException {
+        Files.delete(TARGET);
     }
 
-    class RootTest {
-        public static void main(String[] args) {
-            Policy p = Policy.getPolicy();
-            if (p.implies(Root.class.getProtectionDomain(), new AllPermission())) {
-                System.out.println("Test succeeded");
-            } else {
-                throw new SecurityException("Test failed");
-            }
-        }
+    @Test
+    private void test() {
+        Policy p = Policy.getPolicy();
+        Assert.assertTrue(p.implies(Root.class.getProtectionDomain(),
+                new AllPermission()));
     }
 }
