@@ -26,6 +26,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
+import java.util.Arrays;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JList;
@@ -39,7 +40,7 @@ import javax.swing.SwingUtilities;
  */
 public class TestResetSelectForm {
     private Robot robot;
-    private JEditorPane html;
+    private JEditorPane editor;
     private JFrame frame;
 
     private int listHeight;
@@ -49,32 +50,30 @@ public class TestResetSelectForm {
     private final int width = 200;
     private final int height = 200;
     private final int LIMIT = 10;
+    private final String[] numbers = {"1","2","3","4","5"};
 
     private int getListHeight() {
-        String[] numbers = {"1","2","3","4","5"};
         JList<String> dummy = new JList<>(numbers);
         return dummy.getPreferredSize().height;
     }
 
     private void setup() {
-        html = new JEditorPane("text/html",
-                "<html><body><form action=\"http://localhost\">" +
-                "<select name=select id=\"mySelect\" size=\"5\" multiple> \n" +
-                "            <option>1</option> \n" +
-                "            <option>2</option> \n" +
-                "            <option>3</option> \n" +
-                "            <option>4</option> \n" +
-                "            <option>5</option> \n" +
-                "</select> " +
-                "<br>" +
-                "<input type=reset name=reset value=\"reset\"/>" +
-                "<br>" +
-                "<input type=submit name=submit value=\"submit\"/>" +
-                "</form></body></html>");
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html><body><form action=\"http://localhost\">" +
+                  "<select name=select id=\"mySelect\" size=\"" +
+                  numbers.length + "\" multiple>");
+        Arrays.stream(numbers).forEach(s->{sb.append(
+                  "<option>" + s + "</option>");});
+        sb.append("</select><br>" +
+                  "<input type=reset name=reset value=\"reset\"/>" +
+                  "<br>" +
+                  "<input type=submit name=submit value=\"submit\"/>" +
+                  "</form></body></html>");
+        editor = new JEditorPane("text/html", sb.toString());
         frame = new JFrame();
         frame.setSize(width, height);
         frame.setLayout(new BorderLayout());
-        frame.add(html, BorderLayout.CENTER);
+        frame.add(editor, BorderLayout.CENTER);
         frame.setVisible(true);
     }
 
@@ -85,8 +84,9 @@ public class TestResetSelectForm {
     }
 
     private void checkNoListSelection() {
-        for (int i = 0; i < 5; i++) {
-            int pos = (int)(listHeight * (i + 0.5) / 5);
+        int len = numbers.length;
+        for (int i = 0; i < len; i++) {
+            int pos = (int)(listHeight * (i + 0.5) / len);
             Color c = robot.getPixelColor(loc.x + 30, loc.y + pos);
             if (getMaxColorDiff(baseColor, c) > LIMIT) {
                 throw new RuntimeException("Unexpected List selection at " +
@@ -104,13 +104,13 @@ public class TestResetSelectForm {
                 listHeight = getListHeight();});
 
             // position of 4th item
-            int pos4 = (int)(listHeight * 3.5 / 5);
+            int pos4 = (int)(listHeight * 3.5 / numbers.length);
 
             SwingUtilities.invokeAndWait(() -> setup());
             robot.waitForIdle();
 
             SwingUtilities.invokeAndWait(() -> {
-                loc = html.getLocationOnScreen();});
+                loc = editor.getLocationOnScreen();});
             robot.waitForIdle();
             robot.delay(500);
             baseColor = robot.getPixelColor(loc.x + 30, loc.y + pos4);
@@ -136,8 +136,8 @@ public class TestResetSelectForm {
 
             // Repaint
             SwingUtilities.invokeAndWait(() -> {
-                html.revalidate();
-                html.repaint();});
+                editor.revalidate();
+                editor.repaint();});
             robot.waitForIdle();
             robot.delay(500);
             checkNoListSelection();
