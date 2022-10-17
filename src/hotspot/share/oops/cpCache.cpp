@@ -623,7 +623,11 @@ Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
 void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPoolCache* cache) const {
   // print separator
   if (index == 0) st->print_cr("                 -------------");
+<<<<<<< HEAD
   // print universal entry info
+=======
+  // print entry
+>>>>>>> Added printing for ResolvedInvokeDynamicInfo
   st->print_cr("%3d", index);
   st->print_cr(" - this: " PTR_FORMAT, p2i(this));
   st->print_cr(" - bytecode 1: %s %02x", Bytecodes::name(bytecode_1()), bytecode_1());
@@ -641,6 +645,7 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
                  is_forced_virtual(), is_final(), is_vfinal(),
                  indy_resolution_failed(), parameter_size());
     st->print_cr(" - tos: %s\n - local signature: %01x\n"
+<<<<<<< HEAD
                  " - has appendix: %01x\n - forced virtual: %01x\n"
                  " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
                  " - num parameters: %02x",
@@ -651,6 +656,35 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
         bytecode_1() == Bytecodes::_invokedynamic) {
       oop appendix = appendix_if_resolved(cph);
       if (appendix != nullptr) {
+=======
+          " - has appendix: %01x\n - forced virtual: %01x\n"
+          " - final: %01x\n - virtual Final: %01x\n - resolution Failed: %01x\n"
+          " - num Parameters: %02x", 
+               type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(), 
+               is_forced_virtual(), is_final(), is_vfinal(), 
+               indy_resolution_failed(), parameter_size());
+    if ((bytecode_1() == Bytecodes::_invokehandle ||
+       bytecode_1() == Bytecodes::_invokedynamic)) {
+      constantPoolHandle cph(Thread::current(), cache->constant_pool());
+      Method* m = method_if_resolved(cph);
+      oop appendix = appendix_if_resolved(cph);
+      if (m != NULL) {
+        st->print_cr("  Method%s: " INTPTR_FORMAT " %s.%s%s",
+                    m->is_native() ? " (native)" : "",
+                    p2i(m),
+                    m->method_holder()->name()->as_C_string(),
+                    m->name()->as_C_string(), m->signature()->as_C_string());
+      }
+
+      // Print ResolvedInvokeDynamicInfo array
+      st->print_cr("Printing my data");
+      /*for (int i = 0; i < cache->_resolved_invokedynamic_info_array->length(); i++) {
+        cache->_resolved_invokedynamic_info_array->at(i).print_on(st);
+      }*/
+      st->print_cr("Done!");
+
+      if (appendix != NULL) {
+>>>>>>> Added printing for ResolvedInvokeDynamicInfo
         st->print("  appendix: ");
         appendix->print_on(st);
       }
