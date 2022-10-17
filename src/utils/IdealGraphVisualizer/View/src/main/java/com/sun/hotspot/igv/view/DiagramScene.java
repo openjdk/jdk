@@ -800,7 +800,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
 
-    private void processOutputSlot(Set<Pair<Point, Point>> lastLineCache, OutputSlot s, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor, int offx, int offy, SceneAnimator animator) {
+    private void processOutputSlot(Set<Pair<Point, Point>> lastLineCache, OutputSlot outputSlot, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor, int offx, int offy, SceneAnimator animator) {
         Map<Point, List<Connection>> pointMap = new HashMap<>(connections.size());
 
         for (Connection c : connections) {
@@ -818,7 +818,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             if (cur == null) { // Long connection, has been cut vertically.
                 cur = specialNullPoint;
             } else if (c.hasSlots()) {
-                if (controlPointIndex == 0 && !s.shouldShowName()) {
+                if (controlPointIndex == 0 && !outputSlot.shouldShowName()) {
                     cur = new Point(cur.x, cur.y - SLOT_OFFSET);
                 } else if (controlPointIndex == controlPoints.size() - 1 &&
                            !((Slot)c.getTo()).shouldShowName()) {
@@ -868,16 +868,17 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
                 if (lastLineCache.contains(curPair)) {
                     curAnimator = null;
                 }
-                LineWidget w = new LineWidget(this, s, connectionList, p1, p2, predecessor, curAnimator, isBold, isDashed);
-                w.setVisible(isVisible);
+                LineWidget lineWidget = new LineWidget(this, outputSlot, connectionList, p1, p2, predecessor, curAnimator, isBold, isDashed);
+                lineWidget.setVisible(isVisible);
                 lineCache.add(curPair);
 
-                newPredecessor = w;
-                connectionLayer.addChild(w);
-                w.getActions().addAction(hoverAction);
+                newPredecessor = lineWidget;
+                connectionLayer.addChild(lineWidget);
+                addObject(new ConnectionSet(connectionList), lineWidget);
+                lineWidget.getActions().addAction(hoverAction);
             }
 
-            processOutputSlot(lastLineCache, s, connectionList, controlPointIndex + 1, p, newPredecessor, offx, offy, animator);
+            processOutputSlot(lastLineCache, outputSlot, connectionList, controlPointIndex + 1, p, newPredecessor, offx, offy, animator);
         }
     }
 
@@ -886,6 +887,19 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         panAction.setEnabled(mode == InteractionMode.PANNING);
         // When panAction is not enabled, it does not consume the event
         // and the selection action handles it instead
+    }
+
+    private class ConnectionSet {
+
+        private Set<Connection> connections;
+
+        public ConnectionSet(Collection<Connection> connections) {
+            connections = new HashSet<>(connections);
+        }
+
+        public Set<Connection> getConnectionSet() {
+            return Collections.unmodifiableSet(connections);
+        }
     }
 
     @Override
