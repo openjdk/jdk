@@ -50,7 +50,7 @@ public class ReleaseOptionThroughAPI {
              PrintWriter outWriter = new PrintWriter(out)) {
             Iterable<? extends JavaFileObject> input =
                     fm.getJavaFileObjects(System.getProperty("test.src") + "/ReleaseOption.java");
-            List<String> options = Arrays.asList("--release", "8", "-XDrawDiagnostics", "-Xlint:-options");
+            List<String> options = Arrays.asList("--release", "8", "-XDrawDiagnostics", "-Xlint:-options", "-d", ".");
 
             compiler.getTask(outWriter, fm, null, options, null, input).call();
             String expected ="";
