@@ -44,8 +44,7 @@
 
 #endif // clang/gcc version check
 
-#define PRAGMA_DISABLE_GCC_WARNING(option) \
-  PRAGMA(GCC diagnostic ignored option)
+#define PRAGMA_DISABLE_GCC_WARNING(opt) PRAGMA(GCC diagnostic ignored opt)
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
