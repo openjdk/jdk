@@ -4111,7 +4111,7 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 // in cnt.
 //
 // NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be >= 2*zva_length.
+// you want to use it elsewhere, note that cnt must be >= cache_line_size.
 void MacroAssembler::zero_dcache_blocks(Register base, Register cnt) {
   Label initial_table_end, loop_cbo_zero;
 
