@@ -1156,6 +1156,11 @@ private:
   void cvtdq2pd(XMMRegister dst, XMMRegister src);
   void vcvtdq2pd(XMMRegister dst, XMMRegister src, int vector_len);
 
+  // Convert Halffloat to Single Precision Floating-Point value
+  void vcvtps2ph(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
+  void vcvtph2ps(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvtps2ph(Address dst, KRegister mask, XMMRegister src, int imm8, int vector_len);
+
   // Convert Packed Signed Doubleword Integers to Packed Single-Precision Floating-Point Value
   void cvtdq2ps(XMMRegister dst, XMMRegister src);
   void vcvtdq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1195,6 +1200,9 @@ private:
   // Convert vector double to long
   void evcvtpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
+
+  // Convert vector double to int
+  void vcvttpd2dq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);
@@ -2511,11 +2519,11 @@ private:
   void pmuludq(XMMRegister dst, XMMRegister src);
   void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void vpmullq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpmullq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmuludq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-  void vpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulhuw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Minimum of packed integers

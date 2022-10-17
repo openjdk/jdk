@@ -45,13 +45,14 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq* _alloc_rate_ms_seq;
   double        _prev_collection_pause_end_ms;
 
-  TruncatedSeq* _rs_length_diff_seq;
+  TruncatedSeq* _young_rs_length_diff_seq;
+  TruncatedSeq* _mixed_rs_length_diff_seq;
   TruncatedSeq* _concurrent_refine_rate_ms_seq;
   TruncatedSeq* _dirtied_cards_rate_ms_seq;
-  // The ratio between the number of merged cards and actually scanned cards, for
+  // The ratio between the number of scanned cards and actually merged cards, for
   // young-only and mixed gcs.
-  TruncatedSeq* _young_card_merge_to_scan_ratio_seq;
-  TruncatedSeq* _mixed_card_merge_to_scan_ratio_seq;
+  TruncatedSeq* _young_card_scan_to_merge_ratio_seq;
+  TruncatedSeq* _mixed_card_scan_to_merge_ratio_seq;
 
   // The cost to scan a card during young-only and mixed gcs in ms.
   TruncatedSeq* _young_cost_per_card_scan_ms_seq;
@@ -67,8 +68,10 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq* _young_other_cost_per_region_ms_seq;
   TruncatedSeq* _non_young_other_cost_per_region_ms_seq;
 
-  TruncatedSeq* _pending_cards_seq;
-  TruncatedSeq* _rs_length_seq;
+  TruncatedSeq* _young_pending_cards_seq;
+  TruncatedSeq* _mixed_pending_cards_seq;
+  TruncatedSeq* _young_rs_length_seq;
+  TruncatedSeq* _mixed_rs_length_seq;
 
   TruncatedSeq* _cost_per_byte_ms_during_cm_seq;
 
@@ -123,30 +126,29 @@ public:
   void report_alloc_rate_ms(double alloc_rate);
   void report_concurrent_refine_rate_ms(double cards_per_ms);
   void report_dirtied_cards_rate_ms(double cards_per_ms);
-  void report_cost_per_card_scan_ms(double cost_per_remset_card_ms, bool for_young_gc);
-  void report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_gc);
-  void report_card_merge_to_scan_ratio(double cards_per_entry_ratio, bool for_young_gc);
-  void report_rs_length_diff(double rs_length_diff);
+  void report_cost_per_card_scan_ms(double cost_per_remset_card_ms, bool for_young_only_phase);
+  void report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_only_phase);
+  void report_card_scan_to_merge_ratio(double cards_per_entry_ratio, bool for_young_only_phase);
+  void report_rs_length_diff(double rs_length_diff, bool for_young_only_phase);
   void report_cost_per_byte_ms(double cost_per_byte_ms, bool mark_or_rebuild_in_progress);
   void report_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_non_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_constant_other_time_ms(double constant_other_time_ms);
-  void report_pending_cards(double pending_cards);
-  void report_rs_length(double rs_length);
+  void report_pending_cards(double pending_cards, bool for_young_only_phase);
+  void report_rs_length(double rs_length, bool for_young_only_phase);
 
   double predict_alloc_rate_ms() const;
   int num_alloc_rate_ms() const;
 
   double predict_concurrent_refine_rate_ms() const;
   double predict_dirtied_cards_rate_ms() const;
-  double predict_young_card_merge_to_scan_ratio() const;
 
-  double predict_mixed_card_merge_to_scan_ratio() const;
+  // Predict how many of the given remembered set of length rs_length will add to
+  // the number of total cards scanned.
+  size_t predict_scan_card_num(size_t rs_length, bool for_young_only_phase) const;
 
-  size_t predict_scan_card_num(size_t rs_length, bool for_young_gc) const;
-
-  double predict_card_merge_time_ms(size_t card_num, bool for_young_gc) const;
-  double predict_card_scan_time_ms(size_t card_num, bool for_young_gc) const;
+  double predict_card_merge_time_ms(size_t card_num, bool for_young_only_phase) const;
+  double predict_card_scan_time_ms(size_t card_num, bool for_young_only_phase) const;
 
   double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const;
 
@@ -162,8 +164,8 @@ public:
 
   double predict_cleanup_time_ms() const;
 
-  size_t predict_rs_length() const;
-  size_t predict_pending_cards() const;
+  size_t predict_rs_length(bool for_young_only_phase) const;
+  size_t predict_pending_cards(bool for_young_only_phase) const;
 
   // Add a new GC of the given duration and end time to the record.
   void update_recent_gc_times(double end_time_sec, double elapsed_ms);
