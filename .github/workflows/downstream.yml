@@ -62,7 +62,7 @@ jobs:
 
           echo "::set-output name=tag::$TAG"
 
-          if [ -n "$(git merge-tree $(git merge-base $TAG rivos/main) rivos/main $TAG" ]; then
+          if [ -n "$(git merge-tree $(git merge-base $TAG rivos/main) rivos/main $TAG)" ]; then
             echo "::set-output name=diff::true"
           else
             echo "::set-output name=diff::false"
