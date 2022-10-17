@@ -32,6 +32,8 @@ on:
     # since that's when I would want to review it. And given GHA takes a long
     # time to run, we want to start doing it as early as possible
     - cron: '0 21 * * 0-4'
+  workflow_dispatch:
+    inputs: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
