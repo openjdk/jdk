@@ -377,6 +377,11 @@
           "retained region restore purposes.")                              \
           range(1, 256)                                                     \
                                                                             \
+  product(uint, G1NumCardsCostSampleThreshold, 1000, DIAGNOSTIC,            \
+          "Threshold for the number of cards when reporting card cost "     \
+          "related prediction sample. That sample must involve the same or "\
+          "more than that number of cards to be used.")                     \
+                                                                            \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \
                     product,                                                \
