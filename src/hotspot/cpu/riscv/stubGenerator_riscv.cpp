@@ -329,7 +329,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(c_rarg6, parameters_done);
 
     address loop = __ pc();
-    __ ld(t0, c_rarg5, 0);
+    __ ld(t0, Address(c_rarg5, 0));
     __ addi(c_rarg5, c_rarg5, wordSize);
     __ addi(c_rarg6, c_rarg6, -1);
     __ push_reg(t0);
