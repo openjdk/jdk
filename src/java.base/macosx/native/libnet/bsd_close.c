@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,86 +266,6 @@ static inline void endOp
     errno = orig_errno;
 }
 
-/*
- * Close or dup2 a file descriptor ensuring that all threads blocked on
- * the file descriptor are notified via a wakeup signal.
- *
- *      fd1 < 0    => close(fd2)
- *      fd1 >= 0   => dup2(fd1, fd2)
- *
- * Returns -1 with errno set if operation fails.
- */
-static int closefd(int fd1, int fd2) {
-    int rv, orig_errno;
-    fdEntry_t *fdEntry = getFdEntry(fd2);
-    if (fdEntry == NULL) {
-        errno = EBADF;
-        return -1;
-    }
-
-    /*
-     * Lock the fd to hold-off additional I/O on this fd.
-     */
-    pthread_mutex_lock(&(fdEntry->lock));
-
-    {
-        /*
-         * Send a wakeup signal to all threads blocked on this
-         * file descriptor.
-         */
-        threadEntry_t *curr = fdEntry->threads;
-        while (curr != NULL) {
-            curr->intr = 1;
-            pthread_kill( curr->thr, sigWakeup );
-            curr = curr->next;
-        }
-
-        /*
-         * And close/dup the file descriptor
-         * (restart if interrupted by signal)
-         */
-        do {
-            if (fd1 < 0) {
-                rv = close(fd2);
-            } else {
-                rv = dup2(fd1, fd2);
-            }
-        } while (rv == -1 && errno == EINTR);
-
-    }
-
-    /*
-     * Unlock without destroying errno
-     */
-    orig_errno = errno;
-    pthread_mutex_unlock(&(fdEntry->lock));
-    errno = orig_errno;
-
-    return rv;
-}
-
-/*
- * Wrapper for dup2 - same semantics as dup2 system call except
- * that any threads blocked in an I/O system call on fd2 will be
- * preempted and return -1/EBADF;
- */
-int NET_Dup2(int fd, int fd2) {
-    if (fd < 0) {
-        errno = EBADF;
-        return -1;
-    }
-    return closefd(fd, fd2);
-}
-
-/*
- * Wrapper for close - same semantics as close system call
- * except that any threads blocked in an I/O on fd will be
- * preempted and the I/O system call will return -1/EBADF.
- */
-int NET_SocketClose(int fd) {
-    return closefd(-1, fd);
-}
-
 /************** Basic I/O operations here ***************/
 
 /*
@@ -369,127 +289,10 @@ int NET_SocketClose(int fd) {
     return ret;                                 \
 }
 
-int NET_Read(int s, void* buf, size_t len) {
-    BLOCKING_IO_RETURN_INT( s, recv(s, buf, len, 0) );
-}
-
-int NET_NonBlockingRead(int s, void* buf, size_t len) {
-    BLOCKING_IO_RETURN_INT( s, recv(s, buf, len, MSG_DONTWAIT));
-}
-
-int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
-       struct sockaddr *from, socklen_t *fromlen) {
-    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, fromlen) );
-}
-
-int NET_Send(int s, void *msg, int len, unsigned int flags) {
-    BLOCKING_IO_RETURN_INT( s, send(s, msg, len, flags) );
-}
-
-int NET_SendTo(int s, const void *msg, int len,  unsigned  int
-       flags, const struct sockaddr *to, int tolen) {
-    BLOCKING_IO_RETURN_INT( s, sendto(s, msg, len, flags, to, tolen) );
-}
-
-int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen) {
-    BLOCKING_IO_RETURN_INT( s, accept(s, addr, addrlen) );
-}
-
 int NET_Connect(int s, struct sockaddr *addr, int addrlen) {
     BLOCKING_IO_RETURN_INT( s, connect(s, addr, addrlen) );
 }
 
 int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     BLOCKING_IO_RETURN_INT( ufds[0].fd, poll(ufds, nfds, timeout) );
-}
-
-/*
- * Wrapper for select(s, timeout). We are using select() on Mac OS due to Bug 7131399.
- * Auto restarts with adjusted timeout if interrupted by
- * signal other than our wakeup signal.
- */
-int NET_Timeout(JNIEnv *env, int s, long timeout, jlong nanoTimeStamp) {
-    struct timeval t, *tp = &t;
-    fd_set fds;
-    fd_set* fdsp = NULL;
-    int allocated = 0;
-    threadEntry_t self;
-    fdEntry_t *fdEntry = getFdEntry(s);
-
-    /*
-     * Check that fd hasn't been closed.
-     */
-    if (fdEntry == NULL) {
-        errno = EBADF;
-        return -1;
-    }
-
-    /*
-     * Pick up current time as may need to adjust timeout
-     */
-    if (timeout > 0) {
-        /* Timed */
-        t.tv_sec = timeout / 1000;
-        t.tv_usec = (timeout % 1000) * 1000;
-    } else if (timeout < 0) {
-        /* Blocking */
-        tp = 0;
-    } else {
-        /* Poll */
-        t.tv_sec = 0;
-        t.tv_usec = 0;
-    }
-
-    if (s < FD_SETSIZE) {
-        fdsp = &fds;
-        FD_ZERO(fdsp);
-    } else {
-        int length = (howmany(s+1, NFDBITS)) * sizeof(int);
-        fdsp = (fd_set *) calloc(1, length);
-        if (fdsp == NULL) {
-            return -1;   // errno will be set to ENOMEM
-        }
-        allocated = 1;
-    }
-    FD_SET(s, fdsp);
-
-    jlong prevNanoTime = nanoTimeStamp;
-    jlong nanoTimeout = (jlong) timeout * NET_NSEC_PER_MSEC;
-    for(;;) {
-        int rv;
-
-        /*
-         * call select on the fd. If interrupted by our wakeup signal
-         * errno will be set to EBADF.
-         */
-
-        startOp(fdEntry, &self);
-        rv = select(s+1, fdsp, 0, 0, tp);
-        endOp(fdEntry, &self);
-
-        /*
-         * If interrupted then adjust timeout. If timeout
-         * has expired return 0 (indicating timeout expired).
-         */
-        if (rv < 0 && errno == EINTR) {
-            if (timeout > 0) {
-                jlong newNanoTime = JVM_NanoTime(env, 0);
-                nanoTimeout -= newNanoTime - prevNanoTime;
-                if (nanoTimeout < NET_NSEC_PER_MSEC) {
-                    if (allocated != 0)
-                        free(fdsp);
-                    return 0;
-                }
-                prevNanoTime = newNanoTime;
-                t.tv_sec = nanoTimeout / NET_NSEC_PER_SEC;
-                t.tv_usec = (nanoTimeout % NET_NSEC_PER_SEC) / NET_NSEC_PER_USEC;
-            } else {
-                continue; // timeout is -1, so  loop again.
-            }
-        } else {
-            if (allocated != 0)
-                free(fdsp);
-            return rv;
-        }
-    }
 }

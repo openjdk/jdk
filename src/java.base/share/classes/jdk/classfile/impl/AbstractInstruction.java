@@ -28,12 +28,8 @@ import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-
-import jdk.classfile.BufWriter;
 import jdk.classfile.Classfile;
-import jdk.classfile.CodeBuilder;
-import jdk.classfile.CodeElement;
+import jdk.classfile.Instruction;
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.instruction.SwitchCase;
 import jdk.classfile.constantpool.FieldRefEntry;
@@ -41,21 +37,16 @@ import jdk.classfile.constantpool.InterfaceMethodRefEntry;
 import jdk.classfile.constantpool.InvokeDynamicEntry;
 import jdk.classfile.constantpool.LoadableConstantEntry;
 import jdk.classfile.constantpool.MemberRefEntry;
-import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.instruction.ArrayLoadInstruction;
 import jdk.classfile.instruction.ArrayStoreInstruction;
 import jdk.classfile.instruction.BranchInstruction;
-import jdk.classfile.instruction.CharacterRange;
 import jdk.classfile.instruction.ConstantInstruction;
 import jdk.classfile.instruction.ConvertInstruction;
-import jdk.classfile.instruction.ExceptionCatch;
 import jdk.classfile.instruction.FieldInstruction;
 import jdk.classfile.instruction.IncrementInstruction;
 import jdk.classfile.instruction.InvokeDynamicInstruction;
 import jdk.classfile.instruction.InvokeInstruction;
 import jdk.classfile.instruction.LoadInstruction;
-import jdk.classfile.instruction.LocalVariable;
-import jdk.classfile.instruction.LocalVariableType;
 import jdk.classfile.instruction.LookupSwitchInstruction;
 import jdk.classfile.instruction.MonitorInstruction;
 import jdk.classfile.instruction.NewMultiArrayInstruction;
@@ -80,23 +71,16 @@ import jdk.classfile.TypeKind;
  */
 public abstract sealed class AbstractInstruction
         extends AbstractElement
-        implements CodeElement {
+        implements Instruction {
     final Opcode op;
     final int size;
 
-    @Override
     public Opcode opcode() {
         return op;
     }
 
-    @Override
     public int sizeInBytes() {
         return size;
-    }
-
-    @Override
-    public Kind codeKind() {
-        return op.kind();
     }
 
     public AbstractInstruction(Opcode op, int size) {
@@ -232,7 +216,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public String toString() {
-            return String.format("Branch[OP=%s, kind=%s]", this.opcode(), codeKind());
+            return String.format("Branch[OP=%s]", this.opcode());
         }
 
     }
@@ -1320,220 +1304,5 @@ public abstract sealed class AbstractInstruction
             super(Opcode.NOP);
         }
 
-    }
-
-    public static final class ExceptionCatchImpl
-            extends AbstractInstruction
-            implements ExceptionCatch {
-
-        public final ClassEntry catchTypeEntry;
-        public final Label handler;
-        public final Label tryStart;
-        public final Label tryEnd;
-
-        public ExceptionCatchImpl(Label handler, Label tryStart, Label tryEnd,
-                                  ClassEntry catchTypeEntry) {
-            super(Opcode.EXCEPTION_CATCH, 0);
-            this.catchTypeEntry = catchTypeEntry;
-            this.handler = handler;
-            this.tryStart = tryStart;
-            this.tryEnd = tryEnd;
-        }
-
-        public ExceptionCatchImpl(Label handler, Label tryStart, Label tryEnd,
-                                  Optional<ClassEntry> catchTypeEntry) {
-            super(Opcode.EXCEPTION_CATCH, 0);
-            this.catchTypeEntry = catchTypeEntry.orElse(null);
-            this.handler = handler;
-            this.tryStart = tryStart;
-            this.tryEnd = tryEnd;
-        }
-
-        @Override
-        public Label tryStart() {
-            return tryStart;
-        }
-
-        @Override
-        public Label handler() {
-            return handler;
-        }
-
-        @Override
-        public Label tryEnd() {
-            return tryEnd;
-        }
-
-        @Override
-        public Optional<ClassEntry> catchType() {
-            return Optional.ofNullable(catchTypeEntry);
-        }
-
-        ClassEntry catchTypeEntry() {
-            return catchTypeEntry;
-        }
-
-        @Override
-        public void writeTo(DirectCodeBuilder writer) {
-            writer.addHandler(this);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("ExceptionCatch[catchType=%s]", catchTypeEntry == null ? "<any>" : catchTypeEntry.name().stringValue());
-        }
-    }
-
-    public static final class UnboundCharacterRange
-            extends AbstractInstruction
-            implements CharacterRange {
-
-        public final Label startScope;
-        public final Label endScope;
-        public final int characterRangeStart;
-        public final int characterRangeEnd;
-        public final int flags;
-
-        public UnboundCharacterRange(Label startScope, Label endScope, int characterRangeStart,
-                                     int characterRangeEnd, int flags) {
-            super(Opcode.CHARACTER_RANGE, 0);
-            this.startScope = startScope;
-            this.endScope = endScope;
-            this.characterRangeStart = characterRangeStart;
-            this.characterRangeEnd = characterRangeEnd;
-            this.flags = flags;
-        }
-
-        @Override
-        public Label startScope() {
-            return startScope;
-        }
-
-        @Override
-        public Label endScope() {
-            return endScope;
-        }
-
-        @Override
-        public int characterRangeStart() {
-            return characterRangeStart;
-        }
-
-        @Override
-        public int characterRangeEnd() {
-            return characterRangeEnd;
-        }
-
-        @Override
-        public int flags() {
-            return flags;
-        }
-
-        @Override
-        public void writeTo(DirectCodeBuilder writer) {
-            writer.addCharacterRange(this);
-        }
-
-    }
-
-    private static abstract sealed class AbstractLocalPseudo extends AbstractInstruction {
-        protected final int slot;
-        protected final Utf8Entry name;
-        protected final Utf8Entry descriptor;
-        protected final Label startScope;
-        protected final Label endScope;
-
-        public AbstractLocalPseudo(Opcode op, int slot, Utf8Entry name, Utf8Entry descriptor, Label startScope, Label endScope) {
-            super(op, 0);
-            this.slot = slot;
-            this.name = name;
-            this.descriptor = descriptor;
-            this.startScope = startScope;
-            this.endScope = endScope;
-        }
-
-        public int slot() {
-            return slot;
-        }
-
-        public Utf8Entry name() {
-            return name;
-        }
-
-        public String nameString() {
-            return name.stringValue();
-        }
-
-        public Label startScope() {
-            return startScope;
-        }
-
-        public Label endScope() {
-            return endScope;
-        }
-
-        public void writeTo(BufWriter b) {
-            var lc = ((BufWriterImpl)b).labelContext();
-            int startBci = lc.labelToBci(startScope());
-            int endBci = lc.labelToBci(endScope());
-            int length = endBci - startBci;
-            b.writeU2(startBci);
-            b.writeU2(length);
-            b.writeIndex(name);
-            b.writeIndex(descriptor);
-            b.writeU2(slot());
-        }
-    }
-
-    public static final class UnboundLocalVariable extends AbstractLocalPseudo
-            implements LocalVariable {
-
-        public UnboundLocalVariable(int slot, Utf8Entry name, Utf8Entry descriptor, Label startScope, Label endScope) {
-            super(Opcode.LOCAL_VARIABLE, slot, name, descriptor, startScope, endScope);
-        }
-
-        @Override
-        public Utf8Entry type() {
-            return descriptor;
-        }
-
-        @Override
-        public void writeTo(DirectCodeBuilder writer) {
-            writer.addLocalVariable(this);
-        }
-
-        @Override
-        public String toString() {
-            return "LocalVariable[Slot=" + slot()
-                   + ", name=" + nameString()
-                   + ", descriptor='" + type().stringValue()
-                   + "']";
-        }
-    }
-
-    public static final class UnboundLocalVariableType extends AbstractLocalPseudo
-            implements LocalVariableType {
-
-        public UnboundLocalVariableType(int slot, Utf8Entry name, Utf8Entry signature, Label startScope, Label endScope) {
-            super(Opcode.LOCAL_VARIABLE_TYPE, slot, name, signature, startScope, endScope);
-        }
-
-        @Override
-        public Utf8Entry signature() {
-            return descriptor;
-        }
-
-        @Override
-        public void writeTo(DirectCodeBuilder writer) {
-            writer.addLocalVariableType(this);
-        }
-
-        @Override
-        public String toString() {
-            return "LocalVariableType[Slot=" + slot()
-                   + ", name=" + nameString()
-                   + ", signature='" + signature().stringValue()
-                   + "']";
-        }
     }
 }

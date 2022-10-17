@@ -43,7 +43,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models a method invocation instruction in the {@code code} array of a {@code
  * Code} attribute, other than {@code invokedynamic}.  Corresponding opcodes
- * will have a {@code kind} of {@link CodeElement.Kind#INVOKE}.  Delivered as a
+ * will have a {@code kind} of {@link Opcode.Kind#INVOKE}.  Delivered as a
  * {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  */
 sealed public interface InvokeInstruction extends Instruction
@@ -102,7 +102,7 @@ sealed public interface InvokeInstruction extends Instruction
      * @param method a constant pool entry describing the method
      */
     static InvokeInstruction of(Opcode op, MemberRefEntry method) {
-        Util.checkKind(op, Kind.INVOKE);
+        Util.checkKind(op, Opcode.Kind.INVOKE);
         return new AbstractInstruction.UnboundInvokeInstruction(op, method);
     }
 

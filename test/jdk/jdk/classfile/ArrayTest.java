@@ -61,9 +61,9 @@ public class ArrayTest {
                 int arrayCreateCount = 1;
                 while (it.hasNext()) {
                     CodeElement im = it.next();
-                    if (im.codeKind() == CodeElement.Kind.NEW_REF_ARRAY
-                        || im.codeKind() == CodeElement.Kind.NEW_PRIMITIVE_ARRAY
-                        || im.codeKind() == CodeElement.Kind.NEW_MULTI_ARRAY) {
+                    if (im instanceof NewReferenceArrayInstruction
+                        || im instanceof NewPrimitiveArrayInstruction
+                        || im instanceof NewMultiArrayInstruction) {
                         switch (arrayCreateCount++) {
                             case 1: {
                                 NewMultiArrayInstruction nai = (NewMultiArrayInstruction) im;

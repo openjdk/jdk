@@ -285,9 +285,9 @@ public:
   bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
-  ControlDependency control_dependency() {return _control_dependency; }
-
-  bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
+  ControlDependency control_dependency() const { return _control_dependency; }
+  bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
+  bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

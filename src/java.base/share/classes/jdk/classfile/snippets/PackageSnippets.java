@@ -370,7 +370,7 @@ class PackageSnippets {
                                                         .andThen(CodeRelabeler.of())
                                                         .andThen((innerBuilder, shiftedTargetCode) -> {
                                                             //returns must be replaced with jump to the end of the inlined method
-                                                            if (shiftedTargetCode.codeKind() == CodeElement.Kind.RETURN)
+                                                            if (shiftedTargetCode.opcode() == Opcode.Kind.RETURN)
                                                                 innerBuilder.goto_(inlinedBlockBuilder.breakLabel());
                                                             else
                                                                 innerBuilder.with(shiftedTargetCode);

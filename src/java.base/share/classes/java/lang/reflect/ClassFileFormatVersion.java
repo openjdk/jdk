@@ -160,7 +160,7 @@ public enum ClassFileFormatVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se11/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 11 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/181">
+     * @see <a href="https://openjdk.org/jeps/181">
      * JEP 181: Nest-Based Access Control</a>
      */
     RELEASE_11(55),
@@ -202,7 +202,7 @@ public enum ClassFileFormatVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se15/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 15 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/371">
+     * @see <a href="https://openjdk.org/jeps/371">
      * JEP 371: Hidden Classes</a>
      */
     RELEASE_15(59),
@@ -227,9 +227,9 @@ public enum ClassFileFormatVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se17/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 17 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/306">
+     * @see <a href="https://openjdk.org/jeps/306">
      * JEP 306: Restore Always-Strict Floating-Point Semantics</a>
-     * @see <a href="https://openjdk.java.net/jeps/409">
+     * @see <a href="https://openjdk.org/jeps/409">
      * JEP 409: Sealed Classes</a>
      */
     RELEASE_17(61),

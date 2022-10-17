@@ -283,6 +283,12 @@ void ClassLoaderData::clear_claim(int claim) {
   }
 }
 
+#ifdef ASSERT
+void ClassLoaderData::verify_not_claimed(int claim) {
+  assert((_claim & claim) == 0, "Found claim: %d bits in _claim: %d", claim, _claim);
+}
+#endif
+
 bool ClassLoaderData::try_claim(int claim) {
   for (;;) {
     int old_claim = Atomic::load(&_claim);

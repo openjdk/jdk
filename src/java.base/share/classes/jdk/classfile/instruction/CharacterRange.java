@@ -30,7 +30,7 @@ import jdk.classfile.CodeModel;
 import jdk.classfile.Label;
 import jdk.classfile.PseudoInstruction;
 import jdk.classfile.attribute.CharacterRangeTableAttribute;
-import jdk.classfile.impl.AbstractInstruction;
+import jdk.classfile.impl.AbstractPseudoInstruction;
 import jdk.classfile.impl.BoundCharacterRange;
 
 /**
@@ -40,7 +40,7 @@ import jdk.classfile.impl.BoundCharacterRange;
  * the setting of the {@link Classfile.Option.Key#PROCESS_DEBUG} option.
  */
 sealed public interface CharacterRange extends PseudoInstruction
-        permits AbstractInstruction.UnboundCharacterRange, BoundCharacterRange {
+        permits AbstractPseudoInstruction.UnboundCharacterRange, BoundCharacterRange {
     /**
      * {@return the start of the instruction range}
      */

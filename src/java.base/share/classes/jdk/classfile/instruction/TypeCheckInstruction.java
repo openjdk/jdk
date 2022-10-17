@@ -53,7 +53,7 @@ sealed public interface TypeCheckInstruction extends Instruction
      * @param type the type against which to check or cast
      */
     static TypeCheckInstruction of(Opcode op, ClassEntry type) {
-        Util.checkKind(op, Kind.TYPE_CHECK);
+        Util.checkKind(op, Opcode.Kind.TYPE_CHECK);
         return new AbstractInstruction.UnboundTypeCheckInstruction(op, type);
     }
 

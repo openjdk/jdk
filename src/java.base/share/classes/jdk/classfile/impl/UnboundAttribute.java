@@ -257,21 +257,6 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public List<StackMapFrameInfo> entries() {
             return entries;
         }
-
-        @Override
-        public Kind codeKind() {
-            return Kind.STACK_MAP;
-        }
-
-        @Override
-        public Opcode opcode() {
-            return Opcode.STACK_MAP;
-        }
-
-        @Override
-        public int sizeInBytes() {
-            return 0;
-        }
     }
 
     public static final class UnboundInnerClassesAttribute
@@ -670,21 +655,6 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public List<TypeAnnotation> annotations() {
             return elements;
         }
-
-        @Override
-        public Kind codeKind() {
-            return Kind.TYPE_ANNOTATION;
-        }
-
-        @Override
-        public Opcode opcode() {
-            return Opcode.TYPE_ANNO;
-        }
-
-        @Override
-        public int sizeInBytes() {
-            return 0;
-        }
     }
 
     public static final class UnboundRuntimeInvisibleTypeAnnotationsAttribute
@@ -700,21 +670,6 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         @Override
         public List<TypeAnnotation> annotations() {
             return elements;
-        }
-
-        @Override
-        public Kind codeKind() {
-            return Kind.TYPE_ANNOTATION;
-        }
-
-        @Override
-        public Opcode opcode() {
-            return Opcode.TYPE_ANNO;
-        }
-
-        @Override
-        public int sizeInBytes() {
-            return 0;
         }
     }
 

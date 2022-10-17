@@ -190,7 +190,7 @@ public class Util {
         return List.of(result);
     }
 
-    public static void checkKind(Opcode op, CodeElement.Kind k) {
+    public static void checkKind(Opcode op, Opcode.Kind k) {
         if (op.kind() != k)
             throw new IllegalArgumentException(
                     String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));

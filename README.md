@@ -1,7 +1,7 @@
 # Welcome to the JDK!
 
 For build instructions please see the
-[online documentation](https://openjdk.java.net/groups/build/doc/building.html),
+[online documentation](https://openjdk.org/groups/build/doc/building.html),
 or either of these files:
 
 - [doc/building.html](doc/building.html) (html version)

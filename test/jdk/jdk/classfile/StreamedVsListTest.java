@@ -96,14 +96,13 @@ public class StreamedVsListTest {
                         for (CodeElement element : code) {
                             iim = element;
                             mim = insts.get(n++);
-                            Assert.assertEquals(iim.opcode(), mim.opcode(), "Opcodes don't match");
                             if (iim instanceof Instruction)
                                 testInstruction();
                         }
                     });
                 } catch (Throwable ex) {
                     failed = true;
-                    System.err.printf("%s.%s #%d[%s]: ", cm.thisClass().asInternalName(), meth, n - 1, iim == null ? "<->" : iim.opcode());
+                    System.err.printf("%s.%s #%d[%s]: ", cm.thisClass().asInternalName(), meth, n - 1, iim instanceof Instruction i ? i.opcode() : "<->");
                     System.err.printf("Threw: %s" + "%n", ex);
                     throw ex;
                 }
@@ -111,7 +110,8 @@ public class StreamedVsListTest {
         }
 
         void testInstruction() {
-            switch (iim.codeKind()) {
+            Assert.assertEquals(((Instruction)iim).opcode(), ((Instruction)mim).opcode(), "Opcodes don't match");
+            switch (((Instruction)iim).opcode().kind()) {
                 case LOAD: {
                     LoadInstruction i = (LoadInstruction) iim;
                     LoadInstruction x = (LoadInstruction) mim;

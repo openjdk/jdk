@@ -32,7 +32,7 @@ import jdk.classfile.CodeModel;
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.Label;
 import jdk.classfile.PseudoInstruction;
-import jdk.classfile.impl.AbstractInstruction;
+import jdk.classfile.impl.AbstractPseudoInstruction;
 
 /**
  * A pseudo-instruction modeling an entry in the exception table of a code
@@ -43,7 +43,7 @@ import jdk.classfile.impl.AbstractInstruction;
  * @see PseudoInstruction
  */
 sealed public interface ExceptionCatch extends PseudoInstruction
-        permits AbstractInstruction.ExceptionCatchImpl {
+        permits AbstractPseudoInstruction.ExceptionCatchImpl {
     /**
      * {@return the handler for the exception}
      */
@@ -77,7 +77,7 @@ sealed public interface ExceptionCatch extends PseudoInstruction
     static ExceptionCatch of(Label handler, Label tryStart, Label tryEnd,
                              ClassEntry catchTypeEntry) {
         Objects.requireNonNull(catchTypeEntry);
-        return new AbstractInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, catchTypeEntry);
+        return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, catchTypeEntry);
     }
 
     /**
@@ -90,7 +90,7 @@ sealed public interface ExceptionCatch extends PseudoInstruction
      */
     static ExceptionCatch of(Label handler, Label tryStart, Label tryEnd,
                              Optional<ClassEntry> catchTypeEntry) {
-        return new AbstractInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, catchTypeEntry);
+        return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, catchTypeEntry);
     }
 
     /**
@@ -100,6 +100,6 @@ sealed public interface ExceptionCatch extends PseudoInstruction
      * @param tryEnd the end of the instruction range for the gaurded instructions
      */
     static ExceptionCatch of(Label handler, Label tryStart, Label tryEnd) {
-        return new AbstractInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, (ClassEntry) null);
+        return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, (ClassEntry) null);
     }
 }

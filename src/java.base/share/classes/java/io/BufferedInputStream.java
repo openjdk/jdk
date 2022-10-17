@@ -25,6 +25,8 @@
 
 package java.io;
 
+import java.util.Objects;
+
 import jdk.internal.misc.InternalLock;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
@@ -221,7 +223,7 @@ public class BufferedInputStream extends FilterInputStream {
      */
     private void fill() throws IOException {
         byte[] buffer = getBufIfOpen();
-        if (markpos < 0)
+        if (markpos == -1)
             pos = 0;            /* no mark: throw away the buffer */
         else if (pos >= buffer.length) { /* no room left in buffer */
             if (markpos > 0) {  /* can throw away early part of the buffer */
@@ -304,7 +306,7 @@ public class BufferedInputStream extends FilterInputStream {
                if there is no mark/reset activity, do not bother to copy the
                bytes into the local buffer.  In this way buffered streams will
                cascade harmlessly. */
-            if (len >= getBufIfOpen().length && markpos < 0) {
+            if (len >= getBufIfOpen().length && markpos == -1) {
                 return getInIfOpen().read(b, off, len);
             }
             fill();
@@ -425,7 +427,7 @@ public class BufferedInputStream extends FilterInputStream {
 
         if (avail <= 0) {
             // If no mark position set then don't keep in buffer
-            if (markpos <0)
+            if (markpos == -1)
                 return getInIfOpen().skip(n);
 
             // Fill in buffer to save bytes for reset
@@ -583,4 +585,31 @@ public class BufferedInputStream extends FilterInputStream {
             // Else retry in case a new buf was CASed in fill()
         }
     }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        if (lock != null) {
+            lock.lock();
+            try {
+                return implTransferTo(out);
+            } finally {
+                lock.unlock();
+            }
+        } else {
+            synchronized (this) {
+                return implTransferTo(out);
+            }
+        }
+    }
+
+    private long implTransferTo(OutputStream out) throws IOException {
+        if (getClass() == BufferedInputStream.class
+                && ((count - pos) <= 0) && (markpos == -1)) {
+            return getInIfOpen().transferTo(out);
+        } else {
+            return super.transferTo(out);
+        }
+    }
+
 }

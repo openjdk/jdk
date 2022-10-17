@@ -117,6 +117,7 @@ public class OneToOneTest {
                 var code = mm.code().get();
                 var instructions = code.elementList().stream()
                                        .filter(e -> e instanceof Instruction)
+                                       .map(e -> (Instruction)e)
                                        .toList();
                 Assert.assertEquals(instructions.size(), 17);
 

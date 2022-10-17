@@ -37,7 +37,7 @@ import java.util.List;
 import jdk.classfile.Classfile;
 import jdk.classfile.ClassReader;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
-import jdk.classfile.impl.AbstractInstruction;
+import jdk.classfile.impl.AbstractPseudoInstruction;
 import jdk.classfile.impl.CodeImpl;
 import jdk.classfile.impl.LabelContext;
 import jdk.classfile.impl.SplitConstantPool;
@@ -67,7 +67,7 @@ public class GenerateStackMaps {
                     boolean isStatic,
                     ByteBuffer bytecode,
                     ConstantPoolBuilder constantPool,
-                    List<AbstractInstruction.ExceptionCatchImpl> handlers) {}
+                    List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {}
 
     List<GenData> data;
     Iterator<GenData> it;
@@ -92,7 +92,7 @@ public class GenerateStackMaps {
                                 (m.flags().flagsMask() & Classfile.ACC_STATIC) != 0,
                                 bb.slice(8, bb.getInt(4)),
                                 cp,
-                                com.exceptionHandlers().stream().map(eh -> (AbstractInstruction.ExceptionCatchImpl)eh).toList()));
+                                com.exceptionHandlers().stream().map(eh -> (AbstractPseudoInstruction.ExceptionCatchImpl)eh).toList()));
                     });
                 }
             } catch (IOException e) {

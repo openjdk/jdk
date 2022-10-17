@@ -44,11 +44,6 @@ public final class BoundLocalVariable
     }
 
     @Override
-    public Opcode opcode() {
-        return Opcode.LOCAL_VARIABLE;
-    }
-
-    @Override
     public Utf8Entry type() {
         return secondaryEntry();
     }

@@ -39,6 +39,7 @@ import java.util.List;
 
 import jdk.classfile.*;
 import helpers.ByteArrayClassLoader;
+import jdk.classfile.instruction.ConstantInstruction;
 import jdk.classfile.constantpool.ConstantDynamicEntry;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
 import jdk.classfile.constantpool.LoadableConstantEntry;
@@ -65,8 +66,8 @@ public class BSMTest {
                 cb.transformMethod(mm, (mb, me) -> {
                     if (me instanceof CodeModel xm) {
                         mb.transformCode(xm, (codeB, codeE) -> {
-                            switch (codeE.codeKind()) {
-                                case CONSTANT -> {
+                            switch (codeE) {
+                                case ConstantInstruction ci -> {
                                     ConstantPoolBuilder cpb = codeB.constantPool();
 
                                     List<LoadableConstantEntry> staticArgs = new ArrayList<>(2);

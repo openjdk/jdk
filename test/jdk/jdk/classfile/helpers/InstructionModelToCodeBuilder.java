@@ -30,168 +30,66 @@ import java.lang.constant.MethodTypeDesc;
 
 import jdk.classfile.CodeBuilder;
 import jdk.classfile.CodeElement;
-import jdk.classfile.instruction.ArrayLoadInstruction;
-import jdk.classfile.instruction.ArrayStoreInstruction;
-import jdk.classfile.instruction.BranchInstruction;
-import jdk.classfile.instruction.ConstantInstruction;
-import jdk.classfile.instruction.ConvertInstruction;
-import jdk.classfile.instruction.ExceptionCatch;
-import jdk.classfile.instruction.FieldInstruction;
-import jdk.classfile.instruction.IncrementInstruction;
-import jdk.classfile.instruction.InvokeDynamicInstruction;
-import jdk.classfile.instruction.InvokeInstruction;
-import jdk.classfile.instruction.LabelTarget;
-import jdk.classfile.instruction.LoadInstruction;
-import jdk.classfile.instruction.LookupSwitchInstruction;
-import jdk.classfile.instruction.MonitorInstruction;
-import jdk.classfile.instruction.NewMultiArrayInstruction;
-import jdk.classfile.instruction.NewObjectInstruction;
-import jdk.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.classfile.instruction.OperatorInstruction;
-import jdk.classfile.instruction.ReturnInstruction;
-import jdk.classfile.instruction.StackInstruction;
-import jdk.classfile.instruction.StoreInstruction;
-import jdk.classfile.instruction.TableSwitchInstruction;
-import jdk.classfile.instruction.TypeCheckInstruction;
+import jdk.classfile.instruction.*;
 
 public class InstructionModelToCodeBuilder {
 
     public static void toBuilder(CodeElement model, CodeBuilder cb) {
-        switch (model.codeKind()) {
-            case LOAD: {
-                LoadInstruction im = (LoadInstruction) model;
+        switch (model) {
+            case LoadInstruction im ->
                 cb.loadInstruction(im.typeKind(), im.slot());
-                return;
-            }
-            case STORE: {
-                StoreInstruction im = (StoreInstruction) model;
+            case StoreInstruction im ->
                 cb.storeInstruction(im.typeKind(), im.slot());
-                return;
-            }
-            case INCREMENT: {
-                IncrementInstruction im = (IncrementInstruction) model;
+            case IncrementInstruction im ->
                 cb.incrementInstruction(im.slot(), im.constant());
-                return;
-            }
-            case BRANCH: {
-                BranchInstruction im = (BranchInstruction) model;
+            case BranchInstruction im ->
                 cb.branchInstruction(im.opcode(), im.target());
-                return;
-            }
-            case LOOKUP_SWITCH: {
-                LookupSwitchInstruction im = (LookupSwitchInstruction) model;
+            case LookupSwitchInstruction im ->
                 cb.lookupSwitchInstruction(im.defaultTarget(), im.cases());
-                return;
-            }
-            case TABLE_SWITCH: {
-                TableSwitchInstruction im = (TableSwitchInstruction) model;
+            case TableSwitchInstruction im ->
                 cb.tableSwitchInstruction(im.lowValue(), im.highValue(), im.defaultTarget(), im.cases());
-                return;
-            }
-            case RETURN: {
-                ReturnInstruction im = (ReturnInstruction) model;
+            case ReturnInstruction im ->
                 cb.returnInstruction(im.typeKind());
-                return;
-            }
-            case THROW_EXCEPTION: {
+            case ThrowInstruction im ->
                 cb.throwInstruction();
-                return;
-            }
-            case FIELD_ACCESS: {
-                FieldInstruction im = (FieldInstruction) model;
+            case FieldInstruction im ->
                 cb.fieldInstruction(im.opcode(), im.owner().asSymbol(), im.name().stringValue(), im.typeSymbol());
-                return;
-            }
-            case INVOKE: {
-                InvokeInstruction im = (InvokeInstruction) model;
+            case InvokeInstruction im ->
                 cb.invokeInstruction(im.opcode(), im.owner().asSymbol(), im.name().stringValue(), im.typeSymbol(), im.isInterface());
-                return;
-            }
-            case INVOKE_DYNAMIC: {
-                InvokeDynamicInstruction im = (InvokeDynamicInstruction) model;
+            case InvokeDynamicInstruction im ->
                 cb.invokeDynamicInstruction(DynamicCallSiteDesc.of(im.bootstrapMethod(), im.name().stringValue(), MethodTypeDesc.ofDescriptor(im.type().stringValue()), im.bootstrapArgs().toArray(ConstantDesc[]::new)));
-                return;
-            }
-            case NEW_OBJECT: {
-                NewObjectInstruction im = (NewObjectInstruction) model;
+            case NewObjectInstruction im ->
                 cb.newObjectInstruction(im.className().asSymbol());
-                return;
-            }
-            case NEW_PRIMITIVE_ARRAY:
-                cb.newPrimitiveArrayInstruction(((NewPrimitiveArrayInstruction) model).typeKind());
-                return;
-
-            case NEW_REF_ARRAY:
-                cb.newReferenceArrayInstruction(((NewReferenceArrayInstruction) model).componentType());
-                return;
-
-            case NEW_MULTI_ARRAY: {
-                NewMultiArrayInstruction im = (NewMultiArrayInstruction) model;
+            case NewPrimitiveArrayInstruction im ->
+                cb.newPrimitiveArrayInstruction(im.typeKind());
+            case NewReferenceArrayInstruction im ->
+                cb.newReferenceArrayInstruction(im.componentType());
+            case NewMultiArrayInstruction im ->
                 cb.newMultidimensionalArrayInstruction(im.dimensions(), im.arrayType());
-                return;
-            }
-
-            case TYPE_CHECK: {
-                TypeCheckInstruction im = (TypeCheckInstruction) model;
+            case TypeCheckInstruction im ->
                 cb.typeCheckInstruction(im.opcode(), im.type().asSymbol());
-                return;
-            }
-            case ARRAY_LOAD: {
-                ArrayLoadInstruction im = (ArrayLoadInstruction) model;
+            case ArrayLoadInstruction im ->
                 cb.arrayLoadInstruction(im.typeKind());
-                return;
-            }
-            case ARRAY_STORE: {
-                ArrayStoreInstruction im = (ArrayStoreInstruction) model;
+            case ArrayStoreInstruction im ->
                 cb.arrayStoreInstruction(im.typeKind());
-                return;
-            }
-            case STACK: {
-                StackInstruction im = (StackInstruction) model;
+            case StackInstruction im ->
                 cb.stackInstruction(im.opcode());
-                return;
-            }
-            case CONVERT: {
-                ConvertInstruction im = (ConvertInstruction) model;
+            case ConvertInstruction im ->
                 cb.convertInstruction(im.fromType(), im.toType());
-                return;
-            }
-            case OPERATOR: {
-                OperatorInstruction im = (OperatorInstruction) model;
+            case OperatorInstruction im ->
                 cb.operatorInstruction(im.opcode());
-                return;
-            }
-            case CONSTANT: {
-                ConstantInstruction im = (ConstantInstruction) model;
+            case ConstantInstruction im ->
                 cb.constantInstruction(im.opcode(), im.constantValue());
-                return;
-            }
-            case MONITOR: {
-                MonitorInstruction im = (MonitorInstruction) model;
+            case MonitorInstruction im ->
                 cb.monitorInstruction(im.opcode());
-                return;
-            }
-            case NOP: {
+            case NopInstruction im ->
                 cb.nopInstruction();
-                return;
-            }
-            case LABEL_TARGET: {
-                LabelTarget im = (LabelTarget) model;
+            case LabelTarget im ->
                 cb.labelBinding(im.label());
-                return;
-            }
-            case EXCEPTION_CATCH: {
-                ExceptionCatch im = (ExceptionCatch) model;
+            case ExceptionCatch im ->
                 cb.exceptionCatch(im.tryStart(), im.tryEnd(), im.handler(), im.catchType());
-                return;
-            }
-            case LOCAL_VARIABLE: {
+            default ->
                 throw new IllegalArgumentException("not yet implemented: " + model);
-            }
-            case LINE_NUMBER: {
-                throw new IllegalArgumentException("not yet implemented: " + model);
-            }
         }
     }
 }

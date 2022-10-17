@@ -36,7 +36,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models a local variable load instruction in the {@code code} array of a
  * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
- * {@link CodeElement.Kind#LOAD}.  Delivered as a {@link CodeElement} when
+ * {@link Opcode.Kind#LOAD}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
 sealed public interface LoadInstruction extends Instruction
@@ -64,7 +64,7 @@ sealed public interface LoadInstruction extends Instruction
      * @param slot the local varaible slot to load from
      */
     static LoadInstruction of(Opcode op, int slot) {
-        Util.checkKind(op, Kind.LOAD);
+        Util.checkKind(op, Opcode.Kind.LOAD);
         return new AbstractInstruction.UnboundLoadInstruction(op, slot);
     }
 }

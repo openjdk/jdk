@@ -27,7 +27,6 @@ package jdk.classfile;
 import jdk.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import jdk.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import jdk.classfile.attribute.StackMapTableAttribute;
-import jdk.classfile.impl.AbstractInstruction;
 
 /**
  * A {@link ClassfileElement} that can appear when traversing the elements
@@ -38,35 +37,7 @@ import jdk.classfile.impl.AbstractInstruction;
  * exception metadata, label target metadata, etc.
  */
 public sealed interface CodeElement extends ClassfileElement
-        permits Instruction, PseudoInstruction, AbstractInstruction,
+        permits Instruction, PseudoInstruction,
                 CustomAttribute, RuntimeVisibleTypeAnnotationsAttribute, RuntimeInvisibleTypeAnnotationsAttribute,
                 StackMapTableAttribute {
-    /**
-     * {@return the kind of this instruction}
-     */
-    Kind codeKind();
-
-    /**
-     * {@return the opcode of this instruction}
-     */
-    Opcode opcode();
-
-    /**
-     * {@return the size in bytes of this instruction}
-     */
-    int sizeInBytes();
-
-    /**
-     * Kinds of instructions.
-     */
-    enum Kind {
-        LOAD, STORE, INCREMENT, BRANCH, LOOKUP_SWITCH, TABLE_SWITCH, RETURN, THROW_EXCEPTION,
-        FIELD_ACCESS, INVOKE, INVOKE_DYNAMIC,
-        NEW_OBJECT, NEW_PRIMITIVE_ARRAY, NEW_REF_ARRAY, NEW_MULTI_ARRAY,
-        TYPE_CHECK, ARRAY_LOAD, ARRAY_STORE, STACK, CONVERT, OPERATOR, CONSTANT,
-        MONITOR, NOP, UNSUPPORTED,
-        LABEL_TARGET, EXCEPTION_CATCH, CHARACTER_RANGE, LOCAL_VARIABLE, LOCAL_VARIABLE_TYPE, LINE_NUMBER,
-        PARAMETER_ANNOTATION, STACK_MAP, TYPE_ANNOTATION, END;
-    }
-
 }

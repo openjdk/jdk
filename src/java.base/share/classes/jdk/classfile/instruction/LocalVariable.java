@@ -35,7 +35,7 @@ import jdk.classfile.Label;
 import jdk.classfile.PseudoInstruction;
 import jdk.classfile.attribute.LocalVariableTableAttribute;
 import jdk.classfile.constantpool.Utf8Entry;
-import jdk.classfile.impl.AbstractInstruction;
+import jdk.classfile.impl.AbstractPseudoInstruction;
 import jdk.classfile.impl.BoundLocalVariable;
 
 /**
@@ -47,7 +47,7 @@ import jdk.classfile.impl.BoundLocalVariable;
  * @see PseudoInstruction
  */
 sealed public interface LocalVariable extends PseudoInstruction
-        permits AbstractInstruction.UnboundLocalVariable, BoundLocalVariable {
+        permits AbstractPseudoInstruction.UnboundLocalVariable, BoundLocalVariable {
     /**
      * {@return the local variable slot}
      */

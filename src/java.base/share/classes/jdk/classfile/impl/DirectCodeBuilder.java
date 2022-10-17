@@ -76,7 +76,7 @@ public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeBuilder, CodeModel>
         implements TerminalCodeBuilder, LabelContext {
     private final List<CharacterRange> characterRanges = new ArrayList<>();
-    private final List<AbstractInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
+    private final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
     private final List<LocalVariable> localVariables = new ArrayList<>();
     private final List<LocalVariableType> localVariableTypes = new ArrayList<>();
     private final boolean transformFwdJumps, transformBackJumps;
@@ -190,7 +190,7 @@ public final class DirectCodeBuilder
 
     private void writeExceptionHandlers(BufWriter buf) {
         buf.writeU2(handlers.size());
-        for (AbstractInstruction.ExceptionCatchImpl h : handlers) {
+        for (AbstractPseudoInstruction.ExceptionCatchImpl h : handlers) {
             int startPc = labelToBci(h.tryStart());
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
@@ -680,10 +680,10 @@ public final class DirectCodeBuilder
     }
 
     public void addHandler(ExceptionCatch element) {
-        AbstractInstruction.ExceptionCatchImpl el = (AbstractInstruction.ExceptionCatchImpl) element;
+        AbstractPseudoInstruction.ExceptionCatchImpl el = (AbstractPseudoInstruction.ExceptionCatchImpl) element;
         ClassEntry type = el.catchTypeEntry();
         if (type != null && !constantPool.canWriteDirect(type.constantPool()))
-            el = new AbstractInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), constantPool.maybeClone(type));
+            el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), constantPool.maybeClone(type));
         handlers.add(el);
     }
 

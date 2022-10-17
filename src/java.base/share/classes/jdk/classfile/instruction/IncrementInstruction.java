@@ -32,7 +32,7 @@ import jdk.classfile.impl.AbstractInstruction;
 /**
  * Models a local variable increment instruction in the {@code code} array of a
  * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
- * {@link CodeElement.Kind#INCREMENT}.  Delivered as a {@link CodeElement} when
+ * {@link Opcode.Kind#INCREMENT}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
 sealed public interface IncrementInstruction extends Instruction

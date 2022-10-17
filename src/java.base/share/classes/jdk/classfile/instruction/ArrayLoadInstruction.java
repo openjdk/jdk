@@ -35,7 +35,7 @@ import jdk.classfile.impl.Util;
 /**
  * Models an array load instruction in the {@code code} array of a {@code Code}
  * attribute.  Corresponding opcodes will have a {@code kind} of {@link
- * CodeElement.Kind#ARRAY_LOAD}.  Delivered as a {@link CodeElement} when
+ * Opcode.Kind#ARRAY_LOAD}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
 sealed public interface ArrayLoadInstruction extends Instruction
@@ -52,7 +52,7 @@ sealed public interface ArrayLoadInstruction extends Instruction
      *           which must be of kind {@link Kind#ARRAY_LOAD}
      */
     static ArrayLoadInstruction of(Opcode op) {
-        Util.checkKind(op, Kind.ARRAY_LOAD);
+        Util.checkKind(op, Opcode.Kind.ARRAY_LOAD);
         return new AbstractInstruction.UnboundArrayLoadInstruction(op);
     }
 }
