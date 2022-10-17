@@ -1,16 +1,7 @@
 #ifndef SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
 #define SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
 
-#include "code/compressedStream.hpp"
-#include "interpreter/bytecodes.hpp"
-#include "memory/allocation.hpp"
-#include "oops/array.hpp"
-#include "oops/oopHandle.hpp"
-#include "runtime/handles.hpp"
-#include "utilities/align.hpp"
-#include "utilities/constantTag.hpp"
-#include "utilities/growableArray.hpp"
-
+class Method;
 class ResolvedInvokeDynamicInfo : public MetaspaceObj {
      Method* _method;
      u2 _resolved_references_index;
@@ -37,6 +28,13 @@ public:
     bool is_final() const { return true; }
     bool is_resolved() const { return _method != nullptr; }
     void print_on(outputStream* st) const;
+
+    Method* get_method() const { return _method; }
+    u2 resolved_references_index() const { return _resolved_references_index; }
+    u2 cpool_index() const { return _cpool_index; }
+    u2 num_parameters() const { return _number_of_parameters; }
+    u1 return_type() const { return _return_type; }
+    bool has_appendix() const { return _has_appendix; }
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
