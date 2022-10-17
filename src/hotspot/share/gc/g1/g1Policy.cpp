@@ -179,17 +179,11 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
 }
 
 uint G1Policy::calculate_desired_eden_length_by_mmu() const {
-  // One could argue that any useful eden length to keep any MMU wouldn't be zero, but
-  // in theory this is possible. Other constraints enforce a minimum eden size of one
-  // region anyway.
-  uint desired_min_length = 0;
-  if (use_adaptive_young_list_length()) {
-    double now_sec = os::elapsedTime();
-    double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
-    double alloc_rate_ms = _analytics->predict_alloc_rate_ms();
-    desired_min_length = (uint) ceil(alloc_rate_ms * when_ms);
-  }
-  return desired_min_length;
+  assert(use_adaptive_young_list_length(), "precondition");
+  double now_sec = os::elapsedTime();
+  double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
+  double alloc_rate_ms = _analytics->predict_alloc_rate_ms();
+  return (uint) ceil(alloc_rate_ms * when_ms);
 }
 
 void G1Policy::update_young_length_bounds() {
