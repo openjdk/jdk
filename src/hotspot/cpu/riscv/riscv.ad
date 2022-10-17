@@ -2433,7 +2433,7 @@ encode %{
 
     if (!UseHeavyMonitors) {
       Label slow;
-      __ andi(t0, disp_hdr, markWord::monitor_value);
+      __ andi(t0, tmp, markWord::monitor_value);
       __ bnez(t0, object_has_monitor);
 
       __ fast_unlock(oop, tmp, box, disp_hdr, slow);
@@ -2456,14 +2456,11 @@ encode %{
     {
       Label L;
       __ ld(disp_hdr, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      __ push_reg(tmp);
-      __ li(tmp, (unsigned char)(intptr_t) ANONYMOUS_OWNER);
-      __ bne(disp_hdr, tmp, L);
+      __ mv(t0, (unsigned char)(intptr_t)ANONYMOUS_OWNER);
+      __ bne(disp_hdr, t0, L);
       __ mv(flag, 1); // Indicate failure at cont -- dive into slow-path.
-      __ pop_reg(tmp);
       __ j(cont);
       __ bind(L);
-      __ pop_reg(tmp);
     }
 
     __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));

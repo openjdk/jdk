@@ -929,8 +929,8 @@ private:
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
 
 public:
-  void fast_lock(Register obj, Register hdr, Register t1, Register t2, Register t3, Label& slow);
-  void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void fast_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
 };
 
 #ifdef ASSERT
