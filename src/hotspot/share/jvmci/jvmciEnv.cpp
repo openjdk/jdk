@@ -1547,14 +1547,18 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
     nm->make_not_entrant();
-} else {
-    // We want the nmethod to be deoptimized immediately.
-    Deoptimization::deoptimize_all_marked(nm);
-  }
 
-  // A HotSpotNmethod instance can only reference a single nmethod
-  // during its lifetime so simply clear it here.
-  set_InstalledCode_address(mirror, 0);
+    // Do not clear the address field here as the Java code may still
+    // want to later call this method with deoptimize == true. That requires
+    // the address field to still be pointing at the nmethod.
+   } else {
+    // Deoptimize the nmethod immediately.
+    Deoptimization::deoptimize_all_marked(nm);
+
+    // A HotSpotNmethod instance can only reference a single nmethod
+    // during its lifetime so simply clear it here.
+    set_InstalledCode_address(mirror, 0);
+  }
 }
 
 Klass* JVMCIEnv::asKlass(JVMCIObject obj) {
@@ -1612,6 +1616,7 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
       // nmethod in the code cache.
       set_InstalledCode_address(obj, 0);
       set_InstalledCode_entryPoint(obj, 0);
+      set_HotSpotInstalledCode_codeStart(obj, 0);
     }
     return nm;
   }

@@ -538,7 +538,7 @@ class G1RemSetSamplingTask : public G1ServiceTask {
       g1cs->iterate(&cl);
 
       if (cl.is_complete()) {
-        policy->revise_young_list_target_length_if_necessary(cl.sampled_rs_length());
+        policy->revise_young_list_target_length(cl.sampled_rs_length());
       }
     }
     update_vtime_accum(vtime.duration());
@@ -1116,8 +1116,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
       _merged[tag]++;
     }
 
-    void inc_cards_dirty(size_t increment = 1) {
-      _merged[G1GCPhaseTimes::MergeRSDirtyCards] += increment;
+    void inc_remset_cards(size_t increment = 1) {
+      _merged[G1GCPhaseTimes::MergeRSCards] += increment;
     }
 
     size_t merged(uint i) const { return _merged[i]; }
@@ -1172,9 +1172,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
     void mark_card(G1CardTable::CardValue* value) {
       if (_ct->mark_clean_as_dirty(value)) {
-        _stats.inc_cards_dirty();
         _scan_state->set_chunk_dirty(_ct->index_for_cardvalue(value));
       }
+      _stats.inc_remset_cards();
     }
 
   public:
@@ -1195,7 +1195,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
     // Returns whether the given region actually needs iteration.
     bool start_iterate(uint const tag, uint const region_idx) {
-      assert(tag < G1GCPhaseTimes::MergeRSDirtyCards, "invalid tag %u", tag);
+      assert(tag < G1GCPhaseTimes::MergeRSCards, "invalid tag %u", tag);
       if (remember_if_interesting(region_idx)) {
         _region_base_idx = (size_t)region_idx << HeapRegion::LogCardsPerRegion;
         _stats.inc_card_set_merged(tag);
@@ -1205,8 +1205,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
     void do_card_range(uint const start_card_idx, uint const length) {
-      size_t num_dirtied = _ct->mark_range_dirty(_region_base_idx + start_card_idx, length);
-      _stats.inc_cards_dirty(num_dirtied);
+      _ct->mark_range_dirty(_region_base_idx + start_card_idx, length);
+      _stats.inc_remset_cards(length);
       _scan_state->set_chunk_range_dirty(_region_base_idx + start_card_idx, length);
     }
 
@@ -1308,18 +1308,22 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   // Visitor for the remembered sets of humongous candidate regions to merge their
   // remembered set into the card table.
-  class G1FlushHumongousCandidateRemSets : public HeapRegionClosure {
+  class G1FlushHumongousCandidateRemSets : public HeapRegionIndexClosure {
     G1RemSetScanState* _scan_state;
     G1MergeCardSetStats _merge_stats;
 
   public:
     G1FlushHumongousCandidateRemSets(G1RemSetScanState* scan_state) : _scan_state(scan_state), _merge_stats() { }
 
-    virtual bool do_heap_region(HeapRegion* r) {
+    bool do_heap_region_index(uint region_index) override {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate() ||
-          r->rem_set()->is_empty()) {
+      if (!g1h->region_attr(region_index).is_humongous_candidate()) {
+        return false;
+      }
+
+      HeapRegion* r = g1h->region_at(region_index);
+      if (r->rem_set()->is_empty()) {
         return false;
       }
 
@@ -1343,7 +1347,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // reclaimed.
       r->rem_set()->set_state_complete();
 #ifdef ASSERT
-      G1HeapRegionAttr region_attr = g1h->region_attr(r->hrm_index());
+      G1HeapRegionAttr region_attr = g1h->region_attr(region_index);
       assert(region_attr.remset_is_tracked(), "must be");
 #endif
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");

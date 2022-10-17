@@ -105,11 +105,20 @@ public class ClassUnloadEventTest {
             }
         }
         loader = null;
+
+        // Do a short delay to make sure that the debug agent is done processing all
+        // ClassPrepare events. Otherwise the debug agent might still be holding on to
+        // a reference to a class, which will prevent it from unloading during the GC.
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+        }
+
         // Trigger class unloading
         ClassUnloadCommon.triggerUnloading();
 
-        // Short delay to make sure all ClassUnloadEvents have been sent
-        // before VMDeathEvent is genareated.
+        // Do a short delay to make sure all ClassUnloadEvents have been sent
+        // before VMDeathEvent is generated.
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
