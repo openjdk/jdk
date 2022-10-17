@@ -332,7 +332,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
 #ifndef AMD64
 // Ignore "C4172: returning address of local variable or temporary" on 32bit
 PRAGMA_DIAG_PUSH
-PRAGMA_DISABLE_COMPILER_WARNING(4172)
+PRAGMA_DISABLE_VISCPP_WARNING(4172)
 // Returns an estimate of the current stack pointer. Result must be guaranteed
 // to point into the calling threads stack, and be no lower than the current
 // stack pointer.
