@@ -201,7 +201,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get)
-#if defined(AMD64) || defined(AARCH64)
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   method_entry(java_lang_Thread_currentThread)
 #endif
   AbstractInterpreter::initialize_method_handle_entries();
@@ -433,7 +433,7 @@ address TemplateInterpreterGenerator::generate_method_entry(
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
                                            : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
-#if defined(AMD64) || defined(AARCH64)
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   case Interpreter::java_lang_Thread_currentThread
                                            : entry_point = generate_currentThread(); break;
 #endif
