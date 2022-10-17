@@ -65,8 +65,8 @@ oop JvmtiTagMapEntry::object_no_keepalive() const {
   return _wh.peek();
 }
 
-JvmtiTagMapTable::JvmtiTagMapTable(){
-  _rrht_table = new (ResourceObj::C_HEAP, mtInternal)  ResizableResourceHT(Constants::_table_size);
+JvmtiTagMapTable::JvmtiTagMapTable()
+  :_rrht_table(Constants::_table_size){
 }
 
 void JvmtiTagMapTable::clear() {
@@ -77,9 +77,9 @@ void JvmtiTagMapTable::clear() {
       return true;
     }
   }RemoveAll;
-  _rrht_table->unlink(&RemoveAll);
+  _rrht_table.unlink(&RemoveAll);
 
-  assert(_rrht_table->number_of_entries() == 0, "should have removed all entries");
+  assert(_rrht_table.number_of_entries() == 0, "should have removed all entries");
 }
 
 JvmtiTagMapTable::~JvmtiTagMapTable() {
@@ -88,13 +88,13 @@ JvmtiTagMapTable::~JvmtiTagMapTable() {
 
 jlong JvmtiTagMapTable::find(oop obj) {
   JvmtiTagMapEntry jtme(obj);
-  jlong* found = _rrht_table->get(jtme);
+  jlong* found = _rrht_table.get(jtme);
   return found == NULL ? 0 : *found;
 }
 
 bool JvmtiTagMapTable::add(oop obj, jlong tag) {
   JvmtiTagMapEntry new_entry(obj);
-  bool is_added = _rrht_table->put(new_entry, tag);
+  bool is_added = _rrht_table.put(new_entry, tag);
   if ( is_added ) {
     new_entry.set_released(true);// do not release on dtor, since there is acopied entry inside the table
   }
@@ -103,14 +103,14 @@ bool JvmtiTagMapTable::add(oop obj, jlong tag) {
 
 bool JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapEntry jtme(obj);
-  return _rrht_table->remove(jtme);
+  return _rrht_table.remove(jtme);
 }
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapEntryClosure* closure) {
-  _rrht_table->iterate(closure);
+  _rrht_table.iterate(closure);
 }
 
 void JvmtiTagMapTable::resize_if_needed() {
-  _rrht_table->maybe_grow();
+  _rrht_table.maybe_grow();
 }
 
 void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
@@ -127,7 +127,7 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
       return false;;
     }
   }IsDead(objects);
-  _rrht_table->unlink(&IsDead);
+  _rrht_table.unlink(&IsDead);
 }
 
 

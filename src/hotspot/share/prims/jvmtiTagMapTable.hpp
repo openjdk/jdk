@@ -68,12 +68,12 @@ class JvmtiTagMapTableBase{
 };
   typedef
   ResizeableResourceHashtable <JvmtiTagMapEntry, jlong,
-                               ResourceObj::C_HEAP, mtInternal,
+                               AnyObj::C_HEAP, mtInternal,
                                JvmtiTagMapTableBase::get_hash,
                                JvmtiTagMapTableBase::equals
                                > ResizableResourceHT ;
 
-class JvmtiTagMapTable : public ResourceObj{
+class JvmtiTagMapTable : public CHeapObj<mtInternal> {
   enum Constants {
     _table_size  = 1007
   };
@@ -81,7 +81,7 @@ class JvmtiTagMapTable : public ResourceObj{
 private:
 
   void resize_if_needed();
-  ResizableResourceHT  *_rrht_table;
+  ResizableResourceHT  _rrht_table;
 
 public:
   JvmtiTagMapTable();
@@ -96,7 +96,7 @@ public:
   // iterate over all entries in the hashmap
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
 
-  bool is_empty() const { return _rrht_table->number_of_entries() == 0; }
+  bool is_empty() const { return _rrht_table.number_of_entries() == 0; }
 
   // Cleanup cleared entries and store dead object tags in objects array
   void remove_dead_entries(GrowableArray<jlong>* objects);

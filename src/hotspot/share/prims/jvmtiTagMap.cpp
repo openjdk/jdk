@@ -82,7 +82,7 @@ JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(((JvmtiEnvBase *)env)->tag_map() == NULL, "tag map already exists for environment");
 
-  _hashmap = new (ResourceObj::C_HEAP, mtInternal) JvmtiTagMapTable();
+  _hashmap = new JvmtiTagMapTable();
 
   // finally add us to the environment
   ((JvmtiEnvBase *)env)->release_set_tag_map(this);
@@ -344,10 +344,6 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   //JvmtiTagMapEntry entry ;
   //_hashmap->add_update_remove(&entry, o, tag);
   //see if the object is already tagged
-  JvmtiTagMapTable* hashmap = _hashmap;
-  JvmtiTagMapEntry entry ;
-  _hashmap->add_update_remove(entry, o, tag);
-  // see if the object is already tagged
   JvmtiTagMapTable* hashmap = _hashmap;
   jlong found_tag  = hashmap->find(o);
 
