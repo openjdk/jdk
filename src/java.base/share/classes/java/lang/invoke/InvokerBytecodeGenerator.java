@@ -285,24 +285,6 @@ class InvokerBytecodeGenerator {
         return name;
     }
 
-    private Object classDataValues() {
-        final List<ClassData> cd = classData;
-        return switch(cd.size()) {
-            case 0 -> null;
-            case 1 -> cd.get(0).value;
-            case 2 -> List.of(cd.get(0).value, cd.get(1).value);
-            case 3 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value);
-            case 4 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value, cd.get(3).value);
-            default -> {
-                Object[] data = new Object[classData.size()];
-                for (int i = 0; i < classData.size(); i++) {
-                    data[i] = classData.get(i).value;
-                }
-                yield List.of(data);
-            }
-        };
-    }
-
     private static String debugString(Object arg) {
         if (arg instanceof MethodHandle mh) {
             MemberName member = mh.internalMemberName();
@@ -358,6 +340,29 @@ class InvokerBytecodeGenerator {
     private void methodEpilogue() {
         mv.visitMaxs(0, 0);
         mv.visitEnd();
+    }
+
+    /**
+     * Returns an object to pass this.classData to the <clinit> method of the
+     * generated class. It's usually a copy of the list, but in special cases
+     * where the list's size is 0 or 1, we avoid making the copy.
+     */
+    private Object classDataValues() {
+        final List<ClassData> cd = classData;
+        return switch(cd.size()) {
+            case 0 -> null;             // special case (classData is not used by <clinit>)
+            case 1 -> cd.get(0).value;  // special case (single object)
+            case 2 -> List.of(cd.get(0).value, cd.get(1).value);
+            case 3 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value);
+            case 4 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value, cd.get(3).value);
+            default -> {
+                Object[] data = new Object[classData.size()];
+                for (int i = 0; i < classData.size(); i++) {
+                    data[i] = classData.get(i).value;
+                }
+                yield List.of(data);
+            }
+        };
     }
 
     /*
