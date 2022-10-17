@@ -32,6 +32,9 @@
 #include "WinErrorHandling.h"
 
 
+// Code in this file requires linking with msi.lib
+
+
 namespace msi {
 
 namespace {
