@@ -31,6 +31,9 @@
 #include "Toolbox.h"
 
 
+// Code in this file requires linking with msi.lib
+
+
 namespace msi {
 
 tstring CAImpl::getProperty(const tstring& name) const {
