@@ -7,5 +7,5 @@ or either of these files:
 - [doc/building.html](doc/building.html) (html version)
 - [doc/building.md](doc/building.md) (markdown version)
 
-See <https://openjdk.java.net/> for more information about
+See <https://openjdk.org/> for more information about
 the OpenJDK Community and the JDK.
