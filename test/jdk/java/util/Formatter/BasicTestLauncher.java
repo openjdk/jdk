@@ -23,9 +23,11 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import java.io.IOException;
+import org.junit.Test;
 
 /* @test
- * @summary Unit test for formatter
+ * @summary Unit tests for formatter
  * @library /test/lib
  * @compile Basic.java
  * @bug 4906370 4962433 4973103 4989961 5005818 5031150 4970931 4989491 5002937
@@ -33,44 +35,68 @@ import jdk.test.lib.process.ProcessTools;
  *      6344623 6369500 6534606 6282094 6286592 6476425 5063507 6469160 6476168
  *      8059175 8204229
  *
- * @run main/othervm BasicTestLauncher
+ * @run junit BasicTestLauncher
  */
 public class BasicTestLauncher {
     // US/Pacific time zone
     private static final String TZ_UP = "US/Pacific";
     // Asia/Novosibirsk time zone
     private static final String TZ_AN = "Asia/Novosibirsk";
+    // Locale flag for testJVM
+    private static final String LOCALE_PROV = "-Djava.locale.providers=CLDR";
+    // Test class
+    private static final String SOURCE_CLASS = "Basic";
 
 
-    public static void main(String[] args){
-        runFormatterTests(TZ_UP);
-        runFormatterTests(TZ_AN);
+    @Test
+    public void testUsPac() throws IOException{
+        testTimeZone(TZ_UP);
     }
 
-    /**
-     * Test to validate whether the desired time zone
-     * passes the Formatter Basic unit tests
-     * @param timeZone the time zone to be set in the sub process environment
-     */
-    private static void runFormatterTests(String timeZone){
-        try {
-            System.out.printf("$$$ Testing against %s!%n", timeZone);
+    @Test
+    public void testAsiaNov() throws IOException{
+        testTimeZone(TZ_AN);
+    }
 
+
+    /**
+     * Executes Formatter Basic tests
+     * @param timeZone the time zone to run tests against
+     */
+    private static void testTimeZone(String timeZone) throws IOException{
+        System.out.printf("$$$ Testing against %s!%n", timeZone);
+        OutputAnalyzer output = RunTest(timeZone);
+        CheckTest(output);
+        System.out.printf("$$$ %s passed as expected!%n", timeZone);
+    }
+
+
+    /**
+     * Creates and runs the testJVM process using Basic class
+     * @param timeZone the time zone to be set in the testJVM environment
+     */
+    private static OutputAnalyzer RunTest(String timeZone) throws IOException{
             // Build and run Basic class with correct configuration
-            ProcessBuilder pb = ProcessTools.createTestJvm("-Djava.locale.providers=CLDR", "Basic");
+            ProcessBuilder pb = ProcessTools.createTestJvm(LOCALE_PROV, SOURCE_CLASS);
             pb.environment().put("TZ", timeZone);
             Process process = pb.start();
-
-            // Ensure process ran successfully and passed all tests
             OutputAnalyzer output = new OutputAnalyzer(process);
-            output.shouldNotContain("failure(s)")
-                    .shouldHaveExitValue(0)
-                    .reportDiagnosticSummary();
+            return output;
+    }
 
-            System.out.printf("$$$ %s passed as expected!%n", timeZone);
-        }catch (Exception err) {
-            throw new RuntimeException(String.format("$$$ Error(s) found within %s subprocess: " +
-                    "%s%n", timeZone, err.getMessage()));
+
+    /**
+     * Validates if the testJVM process passed all tests
+     * @param output is an Output Analyzer for the testJVM
+     * @throws RuntimeException for all testJVM failures
+     */
+    private static void CheckTest(OutputAnalyzer output){
+        try {
+            output.shouldHaveExitValue(0)
+                    .reportDiagnosticSummary();
+        }catch(RuntimeException err){
+            throw new RuntimeException(String.format("$$$ %s: Test(s) failed or TestJVM did not build correctly." +
+                    " Check stderr output from diagnostics summary above%n",  err.getMessage()));
         }
     }
 }

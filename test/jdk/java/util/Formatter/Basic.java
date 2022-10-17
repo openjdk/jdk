@@ -21,7 +21,6 @@
  * questions.
  */
 
-import static java.lang.System.out;
 
 public class Basic {
 
@@ -91,6 +90,6 @@ public class Basic {
             throw new RuntimeException((fail + pass) + " tests: "
                                        + fail + " failure(s), first", first);
         else
-            out.println("all " + (fail + pass) + " tests passed");
+            System.out.println("all " + (fail + pass) + " tests passed");
     }
 }
