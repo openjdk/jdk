@@ -120,9 +120,9 @@ build-linux-amd64:
         zip                                                                    \
         zlib1g-dev
     - |
-      mkdir -p /usr/lib/jvm/zulu-18
-      curl -L https://cdn.azul.com/zulu/bin/zulu18.32.13-ca-jdk18.0.2.1-linux_x64.tar.gz \
-        | tar -xzf - -C /usr/lib/jvm/zulu-18 --strip-components 1
+      mkdir -p /usr/lib/jvm/zulu-20
+      curl -L https://cdn.azul.com/zulu/bin/zulu20.0.45-ea-jdk20.0.0-ea.17-linux_x64.tar.gz \
+        | tar -xzf - -C /usr/lib/jvm/zulu-20 --strip-components 1
     - |
       bash configure                                                           \
         --openjdk-target=x86_64-linux-gnu                                      \
@@ -130,7 +130,7 @@ build-linux-amd64:
         --with-vendor-name="Rivos Inc"                                         \
         --with-version-pre="${JDK_VERSION_PRE}"                                \
         --with-version-opt="${JDK_VERSION_OPT}"                                \
-        --with-boot-jdk=/usr/lib/jvm/zulu-18                                   \
+        --with-boot-jdk=/usr/lib/jvm/zulu-20                                   \
         --disable-precompiled-headers                                          \
         --with-zlib=system
     - make jdk-image test-image LOG_LEVEL=info
@@ -172,9 +172,9 @@ build-linux-rv64:
         zip                                                                    \
         zlib1g-dev
     - |
-      mkdir -p /usr/lib/jvm/zulu-18
-      curl -L https://cdn.azul.com/zulu/bin/zulu18.32.13-ca-jdk18.0.2.1-linux_x64.tar.gz \
-        | tar -xzf - -C /usr/lib/jvm/zulu-18 --strip-components 1
+      mkdir -p /usr/lib/jvm/zulu-20
+      curl -L https://cdn.azul.com/zulu/bin/zulu20.0.45-ea-jdk20.0.0-ea.17-linux_x64.tar.gz \
+        | tar -xzf - -C /usr/lib/jvm/zulu-20 --strip-components 1
     - |
       bash configure                                                           \
         --openjdk-target=riscv64-linux-gnu                                     \
@@ -183,7 +183,7 @@ build-linux-rv64:
         --with-version-pre="${JDK_VERSION_PRE}"                                \
         --with-version-opt="${JDK_VERSION_OPT}"                                \
         --with-sysroot=$(pwd)/sysroot-ubuntu-jammy-rv64                        \
-        --with-boot-jdk=/usr/lib/jvm/zulu-18                                   \
+        --with-boot-jdk=/usr/lib/jvm/zulu-20                                   \
         --with-build-jdk=$(pwd)/build/linux-amd64/images/jdk                   \
         --disable-precompiled-headers                                          \
         --with-zlib=system
