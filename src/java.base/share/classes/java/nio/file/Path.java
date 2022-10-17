@@ -250,7 +250,7 @@ public interface Path
     Path getFileName();
 
     /**
-     * Returns the file name extension of this path as a {@code String}.
+     * Returns the file extension of this path's file name as a {@code String}.
      * The extension is derived from this {@code Path} by obtaining the
      * {@linkplain #getFileName file name element}, deriving its {@linkplain
      * #toString string representation}, and then extracting a substring

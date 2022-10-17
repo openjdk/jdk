@@ -22,7 +22,6 @@
  */
 
 import java.nio.file.Path;
-import java.util.Arrays;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
