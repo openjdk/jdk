@@ -44,29 +44,28 @@
 
 #endif // clang/gcc version check
 
-#define PRAGMA_DISABLE_COMPILER_WARNING(option) \
+#define PRAGMA_DISABLE_GCC_WARNING(option) \
   PRAGMA(GCC diagnostic ignored option)
 
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED                     \
-  PRAGMA_DISABLE_COMPILER_WARNING("-Wformat-nonliteral")     \
-  PRAGMA_DISABLE_COMPILER_WARNING("-Wformat-security")
+#define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
+  PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
+  PRAGMA_DISABLE_GCC_WARNING("-Wformat-security")
 
-#define PRAGMA_FORMAT_IGNORED PRAGMA_DISABLE_COMPILER_WARNING("-Wformat")
+#define PRAGMA_FORMAT_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wformat")
 
 // Disable -Wstringop-truncation which is introduced in GCC 8.
 // https://gcc.gnu.org/gcc-8/changes.html
 #if !defined(__clang_major__) && (__GNUC__ >= 8)
-#define PRAGMA_STRINGOP_TRUNCATION_IGNORED PRAGMA_DISABLE_COMPILER_WARNING("-Wstringop-truncation")
+#define PRAGMA_STRINGOP_TRUNCATION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-truncation")
 #endif
 
 // Disable -Wstringop-overflow which is introduced in GCC 7.
 // https://gcc.gnu.org/gcc-7/changes.html
 #if !defined(__clang_major__) && (__GNUC__ >= 7)
-#define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_COMPILER_WARNING("-Wstringop-overflow")
+#define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
 #endif
 
-#define PRAGMA_NONNULL_IGNORED \
-  PRAGMA_DISABLE_COMPILER_WARNING("-Wnonnull")
+#define PRAGMA_NONNULL_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
 #if (__GNUC__ >= 10)
 // TODO: Re-enable warning attribute for Clang once
@@ -90,7 +89,7 @@
 // The name serves only to document the intended function.
 #define ALLOW_C_FUNCTION(name, ...)                          \
   PRAGMA_DIAG_PUSH                                           \
-  PRAGMA_DISABLE_COMPILER_WARNING("-Wattribute-warning")     \
+  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")          \
   __VA_ARGS__                                                \
   PRAGMA_DIAG_POP
 
