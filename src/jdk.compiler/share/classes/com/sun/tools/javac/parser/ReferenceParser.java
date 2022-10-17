@@ -111,12 +111,9 @@ public class ReferenceParser {
 
         try {
             int slash = sig.indexOf("/");
-            int hash = sig.indexOf("#");
-            if (hash > -1 && slash > hash) {
-                // A slash following a hash is part of a doc-file path, not a module separator
-                slash = -1;
-            }
             int afterSlash = slash + 1;
+            int hash = sig.indexOf("#", afterSlash);
+            int afterHash = hash + 1;
             int lparen = sig.indexOf("(", Math.max(slash, hash) + 1);
             int afterLparen = lparen + 1;
 
@@ -139,7 +136,6 @@ public class ReferenceParser {
                 }
             } else {
                 qualExpr = (hash == afterSlash) ? null : parseType(sig, afterSlash, hash, dh);
-                int afterHash = hash + 1;
                 if (sig.indexOf("#", afterHash) == afterHash) {
                     // A hash symbol followed by another hash indicates a literal URL fragment.
                     member = null;
