@@ -193,7 +193,7 @@ final class StringLatin1 {
     public static int hashCode(byte[] value) {
         int len = value.length;
         int result, index;
-        if (len < 8) {
+        if (len < 16) {
             index = 0;
             result = 0;
         } else {
