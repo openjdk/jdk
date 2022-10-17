@@ -207,8 +207,9 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
-  relocate(post_call_nop_Relocation::spec());
-  nop();
+  relocate(post_call_nop_Relocation::spec(), [&] {
+    nop();
+  });
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
