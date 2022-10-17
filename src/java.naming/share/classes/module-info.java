@@ -96,7 +96,8 @@
  *          be allowed to instantiate objects from object references returned by naming/directory systems.
  *          The factory class named by the reference instance will be matched against this filter.
  *          The filter property supports pattern-based filter syntax with the same format as
- *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}.
+ *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}. Limit patterns
+ *          specified in the filter property are unused.
  *          This property can also be specified as a {@linkplain java.security.Security security property}.
  *          This property is also supported by the <a href="{@docRoot}/jdk.naming.rmi/module-summary.html">default JNDI
  *          RMI Provider</a>.
@@ -111,7 +112,8 @@
  *          matched against this specific filter and then against the global filter. The factory class is rejected
  *          if any of these two filters reject it, or if none of them allow it.
  *          The filter property supports pattern-based filter syntax with the same format as
- *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}.
+ *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}. Limit patterns
+ *          specified in the filter property are unused.
  *          <br>The default value allows any object factory class provided by the JDK LDAP provider
  *          implementation.
  *         <br>This system property will be used to filter LDAP specific object factories only if

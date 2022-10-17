@@ -1386,8 +1386,8 @@ jdk.tls.alpnCharset=ISO_8859_1
 # are unused.
 #
 # Each class name pattern is matched against the factory class name to allow or disallow its
-# instantiation. The access to a factory class is allowed unless the filter returns
-# REJECTED.
+# instantiation. The access to a factory class is allowed if the filter returns
+# ALLOWED.
 #
 # Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
