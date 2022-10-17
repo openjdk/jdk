@@ -28,6 +28,7 @@ public:
     bool is_final() const { return true; }
     bool is_resolved() const { return _method != nullptr; }
     void print_on(outputStream* st) const;
+    void print() const;
 
     Method* get_method() const { return _method; }
     u2 resolved_references_index() const { return _resolved_references_index; }
