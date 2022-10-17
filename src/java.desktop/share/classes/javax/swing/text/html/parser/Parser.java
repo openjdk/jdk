@@ -703,6 +703,12 @@ class Parser implements DTDConstants {
                 }
                 if (!s.terminate() || (strict && !s.elem.omitEnd())) {
                     break;
+                } else if (s.terminate()) {
+                    // Since the current tag is not valid in current context
+                    // as otherwise s.advance(elem) would have returned true
+                    // so check if the stack is to be terminated
+                    // in which case return false
+                    return false;
                 }
             }
         }
