@@ -47,7 +47,7 @@ public class InputEdge {
         };
 
     public static final Comparator<InputEdge> INGOING_COMPARATOR = (o1, o2) -> {
-            if(o1.getToIndex() == o2.getToIndex()) {
+            if (o1.getToIndex() == o2.getToIndex()) {
                 return o1.getFrom() - o2.getFrom();
             }
             return o1.getToIndex() - o2.getToIndex();
