@@ -2713,7 +2713,7 @@ public:
 #undef INSN
 
 // Cache Management Operations
-#define INSN(NAME, funct)                                                         \
+#define INSN(NAME, funct)                                                                    \
   void NAME(Register Rs1) {                                                                  \
     unsigned insn = 0;                                                                       \
     patch((address)&insn, 6,  0, 0b0001111);                                                 \
@@ -2730,7 +2730,7 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, funct)                                                         \
+#define INSN(NAME, funct)                                                                    \
   void NAME(Register Rs1, int32_t offset) {                                                  \
     guarantee((offset & 0x1f) == 0, "offset lowest 5 bits must be zero");                    \
     int32_t upperOffset = offset >> 5;                                                       \
