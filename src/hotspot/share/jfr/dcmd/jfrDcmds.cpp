@@ -69,7 +69,7 @@ static bool is_disabled(outputStream* output) {
 static bool invalid_state(outputStream* out, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   if (is_disabled(out)) {
-    return false;
+    return true;
   }
   if (!JfrJavaSupport::is_jdk_jfr_module_available()) {
     JfrJavaSupport::load_jdk_jfr_module(THREAD);
