@@ -101,9 +101,9 @@ public class TreeWriter extends AbstractTreeWriter {
         var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         var div = HtmlTree.DIV(HtmlStyle.header, heading);
-        addPackageTreeLinks(div);
         Content mainContent = new ContentBuilder();
         mainContent.add(div);
+        addPackageTreeLinks(mainContent);
         addTree(classTree.classes(), "doclet.Class_Hierarchy", mainContent);
         addTree(classTree.interfaces(), "doclet.Interface_Hierarchy", mainContent);
         addTree(classTree.annotationInterfaces(), "doclet.Annotation_Type_Hierarchy", mainContent);
@@ -129,7 +129,7 @@ public class TreeWriter extends AbstractTreeWriter {
             var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                     contents.packageHierarchies);
             content.add(span);
-            var ul = HtmlTree.UL(HtmlStyle.horizontal);
+            var ul = HtmlTree.UL(HtmlStyle.horizontal).addStyle(HtmlStyle.contentsList);
             int i = 0;
             for (PackageElement pkg : packages) {
                 // If the package name length is 0 or if -nodeprecated option
