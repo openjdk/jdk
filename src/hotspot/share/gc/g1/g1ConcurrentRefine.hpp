@@ -143,8 +143,10 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
 
   uint64_t adjust_threads_period_ms() const;
   bool is_in_last_adjustment_period() const;
-  class RemSetSamplingClosure;
+
+  class RemSetSamplingClosure;  // Helper class for adjusting young length.
   void adjust_young_list_target_length();
+
   void adjust_threads_wanted(size_t available_bytes);
 
   NONCOPYABLE(G1ConcurrentRefine);

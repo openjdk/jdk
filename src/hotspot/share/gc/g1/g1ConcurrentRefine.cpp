@@ -306,8 +306,8 @@ public:
 // The assumption is that a significant part of the GC is spent on scanning
 // the remembered sets (and many other components), so this thread constantly
 // reevaluates the prediction for the remembered set scanning costs, and potentially
-// G1Policy resizes the young gen. This may do a premature GC or even
-// increase the young gen size to keep pause time length goal.
+// resizes the young gen. This may do a premature GC or even increase the young
+// gen size to keep pause time length goal.
 void G1ConcurrentRefine::adjust_young_list_target_length() {
   if (_policy->use_adaptive_young_list_length()) {
     G1CollectionSet* cset = G1CollectedHeap::heap()->collection_set();
