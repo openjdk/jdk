@@ -24,18 +24,19 @@
 /**
  * @test id=default
  * @bug 8284161
- * @summary Basic tests of virtual threads doing blocking I/O with NIO channels
+ * @summary Test virtual threads doing blocking I/O on NIO channels
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 BlockingChannelOps
+ * @run testng/othervm BlockingChannelOps
  */
 
 /**
- * @test id=indirect-register
- * @summary Basic tests of virtual threads doing blocking I/O with NIO channels
+ * @test id=direct-register
+ * @summary Test virtual threads doing blocking I/O on NIO channels and with
+ *    the I/O poller configured to use direct registration
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 -Djdk.useDirectRegister BlockingChannelOps
+ * @run testng/othervm -Djdk.useDirectRegister BlockingChannelOps
  */
 
 /**
@@ -43,7 +44,7 @@
  * @requires vm.continuations
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
+ * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
  */
 
 import java.io.Closeable;
@@ -57,6 +58,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
@@ -64,12 +66,12 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.thread.VThreadRunner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class BlockingChannelOps {
-    private static final long DELAY = 4000;
 
     /**
      * SocketChannel read/write, no blocking.
@@ -81,12 +83,12 @@ public class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // write should not block
+                // write to sc1
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
                 int n = sc1.write(bb);
                 assertTrue(n > 0);
 
-                // read should not block
+                // read from sc2 should not block
                 bb = ByteBuffer.allocate(10);
                 n = sc2.read(bb);
                 assertTrue(n > 0);
@@ -105,15 +107,15 @@ public class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // schedule write
-                ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                ScheduledWriter.schedule(sc1, bb, DELAY);
+                // delayed write to sc1
+                ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
+                runAfterParkedAsync(() -> sc1.write(bb1));
 
-                // read should block
-                bb = ByteBuffer.allocate(10);
-                int n = sc2.read(bb);
+                // read from sc2 should block
+                ByteBuffer bb2 = ByteBuffer.allocate(10);
+                int n = sc2.read(bb2);
                 assertTrue(n > 0);
-                assertTrue(bb.get(0) == 'X');
+                assertTrue(bb2.get(0) == 'X');
             }
         });
     }
@@ -128,16 +130,20 @@ public class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // schedule thread to read to EOF
-                ScheduledReader.schedule(sc2, true, DELAY);
+                // delayed read from sc2 to EOF
+                Thread reader = runAfterParkedAsync(() -> readToEOF(sc2));
 
-                // write should block
+                // write to sc1 should block
                 ByteBuffer bb = ByteBuffer.allocate(100*1024);
                 for (int i=0; i<1000; i++) {
                     int n = sc1.write(bb);
                     assertTrue(n > 0);
                     bb.clear();
                 }
+                sc1.close();
+
+                // wait for reader to finish
+                reader.join();
             }
         });
     }
@@ -150,10 +156,10 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
-                ScheduledCloser.schedule(sc, DELAY);
+                runAfterParkedAsync(sc::close);
                 try {
                     int n = sc.read(ByteBuffer.allocate(100));
-                    throw new RuntimeException("read returned " + n);
+                    fail("read returned " + n);
                 } catch (AsynchronousCloseException expected) { }
             }
         });
@@ -167,10 +173,14 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
                 try {
                     int n = sc.read(ByteBuffer.allocate(100));
-                    throw new RuntimeException("read returned " + n);
+                    fail("read returned " + n);
                 } catch (ClosedByInterruptException expected) {
                     assertTrue(Thread.interrupted());
                 }
@@ -186,7 +196,7 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
-                ScheduledCloser.schedule(sc, DELAY);
+                runAfterParkedAsync(sc::close);
                 try {
                     ByteBuffer bb = ByteBuffer.allocate(100*1024);
                     for (;;) {
@@ -194,7 +204,12 @@ public class BlockingChannelOps {
                         assertTrue(n > 0);
                         bb.clear();
                     }
-                } catch (AsynchronousCloseException expected) { }
+                } catch (AsynchronousCloseException e) {
+                    // expected
+                } catch (ClosedChannelException e) {
+                    // on macOS the write loop may block more than once
+                    if (!Platform.isOSX()) throw e;
+                }
             }
         });
     }
@@ -207,7 +222,11 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 SocketChannel sc = connection.channel1();
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
                 try {
                     ByteBuffer bb = ByteBuffer.allocate(100*1024);
                     for (;;) {
@@ -215,8 +234,11 @@ public class BlockingChannelOps {
                         assertTrue(n > 0);
                         bb.clear();
                     }
-                } catch (ClosedByInterruptException expected) {
+                } catch (ClosedByInterruptException e) {
                     assertTrue(Thread.interrupted());
+                } catch (ClosedChannelException e) {
+                    // on macOS the write loop may block more than once
+                    if (!Platform.isOSX()) throw e;
                 }
             }
         });
@@ -244,15 +266,14 @@ public class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // schedule write
+                // delayed write to sc1
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                ScheduledWriter.schedule(sc1, bb, DELAY);
+                runAfterParkedAsync(() -> sc1.write(bb));
 
-                // read should block
+                // read from sc2 should block
+                byte[] array = new byte[100];
                 if (timeout > 0)
                     sc2.socket().setSoTimeout(timeout);
-
-                byte[] array = new byte[100];
                 int n = sc2.socket().getInputStream().read(array);
                 assertTrue(n > 0);
                 assertTrue(array[0] == 'X');
@@ -286,8 +307,11 @@ public class BlockingChannelOps {
             try (var ssc = ServerSocketChannel.open()) {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc1 = SocketChannel.open();
-                ScheduledConnector.schedule(sc1, ssc.getLocalAddress(), DELAY);
-                // accept will block
+
+                // delayed connect
+                runAfterParkedAsync(() -> sc1.connect(ssc.getLocalAddress()));
+
+                // accept should block
                 var sc2 = ssc.accept();
                 sc1.close();
                 sc2.close();
@@ -304,11 +328,11 @@ public class BlockingChannelOps {
             try (var ssc = ServerSocketChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 ssc.bind(new InetSocketAddress(lh, 0));
-                ScheduledCloser.schedule(ssc, DELAY);
+                runAfterParkedAsync(ssc::close);
                 try {
                     SocketChannel sc = ssc.accept();
                     sc.close();
-                    throw new RuntimeException("connection accepted???");
+                    fail("connection accepted???");
                 } catch (AsynchronousCloseException expected) { }
             }
         });
@@ -323,11 +347,15 @@ public class BlockingChannelOps {
             try (var ssc = ServerSocketChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 ssc.bind(new InetSocketAddress(lh, 0));
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
                 try {
                     SocketChannel sc = ssc.accept();
                     sc.close();
-                    throw new RuntimeException("connection accepted???");
+                    fail("connection accepted???");
                 } catch (ClosedByInterruptException expected) {
                     assertTrue(Thread.interrupted());
                 }
@@ -355,15 +383,16 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             try (var ssc = ServerSocketChannel.open()) {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-                var sc1 = SocketChannel.open();
-                ScheduledConnector.schedule(sc1, ssc.getLocalAddress(), DELAY);
+                var sc = SocketChannel.open();
 
+                // delayed connect
+                runAfterParkedAsync(() -> sc.connect(ssc.getLocalAddress()));
+
+                // accept should block
                 if (timeout > 0)
                     ssc.socket().setSoTimeout(timeout);
-
-                // accept will block
                 Socket s = ssc.socket().accept();
-                sc1.close();
+                sc.close();
                 s.close();
             }
         });
@@ -406,14 +435,14 @@ public class BlockingChannelOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc2.bind(new InetSocketAddress(lh, 0));
 
-                // schedule send
-                ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                ScheduledSender.schedule(dc1, bb, dc2.getLocalAddress(), DELAY);
+                // delayed send from sc1
+                ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
+                runAfterParkedAsync(() -> dc1.send(bb1, dc2.getLocalAddress()));
 
-                // read should block
-                bb = ByteBuffer.allocate(10);
-                dc2.receive(bb);
-                assertTrue(bb.get(0) == 'X');
+                // read from dc2 should block
+                ByteBuffer bb2 = ByteBuffer.allocate(10);
+                dc2.receive(bb2);
+                assertTrue(bb2.get(0) == 'X');
             }
         });
     }
@@ -427,10 +456,10 @@ public class BlockingChannelOps {
             try (DatagramChannel dc = DatagramChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc.bind(new InetSocketAddress(lh, 0));
-                ScheduledCloser.schedule(dc, DELAY);
+                runAfterParkedAsync(dc::close);
                 try {
                     dc.receive(ByteBuffer.allocate(100));
-                    throw new RuntimeException("receive returned");
+                    fail("receive returned");
                 } catch (AsynchronousCloseException expected) { }
             }
         });
@@ -445,10 +474,14 @@ public class BlockingChannelOps {
             try (DatagramChannel dc = DatagramChannel.open()) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc.bind(new InetSocketAddress(lh, 0));
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
                 try {
                     dc.receive(ByteBuffer.allocate(100));
-                    throw new RuntimeException("receive returned");
+                    fail("receive returned");
                 } catch (ClosedByInterruptException expected) {
                     assertTrue(Thread.interrupted());
                 }
@@ -480,9 +513,9 @@ public class BlockingChannelOps {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 dc2.bind(new InetSocketAddress(lh, 0));
 
-                // schedule send
+                // delayed send from dc2
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                ScheduledSender.schedule(dc1, bb, dc2.getLocalAddress(), DELAY);
+                runAfterParkedAsync(() -> dc1.send(bb, dc2.getLocalAddress()));
 
                 // receive should block
                 byte[] array = new byte[100];
@@ -523,8 +556,9 @@ public class BlockingChannelOps {
                 if (timeout > 0)
                     dc.socket().setSoTimeout(timeout);
 
-                // schedule channel/socket to be asynchronously closed
-                ScheduledCloser.schedule(dc, DELAY);
+                // delayed close of channel/socket
+                runAfterParkedAsync(dc::close);
+
                 assertThrows(SocketException.class, () -> dc.socket().receive(p));
             }
         });
@@ -558,8 +592,10 @@ public class BlockingChannelOps {
                 if (timeout > 0)
                     dc.socket().setSoTimeout(timeout);
 
-                // receive should block
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
                 try {
                     dc.socket().receive(p);
                     fail();
@@ -604,15 +640,15 @@ public class BlockingChannelOps {
             try (Pipe.SinkChannel sink = p.sink();
                  Pipe.SourceChannel source = p.source()) {
 
-                // schedule write
-                ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                ScheduledWriter.schedule(sink, bb, DELAY);
+                // delayed write from sink
+                ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
+                runAfterParkedAsync(() -> sink.write(bb1));
 
                 // read should block
-                bb = ByteBuffer.allocate(10);
-                int n = source.read(bb);
+                ByteBuffer bb2 = ByteBuffer.allocate(10);
+                int n = source.read(bb2);
                 assertTrue(n > 0);
-                assertTrue(bb.get(0) == 'X');
+                assertTrue(bb2.get(0) == 'X');
             }
         });
     }
@@ -627,16 +663,20 @@ public class BlockingChannelOps {
             try (Pipe.SinkChannel sink = p.sink();
                  Pipe.SourceChannel source = p.source()) {
 
-                // schedule thread to read to EOF
-                ScheduledReader.schedule(source, true, DELAY);
+                // delayed read from source to EOF
+                Thread reader = runAfterParkedAsync(() -> readToEOF(source));
 
-                // write should block
+                // write to sink should block
                 ByteBuffer bb = ByteBuffer.allocate(100*1024);
                 for (int i=0; i<1000; i++) {
                     int n = sink.write(bb);
                     assertTrue(n > 0);
                     bb.clear();
                 }
+                sink.close();
+
+                // wait for reader to finish
+                reader.join();
             }
         });
     }
@@ -649,10 +689,10 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SourceChannel source = p.source()) {
-                ScheduledCloser.schedule(source, DELAY);
+                runAfterParkedAsync(source::close);
                 try {
                     int n = source.read(ByteBuffer.allocate(100));
-                    throw new RuntimeException("read returned " + n);
+                    fail("read returned " + n);
                 } catch (AsynchronousCloseException expected) { }
             }
         });
@@ -666,10 +706,14 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SourceChannel source = p.source()) {
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
                 try {
                     int n = source.read(ByteBuffer.allocate(100));
-                    throw new RuntimeException("read returned " + n);
+                    fail("read returned " + n);
                 } catch (ClosedByInterruptException expected) {
                     assertTrue(Thread.interrupted());
                 }
@@ -685,7 +729,7 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SinkChannel sink = p.sink()) {
-                ScheduledCloser.schedule(sink, DELAY);
+                runAfterParkedAsync(sink::close);
                 try {
                     ByteBuffer bb = ByteBuffer.allocate(100*1024);
                     for (;;) {
@@ -706,7 +750,11 @@ public class BlockingChannelOps {
         VThreadRunner.run(() -> {
             Pipe p = Pipe.open();
             try (Pipe.SinkChannel sink = p.sink()) {
-                ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
+
+                // delayed interrupt of current thread
+                Thread thisThread = Thread.currentThread();
+                runAfterParkedAsync(thisThread::interrupt);
+
                 try {
                     ByteBuffer bb = ByteBuffer.allocate(100*1024);
                     for (;;) {
@@ -720,8 +768,6 @@ public class BlockingChannelOps {
             }
         });
     }
-
-    // -- supporting classes --
 
     /**
      * Creates a loopback connection
@@ -760,166 +806,42 @@ public class BlockingChannelOps {
     }
 
     /**
-     * Closes a channel after a delay
+     * Read from a channel until all bytes have been read or an I/O error occurs.
      */
-    static class ScheduledCloser implements Runnable {
-        private final Closeable c;
-        private final long delay;
-        ScheduledCloser(Closeable c, long delay) {
-            this.c = c;
-            this.delay = delay;
-        }
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                c.close();
-            } catch (Exception e) { }
-        }
-        static void schedule(Closeable c, long delay) {
-            new Thread(new ScheduledCloser(c, delay)).start();
+    static void readToEOF(ReadableByteChannel rbc) throws IOException {
+        ByteBuffer bb = ByteBuffer.allocate(16*1024);
+        int n;
+        while ((n = rbc.read(bb)) > 0) {
+            bb.clear();
         }
     }
 
-    /**
-     * Interrupts a thread after a delay
-     */
-    static class ScheduledInterrupter implements Runnable {
-        private final Thread thread;
-        private final long delay;
-
-        ScheduledInterrupter(Thread thread, long delay) {
-            this.thread = thread;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                thread.interrupt();
-            } catch (Exception e) { }
-        }
-
-        static void schedule(Thread thread, long delay) {
-            new Thread(new ScheduledInterrupter(thread, delay)).start();
-        }
+    @FunctionalInterface
+    interface ThrowingRunnable {
+        void run() throws Exception;
     }
 
     /**
-     * Establish a connection to a socket address after a delay
+     * Runs the given task asynchronously after the current virtual thread has parked.
+     * @return the thread started to run the task
      */
-    static class ScheduledConnector implements Runnable {
-        private final SocketChannel sc;
-        private final SocketAddress address;
-        private final long delay;
-
-        ScheduledConnector(SocketChannel sc, SocketAddress address, long delay) {
-            this.sc = sc;
-            this.address = address;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
+    static Thread runAfterParkedAsync(ThrowingRunnable task) {
+        Thread target = Thread.currentThread();
+        if (!target.isVirtual())
+            throw new WrongThreadException();
+        return Thread.ofPlatform().daemon().start(() -> {
             try {
-                Thread.sleep(delay);
-                sc.connect(address);
-            } catch (Exception e) { }
-        }
-
-        static void schedule(SocketChannel sc, SocketAddress address, long delay) {
-            new Thread(new ScheduledConnector(sc, address, delay)).start();
-        }
-    }
-
-    /**
-     * Reads from a connection, and to EOF, after a delay
-     */
-    static class ScheduledReader implements Runnable {
-        private final ReadableByteChannel rbc;
-        private final boolean readAll;
-        private final long delay;
-
-        ScheduledReader(ReadableByteChannel rbc, boolean readAll, long delay) {
-            this.rbc = rbc;
-            this.readAll = readAll;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                ByteBuffer bb = ByteBuffer.allocate(100*1024);
-                for (;;) {
-                    int n = rbc.read(bb);
-                    if (n == -1 || !readAll)
-                        break;
-                    bb.clear();
+                Thread.State state = target.getState();
+                while (state != Thread.State.WAITING
+                        && state != Thread.State.TIMED_WAITING) {
+                    Thread.sleep(20);
+                    state = target.getState();
                 }
-            } catch (Exception e) { }
-        }
-
-        static void schedule(ReadableByteChannel rbc, boolean readAll, long delay) {
-            new Thread(new ScheduledReader(rbc, readAll, delay)).start();
-        }
-    }
-
-    /**
-     * Writes to a connection after a delay
-     */
-    static class ScheduledWriter implements Runnable {
-        private final WritableByteChannel wbc;
-        private final ByteBuffer buf;
-        private final long delay;
-
-        ScheduledWriter(WritableByteChannel wbc, ByteBuffer buf, long delay) {
-            this.wbc = wbc;
-            this.buf = buf;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                wbc.write(buf);
-            } catch (Exception e) { }
-        }
-
-        static void schedule(WritableByteChannel wbc, ByteBuffer buf, long delay) {
-            new Thread(new ScheduledWriter(wbc, buf, delay)).start();
-        }
-    }
-
-    /**
-     * Sends a datagram to a target address after a delay
-     */
-    static class ScheduledSender implements Runnable {
-        private final DatagramChannel dc;
-        private final ByteBuffer buf;
-        private final SocketAddress address;
-        private final long delay;
-
-        ScheduledSender(DatagramChannel dc, ByteBuffer buf, SocketAddress address, long delay) {
-            this.dc = dc;
-            this.buf = buf;
-            this.address = address;
-            this.delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(delay);
-                dc.send(buf, address);
-            } catch (Exception e) { }
-        }
-
-        static void schedule(DatagramChannel dc, ByteBuffer buf,
-                             SocketAddress address, long delay) {
-            new Thread(new ScheduledSender(dc, buf, address, delay)).start();
-        }
+                Thread.sleep(20);  // give a bit more time to release carrier
+                task.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

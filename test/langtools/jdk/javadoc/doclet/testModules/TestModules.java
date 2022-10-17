@@ -1110,9 +1110,9 @@ public class TestModules extends JavadocTester {
                     </div>""");
         checkOutput("deprecated-list.html", found,
                 """
-                    <ul>
-                    <li><a href="#for-removal">Terminally Deprecated</a></li>
-                    <li><a href="#module">Modules</a></li>
+                    <ul class="contents-list">
+                    <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
+                    <li id="contents-module"><a href="#module">Modules</a></li>
                     </ul>""",
                 """
                     <div class="col-summary-item-name even-row-color"><a href="moduleA/module-summary.html">moduleA</a></div>

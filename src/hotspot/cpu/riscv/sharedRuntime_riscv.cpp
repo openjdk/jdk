@@ -56,6 +56,9 @@
 #include "adfiles/ad_riscv.hpp"
 #include "opto/runtime.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
+#endif
 
 #define __ masm->
 
@@ -208,6 +211,9 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::scalable_vector_reg_size(T_BYTE));
 #else
+#if !INCLUDE_JVMCI
+  assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
+#endif
   __ pop_CPU_state(_save_vectors);
 #endif
   __ leave();
@@ -333,9 +339,12 @@ static void patch_callers_callsite(MacroAssembler *masm) {
 
   __ mv(c_rarg0, xmethod);
   __ mv(c_rarg1, ra);
-  int32_t offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
 
   __ pop_CPU_state();
   // restore sp
@@ -492,6 +501,18 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // Will jump to the compiled code just as if compiled code was doing it.
   // Pre-load the register-jump target early, to schedule it better.
   __ ld(t1, Address(xmethod, in_bytes(Method::from_compiled_offset())));
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    // check if this call should be routed towards a specific entry point
+    __ ld(t0, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    Label no_alternative_target;
+    __ beqz(t0, no_alternative_target);
+    __ mv(t1, t0);
+    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ bind(no_alternative_target);
+  }
+#endif // INCLUDE_JVMCI
 
   // Now generate the shuffle code.
   for (int i = 0; i < total_args_passed; i++) {
@@ -938,8 +959,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int vep_offset = ((intptr_t)__ pc()) - start;
 
     // First instruction must be a nop as it may need to be patched on deoptimisation
-    MacroAssembler::assert_alignment(__ pc());
-    __ nop();
+    {
+      Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+      MacroAssembler::assert_alignment(__ pc());
+      __ nop();  // 4 bytes
+    }
     gen_special_dispatch(masm,
                          method,
                          in_sig_bt,
@@ -1090,8 +1114,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.
-  MacroAssembler::assert_alignment(__ pc());
-  __ nop();
+  {
+    Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+    MacroAssembler::assert_alignment(__ pc());
+    __ nop();  // 4 bytes
+  }
 
   if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
     Label L_skip_barrier;
@@ -1263,9 +1290,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label dtrace_method_entry, dtrace_method_entry_done;
   {
-    int32_t offset = 0;
-    __ la_patchable(t0, ExternalAddress((address)&DTraceMethodProbes), offset);
-    __ lbu(t0, Address(t0, offset));
+    ExternalAddress target((address)&DTraceMethodProbes);
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ lbu(t0, Address(t0, offset));
+    });
     __ addw(t0, t0, zr);
     __ bnez(t0, dtrace_method_entry);
     __ bind(dtrace_method_entry_done);
@@ -1466,9 +1496,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label dtrace_method_exit, dtrace_method_exit_done;
   {
-    int32_t offset = 0;
-    __ la_patchable(t0, ExternalAddress((address)&DTraceMethodProbes), offset);
-    __ lbu(t0, Address(t0, offset));
+    ExternalAddress target((address)&DTraceMethodProbes);
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ lbu(t0, Address(t0, offset));
+    });
     __ bnez(t0, dtrace_method_exit);
     __ bind(dtrace_method_exit_done);
   }
@@ -1599,9 +1632,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifndef PRODUCT
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
-    int32_t offset = 0;
-    __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)), offset);
-    __ jalr(x1, t0, offset);
+    RuntimeAddress target(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
 
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
@@ -1675,6 +1711,11 @@ void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
   // Setup code generation tools
   int pad = 0;
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    pad += 512; // Increase the buffer size when compiling for JVMCI
+  }
+#endif
   CodeBuffer buffer("deopt_blob", 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words = -1;
@@ -1726,6 +1767,12 @@ void SharedRuntime::generate_deopt_blob() {
   __ j(cont);
 
   int reexecute_offset = __ pc() - start;
+#if INCLUDE_JVMCI && !defined(COMPILER1)
+  if (EnableJVMCI && UseJVMCICompiler) {
+    // JVMCI does not use this kind of deoptimization
+    __ should_not_reach_here();
+  }
+#endif
 
   // Reexecute case
   // return address is the pc describes what bci to do re-execute at
@@ -1735,6 +1782,47 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ mvw(xcpool, Deoptimization::Unpack_reexecute); // callee-saved
   __ j(cont);
+
+#if INCLUDE_JVMCI
+  Label after_fetch_unroll_info_call;
+  int implicit_exception_uncommon_trap_offset = 0;
+  int uncommon_trap_offset = 0;
+
+  if (EnableJVMCI) {
+    implicit_exception_uncommon_trap_offset = __ pc() - start;
+
+    __ ld(ra, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+
+    uncommon_trap_offset = __ pc() - start;
+
+    // Save everything in sight.
+    reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
+    // fetch_unroll_info needs to call last_java_frame()
+    Label retaddr;
+    __ set_last_Java_frame(sp, noreg, retaddr, t0);
+
+    __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ mvw(t0, -1);
+    __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+
+    __ mvw(xcpool, (int32_t)Deoptimization::Unpack_reexecute);
+    __ mv(c_rarg0, xthread);
+    __ orrw(c_rarg2, zr, xcpool); // exec mode
+    RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
+    __ bind(retaddr);
+    oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
+
+    __ reset_last_Java_frame(false);
+
+    __ j(after_fetch_unroll_info_call);
+  } // EnableJVMCI
+#endif // INCLUDE_JVMCI
 
   int exception_offset = __ pc() - start;
 
@@ -1818,9 +1906,12 @@ void SharedRuntime::generate_deopt_blob() {
 #endif // ASSERT
   __ mv(c_rarg0, xthread);
   __ mv(c_rarg1, xcpool);
-  int32_t offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info)), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
 
   // Need to have an oopmap that tells fetch_unroll_info where to
@@ -1828,6 +1919,12 @@ void SharedRuntime::generate_deopt_blob() {
   oop_maps->add_gc_map(__ pc() - start, map);
 
   __ reset_last_Java_frame(false);
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    __ bind(after_fetch_unroll_info_call);
+  }
+#endif
 
   // Load UnrollBlock* into x15
   __ mv(x15, x10);
@@ -1956,9 +2053,12 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ mv(c_rarg0, xthread);
   __ mv(c_rarg1, xcpool); // second arg: exec_mode
-  offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames)), offset);
-  __ jalr(x1, t0, offset);
+  target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
 
   // Set an oopmap for the call site
   // Use the same PC we used for the last java frame
@@ -1984,6 +2084,12 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   assert(_deopt_blob != NULL, "create deoptimization blob fail!");
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
+    _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  }
+#endif
 }
 
 // Number of stack slots between incoming argument block and the start of
@@ -2042,11 +2148,12 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   __ mv(c_rarg0, xthread);
   __ mvw(c_rarg2, (unsigned)Deoptimization::Unpack_uncommon_trap);
-  int32_t offset = 0;
-  __ la_patchable(t0,
-        RuntimeAddress(CAST_FROM_FN_PTR(address,
-                                        Deoptimization::uncommon_trap)), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
 
   // Set an oopmap for the call site
@@ -2088,8 +2195,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
                       size_of_deoptimized_frame_offset_in_bytes()));
   __ sub(x12, x12, 2 * wordSize);
   __ add(sp, sp, x12);
-  __ ld(fp, sp, 0);
-  __ ld(ra, sp, wordSize);
+  __ ld(fp, Address(sp, 0));
+  __ ld(ra, Address(sp, wordSize));
   __ addi(sp, sp, 2 * wordSize);
   // RA should now be the return address to the caller (3) frame
 
@@ -2168,9 +2275,12 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // sp should already be aligned
   __ mv(c_rarg0, xthread);
   __ mvw(c_rarg1, (unsigned)Deoptimization::Unpack_uncommon_trap);
-  offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames)), offset);
-  __ jalr(x1, t0, offset);
+  target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
 
   // Set an oopmap for the call site
   // Use the same PC we used for the last java frame
@@ -2239,9 +2349,12 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // Do the call
   __ mv(c_rarg0, xthread);
-  int32_t offset = 0;
-  __ la_patchable(t0, RuntimeAddress(call_ptr), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(call_ptr);
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
 
   // Set an oopmap for the call site.  This oopmap will map all
@@ -2349,9 +2462,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
     __ set_last_Java_frame(sp, noreg, retaddr, t0);
 
     __ mv(c_rarg0, xthread);
-    int32_t offset = 0;
-    __ la_patchable(t0, RuntimeAddress(destination), offset);
-    __ jalr(x1, t0, offset);
+    RuntimeAddress target(destination);
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
     __ bind(retaddr);
   }
 
@@ -2480,9 +2596,12 @@ void OptoRuntime::generate_exception_blob() {
   address the_pc = __ pc();
   __ set_last_Java_frame(sp, noreg, the_pc, t0);
   __ mv(c_rarg0, xthread);
-  int32_t offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
 
 
   // handle_exception_C is a special VM call which does not require an explicit

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,10 @@ class outputStream;
 // interactions for this protocol.  Similarly, see the allocate() function for
 // a discussion of allocation.
 
-class OopStorage {
+class OopStorage : public CHeapObjBase {
 public:
-  explicit OopStorage(const char* name, MEMFLAGS memflags);
+  static OopStorage* create(const char* name, MEMFLAGS memflags);
   ~OopStorage();
-
-  void* operator new(size_t size, MEMFLAGS memflags);
-  void operator delete(void* obj, MEMFLAGS memflags);
 
   // These count and usage accessors are racy unless at a safepoint.
 
@@ -281,6 +278,10 @@ private:
 
   // Flag indicating this storage object is a candidate for empty block deletion.
   volatile bool _needs_cleanup;
+
+  // Clients construct via "create" factory function.
+  OopStorage(const char* name, MEMFLAGS memflags);
+  NONCOPYABLE(OopStorage);
 
   bool try_add_block();
   Block* block_for_allocation();

@@ -523,8 +523,9 @@ class Eval {
                 if (member.getKind() == Tree.Kind.VARIABLE) {
                     VariableTree vt = (VariableTree) member;
 
-                    if (vt.getInitializer() != null) {
-                        //for variables with initializer, explicitly move the initializer
+                    if (vt.getInitializer() != null &&
+                        !vt.getModifiers().getFlags().contains(Modifier.STATIC)) {
+                        //for instance variables with initializer, explicitly move the initializer
                         //to the constructor after the captured variables as assigned
                         //(the initializers would otherwise run too early):
                         Range wholeVar = dis.treeToRange(vt);
