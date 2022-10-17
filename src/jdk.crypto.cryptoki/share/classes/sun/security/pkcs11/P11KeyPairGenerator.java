@@ -151,7 +151,9 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
         try {
             checkKeySize(keySize, null);
         } catch (InvalidAlgorithmParameterException e) {
-            throw new InvalidParameterException(e.getMessage());
+            InvalidParameterException ipe = new InvalidParameterException(e.getMessage());
+            ipe.initCause(e);
+            throw ipe;
         }
         this.params = null;
         if (algorithm.equals("EC")) {
