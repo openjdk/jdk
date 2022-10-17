@@ -126,7 +126,7 @@ ifeq ($(call isTargetOs, windows), true)
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBCXX) advapi32.lib ole32.lib msi.lib user32.lib \
-        shlwapi.lib Shell32.lib, \
+          shlwapi.lib Shell32.lib, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_LIB_JPACKAGE)
@@ -147,7 +147,7 @@ ifeq ($(call isTargetOs, windows), true)
           $(addprefix -I, $(JPACKAGE_WIXHELPER_SRC)) $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
       LIBS := $(LIBCXX) ole32.lib msi.lib User32.lib shlwapi.lib \
-        Shell32.lib, \
+          Shell32.lib, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_LIB_WIXHELPER)
