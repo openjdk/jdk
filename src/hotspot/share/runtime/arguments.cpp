@@ -3152,17 +3152,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
 #ifdef ZERO
   // Zero always runs in interpreted mode
   set_mode_flags(_int);
-
-  // Enable error context decoding on known platforms
-#if defined(IA32) || defined(AMD64) || defined(ARM) || \
-    defined(AARCH64) || defined(PPC) || defined(RISCV) || \
-    defined(S390)
-  if (FLAG_IS_DEFAULT(DecodeErrorContext)) {
-    FLAG_SET_DEFAULT(DecodeErrorContext, true);
-  }
-#else
-  UNSUPPORTED_OPTION(DecodeErrorContext);
-#endif
 #endif
 
   // eventually fix up InitialTenuringThreshold if only MaxTenuringThreshold is set
