@@ -95,6 +95,7 @@ public class Lower extends TreeTranslator {
     private final TypeEnvs typeEnvs;
     private final Name dollarAssertionsDisabled;
     private final Types types;
+    private final TransTypes transTypes;
     private final boolean debugLower;
     private final boolean disableProtectedAccessors; // experimental
     private final PkgInfo pkginfoOpt;
@@ -117,6 +118,7 @@ public class Lower extends TreeTranslator {
             fromString(target.syntheticNameChar() + "assertionsDisabled");
 
         types = Types.instance(context);
+        transTypes = TransTypes.instance(context);
         Options options = Options.instance(context);
         debugLower = options.isSet("debuglower");
         pkginfoOpt = PkgInfo.get(options);
@@ -3519,8 +3521,7 @@ public class Lower extends TreeTranslator {
             if (iterableType.getTypeArguments().nonEmpty())
                 iteratorTarget = types.erasure(iterableType.getTypeArguments().head);
             tree.expr.type = types.erasure(types.skipTypeVars(tree.expr.type, false));
-            if (types.asSuper(tree.expr.type, syms.iterableType.tsym) == null)
-                tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);
+            tree.expr = transTypes.coerce(attrEnv, tree.expr, types.erasure(iterableType));
             Symbol iterator = lookupMethod(tree.expr.pos(),
                                            names.iterator,
                                            tree.expr.type,
