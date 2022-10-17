@@ -72,6 +72,8 @@ public @interface PreviewFeature {
         VIRTUAL_THREADS,
         @JEP(number=424, title="Foreign Function & Memory API")
         FOREIGN,
+        @JEP(number=430, title="String Templates", status="First Preview")
+        STRING_TEMPLATES,
         /**
          * A key for testing.
          */

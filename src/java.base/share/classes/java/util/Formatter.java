@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandle;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -60,6 +61,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFloatingDecimal;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -2761,8 +2763,7 @@ public final class Formatter implements Closeable, Flushable {
         int lasto = -1;
 
         List<FormatString> fsa = parse(format);
-        for (int i = 0; i < fsa.size(); i++) {
-            var fs = fsa.get(i);
+        for (FormatString fs : fsa) {
             int index = fs.index();
             try {
                 switch (index) {
@@ -2780,7 +2781,7 @@ public final class Formatter implements Closeable, Flushable {
                             throw new MissingFormatArgumentException(fs.toString());
                         fs.print(this, (args == null ? null : args[lasto]), l);
                     }
-                    default -> {  // explicit index
+                    default -> { // explicit index
                         last = index - 1;
                         if (args != null && last > args.length - 1)
                             throw new MissingFormatArgumentException(fs.toString());
@@ -2803,7 +2804,7 @@ public final class Formatter implements Closeable, Flushable {
     /**
      * Finds format specifiers in the format string.
      */
-    private List<FormatString> parse(String s) {
+    static List<FormatString> parse(String s) {
         ArrayList<FormatString> al = new ArrayList<>();
         int i = 0;
         int max = s.length();
@@ -2846,7 +2847,7 @@ public final class Formatter implements Closeable, Flushable {
         return al;
     }
 
-    private interface FormatString {
+    interface FormatString {
         int index();
         void print(Formatter fmt, Object arg, Locale l) throws IOException;
         String toString();
@@ -2882,14 +2883,15 @@ public final class Formatter implements Closeable, Flushable {
         DECIMAL_FLOAT
     };
 
-    private static class FormatSpecifier implements FormatString {
+    static class FormatSpecifier implements FormatString {
+        private static final double SCALEUP = Math.scalb(1.0, 54);
 
-        private int index = 0;
-        private int flags = Flags.NONE;
-        private int width = -1;
-        private int precision = -1;
-        private boolean dt = false;
-        private char c;
+        int index = 0;
+        int flags = Flags.NONE;
+        int width = -1;
+        int precision = -1;
+        boolean dt = false;
+        char c;
 
         private void index(String s, int start, int end) {
             if (start >= 0) {
@@ -3542,8 +3544,8 @@ public final class Formatter implements Closeable, Flushable {
                 if (width != -1) {
                     newW = adjustWidth(width - exp.length - 1, flags, neg);
                 }
-                localizedMagnitude(fmt, sb, mant, 0, flags, newW, l);
 
+                localizedMagnitude(fmt, sb, mant, 0, flags, newW, l);
                 sb.append(Flags.contains(flags, Flags.UPPERCASE) ? 'E' : 'e');
 
                 char sign = exp[0];
@@ -3715,8 +3717,7 @@ public final class Formatter implements Closeable, Flushable {
                 // If this is subnormal input so normalize (could be faster to
                 // do as integer operation).
                 if (subnormal) {
-                    double scaleUp = Math.scalb(1.0, 54);
-                    d *= scaleUp;
+                    d *= SCALEUP;
                     // Calculate the exponent.  This is not just exponent + 54
                     // since the former is not the normalized exponent.
                     exponent = Math.getExponent(d);
@@ -4620,7 +4621,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class Flags {
+    static class Flags {
 
         static final int NONE          = 0;      // ''
 
@@ -4698,7 +4699,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class Conversion {
+    static class Conversion {
         // Byte, Short, Integer, Long, BigInteger
         // (and associated primitives due to autoboxing)
         static final char DECIMAL_INTEGER     = 'd';
@@ -4823,7 +4824,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class DateTime {
+    static class DateTime {
         static final char HOUR_OF_DAY_0 = 'H'; // (00 - 23)
         static final char HOUR_0        = 'I'; // (01 - 12)
         static final char HOUR_OF_DAY   = 'k'; // (0 - 23) -- like H
@@ -4873,5 +4874,36 @@ public final class Formatter implements Closeable, Flushable {
                 default -> false;
             };
         }
+    }
+
+    /**
+     * Constructs a {@link MethodHandle} expecting arguments matching
+     * {@code ptypes} and returning a {@link String} using the supplied
+     * {@code format} and {@code locale}.
+     *
+     * @param format  format string as described in <a href="#syntax">Format string
+     *                syntax</a>
+     * @param locale  {@link java.util.Locale locale} to process during
+     *                formatting.
+     * @param ptypes  types of arguments
+     *
+     * @return a formatting {@link MethodHandle}
+     *
+     * @throws  java.lang.NullPointerException if any argument is null.
+     * @throws  IllegalFormatException
+     *          If a format string contains an illegal syntax, a format
+     *          specifier that is incompatible with the given arguments,
+     *          insufficient arguments given the format string, or other
+     *          illegal conditions.  For specification of all possible
+     *          formatting errors.
+     */
+    public static MethodHandle formatterMethodHandle(String format, Locale locale, Class<?>... ptypes) {
+        Objects.requireNonNull(format, "format must not be null");
+        Objects.requireNonNull(locale, "locale must not be null");
+        Objects.requireNonNull(ptypes, "ptypes must not be null");
+
+        FormatterBuilder fmh = new FormatterBuilder(format, locale, ptypes);
+
+        return fmh.build();
     }
 }

@@ -222,6 +222,16 @@ public class Names {
     public final Name typeSwitch;
     public final Name enumSwitch;
 
+    // templated string
+    public final Name process;
+    public final Name interpolate;
+    public final Name fragments;
+    public final Name fragmentsUpper;
+    public final Name valuesUpper;
+    public final Name toList;
+    public final Name str;
+    public final Name stringTemplateBSM;
+
     public final Name.Table table;
 
     public Names(Context context) {
@@ -394,6 +404,16 @@ public class Names {
         // sealed types
         permits = fromString("permits");
         sealed = fromString("sealed");
+
+        // templated string
+        process = fromString("process");
+        interpolate = fromString("interpolate");
+        fragments = fromString("fragments");
+        fragmentsUpper = fromString("FRAGMENTS");
+        valuesUpper = fromString("VALUES");
+        toList = fromString("toList");
+        str = fromString("STR");
+        stringTemplateBSM = fromString("stringTemplateBSM");
 
         // pattern switches
         typeSwitch = fromString("typeSwitch");

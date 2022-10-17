@@ -174,6 +174,7 @@ public class Symtab {
     public final Type serializedLambdaType;
     public final Type varHandleType;
     public final Type methodHandleType;
+    public final Type methodHandlesType;
     public final Type methodHandleLookupType;
     public final Type methodTypeType;
     public final Type nativeHeaderType;
@@ -232,6 +233,12 @@ public class Symtab {
     public final Type ioExceptionType;
     public final Type objectStreamExceptionType;
     public final Type externalizableType;
+
+    // For string templates
+    public final Type stringTemplateType;
+    public final Type templateRuntimeType;
+    public final Type templateProcessorType;
+    public final Type processorLinkage;
 
     /** The symbol representing the length field of an array.
      */
@@ -541,6 +548,7 @@ public class Symtab {
         serializedLambdaType = enterClass("java.lang.invoke.SerializedLambda");
         varHandleType = enterClass("java.lang.invoke.VarHandle");
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
+        methodHandlesType = enterClass("java.lang.invoke.MethodHandles");
         methodHandleLookupType = enterClass("java.lang.invoke.MethodHandles$Lookup");
         methodTypeType = enterClass("java.lang.invoke.MethodType");
         errorType = enterClass("java.lang.Error");
@@ -607,7 +615,6 @@ public class Symtab {
         ioExceptionType = enterClass("java.io.IOException");
         objectStreamExceptionType = enterClass("java.io.ObjectStreamException");
         externalizableType = enterClass("java.io.Externalizable");
-
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);
@@ -617,6 +624,12 @@ public class Symtab {
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);
+
+        // For string templates
+        stringTemplateType = enterClass("java.lang.template.StringTemplate");
+        templateRuntimeType = enterClass("java.lang.template.TemplateRuntime");
+        templateProcessorType = enterClass("java.lang.template.TemplateProcessor");
+        processorLinkage = enterClass("java.lang.template.ProcessorLinkage");
 
         // Enter a synthetic class that is used to mark internal
         // proprietary classes in ct.sym.  This class does not have a

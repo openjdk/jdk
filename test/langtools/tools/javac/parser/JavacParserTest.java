@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1906,6 +1906,52 @@ public class JavacParserTest extends TestCase {
                 return null;
             }
         }.scan(cut, null);
+    }
+
+    @Test
+    void testStringTemplate1() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                           Test(int a) {
+                               String s = "prefix \\{a} suffix";
+                           }
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
+        VariableTree decl = (VariableTree) constr.getBody().getStatements().get(0);
+        SourcePositions sp = Trees.instance(ct).getSourcePositions();
+        int initStart = (int) sp.getStartPosition(cut, decl.getInitializer());
+        int initEnd   = (int) sp.getEndPosition(cut, decl.getInitializer());
+        assertEquals("correct templated String span expected", code.substring(initStart, initEnd), "\"prefix \\{a} suffix\"");
+    }
+
+    @Test
+    void testStringTemplate2() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                           Test(int a) {
+                               String s = STR."prefix \\{a} suffix";
+                           }
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
+        VariableTree decl = (VariableTree) constr.getBody().getStatements().get(0);
+        SourcePositions sp = Trees.instance(ct).getSourcePositions();
+        int initStart = (int) sp.getStartPosition(cut, decl.getInitializer());
+        int initEnd   = (int) sp.getEndPosition(cut, decl.getInitializer());
+        assertEquals("correct templated String span expected", code.substring(initStart, initEnd), "STR.\"prefix \\{a} suffix\"");
     }
 
     @Test //JDK-8293897
