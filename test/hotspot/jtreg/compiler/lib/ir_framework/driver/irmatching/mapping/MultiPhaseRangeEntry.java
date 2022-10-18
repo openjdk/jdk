@@ -48,7 +48,7 @@ public class MultiPhaseRangeEntry implements IRNodeMapEntry {
     }
 
     /**
-     * Checks that there is no compile phase overlap of
+     * Checks that there is no compile phase overlap of any {@link PhaseInterval} objects in {@code phaseRanges}.
      */
     private static void checkOverlap(List<PhaseInterval> phaseRanges) {
         // Sort ascending by start field of phase range.

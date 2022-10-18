@@ -62,7 +62,7 @@
   flags(BEFORE_MATCHING,              "Before matching") \
   flags(MATCHING,                     "After matching") \
   flags(GLOBAL_CODE_MOTION,           "Global code motion") \
-  flags(MACHANALYSIS,                 "After mach analysis") \
+  flags(MACH_ANALYSIS,                "After mach analysis") \
   flags(FINAL_CODE,                   "Final Code") \
   flags(END,                          "End") \
   flags(FAILURE,                      "Failure") \

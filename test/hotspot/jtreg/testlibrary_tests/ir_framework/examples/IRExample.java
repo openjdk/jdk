@@ -34,69 +34,10 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  */
 
 /**
- * Multiple {@link IR @IR} rules can be specified at {@link Test @Test} methods. The IR framework performs a regex-based
- * IR matching on the ideal graph compile phase (printed by compile command PrintIdealPhase) or PrintOptoAssembly (also
- * treated as a compile phase and specified in {@link CompilePhase}) output of a method.
- *
- * <p>
- * To perform a matching on a C2 IR node, the user can directly use the public static final strings defined in
- * {@link IRNode} which mostly represent either a real IR node or group of IR nodes as found in the C2 compiler as node
- * classes (there are rare exceptions). These strings represent special placeholder strings (referred to as
- * "IR placeholder string" or just "IR node") which are replaced by the framework by regexes depending on which compile
- * phases (defined with {@link IR#phase()) the IR rule should be applied on. If an IR node placeholder string cannot be
- * used for a specific compile phase (e.g. the IR node does not exist in this phase), a format violation will be reported.
- *
- * <p>
- * The exact mapping from an IR node placeholder string to regexes for different compile phases together with a default
- * phase (see next section) is defined in a static block directly below the corresponding IR node placeholder string in
- * {@link IRNode}.
- *
- * <p>
- * The user can also directly specify user-defined regexes in combination with a required compile phase (there is no
- * default compile phase known by the framework for custom regexes). If such a user-defined regex represents a not yet
- * supported C2 IR node, it is highly encouraged to directly add a new IR node placeholder string definition to
- * {@link IRNode} for it instead together with a static regex mapping block.
- *
- * <p>
- * When not specifying any compile phase with {@link IR#phase()} (or explicitly setting {@link CompilePhase#DEFAULT}),
- * the framework will perform IR matching on a default compile phase which for most IR nodes is
- * {@link CompilePhase#PRINT_IDEAL} (output of flag -XX:+PrintIdeal, the state of the machine independent ideal graph
- * after applying optimizations). The default phase for each IR node is defined in the static regex mapping block below
- * each IR node placeholder string in {@link IRNode}.
- *
- * <p>
- * The {@link IR @IR} annotations provides two kinds of checks:
- * <ul>
- *     <li><p>{@link IR#failOn}: A list of one or more IR nodes/user-defined regexes which are not allowed to occur in
- *                               any compilation output of any compile phase.</li>
- *     <li><p>{@link IR#counts}: A list of one or more "IR node/user-defined regex - counter" pairs which specify how
- *                               often each IR node/user-defined regex should be matched on the compilation output of
- *                               each compile phase.</li>
- * </ul>
- * <p>
- *
- * One might also want to restrict the application of certain @IR rules depending on the used flags in the test VM.
- * These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in
- * {@link TestFramework#JTREG_WHITELIST_FLAGS} (i.e. have no unexpected impact on the IR except if the flag simulates a
- * specific machine setup like UseAVX={1,2,3} etc.) to enable an IR verification by the framework.
- * The @IR rules thus have an option to restrict their application:
- * <ul>
- *     <li><p>{@link IR#applyIf}:    Only apply a rule if a flag has the specified value/range of values.</li>
- *     <li><p>{@link IR#applyIfNot}: Only apply a rule if a flag has NOT a specified value/range of values
- *                                   (inverse of applyIf).</li>
- *     <li><p>{@link IR#applyIfAnd}: Only apply a rule if ALL flags have the specified value/range of values.</li>
- *     <li><p>{@link IR#applyIfOr}:  Only apply a rule if AT LEAST ONE flag has the specified value/range of values.</li>
- * </ul>
- * <p>
- *
- * An IR verification cannot always be performed. Certain VM flags explicitly disable IR verification, change the IR
- * shape in unexpected ways letting IR rules fail or even make IR verification impossible:
- * <ul>
- *     <li><p>-DVerifyIR=false is used</li>
- *     <li><p>The test is run with a non-debug build</li>
- *     <li><p>-Xcomp, -Xint, -XX:-UseCompile, -XX:CompileThreshold, -DFlipC1C2=true, or -DExcludeRandom=true are used.</li>
- *     <li><p>JTreg specifies non-whitelisted flags as VM and/or Javaoptions (could change the IR in unexpected ways).</li>
- * </ul>
+ * The file shows some examples how IR verification can be done by using the {@link IR @IR} annotation. Additional
+ * comments are provided at the IR rules to explain their purpose. A more detailed and complete description about
+ * IR verification and the possibilities to write IR tests with {@link IR @IR} annotations can be found in the
+ * IR framework README.md file.
  *
  * @see IR
  * @see Test

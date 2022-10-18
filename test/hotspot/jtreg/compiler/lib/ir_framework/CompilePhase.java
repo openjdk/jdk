@@ -76,6 +76,7 @@ public enum CompilePhase {
     PRINT_IDEAL("PrintIdeal"),
     BEFORE_MATCHING("Before matching"),
     MATCHING("After matching", RegexType.MACH),
+    MACH_ANALYSIS("After mach analysis", RegexType.MACH),
     GLOBAL_CODE_MOTION("Global code motion", RegexType.MACH),
     FINAL_CODE("Final Code", RegexType.MACH),
     END("End"),
