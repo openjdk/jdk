@@ -90,6 +90,6 @@ public class Basic {
             throw new RuntimeException((fail + pass) + " tests: "
                                        + fail + " failure(s), first", first);
         else
-            System.out.println("all " + (fail + pass) + " tests passed");
+            System.out.printf("all " + pass + " tests passed");
     }
 }

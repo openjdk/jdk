@@ -24,7 +24,10 @@
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+
 
 /* @test
  * @summary Unit tests for formatter
@@ -48,22 +51,13 @@ public class BasicTestLauncher {
     private static final String SOURCE_CLASS = "Basic";
 
 
-    @Test
-    public void testUsPac() throws IOException{
-        testTimeZone(TZ_UP);
-    }
-
-    @Test
-    public void testAsiaNov() throws IOException{
-        testTimeZone(TZ_AN);
-    }
-
-
     /**
      * Executes Formatter Basic tests
      * @param timeZone the time zone to run tests against
      */
-    private static void testTimeZone(String timeZone) throws IOException{
+    @ParameterizedTest
+    @ValueSource(strings = { TZ_UP, TZ_AN })
+    void testTimeZone(String timeZone) throws IOException{
         System.out.printf("$$$ Testing against %s!%n", timeZone);
         OutputAnalyzer output = RunTest(timeZone);
         CheckTest(output);
@@ -80,8 +74,7 @@ public class BasicTestLauncher {
             ProcessBuilder pb = ProcessTools.createTestJvm(LOCALE_PROV, SOURCE_CLASS);
             pb.environment().put("TZ", timeZone);
             Process process = pb.start();
-            OutputAnalyzer output = new OutputAnalyzer(process);
-            return output;
+        return new OutputAnalyzer(process);
     }
 
 
@@ -91,12 +84,7 @@ public class BasicTestLauncher {
      * @throws RuntimeException for all testJVM failures
      */
     private static void CheckTest(OutputAnalyzer output){
-        try {
             output.shouldHaveExitValue(0)
                     .reportDiagnosticSummary();
-        }catch(RuntimeException err){
-            throw new RuntimeException(String.format("$$$ %s: Test(s) failed or TestJVM did not build correctly." +
-                    " Check stderr output from diagnostics summary above%n",  err.getMessage()));
-        }
     }
 }
