@@ -188,12 +188,16 @@ class Http2Connection  {
     // and has not sent the final stream flag
     final class IdleConnectionTimeoutEvent extends TimeoutEvent {
 
+        private boolean fired;
+
         IdleConnectionTimeoutEvent(Duration duration) {
             super(duration);
+            fired = false;
         }
 
         @Override
         public void handle() {
+            fired = true;
             if (debug.on()) {
                 debug.log("HTTP connection idle for too long");
             }
@@ -204,6 +208,10 @@ class Http2Connection  {
         @Override
         public String toString() {
             return "IdleConnectionTimeoutEvent, " + super.toString();
+        }
+
+        public boolean isFired() {
+            return fired;
         }
     }
 
@@ -725,8 +733,8 @@ class Http2Connection  {
             closed = true;
         }
         if (Log.errors()) {
-            if (idleConnectionTimeoutEvent != null) {
-                Log.logTrace("idleConnectionTimeout timeout fired, shutting down connection: {0}", t.getMessage());
+            if (idleConnectionTimeoutEvent != null && idleConnectionTimeoutEvent.isFired()) {
+                Log.logError("idleConnectionTimeout timeout fired, shutting down connection: {0}", t.getMessage());
             } else if (!(t instanceof EOFException) || isActive()) {
                 Log.logError(t);
             } else if (t != null) {
