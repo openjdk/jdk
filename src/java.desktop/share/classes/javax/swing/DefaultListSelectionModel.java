@@ -449,6 +449,10 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             if (shouldClear) {
                 clear(i);
             }
+            // Integer overlfow
+            if (i + 1 < i) {
+                break;
+            }
         }
         fireValueChanged();
     }
@@ -486,8 +490,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * @param index0 one end of the interval.
      * @param index1 other end of the interval
      * @throws IndexOutOfBoundsException if either index is less than {@code -1}
-     *         (and neither index is {@code -1}) or
-     *         either index is equal to Integer.MAX_VALUE
+     *         (and neither index is {@code -1})
      * @see #addListSelectionListener
      */
     public void setSelectionInterval(int index0, int index1) {
@@ -495,9 +498,6 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             return;
         }
 
-        if (index0 == Integer.MAX_VALUE || index1 == Integer.MAX_VALUE) {
-            throw new IndexOutOfBoundsException("index == Integer.MAX_VALUE");
-        }
         if (getSelectionMode() == SINGLE_SELECTION) {
             index0 = index1;
         }
@@ -658,7 +658,11 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          * insMinIndex).
          */
         for(int i = maxIndex; i >= insMinIndex; i--) {
-            setState(i + length, value.get(i));
+            if ((i + length) >= length) {
+                setState(i + length, value.get(i));
+            } else {
+                setState(i, value.get(i));
+            }
         }
 
         /* Initialize the newly inserted indices.
@@ -692,26 +696,31 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * that (as always) index0 need not be &lt;= index1.
      *
      * @throws IndexOutOfBoundsException if either index is negative
-     *         or equal to Integer.MAX_VALUE
      */
     public void removeIndexInterval(int index0, int index1)
     {
         if (index0 < 0 || index1 < 0) {
             throw new IndexOutOfBoundsException("index is negative");
         }
-        if (index0 == Integer.MAX_VALUE || index1 == Integer.MAX_VALUE) {
-            throw new IndexOutOfBoundsException("index is equal to MAX_VALUE");
-        }
+
         int rmMinIndex = Math.min(index0, index1);
         int rmMaxIndex = Math.max(index0, index1);
-        int gapLength = (rmMaxIndex - rmMinIndex) + 1;
+        int gapLength =(rmMaxIndex - rmMinIndex) == Integer.MAX_VALUE
+                ? Integer.MAX_VALUE
+                : (rmMaxIndex - rmMinIndex) + 1;
 
         /* Shift the entire bitset to the left to close the index0, index1
          * gap.
          */
         for(int i = rmMinIndex; i <= maxIndex; i++) {
-            setState(i, value.get(i + gapLength));
+            if ((i + gapLength) >= gapLength) {
+                setState(i, value.get(i + gapLength));
+            } else {
+                setState(i, value.get(gapLength));
+                break;
+            }
         }
+
 
         int leadIndex = this.leadIndex;
         if (leadIndex == 0 && rmMinIndex == 0) {

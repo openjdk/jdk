@@ -30,38 +30,36 @@
 import javax.swing.DefaultListSelectionModel;
 
 public class TestDefListModelException {
+
     public static void main(String[] args) throws Exception {
         test1();
         test2();
+        test3();
+        test4();
     }
 
     private static void test1() {
-        boolean passed = false;
         DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
         selectionModel.setSelectionInterval(0, 1);
-        try {
-            selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
-        } catch (IndexOutOfBoundsException e) {
-            passed = true;
-        }
-        if (!passed) {
-            throw new RuntimeException("IOOBE not thrown");
-        }
+        selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
     }
 
     private static void test2() {
-        boolean passed = false;
         DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
-        try {
-            selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        } catch (IndexOutOfBoundsException e) {
-            passed = true;
-        }
-        if (!passed) {
-            throw new RuntimeException("IOOBE not thrown");
-        }
+        selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
         selectionModel.removeIndexInterval(0, 1);
     }
-}
 
+    private static void test3() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
+        selectionModel.removeIndexInterval(0, Integer.MAX_VALUE - 1);
+    }
+
+    private static void test4() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
+        selectionModel.insertIndexInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE, true);
+    }
+}
 
