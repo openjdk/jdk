@@ -38,51 +38,48 @@ class NativeMethodBarrier: public NativeInstruction {
       return NativeInstruction::addr_at(0);
     }
 
-    NativeMovRegMem* get_patchable_instruction_handle() const {
-      address guard_addr = get_barrier_start_address() + GUARD_INSTRUCTION_OFFSET;
+    address get_patchable_data_address() const {
+      address inst_addr = get_barrier_start_address() + GUARD_INSTRUCTION_OFFSET;
 
-      return reinterpret_cast<NativeMovRegMem*>(guard_addr);
+      debug_only(Assembler::is_z_cfi(*((long*)inst_addr)));
+      return inst_addr + Assembler::instr_len(inst_addr);
     }
 
   public:
     static const int BARRIER_TOTAL_LENGTH = GUARD_INSTRUCTION_OFFSET + 2*6 + 2; // bytes
 
     int get_guard_value() const {
-      NativeMovRegMem* guard_addr = get_patchable_instruction_handle();
-
-      // Return guard instruction and value
-      return guard_addr->offset();
+      address data_addr = get_patchable_data_address();
+      // Return guard instruction value
+      return *((int32_t*)data_addr);
     }
 
     void set_guard_value(int value) {
-      NativeMovRegMem* guard_addr = get_patchable_instruction_handle();
+      address data_addr = get_patchable_data_address();
 
-      // Set guard instruction and value
-      guard_addr->set_offset(value);
+      // Set guard instruction value
+      *data_addr = value;
     }
 
     #ifdef ASSERT
       void verify() const {
-        int offset = 0;
+        int offset = 0; // bytes
         const address start = get_barrier_start_address();
 
-        assert(Assembler::is_equal(start[offset],  IIHF_ZOPC, RIL_MASK), "check load_const (1/2)");
+        MacroAssembler::is_load_const(/* address */ start + offset); // two instructions
+        offset += Assembler::instr_len(&start[offset]);
         offset += Assembler::instr_len(&start[offset]);
 
-        assert(Assembler::is_equal(start[offset],  IILF_ZOPC, RIL_MASK), "check load_const (2/2)");
+        Assembler::is_z_lg(*((long*)(start + offset)));
         offset += Assembler::instr_len(&start[offset]);
 
-        assert(Assembler::is_equal(start[offset], LG_ZOPC, RIL_MASK), "check LG");
+        Assembler::is_z_cfi(*((long*)(start + offset)));
         offset += Assembler::instr_len(&start[offset]);
 
-        assert(Assembler::is_equal(start[offset], CFI_ZOPC, RIL_MASK), "check CFI");
-        get_patchable_instruction_handle()->verify();
+        Assembler::is_z_larl(*((long*)(start + offset)));
         offset += Assembler::instr_len(&start[offset]);
 
-        assert(Assembler::is_equal(start[offset], LARL_ZOPC, RIL_MASK), "check LARL");
-        offset += Assembler::instr_len(&start[offset]);
-
-        assert(Assembler::is_equal(start[offset], BCR_ZOPC, RIL_MASK), "check BCR");
+        Assembler::is_z_bcr(*((long*)(start + offset)));
         offset += Assembler::instr_len(&start[offset]);
 
         assert(offset == BARRIER_TOTAL_LENGTH, "check offset == barrier length constant");
