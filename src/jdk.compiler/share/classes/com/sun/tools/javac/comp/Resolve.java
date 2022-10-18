@@ -3681,7 +3681,8 @@ public class Resolve {
             super(referenceTree, names.init, site, argtypes, typeargtypes, maxPhase);
             if (site.isRaw()) {
                 this.site = new ClassType(site.getEnclosingType(),
-                        !site.tsym.isInner() ? site.tsym.type.getTypeArguments() : List.nil(), site.tsym, site.getMetadata());
+                        !(site.tsym.isInner() && site.getEnclosingType().isRaw()) ?
+                                site.tsym.type.getTypeArguments() : List.nil(), site.tsym, site.getMetadata());
                 needsInference = true;
             }
         }
