@@ -381,7 +381,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             var error = TRACKER.check(1,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
-                    "subscribers for testInputStream(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    "subscribers for testGetSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
             Reference.reachabilityFence(client);
             if (error != null) throw error;
@@ -492,7 +492,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             var error = TRACKER.check(1,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
-                    "subscribers for testInputStream(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    "subscribers for testPostSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
             Reference.reachabilityFence(client);
             if (error != null) throw error;
@@ -554,7 +554,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             var error = TRACKER.check(1,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
-                    "subscribers for testInputStream(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    "subscribers for testPostInterrupt(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
             Reference.reachabilityFence(client);
             if (error != null) throw error;

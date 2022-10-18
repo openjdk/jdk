@@ -180,10 +180,8 @@ public class SmallTimeout {
 
             checkReturn(requests);
 
-            executor.shutdownNow();
-            if (!executor.awaitTermination(500, TimeUnit.MILLISECONDS)) {
-                throw new AssertionError("executor not terminated within bounds");
-            }
+            // shuts down the executor and awaits its termination
+            executor.close();
 
             if (error)
                 throw new RuntimeException("Failed. Check output");
