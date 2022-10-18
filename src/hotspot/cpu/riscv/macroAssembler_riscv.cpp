@@ -4111,13 +4111,13 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 // in cnt.
 //
 // NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be >= cache_line_size.
+// you want to use it elsewhere, note that cnt must be >= CacheLineSize.
 void MacroAssembler::zero_dcache_blocks(Register base, Register cnt) {
   Label initial_table_end, loop_cbo_zero;
 
   // Align base with cache line size.
   neg(t0, base);
-  andi(t0, t0, VM_Version::cache_line_size() - 1);
+  andi(t0, t0, CacheLineSize - 1);
 
   // t0: the number of bytes to be filled to align the base with cache line size.
   add(base, base, t0);
@@ -4128,16 +4128,16 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt) {
   srli(t1, t0, 1);
   sub(t1, t2, t1);
   j(t1);
-  for (int i = -VM_Version::cache_line_size() + 8; i < 0; i += 8) {
+  for (int i = -CacheLineSize + 8; i < 0; i += 8) {
     sd(zr, Address(base, i));
   }
   bind(initial_table_end);
 
-  li(t0, VM_Version::cache_line_size() >> 3);
+  li(t0, CacheLineSize >> 3);
   bind(loop_cbo_zero);
   cbo_zero(base);
   sub(cnt, cnt, t0);
-  add(base, base, VM_Version::cache_line_size());
+  add(base, base, CacheLineSize);
   bge(cnt, t0, loop_cbo_zero);
 }
 

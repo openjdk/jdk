@@ -87,6 +87,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(intx, BlockZeroingLowLimit, 256,                                       \
           "Minimum size in bytes when block zeroing will be used")               \
           range(1, max_jint)                                                     \
+  product(intx, CacheLineSize, DEFAULT_CACHE_LINE_SIZE,                          \
+          "Size of a CPU cache line")                                            \
+          range(1, max_jint)                                                     \
   product(bool, TraceTraps, false, "Trace all traps the signal handler")         \
   /* For now we're going to be safe and add the I/O bits to userspace fences. */ \
   product(bool, UseConservativeFence, true,                                      \
