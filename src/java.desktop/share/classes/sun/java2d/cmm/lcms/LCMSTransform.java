@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,6 @@ final class LCMSTransform implements ColorTransform {
         }
         LCMS.colorConvert(tfm.ID, in.width, in.height, in.offset,
                           in.nextRowOffset, out.offset, out.nextRowOffset,
-                          in.imageAtOnce, out.imageAtOnce,
                           in.dataArray, out.dataArray,
                           in.dataType, out.dataType);
         Reference.reachabilityFence(tfm); // prevent deallocation of "tfm.ID"
