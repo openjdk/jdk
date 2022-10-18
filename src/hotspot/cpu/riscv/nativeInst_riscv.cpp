@@ -265,6 +265,13 @@ void NativeJump::verify() { }
 
 
 void NativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
+  // Patching to not_entrant can happen while activations of the method are
+  // in use. The patching in that instance must happen only when certain
+  // alignment restrictions are true. These guarantees check those
+  // conditions.
+
+  // Must be 4 bytes aligned
+  MacroAssembler::assert_alignment(verified_entry);
 }
 
 
@@ -273,7 +280,7 @@ address NativeJump::jump_destination() const {
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
-  // As a special case we also use sequence movptr_with_offset(r,0), jalr(r,0)
+  // As a special case we also use sequence movptr(r,0), jalr(r,0)
   // i.e. jump to 0 when we need leave space for a wide immediate
   // load
 
@@ -355,6 +362,8 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
          nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
          "riscv cannot replace non-jump with jump");
 
+  check_verified_entry_alignment(entry, verified_entry);
+
   // Patch this nmethod atomically.
   if (Assembler::reachable_from_branch_at(verified_entry, dest)) {
     ptrdiff_t offset = dest - verified_entry;
@@ -381,9 +390,10 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
+  Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
-  a.movptr_with_offset(t0, entry, offset); // lui, addi, slli, addi, slli
+  a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
   a.jalr(x0, t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);

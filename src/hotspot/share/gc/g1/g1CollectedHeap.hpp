@@ -1080,6 +1080,7 @@ public:
   // Iterate over heap regions, in address order, terminating the
   // iteration early if the "do_heap_region" method returns "true".
   void heap_region_iterate(HeapRegionClosure* blk) const;
+  void heap_region_iterate(HeapRegionIndexClosure* blk) const;
 
   // Return the region with the given index. It assumes the index is valid.
   inline HeapRegion* region_at(uint index) const;

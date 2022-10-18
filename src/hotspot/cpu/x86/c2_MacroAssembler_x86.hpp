@@ -308,36 +308,61 @@ public:
   void masked_op(int ideal_opc, int mask_len, KRegister dst,
                  KRegister src1, KRegister src2);
 
-  void vector_castF2I_avx(XMMRegister dst, XMMRegister src, AddressLiteral float_sign_flip, int vec_enc,
-                          XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, Register rscratch = noreg);
+  void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                            BasicType from_elem_bt, BasicType to_elem_bt);
 
-  void vector_castF2I_evex(XMMRegister dst, XMMRegister src, AddressLiteral float_sign_flip, int vec_enc,
-                           XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch = noreg);
+  void vector_cast_int_to_subword(BasicType to_elem_bt, XMMRegister dst, XMMRegister zero,
+                                  XMMRegister xtmp, Register rscratch, int vec_enc);
 
-  void vector_castF2L_evex(XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, int vec_enc,
-                           XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch = noreg);
+  void vector_castF2X_avx(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                          XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                          AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
 
-  void vector_castD2L_evex(XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, int vec_enc,
-                           XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch = noreg );
+  void vector_castF2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                           XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
+                           Register rscratch, int vec_enc);
 
-  void vector_castD2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, int vec_enc,
-                           XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch = noreg);
+  void vector_castF2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                           KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                           Register rscratch, int vec_enc);
 
-  void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc, BasicType from_elem_bt, BasicType to_elem_bt);
+  void vector_castD2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                           XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, AddressLiteral sign_flip,
+                           Register rscratch, int vec_enc);
 
-  void vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, int vec_enc,
-                            XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch = noreg );
+  void vector_castD2X_avx(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                          XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5,
+                          AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
 
-  void vector_cast_float_special_cases_evex(XMMRegister dst, XMMRegister src, AddressLiteral float_sign_flip, int vec_enc,
-                                            XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch = noreg);
 
-  void vector_cast_float_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, int vec_enc,
-                                                    XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
-                                                    Register rscratch = noreg);
+  void vector_cast_double_to_int_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                   XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, Register rscratch,
+                                                   AddressLiteral float_sign_flip, int vec_enc);
 
-  void vector_cast_float_special_cases_avx(XMMRegister dst, XMMRegister src, AddressLiteral float_sign_flip, int vec_enc,
-                                           XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
-                                           Register rscratch = noreg);
+  void vector_cast_double_to_int_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                    KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
+                                                    int vec_enc);
+
+  void vector_cast_double_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                     KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
+                                                     int vec_enc);
+
+  void vector_cast_float_to_int_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                   KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
+                                                   int vec_enc);
+
+  void vector_cast_float_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                    KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
+                                                    int vec_enc);
+
+  void vector_cast_float_to_int_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
+                                                  XMMRegister xtmp4, Register rscratch, AddressLiteral float_sign_flip,
+                                                  int vec_enc);
+
+  void vector_crosslane_doubleword_pack_avx(XMMRegister dst, XMMRegister src, XMMRegister zero,
+                                            XMMRegister xtmp, int index, int vec_enc);
+
+  void vector_mask_cast(XMMRegister dst, XMMRegister src, BasicType dst_bt, BasicType src_bt, int vlen);
 
 #ifdef _LP64
   void vector_round_double_evex(XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, AddressLiteral new_mxcsr, int vec_enc,

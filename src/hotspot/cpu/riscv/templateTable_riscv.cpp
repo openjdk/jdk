@@ -244,10 +244,10 @@ void TemplateTable::fconst(int value) {
       __ fmv_w_x(f10, zr);
       break;
     case 1:
-      __ flw(f10, t0, 0);
+      __ flw(f10, Address(t0, 0));
       break;
     case 2:
-      __ flw(f10, t0, sizeof(float));
+      __ flw(f10, Address(t0, sizeof(float)));
       break;
     default:
       ShouldNotReachHere();
@@ -263,10 +263,10 @@ void TemplateTable::dconst(int value) {
       __ fmv_d_x(f10, zr);
       break;
     case 1:
-      __ fld(f10, t0, 0);
+      __ fld(f10, Address(t0, 0));
       break;
     case 2:
-      __ fld(f10, t0, sizeof(double));
+      __ fld(f10, Address(t0, sizeof(double)));
       break;
     default:
       ShouldNotReachHere();
@@ -387,7 +387,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
     // Stash null_sentinel address to get its value later
     int32_t offset = 0;
-    __ movptr_with_offset(rarg, Universe::the_null_sentinel_addr(), offset);
+    __ mv(rarg, Universe::the_null_sentinel_addr(), offset);
     __ ld(tmp, Address(rarg, offset));
     __ resolve_oop_handle(tmp, x15, t1);
     __ bne(result, tmp, notNull);

@@ -2883,6 +2883,8 @@ uint64_t VM_Version::feature_flags() {
       _cpuid_info.xem_xcr0_eax.bits.ymm != 0) {
     result |= CPU_AVX;
     result |= CPU_VZEROUPPER;
+    if (_cpuid_info.std_cpuid1_ecx.bits.f16c != 0)
+      result |= CPU_F16C;
     if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
       result |= CPU_AVX2;
     if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&

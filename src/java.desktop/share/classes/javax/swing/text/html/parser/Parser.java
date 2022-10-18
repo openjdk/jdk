@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -703,6 +703,12 @@ class Parser implements DTDConstants {
                 }
                 if (!s.terminate() || (strict && !s.elem.omitEnd())) {
                     break;
+                } else if (s.terminate()) {
+                    // Since the current tag is not valid in current context
+                    // as otherwise s.advance(elem) would have returned true
+                    // so check if the stack is to be terminated
+                    // in which case return false
+                    return false;
                 }
             }
         }
@@ -2386,11 +2392,6 @@ class Parser implements DTDConstants {
             errorContext();
             error("exception", e.getClass().getName(), e.getMessage());
             e.printStackTrace();
-        } catch (ThreadDeath e) {
-            errorContext();
-            error("terminated");
-            e.printStackTrace();
-            throw e;
         } finally {
             for (; stack != null ; stack = stack.next) {
                 handleEndTag(stack.tag);

@@ -34,7 +34,7 @@ bool Opaque1Node::cmp( const Node &n ) const {
 }
 
 //------------------------------Identity---------------------------------------
-// Do NOT remove the opaque Node until no more loop ops can happen.
+// Do NOT remove the opaque node until no more loop opts can happen.
 Node* Opaque1Node::Identity(PhaseGVN* phase) {
   if (phase->C->post_loop_opts_phase()) {
     return in(1);
@@ -53,6 +53,18 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
 // temp register and an extra move).  If we "accidentally" optimize through
 // this kind of a Node, we'll get slightly pessimal, but correct, code.  Thus
 // it's OK to be slightly sloppy on optimizations here.
+
+// Do NOT remove the opaque node until no more loop opts can happen. Opaque1
+// and Opaque2 nodes are removed together in order to optimize loops away
+// before macro expansion.
+Node* Opaque2Node::Identity(PhaseGVN* phase) {
+  if (phase->C->post_loop_opts_phase()) {
+    return in(1);
+  } else {
+    phase->C->record_for_post_loop_opts_igvn(this);
+  }
+  return this;
+}
 
 // Do not allow value-numbering
 uint Opaque2Node::hash() const { return NO_HASH; }
