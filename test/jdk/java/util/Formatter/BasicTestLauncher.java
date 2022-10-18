@@ -42,9 +42,9 @@ import org.junit.jupiter.params.provider.ValueSource;
  */
 public class BasicTestLauncher {
     // Locale flag for testJVM
-    private static final String LOCALE_PROV = "-Djava.locale.providers=CLDR";
+    private static final String JAVA_OPTS = "-Djava.locale.providers=CLDR";
     // Test class
-    private static final String SOURCE_CLASS = "Basic";
+    private static final String TEST_CLASS = "Basic";
 
 
     /**
@@ -67,7 +67,7 @@ public class BasicTestLauncher {
      */
     private static OutputAnalyzer RunTest(String timeZone) throws IOException{
             // Build and run Basic class with correct configuration
-            ProcessBuilder pb = ProcessTools.createTestJvm(LOCALE_PROV, SOURCE_CLASS);
+            ProcessBuilder pb = ProcessTools.createTestJvm(JAVA_OPTS, TEST_CLASS);
             pb.environment().put("TZ", timeZone);
             Process process = pb.start();
         return new OutputAnalyzer(process);
