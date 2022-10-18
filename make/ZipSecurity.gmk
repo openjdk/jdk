@@ -36,8 +36,8 @@ include JavaCompilation.gmk
 $(eval $(call SetupZipArchive,BUILD_SEC_BIN_ZIP, \
     SRC := $(JDK_OUTPUTDIR), \
     INCLUDE_FILES := \
-        modules/java.base/javax/crypto/JarVerifier.class \
-        modules/java.base/javax/crypto/ProviderVerifier.class, \
+        modules/java.base/javax/crypto/JarVerifier*.class \
+        modules/java.base/javax/crypto/ProviderVerifier*.class, \
     ZIP := $(IMAGES_OUTPUTDIR)/sec-bin.zip))
 
 TARGETS += $(IMAGES_OUTPUTDIR)/sec-bin.zip
