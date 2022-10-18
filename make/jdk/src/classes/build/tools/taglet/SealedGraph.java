@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ import static java.lang.System.lineSeparator;
 import static jdk.javadoc.doclet.Taglet.Location.TYPE;
 
 /**
- * A block tag to optionally insert a reference to a sealed class hierarchy graph.
+ * A block tag to optionally insert a reference to a sealed class hierarchy graph,
+ * and generate the corresponding dot file.
  */
 public final class SealedGraph implements Taglet {
     private static final String sealedGraphDotPath =
@@ -105,16 +106,16 @@ public final class SealedGraph implements Taglet {
 
         String simpleTypeName = element.getSimpleName().toString();
         String imageFile = simpleTypeName + "-sealed-graph.svg";
-        int thumbnailHeight = 100;
-        var hoverImage = "<span>"
-                + getImage(simpleTypeName, imageFile, -1, true)
-                + "</span>";
+        int thumbnailHeight = 100; // also appears in the stylesheet
+        String hoverImage = "<span>"
+            + getImage(simpleTypeName, imageFile, -1, true)
+            + "</span>";
 
         return "<dt>Sealed Class Hierarchy Graph:</dt>"
                 + "<dd>"
                 + "<a class=\"sealed-graph\" href=\"" + imageFile + "\">"
                 + getImage(simpleTypeName, imageFile, thumbnailHeight, false)
-                // + hoverImage
+                + hoverImage
                 + "</a>"
                 + "</dd>";
     }
@@ -122,10 +123,10 @@ public final class SealedGraph implements Taglet {
     private static final String VERTICAL_ALIGN = "vertical-align:top";
     private static final String BORDER = "border: solid lightgray 1px;";
 
-    private String getImage(String moduleName, String file, int height, boolean useBorder) {
+    private String getImage(String typeName, String file, int height, boolean useBorder) {
         return String.format("<img style=\"%s\" alt=\"Sealed class hierarchy graph for %s\" src=\"%s\"%s>",
                 useBorder ? BORDER + " " + VERTICAL_ALIGN : VERTICAL_ALIGN,
-                moduleName,
+                typeName,
                 file,
                 (height <= 0 ? "" : " height=\"" + height + "\""));
     }
@@ -237,7 +238,6 @@ public final class SealedGraph implements Taglet {
                     .toList();
         }
 
-
         private static boolean isInPublicApi(TypeElement typeElement, Set<String> exports) {
            return (exports.contains(packageName(typeElement.getQualifiedName().toString())) ||
                    exports.contains(packageName(typeElement.getSuperclass().toString()))) &&
@@ -251,6 +251,5 @@ public final class SealedGraph implements Taglet {
                     : name.substring(0, lastDot);
         }
     }
-
 }
 
