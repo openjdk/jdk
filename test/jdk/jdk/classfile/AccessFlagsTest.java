@@ -26,28 +26,26 @@
 /*
  * @test
  * @summary Testing Classfile AccessFlags.
- * @run testng AccessFlagsTest
+ * @run junit AccessFlagsTest
  */
 import java.util.EnumSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.lang.reflect.AccessFlag;
 import jdk.classfile.AccessFlags;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.DataProvider;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.ParameterizedTest;
 
-public class AccessFlagsTest {
+class AccessFlagsTest {
 
-    @DataProvider(name = "accessFlagsContexts")
-    public static AccessFlag.Location[] accessFlagsContexts() {
-        return new AccessFlag.Location[] {AccessFlag.Location.CLASS, AccessFlag.Location.METHOD, AccessFlag.Location.FIELD};
-    }
-
-    @Test(dataProvider = "accessFlagsContexts")
-    public void testRandomAccessFlagsConverions(AccessFlag.Location ctx) {
+    @ParameterizedTest
+    @EnumSource(names = { "CLASS", "METHOD", "FIELD" })
+    void testRandomAccessFlagsConverions(AccessFlag.Location ctx) {
         IntFunction<AccessFlags> intFactory = switch (ctx) {
             case CLASS -> AccessFlags::ofClass;
             case METHOD -> AccessFlags::ofMethod;
@@ -74,12 +72,16 @@ public class AccessFlagsTest {
         }
     }
 
-    @Test(dataProvider = "accessFlagsContexts", expectedExceptions = IllegalArgumentException.class)
-    public void testInvalidFlagsUse(AccessFlag.Location ctx) {
-        switch (ctx) {
-            case CLASS -> AccessFlags.ofClass(AccessFlag.values());
-            case FIELD -> AccessFlags.ofField(AccessFlag.values());
-            case METHOD -> AccessFlags.ofMethod(AccessFlag.values());
-        }
+    @Test
+    void testInvalidFlagsUse() {
+        assertAll(
+            () -> assertThrowsForInvalidFlagsUse(AccessFlags::ofClass),
+            () -> assertThrowsForInvalidFlagsUse(AccessFlags::ofField),
+            () -> assertThrowsForInvalidFlagsUse(AccessFlags::ofMethod)
+        );
+    }
+
+    void assertThrowsForInvalidFlagsUse(Consumer<AccessFlag[]> factory) {
+        assertThrows(IllegalArgumentException.class, () -> factory.accept(AccessFlag.values()));
     }
 }

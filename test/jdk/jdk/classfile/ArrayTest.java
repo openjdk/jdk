@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile arrays.
- * @run testng ArrayTest
+ * @run junit ArrayTest
  */
 import jdk.classfile.Classfile;
 import jdk.classfile.ClassModel;
@@ -37,22 +37,22 @@ import jdk.classfile.TypeKind;
 import jdk.classfile.instruction.NewMultiArrayInstruction;
 import jdk.classfile.instruction.NewPrimitiveArrayInstruction;
 import jdk.classfile.instruction.NewReferenceArrayInstruction;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 
-public class ArrayTest {
+class ArrayTest {
     static final String testClassName = "ArrayTest$TestClass";
     static final Path testClassPath = Paths.get(URI.create(ArrayTest.class.getResource(testClassName + ".class").toString()));
 
 
     @Test
-    public void testArrayNew() throws Exception {
+    void testArrayNew() throws Exception {
         ClassModel cm = Classfile.parse(testClassPath);
 
         for (MethodModel mm : cm.methods()) {

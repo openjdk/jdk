@@ -26,14 +26,12 @@
 /*
  * @test
  * @summary Testing Classfile low module attribute.
- * @run testng LowModuleTest
+ * @run junit LowModuleTest
  */
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-
-import java.lang.reflect.Method;
 import java.nio.file.Path;
 
 import jdk.classfile.Attribute;
@@ -45,52 +43,33 @@ import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.constantpool.ModuleEntry;
 import jdk.classfile.constantpool.PackageEntry;
 import jdk.classfile.constantpool.Utf8Entry;
-import org.testng.ITest;
-import org.testng.annotations.*;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * LowModuleTest
  */
-@Test
-public class LowModuleTest implements ITest {
+class LowModuleTest {
 
     private static final boolean VERBOSE = false;
 
-    @DataProvider(name = "corpus")
-    public static Object[] provide() throws IOException {
+    static Path[] corpus() throws IOException {
         return Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/"))
                 .filter(p -> Files.isRegularFile(p))
                 .filter(p -> p.endsWith("module-info.class"))
-                .toArray();
+                .toArray(Path[]::new);
     }
 
-    private String testMethod = "";
-    private final Path path;
-    private final ClassModel classLow;
-
-    @Factory(dataProvider = "corpus")
-    public LowModuleTest(Path path) throws IOException {
-        this.path = path;
-        this.classLow = Classfile.parse(path);
-    }
-
-    @BeforeMethod
-    public void handleTestMethodName(Method method) {
-        testMethod = method.getName();
-    }
-
-    @Override
-    public String getTestName() {
-        return testMethod + "[" + path.toString() + "]";
-    }
-
-    @Test
-    public void testRead() {
+    @ParameterizedTest
+    @MethodSource("corpus")
+    void testRead(Path path, TestInfo test) throws Exception {
         try {
-            testRead0();
+            printf("%nCHECK %s%n", test.getDisplayName());
+            ClassModel classLow = Classfile.parse(path);
+            testRead0(classLow);
         } catch(Exception ex) {
             System.err.printf("%nFAIL %s - %s%n", path, ex);
             ex.printStackTrace(System.err);
@@ -98,9 +77,8 @@ public class LowModuleTest implements ITest {
         }
     }
 
-    private void testRead0() {
+    private void testRead0(ClassModel classLow) {
         for (Attribute<?> attr : classLow.attributes()) {
-            printf("%nCHECK %s%n", getTestName());
             switch (attr.attributeName()) {
                 case Attributes.NAME_SOURCE_FILE: {
                     SourceFileAttribute sfa = (SourceFileAttribute) attr;

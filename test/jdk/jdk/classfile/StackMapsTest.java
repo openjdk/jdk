@@ -27,7 +27,7 @@
  * @test
  * @summary Testing Classfile stack maps generator.
  * @build testdata.*
- * @run testng StackMapsTest
+ * @run junit StackMapsTest
  */
 
 import jdk.classfile.Classfile;
@@ -35,7 +35,8 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
 import static jdk.classfile.Classfile.ACC_STATIC;
 
@@ -48,7 +49,7 @@ import java.lang.reflect.AccessFlag;
 /**
  * StackMapsTest
  */
-public class StackMapsTest {
+class StackMapsTest {
 
     private byte[] buildDeadCode() {
         return Classfile.build(
@@ -88,88 +89,109 @@ public class StackMapsTest {
     }
 
     @Test
-    public void testDeadCodePatternPatch() throws Exception {
+    void testDeadCodePatternPatch() throws Exception {
         testTransformedStackMaps(buildDeadCode());
     }
 
-    @Test(expectedExceptions = VerifyError.class, expectedExceptionsMessageRegExp = "Unable to generate stack map frame for dead code at bytecode offset 1 of method twoReturns.+opcode: RETURN.+")
-    public void testDeadCodePatternFail() throws Exception {
-        testTransformedStackMaps(buildDeadCode(), Classfile.Option.patchDeadCode(false));
+    @Test
+    void testDeadCodePatternFail() throws Exception {
+        var error = assertThrows(VerifyError.class, () -> testTransformedStackMaps(buildDeadCode(), Classfile.Option.patchDeadCode(false)));
+        assertLinesMatch(
+            """
+            Unable to generate stack map frame for dead code at bytecode offset 1 of method twoReturns()
+            >> more lines >>
+                0: {opcode: RETURN}
+                1: {opcode: RETURN}
+            """.lines(),
+            error.getMessage().lines(),
+            error.getMessage()
+        );
     }
 
     @Test
-    public void testUnresolvedPermission() throws Exception {
+    void testUnresolvedPermission() throws Exception {
         testTransformedStackMaps("modules/java.base/java/security/UnresolvedPermission.class");
     }
 
     @Test
-    public void testURL() throws Exception {
+    void testURL() throws Exception {
         testTransformedStackMaps("modules/java.base/java/net/URL.class");
     }
 
     @Test
-    public void testPattern1() throws Exception {
+    void testPattern1() throws Exception {
         testTransformedStackMaps("/testdata/Pattern1.class");
     }
 
     @Test
-    public void testPattern2() throws Exception {
+    void testPattern2() throws Exception {
         testTransformedStackMaps("/testdata/Pattern2.class");
     }
 
     @Test
-    public void testPattern3() throws Exception {
+    void testPattern3() throws Exception {
         testTransformedStackMaps("/testdata/Pattern3.class");
     }
 
     @Test
-    public void testPattern4() throws Exception {
+    void testPattern4() throws Exception {
         testTransformedStackMaps("/testdata/Pattern4.class");
     }
 
     @Test
-    public void testPattern5() throws Exception {
+    void testPattern5() throws Exception {
         testTransformedStackMaps("/testdata/Pattern5.class");
     }
 
     @Test
-    public void testPattern6() throws Exception {
+    void testPattern6() throws Exception {
         testTransformedStackMaps("/testdata/Pattern6.class");
     }
 
     @Test
-    public void testPattern7() throws Exception {
+    void testPattern7() throws Exception {
         testTransformedStackMaps("/testdata/Pattern7.class");
     }
 
     @Test
-    public void testPattern8() throws Exception {
+    void testPattern8() throws Exception {
         testTransformedStackMaps("/testdata/Pattern8.class");
     }
 
     @Test
-    public void testPattern9() throws Exception {
+    void testPattern9() throws Exception {
         testTransformedStackMaps("/testdata/Pattern9.class");
     }
 
     @Test
-    public void testPattern10() throws Exception {
+    void testPattern10() throws Exception {
         testTransformedStackMaps("/testdata/Pattern10.class");
     }
 
-    @Test(expectedExceptions = VerifyError.class, expectedExceptionsMessageRegExp = "Detected branch target out of bytecode range at bytecode offset 0 of method frameOutOfRangeMethod.+opcode: GOTO.+")
-    public void testFrameOutOfBytecodeRange() {
+    @Test
+    void testFrameOutOfBytecodeRange() {
+        var error = assertThrows(VerifyError.class, () ->
         Classfile.parse(
                 Classfile.build(ClassDesc.of("TestClass"), clb ->
                         clb.withMethodBody("frameOutOfRangeMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                             var l = cob.newLabel();
                             cob.goto_(l);//jump to the end of method body triggers invalid frame creation
                             cob.labelBinding(l);
-                        })));
+                        }))));
+        assertLinesMatch(
+            """
+            Detected branch target out of bytecode range at bytecode offset 0 of method frameOutOfRangeMethod()
+            >> more lines >>
+                0: {opcode: GOTO, target: 3}
+            """.lines(),
+            error.getMessage().lines(),
+            error.getMessage()
+        );
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testMethodSwitchFromStatic() {
+    @Test
+    void testMethodSwitchFromStatic() {
+        assertThrows(IllegalArgumentException.class, () ->
         Classfile.build(ClassDesc.of("TestClass"), clb ->
                 clb.withMethod("testMethod", MethodTypeDesc.of(ConstantDescs.CD_Object, ConstantDescs.CD_int),
                                ACC_STATIC,
@@ -177,11 +199,12 @@ public class StackMapsTest {
                                            var t = cob.newLabel();
                                            cob.aload(0).goto_(t).labelBinding(t).areturn();
                                        })
-                                       .withFlags()));
+                                       .withFlags())));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testMethodSwitchToStatic() {
+    @Test
+    void testMethodSwitchToStatic() {
+        assertThrows(IllegalArgumentException.class, () ->
         Classfile.build(ClassDesc.of("TestClass"), clb ->
                 clb.withMethod("testMethod", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_int),
                                0, mb ->
@@ -189,7 +212,7 @@ public class StackMapsTest {
                                              var t = cob.newLabel();
                                              cob.iload(0).goto_(t).labelBinding(t).ireturn();
                                          })
-                                         .withFlags(AccessFlag.STATIC)));
+                                         .withFlags(AccessFlag.STATIC))));
     }
 
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));

@@ -23,6 +23,11 @@
  * questions.
  */
 
+/*
+ * @test
+ * @summary Testing Classfile TransformExamples compilation.
+ * @compile TransformExamples.java
+ */
 import jdk.classfile.ClassModel;
 import jdk.classfile.ClassTransform;
 import jdk.classfile.FieldModel;

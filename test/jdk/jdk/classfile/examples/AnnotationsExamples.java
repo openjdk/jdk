@@ -23,13 +23,15 @@
  * questions.
  */
 
-import java.io.IOException;
+/*
+ * @test
+ * @summary Testing Classfile AnnotationsExamples compilation.
+ * @compile AnnotationsExamples.java
+ */
 import java.lang.constant.ClassDesc;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import helpers.CorpusTestHelper;
 import jdk.classfile.Annotation;
 import jdk.classfile.Attributes;
 import jdk.classfile.ClassBuilder;
@@ -40,34 +42,20 @@ import jdk.classfile.Classfile;
 import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
 import jdk.classfile.components.ClassPrinter;
-import org.testng.Assert;
-import org.testng.annotations.Factory;
-import org.testng.annotations.Test;
 
-public class AnnotationsExamples extends CorpusTestHelper {
-
-    @Factory(dataProvider = "corpus")
-    public AnnotationsExamples(Path path) throws IOException {
-        super(path);
-    }
+public class AnnotationsExamples {
 
     /** Add a single annotation to a class using a builder convenience */
-    @Test(enabled = true)
-    public void addAnno() {
+    public byte[] addAnno(ClassModel m) {
         // @@@ Not correct
-        ClassModel m = Classfile.parse(bytes);
         List<Annotation> annos = List.of(Annotation.of(ClassDesc.of("java.lang.FunctionalInterface")));
-        var newBytes = m.transform(ClassTransform.endHandler(cb -> cb.with(RuntimeVisibleAnnotationsAttribute.of(annos))));
-        ClassModel res = Classfile.parse(newBytes);
+        return m.transform(ClassTransform.endHandler(cb -> cb.with(RuntimeVisibleAnnotationsAttribute.of(annos))));
     }
 
     /**
      * Find classes with annotations of a certain type
      */
-    @Test(enabled = true)
-    public void findAnnotation() {
-        ClassModel m = Classfile.parse(bytes);
-
+    public void findAnnotation(ClassModel m) {
         if (m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent()) {
             RuntimeVisibleAnnotationsAttribute a = m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get();
             for (Annotation ann : a.annotations()) {
@@ -80,9 +68,7 @@ public class AnnotationsExamples extends CorpusTestHelper {
     /**
      * Find classes with a specific annotation and create a new byte[] with that annotation swapped for @Deprecated.
      */
-    @Test(enabled = true)
-    public void swapAnnotation() {
-        ClassModel m = Classfile.parse(bytes);
+    public void swapAnnotation(ClassModel m) {
         ClassModel m2 = m;
 
         if (m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent()) {
@@ -125,9 +111,7 @@ public class AnnotationsExamples extends CorpusTestHelper {
     /**
      * Find classes with a specific annotation and create a new byte[] with the same content except also adding a new annotation
      */
-    @Test(enabled = true)
-    public void addAnnotation() {
-        ClassModel m = Classfile.parse(bytes);
+    public void addAnnotation(ClassModel m) {
         ClassModel m2 = m;
 
         if (m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent()) {
@@ -159,10 +143,8 @@ public class AnnotationsExamples extends CorpusTestHelper {
         }
     }
 
-    @Test(enabled = true)
-    public void viaEndHandlerClassBuilderEdition() {
-        ClassModel m = Classfile.parse(bytes);
-        byte[] transformed = m.transform(ClassTransform.ofStateful(() -> new ClassTransform() {
+    public byte[] viaEndHandlerClassBuilderEdition(ClassModel m) {
+        return m.transform(ClassTransform.ofStateful(() -> new ClassTransform() {
             boolean found = false;
 
             @Override
@@ -186,21 +168,10 @@ public class AnnotationsExamples extends CorpusTestHelper {
                 }
             }
         }));
-
-        ClassModel n = Classfile.parse(transformed);
-
-        // This doesn't work
-            // Assert.assertTrue(m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent(), "All classes should have annotations by now");
-
-        // But this does
-        Assert.assertTrue(n.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent(), "All classes should have annotations by now");
     }
 
-    @Test(enabled = true)
-    public void viaEndHandlerClassTransformEdition() {
-        ClassModel m = Classfile.parse(bytes);
-
-        byte[] transformed = m.transform(ClassTransform.ofStateful(() -> new ClassTransform() {
+    public byte[] viaEndHandlerClassTransformEdition(ClassModel m) {
+        return m.transform(ClassTransform.ofStateful(() -> new ClassTransform() {
             boolean found = false;
 
             @Override
@@ -224,13 +195,5 @@ public class AnnotationsExamples extends CorpusTestHelper {
                 }
             }
         }));
-
-        ClassModel n = Classfile.parse(transformed);
-
-        // This doesn't work
-        //Assert.assertTrue(m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent(), "All classes should have annotations by now");
-
-        // But this does
-        Assert.assertTrue(n.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent(), "All classes should have annotations by now");
     }
 }

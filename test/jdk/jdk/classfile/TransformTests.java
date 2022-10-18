@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile transformations.
- * @run testng TransformTests
+ * @run junit TransformTests
  */
 import java.net.URI;
 import java.nio.file.Files;
@@ -41,15 +41,14 @@ import jdk.classfile.CodeModel;
 import jdk.classfile.CodeTransform;
 import jdk.classfile.MethodModel;
 import jdk.classfile.instruction.ConstantInstruction;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * TransformTests
  */
-@Test()
-public class TransformTests {
+class TransformTests {
     static final String testClassName = "TransformTests$TestClass";
     static final Path testClassPath = Paths.get(URI.create(ArrayTest.class.getResource(testClassName + ".class").toString()));
     static CodeTransform
@@ -93,7 +92,7 @@ public class TransformTests {
     }
 
     @Test
-    public void testSingleTransform() throws Exception {
+    void testSingleTransform() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
         ClassModel cm = Classfile.parse(bytes);
@@ -104,7 +103,7 @@ public class TransformTests {
     }
 
     @Test
-    public void testSeq2() throws Exception {
+    void testSeq2() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
         ClassModel cm = Classfile.parse(bytes);
@@ -115,7 +114,7 @@ public class TransformTests {
     }
 
     @Test
-    public void testSeqN() throws Exception {
+    void testSeqN() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
         ClassModel cm = Classfile.parse(bytes);

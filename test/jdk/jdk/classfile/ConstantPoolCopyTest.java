@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile constant pool cloning.
- * @run testng ConstantPoolCopyTest
+ * @run junit ConstantPoolCopyTest
  */
 import jdk.classfile.ClassModel;
 import jdk.classfile.ClassReader;
@@ -55,8 +55,8 @@ import jdk.classfile.impl.SplitConstantPool;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
 import jdk.classfile.BootstrapMethodEntry;
 import jdk.classfile.constantpool.ConstantPool;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.net.URI;
@@ -66,17 +66,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ConstantPoolCopyTest {
-    private ClassModel[] classes;
-
-    ConstantPoolCopyTest() throws Exception {
-        classes = rtJarToClassLow(FileSystems.getFileSystem(URI.create("jrt:/")));
-    }
-
-    private ClassModel[] rtJarToClassLow(FileSystem fs) {
+class ConstantPoolCopyTest {
+    private static ClassModel[] rtJarToClassLow(FileSystem fs) {
         try {
             var modules = Stream.of(
                     Files.walk(fs.getPath("modules/java.base/java")),
@@ -100,13 +93,13 @@ public class ConstantPoolCopyTest {
         }
     }
 
-    @DataProvider(name = "classes")
-    public Object[] dataProvider() {
-        return classes;
+    static ClassModel[] classes() {
+        return rtJarToClassLow(FileSystems.getFileSystem(URI.create("jrt:/")));
     }
 
-    @Test(dataProvider = "classes")
-    public void cloneConstantPool(ClassModel c) throws Exception {
+    @ParameterizedTest
+    @MethodSource("classes")
+    void cloneConstantPool(ClassModel c) throws Exception {
         ConstantPool cp = c.constantPool();
         ConstantPoolBuilder cp2 = new SplitConstantPool((ClassReader) cp);
 

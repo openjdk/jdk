@@ -27,43 +27,112 @@
  * @test
  * @summary Testing Classfile on small Corpus.
  * @build helpers.* testdata.*
- * @run testng CorpusTest
+ * @run junit/othervm -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
  */
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPool;
 import com.sun.tools.classfile.ConstantPoolException;
 import helpers.ClassRecord;
 import helpers.ClassRecord.CompatibilityFilter;
-import helpers.CorpusTestHelper;
 import helpers.Transforms;
-import jdk.classfile.Classfile;
-import org.testng.annotations.Factory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
 
 import static com.sun.tools.classfile.ConstantPool.CONSTANT_Double;
 import static com.sun.tools.classfile.ConstantPool.CONSTANT_Long;
 import static helpers.ClassRecord.assertEqualsDeep;
 import static java.util.stream.Collectors.joining;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+import jdk.classfile.Attributes;
+import jdk.classfile.BufWriter;
+import jdk.classfile.Classfile;
+import jdk.classfile.ClassTransform;
+import jdk.classfile.impl.DirectCodeBuilder;
+import jdk.classfile.impl.UnboundAttribute;
+import jdk.classfile.instruction.LineNumber;
+import jdk.classfile.instruction.LocalVariable;
+import jdk.classfile.instruction.LocalVariableType;
 
 /**
  * CorpusTest
  */
-@Test
-public class CorpusTest extends CorpusTestHelper {
-    @Factory(dataProvider = "corpus")
-    public CorpusTest(Path path) throws IOException {
-        super(path);
+@Execution(ExecutionMode.CONCURRENT)
+class CorpusTest {
+
+    protected static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
+    protected static final String testFilter = null; //"modules/java.base/java/util/function/Supplier.class";
+
+    static void splitTableAttributes(String sourceClassFile, String targetClassFile) throws IOException, URISyntaxException {
+        var root = Paths.get(URI.create(CorpusTest.class.getResource("CorpusTest.class").toString())).getParent();
+        Files.write(root.resolve(targetClassFile), Classfile.parse(root.resolve(sourceClassFile)).transform(ClassTransform.transformingMethodBodies((cob, coe) -> {
+            var dcob = (DirectCodeBuilder)cob;
+            var curPc = dcob.curPc();
+            switch (coe) {
+                case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LINE_NUMBER_TABLE) {
+                    @Override
+                    public void writeBody(BufWriter b) {
+                        b.writeU2(1);
+                        b.writeU2(curPc);
+                        b.writeU2(ln.line());
+                    }
+                });
+                case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TABLE) {
+                    @Override
+                    public void writeBody(BufWriter b) {
+                        b.writeU2(1);
+                        lv.writeTo(b);
+                    }
+                });
+                case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
+                    @Override
+                    public void writeBody(BufWriter b) {
+                        b.writeU2(1);
+                        lvt.writeTo(b);
+                    }
+                });
+                default -> cob.with(coe);
+            }
+        })));
+//        ClassRecord.assertEqualsDeep(
+//                ClassRecord.ofClassModel(ClassModel.of(Files.readAllBytes(root.resolve(targetClassFile)))),
+//                ClassRecord.ofClassModel(ClassModel.of(Files.readAllBytes(root.resolve(sourceClassFile)))));
+//        ClassPrinter.toYaml(ClassModel.of(Files.readAllBytes(root.resolve(targetClassFile))), ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
     }
 
-    @Test()
-    public void testNullAdaptations() {
+    static Path[] corpus() throws IOException, URISyntaxException {
+        splitTableAttributes("testdata/Pattern2.class", "testdata/Pattern2-split.class");
+        return Stream.of(
+                Files.walk(JRT.getPath("modules/java.base/java")),
+                Files.walk(JRT.getPath("modules"), 2).filter(p -> p.endsWith("module-info.class")),
+                Files.walk(Paths.get(URI.create(CorpusTest.class.getResource("CorpusTest.class").toString())).getParent()))
+                .flatMap(p -> p)
+                .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class") && !p.endsWith("DeadCodePattern.class"))
+                .filter(p -> testFilter == null || p.toString().equals(testFilter))
+                .toArray(Path[]::new);
+    }
+
+
+    @ParameterizedTest
+    @MethodSource("corpus")
+    void testNullAdaptations(Path path) throws Exception {
+        byte[] bytes = Files.readAllBytes(path);
+
         Optional<ClassRecord> oldRecord;
         Optional<ClassRecord> newRecord;
         Map<Transforms.NoOpTransform, Exception> errors = new HashMap<>();
@@ -137,8 +206,11 @@ public class CorpusTest extends CorpusTestHelper {
         }
     }
 
-    @Test
-    public void testReadAndTransform() throws IOException, ConstantPoolException {
+    @ParameterizedTest
+    @MethodSource("corpus")
+    void testReadAndTransform(Path path) throws IOException, ConstantPoolException {
+        byte[] bytes = Files.readAllBytes(path);
+
         var classModel = Classfile.parse(bytes);
         var classFile = ClassFile.read(new ByteArrayInputStream(bytes));
         assertEqualsDeep(ClassRecord.ofClassModel(classModel), ClassRecord.ofClassFile(classFile),
@@ -158,8 +230,8 @@ public class CorpusTest extends CorpusTestHelper {
         assertEmpty(newModel.verify(null));
     }
 
-    @Test(enabled = false)
-    public void checkDups() {
+//    @Test(enabled = false)
+//    public void checkDups() {
         // Checks input files for dups -- and there are.  Not clear this test has value.
         // Tests above
 //        Map<Integer, Integer> dups = findDups(bytes);
@@ -169,7 +241,7 @@ public class CorpusTest extends CorpusTestHelper {
 //                                    .collect(joining(", "));
 //            System.out.println(String.format("Duplicate entries in input file %s: %s", path, dupsString));
 //        }
-    }
+//    }
 
     private void compareCp(byte[] orig, byte[] transformed) {
         try {

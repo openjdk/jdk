@@ -26,24 +26,24 @@
 /*
  * @test
  * @summary Testing Classfile builder parameters.
- * @run testng BuilderParamTest
+ * @run junit BuilderParamTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import jdk.classfile.Classfile;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.lang.constant.ConstantDescs.CD_void;
 import static jdk.classfile.Classfile.ACC_STATIC;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * BuilderParamTest
  */
-@Test
-public class BuilderParamTest {
-    public void testDirectBuilder() {
+class BuilderParamTest {
+    @Test
+    void testDirectBuilder() {
 
         Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), 0,

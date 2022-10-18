@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile class hierarchy resolution SPI.
- * @run testng ClassHierarchyInfoTest
+ * @run junit ClassHierarchyInfoTest
  */
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
@@ -43,20 +43,18 @@ import jdk.classfile.Classfile;
 import jdk.classfile.CodeModel;
 import jdk.classfile.MethodModel;
 import jdk.classfile.impl.Util;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-/**
- *
- */
-public class ClassHierarchyInfoTest {
+class ClassHierarchyInfoTest {
 
-    @Test(expectedExceptions = VerifyError.class)
+    @Test
     public void testProduceInvalidStackMaps() throws Exception {
-        transformAndVerify(className -> null);
+        assertThrows(VerifyError.class, () -> transformAndVerify(className -> null));
     }
 
     @Test
-    public void testProvideCustomClassHierarchy() throws Exception {
+    void testProvideCustomClassHierarchy() throws Exception {
         transformAndVerify(ClassHierarchyResolver.of(
                 Set.of(ConstantDescs.CD_Set,
                        ConstantDescs.CD_Collection),
@@ -65,15 +63,17 @@ public class ClassHierarchyInfoTest {
                         ClassDesc.of("java.util.HashMap$Values"), ConstantDescs.CD_Object)));
     }
 
-    @Test(expectedExceptions = VerifyError.class)
-    public void testBreakDefaulClassHierarchy() throws Exception {
+    @Test
+    void testBreakDefaulClassHierarchy() throws Exception {
+        assertThrows(VerifyError.class, () -> 
         transformAndVerify(ClassHierarchyResolver.of(
                 Set.of(),
-                Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER));
+                Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER))
+        );
     }
 
     @Test
-    public void testProvideCustomClassStreamResolver() throws Exception {
+    void testProvideCustomClassStreamResolver() throws Exception {
         var fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         transformAndVerify(ClassHierarchyResolver.ofCached(classDesc -> {
             try {
@@ -84,7 +84,7 @@ public class ClassHierarchyInfoTest {
         }));
     }
 
-    public void transformAndVerify(ClassHierarchyResolver res) throws Exception {
+    void transformAndVerify(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
         var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(res));
         byte[] newBytes = classModel.transform(

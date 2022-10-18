@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Classfile builder blocks.
- * @run testng BuilderTryCatchTest
+ * @run junit BuilderTryCatchTest
  */
 
 import jdk.classfile.AccessFlags;
@@ -35,8 +35,8 @@ import jdk.classfile.Opcode;
 import jdk.classfile.TypeKind;
 import jdk.classfile.instruction.BranchInstruction;
 import jdk.classfile.instruction.ExceptionCatch;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -54,15 +54,14 @@ import static java.lang.constant.ConstantDescs.CD_Integer;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_String;
 
-@Test
-public class BuilderTryCatchTest {
+class BuilderTryCatchTest {
 
     static final ClassDesc CD_IOOBE = IndexOutOfBoundsException.class.describeConstable().get();
     static final ClassDesc CD_NPE = NullPointerException.class.describeConstable().get();
     static final MethodTypeDesc MTD_String = MethodType.methodType(String.class).describeConstable().get();
 
     @Test
-    public void testTryCatchCatchAll() throws Throwable {
+    void testTryCatchCatchAll() throws Throwable {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {
             catchBuilder.catching(CD_IOOBE, tb -> {
                 tb.pop();
@@ -81,13 +80,13 @@ public class BuilderTryCatchTest {
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(String.class, String[].class));
 
-        Assert.assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
-        Assert.assertEquals(main.invoke(new String[]{}), "IndexOutOfBoundsException");
-        Assert.assertEquals(main.invoke(null), "any");
+        assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
+        assertEquals(main.invoke(new String[]{}), "IndexOutOfBoundsException");
+        assertEquals(main.invoke(null), "any");
     }
 
     @Test
-    public void testTryCatchCatchAllReachable() throws Throwable {
+    void testTryCatchCatchAllReachable() throws Throwable {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {
             catchBuilder.catching(CD_IOOBE, tb -> {
                 tb.pop();
@@ -106,13 +105,13 @@ public class BuilderTryCatchTest {
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(String.class, String[].class));
 
-        Assert.assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
-        Assert.assertEquals(main.invoke(new String[]{}), "IndexOutOfBoundsException");
-        Assert.assertEquals(main.invoke(null), "any");
+        assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
+        assertEquals(main.invoke(new String[]{}), "IndexOutOfBoundsException");
+        assertEquals(main.invoke(null), "any");
     }
 
     @Test
-    public void testTryMutliCatchReachable() throws Throwable {
+    void testTryMutliCatchReachable() throws Throwable {
         byte[] bytes = generateTryCatchMethod(catchBuilder ->
             catchBuilder.catchingMulti(List.of(CD_IOOBE, CD_NPE), tb -> {
                 tb.invokevirtual(CD_Object, "toString", MTD_String);
@@ -123,12 +122,12 @@ public class BuilderTryCatchTest {
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(String.class, String[].class));
 
-        Assert.assertTrue(main.invoke(new String[]{}).toString().contains("IndexOutOfBoundsException"));
-        Assert.assertTrue(main.invoke(null).toString().contains("NullPointerException"));
+        assertTrue(main.invoke(new String[]{}).toString().contains("IndexOutOfBoundsException"));
+        assertTrue(main.invoke(null).toString().contains("NullPointerException"));
     }
 
     @Test
-    public void testTryCatch() throws Throwable {
+    void testTryCatch() throws Throwable {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {
             catchBuilder.catching(CD_IOOBE, tb -> {
                 tb.pop();
@@ -142,14 +141,14 @@ public class BuilderTryCatchTest {
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(String.class, String[].class));
 
-        Assert.assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
-        Assert.assertEquals(main.invoke(new String[]{}), "IndexOutOfBoundsException");
-        Assert.assertThrows(NullPointerException.class,
+        assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
+        assertEquals(main.invoke(new String[]{}), "IndexOutOfBoundsException");
+        assertThrows(NullPointerException.class,
                 () -> main.invoke(null));
     }
 
     @Test
-    public void testTryCatchAll() throws Throwable {
+    void testTryCatchAll() throws Throwable {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {
             catchBuilder.catchingAll(tb -> {
                 tb.pop();
@@ -163,13 +162,13 @@ public class BuilderTryCatchTest {
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(String.class, String[].class));
 
-        Assert.assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
-        Assert.assertEquals(main.invoke(new String[]{}), "any");
-        Assert.assertEquals(main.invoke(null), "any");
+        assertEquals(main.invoke(new String[]{"BODY"}), "BODY");
+        assertEquals(main.invoke(new String[]{}), "any");
+        assertEquals(main.invoke(null), "any");
     }
 
     @Test
-    public void testTryEmptyCatch() {
+    void testTryEmptyCatch() {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {});
 
         boolean anyGotos = Classfile.parse(bytes).methods().stream()
@@ -178,11 +177,11 @@ public class BuilderTryCatchTest {
                 .anyMatch(codeElement ->
                         (codeElement instanceof BranchInstruction bi && bi.opcode() == Opcode.GOTO) ||
                                 (codeElement instanceof ExceptionCatch));
-        Assert.assertFalse(anyGotos);
+        assertFalse(anyGotos);
     }
 
     @Test
-    public void testEmptyTry() {
+    void testEmptyTry() {
         byte[] bytes = Classfile.build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
@@ -191,10 +190,10 @@ public class BuilderTryCatchTest {
                             xb.constantInstruction("S");
                             xb.astore(stringSlot);
 
-                            Assert.assertThrows(IllegalStateException.class, () -> {
+                            assertThrows(IllegalStateException.class, () -> {
                                 xb.trying(tb -> {
                                 }, catchBuilder -> {
-                                    Assert.fail();
+                                    fail();
 
                                     catchBuilder.catchingAll(tb -> {
                                         tb.pop();
@@ -213,7 +212,7 @@ public class BuilderTryCatchTest {
     }
 
     @Test
-    public void testLocalAllocation() throws Throwable {
+    void testLocalAllocation() throws Throwable {
         byte[] bytes = Classfile.build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
@@ -271,9 +270,9 @@ public class BuilderTryCatchTest {
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(String.class, String[].class));
 
-        Assert.assertEquals(main.invoke(new String[]{"BODY"}), Integer.toString(4));
-        Assert.assertEquals(main.invoke(new String[]{}), Double.toString(Math.PI));
-        Assert.assertEquals(main.invoke(null), "REF");
+        assertEquals(main.invoke(new String[]{"BODY"}), Integer.toString(4));
+        assertEquals(main.invoke(new String[]{}), Double.toString(Math.PI));
+        assertEquals(main.invoke(null), "REF");
     }
 
     static byte[] generateTryCatchMethod(Consumer<CodeBuilder.CatchBuilder> c) {

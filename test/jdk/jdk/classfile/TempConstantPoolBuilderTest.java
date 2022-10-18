@@ -26,13 +26,13 @@
 /*
  * @test
  * @summary Testing Classfile TempConstantPoolBuilder.
- * @run testng TempConstantPoolBuilderTest
+ * @run junit TempConstantPoolBuilderTest
  */
 import jdk.classfile.*;
 import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.classfile.attribute.SourceFileAttribute;
 import java.lang.reflect.AccessFlag;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
 
@@ -43,18 +43,18 @@ import java.lang.constant.MethodTypeDesc;
 import static jdk.classfile.Opcode.INVOKESPECIAL;
 import static jdk.classfile.TypeKind.VoidType;
 
-public class TempConstantPoolBuilderTest {
+class TempConstantPoolBuilderTest {
 
     public static final ClassDesc INTERFACE = ClassDesc.ofDescriptor("Ljava/lang/FunctionalInterface;");
 
-    @Test()
-    public void createAnno() {
+    @Test
+    void createAnno() {
         Annotation a = Annotation.of(INTERFACE,
                                      AnnotationElement.ofString("foo", "bar"));
     }
 
     @Test
-    public void addAnno() {
+    void addAnno() {
         byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))

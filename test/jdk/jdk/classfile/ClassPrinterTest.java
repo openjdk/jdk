@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile ClassPrinter.
- * @run testng ClassPrinterTest
+ * @run junit ClassPrinterTest
  */
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
@@ -37,10 +37,10 @@ import java.util.Optional;
 import jdk.classfile.*;
 import jdk.classfile.attribute.*;
 import jdk.classfile.components.ClassPrinter;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ClassPrinterTest {
+class ClassPrinterTest {
 
     ClassModel getClassModel() {
         return Classfile.parse(Classfile.build(ClassDesc.of("Foo"), clb ->
@@ -112,7 +112,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintYamlTraceAll() throws IOException {
+    void testPrintYamlTraceAll() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toYaml(getClassModel(), ClassPrinter.Verbosity.TRACE_ALL, out::append);
         assertOut(out,
@@ -270,7 +270,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintYamlCriticalAttributes() throws IOException {
+    void testPrintYamlCriticalAttributes() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toYaml(getClassModel(), ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, out::append);
         assertOut(out,
@@ -319,7 +319,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintYamlMembersOnly() throws IOException {
+    void testPrintYamlMembersOnly() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toYaml(getClassModel(), ClassPrinter.Verbosity.MEMBERS_ONLY, out::append);
         assertOut(out,
@@ -344,7 +344,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintJsonTraceAll() throws IOException {
+    void testPrintJsonTraceAll() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toJson(getClassModel(), ClassPrinter.Verbosity.TRACE_ALL, out::append);
         assertOut(out,
@@ -502,7 +502,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintJsonCriticalAttributes() throws IOException {
+    void testPrintJsonCriticalAttributes() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toJson(getClassModel(), ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, out::append);
         assertOut(out,
@@ -551,7 +551,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintJsonMembersOnly() throws IOException {
+    void testPrintJsonMembersOnly() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toJson(getClassModel(), ClassPrinter.Verbosity.MEMBERS_ONLY, out::append);
         assertOut(out,
@@ -576,7 +576,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintXmlTraceAll() throws IOException {
+    void testPrintXmlTraceAll() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toXml(getClassModel(), ClassPrinter.Verbosity.TRACE_ALL, out::append);
         assertOut(out,
@@ -739,7 +739,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintXmlCriticalAttributes() throws IOException {
+    void testPrintXmlCriticalAttributes() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toXml(getClassModel(), ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, out::append);
         assertOut(out,
@@ -792,7 +792,7 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testPrintXmlMembersOnly() throws IOException {
+    void testPrintXmlMembersOnly() throws IOException {
         var out = new StringBuilder();
         ClassPrinter.toXml(getClassModel(), ClassPrinter.Verbosity.MEMBERS_ONLY, out::append);
         assertOut(out,
@@ -821,19 +821,19 @@ public class ClassPrinterTest {
     }
 
     @Test
-    public void testWalkTraceAll() throws IOException {
+    void testWalkTraceAll() throws IOException {
         var node = ClassPrinter.toTree(getClassModel(), ClassPrinter.Verbosity.TRACE_ALL);
         assertEquals(node.walk().count(), 509);
     }
 
     @Test
-    public void testWalkCriticalAttributes() throws IOException {
+    void testWalkCriticalAttributes() throws IOException {
         var node = ClassPrinter.toTree(getClassModel(), ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES);
         assertEquals(node.walk().count(), 128);
     }
 
     @Test
-    public void testWalkMembersOnly() throws IOException {
+    void testWalkMembersOnly() throws IOException {
         var node = ClassPrinter.toTree(getClassModel(), ClassPrinter.Verbosity.MEMBERS_ONLY);
         assertEquals(node.walk().count(), 41);
     }
@@ -842,6 +842,6 @@ public class ClassPrinterTest {
 //        System.out.println("-----------------");
 //        System.out.println(out.toString());
 //        System.out.println("-----------------");
-        assertEquals(out.toString().trim().split(" *\r?\n"), expected.trim().split("\n"));
+        assertArrayEquals(out.toString().trim().split(" *\r?\n"), expected.trim().split("\n"));
     }
 }

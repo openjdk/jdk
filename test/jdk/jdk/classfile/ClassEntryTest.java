@@ -1,11 +1,10 @@
 /*
  * @test
  * @summary Testing Classfile ClassEntry lists methods.
- * @run testng ClassEntryTest
+ * @run junit ClassEntryTest
  */
 import jdk.classfile.constantpool.ClassEntry;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
@@ -13,16 +12,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ClassEntryTest {
+class ClassEntryTest {
 
     static final List<ClassEntry> additionCE = List.copyOf(ClassEntry.addingSymbols(List.of(), new ClassDesc[] {ConstantDescs.CD_Void, ConstantDescs.CD_Enum, ConstantDescs.CD_Class}));
     static final List<ClassDesc> additionCD = List.of(ConstantDescs.CD_Void, ConstantDescs.CD_Enum, ConstantDescs.CD_Class);
     static final List<ClassEntry> base = List.copyOf(additionCE);
 
     @Test
-    public void testNPECombos() {
+    void testNPECombos() {
         // NPE on first param
         try {
             ClassEntry.adding(null, additionCE);
@@ -65,11 +64,11 @@ public class ClassEntryTest {
         expected.addAll(additionCE);
         expected = List.copyOf(expected);
         // Ensure inputs are equivalent before using 'expected' as a common result
-        Assert.assertTrue(listCompare(additionCE, ClassEntry.addingSymbols(List.<ClassEntry>of(), additionCD)));
-        Assert.assertTrue(listCompare(expected, ClassEntry.adding(base, additionCE)));
-        Assert.assertTrue(listCompare(expected, ClassEntry.adding(base, additionCE.toArray(new ClassEntry[0]))));
-        Assert.assertTrue(listCompare(expected, ClassEntry.addingSymbols(base, additionCD)));
-        Assert.assertTrue(listCompare(expected, ClassEntry.addingSymbols(base, additionCD.toArray(new ClassDesc[0]))));
+        assertTrue(listCompare(additionCE, ClassEntry.addingSymbols(List.<ClassEntry>of(), additionCD)));
+        assertTrue(listCompare(expected, ClassEntry.adding(base, additionCE)));
+        assertTrue(listCompare(expected, ClassEntry.adding(base, additionCE.toArray(new ClassEntry[0]))));
+        assertTrue(listCompare(expected, ClassEntry.addingSymbols(base, additionCD)));
+        assertTrue(listCompare(expected, ClassEntry.addingSymbols(base, additionCD.toArray(new ClassDesc[0]))));
     }
 
     boolean listCompare(List<ClassEntry> a, List<ClassEntry> b) {
@@ -112,10 +111,10 @@ public class ClassEntryTest {
 
     @Test
     void addEmpty() {
-        Assert.assertEquals(base, ClassEntry.adding(base, List.of()));
-        Assert.assertEquals(base, ClassEntry.adding(base, new ClassEntry[0]));
-        Assert.assertEquals(base, ClassEntry.addingSymbols(base, List.of()));
-        Assert.assertEquals(base, ClassEntry.addingSymbols(base, new ClassDesc[0]));
+        assertEquals(base, ClassEntry.adding(base, List.of()));
+        assertEquals(base, ClassEntry.adding(base, new ClassEntry[0]));
+        assertEquals(base, ClassEntry.addingSymbols(base, List.of()));
+        assertEquals(base, ClassEntry.addingSymbols(base, new ClassDesc[0]));
     }
 
     @Test
@@ -127,7 +126,7 @@ public class ClassEntryTest {
             if (!result) {
                 fail("Different: " + Arrays.toString(base.toArray())+ " : " + Arrays.toString(dedup.toArray()));
             }
-            Assert.assertTrue(result);
+            assertTrue(result);
         }
         {
             List<ClassEntry> duplicates = ClassEntry.addingSymbols(List.of(), additionCD);
@@ -137,7 +136,7 @@ public class ClassEntryTest {
             if (!result) {
                 fail("Different: " + Arrays.toString(base.toArray())+ " : " + Arrays.toString(dedup.toArray()));
             }
-            Assert.assertTrue(result);
+            assertTrue(result);
         }
 
     }

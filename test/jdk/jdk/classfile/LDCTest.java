@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile LDC instructions.
- * @run testng LDCTest
+ * @run junit LDCTest
  */
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
@@ -36,15 +36,15 @@ import jdk.classfile.*;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
 import jdk.classfile.constantpool.StringEntry;
 import java.lang.reflect.AccessFlag;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 import static helpers.TestConstants.MTD_VOID;
 import static jdk.classfile.Opcode.*;
 import static jdk.classfile.TypeKind.VoidType;
 
-public class LDCTest {
-    @Test()
-    public void testLDCisConvertedToLDCW() throws Exception {
+class LDCTest {
+    @Test
+    void testLDCisConvertedToLDCW() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
@@ -84,11 +84,11 @@ public class LDCTest {
                           .map(e -> (Instruction)e)
                           .toList();
 
-        Assert.assertEquals(opcodes.size(), 4);
-        Assert.assertEquals(opcodes.get(0).opcode(), LDC);
-        Assert.assertEquals(opcodes.get(1).opcode(), LDC_W);
-        Assert.assertEquals(opcodes.get(2).opcode(), LDC);
-        Assert.assertEquals(opcodes.get(3).opcode(), RETURN);
+        assertEquals(opcodes.size(), 4);
+        assertEquals(opcodes.get(0).opcode(), LDC);
+        assertEquals(opcodes.get(1).opcode(), LDC_W);
+        assertEquals(opcodes.get(2).opcode(), LDC);
+        assertEquals(opcodes.get(3).opcode(), RETURN);
     }
 
     // TODO test for explicit LDC_W?

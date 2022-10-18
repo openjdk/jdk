@@ -26,17 +26,17 @@
 /*
  * @test
  * @summary Testing Classfile limits.
- * @run testng LimitsTest
+ * @run junit LimitsTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import jdk.classfile.Classfile;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-public class LimitsTest {
+class LimitsTest {
 
     @Test
-    public void testCPSizeLimit() {
+    void testCPSizeLimit() {
         Classfile.build(ClassDesc.of("BigClass"), cb -> {
             for (int i = 1; i < 65000; i++) {
                 cb.withField("field" + i, ConstantDescs.CD_int, fb -> {});

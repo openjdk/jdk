@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile advanced transformations.
- * @run testng AdvancedTransformationsTest
+ * @run junit AdvancedTransformationsTest
  */
 import helpers.ByteArrayClassLoader;
 import java.util.Map;
@@ -41,8 +41,8 @@ import jdk.classfile.TypeKind;
 import jdk.classfile.impl.StackMapGenerator;
 import jdk.classfile.components.ClassRemapper;
 import jdk.classfile.components.CodeLocalsShifter;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
@@ -72,10 +72,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import jdk.classfile.impl.AbstractPseudoInstruction;
 
-public class AdvancedTransformationsTest {
+class AdvancedTransformationsTest {
 
     @Test
-    public void testShiftLocals() throws Exception {
+    void testShiftLocals() throws Exception {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
             var clm = Classfile.parse(in.readAllBytes());
             var remapped = Classfile.parse(clm.transform((clb, cle) -> {
@@ -107,7 +107,7 @@ public class AdvancedTransformationsTest {
     }
 
     @Test
-    public void testRemapClass() throws Exception {
+    void testRemapClass() throws Exception {
         var map = Map.of(
                 ConstantDescs.CD_List, ClassDesc.of("remapped.List"),
                 ClassDesc.ofDescriptor(AbstractPseudoInstruction.ExceptionCatchImpl.class.descriptorString()), ClassDesc.of("remapped.ExceptionCatchImpl"),
@@ -166,7 +166,7 @@ public class AdvancedTransformationsTest {
     }
 
     @Test
-    public void testRemapModule() throws Exception {
+    void testRemapModule() throws Exception {
         var foo = ClassDesc.ofDescriptor(Foo.class.descriptorString());
         var bar = ClassDesc.ofDescriptor(Bar.class.descriptorString());
 
@@ -183,7 +183,7 @@ public class AdvancedTransformationsTest {
     }
 
     @Test
-    public void testRemapDetails() throws Exception {
+    void testRemapDetails() throws Exception {
         var foo = ClassDesc.ofDescriptor(Foo.class.descriptorString());
         var bar = ClassDesc.ofDescriptor(Bar.class.descriptorString());
         var fooAnno = ClassDesc.ofDescriptor(FooAnno.class.descriptorString());
@@ -233,7 +233,7 @@ public class AdvancedTransformationsTest {
     }
 
     @Test
-    public void testInstrumentClass() throws Exception {
+    void testInstrumentClass() throws Exception {
         var instrumentor = Classfile.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$InstrumentorClass.class").readAllBytes());
         var target = Classfile.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$TargetClass.class").readAllBytes());
         var instrumentedBytes = instrument(target, instrumentor, mm -> mm.methodName().stringValue().equals("instrumentedMethod"));

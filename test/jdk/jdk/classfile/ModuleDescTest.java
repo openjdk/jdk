@@ -26,34 +26,23 @@
 /*
  * @test
  * @summary Testing ModuleDesc.
- * @run testng ModuleDescTest
+ * @run junit ModuleDescTest
  */
 import jdk.classfile.jdktypes.ModuleDesc;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.*;
 
-/**
- *
- */
-public class ModuleDescTest {
+class ModuleDescTest {
 
-    @DataProvider(name = "invalidModuleNames")
-    public static String[] invalidModuleNames() {
-        return new String[] {"abc\\", "ab\\c", "\u0000", "\u0001", "\u001e", "\u001f"};
-    }
-
-    @Test(dataProvider = "invalidModuleNames", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @ValueSource(strings = {"abc\\", "ab\\c", "\u0000", "\u0001", "\u001e", "\u001f"})
     public void testInvalidModuleNames(String mdl) {
-        ModuleDesc.of(mdl);
+        assertThrows(IllegalArgumentException.class, () -> ModuleDesc.of(mdl));
     }
 
-    @DataProvider(name = "validModuleNames")
-    public static String[] validModuleNames() {
-        return new String[] {"a\\\\b", "a.b/c", "a\\@b\\: c"};
-    }
-
-    @Test(dataProvider = "validModuleNames")
+    @ParameterizedTest
+    @ValueSource(strings = {"a\\\\b", "a.b/c", "a\\@b\\: c"})
     public void testValidModuleNames(String mdl) {
         assertEquals(ModuleDesc.of(mdl), ModuleDesc.of(mdl));
         assertEquals(ModuleDesc.of(mdl).moduleName(), mdl);

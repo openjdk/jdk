@@ -26,11 +26,11 @@
 /*
  * @test
  * @summary Testing Classfile annotation model.
- * @run testng AnnotationModelTest
+ * @run junit AnnotationModelTest
  */
 import jdk.classfile.Classfile;
 import jdk.classfile.Attributes;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,9 +38,9 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class AnnotationModelTest {
+class AnnotationModelTest {
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
     private static final String testClass = "modules/java.base/java/lang/annotation/Target.class";
     static byte[] fileBytes;
@@ -54,7 +54,7 @@ public class AnnotationModelTest {
     }
 
     @Test
-    public void readAnnos() {
+    void readAnnos() {
         var model = Classfile.parse(fileBytes);
         var annotations = model.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get().annotations();
 

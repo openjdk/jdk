@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile bootstrap methods.
- * @run testng BSMTest
+ * @run junit BSMTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -45,10 +45,10 @@ import jdk.classfile.constantpool.ConstantPoolBuilder;
 import jdk.classfile.constantpool.LoadableConstantEntry;
 import jdk.classfile.constantpool.MemberRefEntry;
 import jdk.classfile.constantpool.MethodHandleEntry;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.lang.constant.ConstantDescs.CD_String;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BSMTest {
     static final String testClassName = "BSMTest$SomeClass";
@@ -58,8 +58,8 @@ public class BSMTest {
     private static final String TWENTY = "BlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlah";
     private static final String TYPE = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/String;";
 
-    @Test()
-    public void testSevenOfThirteenIterator() throws Exception {
+    @Test
+    void testSevenOfThirteenIterator() throws Exception {
         ClassModel cm = Classfile.parse(testClassPath);
         byte[] newBytes = cm.transform((cb, ce) -> {
             if (ce instanceof MethodModel mm) {

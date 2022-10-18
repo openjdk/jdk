@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile class building.
- * @run testng WriteTest
+ * @run junit WriteTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -38,7 +38,7 @@ import jdk.classfile.Classfile;
 import jdk.classfile.TypeKind;
 import jdk.classfile.Label;
 import jdk.classfile.attribute.SourceFileAttribute;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static helpers.TestConstants.MTD_VOID;
 import static java.lang.constant.ConstantDescs.*;
@@ -47,10 +47,10 @@ import static jdk.classfile.TypeKind.IntType;
 import static jdk.classfile.TypeKind.ReferenceType;
 import static jdk.classfile.TypeKind.VoidType;
 
-@Test
-public class WriteTest {
+class WriteTest {
 
-    public void testJavapWrite() {
+    @Test
+    void testJavapWrite() {
 
         byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
@@ -91,7 +91,8 @@ public class WriteTest {
         });
     }
 
-    public void testPrimitiveWrite() {
+    @Test
+    void testPrimitiveWrite() {
 
         byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
@@ -131,4 +132,3 @@ public class WriteTest {
         });
     }
 }
-

@@ -26,19 +26,19 @@
 /*
  * @test
  * @summary Testing Classfile Util.
- * @run testng UtilTest
+ * @run junit UtilTest
  */
 import jdk.classfile.impl.Util;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * UtilTest
  */
-@Test
-public class UtilTest {
-    public void testFindParams() {
+class UtilTest {
+    @Test
+    void testFindParams() {
         assertEquals(Util.findParams("(IIII)V").cardinality(), 4);
         assertEquals(Util.findParams("([I[I[I[I)V").cardinality(), 4);
         assertEquals(Util.findParams("(IJLFoo;IJ)V").cardinality(), 5);
@@ -48,7 +48,8 @@ public class UtilTest {
         assertEquals(Util.findParams("()V").cardinality(), 0);
     }
 
-    public void testParameterSlots() {
+    @Test
+    void testParameterSlots() {
         assertEquals(Util.parameterSlots("(IIII)V"), 4);
         assertEquals(Util.parameterSlots("([I[I[I[I)V"), 4);
         assertEquals(Util.parameterSlots("(IJLFoo;IJ)V"), 7);
