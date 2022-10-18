@@ -247,21 +247,6 @@ address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg
   return value_addr;
 }
 
-BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) {
-  assert(location.is_stack(), "for now we only look at the stack");
-  int word_offset = location.stack_offset() / wordSize;
-  // (stack picture)
-  // high: [     ]  word_offset + 1
-  // low   [     ]  word_offset
-  //
-  // sp->  [     ]  0
-  // the word_offset is the distance from the stack pointer to the lowest address
-  // The frame's original stack pointer, before any extension by its callee
-  // (due to Compiler1 linkage on SPARC), must be used.
-  return (BasicLock*) (fr->unextended_sp() + word_offset);
-}
-
-
 #ifndef PRODUCT
 
 void StackValue::print_on(outputStream* st) const {

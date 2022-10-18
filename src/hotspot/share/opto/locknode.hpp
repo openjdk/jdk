@@ -89,6 +89,7 @@ public:
 
   // FastLock and FastUnlockNode do not hash, we need one for each corresponding
   // LockNode/UnLockNode to avoid creating Phi's.
+  virtual uint match_edge(uint idx) const { return idx < 2; /* Don't match box */ }
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual uint size_of() const;
   virtual bool cmp( const Node &n ) const ;    // Always fail, except on self
@@ -119,6 +120,7 @@ public:
   virtual bool cmp( const Node &n ) const ;    // Always fail, except on self
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
+  virtual uint match_edge(uint idx) const { return idx < 2; /* Don't match box */ }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
 };

@@ -795,7 +795,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       // (or if input is sufficient). This may have influence on the oop map!
       assert(opLock->_lock->is_valid(), "used");  do_temp(opLock->_lock);
       assert(opLock->_hdr->is_valid(),  "used");  do_temp(opLock->_hdr);
-      assert(opLock->_obj->is_valid(),  "used");  do_temp(opLock->_obj);
+      assert(opLock->_obj->is_valid(),  "used");  do_input(opLock->_obj); do_temp(opLock->_obj);
 
       if (opLock->_scratch->is_valid())           do_temp(opLock->_scratch);
       assert(opLock->_result->is_illegal(), "unused");

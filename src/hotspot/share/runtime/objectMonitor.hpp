@@ -59,7 +59,7 @@ class ObjectWaiter : public StackObj {
 };
 
 // The ObjectMonitor class implements the heavyweight version of a
-// JavaMonitor. The lightweight BasicLock/stack lock version has been
+// JavaMonitor. The lightweight fast-lock version has been
 // inflated into an ObjectMonitor. This inflation is typically due to
 // contention or use of Object.wait().
 //
@@ -146,7 +146,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                         sizeof(WeakHandle));
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
-  void* volatile _owner;            // pointer to owning thread OR BasicLock
+  #define ANONYMOUS_OWNER reinterpret_cast<void*>(1)
+  void* volatile _owner;            // pointer to owning thread
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
@@ -256,8 +257,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      release_clear_owner(void* old_value);
   // Simply set _owner field to new_value; current value must match old_value.
   void      set_owner_from(void* old_value, void* new_value);
-  // Simply set _owner field to current; current value must match basic_lock_p.
-  void      set_owner_from_BasicLock(void* basic_lock_p, JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
@@ -275,6 +274,18 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _next_om field. Returns the prior value of the _next_om field.
   ObjectMonitor* try_set_next_om(ObjectMonitor* old_value, ObjectMonitor* new_value);
+
+  void set_owner_anonymous() {
+    set_owner_from(NULL, ANONYMOUS_OWNER);
+  }
+
+  bool is_owner_anonymous() const {
+    return _owner == ANONYMOUS_OWNER;
+  }
+
+  void set_owner_from_anonymous(Thread* owner) {
+    set_owner_from(ANONYMOUS_OWNER, owner);
+  }
 
   int       waiters() const;
 

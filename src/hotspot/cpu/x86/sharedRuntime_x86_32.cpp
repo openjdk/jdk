@@ -1327,7 +1327,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                        frame_complete,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
-                                       in_ByteSize(-1),
                                        (OopMapSet*)NULL);
   }
   address native_func = method->native_function();
@@ -1382,7 +1381,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   int klass_slot_offset = 0;
   int klass_offset = -1;
-  int lock_slot_offset = 0;
   bool is_static = false;
 
   if (method->is_static()) {
@@ -1395,7 +1393,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Plus a lock if needed
 
   if (method->is_synchronized()) {
-    lock_slot_offset = stack_slots;
     stack_slots += VMRegImpl::slots_per_word;
   }
 
@@ -1410,8 +1407,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   //      |---------------------|
   //      | 2 slots for moves   |
   //      |---------------------|
-  //      | lock box (if sync)  |
-  //      |---------------------| <- lock_slot_offset  (-lock_slot_rbp_offset)
   //      | klass (if static)   |
   //      |---------------------| <- klass_slot_offset
   //      | oopHandle area      |
@@ -1516,10 +1511,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ empty_FPU_stack();
   }
 #endif /* COMPILER2 */
-
-  // Compute the rbp, offset for any slots used after the jni call
-
-  int lock_slot_rbp_offset = (lock_slot_offset*VMRegImpl::stack_slot_size) - fp_adjustment;
 
   // We use rdi as a thread pointer because it is callee save and
   // if we load it once it is usable thru the entire wrapper
@@ -1655,62 +1646,26 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // These are register definitions we need for locking/unlocking
   const Register swap_reg = rax;  // Must use rax, for cmpxchg instruction
   const Register obj_reg  = rcx;  // Will contain the oop
-  const Register lock_reg = rdx;  // Address of compiler lock object (BasicLock)
+  const Register tmp      = rdx;
 
   Label slow_path_lock;
   Label lock_done;
 
   // Lock a synchronized method
   if (method->is_synchronized()) {
-    Label count_mon;
-
-    const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
-
     // Get the handle (the 2nd argument)
     __ movptr(oop_handle_reg, Address(rsp, wordSize));
-
-    // Get address of the box
-
-    __ lea(lock_reg, Address(rbp, lock_slot_rbp_offset));
 
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
     if (!UseHeavyMonitors) {
-      // Load immediate 1 into swap_reg %rax,
-      __ movptr(swap_reg, 1);
-
-      // Load (object->mark() | 1) into swap_reg %rax,
-      __ orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-
-      // Save (object->mark() | 1) into BasicLock's displaced header
-      __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
-
-      // src -> dest iff dest == rax, else rax, <- dest
-      // *obj_reg = lock_reg iff *obj_reg == rax, else rax, = *(obj_reg)
-      __ lock();
-      __ cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ jcc(Assembler::equal, count_mon);
-
-      // Test if the oopMark is an obvious stack pointer, i.e.,
-      //  1) (mark & 3) == 0, and
-      //  2) rsp <= mark < mark + os::pagesize()
-      // These 3 tests can be done by evaluating the following
-      // expression: ((mark - rsp) & (3 - os::vm_page_size())),
-      // assuming both stack pointer and pagesize have their
-      // least significant 2 bits clear.
-      // NOTE: the oopMark is in swap_reg %rax, as the result of cmpxchg
-
-      __ subptr(swap_reg, rsp);
-      __ andptr(swap_reg, 3 - os::vm_page_size());
-
-      // Save the test result, for recursive case, the result is zero
-      __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
-      __ jcc(Assembler::notEqual, slow_path_lock);
+      // Load object header
+      __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ fast_lock_impl(obj_reg, swap_reg, thread, tmp, noreg, slow_path_lock);
     } else {
       __ jmp(slow_path_lock);
     }
-    __ bind(count_mon);
     __ inc_held_monitor_count();
 
     // Slow path will re-enter here
@@ -1830,34 +1785,15 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Get locked oop from the handle we passed to jni
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (!UseHeavyMonitors) {
-      Label not_recur;
-      // Simple recursive lock?
-      __ cmpptr(Address(rbp, lock_slot_rbp_offset), NULL_WORD);
-      __ jcc(Assembler::notEqual, not_recur);
-      __ dec_held_monitor_count();
-      __ jmpb(fast_done);
-      __ bind(not_recur);
-    }
-
     // Must save rax, if it is live now because cmpxchg must use it
     if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
       save_native_result(masm, ret_type, stack_slots);
     }
 
     if (!UseHeavyMonitors) {
-      //  get old displaced header
-      __ movptr(rbx, Address(rbp, lock_slot_rbp_offset));
-
-      // get address of the stack lock
-      __ lea(rax, Address(rbp, lock_slot_rbp_offset));
-
-      // Atomic swap old header if oop still contains the stack lock
-      // src -> dest iff dest == rax, else rax, <- dest
-      // *obj_reg = rbx, iff *obj_reg == rax, else rax, = *(obj_reg)
-      __ lock();
-      __ cmpxchgptr(rbx, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ jcc(Assembler::notEqual, slow_path_unlock);
+      __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
+      __ fast_unlock_impl(obj_reg, swap_reg, tmp, slow_path_unlock);
       __ dec_held_monitor_count();
     } else {
       __ jmp(slow_path_unlock);
@@ -1944,10 +1880,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // has last_Java_frame setup. No exceptions so do vanilla call not call_VM
     // args are (oop obj, BasicLock* lock, JavaThread* thread)
     __ push(thread);
-    __ push(lock_reg);
     __ push(obj_reg);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C)));
-    __ addptr(rsp, 3*wordSize);
+    __ addptr(rsp, 2*wordSize);
 
 #ifdef ASSERT
     { Label L;
@@ -1979,12 +1914,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // +wordSize because of the push above
     // args are (oop obj, BasicLock* lock, JavaThread* thread)
     __ push(thread);
-    __ lea(rax, Address(rbp, lock_slot_rbp_offset));
-    __ push(rax);
 
     __ push(obj_reg);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C)));
-    __ addptr(rsp, 3*wordSize);
+    __ addptr(rsp, 2*wordSize);
 #ifdef ASSERT
     {
       Label L;
@@ -2039,7 +1972,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                             frame_complete,
                                             stack_slots / VMRegImpl::slots_per_word,
                                             (is_static ? in_ByteSize(klass_offset) : in_ByteSize(receiver_offset)),
-                                            in_ByteSize(lock_slot_offset*VMRegImpl::stack_slot_size),
                                             oop_maps);
 
   return nm;

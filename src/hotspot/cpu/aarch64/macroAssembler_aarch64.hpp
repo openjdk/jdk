@@ -1567,6 +1567,9 @@ private:
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 
+public:
+  void fast_lock(Register obj, Register hdr, Register t1, Register t2, Register t3, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 };
 
 #ifdef ASSERT

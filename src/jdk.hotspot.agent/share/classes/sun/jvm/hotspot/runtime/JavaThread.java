@@ -394,15 +394,6 @@ public class JavaThread extends Thread {
     return stackBase.greaterThan(a) && sp.lessThanOrEqual(a);
   }
 
-  public boolean isLockOwned(Address a) {
-    Address stackBase = getStackBase();
-    Address stackLimit = stackBase.addOffsetTo(-getStackSize());
-
-    return stackBase.greaterThan(a) && stackLimit.lessThanOrEqual(a);
-
-    // FIXME: should traverse MonitorArray/MonitorChunks as in VM
-  }
-
   public Oop getCurrentParkBlocker() {
     Oop threadObj = getThreadObj();
     if (threadObj != null) {

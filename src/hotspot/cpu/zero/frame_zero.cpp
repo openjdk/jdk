@@ -394,8 +394,6 @@ void ZeroFrame::identify_vp_word(int       frame_index,
 
     if (offset == BasicObjectLock::obj_offset_in_bytes())
       snprintf(fieldbuf, buflen, "monitor[%d]->_obj", index);
-    else if (offset ==  BasicObjectLock::lock_offset_in_bytes())
-      snprintf(fieldbuf, buflen, "monitor[%d]->_lock", index);
 
     return;
   }

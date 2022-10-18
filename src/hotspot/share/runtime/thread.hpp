@@ -32,6 +32,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
@@ -607,8 +608,7 @@ protected:
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
  public:
-  ParkEvent * volatile _ParkEvent;            // for Object monitors, JVMTI raw monitors,
-                                              // and ObjectSynchronizer::read_stable_mark
+  ParkEvent * volatile _ParkEvent;            // for Object monitors and JVMTI raw monitors
 
   // Termination indicator used by the signal handler.
   // _ParkEvent is just a convenient field we can NULL out after setting the JavaThread termination state
@@ -619,6 +619,16 @@ protected:
   jint _hashStateX;                           // thread-specific hashCode generator state
   jint _hashStateY;
   jint _hashStateZ;
+
+private:
+  LockStack _lock_stack;
+
+public:
+  LockStack& lock_stack() { return _lock_stack; }
+  const LockStack& lock_stack() const { return _lock_stack; }
+
+  static ByteSize lock_stack_current_offset()    { return byte_offset_of(Thread, _lock_stack) + LockStack::current_offset(); }
+  static ByteSize lock_stack_limit_offset()    { return byte_offset_of(Thread, _lock_stack) + LockStack::limit_offset(); }
 
   // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.

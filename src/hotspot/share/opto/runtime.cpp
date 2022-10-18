@@ -564,10 +564,9 @@ const TypeFunc *OptoRuntime::uncommon_trap_Type() {
 // Monitor Handling
 const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
   // create input type (domain)
-  const Type **fields = TypeTuple::fields(2);
+  const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
-  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;   // Address of stack location for lock
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2,fields);
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1,fields);
 
   // create result type (range)
   fields = TypeTuple::fields(0);
@@ -581,11 +580,10 @@ const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
 //-----------------------------------------------------------------------------
 const TypeFunc *OptoRuntime::complete_monitor_exit_Type() {
   // create input type (domain)
-  const Type **fields = TypeTuple::fields(3);
+  const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
-  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock - BasicLock
-  fields[TypeFunc::Parms+2] = TypeRawPtr::BOTTOM;    // Thread pointer (Self)
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3, fields);
+  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Thread pointer (Self)
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
 
   // create result type (range)
   fields = TypeTuple::fields(0);

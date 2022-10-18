@@ -82,7 +82,6 @@ int CompilerToVM::Data::sizeof_LocalVariableTableElement = sizeof(LocalVariableT
 int CompilerToVM::Data::sizeof_ConstantPool = sizeof(ConstantPool);
 int CompilerToVM::Data::sizeof_narrowKlass = sizeof(narrowKlass);
 int CompilerToVM::Data::sizeof_arrayOopDesc = sizeof(arrayOopDesc);
-int CompilerToVM::Data::sizeof_BasicLock = sizeof(BasicLock);
 
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;

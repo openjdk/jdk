@@ -316,12 +316,10 @@ class NewObjectArrayStub: public CodeStub {
 class MonitorAccessStub: public CodeStub {
  protected:
   LIR_Opr _obj_reg;
-  LIR_Opr _lock_reg;
 
  public:
-  MonitorAccessStub(LIR_Opr obj_reg, LIR_Opr lock_reg) {
+  MonitorAccessStub(LIR_Opr obj_reg) {
     _obj_reg  = obj_reg;
-    _lock_reg  = lock_reg;
   }
 
 #ifndef PRODUCT
@@ -335,13 +333,13 @@ class MonitorEnterStub: public MonitorAccessStub {
   CodeEmitInfo* _info;
 
  public:
-  MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info);
+  MonitorEnterStub(LIR_Opr obj_reg, CodeEmitInfo* info);
 
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual void visit(LIR_OpVisitState* visitor) {
     visitor->do_input(_obj_reg);
-    visitor->do_input(_lock_reg);
+    visitor->do_temp(_obj_reg);
     visitor->do_slow_case(_info);
   }
 #ifndef PRODUCT
@@ -351,22 +349,13 @@ class MonitorEnterStub: public MonitorAccessStub {
 
 
 class MonitorExitStub: public MonitorAccessStub {
- private:
-  bool _compute_lock;
-  int  _monitor_ix;
-
  public:
-  MonitorExitStub(LIR_Opr lock_reg, bool compute_lock, int monitor_ix)
-    : MonitorAccessStub(LIR_OprFact::illegalOpr, lock_reg),
-      _compute_lock(compute_lock), _monitor_ix(monitor_ix) { }
+  MonitorExitStub(LIR_Opr obj_reg)
+    : MonitorAccessStub(obj_reg) { }
   virtual void emit_code(LIR_Assembler* e);
   virtual void visit(LIR_OpVisitState* visitor) {
-    assert(_obj_reg->is_illegal(), "unused");
-    if (_compute_lock) {
-      visitor->do_temp(_lock_reg);
-    } else {
-      visitor->do_input(_lock_reg);
-    }
+    visitor->do_input(_obj_reg);
+    visitor->do_temp(_obj_reg);
   }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("MonitorExitStub"); }

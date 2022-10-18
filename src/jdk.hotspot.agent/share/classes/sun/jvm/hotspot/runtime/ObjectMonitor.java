@@ -72,14 +72,23 @@ public class ObjectMonitor extends VMObject {
   //  public boolean isBusy();
   public boolean isEntered(sun.jvm.hotspot.runtime.Thread current) {
     Address o = owner();
-    if (current.threadObjectAddress().equals(o) ||
-        current.isLockOwned(o)) {
+    if (o.asLongValue() == 1) throw new InternalError("Check anonymous owner before calling isEntered()");
+    if (current.threadObjectAddress().equals(o)) {
       return true;
     }
     return false;
   }
 
-  public Address owner() { return addr.getAddressAt(ownerFieldOffset); }
+  public boolean isOwnedAnonymous() {
+    return addr.getAddressAt(ownerFieldOffset).asLongValue() == 1;
+  }
+
+  public Address owner() {
+    Address owner = addr.getAddressAt(ownerFieldOffset);
+    if (owner.asLongValue() == 1) throw new InternalError("Check anonymous owner before calling isEntered()");
+    return owner;
+  }
+
   // FIXME
   //  void      set_owner(void* owner);
 

@@ -36,10 +36,6 @@ markWord markWord::displaced_mark_helper() const {
     ObjectMonitor* monitor = this->monitor();
     return monitor->header();
   }
-  if (has_locker()) {  // has a stack lock
-    BasicLock* locker = this->locker();
-    return locker->displaced_header();
-  }
   // This should never happen:
   fatal("bad header=" INTPTR_FORMAT, value());
   return markWord(value());
@@ -51,11 +47,6 @@ void markWord::set_displaced_mark_helper(markWord m) const {
     // Has an inflated monitor. Must be checked before has_locker().
     ObjectMonitor* monitor = this->monitor();
     monitor->set_header(m);
-    return;
-  }
-  if (has_locker()) {  // has a stack lock
-    BasicLock* locker = this->locker();
-    locker->set_displaced_header(m);
     return;
   }
   // This should never happen:

@@ -585,7 +585,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // Make a frame and preserve the caller's caller-save registers.
         OopMap* oop_map = save_live_registers(sasm, save_fpu_registers);
 
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, monitorenter), Z_R1_scratch, Z_R13);
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, monitorenter), Z_R1_scratch);
 
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, oop_map);

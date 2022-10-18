@@ -68,10 +68,11 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -1375,36 +1376,39 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
   return result;
 }
 
-
-JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
-                                                      address owner) {
-  // NULL owner means not locked so we can skip the search
-  if (owner == NULL) return NULL;
-
-  for (JavaThread* p : *t_list) {
-    // first, see if owner is the address of a Java thread
-    if (owner == (address)p) return p;
-  }
-
-  // Cannot assert on lack of success here since this function may be
-  // used by code that is trying to report useful problem information
-  // like deadlock detection.
-  if (UseHeavyMonitors) return NULL;
-
-  // If we didn't find a matching Java thread and we didn't force use of
-  // heavyweight monitors, then the owner is the stack address of the
-  // Lock Word in the owning Java thread's stack.
-  //
-  JavaThread* the_owner = NULL;
+JavaThread* Threads::owning_thread_impl(ThreadsList * t_list, oop obj) {
   for (JavaThread* q : *t_list) {
-    if (q->is_lock_owned(owner)) {
-      the_owner = q;
-      break;
+    if (q->lock_stack().contains(obj)) {
+      return q;
     }
   }
+  return NULL;
+}
 
-  // cannot assert on lack of success here; see above comment
-  return the_owner;
+JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj, ObjectMonitor** monitor_out) {
+  markWord header = obj->mark();
+  if (header.is_fast_locked()) {
+    return owning_thread_impl(t_list, obj);
+  } else if (header.has_monitor()) {
+    *monitor_out = header.monitor();
+    return owning_thread_from_monitor(t_list, *monitor_out);
+  } else {
+    return NULL;
+  }
+}
+
+JavaThread *Threads::owning_thread_from_monitor(ThreadsList * t_list,
+                                                ObjectMonitor* monitor) {
+  if (monitor->is_owner_anonymous()) {
+    return owning_thread_impl(t_list, monitor->object());
+  } else {
+    // TODO: owner could return Thread* or even JavaThread* already.
+    Thread* owner = reinterpret_cast<Thread*>(monitor->owner());
+    // NULL owner means not locked.
+    if (owner == NULL) return NULL;
+    assert(owner->is_Java_thread(), "only JavaThreads own monitors");
+    return reinterpret_cast<JavaThread*>(owner);
+  }
 }
 
 class PrintOnClosure : public ThreadClosure {

@@ -2166,7 +2166,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   // Make slow path call
   CallNode *call = make_slow_call((CallNode *) lock, OptoRuntime::complete_monitor_enter_Type(),
                                   OptoRuntime::complete_monitor_locking_Java(), NULL, slow_path,
-                                  obj, box, NULL);
+                                  obj, NULL, NULL);
 
   call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
@@ -2226,7 +2226,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
 
   CallNode *call = make_slow_call((CallNode *) unlock, OptoRuntime::complete_monitor_exit_Type(),
                                   CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C),
-                                  "complete_monitor_unlocking_C", slow_path, obj, box, thread);
+                                  "complete_monitor_unlocking_C", slow_path, obj, thread, NULL);
 
   call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
   assert(_callprojs.fallthrough_ioproj == NULL && _callprojs.catchall_ioproj == NULL &&

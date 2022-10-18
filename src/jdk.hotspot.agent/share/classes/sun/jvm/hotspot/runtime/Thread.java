@@ -33,12 +33,17 @@ import sun.jvm.hotspot.utilities.Observer;
 public class Thread extends VMObject {
   private static long tlabFieldOffset;
 
+  private static long lockStackCurrentOffset;
+  private static long lockStackBaseOffset;
+
   private static CIntegerField suspendFlagsField;
 
   private static AddressField currentPendingMonitorField;
   private static AddressField currentWaitingMonitorField;
 
   private static JLongField allocatedBytesField;
+
+  private static long oopPtrSize;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -51,6 +56,7 @@ public class Thread extends VMObject {
   private static synchronized void initialize(TypeDataBase db) {
     Type typeThread = db.lookupType("Thread");
     Type typeJavaThread = db.lookupType("JavaThread");
+    Type typeLockStack = db.lookupType("LockStack");
 
     suspendFlagsField = typeJavaThread.getCIntegerField("_suspend_flags");
 
@@ -58,6 +64,10 @@ public class Thread extends VMObject {
     currentPendingMonitorField = typeJavaThread.getAddressField("_current_pending_monitor");
     currentWaitingMonitorField = typeJavaThread.getAddressField("_current_waiting_monitor");
     allocatedBytesField = typeThread.getJLongField("_allocated_bytes");
+
+    lockStackCurrentOffset = typeThread.getField("_lock_stack").getOffset() + typeLockStack.getField("_current").getOffset();
+    lockStackBaseOffset = typeThread.getField("_lock_stack").getOffset() + typeLockStack.getField("_base").getOffset();
+    oopPtrSize = VM.getVM().getAddressSize();
   }
 
   public Thread(Address addr) {
@@ -108,8 +118,16 @@ public class Thread extends VMObject {
     return new ObjectMonitor(monitorAddr);
   }
 
-  public boolean isLockOwned(Address lock) {
-    if (isInStack(lock)) return true;
+  public boolean isLockOwned(OopHandle obj) {
+    Address current = addr.getAddressAt(lockStackCurrentOffset);
+    Address base = addr.getAddressAt(lockStackBaseOffset);
+    while (base.lessThan(current)) {
+        Address oop = base.getAddressAt(0);
+        if (oop.equals(obj)) {
+            return true;
+        }
+        base = base.addOffsetTo(oopPtrSize);
+    }
     return false;
   }
 

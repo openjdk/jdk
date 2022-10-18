@@ -38,6 +38,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
@@ -72,7 +73,8 @@ void Thread::operator delete(void* p) {
 
 DEBUG_ONLY(Thread* Thread::_starting_thread = NULL;)
 
-Thread::Thread() {
+Thread::Thread():
+  _lock_stack() {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
 
@@ -414,6 +416,9 @@ void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
+  if (!UseHeavyMonitors) {
+    lock_stack().oops_do(f);
+  }
 }
 
 // If the caller is a NamedThread, then remember, in the current scope,
@@ -541,7 +546,8 @@ void Thread::print_owned_locks_on(outputStream* st) const {
 // should be revisited, and they should be removed if possible.
 
 bool Thread::is_lock_owned(address adr) const {
-  return is_in_full_stack(adr);
+  assert(adr != ANONYMOUS_OWNER, "must convert to lock object");
+  return !UseHeavyMonitors && lock_stack().contains(cast_to_oop(adr));
 }
 
 bool Thread::set_as_starting_thread() {

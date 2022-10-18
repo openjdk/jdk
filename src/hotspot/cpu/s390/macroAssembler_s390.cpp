@@ -3159,9 +3159,6 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   // Load Compare Value application register.
 
-  // Initialize the box (must happen before we update the object mark).
-  z_stg(displacedHeader, BasicLock::displaced_header_offset_in_bytes(), box);
-
   // Memory Fence (in cmpxchgd)
   // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
 
@@ -3179,7 +3176,6 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   z_ngr(currentHeader, temp);
   //   z_brne(done);
   //   z_release();
-  z_stg(currentHeader/*==0 or not 0*/, BasicLock::displaced_header_offset_in_bytes(), box);
 
   z_bru(done);
 
@@ -3193,8 +3189,6 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   z_lghi(zero, 0);
   // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
   z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
-  // Store a non-null value into the box.
-  z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
 #ifdef ASSERT
   z_brne(done);
   // We've acquired the monitor, check some invariants.
@@ -3220,11 +3214,6 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   Label done, object_has_monitor;
 
   BLOCK_COMMENT("compiler_fast_unlock_object {");
-
-  // Find the lock address and load the displaced header from the stack.
-  // if the displaced header is zero, we have a recursive unlock.
-  load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-  z_bre(done);
 
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.

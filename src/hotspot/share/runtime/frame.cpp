@@ -573,9 +573,6 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
     st->print(" - obj    [");
     current->obj()->print_value_on(st);
     st->print_cr("]");
-    st->print(" - lock   [");
-    current->lock()->print_on(st, current->obj());
-    st->print_cr("]");
   }
   // monitor
   st->print_cr(" - monitor[" INTPTR_FORMAT "]", p2i(interpreter_frame_monitor_begin()));
@@ -1083,15 +1080,6 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
   return r;
 }
 
-
-BasicLock* frame::get_native_monitor() {
-  nmethod* nm = (nmethod*)_cb;
-  assert(_cb != NULL && _cb->is_nmethod() && nm->method()->is_native(),
-         "Should not call this unless it's a native nmethod");
-  int byte_offset = in_bytes(nm->native_basic_lock_sp_offset());
-  assert(byte_offset >= 0, "should not see invalid offset");
-  return (BasicLock*) &sp()[byte_offset / wordSize];
-}
 
 oop frame::get_native_receiver() {
   nmethod* nm = (nmethod*)_cb;

@@ -116,22 +116,6 @@ inline void ObjectMonitor::set_owner_from(void* old_value, void* new_value) {
                                      p2i(old_value), p2i(new_value));
 }
 
-// Simply set _owner field to self; current value must match basic_lock_p.
-inline void ObjectMonitor::set_owner_from_BasicLock(void* basic_lock_p, JavaThread* current) {
-#ifdef ASSERT
-  void* prev = Atomic::load(&_owner);
-  assert(prev == basic_lock_p, "unexpected prev owner=" INTPTR_FORMAT
-         ", expected=" INTPTR_FORMAT, p2i(prev), p2i(basic_lock_p));
-#endif
-  // Non-null owner field to non-null owner field is safe without
-  // cmpxchg() as long as all readers can tolerate either flavor.
-  Atomic::store(&_owner, current);
-  log_trace(monitorinflation, owner)("set_owner_from_BasicLock(): mid="
-                                     INTPTR_FORMAT ", basic_lock_p="
-                                     INTPTR_FORMAT ", new_value=" INTPTR_FORMAT,
-                                     p2i(this), p2i(basic_lock_p), p2i(current));
-}
-
 // Try to set _owner field to new_value if the current value matches
 // old_value. Otherwise, does not change the _owner field. Returns
 // the prior value of the _owner field.

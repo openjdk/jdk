@@ -2532,9 +2532,6 @@ MonitorValue* LinearScan::location_for_monitor_index(int monitor_index) {
   }
   ScopeValue* object_scope_value = new LocationValue(loc);
 
-  if (!frame_map()->location_for_monitor_lock(monitor_index, &loc)) {
-    bailout("too large frame");
-  }
   return new MonitorValue(object_scope_value, loc);
 }
 

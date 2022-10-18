@@ -727,24 +727,18 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 //%note synchronization_3
 
 //%note monitor_1
-JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, BasicObjectLock* elem))
-#ifdef ASSERT
-  current->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
-  Handle h_obj(current, elem->obj());
+JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, oopDesc* obj))
+  Handle h_obj(current, obj);
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
-  ObjectSynchronizer::enter(h_obj, elem->lock(), current);
-  assert(Universe::heap()->is_in_or_null(elem->obj()),
+  ObjectSynchronizer::enter(h_obj, current);
+  assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
-#ifdef ASSERT
-  current->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
 JRT_END
 
 
-JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
-  oop obj = elem->obj();
+JRT_LEAF(void, InterpreterRuntime::monitorexit(oopDesc* o))
+  oop obj = oop(o);
   assert(Universe::heap()->is_in(obj), "must be an object");
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
@@ -754,10 +748,7 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
     }
     return;
   }
-  ObjectSynchronizer::exit(obj, elem->lock(), JavaThread::current());
-  // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
-  // again at method exit or in the case of an exception.
-  elem->set_obj(NULL);
+  ObjectSynchronizer::exit(obj, JavaThread::current());
 JRT_END
 
 

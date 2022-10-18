@@ -1510,27 +1510,16 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
       if (!mon_info->owner_is_scalar_replaced()) {
         Handle obj(thread, mon_info->owner());
         markWord mark = obj->mark();
-        if (exec_mode == Unpack_none) {
-          if (mark.has_locker() && fr.sp() > (intptr_t*)mark.locker()) {
-            // With exec_mode == Unpack_none obj may be thread local and locked in
-            // a callee frame. Make the lock in the callee a recursive lock and restore the displaced header.
-            markWord dmw = mark.displaced_mark_helper();
-            mark.locker()->set_displaced_header(markWord::encode((BasicLock*) NULL));
-            obj->set_mark(dmw);
-          }
-          if (mark.has_monitor()) {
-            // defer relocking if the deoptee thread is currently waiting for obj
-            ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
-            if (waiting_monitor != NULL && waiting_monitor->object() == obj()) {
-              assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-              mon_info->lock()->set_displaced_header(markWord::unused_mark());
-              JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
-              continue;
-            }
+        if (exec_mode == Unpack_none && mark.has_monitor()) {
+          // defer relocking if the deoptee thread is currently waiting for obj
+          ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
+          if (waiting_monitor != NULL && waiting_monitor->object() == obj()) {
+            assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
+            JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
+            continue;
           }
         }
-        BasicLock* lock = mon_info->lock();
-        ObjectSynchronizer::enter(obj, lock, deoptee_thread);
+        ObjectSynchronizer::enter(obj, deoptee_thread);
         assert(mon_info->owner()->is_locked(), "object must be locked now");
       }
     }
@@ -1605,7 +1594,7 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
       for (int j = 0; j < monitors->number_of_monitors(); j++) {
         BasicObjectLock* src = monitors->at(j);
         if (src->obj() != NULL) {
-          ObjectSynchronizer::exit(src->obj(), src->lock(), thread);
+          ObjectSynchronizer::exit(src->obj(), thread);
         }
       }
       array->element(i)->free_monitors(thread);
