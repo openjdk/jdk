@@ -76,7 +76,12 @@ public class ArchiveRelocationTest {
             .assertNormalExit(output -> {
                     if (run_reloc) {
                         output.shouldContain("Try to map archive(s) at an alternative address");
-                        output.shouldContain("Patching native pointers in heap region");
+                        if (output.getOutput().contains("Trying to map heap") || output.getOutput().contains("Loaded heap")) {
+                          // The native data in the RO/RW regions have been relocated. If the CDS heap is
+                          // mapped/loaded, we must patch all the native pointers. (CDS heap is
+                          // not supported on all platforms)
+                          output.shouldContain("Patching native pointers in heap region");
+                        }
                     }
                 });
     }
