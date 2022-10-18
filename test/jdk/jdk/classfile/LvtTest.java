@@ -27,7 +27,7 @@
  * @test
  * @summary Testing Classfile local variable table.
  * @compile -g testdata/Lvt.java
- * @run testng LvtTest
+ * @run junit LvtTest
  */
 import com.sun.tools.classfile.*;
 import helpers.ClassRecord;
@@ -51,8 +51,7 @@ import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.instruction.LocalVariable;
 import jdk.classfile.instruction.LocalVariableType;
 import java.lang.reflect.AccessFlag;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static helpers.TestConstants.CD_ArrayList;
 import static helpers.TestConstants.CD_PrintStream;
@@ -66,9 +65,9 @@ import java.lang.constant.MethodTypeDesc;
 import static jdk.classfile.Opcode.*;
 import static jdk.classfile.Opcode.INVOKEVIRTUAL;
 import static jdk.classfile.TypeKind.VoidType;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class LvtTest {
+class LvtTest {
     static byte[] fileBytes;
 
     static {
@@ -80,8 +79,8 @@ public class LvtTest {
         }
     }
 
-    @Test()
-    public void getLVTEntries() {
+    @Test
+    void getLVTEntries() {
         ClassModel c = Classfile.parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("m"))
@@ -105,8 +104,8 @@ public class LvtTest {
         assertTrue(expected.equals(lvs));
     }
 
-    @Test()
-    public void buildLVTEntries() throws Exception {
+    @Test
+    void buildLVTEntries() throws Exception {
         ClassModel c = Classfile.parse(fileBytes);
         ClassFile cf = ClassFile.read(new ByteArrayInputStream(fileBytes));
 
@@ -126,8 +125,8 @@ public class LvtTest {
         ClassRecord.assertEqualsDeep(transformed, origClassFile);
     }
 
-    @Test()
-    public void testCreateLoadLVT() throws Exception {
+    @Test
+    void testCreateLoadLVT() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
@@ -188,7 +187,7 @@ public class LvtTest {
         LocalVariableTable_attribute lvt = (LocalVariableTable_attribute) ((Code_attribute) main.attributes.get("Code")).attributes.get("LocalVariableTable");
         LocalVariableTable_attribute.Entry[] entries = lvt.local_variable_table;
 
-        Assert.assertEquals(entries.length, 3);
+        assertEquals(entries.length, 3);
 
         List<LocalVariableTable_attribute.Entry> lvs = Arrays.asList(entries);
         List<ExpectedLvRecord> expected = List.of(
@@ -200,8 +199,8 @@ public class LvtTest {
         assertTrue(expected.equals(lvs));
     }
 
-    @Test()
-    public void getLVTTEntries() {
+    @Test
+    void getLVTTEntries() {
         ClassModel c = Classfile.parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("n"))
@@ -240,8 +239,8 @@ public class LvtTest {
         }
     }
 
-    @Test()
-    public void testCreateLoadLVTT() throws Exception {
+    @Test
+    void testCreateLoadLVTT() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
@@ -315,8 +314,8 @@ public class LvtTest {
         }
     }
 
-    @Test()
-    public void skipDebugSkipsLVT() {
+    @Test
+    void skipDebugSkipsLVT() {
         ClassModel c = Classfile.parse(fileBytes, Classfile.Option.processDebug(false));
 
         c.forEachElement(e -> {

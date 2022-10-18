@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile CP Utf8Entry.
- * @run testng Utf8EntryTest
+ * @run junit Utf8EntryTest
  */
 import jdk.classfile.ClassModel;
 import jdk.classfile.Classfile;
@@ -34,9 +34,10 @@ import jdk.classfile.constantpool.ConstantPool;
 import jdk.classfile.constantpool.PoolEntry;
 import jdk.classfile.constantpool.StringEntry;
 import jdk.classfile.constantpool.Utf8Entry;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -44,42 +45,41 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.function.UnaryOperator;
 
 import static java.lang.constant.ConstantDescs.CD_void;
 import static jdk.classfile.TypeKind.VoidType;
 
-public class Utf8EntryTest {
+class Utf8EntryTest {
 
-    @DataProvider
-    static Object[][] stringsProvider() {
-        return new Object[][]{
-                {"ascii"},
+    @ParameterizedTest
+    @ValueSource(
+        strings = {
+            "ascii",
 
-                {"prefix\u0080\u0080\u0080postfix"},
-                {"prefix\u0080\u0080\u0080"},
-                {"\u0080\u0080\u0080postfix"},
-                {"\u0080\u0080\u0080"},
+            "prefix\u0080\u0080\u0080postfix",
+            "prefix\u0080\u0080\u0080",
+            "\u0080\u0080\u0080postfix",
+            "\u0080\u0080\u0080",
 
-                {"prefix\u07FF\u07FF\u07FFpostfix"},
-                {"prefix\u07FF\u07FF\u07FF"},
-                {"\u07FF\u07FF\u07FFpostfix"},
-                {"\u07FF\u07FF\u07FF"},
+            "prefix\u07FF\u07FF\u07FFpostfix",
+            "prefix\u07FF\u07FF\u07FF",
+            "\u07FF\u07FF\u07FFpostfix",
+            "\u07FF\u07FF\u07FF",
 
-                {"prefix\u0800\u0800\u0800postfix"},
-                {"prefix\u0800\u0800\u0800"},
-                {"\u0800\u0800\u0800postfix"},
-                {"\u0800\u0800\u0800"},
+            "prefix\u0800\u0800\u0800postfix",
+            "prefix\u0800\u0800\u0800",
+            "\u0800\u0800\u0800postfix",
+            "\u0800\u0800\u0800",
 
-                {"prefix\uFFFF\uFFFF\uFFFFpostfix"},
-                {"prefix\uFFFF\uFFFF\uFFFF"},
-                {"\uFFFF\uFFFF\uFFFFpostfix"},
-                {"\uFFFF\uFFFF\uFFFF"},
-        };
-    }
-
-    @Test(dataProvider = "stringsProvider")
-    public void testParse(String s) {
+            "prefix\uFFFF\uFFFF\uFFFFpostfix",
+            "prefix\uFFFF\uFFFF\uFFFF",
+            "\uFFFF\uFFFF\uFFFFpostfix",
+            "\uFFFF\uFFFF\uFFFF"
+        }
+    )
+    void testParse(String s) {
         byte[] classfile = createClassfile(s);
 
         ClassModel cm = Classfile.parse(classfile);
@@ -87,14 +87,13 @@ public class Utf8EntryTest {
 
         Utf8Entry utf8Entry = se.utf8();
         // Inflate to byte[] or char[]
-        Assert.assertTrue(utf8Entry.equalsString(s));
+        assertTrue(utf8Entry.equalsString(s));
 
         // Create string
-        Assert.assertEquals(utf8Entry.stringValue(), s);
+        assertEquals(utf8Entry.stringValue(), s);
     }
-
-    @DataProvider
-    static Object[][] malformedStringsProvider() {
+    
+    static Stream<UnaryOperator<byte[]>> malformedStringsProvider() {
         List<UnaryOperator<byte[]>> l = new ArrayList<>();
 
         l.add(withByte(0b1010_0000));
@@ -132,7 +131,7 @@ public class Utf8EntryTest {
             return s;
         }));
 
-        return l.stream().map(u -> new Object[]{u}).toArray(Object[][]::new);
+        return l.stream();
     }
 
     static UnaryOperator<byte[]> withByte(int b) {
@@ -156,8 +155,9 @@ public class Utf8EntryTest {
         };
     }
 
-    @Test(dataProvider = "malformedStringsProvider")
-    public void testMalformedInput(UnaryOperator<byte[]> f) {
+    @ParameterizedTest
+    @MethodSource("malformedStringsProvider")
+    void testMalformedInput(UnaryOperator<byte[]> f) {
         String marker = "XXXXXXXX";
         byte[] classfile = createClassfile(marker);
         replace(classfile, marker, f);
@@ -165,7 +165,7 @@ public class Utf8EntryTest {
         ClassModel cm = Classfile.parse(classfile);
         StringEntry se = obtainStringEntry(cm.constantPool());
 
-        Assert.assertThrows(RuntimeException.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             String s = se.utf8().stringValue();
         });
     }

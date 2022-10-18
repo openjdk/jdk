@@ -23,6 +23,11 @@
  * questions.
  */
 
+/*
+ * @test
+ * @summary Testing Classfile ExampleGallery compilation.
+ * @compile ExampleGallery.java
+ */
 import java.lang.constant.ClassDesc;
 import java.util.List;
 import java.util.function.Predicate;
@@ -51,7 +56,7 @@ import jdk.classfile.attribute.ExceptionsAttribute;
 import jdk.classfile.attribute.SignatureAttribute;
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.instruction.ConstantInstruction;
-import java.lang.reflect.AccessFlag;
+import jdk.classfile.instruction.InvokeInstruction;
 
 /**
  * ExampleGallery
@@ -259,8 +264,8 @@ public class ExampleGallery {
 
     public byte[] addInstrumentationBeforeInvoke(ClassModel cm) {
         return cm.transform(ClassTransform.transformingMethodBodies((codeB, codeE) -> {
-            switch (codeE.codeKind()) {
-                case INVOKE -> {
+            switch (codeE) {
+                case InvokeInstruction i -> {
                     codeB.nopInstruction();
                     codeB.with(codeE);
                 }

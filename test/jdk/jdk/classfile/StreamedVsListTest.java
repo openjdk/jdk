@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile streaming versus model.
- * @run testng StreamedVsListTest
+ * @run junit StreamedVsListTest
  */
 import jdk.classfile.ClassModel;
 import jdk.classfile.Classfile;
@@ -49,15 +49,13 @@ import jdk.classfile.instruction.NewReferenceArrayInstruction;
 import jdk.classfile.instruction.StoreInstruction;
 import jdk.classfile.instruction.TableSwitchInstruction;
 import jdk.classfile.instruction.TypeCheckInstruction;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
-public class StreamedVsListTest {
+class StreamedVsListTest {
     static byte[] fileBytes;
 
     static {
@@ -70,7 +68,7 @@ public class StreamedVsListTest {
 
 
     @Test
-    public void testStreamed() throws Exception {
+    void testStreamed() throws Exception {
         Vs vs = new Vs();
         vs.test();
         if (vs.failed) {
@@ -110,25 +108,25 @@ public class StreamedVsListTest {
         }
 
         void testInstruction() {
-            Assert.assertEquals(((Instruction)iim).opcode(), ((Instruction)mim).opcode(), "Opcodes don't match");
+            assertEquals(((Instruction)iim).opcode(), ((Instruction)mim).opcode(), "Opcodes don't match");
             switch (((Instruction)iim).opcode().kind()) {
                 case LOAD: {
                     LoadInstruction i = (LoadInstruction) iim;
                     LoadInstruction x = (LoadInstruction) mim;
-                    Assert.assertEquals(i.slot(), x.slot(), "variable");
+                    assertEquals(i.slot(), x.slot(), "variable");
                     break;
                 }
                 case STORE: {
                     StoreInstruction i = (StoreInstruction) iim;
                     StoreInstruction x = (StoreInstruction) mim;
-                    Assert.assertEquals(i.slot(), x.slot(), "variable");
+                    assertEquals(i.slot(), x.slot(), "variable");
                     break;
                 }
                 case INCREMENT: {
                     IncrementInstruction i = (IncrementInstruction) iim;
                     IncrementInstruction x = (IncrementInstruction) mim;
-                    Assert.assertEquals(i.slot(), x.slot(), "variable");
-                    Assert.assertEquals(i.constant(), x.constant(), "constant");
+                    assertEquals(i.slot(), x.slot(), "variable");
+                    assertEquals(i.constant(), x.constant(), "constant");
                     break;
                 }
                 case BRANCH: {
@@ -140,16 +138,16 @@ public class StreamedVsListTest {
                 case TABLE_SWITCH: {
                     TableSwitchInstruction i = (TableSwitchInstruction) iim;
                     TableSwitchInstruction x = (TableSwitchInstruction) mim;
-                    Assert.assertEquals(i.lowValue(), x.lowValue(), "lowValue");
-                    Assert.assertEquals(i.highValue(), x.highValue(), "highValue");
-                    Assert.assertEquals(i.cases().size(), x.cases().size(), "cases().size");
+                    assertEquals(i.lowValue(), x.lowValue(), "lowValue");
+                    assertEquals(i.highValue(), x.highValue(), "highValue");
+                    assertEquals(i.cases().size(), x.cases().size(), "cases().size");
                     //TODO: test labels
                     break;
                 }
                 case LOOKUP_SWITCH: {
                     LookupSwitchInstruction i = (LookupSwitchInstruction) iim;
                     LookupSwitchInstruction x = (LookupSwitchInstruction) mim;
-                    Assert.assertEquals(i.cases(), (Object) x.cases(), "matches: ");
+                    assertEquals(i.cases(), (Object) x.cases(), "matches: ");
                     /**
                     var ipairs = i.pairs();
                     var xpairs = x.pairs();
@@ -167,63 +165,63 @@ public class StreamedVsListTest {
                 case FIELD_ACCESS: {
                     FieldInstruction i = (FieldInstruction) iim;
                     FieldInstruction x = (FieldInstruction) mim;
-                    Assert.assertEquals(i.owner().asInternalName(), (Object) x.owner().asInternalName(), "owner");
-                    Assert.assertEquals(i.name().stringValue(), (Object) x.name().stringValue(), "name");
-                    Assert.assertEquals(i.type().stringValue(), (Object) x.type().stringValue(), "type");
+                    assertEquals(i.owner().asInternalName(), (Object) x.owner().asInternalName(), "owner");
+                    assertEquals(i.name().stringValue(), (Object) x.name().stringValue(), "name");
+                    assertEquals(i.type().stringValue(), (Object) x.type().stringValue(), "type");
                     break;
                 }
                 case INVOKE: {
                     InvokeInstruction i = (InvokeInstruction) iim;
                     InvokeInstruction x = (InvokeInstruction) mim;
-                    Assert.assertEquals(i.owner().asInternalName(), (Object) x.owner().asInternalName(), "owner");
-                    Assert.assertEquals(i.name().stringValue(), (Object) x.name().stringValue(), "name");
-                    Assert.assertEquals(i.type().stringValue(), (Object) x.type().stringValue(), "type");
-                    Assert.assertEquals(i.isInterface(), (Object) x.isInterface(), "isInterface");
-                    Assert.assertEquals(i.count(), x.count(), "count");
+                    assertEquals(i.owner().asInternalName(), (Object) x.owner().asInternalName(), "owner");
+                    assertEquals(i.name().stringValue(), (Object) x.name().stringValue(), "name");
+                    assertEquals(i.type().stringValue(), (Object) x.type().stringValue(), "type");
+                    assertEquals(i.isInterface(), (Object) x.isInterface(), "isInterface");
+                    assertEquals(i.count(), x.count(), "count");
                     break;
                 }
                 case INVOKE_DYNAMIC: {
                     InvokeDynamicInstruction i = (InvokeDynamicInstruction) iim;
                     InvokeDynamicInstruction x = (InvokeDynamicInstruction) mim;
-                    Assert.assertEquals(i.bootstrapMethod(), x.bootstrapMethod(), "bootstrapMethod");
-                    Assert.assertEquals(i.bootstrapArgs(), (Object) x.bootstrapArgs(), "bootstrapArgs");
-                    Assert.assertEquals(i.name().stringValue(), (Object) x.name().stringValue(), "name");
-                    Assert.assertEquals(i.type().stringValue(), (Object) x.type().stringValue(), "type");
+                    assertEquals(i.bootstrapMethod(), x.bootstrapMethod(), "bootstrapMethod");
+                    assertEquals(i.bootstrapArgs(), (Object) x.bootstrapArgs(), "bootstrapArgs");
+                    assertEquals(i.name().stringValue(), (Object) x.name().stringValue(), "name");
+                    assertEquals(i.type().stringValue(), (Object) x.type().stringValue(), "type");
                     break;
                 }
                 case NEW_OBJECT: {
                     NewObjectInstruction i = (NewObjectInstruction) iim;
                     NewObjectInstruction x = (NewObjectInstruction) mim;
-                    Assert.assertEquals(i.className().asInternalName(), (Object) x.className().asInternalName(), "type");
+                    assertEquals(i.className().asInternalName(), (Object) x.className().asInternalName(), "type");
                     break;
                 }
                 case NEW_PRIMITIVE_ARRAY:
                 {
                     NewPrimitiveArrayInstruction i = (NewPrimitiveArrayInstruction) iim;
                     NewPrimitiveArrayInstruction x = (NewPrimitiveArrayInstruction) mim;
-                    Assert.assertEquals(i.typeKind(), x.typeKind(), "type");
+                    assertEquals(i.typeKind(), x.typeKind(), "type");
                     break;
                 }
 
                 case NEW_REF_ARRAY:{
                     NewReferenceArrayInstruction i = (NewReferenceArrayInstruction) iim;
                     NewReferenceArrayInstruction x = (NewReferenceArrayInstruction) mim;
-                    Assert.assertEquals(i.componentType().asInternalName(), (Object) x.componentType().asInternalName(), "type");
+                    assertEquals(i.componentType().asInternalName(), (Object) x.componentType().asInternalName(), "type");
                     break;
                 }
 
                 case NEW_MULTI_ARRAY:{
                     NewMultiArrayInstruction i = (NewMultiArrayInstruction) iim;
                     NewMultiArrayInstruction x = (NewMultiArrayInstruction) mim;
-                    Assert.assertEquals(i.arrayType().asInternalName(), (Object) x.arrayType().asInternalName(), "type");
-                    Assert.assertEquals(i.dimensions(), x.dimensions(), "dimensions");
+                    assertEquals(i.arrayType().asInternalName(), (Object) x.arrayType().asInternalName(), "type");
+                    assertEquals(i.dimensions(), x.dimensions(), "dimensions");
                     break;
                 }
 
                 case TYPE_CHECK: {
                     TypeCheckInstruction i = (TypeCheckInstruction) iim;
                     TypeCheckInstruction x = (TypeCheckInstruction) mim;
-                    Assert.assertEquals(i.type().asInternalName(), (Object) x.type().asInternalName(), "type");
+                    assertEquals(i.type().asInternalName(), (Object) x.type().asInternalName(), "type");
                     break;
                 }
                 case ARRAY_LOAD:
@@ -235,7 +233,7 @@ public class StreamedVsListTest {
                 case CONSTANT: {
                     ConstantInstruction i = (ConstantInstruction) iim;
                     ConstantInstruction x = (ConstantInstruction) mim;
-                    Assert.assertEquals(i.constantValue(), x.constantValue(), "constantValue");
+                    assertEquals(i.constantValue(), x.constantValue(), "constantValue");
                 }
                 break;
                 case MONITOR:

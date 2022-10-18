@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing CodeStackTracker in CodeBuilder.
- * @run testng StackTrackerTest
+ * @run junit StackTrackerTest
  */
 import java.util.List;
 import java.lang.constant.ClassDesc;
@@ -35,41 +35,41 @@ import java.lang.constant.ConstantDescs;
 import jdk.classfile.*;
 import jdk.classfile.components.CodeStackTracker;
 import static jdk.classfile.TypeKind.*;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * StackTrackerTest
  */
-@Test
-public class StackTrackerTest {
+class StackTrackerTest {
 
-    public void testStackTracker() {
+    @Test
+    void testStackTracker() {
         Classfile.build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
                 var stackTracker = CodeStackTracker.of(DoubleType, FloatType); //initial stack tracker pre-set
                 cob.transforming(stackTracker, stcb -> {
-                    assertEquals(stackTracker.stack().get(), List.of(DoubleType, FloatType));
+                    assertIterableEquals(stackTracker.stack().get(), List.of(DoubleType, FloatType));
                     stcb.aload(0);
-                    assertEquals(stackTracker.stack().get(), List.of(ReferenceType, DoubleType, FloatType));
+                    assertIterableEquals(stackTracker.stack().get(), List.of(ReferenceType, DoubleType, FloatType));
                     stcb.lconst_0();
-                    assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
+                    assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
                     stcb.trying(tryb -> {
-                        assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
+                        assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
                         tryb.iconst_1();
-                        assertEquals(stackTracker.stack().get(), List.of(IntType, LongType, ReferenceType, DoubleType, FloatType));
+                        assertIterableEquals(stackTracker.stack().get(), List.of(IntType, LongType, ReferenceType, DoubleType, FloatType));
                         tryb.ifThen(thb -> {
-                            assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
+                            assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
                             thb.constantInstruction(ClassDesc.of("Phee"));
-                            assertEquals(stackTracker.stack().get(), List.of(ReferenceType, LongType, ReferenceType, DoubleType, FloatType));
+                            assertIterableEquals(stackTracker.stack().get(), List.of(ReferenceType, LongType, ReferenceType, DoubleType, FloatType));
                             thb.athrow();
                             assertFalse(stackTracker.stack().isPresent());
                         });
-                        assertEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
+                        assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
                         tryb.return_();
                         assertFalse(stackTracker.stack().isPresent());
                     }, catchb -> catchb.catching(ClassDesc.of("Phee"), cb -> {
-                        assertEquals(stackTracker.stack().get(), List.of(ReferenceType));
+                        assertIterableEquals(stackTracker.stack().get(), List.of(ReferenceType));
                         cb.athrow();
                         assertFalse(stackTracker.stack().isPresent());
                     }));
@@ -79,12 +79,13 @@ public class StackTrackerTest {
             }));
     }
 
-    public void testTrackingLost() {
+    @Test
+    void testTrackingLost() {
         Classfile.build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
                 var stackTracker = CodeStackTracker.of();
                 cob.transforming(stackTracker, stcb -> {
-                    assertEquals(stackTracker.stack().get(), List.of());
+                    assertIterableEquals(stackTracker.stack().get(), List.of());
                     var l1 = stcb.newLabel();
                     stcb.goto_(l1); //forward jump
                     assertFalse(stackTracker.stack().isPresent()); //no stack

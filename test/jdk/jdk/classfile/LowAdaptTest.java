@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile low adaptation.
- * @run testng LowAdaptTest
+ * @run junit LowAdaptTest
  */
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
@@ -46,16 +46,16 @@ import jdk.classfile.TypeKind;
 import helpers.ByteArrayClassLoader;
 import jdk.classfile.attribute.SourceFileAttribute;
 import jdk.classfile.impl.DirectClassBuilder;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class LowAdaptTest {
+class LowAdaptTest {
 
     static final String test = "LowAdaptTest$TestClass";
 
     @Test
-    public void testAdapt() throws Exception {
+    void testAdapt() throws Exception {
         ClassModel cl = Classfile.parse(Paths.get(URI.create(LowAdaptTest.class.getResource(test + ".class").toString())));
 
         DirectMethodHandleDesc bsm = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC,

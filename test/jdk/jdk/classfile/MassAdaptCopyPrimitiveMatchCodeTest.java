@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile massive class adaptation.
- * @run testng MassAdaptCopyPrimitiveMatchCodeTest
+ * @run junit MassAdaptCopyPrimitiveMatchCodeTest
  */
 import helpers.InstructionModelToCodeBuilder;
 import java.lang.reflect.AccessFlag;
@@ -39,7 +39,8 @@ import jdk.classfile.CodeModel;
 import jdk.classfile.Instruction;
 import jdk.classfile.MethodModel;
 import jdk.classfile.instruction.InvokeInstruction;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
@@ -48,12 +49,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * MassAdaptCopyPrimitiveMatchCodeTest.
  */
-public class MassAdaptCopyPrimitiveMatchCodeTest {
+class MassAdaptCopyPrimitiveMatchCodeTest {
 
     final static List<Path> testClasses(Path which) {
         try {
@@ -75,7 +76,8 @@ public class MassAdaptCopyPrimitiveMatchCodeTest {
     String base;
     boolean failure;
 
-    @Test(enabled = false)
+    @Test
+    @Disabled("for a reason...")
     public void testCodeMatch() throws Exception {
         for (Path path : testClasses) {
             try {

@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile massive class adaptation.
- * @run testng MassAdaptCopyCodeTest
+ * @run junit MassAdaptCopyCodeTest
  */
 import helpers.ByteArrayClassLoader;
 import jdk.classfile.ClassModel;
@@ -34,7 +34,7 @@ import jdk.classfile.Classfile;
 import jdk.classfile.CodeModel;
 import jdk.classfile.CodeTransform;
 import jdk.classfile.MethodModel;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URI;
@@ -43,17 +43,17 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class MassAdaptCopyCodeTest {
+class MassAdaptCopyCodeTest {
 
     //final static String testClasses = "target/classes"; // "/w/basejdk/build/linux-x86_64-server-release/jdk/modules/java.base"
 
     final Map<String, ByteArrayClassLoader.ClassData> classNameToClass = new HashMap<>();
     String base;
 
-    @Test()
-    public void testInstructionAdapt() throws Exception {
+    @Test
+    void testInstructionAdapt() throws Exception {
         File root = Paths.get(URI.create(MassAdaptCopyCodeTest.class.getResource("MassAdaptCopyCodeTest.class").toString())).getParent().toFile();
         base = root.getCanonicalPath();
         copy(root);

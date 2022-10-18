@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile annotations.
- * @run testng AnnotationTest
+ * @run junit AnnotationTest
  */
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
@@ -41,21 +41,18 @@ import java.util.Set;
 import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.classfile.*;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import jdk.classfile.impl.DirectClassBuilder;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.AssertJUnit.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * AnnotationTest
  */
-@Test
-public class AnnotationTest {
+class AnnotationTest {
     enum E {C};
 
     private static Map<String, Object> constants
@@ -128,7 +125,8 @@ public class AnnotationTest {
         return RuntimeVisibleAnnotationsAttribute.of(Annotation.of(constantPoolBuilder.utf8Entry("LAnno;"), elements()));
     }
 
-    public void testAnnos() {
+    @Test
+    void testAnnos() {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             ((DirectClassBuilder) cb).writeAttribute(buildAnnotationsWithCPB(cb.constantPool()));
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0, mb -> mb.with(buildAnnotationsWithCPB(mb.constantPool())));
@@ -172,7 +170,8 @@ public class AnnotationTest {
                                                                    elements()));
     }
 
-    public void testAnnosNoCPB() {
+    @Test
+    void testAnnosNoCPB() {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             ((DirectClassBuilder) cb).writeAttribute(buildAnnotations());
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0, mb -> mb.with(buildAnnotations()));

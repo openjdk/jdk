@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile Code Adaptation.
- * @run testng AdaptCodeTest
+ * @run junit AdaptCodeTest
  */
 
 import java.lang.constant.ConstantDesc;
@@ -44,20 +44,20 @@ import helpers.ByteArrayClassLoader;
 import helpers.TestUtil;
 import helpers.Transforms;
 import jdk.classfile.instruction.ConstantInstruction;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.testng.Assert.assertEquals;
-
-@Test()
-public class AdaptCodeTest {
+class AdaptCodeTest {
 
     static final String testClassName = "AdaptCodeTest$TestClass";
     static final Path testClassPath = Paths.get(URI.create(AdaptCodeTest.class.getResource(testClassName + ".class").toString()));
     private static final String THIRTEEN = "BlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlahBlah";
     private static final String SEVEN = "BlahBlahBlahBlahBlahBlahBlah";
 
-    public void testNullAdaptIterator() throws Exception {
+    @Test
+    void testNullAdaptIterator() throws Exception {
         ClassModel cm = Classfile.parse(testClassPath);
         for (ClassTransform t : Transforms.noops) {
             byte[] newBytes = cm.transform(t);
@@ -69,8 +69,13 @@ public class AdaptCodeTest {
         }
     }
 
-    @Test(dataProvider = "noExceptionClassfiles")
-    public void testNullAdaptIterator2(String path) throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "modules/java.base/java/util/AbstractCollection.class",
+        "modules/java.base/java/util/PriorityQueue.class",
+        "modules/java.base/java/util/ArraysParallelSortHelpers.class"
+    })
+    void testNullAdaptIterator2(String path) throws Exception {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         ClassModel cm = Classfile.parse(fs.getPath(path));
         for (ClassTransform t : Transforms.noops) {
@@ -78,7 +83,8 @@ public class AdaptCodeTest {
         }
     }
 
-    public void testSevenOfThirteenIterator() throws Exception {
+    @Test
+    void testSevenOfThirteenIterator() throws Exception {
         ClassModel cm = Classfile.parse(testClassPath);
 
         var transform = ClassTransform.transformingMethodBodies((codeB, codeE) -> {
@@ -103,17 +109,8 @@ public class AdaptCodeTest {
         assertEquals(result, SEVEN);
     }
 
-    @DataProvider(name = "noExceptionClassfiles")
-    public Object[][] provide()  {
-        return new Object[][] { { "modules/java.base/java/util/AbstractCollection.class" },
-                                { "modules/java.base/java/util/PriorityQueue.class" },
-                                { "modules/java.base/java/util/ArraysParallelSortHelpers.class" }
-        };
-    }
-
-
-
-    public void testCopy() throws Exception {
+    @Test
+    void testCopy() throws Exception {
         ClassModel cm = Classfile.parse(testClassPath);
         byte[] newBytes = Classfile.build(cm.thisClass().asSymbol(), cb -> cm.forEachElement(cb));
 //        TestUtil.writeClass(newBytes, "TestClass.class");

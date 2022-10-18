@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile constant instruction opcodes.
- * @run testng OpcodesValidationTest
+ * @run junit OpcodesValidationTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
@@ -36,72 +36,75 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import jdk.classfile.Classfile;
 import jdk.classfile.Opcode;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+import static org.junit.jupiter.api.Assertions.*;
 import static jdk.classfile.Opcode.*;
+import java.util.stream.Stream;
 
-/**
- *
- */
 public class OpcodesValidationTest {
 
-    @DataProvider(name = "positiveCases")
-    public static Object[][] positiveCases() {
-        return new Object[][] {
-            {ACONST_NULL, null},
-            {SIPUSH, (int)Short.MIN_VALUE},
-            {SIPUSH, (int)Short.MAX_VALUE},
-            {BIPUSH, (int)Byte.MIN_VALUE},
-            {BIPUSH, (int)Byte.MAX_VALUE},
-            {ICONST_M1, -1},
-            {ICONST_0, 0},
-            {ICONST_1, 1},
-            {ICONST_2, 2},
-            {ICONST_3, 3},
-            {ICONST_4, 4},
-            {ICONST_5, 5},
-            {LCONST_0, 0l},
-            {LCONST_0, 0},
-            {LCONST_1, 1l},
-            {LCONST_1, 1},
-            {FCONST_0, 0.0f},
-            {FCONST_1, 1.0f},
-            {FCONST_2, 2.0f},
-            {DCONST_0, 0.0d},
-            {DCONST_1, 1.0d},
-        };
+    record Case(Opcode opcode, Object constant) {}
+
+    static Stream<Case> positiveCases() {
+        return Stream.of(
+            new Case(ACONST_NULL, null),
+            new Case(SIPUSH, (int)Short.MIN_VALUE),
+            new Case(SIPUSH, (int)Short.MAX_VALUE),
+            new Case(BIPUSH, (int)Byte.MIN_VALUE),
+            new Case(BIPUSH, (int)Byte.MAX_VALUE),
+            new Case(ICONST_M1, -1),
+            new Case(ICONST_0, 0),
+            new Case(ICONST_1, 1),
+            new Case(ICONST_2, 2),
+            new Case(ICONST_3, 3),
+            new Case(ICONST_4, 4),
+            new Case(ICONST_5, 5),
+            new Case(LCONST_0, 0l),
+            new Case(LCONST_0, 0),
+            new Case(LCONST_1, 1l),
+            new Case(LCONST_1, 1),
+            new Case(FCONST_0, 0.0f),
+            new Case(FCONST_1, 1.0f),
+            new Case(FCONST_2, 2.0f),
+            new Case(DCONST_0, 0.0d),
+            new Case(DCONST_1, 1.0d)
+        );
     }
 
-    @DataProvider(name = "negativeCases")
-    public static Object[][] negativeCases() {
-        return new Object[][] {
-            {ACONST_NULL, 0},
-            {SIPUSH, (int)Short.MIN_VALUE - 1},
-            {SIPUSH, (int)Short.MAX_VALUE + 1},
-            {BIPUSH, (int)Byte.MIN_VALUE - 1},
-            {BIPUSH, (int)Byte.MAX_VALUE + 1},
-            {ICONST_M1, -1l},
-            {ICONST_0, 0l},
-            {ICONST_1, 1l},
-            {ICONST_2, 2l},
-            {ICONST_3, 3l},
-            {ICONST_4, 4l},
-            {ICONST_5, 5l},
-            {LCONST_0, null},
-            {LCONST_0, 1l},
-            {LCONST_1, 1.0d},
-            {LCONST_1, 0},
-            {FCONST_0, 0.0d},
-            {FCONST_1, 1.01f},
-            {FCONST_2, 2},
-            {DCONST_0, 0.0f},
-            {DCONST_1, 1.0f},
-            {DCONST_1, 1},
-        };
+    static Stream<Case> negativeCases() {
+        return Stream.of(
+            new Case(ACONST_NULL, 0),
+            new Case(SIPUSH, (int)Short.MIN_VALUE - 1),
+            new Case(SIPUSH, (int)Short.MAX_VALUE + 1),
+            new Case(BIPUSH, (int)Byte.MIN_VALUE - 1),
+            new Case(BIPUSH, (int)Byte.MAX_VALUE + 1),
+            new Case(ICONST_M1, -1l),
+            new Case(ICONST_0, 0l),
+            new Case(ICONST_1, 1l),
+            new Case(ICONST_2, 2l),
+            new Case(ICONST_3, 3l),
+            new Case(ICONST_4, 4l),
+            new Case(ICONST_5, 5l),
+            new Case(LCONST_0, null),
+            new Case(LCONST_0, 1l),
+            new Case(LCONST_1, 1.0d),
+            new Case(LCONST_1, 0),
+            new Case(FCONST_0, 0.0d),
+            new Case(FCONST_1, 1.01f),
+            new Case(FCONST_2, 2),
+            new Case(DCONST_0, 0.0f),
+            new Case(DCONST_1, 1.0f),
+            new Case(DCONST_1, 1)
+        );
     }
 
-    @Test(dataProvider = "positiveCases")
-    public void testPositive(Opcode opcode, Object constant) {
+    @TestFactory
+    Stream<DynamicTest> testPositiveCases() {
+        return positiveCases().map(c -> dynamicTest(c.toString(), () -> testPositiveCase(c.opcode, c.constant)));
+    }
+
+    private void testPositiveCase(Opcode opcode, Object constant) {
         Classfile.build(ClassDesc.of("MyClass"),
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
@@ -109,8 +112,16 @@ public class OpcodesValidationTest {
                                               codeb -> codeb.constantInstruction(opcode, (ConstantDesc) constant))));
     }
 
-    @Test(dataProvider = "negativeCases", expectedExceptions = IllegalArgumentException.class)
-    public void testNegative(Opcode opcode, Object constant) {
+
+    @TestFactory
+    Stream<DynamicTest> testNegativeCases() {
+        return negativeCases().map(c -> dynamicTest(
+            c.toString(),
+            () -> assertThrows(IllegalArgumentException.class, () -> testNegativeCase(c.opcode, c.constant))
+        ));
+    }
+
+    private void testNegativeCase(Opcode opcode, Object constant) {
         Classfile.build(ClassDesc.of("MyClass"),
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,

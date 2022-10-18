@@ -23,6 +23,19 @@
  * questions.
  */
 
+/*
+ * @test
+ * @summary Testing Classfile ModuleExamples compilation.
+ * @compile ModuleExamples.java
+ */
+import java.io.IOException;
+import java.lang.constant.ClassDesc;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.util.List;
+import java.util.function.Consumer;
+
 import jdk.classfile.Annotation;
 import jdk.classfile.AnnotationElement;
 import jdk.classfile.ClassModel;
@@ -35,20 +48,10 @@ import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.classfile.Attributes;
 import jdk.classfile.jdktypes.PackageDesc;
 import jdk.classfile.jdktypes.ModuleDesc;
-import org.testng.annotations.Test;
-
-import java.io.IOException;
-import java.lang.constant.ClassDesc;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.util.List;
-import java.util.function.Consumer;
 
 public class ModuleExamples {
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
 
-    @Test
     public void examineModule() throws IOException {
         ClassModel cm = Classfile.parse(JRT.getPath("modules/java.base/module-info.class"));
         System.out.println("Is JVMS $4.7 compatible module-info: " + cm.isModuleInfo());
@@ -64,7 +67,6 @@ public class ModuleExamples {
         System.out.println("Packages?: " + mmp.packages());
     }
 
-    @Test(expectedExceptions = RuntimeException.class)
     public void buildModuleFromScratch() {
         var moduleName = ModuleDesc.of("the.very.best.module");
         int moduleFlags = 0;

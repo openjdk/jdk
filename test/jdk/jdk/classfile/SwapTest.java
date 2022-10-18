@@ -24,13 +24,13 @@
 /*
  * @test
  * @summary Testing swap instruction
- * @run testng SwapTest
+ * @run junit SwapTest
  */
 
 import jdk.classfile.AccessFlags;
 import jdk.classfile.Classfile;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -41,9 +41,9 @@ import java.lang.invoke.MethodType;
 import static java.lang.reflect.AccessFlag.PUBLIC;
 import static java.lang.reflect.AccessFlag.STATIC;
 
-public class SwapTest {
+class SwapTest {
     @Test
-    public void testTryCatchCatchAll() throws Throwable {
+    void testTryCatchCatchAll() throws Throwable {
         MethodType mt = MethodType.methodType(String.class, String.class, String.class);
         MethodTypeDesc mtd = mt.describeConstable().get();
 
@@ -59,6 +59,6 @@ public class SwapTest {
 
         MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
         MethodHandle m = lookup.findStatic(lookup.lookupClass(), "m", mt);
-        Assert.assertEquals(m.invoke("A", "B"), "B");
+        assertEquals(m.invoke("A", "B"), "B");
     }
 }

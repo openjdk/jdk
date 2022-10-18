@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile short to long jumps extension.
- * @run testng ShortJumpsFixTest
+ * @run junit ShortJumpsFixTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
@@ -41,24 +41,20 @@ import jdk.classfile.Opcode;
 import static jdk.classfile.Opcode.*;
 import jdk.classfile.instruction.ConstantInstruction;
 import jdk.classfile.instruction.NopInstruction;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
-/**
- *
- */
-public class ShortJumpsFixTest {
+class ShortJumpsFixTest {
 
-    public record Sample(Opcode jumpCode, Opcode... expected) {
+    record Sample(Opcode jumpCode, Opcode... expected) {
         @Override
         public String toString() {
             return jumpCode.name();
         }
     }
 
-    @DataProvider(name = "fwdJumpsCode")
-    public Sample[] provideFwd()  {
+    static Sample[] provideFwd()  {
         return new Sample[]{
             //first is transformed opcode, followed by constant instructions and expected output
             new Sample(GOTO, GOTO_W, NOP, ATHROW, RETURN),
@@ -81,8 +77,7 @@ public class ShortJumpsFixTest {
         };
     }
 
-    @DataProvider(name = "backJumpsCode")
-    public Sample[] provideBack()  {
+    static Sample[] provideBack()  {
         return new Sample[]{
             new Sample(GOTO, GOTO_W, NOP, RETURN, GOTO_W, ATHROW),
             new Sample(IFEQ, GOTO_W, NOP, RETURN, ICONST_0, IFNE, GOTO_W, RETURN),
@@ -105,88 +100,104 @@ public class ShortJumpsFixTest {
     }
 
 
-    @Test(dataProvider = "fwdJumpsCode")
-    public void testFixFwdJumpsDirectGen(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideFwd")
+    void testFixFwdJumpsDirectGen(Sample sample) throws Exception {
         assertFixed(sample, generateFwd(sample, true, Classfile.Option.fixShortJumps(true)));
     }
 
-    @Test(dataProvider = "backJumpsCode")
-    public void testFixBackJumpsDirectGen(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideBack")
+    void testFixBackJumpsDirectGen(Sample sample) throws Exception {
         assertFixed(sample, generateBack(sample, true, Classfile.Option.fixShortJumps(true)));
     }
 
-    @Test(dataProvider = "fwdJumpsCode", expectedExceptions = IllegalStateException.class)
-    public void testFailFwdJumpsDirectGen(Sample sample) throws Exception {
-        generateFwd(sample, true, Classfile.Option.fixShortJumps(false));
+    @ParameterizedTest
+    @MethodSource("provideFwd")
+    void testFailFwdJumpsDirectGen(Sample sample) throws Exception {
+        assertThrows(IllegalStateException.class, () -> generateFwd(sample, true, Classfile.Option.fixShortJumps(false)));
     }
 
-    @Test(dataProvider = "backJumpsCode", expectedExceptions = IllegalStateException.class)
-    public void testFailBackJumpsDirectGen(Sample sample) throws Exception {
-        generateBack(sample, true, Classfile.Option.fixShortJumps(false));
+    @ParameterizedTest
+    @MethodSource("provideBack")
+    void testFailBackJumpsDirectGen(Sample sample) throws Exception {
+        assertThrows(IllegalStateException.class, () -> generateBack(sample, true, Classfile.Option.fixShortJumps(false)));
     }
 
-    @Test(dataProvider = "fwdJumpsCode")
-    public void testFixFwdJumpsTransform(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideFwd")
+    void testFixFwdJumpsTransform(Sample sample) throws Exception {
         assertFixed(sample, Classfile.parse(
                 generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(true))
                 .transform(overflow()));
     }
 
-    @Test(dataProvider = "backJumpsCode")
-    public void testFixBackJumpsTransform(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideBack")
+    void testFixBackJumpsTransform(Sample sample) throws Exception {
         assertFixed(sample, Classfile.parse(
                 generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(true))
                 .transform(overflow()));
     }
 
-    @Test(dataProvider = "fwdJumpsCode", expectedExceptions = IllegalStateException.class)
-    public void testFailFwdJumpsTransform(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideFwd")
+    void testFailFwdJumpsTransform(Sample sample) throws Exception {
+        assertThrows(IllegalStateException.class, () ->
         Classfile.parse(
                 generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(false))
-                .transform(overflow());
+                .transform(overflow()));
     }
 
-    @Test(dataProvider = "backJumpsCode", expectedExceptions = IllegalStateException.class)
-    public void testFailBackJumpsTransform(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideBack")
+    void testFailBackJumpsTransform(Sample sample) throws Exception {
+        assertThrows(IllegalStateException.class, () ->
         Classfile.parse(
                 generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(false))
-                .transform(overflow());
+                .transform(overflow()));
     }
 
-    @Test(dataProvider = "fwdJumpsCode")
-    public void testFixFwdJumpsChainedTransform(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideFwd")
+    void testFixFwdJumpsChainedTransform(Sample sample) throws Exception {
         assertFixed(sample, Classfile.parse(
                 generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(true))
                 .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
-    @Test(dataProvider = "backJumpsCode")
-    public void testFixBackJumpsChainedTransform(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideBack")
+    void testFixBackJumpsChainedTransform(Sample sample) throws Exception {
         assertFixed(sample, Classfile.parse(
                 generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(true))
                 .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
-    @Test(dataProvider = "fwdJumpsCode", expectedExceptions = IllegalStateException.class)
-    public void testFailFwdJumpsChainedTransform(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideFwd")
+    void testFailFwdJumpsChainedTransform(Sample sample) throws Exception {
+        assertThrows(IllegalStateException.class, () ->
         Classfile.parse(
                 generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(false))
-                .transform(ClassTransform.ACCEPT_ALL.andThen(overflow())); //involve BufferedCodeBuilder here
+                .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
-    @Test(dataProvider = "backJumpsCode", expectedExceptions = IllegalStateException.class)
-    public void testFailBackJumpsChainedTransform(Sample sample) throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideBack")
+    void testFailBackJumpsChainedTransform(Sample sample) throws Exception {
+        assertThrows(IllegalStateException.class, () ->
         Classfile.parse(
                 generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(false))
-                .transform(ClassTransform.ACCEPT_ALL.andThen(overflow())); //involve BufferedCodeBuilder here
+                .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
     private static byte[] generateFwd(Sample sample, boolean overflow, Classfile.Option<?>... options) {

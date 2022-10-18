@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile building module.
- * @run testng ModuleBuilderTest
+ * @run junit ModuleBuilderTest
  */
 import jdk.classfile.*;
 
@@ -40,7 +40,7 @@ import jdk.classfile.attribute.ModuleRequireInfo;
 import jdk.classfile.Attributes;
 import jdk.classfile.jdktypes.ModuleDesc;
 import jdk.classfile.jdktypes.PackageDesc;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
 import java.net.URI;
@@ -48,9 +48,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ModuleBuilderTest {
+class ModuleBuilderTest {
     private final ModuleDesc modName = ModuleDesc.of("some.module.structure");
     private final String modVsn = "ab75";
     private final ModuleDesc require1 = ModuleDesc.of("1require.some.mod"); String vsn1 = "1the.best.version";
@@ -96,7 +96,7 @@ public class ModuleBuilderTest {
     }
 
     @Test
-    public void testCreateModuleInfo() {
+    void testCreateModuleInfo() {
         // Build the module-info.class bytes
         byte[] modBytes = Classfile.buildModule(ModuleAttribute.of(modName, mb -> mb.moduleVersion(modVsn)));
 
@@ -110,12 +110,12 @@ public class ModuleBuilderTest {
     }
 
     @Test
-    public void testAllAttributes() {
+    void testAllAttributes() {
         assertEquals(moduleModel.attributes().size(), 3);
     }
 
     @Test
-    public void testVerifyRequires() {
+    void testVerifyRequires() {
         assertEquals(attr.requires().size(), 2);
         ModuleRequireInfo r = attr.requires().get(0);
         assertEquals(r.requires().name().stringValue(), require1.moduleName());
@@ -129,7 +129,7 @@ public class ModuleBuilderTest {
     }
 
     @Test
-    public void testVerifyExports() {
+    void testVerifyExports() {
         List<ModuleExportInfo> exports = attr.exports();
         assertEquals(exports.size(),5);
         for (int i = 0; i < 5; i++) {
@@ -152,7 +152,7 @@ public class ModuleBuilderTest {
     }
 
     @Test
-    public void testVerifyOpens() {
+    void testVerifyOpens() {
         List<ModuleOpenInfo> opens = attr.opens();
         assertEquals(opens.size(), 3);
         assertEquals(opens.get(0).opensTo().size(), 0);
@@ -163,14 +163,14 @@ public class ModuleBuilderTest {
     }
 
     @Test
-    public void testVerifyUses() {
+    void testVerifyUses() {
         var uses = attr.uses();
         assertEquals(uses.size(), 2);
         assertEquals(uses.get(1).asInternalName(), "another/Service");
     }
 
     @Test
-    public void testVerifyProvides() {
+    void testVerifyProvides() {
         var provides = attr.provides();
         assertEquals(provides.size(), 1);
         ModuleProvideInfo p = provides.get(0);
@@ -180,19 +180,19 @@ public class ModuleBuilderTest {
     }
 
     @Test
-    public void verifyPackages() {
+    void verifyPackages() {
         ModulePackagesAttribute a = moduleModel.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
         assertEquals(a.packages().stream().map(pe -> pe.asSymbol().packageName()).toList(), List.of("0", "1", "2", "3", "4", "o0", "o1", "o2", "foo.bar.baz", "quux"));
     }
 
     @Test
-    public void verifyMainclass() {
+    void verifyMainclass() {
         ModuleMainClassAttribute a = moduleModel.findAttribute(Attributes.MODULE_MAIN_CLASS).orElseThrow();
         assertEquals(a.mainClass().asInternalName(), "overwritten/main/Class");
     }
 
     @Test
-    public void verifyIsModuleInfo() throws Exception {
+    void verifyIsModuleInfo() throws Exception {
         assertTrue(moduleModel.isModuleInfo());
 
         ClassModel m = Classfile.parse(Paths.get(URI.create(ModuleBuilderTest.class.getResource("ModuleBuilderTest.class").toString())));

@@ -27,7 +27,7 @@
  * @test
  * @summary Testing Classfile low JCov attributes.
  * @compile -Xjcov LowJCovAttributeTest.java
- * @run testng LowJCovAttributeTest
+ * @run junit LowJCovAttributeTest
  */
 import java.io.IOException;
 import java.net.URI;
@@ -42,16 +42,14 @@ import jdk.classfile.MethodModel;
 import jdk.classfile.Attributes;
 import jdk.classfile.attribute.*;
 import jdk.classfile.constantpool.Utf8Entry;
-import org.testng.annotations.*;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * LowJCovAttributeTest
  */
-@Test
-public class LowJCovAttributeTest {
+class LowJCovAttributeTest {
 
     private static final boolean VERBOSE = false;
 
@@ -61,13 +59,13 @@ public class LowJCovAttributeTest {
     private final Path path;
     private final ClassModel classLow;
 
-    public LowJCovAttributeTest() throws IOException {
+    LowJCovAttributeTest() throws IOException {
         this.path = Paths.get(URI.create(LowJCovAttributeTest.class.getResource(TEST_FILE).toString()));
         this.classLow = Classfile.parse(path);
     }
 
     @Test
-    public void testRead() {
+    void testRead() {
         try {
             testRead0();
         } catch(Exception ex) {
@@ -126,7 +124,7 @@ public class LowJCovAttributeTest {
     }
 
 //    @Test
-//    public void testWrite() {
+//    void testWrite() {
 //        try {
 //            testWrite0();
 //        } catch(Exception ex) {

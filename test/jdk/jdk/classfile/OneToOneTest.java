@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile class writing and reading.
- * @run testng OneToOneTest
+ * @run junit OneToOneTest
  */
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
@@ -42,8 +42,8 @@ import jdk.classfile.Label;
 import jdk.classfile.MethodModel;
 import jdk.classfile.TypeKind;
 import jdk.classfile.attribute.SourceFileAttribute;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 import jdk.classfile.instruction.ConstantInstruction;
 import jdk.classfile.instruction.StoreInstruction;
@@ -59,10 +59,10 @@ import static helpers.TestConstants.MTD_INT_VOID;
 import static helpers.TestConstants.MTD_VOID;
 import static jdk.classfile.Opcode.*;
 
-public class OneToOneTest {
+class OneToOneTest {
 
     @Test
-    public void testClassWriteRead() {
+    void testClassWriteRead() {
 
         byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
@@ -109,7 +109,7 @@ public class OneToOneTest {
 
         ClassModel cm = Classfile.parse(bytes);
         List<MethodModel> ms = cm.methods();
-        Assert.assertEquals(ms.size(), 2);
+        assertEquals(ms.size(), 2);
         boolean found = false;
         for (MethodModel mm : ms) {
             if (mm.methodName().stringValue().equals("main") && mm.code().isPresent()) {
@@ -119,42 +119,42 @@ public class OneToOneTest {
                                        .filter(e -> e instanceof Instruction)
                                        .map(e -> (Instruction)e)
                                        .toList();
-                Assert.assertEquals(instructions.size(), 17);
+                assertEquals(instructions.size(), 17);
 
-                Assert.assertEquals(instructions.get(0).opcode(), ICONST_1);
+                assertEquals(instructions.get(0).opcode(), ICONST_1);
 
                 var i1 = (StoreInstruction) instructions.get(1);
-                Assert.assertEquals(i1.opcode(), ISTORE_1);
+                assertEquals(i1.opcode(), ISTORE_1);
                 int lv1 = i1.slot();
-                Assert.assertEquals(lv1, 1);
+                assertEquals(lv1, 1);
 
                 ConstantInstruction i5 = (ConstantInstruction) instructions.get(5);
-                Assert.assertEquals(i5.opcode(), BIPUSH);
-                Assert.assertEquals(i5.constantValue(), 10);
+                assertEquals(i5.opcode(), BIPUSH);
+                assertEquals(i5.constantValue(), 10);
 
                 BranchInstruction i6 = (BranchInstruction) instructions.get(6);
-                Assert.assertEquals(i6.opcode(), IF_ICMPGE);
-                // Assert.assertEquals(code.instructionOffset(i6.target()), 14);  //FIXME: CodeModel gives BCI, should give instruction offset
+                assertEquals(i6.opcode(), IF_ICMPGE);
+                // assertEquals(code.instructionOffset(i6.target()), 14);  //FIXME: CodeModel gives BCI, should give instruction offset
 
                 LoadInstruction i7 = (LoadInstruction) instructions.get(7);
-                Assert.assertEquals(i7.opcode(), ILOAD_1);
+                assertEquals(i7.opcode(), ILOAD_1);
 
                 OperatorInstruction i9 = (OperatorInstruction) instructions.get(9);
-                Assert.assertEquals(i9.opcode(), IMUL);
+                assertEquals(i9.opcode(), IMUL);
 
                 FieldInstruction i13 = (FieldInstruction) instructions.get(13);
-                Assert.assertEquals(i13.opcode(), GETSTATIC);
-                Assert.assertEquals(i13.owner().asInternalName(), "java/lang/System");
-                Assert.assertEquals(i13.name().stringValue(), "out");
-                Assert.assertEquals(i13.type().stringValue(), "Ljava/io/PrintStream;");
+                assertEquals(i13.opcode(), GETSTATIC);
+                assertEquals(i13.owner().asInternalName(), "java/lang/System");
+                assertEquals(i13.name().stringValue(), "out");
+                assertEquals(i13.type().stringValue(), "Ljava/io/PrintStream;");
 
                 InvokeInstruction i15 = (InvokeInstruction) instructions.get(15);
-                Assert.assertEquals(i15.opcode(), INVOKEVIRTUAL);
-                Assert.assertEquals(i15.owner().asInternalName(), "java/io/PrintStream");
-                Assert.assertEquals(i15.name().stringValue(), "println");
-                Assert.assertEquals(i15.type().stringValue(), "(I)V");
+                assertEquals(i15.opcode(), INVOKEVIRTUAL);
+                assertEquals(i15.owner().asInternalName(), "java/io/PrintStream");
+                assertEquals(i15.name().stringValue(), "println");
+                assertEquals(i15.type().stringValue(), "(I)V");
             }
         }
-        Assert.assertTrue(found);
+        assertTrue(found);
     }
 }

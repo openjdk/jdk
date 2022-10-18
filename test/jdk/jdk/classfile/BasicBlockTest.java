@@ -26,18 +26,14 @@
 /*
  * @test
  * @summary Testing Classfile complex basic blocks affecting SM generator.
- * @run testng BasicBlockTest
+ * @run junit BasicBlockTest
  */
 import java.io.InputStream;
 import java.io.IOException;
-
 import jdk.classfile.Classfile;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-/**
- *
- */
-public class BasicBlockTest {
+class BasicBlockTest {
 
        public void npeInResolveMystery() {
             int i=0; Object key;
@@ -59,7 +55,7 @@ public class BasicBlockTest {
     }
 
     @Test
-    public void testPatternsCausingBasicBlockTroubles() throws IOException {
+    void testPatternsCausingBasicBlockTroubles() throws IOException {
         try (InputStream in = BasicBlockTest.class.getResourceAsStream("BasicBlockTest.class")) {
             var classModel = Classfile.parse(in.readAllBytes());
             Classfile.build(classModel.thisClass().asSymbol(), cb -> classModel.forEachElement(cb));

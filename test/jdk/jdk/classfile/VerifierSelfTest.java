@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile Verifier.
- * @run testng VerifierSelfTest
+ * @run junit VerifierSelfTest
  */
 import java.io.IOException;
 import java.net.URI;
@@ -38,17 +38,14 @@ import java.util.stream.Stream;
 import jdk.classfile.Classfile;
 import jdk.classfile.CodeModel;
 import jdk.classfile.MethodModel;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-/**
- *
- */
-public class VerifierSelfTest {
+class VerifierSelfTest {
 
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
 
     @Test
-    public void testVerify() throws IOException {
+    void testVerify() throws IOException {
         Stream.of(
                 Files.walk(JRT.getPath("modules/java.base")),
                 Files.walk(JRT.getPath("modules"), 2).filter(p -> p.endsWith("module-info.class")))
@@ -63,7 +60,7 @@ public class VerifierSelfTest {
     }
 
     @Test
-    public void testFailedDump() throws IOException {
+    void testFailedDump() throws IOException {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
         var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(className -> null));
         byte[] brokenClassBytes = classModel.transform(

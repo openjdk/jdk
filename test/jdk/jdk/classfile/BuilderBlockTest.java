@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing Classfile builder blocks.
- * @run testng BuilderBlockTest
+ * @run junit BuilderBlockTest
  */
 import java.lang.constant.ClassDesc;
 
@@ -45,21 +45,19 @@ import jdk.classfile.Label;
 import jdk.classfile.Opcode;
 import jdk.classfile.TypeKind;
 import jdk.classfile.impl.LabelImpl;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * BuilderBlockTest
  */
-@Test
-public class BuilderBlockTest {
+class BuilderBlockTest {
 
     static final String testClassName = "AdaptCodeTest$TestClass";
     static final Path testClassPath = Paths.get("target/test-classes/" + testClassName + ".class");
 
-    public void testStartEnd() throws Exception {
+    @Test
+    void testStartEnd() throws Exception {
         // Ensure that start=0 at top level, end is undefined until code is done, then end=1
         Label startEnd[] = new Label[2];
 
@@ -78,7 +76,8 @@ public class BuilderBlockTest {
         assertEquals(((LabelImpl) startEnd[1]).getContextInfo(), 1);
     }
 
-    public void testStartEndBlock() throws Exception {
+    @Test
+    void testStartEndBlock() throws Exception {
         Label startEnd[] = new Label[4];
 
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
@@ -102,7 +101,8 @@ public class BuilderBlockTest {
         assertEquals(((LabelImpl) startEnd[3]).getContextInfo(), 2);
     }
 
-    public void testIfThenReturn() throws Exception {
+    @Test
+    void testIfThenReturn() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
@@ -120,7 +120,8 @@ public class BuilderBlockTest {
 
     }
 
-    public void testIfThenElseReturn() throws Exception {
+    @Test
+    void testIfThenElseReturn() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
@@ -137,7 +138,8 @@ public class BuilderBlockTest {
 
     }
 
-    public void testIfThenBadOpcode()  {
+    @Test
+    void testIfThenBadOpcode()  {
         Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
@@ -145,7 +147,7 @@ public class BuilderBlockTest {
                     mb -> mb.withCode(xb -> {
                         xb.iload(0);
                         xb.iload(1);
-                        Assert.assertThrows(IllegalArgumentException.class, () -> {
+                        assertThrows(IllegalArgumentException.class, () -> {
                             xb.ifThen(
                                     Opcode.GOTO,
                                     xxb -> xxb.iconst_1().istore(2));
@@ -156,7 +158,8 @@ public class BuilderBlockTest {
         });
     }
 
-    public void testIfThenElseImplicitBreak() throws Exception {
+    @Test
+    void testIfThenElseImplicitBreak() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
@@ -175,7 +178,8 @@ public class BuilderBlockTest {
 
     }
 
-    public void testIfThenElseExplicitBreak() throws Exception {
+    @Test
+    void testIfThenElseExplicitBreak() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
@@ -193,7 +197,8 @@ public class BuilderBlockTest {
         assertEquals(fooMethod.invoke(null, 0), 2);
     }
 
-    public void testIfThenElseOpcode() throws Exception {
+    @Test
+    void testIfThenElseOpcode() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
@@ -217,7 +222,8 @@ public class BuilderBlockTest {
         assertEquals(fooMethod.invoke(null, 11, 10), 2);
     }
 
-    public void testIfThenElseBadOpcode()  {
+    @Test
+    void testIfThenElseBadOpcode()  {
         Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
@@ -225,7 +231,7 @@ public class BuilderBlockTest {
                     mb -> mb.withCode(xb -> {
                         xb.iload(0);
                         xb.iload(1);
-                        Assert.assertThrows(IllegalArgumentException.class, () -> {
+                        assertThrows(IllegalArgumentException.class, () -> {
                             xb.ifThenElse(
                                     Opcode.GOTO,
                                     xxb -> xxb.iconst_1().istore(2),
@@ -237,7 +243,8 @@ public class BuilderBlockTest {
         });
     }
 
-    public void testAllocateLocal() {
+    @Test
+    void testAllocateLocal() {
         Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
                           mb -> mb.withCode(xb -> {
@@ -252,7 +259,8 @@ public class BuilderBlockTest {
         });
     }
 
-    public void testAllocateLocalBlock() {
+    @Test
+    void testAllocateLocalBlock() {
         Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
                           mb -> mb.withCode(xb -> {
@@ -271,7 +279,8 @@ public class BuilderBlockTest {
         });
     }
 
-    public void testAllocateLocalIfThen() {
+    @Test
+    void testAllocateLocalIfThen() {
         Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
                           mb -> mb.withCode(xb -> {

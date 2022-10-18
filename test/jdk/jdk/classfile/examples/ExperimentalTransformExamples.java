@@ -23,15 +23,18 @@
  * questions.
  */
 
-import jdk.classfile.*;
-import jdk.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import org.testng.annotations.Test;
-
+/*
+ * @test
+ * @summary Testing Classfile ExperimentalTransformExamples compilation.
+ * @compile ExperimentalTransformExamples.java
+ */
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.Path;
+
+import jdk.classfile.*;
+import jdk.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 /**
  * ExperimentalTransformExamples
@@ -58,13 +61,5 @@ public class ExperimentalTransformExamples {
                 default -> cb.with(ce);
             }
         });
-    }
-
-    @Test(enabled=false)
-    public void testDropAnnos() throws Exception {
-        ClassModel model = Classfile.parse(Path.of("Some.class"));
-        var newBytes = deleteAnnotations(model);
-        ClassModel newModel = Classfile.parse(newBytes );
-        // Compare the two
     }
 }
