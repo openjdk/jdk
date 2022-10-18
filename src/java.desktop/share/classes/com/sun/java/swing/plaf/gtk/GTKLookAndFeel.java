@@ -1356,7 +1356,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         // colors specific only for GTK
         // It is impossible to create a simple GtkWidget without specifying the
         // type. So for GtkWidget we can use any appropriate concrete type of
-        // wigdet. LABEL in this case.
+        // widget. LABEL in this case.
         GTKStyle widgetStyle = (GTKStyle)factory.getStyle(null, Region.LABEL);
         Color bg = widgetStyle.getGTKColor(SynthConstants.ENABLED,
                                            GTKColorType.BACKGROUND);
