@@ -156,7 +156,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_Trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_TransformHelper.c := sign-compare, \
-    DISABLED_WARNINGS_microsoft := 4244 4267 4996, \
+    DISABLED_WARNINGS_microsoft := 4244 4996, \
+    DISABLED_WARNINGS_microsoft_awt_Toolkit.cpp := 4267, \
+    DISABLED_WARNINGS_microsoft_OGLContext.c := 4267, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_windows := -delayload:user32.dll -delayload:gdi32.dll \
@@ -303,7 +305,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
     DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
-    DISABLED_WARNINGS_microsoft := 4819, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
@@ -429,7 +430,7 @@ else
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(BUILD_LIBFREETYPE_CFLAGS), \
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
-      DISABLED_WARNINGS_microsoft := 4018 4267 4244 4312 4819, \
+      DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -468,7 +469,7 @@ else
        unused-result
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess
    HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
-   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138
+   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 
    LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 
@@ -759,7 +760,10 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare, \
       DISABLED_WARNINGS_clang_splashscreen_png.c := incompatible-pointer-types, \
       DISABLED_WARNINGS_clang_splashscreen_sys.m := deprecated-declarations, \
-      DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
+      DISABLED_WARNINGS_microsoft_dgif_lib.c := 4018 4267, \
+      DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4267 4244, \
+      DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
+      DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
