@@ -1748,7 +1748,7 @@ PhaseCCP::~PhaseCCP() {
 
 #ifdef ASSERT
 static bool ccp_type_widens(const Type* t, const Type* t0) {
-  assert(t->meet(t0) == t, "Not monotonic");
+  assert(t->meet(t0) == t->remove_speculative(), "Not monotonic");
   switch (t->base() == t0->base() ? t->base() : Type::Top) {
   case Type::Int:
     assert(t0->isa_int()->_widen <= t->isa_int()->_widen, "widen increases");
