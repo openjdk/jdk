@@ -2268,9 +2268,9 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
   verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
                                     Register tmp2, Register tmp3, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, val, tmp1, tmp2, tmp3);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
