@@ -41,10 +41,6 @@ import org.junit.jupiter.params.provider.ValueSource;
  * @run junit BasicTestLauncher
  */
 public class BasicTestLauncher {
-    // US/Pacific time zone
-    private static final String TZ_UP = "US/Pacific";
-    // Asia/Novosibirsk time zone
-    private static final String TZ_AN = "Asia/Novosibirsk";
     // Locale flag for testJVM
     private static final String LOCALE_PROV = "-Djava.locale.providers=CLDR";
     // Test class
@@ -56,7 +52,7 @@ public class BasicTestLauncher {
      * @param timeZone the time zone to run tests against
      */
     @ParameterizedTest
-    @ValueSource(strings = { TZ_UP, TZ_AN })
+    @ValueSource(strings = { "US/Pacific", "Asia/Novosibirsk" })
     void testTimeZone(String timeZone) throws IOException{
         System.out.printf("$$$ Testing against %s!%n", timeZone);
         OutputAnalyzer output = RunTest(timeZone);
