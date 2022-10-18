@@ -148,6 +148,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_gcc_awt_parseImage.c := sign-compare unused-function, \
     DISABLED_WARNINGS_gcc_debug_trace.c := unused-function, \
     DISABLED_WARNINGS_gcc_ProcessPath.c := maybe-uninitialized, \
+    DISABLED_WARNINGS_gcc_Region.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
     DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
     DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare, \
