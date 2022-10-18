@@ -75,6 +75,8 @@ public class MatteBorder extends EmptyBorder
      * Creates a matte border with the specified insets and color.
      * @param borderInsets the insets of the border
      * @param matteColor the color rendered for the border
+     * @throws {@code NullPointerException} if {@code borderInsets}
+     *          is {@code null}
      * @since 1.3
      */
     public MatteBorder(Insets borderInsets, Color matteColor)   {
@@ -99,6 +101,8 @@ public class MatteBorder extends EmptyBorder
      * Creates a matte border with the specified insets and tile icon.
      * @param borderInsets the insets of the border
      * @param tileIcon the icon to be used for tiling the border
+     * @throws {@code NullPointerException} if {@code borderInsets}
+     *      *   is {@code null}
      * @since 1.3
      */
     public MatteBorder(Insets borderInsets, Icon tileIcon)   {

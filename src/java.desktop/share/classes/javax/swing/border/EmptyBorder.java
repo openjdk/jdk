@@ -83,6 +83,8 @@ public class EmptyBorder extends AbstractBorder implements Serializable
     /**
      * Creates an empty border with the specified insets.
      * @param borderInsets the insets of the border
+     * @throws {@code NullPointerException} if {@code borderInsets}
+     *          is {@code null}
      */
     @ConstructorProperties({"borderInsets"})
     public EmptyBorder(Insets borderInsets)   {
