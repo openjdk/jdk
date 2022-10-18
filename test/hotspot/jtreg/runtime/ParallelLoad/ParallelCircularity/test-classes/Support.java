@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,6 @@
  * questions.
  */
 
-
-// class to print thread-annotated output
-class ThreadPrint {
-    public static void println(String s) {
-        System.out.println(Thread.currentThread().getName() + ": " + s);
-        System.out.flush();
-    }
+public class Support {
+  private Base base = new Base();
 }
