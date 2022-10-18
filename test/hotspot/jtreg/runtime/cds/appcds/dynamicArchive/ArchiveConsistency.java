@@ -153,11 +153,11 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         startTest("5a. Modify common app classpath size");
         String wrongCommonAppClasspathOffset = getNewArchiveName("wrongCommonAppClasspathOffset");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongCommonAppClasspathOffset);
-        int commonAppClasspathSize = CDSArchiveUtils.commonAppClasspathSize(copiedJsa);
-        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetCommonAppClasspathSize(), -1);
+        int commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
+        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetCommonAppClasspathPrefixSize(), -1);
         runTwo(baseArchiveName, wrongCommonAppClasspathOffset,
                appJar, mainClass, isAuto ? 0 : 1,
-               "common app classpath size < 0");
+               "common app classpath prefix len < 0");
 
         startTest("5b. Modify common app classpath size, run with -XX:-VerifySharedSpaces");
         VERIFY_CRC = true;

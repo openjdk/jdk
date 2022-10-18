@@ -83,8 +83,25 @@ public class CommonAppClasspath extends DynamicArchiveTestBase {
         String appJar = JarBuilder.getOrCreateHelloJar();
         String appJar2 = JarBuilder.build("AppendClasspath_HelloMore", mainClass);
 
+        // dump an archive with only appJar in the original location
+        String jars = appJar;
+        dump(topArchiveName,
+             "-Xlog:cds",
+             "-Xlog:cds+dynamic=debug",
+             "-cp", jars, "Hello")
+            .assertNormalExit(output -> {
+                    output.shouldContain("Written dynamic archive 0x");
+                });
+
+        // copy hello.jar to tmp dir
+        Path destPath = CDSTestUtils.copyFile(appJar, System.getProperty("java.io.tmpdir"));
+
+        // Run with appJar relocated to tmp dir - should PASS
+        jars = destPath.toString();
+        runtimeTest(topArchiveName, jars, "Hello", 0, successMessage1);
+
         // dump an archive with both jars in the original location
-        String jars = appJar + File.pathSeparator + appJar2;
+        jars = appJar + File.pathSeparator + appJar2;
         dump(topArchiveName,
              "-Xlog:cds",
              "-Xlog:cds+dynamic=debug",
@@ -95,7 +112,7 @@ public class CommonAppClasspath extends DynamicArchiveTestBase {
 
         // copy hello.jar to USER_DIR/deploy
         String newDir = USER_DIR.toString() + File.separator + "deploy";
-        Path destPath = CDSTestUtils.copyFile(appJar, newDir);
+        destPath = CDSTestUtils.copyFile(appJar, newDir);
 
         // copy AppendClasspath_HelloMore.jar to USER_DIR/deploy
         Path destPath2 = CDSTestUtils.copyFile(appJar2, newDir);
