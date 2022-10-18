@@ -195,7 +195,7 @@ $(eval $(call SetupLogging))
 
 ################################################################################
 
-MAX_PARAMS := 36
+MAX_PARAMS := 48
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
 
 # Template for creating a macro taking named parameters. To use it, assign the
