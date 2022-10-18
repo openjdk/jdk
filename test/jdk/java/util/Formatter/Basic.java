@@ -34,18 +34,20 @@ public class Basic {
     }
 
     static void fail(String fs, Class ex) {
-        String s = "'" + fs + "': " + ex.getName() + " not thrown";
-        if (first == null)
-            setFirst(s);
-        System.err.println("FAILED: " + s);
+        String message = "'%s': %s not thrown".formatted(fs, ex.getName());
+        if (first == null) {
+            setFirst(message);
+        }
+        System.err.printf("FAILED: %s%n", message);
         fail++;
     }
 
     static void fail(String fs, String exp, String got) {
-        String s = "'" + fs + "': Expected '" + exp + "', got '" + got + "'";
-        if (first == null)
-            setFirst(s);
-        System.err.println("FAILED: " + s);
+        String message = "'%s': Expected '%s', got '%s'".formatted(fs, exp, got);
+        if (first == null) {
+            setFirst(message);
+        }
+        System.err.printf("FAILED: %s%n", message);
         fail++;
     }
 
@@ -58,10 +60,11 @@ public class Basic {
     }
 
     static void ck(String fs, String exp, String got) {
-        if (!exp.equals(got))
+        if (!exp.equals(got)) {
             fail(fs, exp, got);
-        else
+        } else {
             pass();
+        }
     }
 
     public static void main(String[] args) {
@@ -83,12 +86,13 @@ public class Basic {
         BasicDouble.test();
         BasicDoubleObject.test();
         BasicBigDecimal.test();
-
         BasicDateTime.test();
 
         if (fail != 0) {
-            throw new RuntimeException(String.format("%d tests: %d failure(s)" +
-                    ", first", fail + pass, fail), first);
+            var tests_message = "%d tests: %d failure(s)%n".formatted(fail + pass, fail);
+            var trace_message = "Traceback of the first error located";
+            String message = "%s %s".formatted(tests_message, trace_message);
+            throw new RuntimeException(message, first);
         } else {
             System.out.printf("All %d tests passed", pass);
         }

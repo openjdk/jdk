@@ -28,7 +28,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 
-
 /* @test
  * @summary Unit tests for formatter
  * @library /test/lib
