@@ -67,6 +67,8 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
@@ -1883,24 +1885,24 @@ public final class System {
     }
 
     /**
-     * Terminates the currently running Java Virtual Machine. The
-     * argument serves as a status code; by convention, a nonzero status
-     * code indicates abnormal termination.
+     * Initiates the <a href="Runtime.html#shutdown">shutdown sequence</a> of the
+     * Java Virtual Machine. This method always blocks indefinitely. The argument
+     * serves as a status code; by convention, a nonzero status code indicates
+     * abnormal termination.
      * <p>
-     * This method calls the {@code exit} method in class
-     * {@code Runtime}. This method never returns normally.
+     * This method calls the {@code exit} method in class {@code Runtime}. This
+     * method never returns normally.
      * <p>
-     * The call {@code System.exit(n)} is effectively equivalent to
-     * the call:
+     * The call {@code System.exit(n)} is effectively equivalent to the call:
      * <blockquote><pre>
      * Runtime.getRuntime().exit(n)
      * </pre></blockquote>
      *
-     * @param      status   exit status.
-     * @throws  SecurityException
-     *        if a security manager exists and its {@code checkExit}
-     *        method doesn't allow exit with the specified status.
-     * @see        java.lang.Runtime#exit(int)
+     * @param  status exit status.
+     * @throws SecurityException
+     *         if a security manager exists and its {@code checkExit} method
+     *         doesn't allow exit with the specified status.
+     * @see    java.lang.Runtime#exit(int)
      */
     public static void exit(int status) {
         Runtime.getRuntime().exit(status);
@@ -2554,12 +2556,20 @@ public final class System {
                 }
             }
 
-            public <T> T getCarrierThreadLocal(ThreadLocal<T> local) {
-                return local.getCarrierThreadLocal();
+            public <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local) {
+                return ((ThreadLocal<T>)local).getCarrierThreadLocal();
             }
 
-            public <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value) {
-                local.setCarrierThreadLocal(value);
+            public <T> void setCarrierThreadLocal(CarrierThreadLocal<T> local, T value) {
+                ((ThreadLocal<T>)local).setCarrierThreadLocal(value);
+            }
+
+            public void removeCarrierThreadLocal(CarrierThreadLocal<?> local) {
+                ((ThreadLocal<?>)local).removeCarrierThreadLocal();
+            }
+
+            public boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local) {
+                return ((ThreadLocal<?>)local).isCarrierThreadLocalPresent();
             }
 
             public Object[] extentLocalCache() {

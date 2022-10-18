@@ -142,13 +142,8 @@ public class TypeEnter implements Completer {
         dependencies = Dependencies.instance(context);
         preview = Preview.instance(context);
         Source source = Source.instance(context);
-        allowTypeAnnos = Feature.TYPE_ANNOTATIONS.allowedInSource(source);
         allowDeprecationOnImport = Feature.DEPRECATION_ON_IMPORT.allowedInSource(source);
     }
-
-    /** Switch: support type annotations.
-     */
-    boolean allowTypeAnnos;
 
     /**
      * Switch: should deprecation warnings be issued on import
@@ -733,14 +728,6 @@ public class TypeEnter implements Completer {
                 }
             }
 
-            // Determine permits.
-            ListBuffer<Symbol> permittedSubtypeSymbols = new ListBuffer<>();
-            List<JCExpression> permittedTrees = tree.permitting;
-            for (JCExpression permitted : permittedTrees) {
-                Type pt = attr.attribBase(permitted, baseEnv, false, false, false);
-                permittedSubtypeSymbols.append(pt.tsym);
-            }
-
             if ((sym.flags_field & ANNOTATION) != 0) {
                 ct.interfaces_field = List.of(syms.annotationType);
                 ct.all_interfaces_field = ct.interfaces_field;
@@ -749,15 +736,6 @@ public class TypeEnter implements Completer {
                 ct.all_interfaces_field = (all_interfaces == null)
                         ? ct.interfaces_field : all_interfaces.toList();
             }
-
-            /* it could be that there are already some symbols in the permitted list, for the case
-             * where there are subtypes in the same compilation unit but the permits list is empty
-             * so don't overwrite the permitted list if it is not empty
-             */
-            if (!permittedSubtypeSymbols.isEmpty()) {
-                sym.permitted = permittedSubtypeSymbols.toList();
-            }
-            sym.isPermittedExplicit = !permittedSubtypeSymbols.isEmpty();
         }
             //where:
             protected JCExpression clearTypeParams(JCExpression superType) {
@@ -768,7 +746,7 @@ public class TypeEnter implements Completer {
     private final class HierarchyPhase extends AbstractHeaderPhase implements Completer {
 
         public HierarchyPhase() {
-            super(CompletionCause.HIERARCHY_PHASE, new PermitsPhase());
+            super(CompletionCause.HIERARCHY_PHASE, new HeaderPhase());
         }
 
         @Override
@@ -842,33 +820,6 @@ public class TypeEnter implements Completer {
 
     }
 
-    private final class PermitsPhase extends AbstractHeaderPhase {
-
-        public PermitsPhase() {
-            super(CompletionCause.HIERARCHY_PHASE, new HeaderPhase());
-        }
-
-        @Override
-        protected void runPhase(Env<AttrContext> env) {
-            JCClassDecl tree = env.enclClass;
-            if (!tree.sym.isAnonymous() || tree.sym.isEnum()) {
-                for (Type supertype : types.directSupertypes(tree.sym.type)) {
-                    if (supertype.tsym.kind == TYP) {
-                        ClassSymbol supClass = (ClassSymbol) supertype.tsym;
-                        Env<AttrContext> supClassEnv = enter.getEnv(supClass);
-                        if (supClass.isSealed() &&
-                            !supClass.isPermittedExplicit &&
-                            supClassEnv != null &&
-                            supClassEnv.toplevel == env.toplevel) {
-                            supClass.permitted = supClass.permitted.append(tree.sym);
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-
     private final class HeaderPhase extends AbstractHeaderPhase {
 
         public HeaderPhase() {
@@ -891,6 +842,8 @@ public class TypeEnter implements Completer {
             annotate.flush();
 
             attribSuperTypes(env, baseEnv);
+
+            fillPermits(tree, baseEnv);
 
             Set<Type> interfaceSet = new HashSet<>();
 
@@ -918,6 +871,36 @@ public class TypeEnter implements Completer {
             if (sym.owner.kind == PCK && (sym.flags_field & PUBLIC) == 0 &&
                 !env.toplevel.sourcefile.isNameCompatible(sym.name.toString(),JavaFileObject.Kind.SOURCE)) {
                 sym.flags_field |= AUXILIARY;
+            }
+        }
+
+        private void fillPermits(JCClassDecl tree, Env<AttrContext> baseEnv) {
+            ClassSymbol sym = tree.sym;
+
+            //fill in implicit permits in supertypes:
+            if (!sym.isAnonymous() || sym.isEnum()) {
+                for (Type supertype : types.directSupertypes(sym.type)) {
+                    if (supertype.tsym.kind == TYP) {
+                        ClassSymbol supClass = (ClassSymbol) supertype.tsym;
+                        Env<AttrContext> supClassEnv = enter.getEnv(supClass);
+                        if (supClass.isSealed() &&
+                            !supClass.isPermittedExplicit &&
+                            supClassEnv != null &&
+                            supClassEnv.toplevel == baseEnv.toplevel) {
+                            supClass.permitted = supClass.permitted.append(sym);
+                        }
+                    }
+                }
+            }
+            // attribute (explicit) permits of the current class:
+            if (sym.isPermittedExplicit) {
+                ListBuffer<Symbol> permittedSubtypeSymbols = new ListBuffer<>();
+                List<JCExpression> permittedTrees = tree.permitting;
+                for (JCExpression permitted : permittedTrees) {
+                    Type pt = attr.attribBase(permitted, baseEnv, false, false, false);
+                    permittedSubtypeSymbols.append(pt.tsym);
+                }
+                sym.permitted = permittedSubtypeSymbols.toList();
             }
         }
     }
@@ -1066,10 +1049,8 @@ public class TypeEnter implements Completer {
 
             finishClass(tree, defaultConstructor, env);
 
-            if (allowTypeAnnos) {
-                typeAnnotations.organizeTypeAnnotationsSignatures(env, (JCClassDecl)env.tree);
-                typeAnnotations.validateTypeAnnotationsSignatures(env, (JCClassDecl)env.tree);
-            }
+            typeAnnotations.organizeTypeAnnotationsSignatures(env, (JCClassDecl)env.tree);
+            typeAnnotations.validateTypeAnnotationsSignatures(env, (JCClassDecl)env.tree);
         }
 
         DefaultConstructorHelper getDefaultConstructorHelper(Env<AttrContext> env) {

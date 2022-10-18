@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,10 +136,9 @@ final class ProviderConfig {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ProviderConfig == false) {
+        if (!(obj instanceof ProviderConfig other)) {
             return false;
         }
-        ProviderConfig other = (ProviderConfig)obj;
         return this.provName.equals(other.provName)
             && this.argument.equals(other.argument);
 
@@ -173,7 +172,7 @@ final class ProviderConfig {
             if (p != null) {
                 return p;
             }
-            if (shouldLoad() == false) {
+            if (!shouldLoad()) {
                 return null;
             }
 
@@ -411,7 +410,7 @@ final class ProviderConfig {
             } catch (Exception e) {
                 Throwable t;
                 if (e instanceof InvocationTargetException) {
-                    t = ((InvocationTargetException)e).getCause();
+                    t = e.getCause();
                 } else {
                     t = e;
                 }

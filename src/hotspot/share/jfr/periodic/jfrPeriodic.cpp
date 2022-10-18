@@ -59,7 +59,6 @@
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
@@ -552,21 +551,6 @@ TRACE_REQUEST_FUNC(StringTableStatistics) {
   emit_table_statistics<EventStringTableStatistics>(statistics);
 }
 
-TRACE_REQUEST_FUNC(PlaceholderTableStatistics) {
-  TableStatistics statistics = SystemDictionary::placeholders_statistics();
-  emit_table_statistics<EventPlaceholderTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(LoaderConstraintsTableStatistics) {
-  TableStatistics statistics = SystemDictionary::loader_constraints_statistics();
-  emit_table_statistics<EventLoaderConstraintsTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(ProtectionDomainCacheTableStatistics) {
-  TableStatistics statistics = SystemDictionary::protection_domain_cache_statistics();
-  emit_table_statistics<EventProtectionDomainCacheTableStatistics>(statistics);
-}
-
 TRACE_REQUEST_FUNC(CompilerStatistics) {
   EventCompilerStatistics event;
   event.set_compileCount(CompileBroker::get_total_compile_count());
@@ -592,7 +576,8 @@ TRACE_REQUEST_FUNC(CompilerConfiguration) {
 
 TRACE_REQUEST_FUNC(CodeCacheStatistics) {
   // Emit stats for all available code heaps
-  for (int bt = 0; bt < CodeBlobType::NumTypes; ++bt) {
+  for (int bt_index = 0; bt_index < static_cast<int>(CodeBlobType::NumTypes); ++bt_index) {
+    const CodeBlobType bt = static_cast<CodeBlobType>(bt_index);
     if (CodeCache::heap_available(bt)) {
       EventCodeCacheStatistics event;
       event.set_codeBlobType((u1)bt);
@@ -619,24 +604,6 @@ TRACE_REQUEST_FUNC(CodeCacheConfiguration) {
   event.set_minBlockLength(CodeCacheMinBlockLength);
   event.set_startAddress((u8)CodeCache::low_bound());
   event.set_reservedTopAddress((u8)CodeCache::high_bound());
-  event.commit();
-}
-
-TRACE_REQUEST_FUNC(CodeSweeperStatistics) {
-  EventCodeSweeperStatistics event;
-  event.set_sweepCount(NMethodSweeper::traversal_count());
-  event.set_methodReclaimedCount(NMethodSweeper::total_nof_methods_reclaimed());
-  event.set_totalSweepTime(NMethodSweeper::total_time_sweeping());
-  event.set_peakFractionTime(NMethodSweeper::peak_sweep_fraction_time());
-  event.set_peakSweepTime(NMethodSweeper::peak_sweep_time());
-  event.commit();
-}
-
-TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
-  EventCodeSweeperConfiguration event;
-  event.set_sweeperEnabled(MethodFlushing);
-  event.set_flushingEnabled(UseCodeCacheFlushing);
-  event.set_sweepThreshold(NMethodSweeper::sweep_threshold_bytes());
   event.commit();
 }
 

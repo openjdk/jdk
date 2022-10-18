@@ -168,7 +168,6 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
     // There is possibility that GC is cancelled when it arrives final mark.
     // In this case, concurrent root phase is skipped and degenerated GC should be
     // followed, where nmethods are disarmed.
-    assert(heap->cancelled_gc() || Continuations::enabled(), "What else?");
   }
 }
 
@@ -251,7 +250,7 @@ void ShenandoahNMethod::assert_same_oops(bool allow_dead) {
       debug_stream.print_cr("-> " PTR_FORMAT, p2i(check.at(i)));
     }
     fatal("Must match #detected: %d, #recorded: %d, #total: %d, begin: " PTR_FORMAT ", end: " PTR_FORMAT "\n%s",
-          oops->length(), _oops_count, count, p2i(nm()->oops_begin()), p2i(nm()->oops_end()), debug_stream.as_string());
+          oops->length(), _oops_count, count, p2i(nm()->oops_begin()), p2i(nm()->oops_end()), debug_stream.freeze());
   }
 }
 #endif
@@ -300,28 +299,10 @@ void ShenandoahNMethodTable::unregister_nmethod(nmethod* nm) {
 
   ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
   assert(data != NULL, "Sanity");
-  if (Thread::current()->is_Code_cache_sweeper_thread()) {
-    wait_until_concurrent_iteration_done();
-  }
   log_unregister_nmethod(nm);
   ShenandoahLocker locker(&_lock);
   assert(contain(nm), "Must have been registered");
 
-  ShenandoahReentrantLocker data_locker(data->lock());
-  data->mark_unregistered();
-}
-
-void ShenandoahNMethodTable::flush_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
-  assert(Thread::current()->is_Code_cache_sweeper_thread(), "Must from Sweep thread");
-  ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
-  assert(data != NULL, "Sanity");
-
-  // Can not alter the array when iteration is in progress
-  wait_until_concurrent_iteration_done();
-  log_flush_nmethod(nm);
-
-  ShenandoahLocker locker(&_lock);
   int idx = index_of(nm);
   assert(idx >= 0 && idx < _index, "Invalid index");
   ShenandoahNMethod::attach_gc_data(nm, NULL);
@@ -348,7 +329,6 @@ int ShenandoahNMethodTable::index_of(nmethod* nm) const {
 
 void ShenandoahNMethodTable::remove(int idx) {
   shenandoah_assert_locked_or_safepoint(CodeCache_lock);
-  assert(!iteration_in_progress(), "Can not happen");
   assert(_index >= 0 && _index <= _list->size(), "Sanity");
 
   assert(idx >= 0 && idx < _index, "Out of bound");
@@ -429,16 +409,6 @@ void ShenandoahNMethodTable::log_unregister_nmethod(nmethod* nm) {
             p2i(nm));
 }
 
-void ShenandoahNMethodTable::log_flush_nmethod(nmethod* nm) {
-  LogTarget(Debug, gc, nmethod) log;
-  if (!log.is_enabled()) {
-    return;
-  }
-
-  ResourceMark rm;
-  log.print("Flush NMethod: (" PTR_FORMAT ")", p2i(nm));
-}
-
 #ifdef ASSERT
 void ShenandoahNMethodTable::assert_nmethods_correct() {
   assert_locked_or_safepoint(CodeCache_lock);
@@ -513,11 +483,8 @@ void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
         continue;
       }
 
-      // A nmethod can become a zombie before it is unregistered.
-      if (nmr->nm()->is_alive()) {
-        nmr->assert_correct();
-        f->do_code_blob(nmr->nm());
-      }
+      nmr->assert_correct();
+      f->do_code_blob(nmr->nm());
     }
   }
 }

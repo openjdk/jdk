@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,8 +119,7 @@ class WindowsAclFileAttributeView
         // GetFileSecurity does not follow links so when following links we
         // need the final target
         String path = WindowsLinkSupport.getFinalPath(file, followLinks);
-        NativeBuffer buffer = getFileSecurity(path, OWNER_SECURITY_INFORMATION);
-        try {
+        try (NativeBuffer buffer = getFileSecurity(path, OWNER_SECURITY_INFORMATION)) {
             // get the address of the SID
             long sidAddress = GetSecurityDescriptorOwner(buffer.address());
             if (sidAddress == 0L)
@@ -129,8 +128,6 @@ class WindowsAclFileAttributeView
         } catch (WindowsException x) {
             x.rethrowAsIOException(file);
             return null;
-        } finally {
-            buffer.release();
         }
     }
 
@@ -146,11 +143,8 @@ class WindowsAclFileAttributeView
 
         // ALLOW and DENY entries in DACL;
         // AUDIT entries in SACL (ignore for now as it requires privileges)
-        NativeBuffer buffer = getFileSecurity(path, DACL_SECURITY_INFORMATION);
-        try {
+        try (NativeBuffer buffer = getFileSecurity(path, DACL_SECURITY_INFORMATION)) {
             return WindowsSecurityDescriptor.getAcl(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
 
@@ -173,7 +167,7 @@ class WindowsAclFileAttributeView
 
         // ConvertStringSidToSid allocates memory for SID so must invoke
         // LocalFree to free it when we are done
-        long pOwner = 0L;
+        long pOwner;
         try {
             pOwner = ConvertStringSidToSid(owner.sidString());
         } catch (WindowsException x) {
@@ -183,26 +177,21 @@ class WindowsAclFileAttributeView
 
         // Allocate buffer for security descriptor, initialize it, set
         // owner information and update the file.
-        try {
-            NativeBuffer buffer = NativeBuffers.getNativeBuffer(SIZEOF_SECURITY_DESCRIPTOR);
+        try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(SIZEOF_SECURITY_DESCRIPTOR)) {
+            InitializeSecurityDescriptor(buffer.address());
+            SetSecurityDescriptorOwner(buffer.address(), pOwner);
+            // may need SeRestorePrivilege to set the owner
+            WindowsSecurity.Privilege priv =
+                WindowsSecurity.enablePrivilege("SeRestorePrivilege");
             try {
-                InitializeSecurityDescriptor(buffer.address());
-                SetSecurityDescriptorOwner(buffer.address(), pOwner);
-                // may need SeRestorePrivilege to set the owner
-                WindowsSecurity.Privilege priv =
-                    WindowsSecurity.enablePrivilege("SeRestorePrivilege");
-                try {
-                    SetFileSecurity(path,
-                                    OWNER_SECURITY_INFORMATION,
-                                    buffer.address());
-                } finally {
-                    priv.drop();
-                }
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(file);
+                SetFileSecurity(path,
+                                OWNER_SECURITY_INFORMATION,
+                                buffer.address());
             } finally {
-                buffer.release();
+                priv.drop();
             }
+        } catch (WindowsException x) {
+            x.rethrowAsIOException(file);
         } finally {
             LocalFree(pOwner);
         }

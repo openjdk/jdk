@@ -327,7 +327,20 @@ public class IndexBuilder {
         return (ii1, ii2) -> {
             // If both are element items, compare the elements
             if (ii1.isElementItem() && ii2.isElementItem()) {
-                return elementComparator.compare(ii1.getElement(), ii2.getElement());
+                int d = elementComparator.compare(ii1.getElement(), ii2.getElement());
+                if (d == 0) {
+                    /*
+                     * Members inherited from classes with package access are
+                     * documented as though they were declared in the inheriting
+                     * subclass (see JDK-4780441).
+                     */
+                    Element subclass1 = ii1.getContainingTypeElement();
+                    Element subclass2 = ii2.getContainingTypeElement();
+                    if (subclass1 != null && subclass2 != null) {
+                        d = elementComparator.compare(subclass1, subclass2);
+                    }
+                }
+                return d;
             }
 
             // If one is an element item, compare labels; if equal, put element item last

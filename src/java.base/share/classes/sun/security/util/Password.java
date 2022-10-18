@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class Password {
 
         try {
             // Use the new java.io.Console class
-            Console con = null;
+            Console con;
             if (!isEchoOn && in == System.in && ((con = System.console()) != null)) {
                 consoleEntered = con.readPassword();
                 // readPassword returns "" if you just print ENTER,
@@ -69,7 +69,6 @@ public class Password {
 
             char[] lineBuffer;
             char[] buf;
-            int i;
 
             buf = lineBuffer = new char[128];
 

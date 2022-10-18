@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
+import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
@@ -179,6 +180,8 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             }
         };
         node.setDisplayName(getName());
+
+        this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
     }
 
     public Widget getLeftWidget() {

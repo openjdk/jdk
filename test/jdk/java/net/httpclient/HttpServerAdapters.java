@@ -45,6 +45,7 @@ import java.net.http.HttpHeaders;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -105,6 +106,16 @@ public interface HttpServerAdapters {
         public abstract Set<Map.Entry<String, List<String>>> entrySet();
         public abstract List<String> get(String name);
         public abstract boolean containsKey(String name);
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof HttpTestRequestHeaders other)) return false;
+            return Objects.equals(entrySet(), other.entrySet());
+        }
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(entrySet());
+        }
 
         public static HttpTestRequestHeaders of(Headers headers) {
             return new Http1TestRequestHeaders(headers);
@@ -138,6 +149,10 @@ public interface HttpServerAdapters {
             public boolean containsKey(String name) {
                 return headers.containsKey(name);
             }
+            @Override
+            public String toString() {
+                return String.valueOf(headers);
+            }
         }
         private static final class Http2TestRequestHeaders extends HttpTestRequestHeaders {
             private final HttpHeaders headers;
@@ -159,6 +174,10 @@ public interface HttpServerAdapters {
             @Override
             public boolean containsKey(String name) {
                 return headers.firstValue(name).isPresent();
+            }
+            @Override
+            public String toString() {
+                return String.valueOf(headers);
             }
         }
     }

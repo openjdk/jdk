@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public:
     return converter.to;
   }
 
-  // Support thin wrappers over primitive types.
+  // Support thin wrappers over primitive types and other conversions.
   // If derived from std::true_type, provides representational conversion
   // from T to some other type.  When true, must provide
   // - Value: typedef for T.
@@ -114,7 +114,20 @@ public:
   //   the same value representation as x.
   // - static T recover(Decayed x): return a value of type T with the
   //   same value representation as x.
-  template<typename T> struct Translate : public std::false_type {};
+  template<typename T, typename Enable = void>
+  struct Translate : public std::false_type {};
+};
+
+// Enum types translate to/from their underlying type.
+template<typename T>
+struct PrimitiveConversions::Translate<T, std::enable_if_t<std::is_enum<T>::value>>
+  : public std::true_type
+{
+  using Value = T;
+  using Decayed = std::underlying_type_t<T>;
+
+  static constexpr Decayed decay(Value x) { return static_cast<Decayed>(x); }
+  static constexpr Value recover(Decayed x) { return static_cast<Value>(x); }
 };
 
 // jfloat and jdouble translation to integral types

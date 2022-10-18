@@ -77,4 +77,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
 #endif
 
+#define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
 #endif // CPU_X86_GLOBALDEFINITIONS_X86_HPP

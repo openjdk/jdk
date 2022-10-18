@@ -261,10 +261,12 @@ void StringConcat::eliminate_unneeded_control() {
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
       if (cmp->in(1)->is_top() || cmp->in(2)->is_top()) {
-        // This region should lose its Phis and be optimized out by igvn but there's a chance the if folds to top first
-        // which then causes a reachable part of the graph to become dead.
+        // This region should lose its Phis. They are removed either in PhaseRemoveUseless (for data phis) or in IGVN
+        // (for memory phis). During IGVN, there is a chance that the If folds to top before the Region is processed
+        // which then causes a reachable part of the graph to become dead. To prevent this, set the boolean input of
+        // the If to a constant to nicely let the diamond Region/If fold away.
         Compile* C = _stringopts->C;
-        C->gvn_replace_by(n, iff->in(0));
+        C->gvn_replace_by(iff->in(1), _stringopts->gvn()->intcon(0));
       }
     }
   }

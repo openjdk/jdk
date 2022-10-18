@@ -26,6 +26,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
@@ -82,7 +83,7 @@ bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) 
   if (!can_be_compiled(m, comp_level)) return false;
 
   return !UseInterpreter ||                                              // must compile all methods
-         (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
+         (AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
 void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
@@ -484,8 +485,18 @@ void CompilationPolicy::initialize() {
     } else if (c2_only) {
       set_c2_count(count);
     } else {
-      set_c1_count(MAX2(count / 3, 1));
-      set_c2_count(MAX2(count - c1_count(), 1));
+#if INCLUDE_JVMCI
+      if (UseJVMCICompiler && UseJVMCINativeLibrary) {
+        int libjvmci_count = MAX2((int) (count * JVMCINativeLibraryThreadFraction), 1);
+        int c1_count = MAX2(count - libjvmci_count, 1);
+        set_c2_count(libjvmci_count);
+        set_c1_count(c1_count);
+      } else
+#endif
+      {
+        set_c1_count(MAX2(count / 3, 1));
+        set_c2_count(MAX2(count - c1_count(), 1));
+      }
     }
     assert(count == c1_count() + c2_count(), "inconsistent compiler thread count");
     set_increase_threshold_at_ratio();

@@ -34,6 +34,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -397,11 +398,11 @@ inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, R
                  preservation_level, L_handle_null);
 }
 
-inline void MacroAssembler::store_heap_oop(Register d, RegisterOrConstant offs, Register s1,
+inline void MacroAssembler::store_heap_oop(Register val, RegisterOrConstant offs, Register base,
                                            Register tmp1, Register tmp2, Register tmp3,
                                            MacroAssembler::PreservationLevel preservation_level,
                                            DecoratorSet decorators) {
-  access_store_at(T_OBJECT, decorators | IN_HEAP, s1, offs, d, tmp1, tmp2, tmp3, preservation_level);
+  access_store_at(T_OBJECT, decorators | IN_HEAP, base, offs, val, tmp1, tmp2, tmp3, preservation_level);
 }
 
 inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register src) {

@@ -25,6 +25,7 @@
  * @bug 8290034
  * @summary Auto-vectorization of Reverse bit operation.
  * @requires vm.compiler2.enabled
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestReverseBitsVector
  */

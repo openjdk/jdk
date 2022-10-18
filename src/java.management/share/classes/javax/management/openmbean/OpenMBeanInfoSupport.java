@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
 
 package javax.management.openmbean;
 
-
-// java import
-//
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -301,8 +298,8 @@ public class OpenMBeanInfoSupport
     }
 
     private static <T> boolean sameArrayContents(T[] a1, T[] a2) {
-        return (new HashSet<T>(Arrays.asList(a1))
-                .equals(new HashSet<T>(Arrays.asList(a2))));
+        return (new HashSet<>(Arrays.asList(a1))
+                .equals(new HashSet<>(Arrays.asList(a2))));
     }
 
     /**
@@ -360,7 +357,7 @@ public class OpenMBeanInfoSupport
     }
 
     private static <T> int arraySetHash(T[] a) {
-        return new HashSet<T>(Arrays.asList(a)).hashCode();
+        return new HashSet<>(Arrays.asList(a)).hashCode();
     }
 
 

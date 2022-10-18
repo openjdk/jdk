@@ -73,7 +73,7 @@ public class CustomTimeZoneNameProvider extends TimeZoneNameProvider {
     @Override
     public Locale[] getAvailableLocales() {
         return new Locale[]{
-            Locale.getDefault()
+            Locale.getDefault(Locale.Category.FORMAT)
         };
     }
 }

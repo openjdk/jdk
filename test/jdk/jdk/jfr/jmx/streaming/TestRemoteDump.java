@@ -119,7 +119,7 @@ public class TestRemoteDump {
             var f1 = service.submit(f);
             var f2 = service.submit(f);
             var f3 = service.submit(f);
-            if (!f1.get() && !f1.get() && !f3.get()) {
+            if (!f1.get() || !f2.get() || !f3.get()) {
                 throw new Exception("Failed to dump multiple recordings simultanously");
             }
             service.shutdown();

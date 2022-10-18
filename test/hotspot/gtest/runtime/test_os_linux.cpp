@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,11 @@
 
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
-#include "utilities/align.hpp"
 #include "concurrentTestRunner.inline.hpp"
+#include "os_linux.hpp"
 #include "unittest.hpp"
+#include "utilities/align.hpp"
+#include "utilities/decoder.hpp"
 
 namespace {
   static void small_page_write(void* addr, size_t size) {
@@ -422,4 +424,56 @@ TEST_VM(os_linux, reserve_memory_special_concurrent) {
   }
 }
 
-#endif
+// Check that method JNI_CreateJavaVM is found.
+TEST(os_linux, addr_to_function_valid) {
+  char buf[128] = "";
+  int offset = -1;
+  address valid_function_pointer = (address)JNI_CreateJavaVM;
+  ASSERT_TRUE(os::dll_address_to_function_name(valid_function_pointer, buf, sizeof(buf), &offset, true));
+  ASSERT_TRUE(strstr(buf, "JNI_CreateJavaVM") != nullptr);
+  ASSERT_TRUE(offset >= 0);
+}
+
+#ifndef PRODUCT
+// Test valid address of method JNI_CreateJavaVM in jni.cpp. We should get "jni.cpp" in the buffer and a valid line number.
+TEST_VM(os_linux, decoder_get_source_info_valid) {
+  char buf[128] = "";
+  int line = -1;
+  address valid_function_pointer = (address)JNI_CreateJavaVM;
+  ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, sizeof(buf), &line));
+  ASSERT_TRUE(strcmp(buf, "jni.cpp") == 0);
+  ASSERT_TRUE(line > 0);
+}
+
+// Same test as "decoder_get_source_info_valid" but with a too-small output buffer. Everything should work the same except
+// that the output buffer truncates "jni.cpp" such that we find "jni.cp" instead. The line number must be found as before.
+TEST_VM(os_linux, decoder_get_source_info_valid_truncated) {
+  char buf[128] = "";
+  int line = -1;
+  memset(buf, 'X', sizeof(buf));
+  address valid_function_pointer = (address)JNI_CreateJavaVM;
+  ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, 7, &line));
+  ASSERT_TRUE(buf[7 - 1] == '\0');
+  ASSERT_TRUE(buf[7] == 'X');
+  ASSERT_TRUE(strcmp(buf, "jni.cp") == 0);
+  ASSERT_TRUE(line > 0);
+}
+
+// Test invalid addresses. Should not cause harm and output buffer and line must contain "" and -1, respectively.
+TEST_VM(os_linux, decoder_get_source_info_invalid) {
+  char buf[128] = "";
+  int line = -1;
+  address invalid_function_pointers[] = { nullptr, (address)1, (address)&line };
+
+  for (address addr : invalid_function_pointers) {
+    strcpy(buf, "somestring");
+    line = 12;
+    // We should return false but do not crash or fail in any way.
+    ASSERT_FALSE(Decoder::get_source_info(addr, buf, sizeof(buf), &line));
+    // buffer should contain "", offset should contain -1
+    ASSERT_TRUE(buf[0] == '\0');
+    ASSERT_TRUE(line == -1);
+  }
+}
+#endif // NOT PRODUCT
+#endif // LINUX

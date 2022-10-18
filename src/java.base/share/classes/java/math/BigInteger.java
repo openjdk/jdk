@@ -868,6 +868,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     * @return the first integer greater than this {@code BigInteger} that
     *         is probably prime.
     * @throws ArithmeticException {@code this < 0} or {@code this} is too large.
+    * @implNote Due to the nature of the underlying algorithm,
+    *          and depending on the size of {@code this},
+    *          this method could consume a large amount of memory, up to
+    *          exhaustion of available heap space, or could run for a long time.
     * @since 1.5
     */
     public BigInteger nextProbablePrime() {
@@ -3880,6 +3884,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         this method is proportional to the value of this parameter.
      * @return {@code true} if this BigInteger is probably prime,
      *         {@code false} if it's definitely composite.
+     * @throws ArithmeticException {@code this} is too large.
+     * @implNote Due to the nature of the underlying primality test algorithm,
+     *          and depending on the size of {@code this} and {@code certainty},
+     *          this method could consume a large amount of memory, up to
+     *          exhaustion of available heap space, or could run for a long time.
      */
     public boolean isProbablePrime(int certainty) {
         if (certainty <= 0)
@@ -3889,7 +3898,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return true;
         if (!w.testBit(0) || w.equals(ONE))
             return false;
-
+        if (w.bitLength() > PRIME_SEARCH_BIT_LENGTH_LIMIT + 1) {
+            throw new ArithmeticException("Primality test implementation restriction on bitLength");
+        }
         return w.primeToCertainty(certainty, null);
     }
 

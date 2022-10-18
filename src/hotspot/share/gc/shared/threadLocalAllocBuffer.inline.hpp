@@ -91,7 +91,7 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
 
   _slow_allocations++;
 
-  log_develop_trace(gc, tlab)("TLAB: %s thread: " INTPTR_FORMAT " [id: %2d]"
+  log_develop_trace(gc, tlab)("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
                               " obj: " SIZE_FORMAT
                               " free: " SIZE_FORMAT
                               " waste: " SIZE_FORMAT,

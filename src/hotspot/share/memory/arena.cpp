@@ -271,29 +271,6 @@ Arena::~Arena() {
   MemTracker::record_arena_free(_flags);
 }
 
-void* Arena::operator new(size_t size) throw() {
-  assert(false, "Use dynamic memory type binding");
-  return NULL;
-}
-
-void* Arena::operator new (size_t size, const std::nothrow_t&  nothrow_constant) throw() {
-  assert(false, "Use dynamic memory type binding");
-  return NULL;
-}
-
-  // dynamic memory type binding
-void* Arena::operator new(size_t size, MEMFLAGS flags) throw() {
-  return (void *) AllocateHeap(size, flags, CALLER_PC);
-}
-
-void* Arena::operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw() {
-  return (void*)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
-}
-
-void Arena::operator delete(void* p) {
-  FreeHeap(p);
-}
-
 // Destroy this arenas contents and reset to empty
 void Arena::destruct_contents() {
   if (UseMallocOnly && _first != NULL) {

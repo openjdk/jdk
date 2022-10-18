@@ -65,7 +65,7 @@ InstructForm::InstructForm(const char *id, InstructForm *instr, MatchRule *rule)
   : _ident(id), _ideal_only(false),
     _localNames(instr->_localNames),
     _effects(instr->_effects),
-    _is_mach_constant(false),
+    _is_mach_constant(instr->_is_mach_constant),
     _needs_constant_base(false),
     _has_call(false)
 {
@@ -4090,12 +4090,6 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
         strcmp(opType,"ReverseBytesS")==0 ||
-        strcmp(opType,"ReplicateB")==0 ||
-        strcmp(opType,"ReplicateS")==0 ||
-        strcmp(opType,"ReplicateI")==0 ||
-        strcmp(opType,"ReplicateL")==0 ||
-        strcmp(opType,"ReplicateF")==0 ||
-        strcmp(opType,"ReplicateD")==0 ||
         strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
@@ -4111,8 +4105,9 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"OrReductionV")==0 ||
         strcmp(opType,"XorReductionV")==0 ||
         strcmp(opType,"MaskAll")==0 ||
-        0 /* 0 to line up columns nicely */ )
+        0 /* 0 to line up columns nicely */ ) {
       return 1;
+    }
   }
   return 0;
 }

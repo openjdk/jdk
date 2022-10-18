@@ -41,8 +41,7 @@
 
 void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
                                   FloatRegister freg0, FloatRegister freg1,
-                                  Register result)
-{
+                                  Register result) {
   if (is_float) {
     float_compare(result, freg0, freg1, unordered_result);
   } else {
@@ -97,7 +96,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // assuming both the stack pointer and page_size have their least
   // significant 2 bits cleared and page_size is a power of 2
   sub(hdr, hdr, sp);
-  li(t0, aligned_mask - os::vm_page_size());
+  mv(t0, aligned_mask - os::vm_page_size());
   andr(hdr, hdr, t0);
   // for recursive locking, the result is zero => save it in the displaced header
   // location (NULL in the displaced hdr location indicates recursive locking)
@@ -310,7 +309,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this);
+  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {
@@ -323,8 +322,9 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // first instruction with a jump. For this action to be legal we
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
-
-  nop();
+  IncompressibleRegion ir(this);  // keep the nop as 4 bytes for patching.
+  assert_alignment(pc());
+  nop();  // 4 bytes
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
@@ -374,14 +374,14 @@ typedef void (C1_MacroAssembler::*c1_float_cond_branch_insn)(FloatRegister op1, 
 static c1_cond_branch_insn c1_cond_branch[] =
 {
   /* SHORT branches */
-  (c1_cond_branch_insn)&Assembler::beq,
-  (c1_cond_branch_insn)&Assembler::bne,
-  (c1_cond_branch_insn)&Assembler::blt,
-  (c1_cond_branch_insn)&Assembler::ble,
-  (c1_cond_branch_insn)&Assembler::bge,
-  (c1_cond_branch_insn)&Assembler::bgt,
-  (c1_cond_branch_insn)&Assembler::bleu, // lir_cond_belowEqual
-  (c1_cond_branch_insn)&Assembler::bgeu  // lir_cond_aboveEqual
+  (c1_cond_branch_insn)&MacroAssembler::beq,
+  (c1_cond_branch_insn)&MacroAssembler::bne,
+  (c1_cond_branch_insn)&MacroAssembler::blt,
+  (c1_cond_branch_insn)&MacroAssembler::ble,
+  (c1_cond_branch_insn)&MacroAssembler::bge,
+  (c1_cond_branch_insn)&MacroAssembler::bgt,
+  (c1_cond_branch_insn)&MacroAssembler::bleu, // lir_cond_belowEqual
+  (c1_cond_branch_insn)&MacroAssembler::bgeu  // lir_cond_aboveEqual
 };
 
 static c1_float_cond_branch_insn c1_float_cond_branch[] =
