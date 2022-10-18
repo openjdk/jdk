@@ -113,6 +113,4 @@ void VM_Version::get_os_cpu_info() {
     }
     fclose(f);
   }
-
-  _cache_line_size = 64;
 }
