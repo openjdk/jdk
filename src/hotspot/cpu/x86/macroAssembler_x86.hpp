@@ -352,7 +352,7 @@ class MacroAssembler: public Assembler {
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register thread_tmp);
-  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
+  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
