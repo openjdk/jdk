@@ -169,7 +169,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * </dd>
  *
  * <dt><i><a id=repEquivalence>representation equivalence</a></i>:</dt>
- * <dd>The two floating-point values represent the the same IEEE 754
+ * <dd>The two floating-point values represent the same IEEE 754
  * <i>datum</i>. In particular, for {@linkplain #isFinite(double)
  * finite} values, the sign, {@linkplain Math#getExponent(double)
  * exponent}, and significand components of the
