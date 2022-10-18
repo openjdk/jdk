@@ -87,9 +87,9 @@ public class Basic {
         BasicDateTime.test();
 
         if (fail != 0)
-            throw new RuntimeException((fail + pass) + " tests: "
-                                       + fail + " failure(s), first", first);
+            throw new RuntimeException(String.format("%s tests: %s failure(s)" +
+                    ", first" , fail+pass, fail), first);
         else
-            System.out.printf("all " + pass + " tests passed");
+            System.out.printf("All %s tests passed", pass);
     }
 }
