@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 #define SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 
+#include "cds/filemap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
@@ -103,8 +104,11 @@ public:
   // function instead.
   inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
 
+  // More efficient version, but works only when ArchiveHeap is mapped.
+  inline static oop decode_from_mapped_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+
   static void patch_embedded_pointers(MemRegion region, address oopmap,
-                                      size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
+                                      size_t oopmap_in_bits, FileMapRegion* map_region, FileMapInfo* info) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void fixup_regions() NOT_CDS_JAVA_HEAP_RETURN;
 
@@ -158,6 +162,9 @@ private:
   static bool is_in_loaded_heap(uintptr_t o) {
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
   }
+
+  template<bool IS_MAPPED>
+  inline static oop decode_from_archive_impl(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
 
 public:
 
