@@ -665,7 +665,6 @@ public final class StringConcatFactory {
         return argPositions;
     }
 
-
     private static MethodHandle foldInLastMixers(MethodHandle mh, long initialLengthCoder, int pos, Class<?>[] ptypes, int count) {
         MethodHandle mix = switch (count) {
             case 1 -> mixer(ptypes[pos]);
@@ -711,6 +710,9 @@ public final class StringConcatFactory {
         int idx = classIndex(cl);
         MethodHandle prepend = PREPENDERS[idx];
         if (prepend == null) {
+            if (idx == STRING_CONCAT_ITEM) {
+                cl = StringConcatItem.class;
+            }
             PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
                     methodType(long.class, long.class, byte[].class,
                             Wrapper.asPrimitiveType(cl), String.class)).rebind();
@@ -726,12 +728,12 @@ public final class StringConcatFactory {
             STRING_CONCAT_ITEM = 5,
             TYPE_COUNT = 6;
     private static int classIndex(Class<?> cl) {
-        if (cl == String.class)              return STRING_IDX;
-        if (cl == int.class)                 return INT_IDX;
-        if (cl == boolean.class)             return BOOLEAN_IDX;
-        if (cl == char.class)                return CHAR_IDX;
-        if (cl == long.class)                return LONG_IDX;
-        if (cl == StringConcatItem.class)    return STRING_CONCAT_ITEM;
+        if (cl == String.class)                          return STRING_IDX;
+        if (cl == int.class)                             return INT_IDX;
+        if (cl == boolean.class)                         return BOOLEAN_IDX;
+        if (cl == char.class)                            return CHAR_IDX;
+        if (cl == long.class)                            return LONG_IDX;
+        if (StringConcatItem.class.isAssignableFrom(cl)) return STRING_CONCAT_ITEM;
         throw new IllegalArgumentException("Unexpected class: " + cl);
     }
 
@@ -1030,11 +1032,6 @@ public final class StringConcatFactory {
     }
 
     /**
-     * {@link StringTemplate} allows more slots because of controlled usage.
-     */
-    public static final int MAX_TEMPLATE_CONCAT_ARG_SLOTS = 253;
-
-    /**
      * Implementations of this class provide information necessary to
      * assist {@link StringConcatFactory} perform optimal addition.
      */
@@ -1067,7 +1064,7 @@ public final class StringConcatFactory {
      * interleaves fragments and values. fragment|value|fragment|value|...|value|fragment.
      * The number of fragments must be one more that the number of ptypes.
      * The total number of slots used by the ptypes must be less than or equal
-     * to MAX_TEMPLATE_CONCAT_ARG_SLOTS.
+     * to MAX_INDY_CONCAT_ARG_SLOTS.
      *
      * @param fragments list of string fragments
      * @param ptypes    list of expression types
@@ -1104,15 +1101,16 @@ public final class StringConcatFactory {
         for (Class<?> ptype : ptypes) {
             slots += ptype == long.class || ptype == double.class ? 2 : 1;
 
-            if (MAX_TEMPLATE_CONCAT_ARG_SLOTS < slots) {
+            if (MAX_INDY_CONCAT_ARG_SLOTS < slots) {
                 throw new StringConcatException("Too many concat argument slots: " +
-                        slots + ", can only accept " + MAX_TEMPLATE_CONCAT_ARG_SLOTS);
+                        slots + ", can only accept " + MAX_INDY_CONCAT_ARG_SLOTS);
             }
 
-            boolean isSpecialized = ptype.isPrimitive() ||
-                                    StringConcatItem.class == ptype;
-            Class<?> ttype = isSpecialized ? promoteIntType(ptype) : Object.class;
-            MethodHandle filter = stringifierFor(ttype);
+            boolean isSpecialized = ptype.isPrimitive();
+            boolean isStringConcatItem = StringConcatItem.class.isAssignableFrom(ptype);
+            Class<?> ttype = isSpecialized ? promoteIntType(ptype) :
+                             isStringConcatItem ? StringConcatItem.class : Object.class;
+            MethodHandle filter = isStringConcatItem ? null : stringifierFor(ttype);
 
             if (filter != null) {
                 filters[pos] = filter;
@@ -1134,13 +1132,10 @@ public final class StringConcatFactory {
                 break;
             }
 
+            Class<?> ttype = ttypes[pos];
+            MethodHandle prepender = prepender(lastFragment.isEmpty() ? null : fragment, ttype);
             initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, fragment);
-            mh = MethodHandles.filterArgumentsWithCombiner(
-                    mh, 1,
-                    prepender(lastFragment.isEmpty() ? null : fragment, ttypes[pos]),
-                    1, 0, // indexCoder, storage
-                    2 + pos  // selected argument
-            );
+            mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepender,1, 0, 2 + pos);
 
             pos++;
         }
@@ -1197,7 +1192,7 @@ public final class StringConcatFactory {
      * @return List of {@link MethodHandle MethodHandles}
      *
      * @throws IllegalArgumentException If maxSlots is not between 1 and
-     *                                  MAX_TEMPLATE_CONCAT_ARG_SLOTS.
+     *                                  MAX_INDY_CONCAT_ARG_SLOTS.
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
      *
@@ -1217,9 +1212,9 @@ public final class StringConcatFactory {
             throw new StringConcatException("fragments size not equal ptypes size plus one");
         }
 
-        if (maxSlots < 1 || MAX_TEMPLATE_CONCAT_ARG_SLOTS < maxSlots) {
+        if (maxSlots < 1 || MAX_INDY_CONCAT_ARG_SLOTS < maxSlots) {
             throw new StringConcatException("maxSlots must be between 1 and " +
-                    MAX_TEMPLATE_CONCAT_ARG_SLOTS);
+                    MAX_INDY_CONCAT_ARG_SLOTS);
 
         }
 
@@ -1272,7 +1267,7 @@ public final class StringConcatFactory {
      * @return {@link MethodHandle}
      *
      * @throws IllegalArgumentException If maxSlots is not between 1 and
-     *                                  MAX_TEMPLATE_CONCAT_ARG_SLOTS or if the
+     *                                  MAX_INDY_CONCAT_ARG_SLOTS or if the
      *                                  getters don't use the same argument type
      * @throws StringConcatException If any of the linkage invariants are violated
      * @throws NullPointerException If any of the incoming arguments is null
@@ -1293,9 +1288,9 @@ public final class StringConcatFactory {
             throw new StringConcatException("fragments size not equal getters size plus one");
         }
 
-        if (maxSlots < 1 || MAX_TEMPLATE_CONCAT_ARG_SLOTS < maxSlots) {
+        if (maxSlots < 1 || MAX_INDY_CONCAT_ARG_SLOTS < maxSlots) {
             throw new StringConcatException("maxSlots must be between 1 and " +
-                    MAX_TEMPLATE_CONCAT_ARG_SLOTS);
+                    MAX_INDY_CONCAT_ARG_SLOTS);
 
         }
 

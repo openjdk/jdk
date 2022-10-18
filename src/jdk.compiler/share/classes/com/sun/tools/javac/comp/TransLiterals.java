@@ -250,7 +250,7 @@ public final class TransLiterals extends TreeTranslator {
             int slots = expressionTypes.stream()
                     .mapToInt(t -> types.isSameType(t, syms.longType) ||
                             types.isSameType(t, syms.doubleType) ? 2 : 1).sum();
-            this.useValuesList = 250 < slots;
+            this.useValuesList = 200 < slots; // StringConcatFactory.MAX_INDY_CONCAT_ARG_SLOTS
             this.stringTemplateClass = null;
             this.fragmentsVar = null;
             this.valuesVar = null;
