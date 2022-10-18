@@ -140,7 +140,7 @@ final class P11AEADCipher extends CipherSpi {
             try {
                 engineSetPadding(algoParts[2]);
             } catch (NoSuchPaddingException e) {
-                throw new NoSuchAlgorithmException();
+                throw new NoSuchAlgorithmException(e);
             }
         } else if (algoParts[0].equals("ChaCha20-Poly1305")) {
             fixedKeySize = 32;

@@ -209,7 +209,7 @@ final class P11PSSSignature extends SignatureSpi {
             mdLen = DIGEST_LENGTHS.get(digestAlg);
         } catch (NullPointerException npe) {
             throw new SignatureException("Unsupported digest: " +
-                    digestAlg);
+                    digestAlg, npe);
         }
         int saltLen = Integer.min(mdLen, (key.length() >> 3) - mdLen -2);
         return new PSSParameterSpec(digestAlg,
