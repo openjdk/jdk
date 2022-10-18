@@ -141,8 +141,14 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
-    DISABLED_WARNINGS_gcc := sign-compare unused-result maybe-uninitialized \
-        format-nonliteral parentheses unused-value unused-function, \
+    DISABLED_WARNINGS_gcc_awt_ImagingLib.c := unused-function sign-compare, \
+    DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
+    DISABLED_WARNINGS_gcc_awt_Mlib.c := unused-function, \
+    DISABLED_WARNINGS_gcc_awt_parseImage.c := sign-compare unused-function, \
+    DISABLED_WARNINGS_gcc_debug_trace.c := unused-function, \
+    DISABLED_WARNINGS_gcc_ProcessPath.c := maybe-uninitialized, \
+    DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
+    DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
     DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare, \
     DISABLED_WARNINGS_clang_awt_parseImage.c := sign-compare, \
     DISABLED_WARNINGS_clang_debug_mem.c := extern-initializer format-nonliteral, \
@@ -223,17 +229,6 @@ ifeq ($(call isTargetOs, windows macosx), false)
       LIBAWT_XAWT_LIBS += -lpthread
     endif
 
-    ifeq ($(TOOLCHAIN_TYPE), gcc)
-      # Turn off all warnings for the following files since they contain warnings
-      # that cannot be turned of individually.
-      # redefining a macro
-      BUILD_LIBAWT_XAWT_gtk2_interface.c_CFLAGS := -w
-      # comparison between pointer and integer
-      BUILD_LIBAWT_XAWT_awt_Font.c_CFLAGS := -w
-      # initializing a declared 'extern'
-      BUILD_LIBAWT_XAWT_debug_mem.c_CFLAGS := -w
-    endif
-
     $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
         NAME := awt_xawt, \
         EXTRA_SRC := $(LIBAWT_XAWT_EXTRA_SRC), \
@@ -243,10 +238,18 @@ ifeq ($(call isTargetOs, windows macosx), false)
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_XAWT_CFLAGS) \
             $(X_CFLAGS), \
         WARNINGS_AS_ERRORS_xlc := false, \
-        DISABLED_WARNINGS_gcc := type-limits pointer-to-int-cast \
-            unused-result maybe-uninitialized format \
-            format-security int-to-pointer-cast parentheses \
-            implicit-fallthrough undef unused-function, \
+        DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
+        DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
+        DISABLED_WARNINGS_gcc_gtk2_interface.c := parentheses type-limits, \
+        DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits unused-function, \
+        DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
+        DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+        DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough, \
+        DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits, \
+        DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
+        DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
+        DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             -L$(INSTALL_LIBRARIES_HERE), \
@@ -296,8 +299,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
         common/awt/debug \
         libawt/java2d, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := format-nonliteral type-limits \
-        misleading-indentation undef unused-function stringop-truncation, \
+    DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
     DISABLED_WARNINGS_microsoft := 4819, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -340,7 +342,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB), \
     HEADERS_FROM_SRC := $(LIBJPEG_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := clobbered implicit-fallthrough shift-negative-value array-bounds, \
+    DISABLED_WARNINGS_gcc_imageioJPEG.c := clobbered array-bounds, \
+    DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
+    DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBJPEG_LIBS) $(JDKLIB_LIBS), \
@@ -382,7 +386,8 @@ ifeq ($(call isTargetOs, windows macosx), false)
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBAWT_HEADLESS_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
-      DISABLED_WARNINGS_gcc := unused-function, \
+      DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
+      DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
@@ -423,7 +428,6 @@ else
           $(BUILD_LIBFREETYPE_CFLAGS), \
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4018 4267 4244 4312 4819, \
-      DISABLED_WARNINGS_gcc := implicit-fallthrough cast-function-type bad-function-cast, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -458,9 +462,9 @@ else
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
-   HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
-   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess unused-result extra use-after-free
+   HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers strict-aliasing \
+       unused-result
+   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess
    HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138
 
@@ -741,9 +745,13 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
-      DISABLED_WARNINGS_gcc := sign-compare type-limits unused-result \
-          maybe-uninitialized shift-negative-value implicit-fallthrough \
-          unused-function, \
+      DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
+      DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
+      DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
+      DISABLED_WARNINGS_gcc_png.c := maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_splashscreen_impl.c := implicit-fallthrough sign-compare unused-function, \
+      DISABLED_WARNINGS_gcc_splashscreen_sys.c := type-limits unused-result, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare, \
