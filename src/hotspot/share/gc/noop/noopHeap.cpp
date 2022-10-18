@@ -1,8 +1,21 @@
 #include "gc/noop/noopHeap.hpp"
+#include "gc/noop/noopMemoryPool.hpp"
+#include "gc/noop/noopThreadLocalData.hpp"
+#include "gc/noop/noopInitLogger.hpp"
 #include "precompiled.hpp"
 #include "memory/universe.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "gc/shared/gcArguments.hpp"
+#include "gc/shared/locationPrinter.inline.hpp"
+#include "logging/log.hpp"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 
 NoopHeap* NoopHeap::heap() {
     return named_heap<NoopHeap>(CollectedHeap::Noop);
@@ -13,11 +26,11 @@ jint NoopHeap::initialize() {
     size_t init_byte_size = align_up(InitialHeapSize, align);
     size_t max_byte_size  = align_up(MaxHeapSize, align);
 
-    // Initializing heap space
-    ReservedSpace heap_rs = Universe::reserve_heap(heap_size_in_bytes, align);
-
+    // Initialize backing storage
+    ReservedHeapSpace heap_rs = Universe::reserve_heap(max_byte_size, align);
     _virtual_space.initialize(heap_rs, init_byte_size);
-    MemRegion committed_region((HeapWord*)_virtual_space.low(), (HeapWord*)_virtual_space.high());
+
+    MemRegion committed_region((HeapWord*)_virtual_space.low(),          (HeapWord*)_virtual_space.high());
 
     initialize_reserved_region(heap_rs);
 
@@ -101,15 +114,6 @@ HeapWord* NoopHeap::allocate_work(size_t size, bool verbose) {
 
     size_t used = _space->used();
 
-    // Print the occupancy line, if needed
-    if (verbose) {
-        size_t last = _last_heap_print;
-        if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
-            print_heap_info(used);
-            print_metaspace_info();
-        }
-    }
-
     assert(is_object_aligned(res), "Object should be aligned: " PTR_FORMAT, p2i(res));
     return res;
 }
@@ -186,11 +190,20 @@ void NoopHeap::collect(GCCause::Cause cause) {
             assert(SafepointSynchronize::is_at_safepoint(), "Expected at safepoint");
             log_info(gc)("GC request for \"%s\" is handled", GCCause::to_string(cause));
             MetaspaceGC::compute_new_size();
-            print_metaspace_info();
             break;
         default:
             log_info(gc)("GC request for \"%s\" is ignored", GCCause::to_string(cause));
     }
+}
+
+void NoopHeap::print_on(outputStream *st) const {
+}
+
+bool NoopHeap::print_location(outputStream* st, void* addr) const {
+	return true;
+}
+
+void NoopHeap::print_tracing_info() const {
 }
 
 void NoopHeap::do_full_collection(bool clear_all_soft_refs) {
