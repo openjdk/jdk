@@ -126,6 +126,7 @@ public class CommentHelper {
     }
 
     Element getElement(ReferenceTree rtree) {
+        // We need to lookup type variables and other types
         Utils utils = configuration.utils;
         // likely a synthesized tree
         if (path == null) {
