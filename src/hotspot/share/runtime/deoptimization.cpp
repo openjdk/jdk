@@ -438,7 +438,10 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   Handle exceptionObject;
   if (trap_scope->rethrow_exception()) {
 #ifndef PRODUCT
-    log_debug(deoptimization)("Exception to be rethrown in the interpreter for method %s::%s at bci %d", trap_scope->method()->method_holder()->name()->as_C_string(), trap_scope->method()->name()->as_C_string(), trap_scope->bci());
+    log_debug(deoptimization)(
+        "Exception to be rethrown in the interpreter for method %s::%s at bci %d",
+        trap_scope->method()->method_holder()->name()->as_C_string(),
+        trap_scope->method()->name()->as_C_string(), trap_scope->bci());
 #endif // !PRODUCT
 
     GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
@@ -1469,7 +1472,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
         log_debug(deoptimization)("skip field reassignment for this vector - it should be assigned already");
         {
           LogMessage(deoptimization) lm;
-          if (lm.is_debug()) {
+          if (lm.is_trace()) {
             NonInterleavingLogStream ls(LogLevelType::Debug, lm);
             Handle obj = sv->value();
             k->oop_print_on(obj(), &ls);

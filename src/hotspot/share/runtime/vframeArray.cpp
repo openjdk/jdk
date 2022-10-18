@@ -334,22 +334,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   // callee locals.
   int i;
 
-#ifndef PRODUCT
-  auto log_deopt = [](int i, intptr_t* addr) {
-    LogTarget(Debug, deoptimization) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      ls.print(" - Reconstructed expression %d (OBJECT): ", i);
-      oop o = cast_to_oop((address)(*addr));
-      if (o == NULL) {
-        ls.print_cr("NULL");
-      } else {
-        ResourceMark rm;
-        ls.print_raw_cr(o->klass()->name()->as_C_string());
-      }
-    }
-  };
-#endif // !PRODUCT
   for(i = 0; i < expressions()->size(); i++) {
     StackValue *value = expressions()->at(i);
     intptr_t*   addr  = iframe()->interpreter_frame_expression_stack_at(i);
@@ -364,7 +348,20 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
 #ifndef PRODUCT
-        log_deopt(i, addr);
+        {
+          LogTarget(Debug, deoptimization) lt;
+          if (lt.is_enabled()) {
+            LogStream ls(lt);
+            ls.print(" - Reconstructed expression %d (OBJECT): ", i);
+            oop o = cast_to_oop((address)(*addr));
+            if (o == NULL) {
+              ls.print_cr("NULL");
+            } else {
+              ResourceMark rm;
+              ls.print_raw_cr(o->klass()->name()->as_C_string());
+            }
+          }
+        }
 #endif // !PRODUCT
         break;
       case T_CONFLICT:
@@ -377,20 +374,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   }
 #ifndef PRODUCT
   log_debug(deoptimization)("Locals size: %d", locals()->size());
-  auto log_it = [](int i, intptr_t* addr) {
-    LogTarget(Debug, deoptimization) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      ls.print(" - Reconstructed local %d (OBJECT): ", i);
-      oop o = cast_to_oop((address)(*addr));
-      if (o == NULL) {
-        ls.print_cr("NULL");
-      } else {
-        ResourceMark rm;
-        ls.print_raw_cr(o->klass()->name()->as_C_string());
-      }
-    }
-  };
 #endif // !PRODUCT
   // Unpack the locals
   for(i = 0; i < locals()->size(); i++) {
@@ -407,7 +390,20 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
 #ifndef PRODUCT
-        log_it(i, addr);
+        {
+          LogTarget(Debug, deoptimization) lt;
+          if (lt.is_enabled()) {
+            LogStream ls(lt);
+            ls.print(" - Reconstructed local %d (OBJECT): ", i);
+            oop o = cast_to_oop((address)(*addr));
+            if (o == NULL) {
+              ls.print_cr("NULL");
+            } else {
+              ResourceMark rm;
+              ls.print_raw_cr(o->klass()->name()->as_C_string());
+            }
+          }
+        }
 #endif // !PRODUCT
         break;
       case T_CONFLICT:

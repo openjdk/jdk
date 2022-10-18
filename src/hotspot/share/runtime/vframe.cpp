@@ -678,10 +678,10 @@ javaVFrame* vframeStreamCommon::asJavaVFrame() {
 
 #ifndef PRODUCT
 void vframe::print() {
-  if (WizardMode) print_on(tty);
+  print_on(tty);
 }
 void vframe::print_on(outputStream* st) const {
-  if (WizardMode) _fr.print_value_on(st,NULL);
+  _fr.print_value_on(st,NULL);
 }
 
 void vframe::print_value() const {
