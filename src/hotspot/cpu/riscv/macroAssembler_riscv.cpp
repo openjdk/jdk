@@ -1733,7 +1733,7 @@ int MacroAssembler::load_signed_byte(Register dst, Address src) {
   return off;
 }
 
-void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2) {
+void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed) {
   switch (size_in_bytes) {
     case  8:  ld(dst, src); break;
     case  4:  is_signed ? lw(dst, src) : lwu(dst, src); break;
@@ -1743,7 +1743,7 @@ void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_
   }
 }
 
-void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2) {
+void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes) {
   switch (size_in_bytes) {
     case  8:  sd(src, dst); break;
     case  4:  sw(src, dst); break;
