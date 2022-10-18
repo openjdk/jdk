@@ -63,7 +63,7 @@ public class ArchiveRelocationTest {
         String mainClass = "Hello";
         String forceRelocation = "-XX:ArchiveRelocationMode=1";
         String runRelocArg  = run_reloc  ? forceRelocation : "-showversion";
-        String logArg = "-Xlog:cds=debug,cds+reloc=debug";
+        String logArg = "-Xlog:cds=debug,cds+reloc=debug,cds+heap";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
         String nmtArg = "-XX:NativeMemoryTracking=detail";
 
@@ -76,6 +76,7 @@ public class ArchiveRelocationTest {
             .assertNormalExit(output -> {
                     if (run_reloc) {
                         output.shouldContain("Try to map archive(s) at an alternative address");
+                        output.shouldContain("Patching native pointers in heap region");
                     }
                 });
     }

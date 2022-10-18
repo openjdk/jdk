@@ -100,7 +100,10 @@ public class TestSerialGCWithCDS {
                               "-XX:ArchiveRelocationMode=1", // always relocate shared metadata
                               "Hello");
         out.shouldContain(HELLO);
-        if (dumpGC.equals(G1)) {
+        if (out.getOutput().contains("Trying to map heap") || out.getOutput().contains("Loaded heap")) {
+            // The native data in the RO/RW regions have been relocated. If the CDS heap is
+            // mapped/loaded, we must patch all the native pointers. (CDS heap is
+            // not supported on all platforms)
             out.shouldContain("Patching native pointers in heap region");
         }
         out.shouldHaveExitValue(0);

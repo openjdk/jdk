@@ -466,13 +466,11 @@ void ArchiveHeapLoader::patch_native_pointers() {
   for (int i = MetaspaceShared::first_archive_heap_region;
        i <= MetaspaceShared::last_archive_heap_region; i++) {
     FileMapRegion* r = FileMapInfo::current_info()->space_at(i);
-    if (r->mapped_base() != NULL) {
-      if (MetaspaceShared::relocation_delta() != 0 && r->has_ptrmap()) {
-        log_info(cds, heap)("Patching native pointers in heap region %d", i);
-        BitMapView bm = r->ptrmap_view();
-        PatchNativePointers patcher((Metadata**)r->mapped_base());
-        bm.iterate(&patcher);
-      }
+    if (r->mapped_base() != NULL && r->has_ptrmap()) {
+      log_info(cds, heap)("Patching native pointers in heap region %d", i);
+      BitMapView bm = r->ptrmap_view();
+      PatchNativePointers patcher((Metadata**)r->mapped_base());
+      bm.iterate(&patcher);
     }
   }
 }
