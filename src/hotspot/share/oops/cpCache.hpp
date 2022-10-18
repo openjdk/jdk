@@ -139,7 +139,8 @@ class ConstantPoolCacheEntry {
   friend class InterpreterRuntime;
 
  private:
-  volatile intx     _indices;  // constant pool index & rewrite bytecodes
+  volatile int     _indices;  // constant pool index & rewrite bytecodes
+  int              _invokedynamic_index;
   Metadata* volatile   _f1;       // entry specific metadata field
   volatile intx        _f2;       // entry specific int/metadata field
   volatile intx     _flags;    // flags
@@ -215,6 +216,9 @@ class ConstantPoolCacheEntry {
     assert(_f2 == 0, "set once");  // note: ref_index might be zero also
     _f2 = ref_index;
   }
+  void initialize_resolved_invokedynamic_index(int ri) {
+    _invokedynamic_index = ri;
+  }
 
   void set_field(                                // sets entry to resolved field state
     Bytecodes::Code get_code,                    // the bytecode used for reading the field
@@ -236,6 +240,7 @@ class ConstantPoolCacheEntry {
   );
 
  public:
+  int get_invokedynamic_index() { return _invokedynamic_index; }
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     const methodHandle& method,                  // the method to call
@@ -472,6 +477,16 @@ class ConstantPoolCache: public MetaspaceObj {
   void set_resolved_references(OopHandle s) { _resolved_references = s; }
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
+
+  // New code
+  ResolvedInvokeDynamicInfo get_resolved_invokedynamic_info_array_element(int index) {
+    return _resolved_invokedynamic_info_array->at(index);
+  }
+  void print_resolved_invokedynamicinfo_array(outputStream* st) const {
+    for (int i = 0; i < _resolved_invokedynamic_info_array->length(); i++) {
+        _resolved_invokedynamic_info_array->at(i).print_on(st);
+      }
+  }
 
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
