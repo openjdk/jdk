@@ -239,6 +239,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_XAWT_CFLAGS) \
             $(X_CFLAGS), \
         WARNINGS_AS_ERRORS_xlc := false, \
+        DISABLED_WARNINGS_gcc := int-to-pointer-cast, \
         DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
         DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
         DISABLED_WARNINGS_gcc_gtk2_interface.c := parentheses type-limits, \
@@ -246,8 +247,8 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
         DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
         DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
-        DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough, \
-        DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits, \
+        DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough pointer-to-int-cast, \
+        DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
         DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
         DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
         DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
