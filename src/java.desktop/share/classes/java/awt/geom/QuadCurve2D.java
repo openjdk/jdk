@@ -1098,7 +1098,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      * @since 1.2
      */
     public boolean intersects(double x, double y, double w, double h) {
-        // Trivially reject non-existant rectangles
+        // Trivially reject non-existent rectangles
         if (w <= 0 || h <= 0) {
             return false;
         }

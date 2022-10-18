@@ -377,7 +377,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         installKeyboardActions();
     }
 
-    // Overriden PopupMenuListener notification methods to inform combo box
+    // Overridden PopupMenuListener notification methods to inform combo box
     // PopupMenuListeners.
 
     protected void firePopupMenuWillBecomeVisible() {
@@ -708,7 +708,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
 
 
     //===================================================================
-    // begin Event Listenters
+    // begin Event Listeners
     //
 
     /**

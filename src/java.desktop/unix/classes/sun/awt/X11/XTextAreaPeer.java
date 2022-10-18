@@ -1244,7 +1244,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     // what is necessary/possible. E.g. no additional mouse-exited/entered
     // events are generated, when mouse exits scrollbar and enters viewport
     // with JTextArea inside. Actually, no events are ever generated here (for
-    // now). They are only dispatched as correctly as possible/neccessary.
+    // now). They are only dispatched as correctly as possible/necessary.
     //
     // In future, it would be better to replace fake-emulation of grab-detection
     // and event-dispatching here, by reusing some common implementation of this
@@ -1365,7 +1365,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
 
         // Current way of grab-detection causes interesting (but harmless)
-        // side-effect. If mouse is draged from outside to inside of TextArea,
+        // side-effect. If mouse is dragged from outside to inside of TextArea,
         // we will then (in some cases) be asked to dispatch mouse-entered/exited
         // events. But, as at least one mouse-button is down, we will detect
         // grab-mode is on (though the grab isn't ours).
