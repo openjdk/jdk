@@ -422,7 +422,7 @@ public class BasicSpinnerUI extends SpinnerUI
      * <p>
      * The <code>replaceEditor</code> method is called when the spinners
      * editor is changed with <code>JSpinner.setEditor</code>.  If you've
-     * overriden this method, then you'll probably want to override
+     * overridden this method, then you'll probably want to override
      * <code>replaceEditor</code> as well.
      *
      * @return the JSpinners editor JComponent, spinner.getEditor() by default
@@ -1095,7 +1095,7 @@ public class BasicSpinnerUI extends SpinnerUI
             }
         }
 
-        // Syncronizes the ToolTip text for the components within the spinner
+        // Synchronizes the ToolTip text for the components within the spinner
         // to be the same value as the spinner ToolTip text.
         private void updateToolTipTextForChildren(JComponent spinner) {
             String toolTipText = spinner.getToolTipText();
