@@ -53,7 +53,6 @@ class ClassPrelinker :  public StackObj {
   ClassesTable _vm_classes;
 
   void add_one_vm_class(InstanceKlass* ik);
-  bool can_archive_resolved_vm_class(InstanceKlass* cp_holder, InstanceKlass* resolved_klass);
 
 #ifdef ASSERT
   static bool is_in_archivebuilder_buffer(address p);
@@ -67,7 +66,6 @@ class ClassPrelinker :  public StackObj {
   Klass* maybe_resolve_class(constantPoolHandle cp, int cp_index, TRAPS);
   bool can_archive_resolved_klass(InstanceKlass* cp_holder, Klass* resolved_klass);
   Klass* find_loaded_class(JavaThread* THREAD, oop class_loader, Symbol* name);
-  Klass* get_resolved_klass_or_null(ConstantPool* cp, int cp_index);
 
   static ClassPrelinker* _singleton;
 public:

@@ -67,27 +67,14 @@ ClassPrelinker::~ClassPrelinker() {
   _singleton = NULL;
 }
 
-bool ClassPrelinker::can_archive_resolved_vm_class(InstanceKlass* cp_holder, InstanceKlass* resolved_klass) {
-  if (!is_vm_class(resolved_klass)) {
-    return false;
-  }
-  if (!cp_holder->is_shared_boot_class() &&
-      !cp_holder->is_shared_platform_class() &&
-      !cp_holder->is_shared_app_class()) {
-    // Custom loaders are not guaranteed to resolve the vmClasses to the
-    // ones resolved by the boot loader.
-    return false;
-  }
-  if (cp_holder->class_loader_data() != resolved_klass->class_loader_data()) {
-    // If they are defined by different loaders, it's possible for resolved_klass
-    // to be already defined, but is not yet resolved in cp_holder->class_loader().
+bool ClassPrelinker::can_archive_resolved_klass(ConstantPool* cp, int cp_index) {
+  assert(!is_in_archivebuilder_buffer(cp), "sanity");
+  assert(cp->tag_at(cp_index).is_klass(), "must be resolved");
 
-    // TODO: this check can be removed if we preload the vmClasses into
-    // platform and app loaders during VM bootstrap.
-    return false;
-  }
+  Klass* resolved_klass = cp->resolved_klass_at(cp_index);
+  assert(resolved_klass != NULL, "must be");
 
-  return true;
+  return can_archive_resolved_klass(cp->pool_holder(), resolved_klass);
 }
 
 bool ClassPrelinker::can_archive_resolved_klass(InstanceKlass* cp_holder, Klass* resolved_klass) {
@@ -96,9 +83,19 @@ bool ClassPrelinker::can_archive_resolved_klass(InstanceKlass* cp_holder, Klass*
 
   if (resolved_klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_klass);
-    if (can_archive_resolved_vm_class(cp_holder, ik)) {
-      return true;
+    if (is_vm_class(ik)) { // These are safe to resolve. See is_vm_class declaration.
+      assert(ik->is_shared_boot_class(), "vmClasses must be loaded by boot loader");
+      if (cp_holder->is_shared_boot_class()) {
+        // For now, do this for boot loader only. Other loaders
+        // must go through ConstantPool::klass_at_impl at runtime
+        // to put this class in their directory.
+
+        // TODO: we can support the platform and app loaders as well, if we
+        // preload the vmClasses into these two loaders during VM bootstrap.
+        return true;
+      }
     }
+
     if (cp_holder->is_subtype_of(ik)) {
       // All super types of ik will be resolved in ik->class_loader() before
       // ik is defined in this loader, so it's safe to archive the resolved klass reference.
@@ -109,29 +106,6 @@ bool ClassPrelinker::can_archive_resolved_klass(InstanceKlass* cp_holder, Klass*
   }
 
   return false;
-}
-
-Klass* ClassPrelinker::get_resolved_klass_or_null(ConstantPool* cp, int cp_index) {
-  if (cp->tag_at(cp_index).is_klass()) {
-    CPKlassSlot kslot = cp->klass_slot_at(cp_index);
-    int resolved_klass_index = kslot.resolved_klass_index();
-    return cp->resolved_klasses()->at(resolved_klass_index);
-  } else {
-    // klass is not resolved yet
-    assert(cp->tag_at(cp_index).is_unresolved_klass() ||
-           cp->tag_at(cp_index).is_unresolved_klass_in_error(), "must be");
-    return NULL;
-  }
-}
-
-bool ClassPrelinker::can_archive_resolved_klass(ConstantPool* cp, int cp_index) {
-  assert(!is_in_archivebuilder_buffer(cp), "sanity");
-  assert(cp->tag_at(cp_index).is_klass(), "must be resolved");
-
-  Klass* resolved_klass = get_resolved_klass_or_null(cp, cp_index);
-  assert(resolved_klass != NULL, "must be");
-
-  return can_archive_resolved_klass(cp->pool_holder(), resolved_klass);
 }
 
 void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
@@ -189,12 +163,10 @@ Klass* ClassPrelinker::maybe_resolve_class(constantPoolHandle cp, int cp_index, 
     return NULL;
   }
 
-  CPKlassSlot kslot = cp->klass_slot_at(cp_index);
-  int name_index = kslot.name_index();
-  Symbol* name = cp->symbol_at(name_index);
+  Symbol* name = cp->klass_name_at(cp_index);
   Klass* resolved_klass = find_loaded_class(THREAD, cp_holder->class_loader(), name);
   if (resolved_klass != NULL && can_archive_resolved_klass(cp_holder, resolved_klass)) {
-    Klass* k = ConstantPool::klass_at_impl(cp, cp_index, CHECK_NULL); // Should fail only with OOM
+    Klass* k = cp->klass_at(cp_index, CHECK_NULL); // Should fail only with OOM
     assert(k == resolved_klass, "must be");
   }
 
