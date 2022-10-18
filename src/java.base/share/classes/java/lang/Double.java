@@ -172,8 +172,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <dd>The two floating-point values represent the same IEEE 754
  * <i>datum</i>. In particular, for {@linkplain #isFinite(double)
  * finite} values, the sign, {@linkplain Math#getExponent(double)
- * exponent}, and significand components of the
- * floating-point values are the same. Under this relation:
+ * exponent}, and significand components of the floating-point values
+ * are the same. Under this relation:
  * <ul>
  * <li> {@code +0.0} and {@code -0.0} are distinguished from each other.
  * <li> every bit pattern encoding a NaN is considered equivalent to each other
