@@ -237,8 +237,9 @@ private:
 
 } // namespace msi
 
-#define Pragma(string) _Pragma(#string)
 
+// For reliable macro expansion involving pragmas
+#define JP_PRAGMA(string) _Pragma(#string)
 
 //
 // Helpers to define CA functions.
@@ -270,7 +271,7 @@ private:
 #define JP_CA_BASE(name, ca_type) \
     static void name ## Body(ca_type&); \
     extern "C" UINT __stdcall name(MSIHANDLE hInstall) { \
-        Pragma(comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)); \
+        JP_PRAGMA(comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)); \
         const msi::MsiLogTrigger logTrigger(hInstall); \
         JP_DEBUG_BREAK(JP_CA_DEBUG_BREAK, name); \
         LOG_TRACE_FUNCTION(); \
@@ -289,14 +290,12 @@ private:
 
 #define JP_CA_DECLARE(name) \
     extern "C" UINT __stdcall name(MSIHANDLE); \
-    Pragma(comment(linker, "/INCLUDE:" JP_CA_MANGLED_NAME(name)))
+    JP_PRAGMA(comment(linker, "/INCLUDE:" JP_CA_MANGLED_NAME(name)))
 
 #ifdef _WIN64
     #define JP_CA_MANGLED_NAME(name) #name
 #else
     #define JP_CA_MANGLED_NAME(name) "_" #name "@4"
 #endif
-
-#undef Pragma
 
 #endif // #ifndef MsiCA_h
