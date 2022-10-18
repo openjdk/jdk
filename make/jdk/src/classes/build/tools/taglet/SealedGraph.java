@@ -168,12 +168,16 @@ public final class SealedGraph implements Taglet {
                 builder = new StringBuilder()
                         .append("digraph G {")
                         .append(lineSeparator())
-/*                        .append("  labelloc=\"b\";")
+                        .append("  nodesep=0.500000;")
                         .append(lineSeparator())
-                        .append("  label=\"The Public Sealed Hierarchy of ")
-                        .append(rootNode.getName())
-                        .append("\";")
-                        .append(lineSeparator())*/
+                        .append("  ranksep=0.600000;")
+                        .append(lineSeparator())
+                        .append("  pencolor=transparent;")
+                        .append(lineSeparator())
+                        .append("  node [shape=plaintext, fontcolor=\"#e76f00\", fontname=\"DejaVuSans\", fontsize=12, margin=\".2,.2\"];")
+                        .append(lineSeparator())
+                        .append("  edge [penwidth=2, color=\"#999999\", arrowhead=open, arrowsize=1];")
+                        .append(lineSeparator())
                         .append("  rankdir=\"BT\";")
                         .append(lineSeparator());
             }
