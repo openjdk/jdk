@@ -438,6 +438,13 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     resolved_references->obj_at_put(appendix_index, appendix());
   }
 
+  // You may be able to compare Array<ResolvedInvokeDynamicInfo>.at(_invokedynamic_index) with the info
+  // that's set in the constant pool cache here.
+  // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
+  // out of the ConstantPoolCacheEntry.
+  if (UseNewCode)
+  tty->print_cr("index of invokevirtual is %d", _invokedynamic_index);
+
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
 
   // The interpreter assembly code does not check byte_2,
@@ -733,6 +740,8 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
     int original_index = invokedynamic_inverse_index_map.at(i);
     e->initialize_entry(original_index);
     assert(entry_at(offset) == e, "sanity");
+    // This should match the indices of invokedynamic in the new array
+    e->initialize_resolved_invokedynamic_index(i);
   }
 
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {

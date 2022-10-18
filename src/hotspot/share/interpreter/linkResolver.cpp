@@ -1786,6 +1786,10 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
 
   resolve_dynamic_call(result, bootstrap_specifier, CHECK);
 
+  // Grab resolution information for invokedynamic and fill ResolvedInvokedynamicInfo
+  //pool->cache()->_resolved_invokedynamic_info_array->at(cpce->get_invokedynamic_index()).set_method(result.resolved_method());
+  pool->cache()->get_resolved_invokedynamic_info_array_element(cpce->get_invokedynamic_index());//.set_method(result.resolved_method());
+
   LogTarget(Debug, methodhandles, indy) lt_indy;
   if (lt_indy.is_enabled()) {
     LogStream ls(lt_indy);

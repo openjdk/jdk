@@ -36,6 +36,8 @@ public:
     u2 num_parameters() const { return _number_of_parameters; }
     u1 return_type() const { return _return_type; }
     bool has_appendix() const { return _has_appendix; }
+
+    void set_method(Method* m) { _method = m; }
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
