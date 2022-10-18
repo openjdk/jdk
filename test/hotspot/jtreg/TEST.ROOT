@@ -55,6 +55,7 @@ requires.properties= \
     vm.gc.Parallel \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
+    vm.gc.Noop \
     vm.gc.Z \
     vm.jvmci \
     vm.emulatedClient \
