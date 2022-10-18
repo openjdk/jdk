@@ -129,6 +129,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Hot Card Cache", Level.DEBUG),
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
+        new LogMessageWithLevel("Merged Cards", Level.DEBUG),
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
         // Evacuate Collection Set
         new LogMessageWithLevel("Ext Root Scanning", Level.DEBUG),

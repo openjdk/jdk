@@ -31,7 +31,7 @@
 
 
 AC_PREREQ([2.69])
-AC_INIT(OpenJDK, openjdk, build-dev@openjdk.java.net,,http://openjdk.java.net)
+AC_INIT(OpenJDK, openjdk, build-dev@openjdk.org,,https://openjdk.org)
 
 AC_CONFIG_AUX_DIR([$TOPDIR/make/autoconf/build-aux])
 m4_include([build-aux/pkg.m4])
@@ -133,6 +133,7 @@ BASIC_SETUP_DEFAULT_LOG
 ###############################################################################
 
 # We need build & target for this.
+JDKOPT_SETUP_JMOD_OPTIONS
 JDKOPT_SETUP_JLINK_OPTIONS
 JDKVER_SETUP_JDK_VERSION_NUMBERS
 
@@ -247,6 +248,7 @@ JDKOPT_EXCLUDE_TRANSLATIONS
 JDKOPT_ENABLE_DISABLE_MANPAGES
 JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE
 JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT
+JDKOPT_SETUP_MACOSX_SIGNING
 
 ###############################################################################
 #

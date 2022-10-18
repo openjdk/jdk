@@ -161,7 +161,7 @@ void Deoptimization::UnrollBlock::print() {
     st.print(INTX_FORMAT " ", frame_sizes()[index]);
   }
   st.cr();
-  tty->print_raw(st.as_string());
+  tty->print_raw(st.freeze());
 }
 
 
@@ -214,7 +214,7 @@ static void print_objects(JavaThread* deoptee_thread,
       k->oop_print_on(obj(), &st);
     }
   }
-  tty->print_raw(st.as_string());
+  tty->print_raw(st.freeze());
 }
 
 static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMethod* compiled_method,
@@ -321,7 +321,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
             }
           }
         }
-        tty->print_raw(st.as_string());
+        tty->print_raw(st.freeze());
       }
 #endif // !PRODUCT
     }
@@ -1582,7 +1582,7 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
       st.print(" - %s", code_name);
       st.print_cr(" @ bci=%d ", bci);
     }
-    tty->print_raw(st.as_string());
+    tty->print_raw(st.freeze());
     tty->cr();
   }
 
@@ -2063,7 +2063,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
           class_name->print_symbol_on(&st);
         }
         st.cr();
-        tty->print_raw(st.as_string());
+        tty->print_raw(st.freeze());
       }
       if (xtty != NULL) {
         // Log the precise location of the trap.

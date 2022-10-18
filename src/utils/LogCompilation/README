@@ -13,9 +13,9 @@ Adding the -i option with also report inlining like PrintInlining.
 
 More information about the LogCompilation output can be found at
 
-https://wiki.openjdk.java.net/display/HotSpot/LogCompilation+overview
-https://wiki.openjdk.java.net/display/HotSpot/PrintCompilation
-https://wiki.openjdk.java.net/display/HotSpot/LogCompilation+tool
+https://wiki.openjdk.org/display/HotSpot/LogCompilation+overview
+https://wiki.openjdk.org/display/HotSpot/PrintCompilation
+https://wiki.openjdk.org/display/HotSpot/LogCompilation+tool
 
 The project layout is now for Maven. To build the project with Maven do:
 

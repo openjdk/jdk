@@ -609,4 +609,23 @@ public:
   bool is_complete() { return _is_complete; }
 };
 
+class HeapRegionIndexClosure : public StackObj {
+  friend class HeapRegionManager;
+  friend class G1CollectionSet;
+  friend class G1CollectionSetCandidates;
+
+  bool _is_complete;
+  void set_incomplete() { _is_complete = false; }
+
+public:
+  HeapRegionIndexClosure(): _is_complete(true) {}
+
+  // Typically called on each region until it returns true.
+  virtual bool do_heap_region_index(uint region_index) = 0;
+
+  // True after iteration if the closure was applied to all heap regions
+  // and returned "false" in all cases.
+  bool is_complete() { return _is_complete; }
+};
+
 #endif // SHARE_GC_G1_HEAPREGION_HPP
