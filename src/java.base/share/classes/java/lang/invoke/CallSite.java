@@ -28,6 +28,8 @@ package java.lang.invoke;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
+import java.util.stream.Collectors;
+import java.util.List;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -107,6 +109,10 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
         target = makeUninitializedCallSite(type);
     }
 
+    // Hack -- avoid stack overflow and nasty nesting when the tracing code uses invokedynamic for
+    // string concat, etc.
+    static boolean block = false;
+
     /**
      * Make a call site object equipped with an initial target method handle.
      * @param target the method handle which will be the initial target of the call site
@@ -116,6 +122,25 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
     CallSite(MethodHandle target) {
         target.type();  // null check
         this.target = target;
+        if (MethodHandleStatics.TRACE_CALLSITE && !block) {
+            block = true;
+            StackWalker walker = StackWalker.getInstance();
+            List<StackWalker.StackFrame> frames = walker.walk(s -> s.collect(Collectors.toList()));
+            String caller = "Unknown";
+            boolean getCaller = false;
+            for (var f : frames) {
+                if (getCaller) {
+                    caller = f.toStackTraceElement().toString();
+                    break;
+                } else if (f.getClassName().equals("java.lang.invoke.MethodHandleNatives") && 
+                           f.getMethodName().equals("linkCallSite")) {
+                    getCaller = true; 
+                }
+            }
+            System.out.println("======== CallSite: " + caller);
+            System.out.println(target.debugString(0));
+            block = false;
+        }
     }
 
     /**

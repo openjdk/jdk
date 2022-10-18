@@ -170,8 +170,8 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
-    String internalProperties() {
-        return "\n& DMH.MN="+internalMemberName();
+    String internalProperties(int level) {
+        return "\n" + debugPrefix(level) + "& DMH.MN="+internalMemberName();
     }
 
     //// Implementation methods.

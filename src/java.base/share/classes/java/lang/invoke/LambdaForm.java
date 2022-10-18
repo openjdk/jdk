@@ -1029,12 +1029,18 @@ class LambdaForm {
     }
 
     public String toString() {
+        return debugString(-1);
+    }
+
+    String debugString(int level) {
+        String prefix = MethodHandle.debugPrefix(level);
         String lambdaName = lambdaName();
-        StringBuilder buf = new StringBuilder(lambdaName + "=Lambda(");
+        StringBuilder buf = new StringBuilder(lambdaName);
+        buf.append("=Lambda(");
         for (int i = 0; i < names.length; i++) {
             if (i == arity)  buf.append(")=>{");
             Name n = names[i];
-            if (i >= arity)  buf.append("\n    ");
+            if (i >= arity)  buf.append("\n    ").append(prefix);
             buf.append(n.paramString());
             if (i < arity) {
                 if (i+1 < arity)  buf.append(",");

@@ -1689,8 +1689,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /** Return a string with a several lines describing the method handle structure.
      *  This string would be suitable for display in an IDE debugger.
      */
+    String debugString(int level) {
+        return type+" : "+internalForm().debugString(level)+internalProperties(level);
+    }
     String debugString() {
-        return type+" : "+internalForm()+internalProperties();
+        return debugString(-1);
     }
 
     //// Implementation methods.
@@ -1787,12 +1790,23 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
-    Object internalValues() {
+    Object internalValues(int level) {
         return null;
+    }
+
+    static String debugPrefix(int level) {
+        if (level <= 0) {
+            return "";
+        }
+        return new String(new char[level*4]).replace('\0', ' ');
     }
 
     /*non-public*/
     Object internalProperties() {
+        return internalProperties(-1);
+    }
+
+    Object internalProperties(int level) {
         // Override to something to follow this.form, like "\n& FOO=bar"
         return "";
     }
