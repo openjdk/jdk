@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.SuccessResu
 
 /**
  * Test class that does not contain any applicable {@link IR @IR} annotations and therefore does not fail. It simply
- * returns a {@link SuccessResult} objects when being matched.
+ * returns a {@link SuccessResult} object when being matched.
  */
 public class NonIRTestClass implements Matchable {
 
