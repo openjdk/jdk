@@ -2869,9 +2869,11 @@ class StubGenerator: public StubCodeGenerator {
     __ push_frame_abi160(0);
 
     // Prep arg for VM call
-    // Since we call address* -> int and not address -> int, we must provide an extra level of indirection.
-    // We construct a pointer to the location of the return pc stored above.
-    __ z_la(Z_ARG1, _z_abi(return_pc), Z_R0, Z_SP);
+    // Create PTR to (R14 - Barrier_Length)
+    // This is the address of the entry point for the compiled fn we are examining.
+    __ z_lay(Z_R1_scratch, -32, Z_R0, R14);            // R1 <- R14 - 32
+    __ z_stg(Z_R1_scratch, _z_abi(carg2), Z_R0, Z_SP); // SP[abi_carg2] <- R1
+    __ z_la(Z_ARG1, _z_abi(carg2), Z_R0, Z_SP);        // R2 <- SP + abi_carg2
 
     // Call BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
