@@ -44,6 +44,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
+  if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
+    warning("CacheLineSize must be a power of 2");
+    FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
+  }
+
   if (UseAES || UseAESIntrinsics) {
     if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
       warning("AES instructions are not available on this CPU");
@@ -132,7 +137,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * VM_Version::cache_line_size());
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, CacheLineSize);
     }
   } else if (UseBlockZeroing) {
     warning("Zicboz is not available on this CPU");
