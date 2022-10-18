@@ -32,6 +32,26 @@ import org.junit.jupiter.params.provider.ValueSource;
 /* @test
  * @summary Unit tests for formatter
  * @library /test/lib
+ * @compile Basic.java
+ * @compile BasicBoolean.java
+ * @compile BasicBooleanObject.java
+ * @compile BasicByte.java
+ * @compile BasicByteObject.java
+ * @compile BasicChar.java
+ * @compile BasicCharObject.java
+ * @compile BasicShort.java
+ * @compile BasicShortObject.java
+ * @compile BasicInt.java
+ * @compile BasicIntObject.java
+ * @compile BasicLong.java
+ * @compile BasicLongObject.java
+ * @compile BasicBigInteger.java
+ * @compile BasicFloat.java
+ * @compile BasicFloatObject.java
+ * @compile BasicDouble.java
+ * @compile BasicDoubleObject.java
+ * @compile BasicBigDecimal.java
+ * @compile BasicDateTime.java
  * @bug 4906370 4962433 4973103 4989961 5005818 5031150 4970931 4989491 5002937
  *      5005104 5007745 5061412 5055180 5066788 5088703 6317248 6318369 6320122
  *      6344623 6369500 6534606 6282094 6286592 6476425 5063507 6469160 6476168
