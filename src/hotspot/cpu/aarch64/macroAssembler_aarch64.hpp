@@ -110,13 +110,6 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
   void rt_call(address dest, Register tmp = rscratch1);
 
-  // Helper functions for statistics gathering.
-  // Unconditional atomic increment.
-  void atomic_incw(Register counter_addr, Register tmp, Register tmp2);
-  void atomic_incw(Address counter_addr, Register tmp1, Register tmp2, Register tmp3) {
-    lea(tmp1, counter_addr);
-    atomic_incw(tmp1, tmp2, tmp3);
-  }
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
