@@ -205,11 +205,6 @@ source %{
           return false;
         }
         break;
-      case Op_VectorLoadConst:
-        if (is_floating_point_type(bt)) {
-          return false;
-        }
-        break;
       default:
         break;
     }
@@ -402,7 +397,6 @@ instruct storeV_masked(vReg src, vmemA mem, pRegGov pg) %{
 // vector load const
 
 instruct vloadcon(vReg dst, immI0 src) %{
-  predicate(is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorLoadConst src));
   format %{ "vloadcon $dst, $src\t# load/generate iota indices" %}
   ins_encode %{
@@ -410,8 +404,11 @@ instruct vloadcon(vReg dst, immI0 src) %{
     if (UseSVE == 0) {
       uint length_in_bytes = Matcher::vector_length_in_bytes(this);
       assert(length_in_bytes <= 16, "must be");
-      // The offset based on the iota indices stub for B/H/S/D is 0/16/32/48.
+      // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 16.
       int offset = exact_log2(type2aelembytes(bt)) << 4;
+      if (is_floating_point_type(bt)) {
+        offset += 32;
+      }
       __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + offset));
       if (length_in_bytes == 16) {
         __ ldrq($dst$$FloatRegister, rscratch1);
@@ -421,6 +418,9 @@ instruct vloadcon(vReg dst, immI0 src) %{
     } else {
       Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
       __ sve_index($dst$$FloatRegister, size, 0, 1);
+      if (is_floating_point_type(bt)) {
+        __ sve_scvtf($dst$$FloatRegister, size, ptrue, $dst$$FloatRegister, size);
+      }
     }
   %}
   ins_pipe(pipe_slow);

@@ -847,6 +847,24 @@ address StubGenerator::generate_iota_indices(const char *stub_name) {
   __ emit_data64(0x0000000000000005, relocInfo::none);
   __ emit_data64(0x0000000000000006, relocInfo::none);
   __ emit_data64(0x0000000000000007, relocInfo::none);
+  // D - FP
+  __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
+  __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+  __ emit_data64(0x40A0000040800000, relocInfo::none); // 4.0f, 5.0f
+  __ emit_data64(0x40E0000040C00000, relocInfo::none); // 6.0f, 7.0f
+  __ emit_data64(0x4110000041000000, relocInfo::none); // 8.0f, 9.0f
+  __ emit_data64(0x4130000041200000, relocInfo::none); // 10.0f, 11.0f
+  __ emit_data64(0x4150000041400000, relocInfo::none); // 12.0f, 13.0f
+  __ emit_data64(0x4170000041600000, relocInfo::none); // 14.0f, 15.0f
+  // Q - FP
+  __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
+  __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
+  __ emit_data64(0x4000000000000000, relocInfo::none); // 2.0d
+  __ emit_data64(0x4008000000000000, relocInfo::none); // 3.0d
+  __ emit_data64(0x4010000000000000, relocInfo::none); // 4.0d
+  __ emit_data64(0x4014000000000000, relocInfo::none); // 5.0d
+  __ emit_data64(0x4018000000000000, relocInfo::none); // 6.0d
+  __ emit_data64(0x401c000000000000, relocInfo::none); // 7.0d
   return start;
 }
 

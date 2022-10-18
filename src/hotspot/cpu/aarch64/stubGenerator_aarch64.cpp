@@ -642,6 +642,12 @@ class StubGenerator: public StubCodeGenerator {
     // D
     __ emit_data64(0x0000000000000000, relocInfo::none);
     __ emit_data64(0x0000000000000001, relocInfo::none);
+    // S - FP
+    __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
+    __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+    // D - FP
+    __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
+    __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
     return start;
   }
 

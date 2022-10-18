@@ -1992,11 +1992,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
-    case Op_VectorLoadConst:
-      if (is_floating_point_type(bt)) {
-        return false;
-      }
-      break;
   }
   return true;  // Per default match rules are supported.
 }
@@ -8405,7 +8400,6 @@ instruct vmaskcast_avx(vec dst, vec src) %{
 //-------------------------------- Load Iota Indices ----------------------------------
 
 instruct loadIotaIndices(vec dst, immI_0 src) %{
-  predicate(is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorLoadConst src));
   format %{ "vector_load_iota $dst CONSTANT_MEMORY\t! load iota indices" %}
   ins_encode %{

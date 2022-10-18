@@ -2887,37 +2887,43 @@ bool LibraryCallKit::inline_index_vector() {
 
   int num_elem = vlen->get_con();
   BasicType elem_bt = elem_type->basic_type();
-  BasicType iota_bt = elem_bt;
-  // The iota indices are integral type
-  if (is_floating_point_type(elem_bt)) {
-    iota_bt = elem_bt == T_FLOAT ? T_INT : T_LONG;
-  }
 
-  // Get the vector add/mul op based on the basic element type
-  int add_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_ADD, elem_bt);
-  int mul_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_MUL, elem_bt);
-  int vadd_op = VectorNode::opcode(add_op, elem_bt);
-  int vmul_op = VectorNode::opcode(mul_op, elem_bt);
-
-  // Check whether the basic ops are supported by the current hardware
-  if (!arch_supports_vector(Op_VectorLoadConst, num_elem, iota_bt, VecMaskNotUsed) ||
-      !arch_supports_vector(vmul_op, num_elem, elem_bt, VecMaskNotUsed) ||
-      !arch_supports_vector(vadd_op, num_elem, elem_bt, VecMaskNotUsed)) {
+  // Check whether the iota index generation op is supported by the current hardware
+  if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
     }
     return false; // not supported
   }
 
-  // If it is a floating point type vector, additionally check whether the
-  // relative vector cast op is supported by the current hardware
-  if (is_floating_point_type(elem_bt)) {
-    int vcast_op = elem_bt == T_FLOAT ? Op_VectorCastI2X : Op_VectorCastL2X;
-    if (!arch_supports_vector(vcast_op, num_elem, elem_bt, VecMaskNotUsed)) {
+  int mul_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_MUL, elem_bt);
+  int vmul_op = VectorNode::opcode(mul_op, elem_bt);
+  bool needs_mul = true;
+  Node* scale = argument(4);
+  const TypeInt* scale_type = gvn().type(scale)->isa_int();
+  // Multiply is not needed if the scale is a constant "1".
+  if (scale_type && scale_type->is_con() && scale_type->get_con() == 1) {
+    needs_mul = false;
+  } else {
+    // Check whether the vector multiply op is supported by the current hardware
+    if (!arch_supports_vector(vmul_op, num_elem, elem_bt, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
       }
       return false; // not supported
+    }
+
+    // Check whether the scalar cast op is supported by the current hardware
+    if (is_floating_point_type(elem_bt) || elem_bt == T_LONG) {
+      int cast_op = elem_bt == T_LONG ? Op_ConvI2L :
+                    elem_bt == T_FLOAT? Op_ConvI2F : Op_ConvI2D;
+      if (!Matcher::match_rule_supported(cast_op)) {
+        if (C->print_intrinsics()) {
+          tty->print_cr("  ** Rejected op (%s) because architecture does not support it",
+                        NodeClassNames[cast_op]);
+        }
+        return false; // not supported
+      }
     }
   }
 
@@ -2932,24 +2938,28 @@ bool LibraryCallKit::inline_index_vector() {
     return false;
   }
 
-  // Compute the iota indice vector
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
-  const TypeVect* iota_vt = TypeVect::make(iota_bt, num_elem);
-  Node* iota = gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), iota_vt));
-  if (elem_bt == T_FLOAT) {
-    iota = gvn().transform(new VectorCastI2XNode(iota, vt));
-  } else if (elem_bt == T_DOUBLE) {
-    iota = gvn().transform(new VectorCastL2XNode(iota, vt));
+  int add_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_ADD, elem_bt);
+  int vadd_op = VectorNode::opcode(add_op, elem_bt);
+  bool needs_add = true;
+  // The addition is not needed if all the element values of "opd" are zero
+  if (VectorNode::is_all_zeros_vector(opd)) {
+    needs_add = false;
+  } else {
+    // Check whether the vector addition op is supported by the current hardware
+    if (!arch_supports_vector(vadd_op, num_elem, elem_bt, VecMaskNotUsed)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
   }
 
-  Node* index = NULL;
-  Node* scale = argument(4);
-  const TypeInt* scale_type = gvn().type(scale)->isa_int();
-  if (scale_type && scale_type->is_con() && scale_type->get_con() == 1) {
-    index = iota;
-  } else {
-    // Multiply the "scale" with "iota" if it is not "1".
-    // Broadcast the "scale" to a vector
+  // Compute the iota indice vector
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  Node* index = gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
+
+  // Broadcast the "scale" to a vector, and multiply the "scale" with iota indice vector.
+  if (needs_mul) {
     switch (elem_bt) {
       case T_BOOLEAN: // fall-through
       case T_BYTE:    // fall-through
@@ -2968,18 +2978,17 @@ bool LibraryCallKit::inline_index_vector() {
         break;
       }
       case T_DOUBLE: {
-        scale = gvn().transform(new ConvI2LNode(scale));
-        scale = gvn().transform(new ConvL2DNode(scale));
+        scale = gvn().transform(new ConvI2DNode(scale));
         break;
       }
       default: fatal("%s", type2name(elem_bt));
     }
     scale = gvn().transform(VectorNode::scalar2vector(scale, num_elem, Type::get_const_basic_type(elem_bt)));
-    index = gvn().transform(VectorNode::make(vmul_op, iota, scale, vt));
+    index = gvn().transform(VectorNode::make(vmul_op, index, scale, vt));
   }
 
-  // Add "opd" if it is not a zero vector.
-  if (!VectorNode::is_all_zeros_vector(opd)) {
+  // Add "opd" if addition is needed.
+  if (needs_add) {
     index = gvn().transform(VectorNode::make(vadd_op, opd, index, vt));
   }
   Node* vbox = box_vector(index, vbox_type, elem_bt, num_elem);
