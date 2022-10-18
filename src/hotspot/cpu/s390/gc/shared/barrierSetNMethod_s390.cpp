@@ -42,7 +42,7 @@ class NativeMethodBarrier: public NativeInstruction {
       address inst_addr = get_barrier_start_address() + GUARD_INSTRUCTION_OFFSET;
 
       debug_only(Assembler::is_z_cfi(*((long*)inst_addr)));
-      return inst_addr + Assembler::instr_len(inst_addr);
+      return inst_addr + 2;
     }
 
   public:
@@ -55,7 +55,8 @@ class NativeMethodBarrier: public NativeInstruction {
     }
 
     void set_guard_value(int value) {
-      address data_addr = get_patchable_data_address();
+      int32_t* data_addr = (int32_t*)get_patchable_data_address();
+
 
       // Set guard instruction value
       *data_addr = value;
