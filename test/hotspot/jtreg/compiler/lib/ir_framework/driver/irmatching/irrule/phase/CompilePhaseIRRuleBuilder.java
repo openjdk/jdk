@@ -42,7 +42,7 @@ import java.util.*;
  * This class creates a list of {@link CompilePhaseIRRule} for each specified compile phase in {@link IR#phase()} of an
  * IR rule. Default compile phases of {@link IRNode} placeholder strings as found in {@link RawConstraint} objects are
  * replaced by the actual default phases. The resulting parsed {@link Constraint} objects which now belong to a
- * non-default compile phase are moved to the check attribute matchables which represent these compile phase.
+ * non-default compile phase are moved to the check attribute matchables which represent these compile phases.
  *
  * @see CompilePhaseIRRule
  */
