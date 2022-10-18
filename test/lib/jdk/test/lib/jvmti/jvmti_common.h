@@ -36,6 +36,8 @@
 #include <unistd.h>
 #endif
 
+#include "jvmti.h"
+
 #define LOG(...) \
   { \
     printf(__VA_ARGS__); \

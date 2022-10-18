@@ -26,6 +26,7 @@
 #include "jvmti.h"
 #include "agent_common.h"
 #include "JVMTITools.h"
+#include "jvmti_common.h"
 
 extern "C" {
 
@@ -49,71 +50,6 @@ static void set_watch_ev(int value) {
     watch_ev = value;
 
     jvmti->RawMonitorExit(watch_ev_monitor);
-}
-
-static void printFrame(jvmtiEnv *jvmti, jmethodID method, jint depth) {
-    char *className = NULL;
-    char *classSig = NULL;
-    jclass cls;
-    jvmtiError err = jvmti->GetMethodDeclaringClass(method, &cls);
-    if (err == JVMTI_ERROR_NONE) {
-        err = jvmti->GetClassSignature(cls, &classSig, NULL);
-        if (err == JVMTI_ERROR_NONE) {
-            // drop leading 'L' and trailing ';'
-            className = classSig + 1;
-            className[strlen(classSig) - 2] = '\0';
-        } else {
-            printf("GetClassSignature error: %s (%d)\n", TranslateError(err), err);
-        }
-    } else {
-        printf("GetMethodDeclaringClass error: %s (%d)\n", TranslateError(err), err);
-    }
-
-    char *methodName = NULL;
-    char *methodSig = NULL;
-    err = jvmti->GetMethodName(method, &methodName, &methodSig, NULL);
-    if (err != JVMTI_ERROR_NONE) {
-        printf("GetMethodName error: %s (%d)\n", TranslateError(err), err);
-    }
-
-    printf("%02d: %s %s%s\n", depth,
-           className != NULL ? className : "<class name is not available>",
-           methodName != NULL ? methodName : "<method name is not available>",
-           methodSig != NULL ? methodSig : "<method signature is not available>");
-    jvmti->Deallocate((unsigned char*)classSig);
-    jvmti->Deallocate((unsigned char*)methodName);
-    jvmti->Deallocate((unsigned char*)methodSig);
-}
-
-static void printStackTrace(jvmtiEnv *jvmti, jthread thread) {
-    jvmtiThreadInfo threadInfo;
-    memset(&threadInfo, 0, sizeof(threadInfo));
-    jvmtiError err = jvmti->GetThreadInfo(thread, &threadInfo);
-    if (err != JVMTI_ERROR_NONE) {
-        printf("GetThreadInfo error: %s (%d)\n", TranslateError(err), err);
-    }
-
-    jvmtiFrameInfo frames[64];
-    jint count = 0;
-    err = jvmti->GetStackTrace(thread, 0, 64, frames, &count);
-    if (err != JVMTI_ERROR_NONE) {
-        printf("Failed to get stack trace: %s (%d)\n", TranslateError(err), err);
-    }
-
-    printf("Stack trace for thread %s: frame count: %d\n",
-           threadInfo.name != NULL ? threadInfo.name : "<name is not available>",
-           count);
-    jvmti->Deallocate((unsigned char*)threadInfo.name);
-
-    if (err != JVMTI_ERROR_NONE) { // GetStackTrace error
-        printf("  Not Available\n");
-    } else {
-        for (int depth = 0; depth < count; depth++) {
-            printFrame(jvmti, frames[depth].method, depth);
-        }
-    }
-    printf("\n");
-    fflush(0);
 }
 
 void JNICALL
@@ -256,7 +192,7 @@ Java_nsk_jvmti_PopFrame_popframe004_doPopFrame(JNIEnv *env, jclass cls, jboolean
 
     if (gotError) {
         tot_result = STATUS_FAILED;
-        printStackTrace(jvmti, frameThr);
+        print_stack_trace(jvmti, env, frameThr);
     }
 
     if (otherThread) { /* we are in a different thread */
