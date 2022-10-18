@@ -98,7 +98,8 @@ public class AllBitsSetVectorMatchRuleTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.VAND_NOT_L, " >= 1" })
+    @IR(counts = { IRNode.VAND_NOT_L, " >= 1" }, applyIf = {"UseSVE", "0"})
+    @IR(counts = { IRNode.VMASK_AND_NOT_L, " >= 1" }, applyIf = {"UseSVE", "> 0"})
     public static void testAllBitsSetMask() {
         VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
         VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);

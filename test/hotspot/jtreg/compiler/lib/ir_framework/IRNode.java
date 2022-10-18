@@ -553,6 +553,16 @@ public class IRNode {
         beforeMatchingNameRegex(LOAD_VECTOR, "LoadVector");
     }
 
+    public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
+    }
+
+    public static final String LOAD_VECTOR_GATHER_MASKED = PREFIX + "LOAD_VECTOR_GATHER_MASKED" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_VECTOR_GATHER_MASKED, "LoadVectorGatherMasked");
+    }
+
     public static final String LONG_COUNTED_LOOP = PREFIX + "LONG_COUNTED_LOOP" + POSTFIX;
     static {
         String regex = START + "LongCountedLoop\\b" + MID + END;
@@ -891,6 +901,16 @@ public class IRNode {
         beforeMatchingNameRegex(STORE_VECTOR, "StoreVector");
     }
 
+    public static final String STORE_VECTOR_SCATTER = PREFIX + "STORE_VECTOR_SCATTER" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(STORE_VECTOR_SCATTER, "StoreVectorScatter");
+    }
+
+    public static final String STORE_VECTOR_SCATTER_MASKED = PREFIX + "STORE_VECTOR_SCATTER_MASKED" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(STORE_VECTOR_SCATTER_MASKED, "StoreVectorScatterMasked");
+    }
+
     public static final String SUB = PREFIX + "SUB" + POSTFIX;
     static {
         beforeMatchingNameRegex(SUB, "Sub(I|L|F|D)");
@@ -1066,14 +1086,54 @@ public class IRNode {
         machOnlyNameRegex(VFABD_MASKED, "vfabd_masked");
     }
 
+    public static final String VFMSB_MASKED = PREFIX + "VFMSB_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFMSB_MASKED, "vfmsb_masked");
+    }
+
+    public static final String VFNMAD_MASKED = PREFIX + "VFNMAD_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFNMAD_MASKED, "vfnmad_masked");
+    }
+
+    public static final String VFNMSB_MASKED = PREFIX + "VFNMSB_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFNMSB_MASKED, "vfnmsb_masked");
+    }
+
+    public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
+    }
+
     public static final String VMLA = PREFIX + "VMLA" + POSTFIX;
     static {
         machOnlyNameRegex(VMLA, "vmla");
     }
 
+    public static final String VMLA_MASKED = PREFIX + "VMLA_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMLA_MASKED, "vmla_masked");
+    }
+
     public static final String VMLS = PREFIX + "VMLS" + POSTFIX;
     static {
         machOnlyNameRegex(VMLS, "vmls");
+    }
+
+    public static final String VMLS_MASKED = PREFIX + "VMLS_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMLS_MASKED, "vmls_masked");
+    }
+
+    public static final String VNOT_I_MASKED = PREFIX + "VNOT_I_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VNOT_I_MASKED, "vnotI_masked");
+    }
+
+    public static final String VNOT_L_MASKED = PREFIX + "VNOT_L_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VNOT_L_MASKED, "vnotL_masked");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
