@@ -32,21 +32,21 @@
 
 class NativeMethodBarrier: public NativeInstruction {
   private:
-    static const int GUARD_INSTRUCTION_OFFSET = 3*6; // bytes
+    static const int PATCHABLE_INSTRUCTION_OFFSET = 3*6; // bytes
 
     address get_barrier_start_address() const {
       return NativeInstruction::addr_at(0);
     }
 
     address get_patchable_data_address() const {
-      address inst_addr = get_barrier_start_address() + GUARD_INSTRUCTION_OFFSET;
+      address inst_addr = get_barrier_start_address() + PATCHABLE_INSTRUCTION_OFFSET;
 
       debug_only(Assembler::is_z_cfi(*((long*)inst_addr)));
       return inst_addr + 2;
     }
 
   public:
-    static const int BARRIER_TOTAL_LENGTH = GUARD_INSTRUCTION_OFFSET + 2*6 + 2; // bytes
+    static const int BARRIER_TOTAL_LENGTH = PATCHABLE_INSTRUCTION_OFFSET + 2*6 + 2; // bytes
 
     int get_guard_value() const {
       address data_addr = get_patchable_data_address();
