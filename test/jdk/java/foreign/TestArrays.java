@@ -107,7 +107,7 @@ public class TestArrays {
 
     @Test(dataProvider = "arrays")
     public void testArrays(Consumer<MemorySegment> init, Consumer<MemorySegment> checker, MemoryLayout layout) {
-        MemorySegment segment = MemorySegment.allocateNative(layout);
+        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openImplicit());
         init.accept(segment);
         assertFalse(segment.isReadOnly());
         checker.accept(segment);

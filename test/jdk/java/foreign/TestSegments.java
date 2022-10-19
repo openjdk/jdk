@@ -50,7 +50,7 @@ public class TestSegments {
 
     @Test(dataProvider = "badSizeAndAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadAllocateAlign(long size, long align) {
-        MemorySegment.allocateNative(size, align);
+        MemorySegment.allocateNative(size, align, MemorySession.openImplicit());
     }
 
     @Test
@@ -74,12 +74,12 @@ public class TestSegments {
     @Test(expectedExceptions = { OutOfMemoryError.class,
                                  IllegalArgumentException.class })
     public void testAllocateTooBig() {
-        MemorySegment.allocateNative(Long.MAX_VALUE);
+        MemorySegment.allocateNative(Long.MAX_VALUE, MemorySession.openImplicit());
     }
 
     @Test(expectedExceptions = OutOfMemoryError.class)
     public void testNativeAllocationTooBig() {
-        MemorySegment segment = MemorySegment.allocateNative(1024L * 1024 * 8 * 2); // 2M
+        MemorySegment segment = MemorySegment.allocateNative(1024L * 1024 * 8 * 2, MemorySession.openImplicit()); // 2M
     }
 
     @Test
@@ -161,14 +161,14 @@ public class TestSegments {
     @Test(expectedExceptions = IndexOutOfBoundsException.class)
     public void testSmallSegmentMax() {
         long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when cast to int
-        MemorySegment memorySegment = MemorySegment.allocateNative(10);
+        MemorySegment memorySegment = MemorySegment.allocateNative(10, MemorySession.openImplicit());
         memorySegment.get(JAVA_INT, offset);
     }
 
     @Test(expectedExceptions = IndexOutOfBoundsException.class)
     public void testSmallSegmentMin() {
         long offset = ((long)Integer.MIN_VALUE * 2L) + 6L; // underflows to 6 when cast to int
-        MemorySegment memorySegment = MemorySegment.allocateNative(10L);
+        MemorySegment memorySegment = MemorySegment.allocateNative(10L, MemorySession.openImplicit());
         memorySegment.get(JAVA_INT, offset);
     }
 
@@ -207,12 +207,12 @@ public class TestSegments {
                 () -> MemorySegment.ofArray(new int[] { 1, 2, 3, 4 }),
                 () -> MemorySegment.ofArray(new long[] { 1l, 2l, 3l, 4l } ),
                 () -> MemorySegment.ofArray(new short[] { 1, 2, 3, 4 } ),
-                () -> MemorySegment.allocateNative(4L),
-                () -> MemorySegment.allocateNative(4L, 8),
-                () -> MemorySegment.allocateNative(JAVA_INT),
-                () -> MemorySegment.allocateNative(4L),
-                () -> MemorySegment.allocateNative(4L, 8),
-                () -> MemorySegment.allocateNative(JAVA_INT)
+                () -> MemorySegment.allocateNative(4L, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(4L, 8, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(JAVA_INT, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(4L, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(4L, 8, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(JAVA_INT, MemorySession.openImplicit())
 
         );
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);

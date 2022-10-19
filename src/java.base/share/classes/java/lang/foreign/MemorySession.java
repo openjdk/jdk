@@ -232,7 +232,7 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
      * @throws IllegalStateException if this session is not {@linkplain MemorySession#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread other than the thread
      * {@linkplain MemorySession#ownerThread() owning} this session.
-     * @see MemorySegment#allocateNative(long, long)
+     * @see MemorySegment#allocateNative(long, long, MemorySession)
      */
     @Override
     default MemorySegment allocate(long byteSize, long byteAlignment) {

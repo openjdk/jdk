@@ -69,7 +69,7 @@ public class LoopOverConstant extends JavaLayouts {
 
     //setup native memory segment
 
-    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE);
+    static final MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, MemorySession.openImplicit());
 
     static {
         for (int i = 0; i < ELEM_SIZE; i++) {

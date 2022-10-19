@@ -89,8 +89,8 @@ public class TestLoadStoreShorts {
     srcSegmentHeap = MemorySegment.ofArray(new byte[size]);
     dstSegmentHeap = MemorySegment.ofArray(new byte[size]);
 
-    srcSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize());
-    dstSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize());
+    srcSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), MemorySession.openImplicit());
+    dstSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), MemorySession.openImplicit());
 
     this.longSize = longSize;
 
