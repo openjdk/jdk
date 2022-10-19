@@ -102,8 +102,7 @@ public class ClusterOutputSlotNode implements Vertex {
     }
 
     public Dimension getSize() {
-        int SIZE = 0;
-        return new Dimension(SIZE, SIZE);
+        return new Dimension(0, 0);
     }
 
     public void setPosition(Point p) {
