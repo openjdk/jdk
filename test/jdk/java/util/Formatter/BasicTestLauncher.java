@@ -84,10 +84,10 @@ public class BasicTestLauncher {
      * @param timeZone the time zone to be set in the testJVM environment
      */
     private static OutputAnalyzer RunTest(String timeZone) throws IOException{
-            // Build and run Basic class with correct configuration
-            ProcessBuilder pb = ProcessTools.createTestJvm(JAVA_OPTS, TEST_CLASS);
-            pb.environment().put("TZ", timeZone);
-            Process process = pb.start();
+        // Build and run Basic class with correct configuration
+        ProcessBuilder pb = ProcessTools.createTestJvm(JAVA_OPTS, TEST_CLASS);
+        pb.environment().put("TZ", timeZone);
+        Process process = pb.start();
         return new OutputAnalyzer(process);
     }
 
@@ -98,7 +98,7 @@ public class BasicTestLauncher {
      * @throws RuntimeException for all testJVM failures
      */
     private static void CheckTest(OutputAnalyzer output){
-            output.shouldHaveExitValue(0)
-                    .reportDiagnosticSummary();
+        output.shouldHaveExitValue(0)
+                .reportDiagnosticSummary();
     }
 }
