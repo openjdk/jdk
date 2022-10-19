@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.net.ProtocolFamily;
 import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import java.util.Objects;
 import java.util.Random;
 
@@ -48,6 +50,21 @@ class DNSDatagramSocketFactory {
         static final int LOWER = sun.net.PortConfig.getLower();
         static final int UPPER = sun.net.PortConfig.getUpper();
         static final int RANGE = UPPER - LOWER + 1;
+    }
+
+    private static int findFirstFreePort() {
+        PrivilegedExceptionAction<DatagramSocket> action = () -> new DatagramSocket(0);
+        int port;
+        try {
+            @SuppressWarnings({"deprecated", "removal"})
+            DatagramSocket ds = AccessController.doPrivileged(action);
+            try (DatagramSocket ds1 = ds) {
+                port = ds1.getLocalPort();
+            }
+        } catch (Exception x) {
+            port = 0;
+        }
+        return port;
     }
 
     // Records a subset of max {@code capacity} previously used ports
@@ -74,7 +91,10 @@ class DNSDatagramSocketFactory {
         public boolean add(int port) {
             if (ports[index] != 0) { // at max capacity
                 // remove one port at random and store the new port there
-                ports[random.nextInt(capacity)] = port;
+                // don't remove the last port
+                int remove = random.nextInt(capacity);
+                if ((remove +1) % capacity == index) remove = index;
+                ports[index = remove] = port;
             } else { // there's a free slot
                 ports[index] = port;
             }
@@ -90,7 +110,8 @@ class DNSDatagramSocketFactory {
         }
     }
 
-    int lastport = 0;
+    int lastport = findFirstFreePort();
+    int lastSystemAllocated = lastport;
     int suitablePortCount;
     int unsuitablePortCount;
     final ProtocolFamily family; // null (default) means dual stack
@@ -147,13 +168,16 @@ class DNSDatagramSocketFactory {
         s = openDefault();
         lastport = s.getLocalPort();
         if (lastseen == 0) {
+            lastSystemAllocated = lastport;
             history.offer(lastport);
             return s;
         }
 
         thresholdCrossed = suitablePortCount > thresholdCount;
-        boolean farEnough = Integer.bitCount(lastseen ^ lastport) > BIT_DEVIATION
-                            && Math.abs(lastport - lastseen) > deviation;
+        boolean farEnough = farEnough(lastseen);
+        if (farEnough && lastSystemAllocated > 0) {
+            farEnough = farEnough(lastSystemAllocated);
+        }
         boolean recycled = history.contains(lastport);
         boolean suitable = (thresholdCrossed || farEnough && !recycled);
         if (suitable && !recycled) history.add(lastport);
@@ -168,6 +192,7 @@ class DNSDatagramSocketFactory {
             // Either the underlying stack supports random UDP port allocation,
             // or the new port is sufficiently distant from last port to make
             // it look like it is. Let's use it.
+            lastSystemAllocated = lastport;
             return s;
         }
 
@@ -218,24 +243,48 @@ class DNSDatagramSocketFactory {
                 && !isUsingNativePortRandomization();
     }
 
+    private boolean farEnough(int port) {
+        return Integer.bitCount(port ^ lastport) > BIT_DEVIATION
+                && Math.abs(port - lastport) > deviation;
+    }
+
     private DatagramSocket openRandom() {
         int maxtries = MAX_RANDOM_TRIES;
         while (maxtries-- > 0) {
-            int port = EphemeralPortRange.LOWER
-                    + random.nextInt(EphemeralPortRange.RANGE);
+            int port;
+            boolean suitable;
+            boolean recycled;
+            int maxrandom = MAX_RANDOM_TRIES;
+            do {
+                port = EphemeralPortRange.LOWER
+                        + random.nextInt(EphemeralPortRange.RANGE);
+                recycled = history.contains(port);
+                suitable = lastport == 0 || (farEnough(port) && !recycled);
+            } while (maxrandom-- > 0 && !suitable);
+
+            // if no suitable port was found, try again
+            // this means we might call random MAX_RANDOM_TRIES x MAX_RANDOM_TRIES
+            // times - but that should be OK with MAX_RANDOM_TRIES = 5.
+            if (!suitable) continue;
+
             try {
                 if (family != null) {
                     DatagramChannel c = DatagramChannel.open(family);
                     try {
                         DatagramSocket s = c.socket();
                         s.bind(new InetSocketAddress(port));
+                        lastport = s.getLocalPort();
+                        if (!recycled) history.add(port);
                         return s;
                     } catch (Throwable x) {
                         c.close();
                         throw x;
                     }
                 }
-                return new DatagramSocket(port);
+                DatagramSocket s = new DatagramSocket(port);
+                lastport = s.getLocalPort();
+                if (!recycled) history.add(port);
+                return s;
             } catch (IOException x) {
                 // try again until maxtries == 0;
             }

@@ -378,7 +378,7 @@ class PlainHttpConnection extends HttpConnection {
 
     @Override
     ConnectionPool.CacheKey cacheKey() {
-        return new ConnectionPool.CacheKey(address, null);
+        return ConnectionPool.cacheKey(false, address, null);
     }
 
     @Override
