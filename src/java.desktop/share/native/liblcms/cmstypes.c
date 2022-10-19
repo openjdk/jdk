@@ -3444,6 +3444,8 @@ void *Type_ProfileSequenceId_Read(struct _cms_typehandler_struct* self, cmsIOHAN
     cmsUInt32Number Count;
     cmsUInt32Number BaseOffset;
 
+    cmsUNUSED_PARAMETER(SizeOfTag);
+
     *nItems = 0;
 
     // Get actual position as a basis for element offsets
@@ -5143,6 +5145,8 @@ void *Type_Dictionary_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* i
    wchar_t *NameWCS = NULL, *ValueWCS = NULL;
    cmsMLU *DisplayNameMLU = NULL, *DisplayValueMLU=NULL;
    cmsBool rc;
+
+    cmsUNUSED_PARAMETER(SizeOfTag);
 
     *nItems = 0;
 
