@@ -29,91 +29,31 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 
-const jint ShenandoahEvacOOMHandler::OOM_MARKER_MASK = 0x80000000;
+const jint ShenandoahEvacOOMCounter::OOM_MARKER_MASK = 0x80000000;
 
-ShenandoahEvacOOMHandler::ShenandoahEvacOOMHandler() {
-  for (int i = 0; i < EVAC_COUNTER_BUCKETS; i++)
-    _threads_in_evac[i].bits = 0;
+ShenandoahEvacOOMCounter::ShenandoahEvacOOMCounter()
+  : _bits(0) {
 }
 
-volatile jint *ShenandoahEvacOOMHandler::threads_in_evac_ptr(Thread* t) {
-  uint64_t key = (uintptr_t)t;
-  key ^= (key >> 33);
-  key *= UINT64_C(0xff51afd7ed558ccd);
-  key ^= (key >> 33);
-  key *= UINT64_C(0xc4ceb9fe1a85ec53);
-  key ^= (key >> 33);
-
-  return &_threads_in_evac[key % EVAC_COUNTER_BUCKETS].bits;
+void ShenandoahEvacOOMCounter::decrement() {
+  assert(unmasked_count() > 0, "sanity");
+  // NOTE: It's ok to simply decrement, even with mask set, because unmasked value is positive.
+  Atomic::dec(&_bits);
 }
 
-void ShenandoahEvacOOMHandler::wait_for_one_counter(volatile jint *ptr) {
-  // We might be racing against handle_out_of_memory_during_evacuation()
-  // setting the OOM_MARKER_MASK bit so we must make sure it is set here
-  // *and* the counter is zero.
-  while (Atomic::load_acquire(ptr) != OOM_MARKER_MASK) {
-    os::naked_short_sleep(1);
-  }
+void ShenandoahEvacOOMCounter::clear() {
+  assert(unmasked_count() == 0, "sanity");
+  Atomic::release_store_fence(&_bits, (jint)0);
 }
 
-void ShenandoahEvacOOMHandler::wait_for_no_evac_threads() {
-  // Once the OOM_MARKER_MASK bit is set the counter can only decrease
-  // so it's safe to check each bucket in turn.
-  for (int i = 0; i < EVAC_COUNTER_BUCKETS; i++) {
-    wait_for_one_counter(&_threads_in_evac[i].bits);
-  }
-  // At this point we are sure that no threads can evacuate anything. Raise
-  // the thread-local oom_during_evac flag to indicate that any attempt
-  // to evacuate should simply return the forwarding pointer instead (which is safe now).
-  ShenandoahThreadLocalData::set_oom_during_evac(Thread::current(), true);
-}
-
-void ShenandoahEvacOOMHandler::register_thread(Thread* thr) {
-  volatile jint *ptr = threads_in_evac_ptr(thr);
-  jint threads_in_evac = Atomic::load_acquire(ptr);
-
-  assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
-  while (true) {
-    // Check for OOM.
-    // If offender has OOM_MARKER_MASK, then loop until no more threads in evac
-    if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
-      wait_for_no_evac_threads();
-      return;
-    }
-
-    jint other = Atomic::cmpxchg(ptr, threads_in_evac, threads_in_evac + 1);
-    if (other == threads_in_evac) {
-      // Success: caller may safely enter evacuation
-      return;
-    } else {
-      threads_in_evac = other;
-    }
-  }
-}
-
-void ShenandoahEvacOOMHandler::unregister_thread(Thread* thr) {
-  if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
-    volatile jint *ptr = threads_in_evac_ptr(thr);
-    assert((Atomic::load_acquire(ptr) & ~OOM_MARKER_MASK) > 0, "sanity");
-    // NOTE: It's ok to simply decrement, even with mask set, because unmasked value is positive.
-    Atomic::dec(ptr);
-  } else {
-    // If we get here, the current thread has already gone through the
-    // OOM-during-evac protocol and has thus either never entered or successfully left
-    // the evacuation region. Simply flip its TL oom-during-evac flag back off.
-    ShenandoahThreadLocalData::set_oom_during_evac(thr, false);
-  }
-  assert(!ShenandoahThreadLocalData::is_oom_during_evac(thr), "TL oom-during-evac must be turned off");
-}
-
-void ShenandoahEvacOOMHandler::set_oom_bit(volatile jint *ptr, bool decrement) {
-  jint threads_in_evac = Atomic::load_acquire(ptr);
+void ShenandoahEvacOOMCounter::set_oom_bit(bool decrement) {
+  jint threads_in_evac = Atomic::load_acquire(&_bits);
   while (true) {
     jint newval = decrement
       ? (threads_in_evac - 1) | OOM_MARKER_MASK
       : threads_in_evac | OOM_MARKER_MASK;
 
-    jint other = Atomic::cmpxchg(ptr, threads_in_evac, newval);
+    jint other = Atomic::cmpxchg(&_bits, threads_in_evac, newval);
     if (other == threads_in_evac) {
       // Success: wait for other threads to get out of the protocol and return.
       break;
@@ -124,16 +64,115 @@ void ShenandoahEvacOOMHandler::set_oom_bit(volatile jint *ptr, bool decrement) {
   }
 }
 
+bool ShenandoahEvacOOMCounter::try_increment()
+{
+  jint threads_in_evac = Atomic::load_acquire(&_bits);
+
+  while (true) {
+    // Cannot enter evacuation if OOM_MARKER_MASK is set.
+    if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
+      return false;
+    }
+
+    jint other = Atomic::cmpxchg(&_bits, threads_in_evac, threads_in_evac + 1);
+    if (other == threads_in_evac) {
+      // Success: caller may safely enter evacuation
+      return true;
+    } else {
+      threads_in_evac = other;
+    }
+  }
+}
+
+ShenandoahEvacOOMHandler::ShenandoahEvacOOMHandler()
+  : _num_counters(calc_num_counters()) {
+
+  assert(_num_counters > 0, "sanity");
+  _threads_in_evac = NEW_C_HEAP_ARRAY(ShenandoahEvacOOMCounter, _num_counters, mtGC);
+  for (int i = 0; i < _num_counters; i++) {
+    new (&_threads_in_evac[i]) ShenandoahEvacOOMCounter;
+  }
+}
+
+int ShenandoahEvacOOMHandler::calc_num_counters() {
+  // Scale the number of counter buckets with the number of CPUs to
+  // minimise contention.  Also make sure the number is a power of two
+  // so we can map hash values to buckets with a simple mask.
+  const int nproc = os::active_processor_count();
+  const int clamped = MAX2(1, MIN2(nproc, 128));
+  return round_up_power_of_2(clamped);
+}
+
+uint64_t ShenandoahEvacOOMHandler::hash_pointer(const void *p) {
+  // Bit mixing function from MurmurHash3
+  uint64_t key = (uintptr_t)p;
+  key ^= (key >> 33);
+  key *= UINT64_C(0xff51afd7ed558ccd);
+  key ^= (key >> 33);
+  key *= UINT64_C(0xc4ceb9fe1a85ec53);
+  key ^= (key >> 33);
+  return key;
+}
+
+ShenandoahEvacOOMCounter *ShenandoahEvacOOMHandler::counter_for_thread(Thread* t) {
+  const uint64_t key = hash_pointer(t);
+  assert(is_power_of_2(_num_counters), "must be");
+  return &_threads_in_evac[key & (_num_counters - 1)];
+}
+
+void ShenandoahEvacOOMHandler::wait_for_one_counter(ShenandoahEvacOOMCounter *ptr) {
+  // We might be racing against handle_out_of_memory_during_evacuation()
+  // setting the OOM_MARKER_MASK bit so we must make sure it is set here
+  // *and* the counter is zero.
+  while (ptr->load_acquire() != ShenandoahEvacOOMCounter::OOM_MARKER_MASK) {
+    os::naked_short_sleep(1);
+  }
+}
+
+void ShenandoahEvacOOMHandler::wait_for_no_evac_threads() {
+  // Once the OOM_MARKER_MASK bit is set the counter can only decrease
+  // so it's safe to check each bucket in turn.
+  for (int i = 0; i < _num_counters; i++) {
+    wait_for_one_counter(&_threads_in_evac[i]);
+  }
+  // At this point we are sure that no threads can evacuate anything. Raise
+  // the thread-local oom_during_evac flag to indicate that any attempt
+  // to evacuate should simply return the forwarding pointer instead (which is safe now).
+  ShenandoahThreadLocalData::set_oom_during_evac(Thread::current(), true);
+}
+
+void ShenandoahEvacOOMHandler::register_thread(Thread* thr) {
+  assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
+
+  ShenandoahEvacOOMCounter *counter = counter_for_thread(thr);
+  if (!counter->try_increment()) {
+    // Counter has OOM_MARKER_MASK set, loop until no more threads in evac
+    wait_for_no_evac_threads();
+  }
+}
+
+void ShenandoahEvacOOMHandler::unregister_thread(Thread* thr) {
+  if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
+    counter_for_thread(thr)->decrement();
+  } else {
+    // If we get here, the current thread has already gone through the
+    // OOM-during-evac protocol and has thus either never entered or successfully left
+    // the evacuation region. Simply flip its TL oom-during-evac flag back off.
+    ShenandoahThreadLocalData::set_oom_during_evac(thr, false);
+  }
+  assert(!ShenandoahThreadLocalData::is_oom_during_evac(thr), "TL oom-during-evac must be turned off");
+}
+
 void ShenandoahEvacOOMHandler::handle_out_of_memory_during_evacuation() {
   assert(ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "sanity");
   assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
 
-  volatile jint *myptr = threads_in_evac_ptr(Thread::current());
-  assert((Atomic::load_acquire(myptr) & ~OOM_MARKER_MASK) > 0, "sanity");
+  ShenandoahEvacOOMCounter *self = counter_for_thread(Thread::current());
+  assert(self->unmasked_count() > 0, "sanity");
 
-  for (int i = 0; i < EVAC_COUNTER_BUCKETS; i++) {
-    volatile jint *ptr = &_threads_in_evac[i].bits;
-    set_oom_bit(ptr, ptr == myptr);
+  for (int i = 0; i < _num_counters; i++) {
+    ShenandoahEvacOOMCounter *counter = &_threads_in_evac[i];
+    counter->set_oom_bit(counter == self);
   }
 
   wait_for_no_evac_threads();
@@ -141,9 +180,7 @@ void ShenandoahEvacOOMHandler::handle_out_of_memory_during_evacuation() {
 
 void ShenandoahEvacOOMHandler::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
-  for (int i = 0; i < EVAC_COUNTER_BUCKETS; i++) {
-    volatile jint *ptr = &_threads_in_evac[i].bits;
-    assert((Atomic::load_acquire(ptr) & ~OOM_MARKER_MASK) == 0, "sanity");
-    Atomic::release_store_fence(ptr, (jint)0);
+  for (int i = 0; i < _num_counters; i++) {
+    _threads_in_evac[i].clear();
   }
 }
