@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,60 @@
  * <p>The {@link com.sun.net.httpserver.spi} package specifies a Service Provider
  * Interface (SPI) for locating HTTP server implementations based on the
  * {@code com.sun.net.httpserver} API.
+ * <p>
+ * <b id="httpserverprops">System properties used by the HTTP server API</b>
+ * <p>
+ * The following is a list of JDK specific system properties used by the HTTP
+ * server implementation.
+ * <ul>
+ * <li><p><b>{@systemProperty sun.net.httpserver.idleInterval}</b> (default: 30 sec)<br>
+ * Maximum duration in seconds which an idle connection is kept open.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.clockTick}</b> (default: 10 sec)<br>
+ * The granularity of the idle interval timer in seconds. The default value might need to
+ * be reduced if the idle interval itself is reduced.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpserver.maxConnections}</b> (default: -1)<br>
+ * The maximum number of open connections at a time. This includes active and idle connections.
+ * If zero or negative, then no limit is enforced.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxIdleConnections}</b> (default: 200)<br>
+ * The maximum number of idle connections at a time.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.drainAmount}</b> (default: 64K)<br>
+ * The maximum number of bytes that will be automatically read and discarded from a
+ * request body that has not been completely consumed by its
+ * {@link com.sun.net.httpserver.HttpHandler HttpHandler}. If the number of remaining
+ * unread bytes are less than this limit then the connection will be put in the idle connection
+ * cache. If not, then it will be closed.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxReqHeaders}</b> (default: 200)<br>
+ * The maxiumum number of headers accepted in a request. If this limit is exceeded
+ * while the headers are being read, then the connection is terminated and the request ignored.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxReqTime}</b> (default: -1)<br>
+ * The maximum duration in milliseconds of a request. In practice, this is a function of
+ * request size, network speed, and handler processing delays. A value less than or equal
+ * to zero means the duration is not limited. If the limit is
+ * exceeded then the connection is terminated and the handler will receive a
+ * {@link java.io.IOException}.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxRspTime}</b> (default: -1)<br>
+ * The maximum duration in milliseconds of a response. In practice, this is a function of
+ * response size, network speed, and handler processing delays. A value less than or equal
+ * to zero means the duration is not limited. If the limit is
+ * exceeded then the connection is terminated and the handler will receive a
+ * {@link java.io.IOException}.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.timerMillis}</b> (default: 1 sec)<br>
+ * The granularity of the timer that manages request and response times.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.debug}</b> (default: false)<br>
+ * Boolean value, which if true, generates debug information on the console.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.nodelay}</b> (default: false)<br>
+ * Boolean value, which if true, sets the TCP_NODELAY socket option on all incoming connections.
+ * </li></ul>
  *
  * @toolGuide jwebserver
  *
