@@ -31,12 +31,93 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 
+// A G1MonotonicArena extends the FreeListConfig, memory
+// blocks allocated from the OS are managed as a linked-list of Segments.
+//
+// Implementation details as below:
+//
+// Allocation arena for (card set, or ...) heap memory objects (Slot slots).
+//
+// Actual allocation from the C heap occurs as memory blocks called Segments.
+// The allocation pattern for these Segments is assumed to be strictly two-phased:
+//
+// - in the first phase, Segment are allocated from the C heap (or a free
+// list given at initialization time). This allocation may occur in parallel. This
+// typically corresponds to a single mutator phase, but may extend over multiple.
+//
+// - in the second phase, Segments are added in bulk to the free list.
+// This is typically done during a GC pause.
+//
+// Some third party is responsible for giving back memory from the free list to
+// the operating system.
+//
+// Allocation and deallocation in the first phase basis may occur by multiple threads concurrently.
+//
+// The class also manages a few counters for statistics using atomic operations.
+// Their values are only consistent within each other with extra global
+// synchronization.
+
+class G1MonotonicArena : public FreeListConfig {
+public:
+  class AllocOptions;
+  class Segment;
+  class SegmentFreeList;
+private:
+  // AllocOptions provides parameters for allocation segment
+  // sizing and expansion.
+  const AllocOptions* _alloc_options;
+
+  Segment* volatile _first;       // The (start of the) list of all segments.
+  Segment* _last;                 // The last segment of the list of all segments.
+  volatile uint _num_segments;    // Number of assigned segments to this allocator.
+  volatile size_t _mem_size;      // Memory used by all segments.
+
+  SegmentFreeList* _segment_free_list;   // The global free segment list to preferentially
+                                      // get new segments from.
+
+  volatile uint _num_total_slots; // Number of slots available in all segments (allocated + not yet used).
+  volatile uint _num_allocated_slots; // Number of total slots allocated ever (including free and pending).
+
+  inline Segment* new_segment(Segment* const prev);
+
+  DEBUG_ONLY(uint calculate_length() const;)
+
+public:
+  const Segment* first_segment() const { return Atomic::load(&_first); }
+
+  uint num_total_slots() const { return Atomic::load(&_num_total_slots); }
+  uint num_allocated_slots() const {
+    uint allocated = Atomic::load(&_num_allocated_slots);
+    assert(calculate_length() == allocated, "Must be");
+    return allocated;
+  }
+
+  uint slot_size() const;
+
+  G1MonotonicArena(const AllocOptions* alloc_options,
+                   SegmentFreeList* segment_free_list);
+  ~G1MonotonicArena();
+
+  // Deallocate all segments to the free segment list and reset this allocator. Must
+  // be called in a globally synchronized area.
+  void drop_all();
+
+  uint num_segments() const;
+
+  template<typename SegmentClosure>
+  void iterate_segments(SegmentClosure& closure) const;
+protected:
+  void* allocate() override;
+  // We do not deallocate individual slots
+  void deallocate(void* slot) override { ShouldNotReachHere(); }
+};
+
 // A single segment/arena containing _num_slots blocks of memory of _slot_size.
-// G1SegmentedArraySegments can be linked together using a singly linked list.
-class G1SegmentedArraySegment {
+// Segments can be linked together using a singly linked list.
+class G1MonotonicArena::Segment {
   const uint _slot_size;
   const uint _num_slots;
-  G1SegmentedArraySegment* volatile _next;
+  Segment* volatile _next;
   // Index into the next free slot to allocate into. Full if equal (or larger)
   // to _num_slots (can be larger because we atomically increment this value and
   // check only afterwards if the allocation has been successful).
@@ -46,7 +127,7 @@ class G1SegmentedArraySegment {
   char* _bottom;  // Actual data.
   // Do not add class member variables beyond this point
 
-  static size_t header_size() { return align_up(sizeof(G1SegmentedArraySegment), DEFAULT_CACHE_LINE_SIZE); }
+  static size_t header_size() { return align_up(sizeof(Segment), DEFAULT_CACHE_LINE_SIZE); }
 
   static size_t payload_size(uint slot_size, uint num_slots) {
     // The cast (size_t) is required to guard against overflow wrap around.
@@ -55,25 +136,25 @@ class G1SegmentedArraySegment {
 
   size_t payload_size() const { return payload_size(_slot_size, _num_slots); }
 
-  NONCOPYABLE(G1SegmentedArraySegment);
+  NONCOPYABLE(Segment);
 
-  G1SegmentedArraySegment(uint slot_size, uint num_slots, G1SegmentedArraySegment* next, MEMFLAGS flag);
-  ~G1SegmentedArraySegment() = default;
+  Segment(uint slot_size, uint num_slots, Segment* next, MEMFLAGS flag);
+  ~Segment() = default;
 public:
-  G1SegmentedArraySegment* volatile* next_addr() { return &_next; }
+  Segment* volatile* next_addr() { return &_next; }
 
-  void* get_new_slot();
+  void* allocate_slot();
 
   uint num_slots() const { return _num_slots; }
 
-  G1SegmentedArraySegment* next() const { return _next; }
+  Segment* next() const { return _next; }
 
-  void set_next(G1SegmentedArraySegment* next) {
+  void set_next(Segment* next) {
     assert(next != this, " loop condition");
     _next = next;
   }
 
-  void reset(G1SegmentedArraySegment* next) {
+  void reset(Segment* next) {
     _next_allocate = 0;
     assert(next != this, " loop condition");
     set_next(next);
@@ -94,10 +175,10 @@ public:
     return header_size() + payload_size(slot_size, num_slots);
   }
 
-  static G1SegmentedArraySegment* create_segment(uint slot_size, uint num_slots, G1SegmentedArraySegment* next, MEMFLAGS mem_flag);
-  static void delete_segment(G1SegmentedArraySegment* segment);
+  static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MEMFLAGS mem_flag);
+  static void delete_segment(Segment* segment);
 
-  // Copies the (valid) contents of this segment into the destination.
+  // Copies the contents of this segment into the destination.
   void copy_to(void* dest) const {
     ::memcpy(dest, _bottom, length() * _slot_size);
   }
@@ -105,15 +186,16 @@ public:
   bool is_full() const { return _next_allocate >= _num_slots; }
 };
 
-// Set of (free) G1SegmentedArraySegments. The assumed usage is that allocation
+
+// Set of (free) Segments. The assumed usage is that allocation
 // to it and removal of segments is strictly separate, but every action may be
-// performed by multiple threads at the same time.
+// performed by multiple threads concurrently.
 // Counts and memory usage are current on a best-effort basis if accessed concurrently.
-class G1SegmentedArrayFreeList {
-  static G1SegmentedArraySegment* volatile* next_ptr(G1SegmentedArraySegment& segment) {
+class G1MonotonicArena::SegmentFreeList {
+  static Segment* volatile* next_ptr(Segment& segment) {
     return segment.next_addr();
   }
-  using SegmentStack = LockFreeStack<G1SegmentedArraySegment, &G1SegmentedArrayFreeList::next_ptr>;
+  using SegmentStack = LockFreeStack<Segment, &SegmentFreeList::next_ptr>;
 
   SegmentStack _list;
 
@@ -121,13 +203,13 @@ class G1SegmentedArrayFreeList {
   volatile size_t _mem_size;
 
 public:
-  G1SegmentedArrayFreeList() : _list(), _num_segments(0), _mem_size(0) { }
-  ~G1SegmentedArrayFreeList() { free_all(); }
+  SegmentFreeList() : _list(), _num_segments(0), _mem_size(0) { }
+  ~SegmentFreeList() { free_all(); }
 
-  void bulk_add(G1SegmentedArraySegment& first, G1SegmentedArraySegment& last, size_t num, size_t mem_size);
+  void bulk_add(Segment& first, Segment& last, size_t num, size_t mem_size);
 
-  G1SegmentedArraySegment* get();
-  G1SegmentedArraySegment* get_all(size_t& num_segments, size_t& mem_size);
+  Segment* get();
+  Segment* get_all(size_t& num_segments, size_t& mem_size);
 
   // Give back all memory to the OS.
   void free_all();
@@ -138,8 +220,8 @@ public:
   size_t mem_size() const { return Atomic::load(&_mem_size); }
 };
 
-// Configuration for G1SegmentedArray, e.g slot size, slot number of next G1SegmentedArraySegment.
-class G1SegmentedArrayAllocOptions {
+// Configuration for G1MonotonicArena, e.g slot size, slot number of next Segment.
+class G1MonotonicArena::AllocOptions {
 
 protected:
   const MEMFLAGS _mem_flag;
@@ -150,7 +232,7 @@ protected:
   const uint _slot_alignment;
 
 public:
-  G1SegmentedArrayAllocOptions(MEMFLAGS mem_flag, uint slot_size, uint initial_num_slots, uint max_num_slots, uint alignment) :
+  AllocOptions(MEMFLAGS mem_flag, uint slot_size, uint initial_num_slots, uint max_num_slots, uint alignment) :
     _mem_flag(mem_flag),
     _slot_size(align_up(slot_size, alignment)),
     _initial_num_slots(initial_num_slots),
@@ -171,87 +253,6 @@ public:
   uint slot_alignment() const { return _slot_alignment; }
 
   MEMFLAGS mem_flag() const {return _mem_flag; }
-};
-
-// A segmented array where G1SegmentedArraySegment is the segment, and
-// G1SegmentedArrayFreeList is the free list to cache G1SegmentedArraySegments,
-// and G1SegmentedArrayAllocOptions is the configuration for G1SegmentedArray
-// attributes.
-//
-// Implementation details as below:
-//
-// Arena-like allocator for (card set, or ...) heap memory objects (Slot slots).
-//
-// Actual allocation from the C heap occurs on G1SegmentedArraySegment basis, i.e. segments
-// of slots. The assumed allocation pattern for these G1SegmentedArraySegment slots
-// is assumed to be strictly two-phased:
-//
-// - in the first phase, G1SegmentedArraySegments are allocated from the C heap (or a free
-// list given at initialization time). This allocation may occur in parallel. This
-// typically corresponds to a single mutator phase, but may extend over multiple.
-//
-// - in the second phase, G1SegmentedArraySegments are given back in bulk to the free list.
-// This is typically done during a GC pause.
-//
-// Some third party is responsible for giving back memory from the free list to
-// the operating system.
-//
-// Allocation and deallocation in the first phase basis may occur by multiple threads at once.
-//
-// The class also manages a few counters for statistics using atomic operations.
-// Their values are only consistent within each other with extra global
-// synchronization.
-
-class G1SegmentedArray : public FreeListConfig  {
-  // G1SegmentedArrayAllocOptions provides parameters for allocation segment
-  // sizing and expansion.
-  const G1SegmentedArrayAllocOptions* _alloc_options;
-
-  G1SegmentedArraySegment* volatile _first;       // The (start of the) list of all segments.
-  G1SegmentedArraySegment* _last;                 // The last segment of the list of all segments.
-  volatile uint _num_segments;                    // Number of assigned segments to this allocator.
-  volatile size_t _mem_size;                      // Memory used by all segments.
-
-  G1SegmentedArrayFreeList* _free_segment_list;   // The global free segment list to preferentially
-                                                  // get new segments from.
-
-  volatile uint _num_total_slots; // Number of slots available in all segments (allocated + not yet used).
-  volatile uint _num_allocated_slots; // Number of total slots allocated ever (including free and pending).
-
-private:
-  inline G1SegmentedArraySegment* create_new_segment(G1SegmentedArraySegment* const prev);
-
-  DEBUG_ONLY(uint calculate_length() const;)
-
-public:
-  const G1SegmentedArraySegment* first_array_segment() const { return Atomic::load(&_first); }
-
-  uint num_total_slots() const { return Atomic::load(&_num_total_slots); }
-  uint num_allocated_slots() const {
-    uint allocated = Atomic::load(&_num_allocated_slots);
-    assert(calculate_length() == allocated, "Must be");
-    return allocated;
-  }
-
-  uint slot_size() const;
-
-  G1SegmentedArray(const G1SegmentedArrayAllocOptions* alloc_options,
-                   G1SegmentedArrayFreeList* free_segment_list);
-  ~G1SegmentedArray();
-
-  // Deallocate all segments to the free segment list and reset this allocator. Must
-  // be called in a globally synchronized area.
-  void drop_all();
-
-  inline void* allocate() override;
-
-  // We do not deallocate individual slots
-  inline void deallocate(void* node) override { ShouldNotReachHere(); }
-
-  uint num_segments() const;
-
-  template<typename SegmentClosure>
-  void iterate_segments(SegmentClosure& closure) const;
 };
 
 #endif //SHARE_GC_G1_G1SEGMENTEDARRAY_HPP

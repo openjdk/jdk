@@ -30,7 +30,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
-inline void* G1SegmentedArraySegment::get_new_slot() {
+inline void* G1MonotonicArena::Segment::allocate_slot() {
   if (_next_allocate >= _num_slots) {
     return nullptr;
   }
@@ -42,10 +42,10 @@ inline void* G1SegmentedArraySegment::get_new_slot() {
   return r;
 }
 
-inline G1SegmentedArraySegment* G1SegmentedArrayFreeList::get() {
+inline G1MonotonicArena::Segment* G1MonotonicArena::SegmentFreeList::get() {
   GlobalCounter::CriticalSection cs(Thread::current());
 
-  G1SegmentedArraySegment* result = _list.pop();
+  Segment* result = _list.pop();
   if (result != nullptr) {
     Atomic::dec(&_num_segments, memory_order_relaxed);
     Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
