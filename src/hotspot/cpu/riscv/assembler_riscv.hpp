@@ -1842,6 +1842,27 @@ public:
     }
   };
 
+public:
+  // Emit a relocation.
+  void relocate(RelocationHolder const& rspec, int format = 0) {
+    AbstractAssembler::relocate(rspec, format);
+  }
+  void relocate(relocInfo::relocType rtype, int format = 0) {
+    AbstractAssembler::relocate(rtype, format);
+  }
+  template <typename Callback>
+  void relocate(RelocationHolder const& rspec, Callback emit_insts, int format = 0) {
+    AbstractAssembler::relocate(rspec, format);
+    IncompressibleRegion ir(this);  // relocations
+    emit_insts();
+  }
+  template <typename Callback>
+  void relocate(relocInfo::relocType rtype, Callback emit_insts, int format = 0) {
+    AbstractAssembler::relocate(rtype, format);
+    IncompressibleRegion ir(this);  // relocations
+    emit_insts();
+  }
+
   // patch a 16-bit instruction.
   static void c_patch(address a, unsigned msb, unsigned lsb, uint16_t val) {
     assert_cond(a != NULL);
@@ -2723,7 +2744,7 @@ public:
     return uabs(target - branch) < branch_range;
   }
 
-  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(false) {}
+  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {}
 
   virtual ~Assembler() {}
 };
