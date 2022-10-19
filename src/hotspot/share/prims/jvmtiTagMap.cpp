@@ -345,6 +345,7 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
 
+  _hashmap->add_update_remove(o, tag);
   // see if the object is already tagged
   JvmtiTagMapTable* hashmap = _hashmap;
   jlong found_tag  = hashmap->find(o);
