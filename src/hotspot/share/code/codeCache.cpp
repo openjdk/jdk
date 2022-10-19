@@ -990,7 +990,7 @@ void CodeCache::flush_unlinked_nmethods() {
   if (!CompileBroker::should_compile_new_jobs() && freed_memory != 0) {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
     log_info(codecache)("Restarting compiler");
-    EventJitRestart event;
+    EventJITRestart event;
     event.set_freedMemory(freed_memory);
     event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
     event.commit();

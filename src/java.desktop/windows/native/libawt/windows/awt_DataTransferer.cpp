@@ -211,7 +211,7 @@ IdleFunc() {
      * If IdleFunc is a noop, the secondary message pump occasionally occupies
      * all processor time and causes drag freezes. GetQueueStatus is needed to
      * mark all messages that are currently in the queue as old, otherwise
-     * WaitMessage will return immediatelly as we selectively get messages from
+     * WaitMessage will return immediately as we selectively get messages from
      * the queue.
      */
     ::WaitMessage();
@@ -247,7 +247,7 @@ Java_sun_awt_windows_WDataTransferer_dragQueryFile
     TRY;
 
     /*
-     * Fix for the BugTraq ID 4327064 - inter-jvm DnD crashes the droping jvm.
+     * Fix for the BugTraq ID 4327064 - inter-jvm DnD crashes the dropping jvm.
      * On Win9X DragQueryFile() doesn't accept a pointer to the local help as the first
      * argument, so we should dump the bits into global memory.
      */
@@ -418,7 +418,7 @@ Java_sun_awt_windows_WDataTransferer_platformImageBytesToImageData(
                     break;
                 default:
                     // The header is probably corrupted.
-                    // Fail immediatelly to avoid memory access violation.
+                    // Fail immediately to avoid memory access violation.
                     free(bBytes);
                     ::DeleteDC(hdc);
                     return NULL;

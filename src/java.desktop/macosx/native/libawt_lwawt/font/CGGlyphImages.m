@@ -404,7 +404,7 @@ CGGI_GetRenderingMode(const AWTStrike *strike)
 }
 
 
-#pragma mark --- Canvas Managment ---
+#pragma mark --- Canvas Management ---
 
 /*
  * Creates a new canvas of a fixed size, and initializes the CGContext as
@@ -728,7 +728,7 @@ CGGI_CreateImageForUnicode
 }
 
 
-#pragma mark --- GlyphInfo Filling and Canvas Managment ---
+#pragma mark --- GlyphInfo Filling and Canvas Management ---
 
 /*
  * Sets all the per-run properties for the canvas, and then iterates through
@@ -837,7 +837,7 @@ CGGI_FillImagesForGlyphs(jlong *glyphInfos, const AWTStrike *strike,
  *
  * Creates a GlyphInfo struct with a malloc that also encapsulates the
  * image the struct points to.  This is done to meet memory layout
- * expectations in the Sun text rasterizer memory managment code.
+ * expectations in the Sun text rasterizer memory management code.
  * The image immediately follows the struct physically in memory.
  */
 static inline void

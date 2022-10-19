@@ -32,6 +32,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -1733,7 +1734,7 @@ int MacroAssembler::load_signed_byte(Register dst, Address src) {
   return off;
 }
 
-void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2) {
+void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed) {
   switch (size_in_bytes) {
     case  8:  ld(dst, src); break;
     case  4:  is_signed ? lw(dst, src) : lwu(dst, src); break;
@@ -1743,7 +1744,7 @@ void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_
   }
 }
 
-void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2) {
+void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes) {
   switch (size_in_bytes) {
     case  8:  sd(src, dst); break;
     case  4:  sw(src, dst); break;
@@ -2093,15 +2094,15 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
-                                     Address dst, Register src,
+                                     Address dst, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
 }
 
@@ -2268,9 +2269,9 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
   verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
                                     Register tmp2, Register tmp3, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, val, tmp1, tmp2, tmp3);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
