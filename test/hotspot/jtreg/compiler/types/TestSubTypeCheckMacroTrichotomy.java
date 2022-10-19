@@ -30,7 +30,9 @@
  * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:-BackgroundCompilation TestSubTypeCheckMacroTrichotomy
- * @run main/othervm -XX:-BackgroundCompilation -XX:+StressReflectiveCode -XX:+ExpandSubTypeCheckAtParseTime
+ * @run main/othervm -XX:-BackgroundCompilation
+ *     -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
+ *     -XX:+UnlockDiagnosticVMOptions -XX:+ExpandSubTypeCheckAtParseTime
  *     -XX:-TieredCompilation -XX:CompileThreshold=100 TestSubTypeCheckMacroTrichotomy
  *
  */
