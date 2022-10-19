@@ -882,9 +882,8 @@ unsigned int FileMapInfo::longest_common_app_classpath_prefix_len(int num_paths,
   return 0;
 }
 
-bool FileMapInfo::check_paths_ignoring_common_prefix(int shared_path_start_idx, int num_paths,
-                                                     GrowableArray<const char*>* rp_array,
-                                                     unsigned int dumptime_prefix_len, unsigned int runtime_prefix_len) {
+bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, GrowableArray<const char*>* rp_array,
+                              unsigned int dumptime_prefix_len, unsigned int runtime_prefix_len) {
   int i = 0;
   int j = shared_path_start_idx;
   while (i < num_paths) {
@@ -896,33 +895,14 @@ bool FileMapInfo::check_paths_ignoring_common_prefix(int shared_path_start_idx, 
     assert(strlen(shared_path(j)->name()) > (size_t)dumptime_prefix_len, "sanity");
     const char* dumptime_path = shared_path(j)->name() + dumptime_prefix_len;
     assert(strlen(rp_array->at(i)) > (size_t)runtime_prefix_len, "sanity");
-    const char* runtime_path = rp_array->at(i)  + runtime_prefix_len;
-    if (strcmp(dumptime_path, runtime_path) != 0) {
+    const char* runtime_path = runtime_path = rp_array->at(i)  + runtime_prefix_len;
+    if (!os::same_files(dumptime_path, runtime_path)) {
       return true;
     }
     i++;
     j++;
   }
   return false;
-}
-
-bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, GrowableArray<const char*>* rp_array) {
-  int i = 0;
-  int j = shared_path_start_idx;
-  bool mismatch = false;
-  while (i < num_paths && !mismatch) {
-    while (shared_path(j)->from_class_path_attr()) {
-      // shared_path(j) was expanded from the JAR file attribute "Class-Path:"
-      // during dump time. It's not included in the -classpath VM argument.
-      j++;
-    }
-    if (!os::same_files(shared_path(j)->name(), rp_array->at(i))) {
-      mismatch = true;
-    }
-    i++;
-    j++;
-  }
-  return mismatch;
 }
 
 bool FileMapInfo::validate_boot_class_paths() {
@@ -976,7 +956,7 @@ bool FileMapInfo::validate_boot_class_paths() {
         // check the full runtime boot path, must match with dump time
         num = rp_len;
       }
-      mismatch = check_paths(1, num, rp_array);
+      mismatch = check_paths(1, num, rp_array, 0, 0);
     } else {
       // create_path_array() ignores non-existing paths. Although the dump time and runtime boot classpath lengths
       // are the same initially, after the call to create_path_array(), the runtime boot classpath length could become
@@ -1025,12 +1005,17 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
     // run 2: -cp x.jar:NE4:b.jar      -> x.jar:b.jar -> mismatched
 
     int j = header()->app_class_paths_start_index();
-    mismatch = check_paths(j, shared_app_paths_len, rp_array);
+    mismatch = check_paths(j, shared_app_paths_len, rp_array, 0, 0);
     if (mismatch) {
+      // To facilitate app deployment, we allow the JAR files to be moved *together* to
+      // a different location, as long as they are still stored under the same directory
+      // structure. E.g., the following is OK.
+      //     java -Xshare:dump -cp /a/Foo.jar:/a/b/Bar.jar  ...
+      //     java -Xshare:auto -cp /x/y/Foo.jar:/x/y/b/Bar.jar  ...
       unsigned int dumptime_prefix_len = header()->common_app_classpath_prefix_size();
       unsigned int runtime_prefix_len = longest_common_app_classpath_prefix_len(shared_app_paths_len, rp_array);
-      mismatch = check_paths_ignoring_common_prefix(j, shared_app_paths_len, rp_array,
-                                                    dumptime_prefix_len, runtime_prefix_len);
+      mismatch = check_paths(j, shared_app_paths_len, rp_array,
+                             dumptime_prefix_len, runtime_prefix_len);
       if (mismatch) {
         return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
       }
@@ -1061,7 +1046,7 @@ bool FileMapInfo::check_module_paths() {
   }
   ResourceMark rm;
   GrowableArray<const char*>* rp_array = create_path_array(rp);
-  return check_paths(header()->app_module_paths_start_index(), num_paths, rp_array);
+  return check_paths(header()->app_module_paths_start_index(), num_paths, rp_array, 0, 0);
 }
 
 bool FileMapInfo::validate_shared_path_table() {

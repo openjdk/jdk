@@ -564,12 +564,10 @@ public:
   unsigned int longest_common_app_classpath_prefix_len(int num_paths,
                                                        GrowableArray<const char*>* rp_array)
                                                        NOT_CDS_RETURN_(0);
-  bool  check_paths_ignoring_common_prefix(int shared_path_start_idx, int num_paths,
-                                           GrowableArray<const char*>* rp_array,
-                                           unsigned int dumptime_prefix_len, unsigned int runtime_prefix_len)
-                                           NOT_CDS_RETURN_(false);
   bool  check_paths(int shared_path_start_idx, int num_paths,
-                    GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);
+                    GrowableArray<const char*>* rp_array,
+                    unsigned int dumptime_prefix_len,
+                    unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_regions(int first, int max, bool is_open_archive,
