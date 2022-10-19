@@ -174,7 +174,9 @@ public class DefaultAgentFilterTest {
     private static void testDefaultAgent(String propertyFile) throws Exception {
         for (int i = 1; i <= FREE_PORT_ATTEMPTS; i++) {
             int port = Utils.getFreePort();
-            System.out.println("Attempting testDefaultAgent(" + propertyFile + ") with port: " + port);
+            System.out.println("Attempting testDefaultAgent(" +
+                               (propertyFile != null ? propertyFile : "no properties")
+                               + ") with port: " + port);
             try {
                 testDefaultAgent(propertyFile, port);
                 break;  // return succesfully
@@ -188,19 +190,19 @@ public class DefaultAgentFilterTest {
     }
 
     private static void testDefaultAgent(String propertyFile, int port) throws Exception {
-        String propFile = System.getProperty("test.src") + File.separator + propertyFile;
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
                 "-cp",
                 System.getProperty("test.class.path"),
                 "-XX:+UsePerfData"
         ));
-        String[] args = new String[]{
-            "-Dcom.sun.management.jmxremote.port=" + port,
-            "-Dcom.sun.management.jmxremote.authenticate=false",
-            "-Dcom.sun.management.jmxremote.ssl=false",
-            "-Dcom.sun.management.config.file=" + propFile
-        };
-        pbArgs.addAll(Arrays.asList(args));
+        // JMX config arguments, using propertyFile if non-null:
+        pbArgs.add("-Dcom.sun.management.jmxremote.port=" + port);
+        pbArgs.add("-Dcom.sun.management.jmxremote.authenticate=false");
+        pbArgs.add("-Dcom.sun.management.jmxremote.ssl=false");
+        if (propertyFile != null) {
+            String propFile = System.getProperty("test.src") + File.separator + propertyFile;
+            pbArgs.add("-Dcom.sun.management.config.file=" + propFile);
+        }
         pbArgs.add(TEST_APP_NAME);
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -281,6 +283,19 @@ public class DefaultAgentFilterTest {
             System.out.println(ex);
             System.out.println("----\tTest FAILED !!");
             throw ex;
+        }
+        try {
+            // Use default filter, should fail with: java.io.InvalidClassException: filter status: REJECTED
+            testDefaultAgent(null);
+            throw new RuntimeException("---" + DefaultAgentFilterTest.class.getName() + " - No exception reported");
+        } catch (Exception ex) {
+            System.out.println(ex);
+            if (ex instanceof InvalidClassException) {
+                System.out.println("----\tTest PASSED: expected InvalidClassException received.");
+            } else {
+                System.out.println("----\tTest FAILED: unexpected Exception");
+                throw ex;
+            }
         }
         System.out.println("---" + DefaultAgentFilterTest.class.getName() + "-main: finished ...");
     }
