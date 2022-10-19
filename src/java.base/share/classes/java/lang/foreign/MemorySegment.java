@@ -1142,6 +1142,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @see MemorySession#allocate(MemoryLayout)
      */
     static MemorySegment allocateNative(MemoryLayout layout, MemorySession session) {
+        Objects.requireNonNull(session);
         Objects.requireNonNull(layout);
         return session.allocate(layout.byteSize(), layout.byteAlignment());
     }
@@ -1178,8 +1179,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @see MemorySession#allocate(long)
      */
     static MemorySegment allocateNative(long byteSize, MemorySession session) {
-        Utils.checkAllocationSizeAndAlign(byteSize, 1L);
-        return session.allocate(byteSize, 1L);
+        return allocateNative(byteSize, 1, session);
     }
 
     /**
@@ -1217,6 +1217,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @see MemorySession#allocate(long, long)
      */
     static MemorySegment allocateNative(long byteSize, long byteAlignment, MemorySession session) {
+        Objects.requireNonNull(session);
         Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         return session.allocate(byteSize, byteAlignment);
     }
