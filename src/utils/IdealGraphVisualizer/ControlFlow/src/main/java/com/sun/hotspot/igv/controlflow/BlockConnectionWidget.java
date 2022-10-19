@@ -8,7 +8,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,9 +24,9 @@
 package com.sun.hotspot.igv.controlflow;
 
 import com.sun.hotspot.igv.data.InputBlockEdge;
+import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
-import com.sun.hotspot.igv.layout.Cluster;
 import java.awt.BasicStroke;
 import java.awt.Point;
 import java.awt.Stroke;
@@ -45,28 +45,22 @@ public class BlockConnectionWidget extends ConnectionWidget implements Link {
     private static final Stroke DASHED_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5, 5}, 0);
     private static final Stroke BOLD_DASHED_STROKE = new BasicStroke(2.5f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5, 5}, 0);
 
-    private BlockWidget from;
-    private BlockWidget to;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final BlockWidget from;
+    private final BlockWidget to;
+    private final Port inputSlot;
+    private final Port outputSlot;
     private List<Point> points;
-    private InputBlockEdge edge;
     private boolean isDashed = false;
     private boolean isBold = false;
 
     public BlockConnectionWidget(ControlFlowScene scene, InputBlockEdge edge) {
         super(scene);
 
-        this.edge = edge;
         this.from = (BlockWidget) scene.findWidget(edge.getFrom());
         this.to = (BlockWidget) scene.findWidget(edge.getTo());
         inputSlot = to.getInputSlot();
         outputSlot = from.getOutputSlot();
-        points = new ArrayList<Point>();
-    }
-
-    public InputBlockEdge getEdge() {
-        return edge;
+        points = new ArrayList<>();
     }
 
     public Port getTo() {
