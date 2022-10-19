@@ -1,21 +1,23 @@
 % Testing the JDK
 
-## Using "make test" (the run-test framework)
+## Overview
 
-This new way of running tests is developer-centric. It assumes that you have
-built a JDK locally and want to test it. Running common test targets is simple,
-and more complex ad-hoc combination of tests is possible. The user interface is
-forgiving, and clearly report errors it cannot resolve.
+The bulk of JDK tests use [jtreg](https://openjdk.org/jtreg/), a regression test framework and test runner
+built for the JDK's specific needs. Other test frameworks are also used. The different test frameworks can be executed directly, but
+there is also a set of make targets intended to simplify the interface, and figure
+out how to run your tests for you.
 
-The main target `test` uses the jdk-image as the tested product. There is
-also an alternate target `exploded-test` that uses the exploded image
-instead. Not all tests will run successfully on the exploded image, but using
-this target can greatly improve rebuild times for certain workflows.
+## Running tests locally with `make test`
 
-Previously, `make test` was used to invoke an old system for running tests, and
-`make run-test` was used for the new test framework. For backward compatibility
-with scripts and muscle memory, `run-test` (and variants like
-`exploded-run-test` or `run-test-tier1`) are kept as aliases.
+This is the easiest way to get started. Assuming you've built the JDK locally, execute:
+
+    $ make test
+
+This will run a default set of tests against the JDK, and present you with the results. `make test` is part of a family
+of test-related make targets which simplify running tests, because they invoke the 
+various test frameworks for you. The "make test framework" is simple to start with, 
+but more complex ad-hoc combination of tests is also possible. You can always invoke
+the test frameworks directly if you want even more control. 
 
 Some example command-lines:
 
@@ -27,6 +29,16 @@ Some example command-lines:
     $ make test TEST="jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java"
     $ make test TEST="micro:java.lang.reflect" MICRO="FORK=1;WARMUP_ITER=2"
     $ make exploded-test TEST=tier2
+
+"tier1" and "tier2" refer to tiered testing, see further down. "TEST" is a test selection argument which the make test framework will use to try to find the tests you want. It iterates over the available test frameworks, and if the test isn't present in one, it tries the next one. The main target `test` uses the jdk-image as the tested product. There is
+also an alternate target `exploded-test` that uses the exploded image
+instead. Not all tests will run successfully on the exploded image, but using
+this target can greatly improve rebuild times for certain workflows.
+
+Previously, `make test` was used to invoke an old system for running tests, and
+`make run-test` was used for the new test framework. For backward compatibility
+with scripts and muscle memory, `run-test` and variants like
+`exploded-run-test` or `run-test-tier1` are kept as aliases.
 
 ### Configuration
 
