@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,13 @@
 
 #define IS_SAFE_SIZE_T(x) ((x) >= 0 && (unsigned long long)(x) <= SIZE_MAX)
 
+#define IS_MUL_OVERFLOW(m, n) \
+        ((m) != 0 && (n) != 0 && (((size_t)((m)*(n))) != (((size_t)(m)) * ((size_t)(n)))))
+
 #define IS_SAFE_SIZE_MUL(m, n) \
-    (IS_SAFE_SIZE_T(m) && IS_SAFE_SIZE_T(n) && ((m) == 0 || (n) == 0 || (size_t)(n) <= (SIZE_MAX / (size_t)(m))))
+    (IS_SAFE_SIZE_T(m) && IS_SAFE_SIZE_T(n) && \
+     ((m) == 0 || (n) == 0 || (size_t)(n) <= (SIZE_MAX / (size_t)(m))) && \
+     !IS_MUL_OVERFLOW(m, n))
 
 #define IS_SAFE_SIZE_ADD(a, b) \
     (IS_SAFE_SIZE_T(a) && IS_SAFE_SIZE_T(b) && (size_t)(b) <= (SIZE_MAX - (size_t)(a)))
