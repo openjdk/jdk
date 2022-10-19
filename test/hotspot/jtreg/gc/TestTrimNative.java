@@ -263,7 +263,7 @@ public class TestTrimNative {
     // We need small-grained allocations to make sure they actually increase RSS (all touched) and to see the
     // glibc-retaining-memory effect.
     static final int szAllocations = 16;
-    static final int totalAllocationsSize = 4 * 1024 * 1024;
+    static final int totalAllocationsSize = 16 * 1024 * 1024; // 16 MB total
     static final int numAllocations = totalAllocationsSize / szAllocations;
 
     static long[] ptrs = new long[numAllocations];
@@ -333,9 +333,9 @@ public class TestTrimNative {
             if (mat.matches()) {
                 long rss1 = Long.parseLong(mat.group(1)) * Unit.valueOf(mat.group(2)).size;
                 long rss2 = Long.parseLong(mat.group(3)) * Unit.valueOf(mat.group(4)).size;
+                System.out.println("Parsed Trim Line. rss1: " + rss1 + " rss2: " + rss2);
                 if (rss1 > rss2) {
                     rssReductionTotal += (rss1 - rss2);
-                    System.out.println("rss1: " + rss1 + " rss2 " + rss2);
                 }
                 numTrimsFound ++;
             }
@@ -348,8 +348,14 @@ public class TestTrimNative {
             throw new RuntimeException("We found fewer trim lines in UL log than expected (expected " + minExpected +
                     ", found " + numTrimsFound + ".");
         }
-        if (rssReductionTotal < (numAllocations * szAllocations)) {
-            throw new RuntimeException("We did not see the expected RSS reduction in the UL log.");
+        // This is very fuzzy. We malloced X, free'd X, trimmed, measured the combined effect of all reductions.
+        // This does not take into effect mallocs or frees that may happen concurrently. But we expect to see *some*
+        // reduction somewhere. Test with a fudge factor.
+        float fudge = 0.8f;
+        long expectedMinimalReduction = (long) (totalAllocationsSize * fudge);
+        if (rssReductionTotal < expectedMinimalReduction) {
+            throw new RuntimeException("We did not see the expected RSS reduction in the UL log. Expected (with fudge)" +
+                                       " to see at least a combined reduction of " + expectedMinimalReduction + ".");
         }
     }
 
