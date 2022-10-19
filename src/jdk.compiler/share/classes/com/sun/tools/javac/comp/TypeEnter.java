@@ -341,8 +341,10 @@ public class TypeEnter implements Completer {
         private void staticImports(JCCompilationUnit tree, Env<AttrContext> env, ImportFilter staticImportFilter) {
              if (preview.isEnabled() && preview.isPreview(Feature.STRING_TEMPLATES)) {
                 Lint prevLint = chk.setLint(lint.suppress(LintCategory.DEPRECATION, LintCategory.REMOVAL, LintCategory.PREVIEW));
+                boolean prevPreviewCheck = chk.disablePreviewCheck;
 
                 try {
+                    chk.disablePreviewCheck = true;
                     String autoImports = """
                             import static java.lang.template.StringTemplate.STR;
                             """;
@@ -354,6 +356,7 @@ public class TypeEnter implements Completer {
                     }
                 } finally {
                     chk.setLint(prevLint);
+                    chk.disablePreviewCheck = prevPreviewCheck;
                 }
             }
         }

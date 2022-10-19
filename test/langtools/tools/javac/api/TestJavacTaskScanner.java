@@ -103,7 +103,7 @@ public class TestJavacTaskScanner extends ToolTester {
 
         check(numTokens, "#Tokens", 1054);
         check(numParseTypeElements, "#parseTypeElements", 158);
-        check(numAllMembers, "#allMembers", 52);
+        check(numAllMembers, "#allMembers", 58);
     }
 
     void check(int value, String name, int expected) {

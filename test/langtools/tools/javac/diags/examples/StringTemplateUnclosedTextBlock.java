@@ -27,7 +27,8 @@
  // key: compiler.err.unclosed.text.block.template
  // key: compiler.err.not.stmt
  // key: compiler.err.expected
- // key: compiler.err.unclosed.str.lit
+ // key: compiler.err.illegal.char
+ // key: compiler.err.premature.eof
  // options: --enable-preview -source 20
 
 import java.lang.template.*;

@@ -489,6 +489,7 @@ public class JavaTokenizer extends UnicodeReader {
     private void scanString(int pos) {
         // Track the end of first line for error recovery.
         int firstEOLN = NOT_FOUND;
+        tk = TokenKind.STRINGLITERAL;
 
         // Check for text block delimiter.
         isTextBlock = accept("\"\"\"");
@@ -511,8 +512,9 @@ public class JavaTokenizer extends UnicodeReader {
             // While characters are available.
             while (isAvailable()) {
                 if (accept("\"\"\"")) {
-                    tk = isStringTemplate ? Tokens.TokenKind.STRINGFRAGMENT
-                                          : Tokens.TokenKind.STRINGLITERAL;
+                    if (isStringTemplate && tk == TokenKind.STRINGLITERAL) {
+                        tk = TokenKind.STRINGFRAGMENT;
+                    }
 
                     return;
                 }
@@ -538,8 +540,9 @@ public class JavaTokenizer extends UnicodeReader {
             // While characters are available.
             while (isAvailable()) {
                 if (accept('\"')) {
-                    tk = isStringTemplate ? Tokens.TokenKind.STRINGFRAGMENT
-                                          : Tokens.TokenKind.STRINGLITERAL;
+                    if (isStringTemplate && tk == TokenKind.STRINGLITERAL) {
+                        tk = TokenKind.STRINGFRAGMENT;
+                    }
                     return;
                 }
 
@@ -1101,7 +1104,6 @@ public class JavaTokenizer extends UnicodeReader {
                         }
                     }
                     break loop;
-                case '\\':
                 case '\"': // (Spec. 3.10)
                     scanString(pos);
                     break loop;
