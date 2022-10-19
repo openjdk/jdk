@@ -174,6 +174,15 @@ public class TestVectorConditionalMove {
         }
     }
 
+    @Test
+    @IR(failOn = {IRNode.CMOVEVD})
+    private static void testCMoveVDUnsupported() {
+        int seed = 1001;
+        for (int i = 0; i < doublec.length; i++) {
+            doublec[i] = (i % 2 == 0) ? seed + i : seed - i;
+        }
+    }
+
     @Run(test = {"testCMoveVFGT", "testCMoveVFLT","testCMoveVDLE", "testCMoveVDGE", "testCMoveVFEQ", "testCMoveVDNE",
                  "testCMoveVFGTSwap", "testCMoveVFLTSwap","testCMoveVDLESwap", "testCMoveVDGESwap"})
     private void testCMove_runner() {
