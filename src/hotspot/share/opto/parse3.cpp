@@ -225,21 +225,16 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     }
   }
 
-  // if val is invalid and current path ijn't dead
+  // if val is a valid object and the current path isn't dead
   if (DoPartialEscapeAnalysis && is_obj && !val->is_top() && !stopped()) {
     // val is escaped if obj is escaped or is not trackable.
     PEAState& state = block()->state();
-    AllocateNode* lhs_alloc = state.is_alias(val);
-    AllocateNode* rhs_alloc;
-    if (lhs_alloc != nullptr && state.get_object_state(lhs_alloc)->is_virtual()
-        // put_static_field || unknown object || obj is not virtual
-        && (!is_field || (rhs_alloc=state.is_alias(obj)) == nullptr || !state.get_object_state(rhs_alloc)->is_virtual())) {
-#ifndef PRODUCT
-        if (TraceOptoParse) {
-          tty->print_cr("materialize: %d %s", lhs_alloc->_idx, lhs_alloc->Name());
-        }
-#endif /*PRODUCT*/
-        EscapedState* escaped = state.materialize(this, lhs_alloc, control());
+    AllocateNode* src_alloc = state.is_alias(val);
+    AllocateNode* dst_alloc;
+    if (src_alloc != nullptr && state.get_object_state(src_alloc)->is_virtual()
+        // put_static_field or unknown dst or dst has materialized.
+        && (!is_field || !(dst_alloc=state.is_alias(obj)) || !state.get_object_state(dst_alloc)->is_virtual())) {
+        EscapedState* escaped = state.materialize(this, src_alloc, control());
         val = escaped->get_materialized_value();
     }
   }

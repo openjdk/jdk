@@ -376,6 +376,13 @@ EscapedState* PEAState::materialize(GraphKit* parser, AllocateNode* alloc, Node*
     }
   });
 
+#ifndef PRODUCT
+  if (Verbose) {
+    tty->print("PEA materializes a virtual object: ");
+    alloc->dump();
+  }
+#endif
+
   JVMState* jvms = parser->sync_jvms();
   SafePointNode* map = jvms->map();
   parser->kill_dead_locals();

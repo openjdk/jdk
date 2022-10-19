@@ -488,8 +488,8 @@
   notproduct(bool, PrintEscapeAnalysis, false,                              \
           "Print the results of escape analysis")                           \
                                                                             \
-  product(bool, DoPartialEscapeAnalysis, false,                             \
-          "Perform partialescape analysis")                                 \
+  product(bool, DoPartialEscapeAnalysis, false, EXPERIMENTAL,               \
+          "Perform partial escape analysis")                                \
                                                                             \
   product(bool, EliminateAllocations, true,                                 \
           "Use escape analysis to eliminate allocations")                   \
