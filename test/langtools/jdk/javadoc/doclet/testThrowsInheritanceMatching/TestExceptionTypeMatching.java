@@ -203,15 +203,15 @@ public class TestExceptionTypeMatching extends JavadocTester {
 
                 public class Parent {
 
-                    /** @throws X sometimes */
-                    public <X extends Throwable> void m() throws X { }
+                    /** @throws T sometimes */
+                    public <T extends RuntimeException> void m() { }
                 }
                 """, """
                 package x;
 
                 public class Child extends Parent {
 
-                    /** @throws X {@inheritDoc} */
+                    /** @throws T {@inheritDoc} */
                     @Override
                     public void m() { }
                 }
@@ -219,16 +219,14 @@ public class TestExceptionTypeMatching extends JavadocTester {
         // turn off DocLint so that it does not interfere with diagnostics
         // by raising an error for the condition we are testing:
         //
-        // Child.java:5: error: invalid use of @throws
-        //    /** @throws X {@inheritDoc} */
+        // Child.java:5: error: reference not found
+        //    /** @throws T {@inheritDoc} */
         //        ^
         javadoc("-d", base.resolve("out").toString(), "-sourcepath", src.toString(), "x", "-Xdoclint:none");
         checkExit(Exit.OK);
-        // It just happens so that X is resolved to a package.
-        // This should probably be fixed eventually. // TODO: add a link to the JBS issue
         checkOutput(Output.OUT, true, """
-                Child.java:5: warning: type found is not of exception type: X (MODULE <unnamed module> PACKAGE X)
-                    /** @throws X {@inheritDoc} */
+                Child.java:5: warning: cannot find exception type by name
+                    /** @throws T {@inheritDoc} */
                                 ^
                 """);
     }
