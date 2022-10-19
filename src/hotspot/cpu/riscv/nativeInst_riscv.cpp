@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/ostream.hpp"

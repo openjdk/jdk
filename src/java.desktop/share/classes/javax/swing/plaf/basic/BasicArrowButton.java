@@ -216,7 +216,7 @@ public class BasicArrowButton extends JButton implements SwingConstants
          * {@code BasicArrowButton}s are used as a child component of
          * composite components such as {@code JScrollBar} and
          * {@code JComboBox}. Since the composite component typically gets the
-         * focus, this method is overriden to return {@code false}.
+         * focus, this method is overridden to return {@code false}.
          *
          * @return {@code false}
          */
