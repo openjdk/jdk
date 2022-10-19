@@ -690,7 +690,7 @@ final class Helpers implements MarlinConst {
         }
 
         private void ensureSpace(final int n) {
-            // use substraction to avoid integer overflow:
+            // use subtraction to avoid integer overflow:
             if (curves.length - end < n) {
                 if (DO_STATS) {
                     stat_array_polystack_curves.add(end + n);
