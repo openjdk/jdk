@@ -215,7 +215,11 @@ class CMoveKit {
   Node_List* pack(Node* key)      const  { return (Node_List*)_dict->operator[](_2p(key)); }
   Node* is_Bool_candidate(Node* nd) const; // if it is the right candidate return corresponding CMove* ,
   Node* is_CmpD_candidate(Node* nd) const; // otherwise return NULL
-  Node_List* make_cmovevd_pack(Node_List* cmovd_pk);
+  // If the input pack is a cmove candidate, return true, otherwise return false.
+  bool is_cmove_pack_candidate(Node_List* cmove_pk);
+  // Determine if the current cmove pack can be vectorized.
+  bool can_merge_cmove_pack(Node_List* cmove_pk);
+  void make_cmove_pack(Node_List* cmovd_pk);
   bool test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk);
 };//class CMoveKit
 
@@ -536,6 +540,8 @@ class SuperWord : public ResourceObj {
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
+  // Clear the unused cmove pack and its related packs from superword candidate packset.
+  void remove_cmove_and_related_packs(Node_List* cmove_pk);
   // Merge CMoveD into new vector-nodes
   void merge_packs_to_cmovd();
   // Adjust the memory graph for the packed operations
@@ -584,6 +590,8 @@ class SuperWord : public ResourceObj {
   Node_List* in_pack(Node* s, Node_List* p);
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
+  // Remove the pack in the packset
+  void remove_pack(Node_List* p);
   // Return the node executed first in pack p.
   Node* executed_first(Node_List* p);
   // Return the node executed last in pack p.

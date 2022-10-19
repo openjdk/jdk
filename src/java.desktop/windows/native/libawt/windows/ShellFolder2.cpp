@@ -1060,7 +1060,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             // limit iconSize to MAX_ICON_SIZE, so that the colorBits and maskBits
             // arrays are big enough.
             // (logic: rather show bad icons than overrun the array size)
-            iconSize = iconSize > MAX_ICON_SIZE ? MAX_ICON_SIZE : iconSize;
+            iconSize = (iconSize <= 0 || iconSize > MAX_ICON_SIZE) ? MAX_ICON_SIZE : iconSize;
 
             // Set up BITMAPINFO
             BITMAPINFO bmi;

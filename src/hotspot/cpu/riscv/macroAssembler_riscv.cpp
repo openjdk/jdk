@@ -32,6 +32,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -1203,8 +1204,6 @@ int MacroAssembler::bitset_to_regs(unsigned int bitset, unsigned char* regs) {
 // Return the number of words pushed
 int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
   DEBUG_ONLY(int words_pushed = 0;)
-  CompressibleRegion cr(this);
-
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
   // reserve one slot to align for odd count
@@ -1225,8 +1224,6 @@ int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
 
 int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
   DEBUG_ONLY(int words_popped = 0;)
-  CompressibleRegion cr(this);
-
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
   // reserve one slot to align for odd count
@@ -1248,7 +1245,6 @@ int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
 // Push floating-point registers in the bitset supplied.
 // Return the number of words pushed
 int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
-  CompressibleRegion cr(this);
   DEBUG_ONLY(int words_pushed = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -1269,7 +1265,6 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
 }
 
 int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
-  CompressibleRegion cr(this);
   DEBUG_ONLY(int words_popped = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -1293,7 +1288,6 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
 // Push vector registers in the bitset supplied.
 // Return the number of words pushed
 int MacroAssembler::push_v(unsigned int bitset, Register stack) {
-  CompressibleRegion cr(this);
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
@@ -1309,7 +1303,6 @@ int MacroAssembler::push_v(unsigned int bitset, Register stack) {
 }
 
 int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
-  CompressibleRegion cr(this);
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
@@ -1326,7 +1319,6 @@ int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
 #endif // COMPILER2
 
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
-  CompressibleRegion cr(this);
   // Push integer registers x7, x10-x17, x28-x31.
   push_reg(RegSet::of(x7) + RegSet::range(x10, x17) + RegSet::range(x28, x31) - exclude, sp);
 
@@ -1341,7 +1333,6 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
 }
 
 void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
-  CompressibleRegion cr(this);
   int offset = 0;
   for (int i = 0; i < 32; i++) {
     if (i <= f7->encoding() || i >= f28->encoding() || (i >= f10->encoding() && i <= f17->encoding())) {
@@ -1354,7 +1345,6 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes) {
-  CompressibleRegion cr(this);
   // integer registers, except zr(x0) & ra(x1) & sp(x2) & gp(x3) & tp(x4)
   push_reg(RegSet::range(x5, x31), sp);
 
@@ -1376,7 +1366,6 @@ void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes)
 }
 
 void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_bytes) {
-  CompressibleRegion cr(this);
   // vector registers
   if (restore_vectors) {
     vsetvli(t0, x0, Assembler::e64, Assembler::m8);
@@ -1745,7 +1734,7 @@ int MacroAssembler::load_signed_byte(Register dst, Address src) {
   return off;
 }
 
-void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2) {
+void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed) {
   switch (size_in_bytes) {
     case  8:  ld(dst, src); break;
     case  4:  is_signed ? lw(dst, src) : lwu(dst, src); break;
@@ -1755,7 +1744,7 @@ void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_
   }
 }
 
-void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2) {
+void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes) {
   switch (size_in_bytes) {
     case  8:  sd(src, dst); break;
     case  4:  sw(src, dst); break;
@@ -2105,15 +2094,15 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
-                                     Address dst, Register src,
+                                     Address dst, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
 }
 
@@ -2280,9 +2269,9 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
   verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
                                     Register tmp2, Register tmp3, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, val, tmp1, tmp2, tmp3);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,

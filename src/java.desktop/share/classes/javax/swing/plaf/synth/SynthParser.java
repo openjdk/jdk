@@ -124,8 +124,8 @@ class SynthParser extends DefaultHandler {
 
     /**
      * Indicates the depth of how many elements we've encountered but don't
-     * understand. This is used when forwarding to beans persistance to know
-     * when we hsould stop forwarding.
+     * understand. This is used when forwarding to beans persistence to know
+     * when we should stop forwarding.
      */
     private int _depth;
 
@@ -162,7 +162,7 @@ class SynthParser extends DefaultHandler {
     private String _inputMapID;
 
     /**
-     * Object references outside the scope of persistance.
+     * Object references outside the scope of persistence.
      */
     private Map<String,Object> _mapping;
 
@@ -281,14 +281,14 @@ class SynthParser extends DefaultHandler {
     }
 
     /**
-     * Returns true if we are forwarding to persistance.
+     * Returns true if we are forwarding to persistence.
      */
     private boolean isForwarding() {
         return (_depth > 0);
     }
 
     /**
-     * Handles beans persistance.
+     * Handles beans persistence.
      */
     private DocumentHandler getHandler() {
         if (_handler == null) {
@@ -664,7 +664,7 @@ class SynthParser extends DefaultHandler {
             }
         }
         if (color == null) {
-            throw new SAXException("color: you must specificy a value");
+            throw new SAXException("color: you must specify a value");
         }
         register(id, color);
         if (_stateInfo != null && _colorTypes.size() > 0) {
