@@ -630,8 +630,24 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", stub_name);
     address start = __ pc();
+    // B
     __ emit_data64(0x0706050403020100, relocInfo::none);
     __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
+    // H
+    __ emit_data64(0x0003000200010000, relocInfo::none);
+    __ emit_data64(0x0007000600050004, relocInfo::none);
+    // S
+    __ emit_data64(0x0000000100000000, relocInfo::none);
+    __ emit_data64(0x0000000300000002, relocInfo::none);
+    // D
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000001, relocInfo::none);
+    // S - FP
+    __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
+    __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+    // D - FP
+    __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
+    __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
     return start;
   }
 
@@ -7846,7 +7862,9 @@ class StubGenerator: public StubCodeGenerator {
                                                 SharedRuntime::
                                                 throw_NullPointerException_at_call));
 
-    StubRoutines::aarch64::_vector_iota_indices    = generate_iota_indices("iota_indices");
+    if (UseSVE == 0) {
+      StubRoutines::aarch64::_vector_iota_indices = generate_iota_indices("iota_indices");
+    }
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
