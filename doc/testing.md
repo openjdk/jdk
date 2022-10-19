@@ -14,10 +14,10 @@ This is the easiest way to get started. Assuming you've built the JDK locally, e
     $ make test
 
 This will run a default set of tests against the JDK, and present you with the results. `make test` is part of a family
-of test-related make targets which simplify running tests, because they invoke the 
-various test frameworks for you. The "make test framework" is simple to start with, 
+of test-related make targets which simplify running tests, because they invoke the
+various test frameworks for you. The "make test framework" is simple to start with,
 but more complex ad-hoc combination of tests is also possible. You can always invoke
-the test frameworks directly if you want even more control. 
+the test frameworks directly if you want even more control.
 
 Some example command-lines:
 
