@@ -1315,7 +1315,6 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
           fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
         }
         // Define result register and result operand
-        fprintf(fp, "        ra_->add_reference(root, inst%d);\n", inst_num);
         fprintf(fp, "        ra_->set_pair(root->_idx, ra_->get_reg_second(inst%d), ra_->get_reg_first(inst%d));\n", inst_num, inst_num);
         fprintf(fp, "        root->_opnds[0] = inst%d->_opnds[0]->clone(); // result\n", inst_num);
         fprintf(fp, "        // ----- Done with initial setup -----\n");
