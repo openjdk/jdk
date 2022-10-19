@@ -2864,9 +2864,12 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
-    // Save caller's sp, return_pc in frame large enough for vm call
+    int nbytes_volatile = (8 + 5) * BytesPerWord;
+
+    // VM-Call Prologue
     __ save_return_pc();
-    __ push_frame_abi160(0);
+    __ push_frame_abi160(nbytes_volatile);
+    __ save_volatile_registers(Z_SP, frame::z_abi_160_size, true, false);
 
     // Prep arg for VM call
     // Create PTR to (R14 - Barrier_Length)
@@ -2875,10 +2878,12 @@ class StubGenerator: public StubCodeGenerator {
     __ z_stg(Z_R1_scratch, _z_abi(carg_2), Z_R0, Z_SP); // SP[abi_carg2] <- R1
     __ z_la(Z_ARG1, _z_abi(carg_2), Z_R0, Z_SP);        // R2 <- SP + abi_carg2
 
-    // Call BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
+    // VM-Call: BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
+    __ z_ltr(Z_R0, Z_RET);
 
-    // Restore caller's sp & return_pc
+    // VM-Call Epilogue
+    __ restore_volatile_registers(Z_SP, frame::z_abi_160_size, true, false);
     __ pop_frame();
     __ restore_return_pc();
 
