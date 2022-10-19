@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 
-#include "gc/g1/g1SegmentedArrayFreePool.hpp"
-#include "gc/g1/g1SegmentedArray.inline.hpp"
+#include "gc/g1/g1MonotonicArena.inline.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"

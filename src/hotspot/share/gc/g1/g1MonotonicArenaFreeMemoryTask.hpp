@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
-#define SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
+#ifndef SHARE_GC_G1_G1MONOTONICARENAFREEMEMORYTASK_HPP
+#define SHARE_GC_G1_G1MONOTONICARENAFREEMEMORYTASK_HPP
 
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1SegmentedArrayFreePool.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "utilities/growableArray.hpp"
@@ -93,4 +93,4 @@ public:
                         G1MonotonicArenaMemoryStats* collection_set_candidate_stats);
 };
 
-#endif // SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
+#endif // SHARE_GC_G1_G1MONOTONICARENAFREEMEMORYTASK_HPP

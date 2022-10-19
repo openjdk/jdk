@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1SEGMENTEDARRAYFREEPOOL_HPP
-#define SHARE_GC_G1_G1SEGMENTEDARRAYFREEPOOL_HPP
+#ifndef SHARE_GC_G1_G1MONOTONICARENAFREEPOOL_HPP
+#define SHARE_GC_G1_G1MONOTONICARENAFREEPOOL_HPP
 
 #include "gc/g1/g1CardSet.hpp"
-#include "gc/g1/g1SegmentedArray.hpp"
+#include "gc/g1/g1MonotonicArena.hpp"
 #include "utilities/growableArray.hpp"
 
 // Statistics for a monotonic arena. Contains the number of segments and memory
@@ -126,4 +126,4 @@ public:
   bool return_to_os(jlong deadline);
 };
 
-#endif //SHARE_GC_G1_G1SEGMENTEDARRAYFREEPOOL_HPP
+#endif //SHARE_GC_G1_G1MONOTONICARENAFREEPOOL_HPP

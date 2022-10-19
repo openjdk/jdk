@@ -23,10 +23,10 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP
-#define SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP
+#ifndef SHARE_GC_G1_G1MONOTONICARENA_INLINE_HPP
+#define SHARE_GC_G1_G1MONOTONICARENA_INLINE_HPP
 
-#include "gc/g1/g1SegmentedArray.hpp"
+#include "gc/g1/g1MonotonicArena.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
@@ -53,4 +53,4 @@ inline G1MonotonicArena::Segment* G1MonotonicArena::SegmentFreeList::get() {
   return result;
 }
 
-#endif //SHARE_GC_G1_G1SEGMENTEDARRAY_INLINE_HPP
+#endif //SHARE_GC_G1_G1MONOTONICARENA_INLINE_HPP

@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
-#include "gc/g1/g1SegmentedArray.hpp"
-#include "gc/g1/g1SegmentedArrayFreePool.hpp"
+#include "gc/g1/g1MonotonicArena.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/shared/freeListAllocator.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"

@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
-#define SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
+#ifndef SHARE_GC_G1_G1MONOTONICARENA_HPP
+#define SHARE_GC_G1_G1MONOTONICARENA_HPP
 
 #include "gc/shared/freeListAllocator.hpp"
 #include "memory/allocation.hpp"
@@ -255,4 +255,4 @@ public:
   MEMFLAGS mem_flag() const {return _mem_flag; }
 };
 
-#endif //SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
+#endif //SHARE_GC_G1_MONOTONICARENA_HPP
