@@ -671,7 +671,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_zero_blocks() {
     Label done;
 
-    const Register base = x28, cnt = x29;
+    const Register base = x28, cnt = x29, tmp1 = x30, tmp2 = x31, tmp3 = x7;
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "zero_blocks");
@@ -684,7 +684,7 @@ class StubGenerator: public StubCodeGenerator {
       int low_limit = MAX2(CacheLineSize, BlockZeroingLowLimit);
       __ li(t0, low_limit);
       __ blt(cnt, t0, small);
-      __ zero_dcache_blocks(base, cnt);
+      __ zero_dcache_blocks(base, cnt, tmp1, tmp2, tmp3);
       __ bind(small);
     }
 

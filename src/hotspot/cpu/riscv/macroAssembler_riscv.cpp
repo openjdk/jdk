@@ -4112,33 +4112,33 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 //
 // NOTE: This is intended to be used in the zero_blocks() stub.  If
 // you want to use it elsewhere, note that cnt must be >= CacheLineSize.
-void MacroAssembler::zero_dcache_blocks(Register base, Register cnt) {
+void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2, Register tmp3) {
   Label initial_table_end, loop_cbo_zero;
 
   // Align base with cache line size.
-  neg(t0, base);
-  andi(t0, t0, CacheLineSize - 1);
+  neg(tmp1, base);
+  andi(tmp1, tmp1, CacheLineSize - 1);
 
-  // t0: the number of bytes to be filled to align the base with cache line size.
-  add(base, base, t0);
-  srai(t1, t0, 3);
-  sub(cnt, cnt, t1);
-  add(t2, zr, zr);
-  movptr(t2, initial_table_end);
-  srli(t1, t0, 1);
-  sub(t1, t2, t1);
-  j(t1);
+  // tmp1: the number of bytes to be filled to align the base with cache line size.
+  add(base, base, tmp1);
+  srai(tmp2, tmp1, 3);
+  sub(cnt, cnt, tmp2);
+  add(tmp3, zr, zr);
+  movptr(tmp3, initial_table_end);
+  srli(tmp2, tmp1, 1);
+  sub(tmp2, tmp3, tmp2);
+  j(tmp2);
   for (int i = -CacheLineSize + 8; i < 0; i += 8) {
     sd(zr, Address(base, i));
   }
   bind(initial_table_end);
 
-  li(t0, CacheLineSize >> 3);
+  li(tmp1, CacheLineSize >> 3);
   bind(loop_cbo_zero);
   cbo_zero(base);
-  sub(cnt, cnt, t0);
+  sub(cnt, cnt, tmp1);
   add(base, base, CacheLineSize);
-  bge(cnt, t0, loop_cbo_zero);
+  bge(cnt, tmp1, loop_cbo_zero);
 }
 
 #define FCVT_SAFE(FLOATCVT, FLOATEQ)                                                             \

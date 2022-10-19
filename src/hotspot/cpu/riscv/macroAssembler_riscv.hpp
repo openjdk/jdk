@@ -1101,7 +1101,7 @@ public:
   address zero_words(Register ptr, Register cnt);
   void fill_words(Register base, Register cnt, Register value);
   void zero_memory(Register addr, Register len, Register tmp);
-  void zero_dcache_blocks(Register base, Register cnt);
+  void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2, Register tmp3);
 
   // shift left by shamt and add
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);

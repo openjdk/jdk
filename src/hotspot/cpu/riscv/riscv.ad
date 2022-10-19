@@ -665,6 +665,11 @@ reg_class no_special_ptr_reg %{
   return _NO_SPECIAL_PTR_REG_mask;
 %}
 
+// Class for 64 bit register r7
+reg_class r7_reg(
+    R7, R7_H
+);
+
 // Class for 64 bit register r10
 reg_class r10_reg(
     R10, R10_H
@@ -725,6 +730,10 @@ reg_class r29_reg(
 
 reg_class r30_reg(
     R30, R30_H
+);
+
+reg_class r31_reg(
+    R31, R31_H
 );
 
 // Class for zero registesr
@@ -3267,6 +3276,16 @@ operand iRegPNoSp()
   interface(REG_INTER);
 %}
 
+operand iRegP_R7()
+%{
+  constraint(ALLOC_IN_RC(r7_reg));
+  match(RegP);
+  match(iRegPNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 operand iRegP_R10()
 %{
   constraint(ALLOC_IN_RC(r10_reg));
@@ -3348,6 +3367,28 @@ operand iRegP_R16()
 operand iRegP_R28()
 %{
   constraint(ALLOC_IN_RC(r28_reg));
+  match(RegP);
+  match(iRegPNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// Pointer 64 bit Register R30 only
+operand iRegP_R30()
+%{
+  constraint(ALLOC_IN_RC(r30_reg));
+  match(RegP);
+  match(iRegPNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// Pointer 64 bit Register R31 only
+operand iRegP_R31()
+%{
+  constraint(ALLOC_IN_RC(r31_reg));
   match(RegP);
   match(iRegPNoSp);
   op_cost(0);
@@ -10284,11 +10325,13 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 %}
 
 // clearing of an array
-instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy)
+instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
+                            iRegP_R31 tmp2, iRegP_R7 tmp3, Universe dummy)
 %{
+  // temp registers must match the one used in StubGenerator::generate_zero_blocks()
   predicate(!UseRVV);
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(4 * DEFAULT_COST);
   format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}
