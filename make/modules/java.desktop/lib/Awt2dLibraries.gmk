@@ -367,6 +367,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       common/awt/debug \
       common/font \
       common/java2d/opengl \
+      include \
       #
 
   LIBAWT_HEADLESS_CFLAGS := $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) $(X_CFLAGS) \
@@ -476,6 +477,7 @@ LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libawt/java2d \
     libawt/java2d/pipe \
     libawt/java2d/loops \
+    include \
     #
 
 LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
@@ -653,6 +655,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   LIBSPLASHSCREEN_EXTRA_SRC := \
       common/awt/systemscale \
       #
+
+  LIBSPLASHSCREEN_HEADER_DIRS += include
 
   ifeq ($(USE_EXTERNAL_LIBGIF), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/giflib

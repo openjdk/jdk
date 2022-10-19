@@ -40,7 +40,7 @@ public class X11SunUnicode_0 extends Charset {
     }
 
     /* Seems like supporting a decoder is required, but we aren't going
-     * to be publically exposing this class, so no need to waste work
+     * to be publicly exposing this class, so no need to waste work
      */
     public CharsetDecoder newDecoder() {
         throw new Error("Decoder is not implemented for X11SunUnicode_0 Charset");
