@@ -87,6 +87,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private DiagramViewModel model;
     private DiagramViewModel modelCopy;
     private boolean rebuilding;
+    private boolean undoRedoEnabled = true;
+
+
 
     /**
      * The alpha level of partially visible figures.
@@ -187,10 +190,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     @Override
     public void centerFigures(List<Figure> list) {
-        boolean b = getUndoRedoEnabled();
-        setUndoRedoEnabled(false);
+        boolean enableUndoRedo = undoRedoEnabled;
+        undoRedoEnabled = false;
         gotoFigures(list);
-        setUndoRedoEnabled(b);
+        undoRedoEnabled = enableUndoRedo;
     }
 
     private final ControllableChangedListener<SelectionCoordinator> highlightedCoordinatorListener = new ControllableChangedListener<SelectionCoordinator>() {
@@ -363,23 +366,20 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         };
         getActions().addAction(ActionFactory.createRectangularSelectAction(rectangularSelectDecorator, selectLayer, rectangularSelectProvider));
 
-        boolean b = getUndoRedoEnabled();
-        setUndoRedoEnabled(false);
+        boolean enableUndoRedo = undoRedoEnabled;
+        undoRedoEnabled = false;
         setNewModel(model);
-        setUndoRedoEnabled(b);
+        undoRedoEnabled = enableUndoRedo;
         ObjectSceneListener selectionChangedListener = new ObjectSceneListener() {
 
             @Override
-            public void objectAdded(ObjectSceneEvent arg0, Object arg1) {
-            }
+            public void objectAdded(ObjectSceneEvent arg0, Object arg1) {}
 
             @Override
-            public void objectRemoved(ObjectSceneEvent arg0, Object arg1) {
-            }
+            public void objectRemoved(ObjectSceneEvent arg0, Object arg1) {}
 
             @Override
-            public void objectStateChanged(ObjectSceneEvent e, Object o, ObjectState oldState, ObjectState newState) {
-            }
+            public void objectStateChanged(ObjectSceneEvent e, Object o, ObjectState oldState, ObjectState newState) {}
 
             @Override
             public void selectionChanged(ObjectSceneEvent e, Set<Object> oldSet, Set<Object> newSet) {
@@ -600,9 +600,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private void smallUpdate(boolean relayout) {
         updateHiddenNodes(model.getHiddenNodes(), relayout);
-        boolean b = getUndoRedoEnabled();
-        setUndoRedoEnabled(false);
-        setUndoRedoEnabled(b);
+        boolean enableUndoRedo = undoRedoEnabled;
+        undoRedoEnabled = false;
+        undoRedoEnabled = enableUndoRedo;
         validate();
     }
 
@@ -1202,26 +1202,27 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         @Override
         public void redo() throws CannotRedoException {
             super.redo();
-            boolean b = scene.getUndoRedoEnabled();
-            scene.setUndoRedoEnabled(false);
+            boolean enableUndoRedo = scene.undoRedoEnabled;
+            scene.undoRedoEnabled = false;
             scene.getModel().getViewChangedEvent().addListener(this);
             scene.getModel().setData(newModel);
             scene.getModel().getViewChangedEvent().removeListener(this);
-            scene.setUndoRedoEnabled(b);
+            scene.undoRedoEnabled = enableUndoRedo;
+
         }
 
         @Override
         public void undo() throws CannotUndoException {
             super.undo();
-            boolean b = scene.getUndoRedoEnabled();
-            scene.setUndoRedoEnabled(false);
+            boolean enableUndoRedo = scene.undoRedoEnabled;
+            scene.undoRedoEnabled = false;
             scene.getModel().getViewChangedEvent().addListener(this);
             scene.getModel().setData(oldModel);
             scene.getModel().getViewChangedEvent().removeListener(this);
 
             SwingUtilities.invokeLater(() -> scene.setScrollPosition(oldScrollPosition));
 
-            scene.setUndoRedoEnabled(b);
+            scene.undoRedoEnabled = enableUndoRedo;
         }
 
         @Override
@@ -1229,15 +1230,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             scene.getModel().getViewChangedEvent().removeListener(this);
             scene.smallUpdate(!oldModel.getHiddenNodes().equals(newModel.getHiddenNodes()));
         }
-    }
-    private boolean undoRedoEnabled = true;
-
-    private void setUndoRedoEnabled(boolean enable) {
-        undoRedoEnabled = enable;
-    }
-
-    private boolean getUndoRedoEnabled() {
-        return undoRedoEnabled;
     }
 
     private final ChangedListener<DiagramViewModel> fullChange = new ChangedListener<DiagramViewModel>() {
@@ -1269,13 +1261,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
 
     private void addUndo() {
-
         DiagramViewModel newModelCopy = model.copy();
-
         if (undoRedoEnabled) {
             getUndoRedoManager().undoableEditHappened(new UndoableEditEvent(this, new DiagramUndoRedo(this, getScrollPosition(), modelCopy, newModelCopy)));
         }
-
-        this.modelCopy = newModelCopy;
+        modelCopy = newModelCopy;
     }
 }
