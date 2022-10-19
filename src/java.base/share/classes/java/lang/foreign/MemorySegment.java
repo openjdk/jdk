@@ -1129,7 +1129,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This is equivalent to the following code:
      * {@snippet lang=java :
-     * session.allocate(layout.bytesSize(), layout.bytesAlignment());
+     * allocateNative(layout.bytesSize(), layout.bytesAlignment(), session);
      * }
      * <p>
      * The region of off-heap region backing the returned native segment is initialized to zero.
@@ -1137,14 +1137,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param layout the layout of the off-heap memory region backing the native segment.
      * @param session the session to which the returned segment is associated.
      * @return a new native segment.
-     * @throws IllegalStateException if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning {@code session}.
+     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread other than the thread
+     * {@linkplain MemorySession#ownerThread() owning} {@code session}.
      * @see MemorySession#allocate(MemoryLayout)
      */
     static MemorySegment allocateNative(MemoryLayout layout, MemorySession session) {
         Objects.requireNonNull(session);
         Objects.requireNonNull(layout);
-        return session.allocate(layout.byteSize(), layout.byteAlignment());
+        return allocateNative(layout.byteSize(), layout.byteAlignment(), session);
     }
 
     /**
@@ -1162,7 +1163,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This is equivalent to the following code:
      * {@snippet lang=java :
-     * session.allocate(byteSize, 1);
+     * allocateNative(bytesSize, 1, session);
      * }
      * <p>
      * The region of off-heap region backing the returned native segment is initialized to zero.
@@ -1173,9 +1174,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param session the session to which the returned segment is associated.
      * @return a new native memory segment.
      * @throws IllegalArgumentException if {@code byteSize < 0}.
-     * @throws IllegalStateException if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning {@code session}.
-     * @see ByteBuffer#allocateDirect(int)
+     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread other than the thread
+     *  {@linkplain MemorySession#ownerThread() owning} {@code session}.
      * @see MemorySession#allocate(long)
      */
     static MemorySegment allocateNative(long byteSize, MemorySession session) {
@@ -1195,15 +1196,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the newly allocated off-heap region backing the segment. Moreover, the {@linkplain #address() address}
      * of the returned segment will be aligned according to the provided alignment constraint.
      * <p>
-     * The returned memory segment is associated with a new {@linkplain MemorySession#openImplicit implicit}
-     * memory session. As such, the off-heap region which backs the returned segment is
-     * freed <em>automatically</em>, some unspecified time after it is no longer referenced.
-     * <p>
-     * This is equivalent to the following code:
-     * {@snippet lang=java :
-     * session.allocate(byteSize, byteAlignment);
-     * }
-     * <p>
      * The region of off-heap region backing the returned native segment is initialized to zero.
      *
      * @param byteSize the size (in bytes) of the off-heap region of memory backing the native memory segment.
@@ -1212,14 +1204,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new native memory segment.
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0}, or if {@code byteAlignment}
      *                                  is not a power of 2.
-     * @throws IllegalStateException    if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread owning {@code session}.
+     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread other than the thread
+     * {@linkplain MemorySession#ownerThread() owning} {@code session}.
      * @see MemorySession#allocate(long, long)
      */
     static MemorySegment allocateNative(long byteSize, long byteAlignment, MemorySession session) {
         Objects.requireNonNull(session);
         Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return session.allocate(byteSize, byteAlignment);
+        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, session);
     }
 
     /**

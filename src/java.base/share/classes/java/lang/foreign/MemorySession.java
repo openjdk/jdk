@@ -219,6 +219,11 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
      * the newly allocated off-heap memory region backing the segment. Moreover, the {@linkplain MemorySegment#address() address}
      * of the returned segment will be aligned according the provided alignment constraint.
      * <p>
+     * Equivalent to the following code:
+     * {@snippet lang = java:
+     * MemorySegment.allocateNative(size, align, this);
+     * }
+     * <p>
      * A client is responsible for ensuring that this memory session is closed when the
      * segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
@@ -236,8 +241,7 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
      */
     @Override
     default MemorySegment allocate(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
+        return MemorySegment.allocateNative(byteSize, byteAlignment, this);
     }
 
     /**
