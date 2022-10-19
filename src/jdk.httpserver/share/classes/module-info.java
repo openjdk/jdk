@@ -89,7 +89,7 @@
  * Boolean value, which if true, generates debug information on the console.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.nodelay}</b> (default: false)<br>
- * Boolean value, which if true, sets the {@link java.net.SocketOptions#TCP_NODELAY TCP_NODELAY}
+ * Boolean value, which if true, sets the {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
  * socket option on all incoming connections.
  * </li></ul>
  *
