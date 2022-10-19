@@ -40,7 +40,6 @@ import jdk.test.lib.Utils;
  * @library /test/lib
  * @requires vm.hasSA
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
- *          jdk.hotspot.agent/sun.jvm.hotspot.memory
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
  * @run driver TestObjectAlignment
  */
@@ -68,7 +67,6 @@ public class TestObjectAlignment {
         ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.memory=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.runtime=ALL-UNNAMED",
             "TestObjectAlignment",
             Long.toString(lingeredAppPid),
