@@ -43,9 +43,10 @@
             <file name="com-sun-hotspot-igv-coordinator-actions-OutlineAction.instance"/>
         </folder>
     </folder>
-    
+
     <folder name="Menu">
         <folder name="File">
+            <attr name="position" intvalue="50"/>
             <file name="Export_hidden"/>
             <file name="Import_hidden"/>
             <file name="Separator2.instance_hidden"/>
@@ -96,8 +97,9 @@
             <file name="org-openide-actions-SaveAllAction.shadow_hidden"/>
             <file name="org-openide-actions-SaveAsAction.shadow_hidden"/>
         </folder>
-        
+
         <folder name="Edit">
+            <attr name="position" intvalue="100"/>
             <file name="org-openide-actions-UndoAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-UndoAction.instance"/>
                 <attr name="position" intvalue="100"/>
@@ -130,8 +132,9 @@
             <file name="org-openide-actions-ReplaceAction.shadow_hidden"/>
             <file name="sep-before-reposearch.instance_hidden"/>
         </folder>
-        
+
         <folder name="View">
+            <attr name="position" intvalue="150"/>
             <!-- Hidden menu entries from other modules -->
             <file name="Separator1.instance_hidden"/>
             <file name="Separator2.instance_hidden"/>
@@ -148,7 +151,7 @@
             <file name="toggle-non-printable-characters.shadow_hidden"/>
             <file name="toggle-toolbar.shadow_hidden"/>
         </folder>
-        
+
         <!-- Hidden menus -->
         <folder name="Tools_hidden"/>
         <folder name="GoTo_hidden"/>
@@ -159,14 +162,18 @@
         <folder name="Versioning_hidden"/>
 
         <folder name="Options">
+            <attr name="position" intvalue="200"/>
             <file name="org-netbeans-modules-options-OptionsWindowAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Window/org-netbeans-modules-options-OptionsWindowAction.instance"/>
+                <attr name="position" intvalue="1"/>
             </file>
         </folder>
 
         <folder name="Window">
+            <attr name="position" intvalue="250"/>
             <file name="OutlineAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Window/com-sun-hotspot-igv-coordinator-actions-OutlineAction.instance"/>
+                <attr name="position" intvalue="4"/>
             </file>
             <!-- Hidden menu entries from other modules -->
             <file name="Web_hidden"/>
@@ -188,6 +195,7 @@
         </folder>
 
         <folder name="Help">
+            <attr name="position" intvalue="300"/>
             <!-- Hidden menu entries from other modules -->
             <file name="Separator1.instance_hidden"/>
             <file name="netbeans-kb.url_hidden"/>
@@ -214,12 +222,12 @@
             <file name="Versioning.instance_hidden"/>
         </folder>
     </folder>
-    
+
     <folder name="Windows2">
         <folder name="Components">
             <file name="OutlineTopComponent.settings" url="OutlineTopComponentSettings.xml"/>
         </folder>
-        <folder name="Modes">  
+        <folder name="Modes">
             <file name="customLeft.wsmode" url="customLeftWsmode.xml"/>
             <folder name="customLeft">
                 <file name="OutlineTopComponent.wstcref" url="OutlineTopComponentWstcref.xml"/>
