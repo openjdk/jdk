@@ -364,11 +364,13 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   if (!is_f1_null()) {
     return;
   }
+  // New code
+  ConstantPoolCache* cpCache = cpool->cache();
 
   if (indy_resolution_failed()) {
     // Before we got here, another thread got a LinkageError exception during
     // resolution.  Ignore our success and throw their exception.
-    ConstantPoolCache* cpCache = cpool->cache();
+    //ConstantPoolCache* cpCache = cpool->cache();
     int index = -1;
     for (int i = 0; i < cpCache->length(); i++) {
       if (cpCache->entry_at(i) == this) {
@@ -442,8 +444,12 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // that's set in the constant pool cache here.
   // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
   // out of the ConstantPoolCacheEntry.
-  if (UseNewCode)
-  tty->print_cr("index of invokevirtual is %d", _invokedynamic_index);
+  if (UseNewCode) {
+    cpCache->resolved_invokedynamic_info_element(_invokedynamic_index)->fill_in(adapter, 
+          adapter->size_of_parameters(), adapter->result_type(), has_appendix);
+    //cpCache->resolved_invokedynamic_info_element(_invokedynamic_index).fill_in(adapter, adapter->size_of_parameters(), adapter->result_type(), has_appendix);
+    tty->print_cr("index of invokevirtual is %d", _invokedynamic_index);
+  }
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
 

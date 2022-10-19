@@ -37,7 +37,12 @@ public:
     u1 return_type() const { return _return_type; }
     bool has_appendix() const { return _has_appendix; }
 
-    void set_method(Method* m) { _method = m; }
+    void fill_in(Method* m, u2 num_params, u1 return_type, bool has_appendix) {
+        _method = m;
+        _number_of_parameters = num_params; // might be parameter size()
+        _return_type = return_type;
+        _has_appendix = has_appendix;
+     }
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
