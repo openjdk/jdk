@@ -712,7 +712,7 @@ class XFileDialogPeer extends XDialogPeer
      * Otherwise, SavedDir will be not null before second showing
      * So the current directory of the file dialog will be incorrect after second showing
      * since 'setDirectory' will be ignored
-     * We cann't update savedDir here now since it used very often
+     * We can't update savedDir here now since it used very often
      */
     public void setDirectory(String dir) {
 
@@ -796,7 +796,7 @@ class XFileDialogPeer extends XDialogPeer
         }
 
         if (savedFile != null) {
-            // Actually in Motif implementation lost file value which was saved after prevously showing
+            // Actually in Motif implementation lost file value which was saved after previously showing
             // Seems we shouldn't restore Motif behaviour in this case
             setFile(savedFile);
         }
