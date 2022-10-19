@@ -764,6 +764,7 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler);
     public static final boolean DeoptimizeObjectsALot = WB.getBooleanVMFlag("DeoptimizeObjectsALot");
     public static final boolean ZGCIsSelected = GC.Z.isSelected();
+    public static final boolean StressReflectiveCode = unbox(WB.getBooleanVMFlag("StressReflectiveCode"), false);
 
     public String testMethodName;
     public int testMethodDepth;
@@ -885,7 +886,7 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
             Asserts.assertEQ(testMethodName, frames[stackTraceDepth].getMethodName(),
                     testCaseName + ": test method not found at depth " + testMethodDepth);
             // check if the frame is (not) deoptimized as expected
-            if (!DeoptimizeObjectsALot) {
+            if (!DeoptimizeObjectsALot && !StressReflectiveCode) {
                 if (testFrameShouldBeDeoptimized()) {
                     Asserts.assertTrue(WB.isFrameDeoptimized(testMethodDepth+1),
                             testCaseName + ": expected test method frame at depth " + testMethodDepth + " to be deoptimized");
