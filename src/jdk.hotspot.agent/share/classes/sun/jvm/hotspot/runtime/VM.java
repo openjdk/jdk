@@ -502,13 +502,12 @@ public class VM {
     boolType = (CIntegerType) db.lookupType("bool");
 
     minObjAlignmentInBytes = getObjectAlignmentInBytes();
-    if (minObjAlignmentInBytes == 8) {
-      logMinObjAlignmentInBytes = 3;
-    } else if (minObjAlignmentInBytes == 16) {
-      logMinObjAlignmentInBytes = 4;
-    } else {
-      throw new RuntimeException("Object alignment " + minObjAlignmentInBytes + " not yet supported");
+    if (minObjAlignmentInBytes < 8 || minObjAlignmentInBytes > 256 ||
+        (minObjAlignmentInBytes & (minObjAlignmentInBytes - 1)) != 0) {
+      throw new RuntimeException("Object alignment " + minObjAlignmentInBytes + " is not yet supported");
     }
+
+    logMinObjAlignmentInBytes = Integer.numberOfTrailingZeros(minObjAlignmentInBytes);
 
     if (isCompressedOopsEnabled()) {
       // Size info for oops within java objects is fixed
