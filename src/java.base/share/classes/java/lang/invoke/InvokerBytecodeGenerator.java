@@ -343,13 +343,16 @@ class InvokerBytecodeGenerator {
     }
 
     /**
-     * Returns an object to pass this.classData to the <clinit> method of the
-     * generated class. It's usually a copy of the list, but in special cases
-     * where the list's size is 0 or 1, we avoid making the copy.
+     * Returns the class data object that will be passed to `Lookup.defineHiddenClassWithClassData`.
+     * The classData is loaded in the <clinit> method of the generated class.
+     * If the class data contains only one single object, this method returns  that single object.
+     * If the class data contains more than one objects, this method returns a List.
+     *
+     * This method returns null if no class data.
      */
     private Object classDataValues() {
         final List<ClassData> cd = classData;
-        return switch(cd.size()) {
+        return switch (cd.size()) {
             case 0 -> null;             // special case (classData is not used by <clinit>)
             case 1 -> cd.get(0).value;  // special case (single object)
             case 2 -> List.of(cd.get(0).value, cd.get(1).value);
