@@ -2880,7 +2880,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // VM-Call: BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
-    __ z_ltr(Z_R0, Z_RET);
+    __ z_ltr(Z_R0_scratch, Z_RET);
 
     // VM-Call Epilogue
     __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
@@ -2890,7 +2890,7 @@ class StubGenerator: public StubCodeGenerator {
     // Check return val of vm call
     // if (return val != 0)
     // return to caller
-    __ z_ltr(Z_R2, Z_R2);
+    __ z_ltr(Z_R0_scratch, Z_R0_scratch);
     __ z_bcr(Assembler::bcondNotZero, Z_R14);
 
     // O.W. call indicates deoptimization required
