@@ -1,0 +1,2 @@
+T7039014b.java:16:5: compiler.err.incompatible.diff.ret.same.type: T7039014b.A<java.lang.String>, m, java.lang.String
+1 error
