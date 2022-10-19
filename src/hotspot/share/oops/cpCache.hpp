@@ -462,7 +462,7 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_cp_cache_map,
                                      const intStack& invokedynamic_references_map, 
-                                     const GrowableArray<InvokeDynamicInfo>& invokedynamic_info,
+                                     const GrowableArray<InvokeDynamicInfo> invokedynamic_info,
                                      TRAPS);
 
   int length() const                      { return _length; }
@@ -487,6 +487,7 @@ class ConstantPoolCache: public MetaspaceObj {
         _resolved_invokedynamic_info_array->at(i).print_on(st);
       }
   }
+  int resolved_invokedynamicinfo_length() { return _resolved_invokedynamic_info_array->length(); }
 
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
