@@ -41,8 +41,8 @@ import jdk.test.lib.Utils;
 
 public class TestEor3AArch64 {
 
-    private final static int LENGTH = 2048;
-    private final static Random RD = Utils.getRandomInstance();
+    private static final int LENGTH = 2048;
+    private static final Random RD = Utils.getRandomInstance();
 
     private static int[] ia;
     private static int[] ib;
