@@ -48,8 +48,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 class MacOSXWatchService extends AbstractWatchService {
-    private static final MacOSXFileSystemProvider theFSProvider = DefaultFileSystemProvider.instance();
-    private static final MacOSXFileSystem theFS = (MacOSXFileSystem) theFSProvider.theFileSystem();
+    private static final MacOSXFileSystemProvider THE_FS_PROVIDER = DefaultFileSystemProvider.instance();
+    private static final MacOSXFileSystem THE_FS = (MacOSXFileSystem) THE_FS_PROVIDER.theFileSystem();
 
     private final HashMap<Object, MacOSXWatchKey> dirKeyToWatchKey      = new HashMap<>();
     private final HashMap<Long, MacOSXWatchKey>   eventStreamToWatchKey = new HashMap<>();
@@ -63,7 +63,8 @@ class MacOSXWatchService extends AbstractWatchService {
         t.setDaemon(true);
         t.start();
 
-        // In order to be able to schedule any FSEventStream's, a reference to a run loop is required.
+        // In order to be able to schedule any FSEventStreams,
+        // a reference to a run loop is required.
         runLoopThread.waitForRunLoopRef();
     }
 
@@ -306,11 +307,9 @@ class MacOSXWatchService extends AbstractWatchService {
     }
 
     private static class MacOSXWatchKey extends AbstractWatchKey {
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-        private static final long kFSEventStreamEventFlagRootChanged     = 0x00000020;
-
-        private static final Path relativeRootPath = theFS.getPath("");
+        private static final Path RELATIVE_ROOT_PATH = THE_FS.getPath("");
 
         // Full path to this key's watch root directory.
         private final Path   realRootPath;
@@ -345,7 +344,7 @@ class MacOSXWatchService extends AbstractWatchService {
             directorySnapshot = DirectorySnapshot.create(getRealRootPath());
 
             synchronized (eventStreamRefLock) {
-                final int kFSEventStreamCreateFlagWatchRoot  = 0x00000004;
+                final int kFSEventStreamCreateFlagWatchRoot = 0x00000004;
                 eventStreamRef = MacOSXWatchService.eventStreamCreate(
                         realRootPath.toString(),
                         WatchModifier.sensitivityOf(modifierSet),
@@ -377,8 +376,8 @@ class MacOSXWatchService extends AbstractWatchService {
 
         private Path toRelativePath(final String absPath) {
             return   (absPath.length() > realRootPathLength)
-                    ? theFS.getPath(absPath.substring(realRootPathLength))
-                    : relativeRootPath;
+                    ? THE_FS.getPath(absPath.substring(realRootPathLength))
+                    : RELATIVE_ROOT_PATH;
         }
 
         private boolean updateNeeded(String[] paths, long eventFlagsPtr) {
@@ -394,13 +393,14 @@ class MacOSXWatchService extends AbstractWatchService {
 
                 Path path = toRelativePath(absPath);
 
-                if (!relativeRootPath.equals(path)) {
+                if (!RELATIVE_ROOT_PATH.equals(path)) {
                     // Ignore events from subdirectories for now.
                     eventFlagsPtr += SIZEOF_FS_EVENT_STREAM_EVENT_FLAGS;
                     continue;
                 }
 
-                final int flags = unsafe.getInt(eventFlagsPtr);
+                final int kFSEventStreamEventFlagRootChanged = 0x00000020;
+                final int flags = UNSAFE.getInt(eventFlagsPtr);
                 if ((flags & kFSEventStreamEventFlagRootChanged) != 0) {
                     cancel();
                     signal();
@@ -430,12 +430,12 @@ class MacOSXWatchService extends AbstractWatchService {
             static DirectorySnapshot create(final Path realRootPath) throws IOException {
                 final DirectorySnapshot snapshot = new DirectorySnapshot();
                 try (final DirectoryStream<Path> directoryStream
-                             = theFSProvider.newDirectoryStream(
+                             = THE_FS_PROVIDER.newDirectoryStream(
                                      realRootPath, p -> true)) {
                     for (final Path file : directoryStream) {
                         try {
                             final BasicFileAttributes attrs
-                                    = theFSProvider.readAttributes(
+                                    = THE_FS_PROVIDER.readAttributes(
                                             file,
                                             BasicFileAttributes.class,
                                             LinkOption.NOFOLLOW_LINKS);
@@ -457,13 +457,13 @@ class MacOSXWatchService extends AbstractWatchService {
                 currentTick++;
 
                 try (final DirectoryStream<Path> directoryStream
-                             = theFSProvider.newDirectoryStream(
-                                     watchKey.getRealRootPath().resolve(relativeRootPath),
+                             = THE_FS_PROVIDER.newDirectoryStream(
+                                     watchKey.getRealRootPath().resolve(RELATIVE_ROOT_PATH),
                                      p -> true)) {
                     for (final Path file : directoryStream) {
                         try {
                             final BasicFileAttributes attrs
-                                    = theFSProvider.readAttributes(
+                                    = THE_FS_PROVIDER.readAttributes(
                                             file,
                                             BasicFileAttributes.class,
                                             LinkOption.NOFOLLOW_LINKS);
@@ -471,7 +471,7 @@ class MacOSXWatchService extends AbstractWatchService {
                             final Entry entry       = files.get(fileName);
                             final boolean isNew     = (entry == null);
                             final long lastModified = attrs.lastModifiedTime().toMillis();
-                            final Path relativePath = relativeRootPath.resolve(fileName);
+                            final Path relativePath = RELATIVE_ROOT_PATH.resolve(fileName);
 
                             if (attrs.isDirectory()) {
                                 if (isNew) {
@@ -499,7 +499,7 @@ class MacOSXWatchService extends AbstractWatchService {
                                         watchKey.reportDeleted(relativePath);
                                         files.put(fileName,
                                                 new Entry(false, lastModified, currentTick));
-                                        watchKey.reportCreated(relativeRootPath.resolve(fileName));
+                                        watchKey.reportCreated(RELATIVE_ROOT_PATH.resolve(fileName));
                                     } else if (entry.isModified(lastModified)) {
                                         watchKey.reportModified(relativePath);
                                     }
@@ -525,7 +525,7 @@ class MacOSXWatchService extends AbstractWatchService {
                     if (entry.lastTickCount != currentTick) {
                         final Path file = mapEntry.getKey();
                         it.remove();
-                        watchKey.reportDeleted(relativeRootPath.resolve(file));
+                        watchKey.reportDeleted(RELATIVE_ROOT_PATH.resolve(file));
                     }
                 }
             }

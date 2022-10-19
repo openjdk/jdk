@@ -134,7 +134,6 @@ public class Move {
                     throw new RuntimeException("Too many events");
                 }
             }
-
         } finally {
             rootWatcher.close();
         }
@@ -190,7 +189,7 @@ public class Move {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
             testMoveSubtree(dir);
-        } catch(UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             System.out.println("FILE_TREE watching is not supported; test considered passed");
         } finally {
             TestUtil.removeAll(dir);
@@ -199,7 +198,7 @@ public class Move {
         dir = TestUtil.createTemporaryDirectory();
         try {
             testMoveFileToDirectory(dir);
-        } catch(UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             System.out.println("FILE_TREE watching is not supported; test considered passed");
         } finally {
             TestUtil.removeAll(dir);
