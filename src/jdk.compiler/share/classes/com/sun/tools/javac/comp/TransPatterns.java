@@ -721,7 +721,7 @@ public class TransPatterns extends TreeTranslator {
         bindingContext = new BasicBindingContext();
         VarSymbol prevCurrentValue = currentValue;
         try {
-            if (tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.RECORDPATTERNDECL) {
+            if (tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.PATTERN) {
                 /**
                  * A statement of the form
                  *

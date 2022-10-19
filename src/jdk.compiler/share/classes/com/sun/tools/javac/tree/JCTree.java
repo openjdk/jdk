@@ -1245,10 +1245,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public EnhancedForLoopTree.DeclarationKind getDeclarationKind() {
             if (varOrRecordPattern instanceof JCVariableDecl) {
-                return DeclarationKind.VARDECL;
+                return DeclarationKind.VARIABLE;
             }
             else {
-                return DeclarationKind.RECORDPATTERNDECL;
+                return DeclarationKind.PATTERN;
             }
         }
     }

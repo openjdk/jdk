@@ -425,13 +425,13 @@ public class Analyzer {
 
         @Override
         boolean match(JCEnhancedForLoop tree){
-            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARDECL);
+            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
 
             return !isImplicitlyTyped((JCVariableDecl) tree.varOrRecordPattern);
         }
         @Override
         List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {
-            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARDECL);
+            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
 
             JCEnhancedForLoop newTree = copier.copy(oldTree);
             newTree.varOrRecordPattern = rewriteVarType((JCVariableDecl) oldTree.varOrRecordPattern);
@@ -440,7 +440,7 @@ public class Analyzer {
         }
         @Override
         void process(JCEnhancedForLoop oldTree, JCEnhancedForLoop newTree, boolean hasErrors){
-            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARDECL);
+            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
 
             processVar((JCVariableDecl) oldTree.varOrRecordPattern,
                            (JCVariableDecl) newTree.varOrRecordPattern, hasErrors);

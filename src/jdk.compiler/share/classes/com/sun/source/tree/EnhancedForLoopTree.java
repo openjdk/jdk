@@ -55,16 +55,16 @@ public interface EnhancedForLoopTree extends StatementTree {
     @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
     public enum DeclarationKind {
         /** enum constant for local variable declarations */
-        VARDECL,
+        VARIABLE,
         /** enum constant for record pattern declarations */
-        RECORDPATTERNDECL
+        PATTERN
     }
 
     /**
      * Returns the control variable for the loop.
      * @return the control variable, or {@code null} if this enhanced for uses a pattern
      */
-    Tree getVariable();
+    VariableTree getVariable();
 
     /**
      * Returns the control variable or pattern for the loop.

@@ -3462,7 +3462,7 @@ public class Lower extends TreeTranslator {
 
             JCBlock body = null;
 
-            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARDECL);
+            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
             JCVariableDecl oldVar = (JCVariableDecl) tree.varOrRecordPattern;
             JCVariableDecl loopvardef = (JCVariableDecl) make.VarDef(oldVar.mods,
                     oldVar.name,
@@ -3551,7 +3551,7 @@ public class Lower extends TreeTranslator {
                                        List.nil());
             JCExpression vardefinit = make.App(make.Select(make.Ident(itvar), next));
 
-            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARDECL);
+            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
 
             JCVariableDecl var = (JCVariableDecl) tree.varOrRecordPattern;
             if (var.type.isPrimitive())

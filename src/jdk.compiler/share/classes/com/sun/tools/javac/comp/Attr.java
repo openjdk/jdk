@@ -1546,7 +1546,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
             }
-            if(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARDECL) {
+            if(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE) {
                 JCVariableDecl var = (JCVariableDecl) tree.varOrRecordPattern;
 
                 if (var.isImplicitlyTyped()) {
@@ -1559,7 +1559,7 @@ public class Attr extends JCTree.Visitor {
                 loopEnv.tree = tree; // before, we were not in loop!
                 attribStat(tree.body, loopEnv);
             }
-            else if (tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.RECORDPATTERNDECL) {
+            else if (tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.PATTERN) {
                 JCRecordPattern recordPattern = (JCRecordPattern) tree.varOrRecordPattern;
 
                 attribTree(recordPattern, loopEnv, unknownExprInfo);
