@@ -27,6 +27,7 @@
 package java.lang.foreign;
 
 import java.io.UncheckedIOException;
+import java.lang.ref.Cleaner;
 import java.lang.reflect.Array;
 import java.lang.invoke.MethodHandles;
 import java.nio.Buffer;
@@ -1118,7 +1119,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * Clients are responsible for ensuring that the memory session associated with the returned segment is
      * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
-     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a Cleaner
+     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a {@link Cleaner}
      * (such as {@linkplain MemorySession#openImplicit()}) can be used, allowing the returned segment to be
      * automatically released some unspecified time after the session is no longer referenced.
      * <p>
@@ -1137,8 +1138,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param session the session to which the returned segment is associated.
      * @return a new native segment.
      * @throws IllegalStateException if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException  if this method is invoked by a thread other than the
-     *                               {@linkplain MemorySession#ownerThread() owner thread} (if any).
+     * @throws WrongThreadException if this method is called from a thread other than the thread owning {@code session}.
      * @see MemorySession#allocate(MemoryLayout)
      */
     static MemorySegment allocateNative(MemoryLayout layout, MemorySession session) {
@@ -1151,7 +1151,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * Clients are responsible for ensuring that the memory session associated with the returned segment is
      * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
-     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a Cleaner
+     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a {@link Cleaner}
      * (such as {@linkplain MemorySession#openImplicit()}) can be used, allowing the returned segment to be
      * automatically released some unspecified time after the session is no longer referenced.
      * <p>
@@ -1173,8 +1173,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a new native memory segment.
      * @throws IllegalArgumentException if {@code byteSize < 0}.
      * @throws IllegalStateException if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException  if this method is invoked by a thread other than the
-     *                               {@linkplain MemorySession#ownerThread() owner thread} (if any).
+     * @throws WrongThreadException if this method is called from a thread other than the thread owning {@code session}.
      * @see ByteBuffer#allocateDirect(int)
      * @see MemorySession#allocate(long)
      */
@@ -1188,7 +1187,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * Clients are responsible for ensuring that the memory session associated with the returned segment is
      * closed when segments are no longer in use. Failure to do so will result in off-heap memory leaks. As an
-     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a Cleaner
+     * alternative to explicitly invoke {@link MemorySession#close()}, sessions backed with a {@link Cleaner}
      * (such as {@linkplain MemorySession#openImplicit()}) can be used, allowing the returned segment to be
      * automatically released some unspecified time after the session is no longer referenced.
      * <p>
@@ -1214,8 +1213,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0}, or if {@code byteAlignment}
      *                                  is not a power of 2.
      * @throws IllegalStateException    if the {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException     if this method is invoked by a thread other than the
-     *                                  {@linkplain MemorySession#ownerThread() owner thread} (if any).
+     * @throws WrongThreadException if this method is called from a thread other than the thread owning {@code session}.
      * @see MemorySession#allocate(long, long)
      */
     static MemorySegment allocateNative(long byteSize, long byteAlignment, MemorySession session) {
