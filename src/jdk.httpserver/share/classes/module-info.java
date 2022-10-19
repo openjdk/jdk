@@ -44,11 +44,9 @@
  * server implementation.
  * <ul>
  * <li><p><b>{@systemProperty sun.net.httpserver.idleInterval}</b> (default: 30 sec)<br>
- * Maximum duration in seconds which an idle connection is kept open.
- * </li>
- * <li><p><b>{@systemProperty sun.net.httpserver.clockTick}</b> (default: 10 sec)<br>
- * The granularity of the idle interval timer in seconds. The default value might need to
- * be reduced if the idle interval itself is reduced.
+ * Maximum duration in seconds which an idle connection is kept open. This timer
+ * has an implementation specific granularity that may mean that idle connections are
+ * closed later than the specified interval.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpserver.maxConnections}</b> (default: -1)<br>
  * The maximum number of open connections at a time. This includes active and idle connections.
@@ -65,7 +63,7 @@
  * cache. If not, then it will be closed.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqHeaders}</b> (default: 200)<br>
- * The maxiumum number of headers accepted in a request. If this limit is exceeded
+ * The maxiumum number of header fields accepted in a request. If this limit is exceeded
  * while the headers are being read, then the connection is terminated and the request ignored.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqTime}</b> (default: -1)<br>
