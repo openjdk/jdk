@@ -479,8 +479,8 @@ class ConstantPoolCache: public MetaspaceObj {
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
 
   // New code
-  ResolvedInvokeDynamicInfo get_resolved_invokedynamic_info_array_element(int index) {
-    return _resolved_invokedynamic_info_array->at(index);
+  ResolvedInvokeDynamicInfo* resolved_invokedynamic_info_element(int index) {
+    return _resolved_invokedynamic_info_array->adr_at(index);
   }
   void print_resolved_invokedynamicinfo_array(outputStream* st) const {
     for (int i = 0; i < _resolved_invokedynamic_info_array->length(); i++) {
