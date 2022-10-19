@@ -508,10 +508,10 @@ public class WindowsIconFactory implements Serializable
                     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                                          RenderingHints.VALUE_ANTIALIAS_ON);
 
-                    // outter left arc
+                    // outer left arc
                     g.setColor(UIManager.getColor("RadioButton.shadow"));
                     g.drawArc(x, y, 11, 11, 45, 180);
-                    // outter right arc
+                    // outer right arc
                     g.setColor(UIManager.getColor("RadioButton.highlight"));
                     g.drawArc(x, y, 11, 11, 45, -180);
                     // inner left arc
@@ -535,7 +535,7 @@ public class WindowsIconFactory implements Serializable
 
                 } else {
 
-                    // outter left arc
+                    // outer left arc
                     g.setColor(UIManager.getColor("RadioButton.shadow"));
                     g.drawLine(x+4, y+0, x+7, y+0);
                     g.drawLine(x+2, y+1, x+3, y+1);
@@ -544,7 +544,7 @@ public class WindowsIconFactory implements Serializable
                     g.drawLine(x+0, y+4, x+0, y+7);
                     g.drawLine(x+1, y+8, x+1, y+9);
 
-                    // outter right arc
+                    // outer right arc
                     g.setColor(UIManager.getColor("RadioButton.highlight"));
                     g.drawLine(x+2, y+10, x+3, y+10);
                     g.drawLine(x+4, y+11, x+7, y+11);
