@@ -978,6 +978,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   } /* ends critical section */
 }
 
+
 template <typename CONFIG, MEMFLAGS F>
 template <typename EVALUATE_FUNC>
 inline size_t ConcurrentHashTable<CONFIG, F>::
@@ -1180,6 +1181,46 @@ inline void ConcurrentHashTable<CONFIG, F>::
 }
 
 template <typename CONFIG, MEMFLAGS F>
+template <typename FUNC>
+inline bool ConcurrentHashTable<CONFIG, F>::
+  do_scan_for_range(FUNC& scan_f, size_t start_idx, size_t stop_idx, InternalTable* table)
+{
+  assert(start_idx < stop_idx, "Must be");
+  assert(stop_idx <= table->_size, "Must be");
+
+  for (size_t bucket_it = start_idx; bucket_it < stop_idx; ++bucket_it) {
+    Bucket* bucket = table->get_bucket(bucket_it);
+    // If bucket has a redirect, the items will be in the new table.
+    if (!bucket->have_redirect()) {
+      if(!visit_nodes(bucket, scan_f)) {
+        return false;
+      }
+    } else {
+      assert(bucket->is_locked(), "Bucket must be locked.");
+    }
+  }
+  return true;
+}
+
+template <typename CONFIG, MEMFLAGS F>
+template <typename SCAN_FUNC>
+inline void ConcurrentHashTable<CONFIG, F>::
+  do_safepoint_scan(SCAN_FUNC& scan_f, BucketsClaimer* bucket_claimer)
+{
+  assert(SafepointSynchronize::is_at_safepoint(),
+         "must only be called in a safepoint");
+  size_t start_idx = 0, stop_idx = 0;
+  InternalTable* table = nullptr;
+  while (bucket_claimer->claim(&start_idx, &stop_idx, &table)) {
+    assert(table != nullptr, "precondition");
+    if (!do_scan_for_range(scan_f, start_idx, stop_idx, table)) {
+      return;
+    }
+    table = nullptr;
+  }
+}
+
+template <typename CONFIG, MEMFLAGS F>
 template <typename EVALUATE_FUNC, typename DELETE_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   try_bulk_delete(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f)
@@ -1297,5 +1338,76 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   unlock_resize_lock(thread);
   return true;
 }
+
+template <typename CONFIG, MEMFLAGS F>
+class ConcurrentHashTable<CONFIG, F>::BucketsClaimer {
+  // Default size of _claim_size_log2
+  static const size_t DEFAULT_CLAIM_SIZE_LOG2 = 7;
+
+  ConcurrentHashTable<CONFIG, F>* _cht;
+  // The table is split into ranges, every increment is one range.
+  volatile size_t _next_to_claim;
+  size_t _claim_size_log2; // Log number of buckets in claimed range.
+  size_t _limit;      // Limit to number of claims
+
+  // If there is a paused resize, we also need to operate on the already resized items.
+  volatile size_t _next_to_claim_new_table;
+  size_t _claim_size_log2_new_table;
+  size_t _limit_new_table;
+
+public:
+  BucketsClaimer(ConcurrentHashTable<CONFIG, F>* cht) :
+    _cht(cht),
+    _next_to_claim(0),
+    _claim_size_log2(DEFAULT_CLAIM_SIZE_LOG2),
+    _limit(0),
+    _next_to_claim_new_table(0),
+    _claim_size_log2_new_table(0),
+    _limit_new_table(0)
+  {
+    size_t size_log2 = _cht->_table->_log2_size;
+    _claim_size_log2 = MIN2(_claim_size_log2, size_log2);
+    _limit = (size_t)1 << (size_log2 - _claim_size_log2);
+
+    ConcurrentHashTable<CONFIG, F>::InternalTable* new_table = _cht->get_new_table();
+
+    if (new_table == nullptr) { return; }
+
+    DEBUG_ONLY(if (new_table == POISON_PTR) { return; })
+
+    size_t size_log2_new_table = new_table->_log2_size;
+    _claim_size_log2_new_table = MIN2(DEFAULT_CLAIM_SIZE_LOG2, size_log2_new_table);
+    _limit_new_table = (size_t)1 << (size_log2_new_table - _claim_size_log2_new_table);
+  }
+
+  // Returns true if you succeeded to claim the range [start, stop).
+  bool claim(size_t* start, size_t* stop, ConcurrentHashTable<CONFIG, F>::InternalTable** table) {
+    if (Atomic::load(&_next_to_claim) < _limit) {
+      size_t claimed = Atomic::fetch_and_add(&_next_to_claim, 1u);
+      if (claimed < _limit) {
+        *start = claimed << _claim_size_log2;
+        *stop  = (*start) + ((size_t)1 << _claim_size_log2);
+        *table = _cht->get_table();
+        return true;
+      }
+    }
+
+    if (_limit_new_table == 0) {
+      assert(_cht->get_new_table() == nullptr || _cht->get_new_table() == POISON_PTR, "Precondition");
+      return false;
+    }
+
+    ConcurrentHashTable<CONFIG, F>::InternalTable* new_table = _cht->get_new_table();
+    assert(new_table != nullptr, "Precondition");
+    size_t claimed = Atomic::fetch_and_add(&_next_to_claim_new_table, 1u);
+    if (claimed < _limit_new_table) {
+      *start = claimed << _claim_size_log2_new_table;
+      *stop  = (*start) + ((size_t)1 << _claim_size_log2_new_table);
+      *table = new_table;
+      return true;
+    }
+    return false;
+  }
+};
 
 #endif // SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP
