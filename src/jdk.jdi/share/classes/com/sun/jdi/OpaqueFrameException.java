@@ -28,7 +28,6 @@ package com.sun.jdi;
 /**
  * Thrown to indicate an operation could not be performed on a frame.
  *
- * @sealedGraph
  * @since 19
  */
 public sealed class OpaqueFrameException
