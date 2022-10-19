@@ -63,12 +63,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static java.util.stream.Collectors.joining;
-
 /**
- * A taglet that processes {@link ThrowsTree}, which represents
- * {@code @throws} and {@code @exception} tags, collectively
- * referred to as exception tags.
+ * A taglet that processes {@link ThrowsTree}, which represents {@code @throws}
+ * and {@code @exception} tags, collectively referred to as exception tags.
  */
 public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
@@ -117,12 +114,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      *
      * Map<ThrowsTree, ExecutableElement> associates a doc tree with its holder
      * element externally. Such maps are ordered, have non-null keys and values.
-     *
-     * Of all language elements only constructors and methods can declare
-     * thrown exceptions and, hence, document them.
      */
 
     public ThrowsTaglet() {
+        // of all language elements only constructors and methods can declare
+        // thrown exceptions and, hence, document them
         super(DocTree.Kind.THROWS, false, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD));
     }
 
@@ -140,7 +136,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         ElementKind kind = holder.getKind();
         if (kind != ElementKind.METHOD && kind != ElementKind.CONSTRUCTOR) {
             // Elements are processed by applicable taglets only. This taglet
-            // is only applicable to methods and constructors.
+            // is only applicable to executable elements such as methods
+            // and constructors.
             throw newAssertionError(holder, kind);
         }
         var executable = (ExecutableElement) holder;
@@ -574,19 +571,22 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     private Map<TypeMirror, TypeMirror> getSubstitutedThrownTypes(Types types,
                                                                   List<? extends TypeMirror> declaredThrownTypes,
                                                                   List<? extends TypeMirror> instantiatedThrownTypes) {
-        if (!declaredThrownTypes.equals(instantiatedThrownTypes)) {
-            Map<TypeMirror, TypeMirror> map = new HashMap<>();
-            Iterator<? extends TypeMirror> i1 = declaredThrownTypes.iterator();
-            Iterator<? extends TypeMirror> i2 = instantiatedThrownTypes.iterator();
-            while (i1.hasNext() && i2.hasNext()) {
-                TypeMirror t1 = i1.next();
-                TypeMirror t2 = i2.next();
-                if (!types.isSameType(t1, t2))
-                    map.put(t1, t2);
+        Map<TypeMirror, TypeMirror> map = new HashMap<>();
+        var i1 = declaredThrownTypes.iterator();
+        var i2 = instantiatedThrownTypes.iterator();
+        while (i1.hasNext() && i2.hasNext()) {
+            TypeMirror t1 = i1.next();
+            TypeMirror t2 = i2.next();
+            if (!types.isSameType(t1, t2)) {
+                map.put(t1, t2);
             }
-            return map;
         }
-        return Map.of();
+        // correspondence between types is established positionally, i.e.
+        // pairwise, which means that the lists must have the same
+        // number of elements; if they don't, this algorithm is
+        // broken
+        assert !i1.hasNext() && !i2.hasNext();
+        return map;
     }
 
     private record Result(List<? extends ThrowsTree> throwsTrees, ExecutableElement method) { }
