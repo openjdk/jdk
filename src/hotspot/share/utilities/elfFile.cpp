@@ -805,7 +805,7 @@ bool DwarfFile::DebugAranges::read_address_descriptors(const DwarfFile::DebugAra
       found_matching_set = true;
       return true;
     }
-  } while (!is_terminating_entry(header) && _reader.has_bytes_left());
+  } while (!is_terminating_entry(header, descriptor) && _reader.has_bytes_left());
 
   // Set does not match offset_in_library. Continue with next.
   return true;
@@ -821,8 +821,12 @@ bool DwarfFile::DebugAranges::does_match_offset(const uint32_t offset_in_library
          && offset_in_library < descriptor.beginning_address + descriptor.range_length;
 }
 
-bool DwarfFile::DebugAranges::is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header) {
-  return _reader.get_position() >= _entry_end;
+bool DwarfFile::DebugAranges::is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
+                                                   const AddressDescriptor& descriptor) {
+  bool is_terminating = _reader.get_position() >= _entry_end;
+  assert(!is_terminating || (descriptor.beginning_address == 0 && descriptor.range_length == 0),
+         "a terminating entry needs a pair of zero");
+  return is_terminating;
 }
 
 // Find the .debug_line offset for the line number program by reading from the .debug_abbrev and .debug_info section.

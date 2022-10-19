@@ -494,7 +494,8 @@ class DwarfFile : public ElfFile {
                                   uint32_t offset_in_library, bool& found_matching_set);
     bool read_address_descriptor(AddressDescriptor& descriptor);
     static bool does_match_offset(uint32_t offset_in_library, const AddressDescriptor& descriptor) ;
-    bool is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header);
+    bool is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
+                              const AddressDescriptor& descriptor);
    public:
     DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()),
                                           _section_start_address(0), _entry_end(0) {}
