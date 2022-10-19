@@ -2,7 +2,6 @@ package gc.noop;
 
 /**
  * @test TestHelloWorld
- * @requires vm.gc.Noop
  * @summary Basic sanity test for Noop
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
  *                   gc.noop.TestHelloWorld
