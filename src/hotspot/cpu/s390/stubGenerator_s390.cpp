@@ -2869,7 +2869,7 @@ class StubGenerator: public StubCodeGenerator {
     // VM-Call Prologue
     __ save_return_pc();
     __ push_frame_abi160(nbytes_volatile);
-    __ save_volatile_registers(Z_SP, frame::z_abi_160_size, true, false);
+    __ save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
 
     // Prep arg for VM call
     // Create PTR to (R14 - Barrier_Length)
@@ -2883,7 +2883,7 @@ class StubGenerator: public StubCodeGenerator {
     __ z_ltr(Z_R0, Z_RET);
 
     // VM-Call Epilogue
-    __ restore_volatile_registers(Z_SP, frame::z_abi_160_size, true, false);
+    __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
     __ pop_frame();
     __ restore_return_pc();
 
