@@ -26,8 +26,6 @@
  * @bug 8255746
  * @summary Checks that -XX:CompileCommand=PrintCompilation,... works
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver compiler.print.CompileCommandPrintCompilation
  */
 
