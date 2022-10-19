@@ -62,7 +62,7 @@ public class MetalComboBoxEditor extends BasicComboBoxEditor {
                     }
                     super.setText(s);
                 }
-            // The preferred and minimum sizes are overriden and padded by
+            // The preferred and minimum sizes are overridden and padded by
             // 4 to keep the size as it previously was.  Refer to bugs
             // 4775789 and 4517214 for details.
             public Dimension getPreferredSize() {

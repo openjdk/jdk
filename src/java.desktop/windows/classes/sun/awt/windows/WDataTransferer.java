@@ -194,10 +194,10 @@ final class WDataTransferer extends DataTransferer {
             } else if (contents.isDataFlavorSupported(DataFlavor.allHtmlFlavor)) {
                 // if we cannot get data represented by the
                 // DataFlavor.selectionHtmlFlavor format
-                // but the DataFlavor.allHtmlFlavor format is avialable
-                // we belive that the user knows how to represent
+                // but the DataFlavor.allHtmlFlavor format is available
+                // we believe that the user knows how to represent
                 // the data and how to mark up selection in a
-                // system specific manner. Therefor, we use this data
+                // system specific manner. Therefore, we use this data
                 bytes = super.translateTransferable(contents,
                         DataFlavor.allHtmlFlavor,
                         format);
@@ -585,7 +585,7 @@ class HTMLCodec extends InputStream {
      * EndFragment:000000694\r\n      -- shift in array before start  <!--EndFragment-->
      * StartSelection:000000398\r\n   -- shift in array of the first char in copied selection
      * EndSelection:000000692\r\n     -- shift in array of the last char in copied selection
-     * SourceURL:http://sun.com/\r\n  -- base URL for related referenses
+     * SourceURL:http://sun.com/\r\n  -- base URL for related references
      * <HTML>...<BODY>...<!--StartFragment-->.....................<!--EndFragment-->...</BODY><HTML>
      * ^                                     ^ ^                ^^                                 ^
      * \ StartHTML                           | \-StartSelection | \EndFragment              EndHTML/
@@ -704,7 +704,7 @@ class HTMLCodec extends InputStream {
             iFragEnd,  // EndFragment -- shift in array before start <!--EndFragment-->
             iSelStart, // StartSelection -- shift in array of the first char in copied selection
             iSelEnd;   // EndSelection -- shift in array of the last char in copied selection
-    private String stBaseURL; // SourceURL -- base URL for related referenses
+    private String stBaseURL; // SourceURL -- base URL for related references
     private String stVersion; // Version -- current supported version
 
     //Stream reader markers:

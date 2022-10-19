@@ -32,6 +32,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -307,9 +308,12 @@ void MacroAssembler::call_VM_base(Register oop_result,
     ld(t0, Address(java_thread, in_bytes(Thread::pending_exception_offset())));
     Label ok;
     beqz(t0, ok);
-    int32_t offset = 0;
-    la_patchable(t0, RuntimeAddress(StubRoutines::forward_exception_entry()), offset);
-    jalr(x0, t0, offset);
+    RuntimeAddress target(StubRoutines::forward_exception_entry());
+    relocate(target.rspec(), [&] {
+      int32_t offset;
+      la_patchable(t0, target, offset);
+      jalr(x0, t0, offset);
+    });
     bind(ok);
   }
 
@@ -382,9 +386,12 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   movptr(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
-  int32_t offset = 0;
-  la_patchable(t1, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()), offset);
-  ld(t1, Address(t1, offset));
+  ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
+  relocate(target.rspec(), [&] {
+    int32_t offset;
+    la_patchable(t1, target, offset);
+    ld(t1, Address(t1, offset));
+  });
   jalr(t1);
 
   pop_reg(RegSet::of(ra, t0, t1, c_rarg0), sp);
@@ -421,9 +428,12 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   movptr(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
-  int32_t offset = 0;
-  la_patchable(t1, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()), offset);
-  ld(t1, Address(t1, offset));
+  ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
+  relocate(target.rspec(), [&] {
+    int32_t offset;
+    la_patchable(t1, target, offset);
+    ld(t1, Address(t1, offset));
+  });
   jalr(t1);
 
   pop_reg(RegSet::of(ra, t0, t1, c_rarg0), sp);
@@ -719,7 +729,34 @@ void MacroAssembler::vfneg_v(VectorRegister vd, VectorRegister vs) {
   vfsgnjn_vv(vd, vs, vs);
 }
 
-void MacroAssembler::la(Register Rd, const address &dest) {
+void MacroAssembler::baseOffset32(Register Rd, const Address &adr, int32_t &offset) {
+  assert(Rd != noreg, "Rd must not be empty register!");
+  guarantee(Rd != adr.base(), "should use different registers!");
+  if (is_offset_in_range(adr.offset(), 32)) {
+    int32_t imm = adr.offset();
+    int32_t upper = imm, lower = imm;
+    lower = (imm << 20) >> 20;
+    upper -= lower;
+    lui(Rd, upper);
+    offset = lower;
+  } else {
+    offset = ((int32_t)adr.offset() << 20) >> 20;
+    li(Rd, adr.offset() - offset);
+  }
+  add(Rd, Rd, adr.base());
+}
+
+void MacroAssembler::baseOffset(Register Rd, const Address &adr, int32_t &offset) {
+  if (is_offset_in_range(adr.offset(), 12)) {
+    assert(Rd != noreg, "Rd must not be empty register!");
+    addi(Rd, adr.base(), adr.offset());
+    offset = 0;
+  } else {
+    baseOffset32(Rd, adr, offset);
+  }
+}
+
+void MacroAssembler::la(Register Rd, const address dest) {
   int64_t offset = dest - pc();
   if (is_offset_in_range(offset, 32)) {
     auipc(Rd, (int32_t)offset + 0x800);  //0x800, Note:the 11th sign bit
@@ -736,8 +773,9 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
       if (rtype == relocInfo::none) {
         mv(Rd, (intptr_t)(adr.target()));
       } else {
-        relocate(adr.rspec());
-        movptr(Rd, adr.target());
+        relocate(adr.rspec(), [&] {
+          movptr(Rd, adr.target());
+        });
       }
       break;
     }
@@ -757,8 +795,211 @@ void MacroAssembler::la(Register Rd, Label &label) {
   la(Rd, target(label));
 }
 
+void MacroAssembler::li32(Register Rd, int32_t imm) {
+  // int32_t is in range 0x8000 0000 ~ 0x7fff ffff, and imm[31] is the sign bit
+  int64_t upper = imm, lower = imm;
+  lower = (imm << 20) >> 20;
+  upper -= lower;
+  upper = (int32_t)upper;
+  // lui Rd, imm[31:12] + imm[11]
+  lui(Rd, upper);
+  // use addiw to distinguish li32 to li64
+  addiw(Rd, Rd, lower);
+}
+
+void MacroAssembler::li64(Register Rd, int64_t imm) {
+  // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
+  // (imm[31:20] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
+  int64_t lower = imm & 0xffffffff;
+  lower -= ((lower << 44) >> 44);
+  int64_t tmp_imm = ((uint64_t)(imm & 0xffffffff00000000)) + (uint64_t)lower;
+  int32_t upper = (tmp_imm - (int32_t)lower) >> 32;
+
+  // Load upper 32 bits
+  int64_t up = upper, lo = upper;
+  lo = (lo << 52) >> 52;
+  up -= lo;
+  up = (int32_t)up;
+  lui(Rd, up);
+  addi(Rd, Rd, lo);
+
+  // Load the rest 32 bits.
+  slli(Rd, Rd, 12);
+  addi(Rd, Rd, (int32_t)lower >> 20);
+  slli(Rd, Rd, 12);
+  lower = ((int32_t)imm << 12) >> 20;
+  addi(Rd, Rd, lower);
+  slli(Rd, Rd, 8);
+  lower = imm & 0xff;
+  addi(Rd, Rd, lower);
+}
+
+void MacroAssembler::li(Register Rd, int64_t imm) {
+  // int64_t is in range 0x8000 0000 0000 0000 ~ 0x7fff ffff ffff ffff
+  // li -> c.li
+  if (do_compress() && (is_imm_in_range(imm, 6, 0) && Rd != x0)) {
+    c_li(Rd, imm);
+    return;
+  }
+
+  int shift = 12;
+  int64_t upper = imm, lower = imm;
+  // Split imm to a lower 12-bit sign-extended part and the remainder,
+  // because addi will sign-extend the lower imm.
+  lower = ((int32_t)imm << 20) >> 20;
+  upper -= lower;
+
+  // Test whether imm is a 32-bit integer.
+  if (!(((imm) & ~(int64_t)0x7fffffff) == 0 ||
+        (((imm) & ~(int64_t)0x7fffffff) == ~(int64_t)0x7fffffff))) {
+    while (((upper >> shift) & 1) == 0) { shift++; }
+    upper >>= shift;
+    li(Rd, upper);
+    slli(Rd, Rd, shift);
+    if (lower != 0) {
+      addi(Rd, Rd, lower);
+    }
+  } else {
+    // 32-bit integer
+    Register hi_Rd = zr;
+    if (upper != 0) {
+      lui(Rd, (int32_t)upper);
+      hi_Rd = Rd;
+    }
+    if (lower != 0 || hi_Rd == zr) {
+      addiw(Rd, hi_Rd, lower);
+    }
+  }
+}
+
+#define INSN(NAME, REGISTER)                                       \
+  void MacroAssembler::NAME(const address dest, Register temp) {   \
+    assert_cond(dest != NULL);                                     \
+    int64_t distance = dest - pc();                                \
+    if (is_imm_in_range(distance, 20, 1)) {                        \
+      Assembler::jal(REGISTER, distance);                          \
+    } else {                                                       \
+      assert(temp != noreg, "temp must not be empty register!");   \
+      int32_t offset = 0;                                          \
+      movptr(temp, dest, offset);                                  \
+      Assembler::jalr(REGISTER, temp, offset);                     \
+    }                                                              \
+  }                                                                \
+
+  INSN(j,   x0);
+  INSN(jal, x1);
+
+#undef INSN
+
+#define INSN(NAME, REGISTER)                                       \
+  void MacroAssembler::NAME(const Address &adr, Register temp) {   \
+    switch (adr.getMode()) {                                       \
+      case Address::literal: {                                     \
+        relocate(adr.rspec(), [&] {                                \
+          NAME(adr.target(), temp);                                \
+        });                                                        \
+        break;                                                     \
+      }                                                            \
+      case Address::base_plus_offset: {                            \
+        int32_t offset = 0;                                        \
+        baseOffset(temp, adr, offset);                             \
+        Assembler::jalr(REGISTER, temp, offset);                   \
+        break;                                                     \
+      }                                                            \
+      default:                                                     \
+        ShouldNotReachHere();                                      \
+    }                                                              \
+  }
+
+  INSN(j,   x0);
+  INSN(jal, x1);
+
+#undef INSN
+
+#define INSN(NAME)                                                                    \
+  void MacroAssembler::NAME(Register Rd, const address dest, Register temp) {         \
+    assert_cond(dest != NULL);                                                        \
+    int64_t distance = dest - pc();                                                   \
+    if (is_imm_in_range(distance, 20, 1)) {                                           \
+      Assembler::NAME(Rd, distance);                                                  \
+    } else {                                                                          \
+      assert_different_registers(Rd, temp);                                           \
+      int32_t offset = 0;                                                             \
+      movptr(temp, dest, offset);                                                     \
+      jalr(Rd, temp, offset);                                                         \
+    }                                                                                 \
+  }                                                                                   \
+  void MacroAssembler::NAME(Register Rd, Label &L, Register temp) {                   \
+    assert_different_registers(Rd, temp);                                             \
+    wrap_label(Rd, L, temp, &MacroAssembler::NAME);                                   \
+  }
+
+  INSN(jal);
+
+#undef INSN
+
+#define INSN(NAME, REGISTER)                                       \
+  void MacroAssembler::NAME(Label &l, Register temp) {             \
+    jal(REGISTER, l, temp);                                        \
+  }                                                                \
+
+  INSN(j,   x0);
+  INSN(jal, x1);
+
+#undef INSN
+
+void MacroAssembler::wrap_label(Register Rt, Label &L, Register tmp, load_insn_by_temp insn) {
+  if (L.is_bound()) {
+    (this->*insn)(Rt, target(L), tmp);
+  } else {
+    L.add_patch_at(code(), locator());
+    (this->*insn)(Rt, pc(), tmp);
+  }
+}
+
+void MacroAssembler::wrap_label(Register Rt, Label &L, jal_jalr_insn insn) {
+  if (L.is_bound()) {
+    (this->*insn)(Rt, target(L));
+  } else {
+    L.add_patch_at(code(), locator());
+    (this->*insn)(Rt, pc());
+  }
+}
+
+void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
+                                compare_and_branch_insn insn,
+                                compare_and_branch_label_insn neg_insn, bool is_far) {
+  if (is_far) {
+    Label done;
+    (this->*neg_insn)(r1, r2, done, /* is_far */ false);
+    j(L);
+    bind(done);
+  } else {
+    if (L.is_bound()) {
+      (this->*insn)(r1, r2, target(L));
+    } else {
+      L.add_patch_at(code(), locator());
+      (this->*insn)(r1, r2, pc());
+    }
+  }
+}
+
+#define INSN(NAME, NEG_INSN)                                                              \
+  void MacroAssembler::NAME(Register Rs1, Register Rs2, Label &L, bool is_far) {          \
+    wrap_label(Rs1, Rs2, L, &MacroAssembler::NAME, &MacroAssembler::NEG_INSN, is_far);    \
+  }
+
+  INSN(beq,  bne);
+  INSN(bne,  beq);
+  INSN(blt,  bge);
+  INSN(bge,  blt);
+  INSN(bltu, bgeu);
+  INSN(bgeu, bltu);
+
+#undef INSN
+
 #define INSN(NAME)                                                                \
-  void MacroAssembler::NAME##z(Register Rs, const address &dest) {                \
+  void MacroAssembler::NAME##z(Register Rs, const address dest) {                 \
     NAME(Rs, zr, dest);                                                           \
   }                                                                               \
   void MacroAssembler::NAME##z(Register Rs, Label &l, bool is_far) {              \
@@ -774,16 +1015,31 @@ void MacroAssembler::la(Register Rd, Label &label) {
 
 #undef INSN
 
+#define INSN(NAME, NEG_INSN)                                                      \
+  void MacroAssembler::NAME(Register Rs, Register Rt, const address dest) {       \
+    NEG_INSN(Rt, Rs, dest);                                                       \
+  }                                                                               \
+  void MacroAssembler::NAME(Register Rs, Register Rt, Label &l, bool is_far) {    \
+    NEG_INSN(Rt, Rs, l, is_far);                                                  \
+  }
+
+  INSN(bgt,  blt);
+  INSN(ble,  bge);
+  INSN(bgtu, bltu);
+  INSN(bleu, bgeu);
+
+#undef INSN
+
 // Float compare branch instructions
 
-#define INSN(NAME, FLOATCMP, BRANCH)                                                                                   \
-  void MacroAssembler::float_##NAME(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far, bool is_unordered) {  \
-    FLOATCMP##_s(t0, Rs1, Rs2);                                                                                        \
-    BRANCH(t0, l, is_far);                                                                                             \
-  }                                                                                                                    \
-  void MacroAssembler::double_##NAME(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far, bool is_unordered) { \
-    FLOATCMP##_d(t0, Rs1, Rs2);                                                                                        \
-    BRANCH(t0, l, is_far);                                                                                             \
+#define INSN(NAME, FLOATCMP, BRANCH)                                                                                    \
+  void MacroAssembler::float_##NAME(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far, bool is_unordered) {   \
+    FLOATCMP##_s(t0, Rs1, Rs2);                                                                                         \
+    BRANCH(t0, l, is_far);                                                                                              \
+  }                                                                                                                     \
+  void MacroAssembler::double_##NAME(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far, bool is_unordered) {  \
+    FLOATCMP##_d(t0, Rs1, Rs2);                                                                                         \
+    BRANCH(t0, l, is_far);                                                                                              \
   }
 
   INSN(beq, feq, bnez);
@@ -928,7 +1184,7 @@ void MacroAssembler::push_reg(Register Rs)
 
 void MacroAssembler::pop_reg(Register Rd)
 {
-  ld(Rd, esp, 0);
+  ld(Rd, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
 
@@ -948,8 +1204,6 @@ int MacroAssembler::bitset_to_regs(unsigned int bitset, unsigned char* regs) {
 // Return the number of words pushed
 int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
   DEBUG_ONLY(int words_pushed = 0;)
-  CompressibleRegion cr(this);
-
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
   // reserve one slot to align for odd count
@@ -970,8 +1224,6 @@ int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
 
 int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
   DEBUG_ONLY(int words_popped = 0;)
-  CompressibleRegion cr(this);
-
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
   // reserve one slot to align for odd count
@@ -993,7 +1245,6 @@ int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
 // Push floating-point registers in the bitset supplied.
 // Return the number of words pushed
 int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
-  CompressibleRegion cr(this);
   DEBUG_ONLY(int words_pushed = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -1014,7 +1265,6 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
 }
 
 int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
-  CompressibleRegion cr(this);
   DEBUG_ONLY(int words_popped = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -1038,7 +1288,6 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
 // Push vector registers in the bitset supplied.
 // Return the number of words pushed
 int MacroAssembler::push_v(unsigned int bitset, Register stack) {
-  CompressibleRegion cr(this);
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
@@ -1054,7 +1303,6 @@ int MacroAssembler::push_v(unsigned int bitset, Register stack) {
 }
 
 int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
-  CompressibleRegion cr(this);
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
@@ -1071,7 +1319,6 @@ int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
 #endif // COMPILER2
 
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
-  CompressibleRegion cr(this);
   // Push integer registers x7, x10-x17, x28-x31.
   push_reg(RegSet::of(x7) + RegSet::range(x10, x17) + RegSet::range(x28, x31) - exclude, sp);
 
@@ -1086,7 +1333,6 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
 }
 
 void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
-  CompressibleRegion cr(this);
   int offset = 0;
   for (int i = 0; i < 32; i++) {
     if (i <= f7->encoding() || i >= f28->encoding() || (i >= f10->encoding() && i <= f17->encoding())) {
@@ -1099,7 +1345,6 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes) {
-  CompressibleRegion cr(this);
   // integer registers, except zr(x0) & ra(x1) & sp(x2) & gp(x3) & tp(x4)
   push_reg(RegSet::range(x5, x31), sp);
 
@@ -1121,7 +1366,6 @@ void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes)
 }
 
 void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_bytes) {
-  CompressibleRegion cr(this);
   // vector registers
   if (restore_vectors) {
     vsetvli(t0, x0, Assembler::e64, Assembler::m8);
@@ -1340,17 +1584,21 @@ void MacroAssembler::reinit_heapbase() {
     if (Universe::is_fully_initialized()) {
       mv(xheapbase, CompressedOops::ptrs_base());
     } else {
-      int32_t offset = 0;
-      la_patchable(xheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()), offset);
-      ld(xheapbase, Address(xheapbase, offset));
+      ExternalAddress target(CompressedOops::ptrs_base_addr());
+      relocate(target.rspec(), [&] {
+        int32_t offset;
+        la_patchable(xheapbase, target, offset);
+        ld(xheapbase, Address(xheapbase, offset));
+      });
     }
   }
 }
 
 void MacroAssembler::mv(Register Rd, Address dest) {
   assert(dest.getMode() == Address::literal, "Address mode should be Address::literal");
-  relocate(dest.rspec());
-  movptr(Rd, dest.target());
+  relocate(dest.rspec(), [&] {
+    movptr(Rd, dest.target());
+  });
 }
 
 void MacroAssembler::mv(Register Rd, RegisterOrConstant src) {
@@ -1358,6 +1606,85 @@ void MacroAssembler::mv(Register Rd, RegisterOrConstant src) {
     mv(Rd, src.as_register());
   } else {
     mv(Rd, src.as_constant());
+  }
+}
+
+void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset) {
+  int64_t imm64 = (int64_t)addr;
+#ifndef PRODUCT
+  {
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "0x%" PRIx64, imm64);
+    block_comment(buffer);
+  }
+#endif
+  assert(is_unsigned_imm_in_range(imm64, 47, 0) || (imm64 == (int64_t)-1),
+         "bit 47 overflows in address constant");
+  // Load upper 31 bits
+  int64_t imm = imm64 >> 17;
+  int64_t upper = imm, lower = imm;
+  lower = (lower << 52) >> 52;
+  upper -= lower;
+  upper = (int32_t)upper;
+  lui(Rd, upper);
+  addi(Rd, Rd, lower);
+
+  // Load the rest 17 bits.
+  slli(Rd, Rd, 11);
+  addi(Rd, Rd, (imm64 >> 6) & 0x7ff);
+  slli(Rd, Rd, 6);
+
+  // This offset will be used by following jalr/ld.
+  offset = imm64 & 0x3f;
+}
+
+void MacroAssembler::movptr(Register Rd, uintptr_t imm64) {
+  movptr(Rd, (address)imm64);
+}
+
+void MacroAssembler::movptr(Register Rd, address addr) {
+  int offset = 0;
+  movptr(Rd, addr, offset);
+  addi(Rd, Rd, offset);
+}
+
+void MacroAssembler::add(Register Rd, Register Rn, int64_t increment, Register temp) {
+  if (is_imm_in_range(increment, 12, 0)) {
+    addi(Rd, Rn, increment);
+  } else {
+    assert_different_registers(Rn, temp);
+    li(temp, increment);
+    add(Rd, Rn, temp);
+  }
+}
+
+void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register temp) {
+  if (is_imm_in_range(increment, 12, 0)) {
+    addiw(Rd, Rn, increment);
+  } else {
+    assert_different_registers(Rn, temp);
+    li(temp, increment);
+    addw(Rd, Rn, temp);
+  }
+}
+
+void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) {
+  if (is_imm_in_range(-decrement, 12, 0)) {
+    addi(Rd, Rn, -decrement);
+  } else {
+    assert_different_registers(Rn, temp);
+    li(temp, decrement);
+    sub(Rd, Rn, temp);
+  }
+}
+
+void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
+  if (is_imm_in_range(-decrement, 12, 0)) {
+    addiw(Rd, Rn, -decrement);
+  } else {
+    assert_different_registers(Rn, temp);
+    li(temp, decrement);
+    subw(Rd, Rn, temp);
   }
 }
 
@@ -1407,7 +1734,7 @@ int MacroAssembler::load_signed_byte(Register dst, Address src) {
   return off;
 }
 
-void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2) {
+void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed) {
   switch (size_in_bytes) {
     case  8:  ld(dst, src); break;
     case  4:  is_signed ? lw(dst, src) : lwu(dst, src); break;
@@ -1417,7 +1744,7 @@ void MacroAssembler::load_sized_value(Register dst, Address src, size_t size_in_
   }
 }
 
-void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2) {
+void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in_bytes) {
   switch (size_in_bytes) {
     case  8:  sd(src, dst); break;
     case  4:  sw(src, dst); break;
@@ -1696,8 +2023,12 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value) {
   int32_t offset = 0;
   _masm = masm;
-  _masm->la_patchable(t0, ExternalAddress((address)flag_addr), offset);
-  _masm->lbu(t0, Address(t0, offset));
+  ExternalAddress target((address)flag_addr);
+  _masm->relocate(target.rspec(), [&] {
+    int32_t offset;
+    _masm->la_patchable(t0, target, offset);
+    _masm->lbu(t0, Address(t0, offset));
+  });
   _masm->beqz(t0, _label);
 }
 
@@ -1763,15 +2094,15 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
-                                     Address dst, Register src,
+                                     Address dst, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
+    bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
 }
 
@@ -1938,9 +2269,9 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
   verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
                                     Register tmp2, Register tmp3, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, val, tmp1, tmp2, tmp3);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
@@ -2441,12 +2772,14 @@ void MacroAssembler::far_jump(Address entry, Register tmp) {
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   IncompressibleRegion ir(this);  // Fixed length: see MacroAssembler::far_branch_size()
-  int32_t offset = 0;
   if (far_branches()) {
     // We can use auipc + jalr here because we know that the total size of
     // the code cache cannot exceed 2Gb.
-    la_patchable(tmp, entry, offset);
-    jalr(x0, tmp, offset);
+    relocate(entry.rspec(), [&] {
+      int32_t offset;
+      la_patchable(tmp, entry, offset);
+      jalr(x0, tmp, offset);
+    });
   } else {
     j(entry);
   }
@@ -2460,12 +2793,14 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   IncompressibleRegion ir(this);  // Fixed length: see MacroAssembler::far_branch_size()
-  int32_t offset = 0;
   if (far_branches()) {
     // We can use auipc + jalr here because we know that the total size of
     // the code cache cannot exceed 2Gb.
-    la_patchable(tmp, entry, offset);
-    jalr(x1, tmp, offset); // link
+    relocate(entry.rspec(), [&] {
+      int32_t offset;
+      la_patchable(tmp, entry, offset);
+      jalr(x1, tmp, offset); // link
+    });
   } else {
     jal(entry); // link
   }
@@ -2701,7 +3036,6 @@ void MacroAssembler::la_patchable(Register reg1, const Address &dest, int32_t &o
   assert(is_valid_riscv64_address(dest.target()), "bad address");
   assert(dest.getMode() == Address::literal, "la_patchable must be applied to a literal address");
 
-  relocate(dest.rspec());
   // RISC-V doesn't compute a page-aligned address, in order to partially
   // compensate for the use of *signed* offsets in its base+disp12
   // addressing mode (RISC-V's PC-relative reach remains asymmetric
@@ -2741,17 +3075,23 @@ void MacroAssembler::reserved_stack_check() {
 
     enter();   // RA and FP are live.
     mv(c_rarg0, xthread);
-    int32_t offset = 0;
-    la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone)), offset);
-    jalr(x1, t0, offset);
+    RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
+    relocate(target.rspec(), [&] {
+      int32_t offset;
+      la_patchable(t0, target, offset);
+      jalr(x1, t0, offset);
+    });
     leave();
 
     // We have already removed our own frame.
     // throw_delayed_StackOverflowError will think that it's been
     // called by our caller.
-    offset = 0;
-    la_patchable(t0, RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()), offset);
-    jalr(x0, t0, offset);
+    target = RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry());
+    relocate(target.rspec(), [&] {
+      int32_t offset;
+      la_patchable(t0, target, offset);
+      jalr(x0, t0, offset);
+    });
     should_not_reach_here();
 
     bind(no_reserved_zone_enabling);
@@ -2765,8 +3105,9 @@ void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype)
 // Read the polling page.  The address of the polling page must
 // already be in r.
 void MacroAssembler::read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype) {
-  relocate(rtype);
-  lwu(zr, Address(r, offset));
+  relocate(rtype, [&] {
+    lwu(zr, Address(r, offset));
+  });
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
@@ -2780,8 +3121,9 @@ void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
   }
 #endif
   int oop_index = oop_recorder()->find_index(obj);
-  relocate(oop_Relocation::spec(oop_index));
-  li32(dst, 0xDEADBEEF);
+  relocate(oop_Relocation::spec(oop_index), [&] {
+    li32(dst, 0xDEADBEEF);
+  });
   zero_extend(dst, dst, 32);
 }
 
@@ -2792,8 +3134,9 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   assert(!Universe::heap()->is_in(k), "should not be an oop");
 
   narrowKlass nk = CompressedKlassPointers::encode(k);
-  relocate(metadata_Relocation::spec(index));
-  li32(dst, nk);
+  relocate(metadata_Relocation::spec(index), [&] {
+    li32(dst, nk);
+  });
   zero_extend(dst, dst, 32);
 }
 
@@ -2840,8 +3183,9 @@ address MacroAssembler::trampoline_call(Address entry) {
     assert_alignment(call_pc);
   }
 #endif
-  relocate(entry.rspec());
-  jal(target);
+  relocate(entry.rspec(), [&] {
+    jal(target);
+  });
 
   postcond(pc() != badAddress);
   return call_pc;
@@ -2849,6 +3193,7 @@ address MacroAssembler::trampoline_call(Address entry) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
+  IncompressibleRegion ir(this);  // relocations
   movptr(t1, (address)Universe::non_oop_word());
   assert_cond(entry != NULL);
   return trampoline_call(Address(entry, rh));
@@ -2880,21 +3225,22 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   // Make sure the address of destination 8-byte aligned after 3 instructions.
   align(wordSize, NativeCallTrampolineStub::data_offset);
 
-  relocate(trampoline_stub_Relocation::spec(code()->insts()->start() +
-                                            insts_call_instruction_offset));
+  RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
+                                                         insts_call_instruction_offset);
   const int stub_start_offset = offset();
-
-  // Now, create the trampoline stub's code:
-  // - load the call
-  // - call
-  Label target;
-  ld(t0, target);  // auipc + ld
-  jr(t0);          // jalr
-  bind(target);
-  assert(offset() - stub_start_offset == NativeCallTrampolineStub::data_offset,
-         "should be");
-  assert(offset() % wordSize == 0, "bad alignment");
-  emit_int64((intptr_t)dest);
+  relocate(rh, [&] {
+    // Now, create the trampoline stub's code:
+    // - load the call
+    // - call
+    Label target;
+    ld(t0, target);  // auipc + ld
+    jr(t0);          // jalr
+    bind(target);
+    assert(offset() - stub_start_offset == NativeCallTrampolineStub::data_offset,
+           "should be");
+    assert(offset() % wordSize == 0, "bad alignment");
+    emit_int64((int64_t)dest);
+  });
 
   const address stub_start_addr = addr_at(stub_start_offset);
 
@@ -2962,9 +3308,11 @@ void MacroAssembler::decrementw(const Address dst, int32_t value) {
 
 void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
   assert_different_registers(src1, t0);
-  int32_t offset;
-  la_patchable(t0, src2, offset);
-  ld(t0, Address(t0, offset));
+  relocate(src2.rspec(), [&] {
+    int32_t offset;
+    la_patchable(t0, src2, offset);
+    ld(t0, Address(t0, offset));
+  });
   beq(src1, t0, equal);
 }
 
@@ -3858,7 +4206,7 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
   bind(loop);
   sub(len, len, unroll);
   for (int i = -unroll; i < 0; i++) {
-    Assembler::sd(zr, Address(tmp, i * wordSize));
+    sd(zr, Address(tmp, i * wordSize));
   }
   bind(entry);
   add(tmp, tmp, unroll * wordSize);
@@ -4149,11 +4497,14 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 
 void MacroAssembler::rt_call(address dest, Register tmp) {
   CodeBlob *cb = CodeCache::find_blob(dest);
+  RuntimeAddress target(dest);
   if (cb) {
-    far_call(RuntimeAddress(dest));
+    far_call(target);
   } else {
-    int32_t offset = 0;
-    la_patchable(tmp, RuntimeAddress(dest), offset);
-    jalr(x1, tmp, offset);
+    relocate(target.rspec(), [&] {
+      int32_t offset;
+      la_patchable(tmp, target, offset);
+      jalr(x1, tmp, offset);
+    });
   }
 }
