@@ -8400,12 +8400,12 @@ instruct vmaskcast_avx(vec dst, vec src) %{
 //-------------------------------- Load Iota Indices ----------------------------------
 
 instruct loadIotaIndices(vec dst, immI_0 src) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (VectorLoadConst src));
   format %{ "vector_load_iota $dst CONSTANT_MEMORY\t! load iota indices" %}
   ins_encode %{
      int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
-     __ load_iota_indices($dst$$XMMRegister, vlen_in_bytes);
+     BasicType bt = Matcher::vector_element_basic_type(this);
+     __ load_iota_indices($dst$$XMMRegister, vlen_in_bytes, bt);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8417,14 +8417,11 @@ instruct VectorPopulateIndex(vec dst, rRegI src1, immI_1 src2, vec vtmp) %{
   format %{ "vector_populate_index $dst $src1 $src2\t! using $vtmp as TEMP" %}
   ins_encode %{
      assert($src2$$constant == 1, "required");
-     int vlen = Matcher::vector_length(this);
+     int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
      int vlen_enc = vector_length_encoding(this);
      BasicType elem_bt = Matcher::vector_element_basic_type(this);
      __ vpbroadcast(elem_bt, $vtmp$$XMMRegister, $src1$$Register, vlen_enc);
-     __ load_iota_indices($dst$$XMMRegister, vlen);
-     if (elem_bt != T_BYTE) {
-       __ vconvert_b2x(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-     }
+     __ load_iota_indices($dst$$XMMRegister, vlen_in_bytes, elem_bt);
      __ vpadd(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
@@ -8436,14 +8433,11 @@ instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp) %{
   format %{ "vector_populate_index $dst $src1 $src2\t! using $vtmp as TEMP" %}
   ins_encode %{
      assert($src2$$constant == 1, "required");
-     int vlen = Matcher::vector_length(this);
+     int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
      int vlen_enc = vector_length_encoding(this);
      BasicType elem_bt = Matcher::vector_element_basic_type(this);
      __ vpbroadcast(elem_bt, $vtmp$$XMMRegister, $src1$$Register, vlen_enc);
-     __ load_iota_indices($dst$$XMMRegister, vlen);
-     if (elem_bt != T_BYTE) {
-       __ vconvert_b2x(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-     }
+     __ load_iota_indices($dst$$XMMRegister, vlen_in_bytes, elem_bt);
      __ vpadd(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
