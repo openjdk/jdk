@@ -192,7 +192,8 @@ class CallbackWrapper : public StackObj {
  private:
   JvmtiTagMap* _tag_map;
   JvmtiTagMapTable* _hashmap;
-  JvmtiTagMapEntry* _entry;
+  JvmtiTagMapEntry _entry;
+  bool _entry_found;
   oop _o;
   jlong _obj_size;
   jlong _obj_tag;
@@ -350,6 +351,7 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
 
+  _hashmap->add_update_remove(o, tag);
   // see if the object is already tagged
   JvmtiTagMapTable* hashmap = _hashmap;
   jlong found_tag  = hashmap->find(o);

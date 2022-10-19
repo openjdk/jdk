@@ -109,7 +109,6 @@ void JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapEntry jtme(obj);
   _rrht_table->remove(jtme);
 }
-
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapEntryClosure* closure) {
   _rrht_table->iterate(closure);
 }
