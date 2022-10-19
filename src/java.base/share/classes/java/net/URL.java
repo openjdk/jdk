@@ -528,7 +528,7 @@ public final class URL implements java.io.Serializable {
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol. In particular, if the
+     *               of the associated protocol, or the
      *               underlying stream handler's {@linkplain
      *               URLStreamHandler#parseURL parseURL method} throws
      *               {@code IllegalArgumentException}
@@ -575,7 +575,7 @@ public final class URL implements java.io.Serializable {
      * <p>
      * For a more detailed description of URL parsing, refer to RFC2396.
      *
-     * @implSpec Parsing the URL involves calling the {@link
+     * @implSpec Parsing the URL includes calling the {@link
      * URLStreamHandler#parseURL(URL, String, int, int) parseURL} method on the
      * selected handler.
      *
@@ -584,7 +584,7 @@ public final class URL implements java.io.Serializable {
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol. In particular, if the
+     *               of the associated protocol, or the
      *               underlying stream handler's {@linkplain
      *               URLStreamHandler#parseURL parseURL method} throws
      *               {@code IllegalArgumentException}
@@ -603,7 +603,7 @@ public final class URL implements java.io.Serializable {
      * within a specified context. If the handler is null, the parsing
      * occurs as with the two argument constructor.
      *
-     * @implSpec Parsing the URL involves calling the {@link
+     * @implSpec Parsing the URL includes calling the {@link
      * URLStreamHandler#parseURL(URL, String, int, int) parseURL} method on the
      * selected handler.
      *
@@ -613,7 +613,7 @@ public final class URL implements java.io.Serializable {
      * @throws     MalformedURLException  if no protocol is specified, or an
      *               unknown protocol is found, or {@code spec} is {@code null},
      *               or the parsed URL fails to comply with the specific syntax
-     *               of the associated protocol.  In particular, if the
+     *               of the associated protocol, or the
      *               underlying stream handler's {@linkplain
      *               URLStreamHandler#parseURL(URL, String, int, int)
      *               parseURL method} throws {@code IllegalArgumentException}
