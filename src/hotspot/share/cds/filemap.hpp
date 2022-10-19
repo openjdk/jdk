@@ -39,6 +39,7 @@
 
 static const int JVM_IDENT_MAX = 256;
 
+class BitMapView;
 class CHeapBitMap;
 class ClassFileStream;
 class ClassLoaderData;
@@ -102,11 +103,11 @@ public:
   }
 };
 
-struct ArchiveHeapOopmapInfo {
-  address _oopmap;               // bitmap for relocating embedded oops
-  size_t  _offset;               // this oopmap is stored at this offset from the bottom of the BM region
-  size_t  _oopmap_size_in_bits;
-  size_t  _oopmap_size_in_bytes;
+struct ArchiveHeapBitmapInfo {
+  address _map;               // bitmap for relocating embedded oops
+  size_t  _bm_region_offset;  // this bitmap is stored at this offset from the bottom of the BM region
+  size_t  _size_in_bits;
+  size_t  _size_in_bytes;
 };
 
 class SharedPathTable {
@@ -137,6 +138,7 @@ public:
 
 
 class FileMapRegion: private CDSFileMapRegion {
+  BitMapView bitmap_view(bool is_oopmap);
 public:
   void assert_is_heap_region() const {
     assert(_is_heap_region, "must be heap region");
@@ -156,7 +158,7 @@ public:
   size_t mapping_end_offset()       const { return _mapping_offset + used_aligned(); }
   size_t used()                     const { return _used; }
   size_t used_aligned()             const; // aligned up to MetaspaceShared::core_region_alignment()
-  char*  mapped_base()              const { assert_is_not_heap_region(); return _mapped_base; }
+  char*  mapped_base()              const { return _mapped_base; }
   char*  mapped_end()               const { return mapped_base()        + used_aligned(); }
   bool   read_only()                const { return _read_only != 0; }
   bool   allow_exec()               const { return _allow_exec != 0; }
@@ -170,11 +172,10 @@ public:
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
   void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
             bool allow_exec, int crc);
-
-  void init_oopmap(size_t oopmap_offset, size_t size_in_bits) {
-    _oopmap_offset = oopmap_offset;
-    _oopmap_size_in_bits = size_in_bits;
-  }
+  void init_bitmaps(ArchiveHeapBitmapInfo oopmap, ArchiveHeapBitmapInfo ptrmap);
+  BitMapView oopmap_view();
+  BitMapView ptrmap_view();
+  bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
 
   void print(outputStream* st, int region_index);
 };
@@ -444,11 +445,11 @@ public:
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
   char* write_bitmap_region(const CHeapBitMap* ptrmap,
-                            GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                            GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                            GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
+                            GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps,
                             size_t &size_in_bytes);
   size_t write_heap_regions(GrowableArray<MemRegion>* regions,
-                            GrowableArray<ArchiveHeapOopmapInfo>* oopmaps,
+                            GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
                             int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
@@ -573,8 +574,8 @@ public:
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
-  static size_t set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_size);
-  static size_t write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo> *oopmaps, size_t curr_offset, char* buffer);
+  static size_t set_bitmaps_offset(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_size);
+  static size_t write_bitmaps(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_offset, char* buffer);
 
   address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
 
