@@ -441,6 +441,22 @@ public final class SunJCE extends Provider {
                 attrs);
 
         /*
+         * Key Derivation engines
+         */
+        put("KeyDerivation.HkdfMD5",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfMD5");
+        put("KeyDerivation.HkdfSHA1",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA1");
+        put("KeyDerivation.HkdfSHA224",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA224");
+        put("KeyDerivation.HkdfSHA256",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA256");
+        put("KeyDerivation.HkdfSHA384",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA384");
+        put("KeyDerivation.HkdfSHA512",
+                "com.sun.crypto.provider.HkdfKeyDerivation$HkdfSHA512");
+
+        /*
          * Algorithm Parameter engines
          */
         psA("AlgorithmParameters", "DiffieHellman",
