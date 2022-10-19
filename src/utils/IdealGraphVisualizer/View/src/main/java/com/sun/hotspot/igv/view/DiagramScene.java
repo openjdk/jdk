@@ -119,8 +119,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     public double getZoomMinFactor() {
-        double factorWidth = getScrollPane().getViewport().getViewRect().getWidth() / getBounds().getWidth() ;
-        double factorHeight = getScrollPane().getViewport().getViewRect().getHeight() / getBounds().getHeight();
+        double factorWidth = scrollPane.getViewport().getViewRect().getWidth() / getBounds().getWidth() ;
+        double factorHeight = scrollPane.getViewport().getViewRect().getHeight() / getBounds().getHeight();
         double zoomToFit = 0.98 * Math.min(factorWidth, factorHeight);
         return Math.min(zoomToFit, ZOOM_MIN_FACTOR);
     }
@@ -211,11 +211,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     };
 
     private Point getScrollPosition() {
-        return getScrollPane().getViewport().getViewPosition();
+        return scrollPane.getViewport().getViewPosition();
     }
 
     private void setScrollPosition(Point p) {
-        getScrollPane().getViewport().setViewPosition(p);
+        scrollPane.getViewport().setViewPosition(p);
     }
 
     private JScrollPane createScrollPane(MouseZoomAction mouseZoomAction) {
@@ -459,10 +459,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     public DiagramViewModel getModel() {
         return model;
-    }
-
-    private JScrollPane getScrollPane() {
-        return scrollPane;
     }
 
     @Override
@@ -988,7 +984,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private void centerRectangle(Rectangle r) {
         Rectangle rect = convertSceneToView(r);
-        Rectangle viewRect = getScrollPane().getViewport().getViewRect();
+        Rectangle viewRect = scrollPane.getViewport().getViewRect();
         double factor = Math.min(viewRect.getWidth() / rect.getWidth(),  viewRect.getHeight() / rect.getHeight());
         if (factor < 1.0) {
             centredZoom(getZoomFactor() * factor, null);
@@ -1001,9 +997,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         viewRect.y = rect.y + rect.height / 2 - viewRect.height / 2;
         // Ensure to be within area
         viewRect.x = Math.max(0, viewRect.x);
-        viewRect.x = Math.min(getScrollPane().getViewport().getViewSize().width - viewRect.width, viewRect.x);
+        viewRect.x = Math.min(scrollPane.getViewport().getViewSize().width - viewRect.width, viewRect.x);
         viewRect.y = Math.max(0, viewRect.y);
-        viewRect.y = Math.min(getScrollPane().getViewport().getViewSize().height - viewRect.height, viewRect.y);
+        viewRect.y = Math.min(scrollPane.getViewport().getViewSize().height - viewRect.height, viewRect.y);
         getView().scrollRectToVisible(viewRect);
     }
 
