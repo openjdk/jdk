@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 8062588 8165804 8210406
+ * @bug 4052440 8062588 8165804 8210406 8291660
  * @summary BreakIteratorProvider tests
  * @library providersrc/foobarutils
  *          providersrc/fooprovider
@@ -102,8 +102,9 @@ public class BreakIteratorProviderTest extends ProviderTest {
             // JRE
             String[] jresResult = new String[4];
             if (jreSupportsLocale) {
-                for (int i = 0; i < 4; i++) {
-                    jresResult[i] = "sun.text." + classNames[i];
+                jresResult[0] = "sun.util.locale.provider.BreakIteratorProviderImpl$GraphemeBreakIterator";
+                for (int i = 1; i < 4; i++) {
+                    jresResult[i] = "sun.text." + classNames[i - 1];
                 }
             }
 

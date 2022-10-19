@@ -186,20 +186,15 @@ public:
   // supports. Caller does not hold the Heap_lock on entry.
   virtual void collect(GCCause::Cause cause);
 
-  // Perform a full collection of generations up to and including max_generation.
-  // Mostly used for testing purposes. Caller does not hold the Heap_lock on entry.
-  void collect(GCCause::Cause cause, GenerationType max_generation);
-
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   // The methods is_in() and is_in_youngest() may be expensive to compute
   // in general, so, to prevent their inadvertent use in product jvm's, we
   // restrict their use to assertion checking or verification only.
   bool is_in(const void* p) const;
 
-  // Returns true if the reference is to an object in the reserved space
-  // for the young generation.
+  // Returns true if p points into the reserved space for the young generation.
   // Assumes the young gen address range is less than that of the old gen.
-  bool is_in_young(oop p) const;
+  bool is_in_young(const void* p) const;
 
   virtual bool requires_barriers(stackChunkOop obj) const;
 

@@ -23,23 +23,32 @@
 
 /*
  * @test
- * @bug 7071819 8221431 8239383 8273430
+ * @bug 7071819 8221431 8239383 8273430 8291660
  * @summary tests Unicode Extended Grapheme support
  * @library /lib/testlibrary/java/lang
- * @build java.base/java.util.regex.GraphemeTestAccessor
+ * @modules java.base/jdk.internal.util.regex:+open
  * @run testng GraphemeTest
  */
 
-import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import jdk.internal.util.regex.Grapheme;
 
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import static org.testng.Assert.fail;
 import static org.testng.Assert.assertFalse;
-import java.util.regex.GraphemeTestAccessor;
 
 public class GraphemeTest {
+
+    private static MethodHandles.Lookup lookup;
+
+    @BeforeClass
+    public static void setup() throws IllegalAccessException {
+        lookup = MethodHandles.privateLookupIn(Grapheme.class, MethodHandles.lookup());
+    }
 
     @Test
     public static void testGraphemeBreakProperty() throws Throwable {
@@ -52,12 +61,16 @@ public class GraphemeTest {
     }
 
     @Test
-    public static void testExcludedSpacingMarks() {
-        assertFalse(GraphemeTestAccessor.isExcludedSpacingMark(0x1065));
-        assertFalse(GraphemeTestAccessor.isExcludedSpacingMark(0x1066));
+    public static void testExcludedSpacingMarks() throws Throwable {
+        var mh = lookup.findStatic(
+                Grapheme.class, "isExcludedSpacingMark", MethodType.methodType(boolean.class, int.class));
+        assertFalse((boolean)mh.invokeExact(0x1065));
+        assertFalse((boolean)mh.invokeExact(0x1066));
     }
 
-    private static void testProps(Path path) throws IOException {
+    private static void testProps(Path path) throws Throwable {
+        var mh = lookup.findStatic(
+                Grapheme.class, "getType", MethodType.methodType(int.class, int.class));
         Files.lines(path)
                 .map(ln -> ln.replaceFirst("#.*", ""))
                 .filter(ln -> ln.length() != 0)
@@ -83,15 +96,19 @@ public class GraphemeTest {
                         // canonical equivalence."
                         // For "extended grapheme clusters" support, there is no
                         // need actually to diff "extend" and "spackmark" given GB9, GB9a.
-                        if (!expected.equals(types[GraphemeTestAccessor.getType(cp)])) {
-                            if ("Extend".equals(expected) &&
-                                    "SpacingMark".equals(types[GraphemeTestAccessor.getType(cp)]))
-                                System.out.printf("[%x]  [%s][%d] -> [%s]%n",
-                                        cp, expected, Character.getType(cp), types[GraphemeTestAccessor.getType(cp)]);
-                            else
-                                fail(String.format(
-                                        "cp=[%x], expected:[%s] result:[%s]%n",
-                                        cp, expected, types[GraphemeTestAccessor.getType(cp)]));
+                        try {
+                            if (!expected.equals(types[(int) mh.invokeExact(cp)])) {
+                                if ("Extend".equals(expected) &&
+                                        "SpacingMark".equals(types[(int) mh.invokeExact(cp)]))
+                                    System.out.printf("[%x]  [%s][%d] -> [%s]%n",
+                                            cp, expected, Character.getType(cp), types[(int) mh.invokeExact(cp)]);
+                                else
+                                    fail(String.format(
+                                            "cp=[%x], expected:[%s] result:[%s]%n",
+                                            cp, expected, types[(int) mh.invokeExact(cp)]));
+                            }
+                        } catch (Throwable e) {
+                            throw new RuntimeException(e);
                         }
                     }
                 });

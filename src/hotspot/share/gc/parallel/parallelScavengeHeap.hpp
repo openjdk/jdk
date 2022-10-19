@@ -183,7 +183,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   bool is_in_reserved(const void* p) const;
 
-  bool is_in_young(const oop p) const;
+  bool is_in_young(const void* p) const;
 
   virtual bool requires_barriers(stackChunkOop obj) const;
 

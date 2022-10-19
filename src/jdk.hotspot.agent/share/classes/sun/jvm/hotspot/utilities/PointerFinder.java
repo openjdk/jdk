@@ -73,7 +73,7 @@ public class PointerFinder {
         JavaThread t = threads.getJavaThreadAt(i);
         Address stackBase = t.getStackBase();
         if (stackBase != null) {
-            Long stackSize = t.getStackSize();
+            long stackSize = t.getStackSize();
             Address stackEnd = stackBase.addOffsetTo(-stackSize);
             if (a.lessThanOrEqual(stackBase) && a.greaterThan(stackEnd)) {
                 loc.stackThread = t;

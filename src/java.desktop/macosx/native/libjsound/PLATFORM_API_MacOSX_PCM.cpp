@@ -175,7 +175,7 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
             defSampleRate,                  // sample rate
             DAUDIO_PCM,                     // PCM
             TRUE,                           // signed
-            UTIL_IsBigEndianPlatform());    // native endianess
+            UTIL_IsBigEndianPlatform());    // native endianness
     }
 
     TRACE0("<<DAUDIO_GetFormats\n");
@@ -848,7 +848,7 @@ void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
         if (fabs(sampleRate - hardwareSampleRate) > 1) {
             device->resampler = new Resampler();
 
-            // request HAL for Float32 with native endianess
+            // request HAL for Float32 with native endianness
             FillASBDForNonInterleavedPCM(device->asbd, hardwareSampleRate, channels, 32, true, false, kAudioFormatFlagsNativeEndian != 0);
         } else {
             sampleRate = hardwareSampleRate;    // in case sample rates are not exactly equal

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ public class Annotation {
     g.setColor(baseColor);
     int tmpY = y;
     for (int i = 0; i < strings.size(); i++) {
-      String s = (String) strings.get(i);
-      Integer h = (Integer) heights.get(i);
+      String s = strings.get(i);
+      Integer h = heights.get(i);
       g.drawString(s, x, tmpY);
       tmpY += h.intValue();
     }
@@ -152,7 +152,7 @@ public class Annotation {
   public String toString() {
     String result = "Annotation: lowAddr: " + getLowAddress() + " highAddr: " + getHighAddress() + " strings: "  + strings.size();
     for (int i = 0; i < strings.size(); i++) {
-      result += "\n" + (String) strings.get(i);
+      result += "\n" + strings.get(i);
     }
     return result;
   }

@@ -271,6 +271,7 @@ public:
   // Apply blk->do_heap_region() on all committed regions in address order,
   // terminating the iteration early if do_heap_region() returns true.
   void iterate(HeapRegionClosure* blk) const;
+  void iterate(HeapRegionIndexClosure* blk) const;
 
   void par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* hrclaimer, const uint start_index) const;
 

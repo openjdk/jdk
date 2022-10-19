@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,10 +195,10 @@ class ConstraintsChecker extends PKIXCertPathChecker {
                 debug.println("mergedNC = " + newConstraints);
             }
             if (newConstraints == null) {
-                return newConstraints;
+                return null;
             } else {
                 // Make sure we do a clone here, because we're probably
-                // going to modify this object later and we don't want to
+                // going to modify this object later, and we don't want to
                 // be sharing it with a Certificate object!
                 return (NameConstraintsExtension)newConstraints.clone();
             }

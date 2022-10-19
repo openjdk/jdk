@@ -64,7 +64,7 @@ An IR verification cannot always be performed. For example, a JTreg test could b
 
 In general, the framework will only perform IR verification if the used VM flags allow a C2 compilation and if non-critical additional JTreg VM and Javaoptions are provided (see whiteflag list in [TestFramework](./TestFramework.java)). The user test code, however, can specify any flags which still allow an IR verification to be performed if a C2 compilation is done (expected flags by user defined `@IR` annotations).
 
-An `@IR` annotation allows additional preconditions/restrictions on the currently present VM flags to enable or disable rules when certain flags are present or have a specific value (see `applyIfXX` properties of an `@IR` annotation).
+An `@IR` annotation allows additional preconditions/restrictions on the currently present VM flags to enable or disable rules when certain flags are present or have a specific value (see `applyIfXX` properties of an `@IR` annotation). If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction.
 
 More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java) and [TestIRMatching](../../../testlibrary_tests/ir_framework/tests/TestIRMatching.java) (an internal framework test).
 

@@ -371,6 +371,12 @@ public class TestGetEventWriter {
                     throw new AssertionError("Expected IllegalAccessError");
                 } catch (IllegalAccessError e) {
                 }
+                try {
+                    // Test looking up with null caller
+                    cp.lookupMethod(cpi, 184, null);
+                    throw new AssertionError("Expected IllegalAccessError");
+                } catch (IllegalAccessError e) {
+                }
 
                 // Ignore all subsequent instructions
                 return;

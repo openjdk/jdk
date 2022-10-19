@@ -239,8 +239,7 @@ public class Repository {
                               final String dom,
                               final ObjectName name,
                               final RegistrationContext context) {
-        final Map<String,NamedObject> moiTb =
-            new HashMap<String,NamedObject>();
+        final Map<String,NamedObject> moiTb = new HashMap<>();
         final String key = name.getCanonicalKeyPropertyListString();
         addMoiToTb(object,name,key,moiTb,context);
         domainTb.put(dom, moiTb);
@@ -325,7 +324,7 @@ public class Repository {
     public Repository(String domain, boolean fairLock) {
         lock = new ReentrantReadWriteLock(fairLock);
 
-        domainTb = new HashMap<String,Map<String,NamedObject>>(5);
+        domainTb = new HashMap<>(5);
 
         if (domain != null && domain.length() != 0)
             this.domain = domain.intern(); // we use == domain later on...
@@ -333,7 +332,7 @@ public class Repository {
             this.domain = ServiceName.DOMAIN;
 
         // Creates a new hashtable for the default domain
-        domainTb.put(this.domain, new HashMap<String,NamedObject>());
+        domainTb.put(this.domain, new HashMap<>());
     }
 
     /**
@@ -347,7 +346,7 @@ public class Repository {
         final List<String> result;
         try {
             // Temporary list
-            result = new ArrayList<String>(domainTb.size());
+            result = new ArrayList<>(domainTb.size());
             for (Map.Entry<String,Map<String,NamedObject>> entry :
                      domainTb.entrySet()) {
                 // Skip domains that are in the table but have no
@@ -507,7 +506,7 @@ public class Repository {
      */
     public Set<NamedObject> query(ObjectName pattern, QueryExp query) {
 
-        final Set<NamedObject> result = new HashSet<NamedObject>();
+        final Set<NamedObject> result = new HashSet<>();
 
         // The following filter cases are considered:
         // null, "", "*:*" : names in all domains
@@ -641,7 +640,7 @@ public class Repository {
                 // big buckets array size inside table, never cleared,
                 // thus the new !
                 if (dom == domain) // ES: OK dom and domain are interned.
-                    domainTb.put(domain, new HashMap<String,NamedObject>());
+                    domainTb.put(domain, new HashMap<>());
             }
 
             unregistering(context,name);

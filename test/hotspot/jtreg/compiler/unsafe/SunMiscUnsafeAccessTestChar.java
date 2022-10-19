@@ -43,7 +43,14 @@ import static org.testng.Assert.*;
 
 public class SunMiscUnsafeAccessTestChar {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attempts with delay on failure.
+    // Be mindful of worst-case total time on test, which would be at
+    // roughly (delay*attempts) milliseconds.
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 100);
+    static final int WEAK_DELAY_MS = Math.max(1, Integer.getInteger("weakDelay", 1));
 
     static final sun.misc.Unsafe UNSAFE;
 
@@ -84,6 +91,16 @@ public class SunMiscUnsafeAccessTestChar {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(char[].class);
         int ascale = UNSAFE.arrayIndexScale(char[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay() {
+        try {
+            if (WEAK_DELAY_MS > 0) {
+                Thread.sleep(WEAK_DELAY_MS);
+            }
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static char static_v;

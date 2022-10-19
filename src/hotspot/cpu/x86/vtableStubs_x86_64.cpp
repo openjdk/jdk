@@ -48,7 +48,6 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
-  Register tmp_load_klass = rscratch1;
   VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
@@ -70,7 +69,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
-    __ incrementq(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
+    __ incrementq(ExternalAddress(SharedRuntime::nof_megamorphic_calls_addr()), rscratch1);
   }
 #endif
 
@@ -81,7 +80,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // get receiver klass
   address npe_addr = __ pc();
-  __ load_klass(rax, j_rarg0, tmp_load_klass);
+  __ load_klass(rax, j_rarg0, rscratch1);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -164,7 +163,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
-    __ incrementq(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
+    __ incrementq(ExternalAddress(SharedRuntime::nof_megamorphic_calls_addr()), rscratch1);
   }
 #endif // PRODUCT
 

@@ -383,6 +383,8 @@ public:
   };
   // Return the category of this type.
   Category category() const;
+  // Check recursively in tuples.
+  bool has_category(Category cat) const;
 
   static const char* str(const Type* t);
 #endif // !PRODUCT

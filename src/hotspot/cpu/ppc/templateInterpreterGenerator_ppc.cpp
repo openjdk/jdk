@@ -476,12 +476,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return NULL;
-}
-
 // Interpreter intrinsic for WeakReference.get().
 // 1. Don't push a full blown frame and go on dispatching, but fetch the value
 //    into R8 and return quickly
@@ -1442,7 +1436,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ li(R0/*thread_state*/, _thread_in_native_trans);
   __ release();
   __ stw(R0/*thread_state*/, thread_(thread_state));
-  __ fence();
+  if (!UseSystemMemoryBarrier) {
+    __ fence();
+  }
 
   // Now before we return to java we must look for a current safepoint
   // (a new safepoint can not start since we entered native_trans).

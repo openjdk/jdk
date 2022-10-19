@@ -181,7 +181,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   MacroAssembler* masm = new MacroAssembler(&cb);
   pDCD = (pDynamicCodeData) masm->pc();
 
-  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache));
+  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache), rscratch1);
   masm->flush();
 
   // Create an Unwind Structure specifying no unwind info
@@ -320,6 +320,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return frame(sp + 1, fp, (address)*sp);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -449,15 +455,14 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
-  intptr_t *sp = (intptr_t *)uc->REG_SP;
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
+  address sp = (address)uc->REG_SP;
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = (address)uc->REG_PC;
+  address pc = os::fetch_frame_from_context(uc).pc();
   print_instructions(st, pc, sizeof(char));
   st->cr();
 }

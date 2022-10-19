@@ -4,7 +4,6 @@
  * @summary test that only Java 8+ allows repeating annotations
  * @compile WrongVersion.java
  * @compile --release 8 WrongVersion.java
- * @compile/fail/ref=WrongVersion7.out -XDrawDiagnostics -Xlint:-options -source 7 WrongVersion.java
  */
 import java.lang.annotation.Repeatable;
 

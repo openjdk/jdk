@@ -39,9 +39,7 @@
 #define __ masm->
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  Register dst, Address src, Register tmp1, Register tmp_thread) {
-  assert_cond(masm != NULL);
-
+                                  Register dst, Address src, Register tmp1, Register tmp2) {
   // RA is live. It must be saved around calls.
 
   bool in_heap = (decorators & IN_HEAP) != 0;
@@ -81,8 +79,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 }
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                   Address dst, Register val, Register tmp1, Register tmp2) {
-  assert_cond(masm != NULL);
+                                   Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   switch (type) {
@@ -124,7 +121,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  assert_cond(masm != NULL);
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
   STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
   __ andi(obj, obj, ~JNIHandles::weak_tag_mask);
@@ -139,7 +135,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
                                         Register tmp2,
                                         Label& slow_case,
                                         bool is_far) {
-  assert_cond(masm != NULL);
   assert_different_registers(obj, tmp2);
   assert_different_registers(obj, var_size_in_bytes);
   Register end = tmp2;
@@ -166,7 +161,6 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
                                                Register var_size_in_bytes,
                                                int con_size_in_bytes,
                                                Register tmp1) {
-  assert_cond(masm != NULL);
   assert(tmp1->is_valid(), "need temp reg");
 
   __ ld(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
@@ -198,6 +192,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   if (bs_nm == NULL) {
     return;
   }
+
+  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
 
   Label local_guard;
   NMethodPatchingType patching_type = nmethod_patching_type();
@@ -262,13 +258,13 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     __ beq(t0, t1, skip_barrier);
 
     int32_t offset = 0;
-    __ movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+    __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
     __ jalr(ra, t0, offset);
     __ j(skip_barrier);
 
     __ bind(local_guard);
 
-    assert(__ offset() % 4 == 0, "bad alignment");
+    MacroAssembler::assert_alignment(__ pc());
     __ emit_int32(0); // nmethod guard value. Skipped over in common case.
     __ bind(skip_barrier);
   } else {
@@ -296,15 +292,14 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ bnez(t1, method_live);
 
   // Is it a weak but alive CLD?
-  __ push_reg(RegSet::of(x28, x29), sp);
+  __ push_reg(RegSet::of(x28), sp);
 
   __ ld(x28, Address(t0, ClassLoaderData::holder_offset()));
 
-  // Uses x28 & x29, so we must pass new temporaries.
-  __ resolve_weak_handle(x28, x29);
+  __ resolve_weak_handle(x28, t0, t1);
   __ mv(t0, x28);
 
-  __ pop_reg(RegSet::of(x28, x29), sp);
+  __ pop_reg(RegSet::of(x28), sp);
 
   __ bnez(t0, method_live);
 

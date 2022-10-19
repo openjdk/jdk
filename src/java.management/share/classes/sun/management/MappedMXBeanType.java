@@ -24,6 +24,7 @@
  */
 
 package sun.management;
+
 import java.lang.management.MemoryUsage;
 import java.lang.management.MemoryNotificationInfo;
 import java.lang.management.MonitorInfo;
@@ -616,7 +617,7 @@ public abstract class MappedMXBeanType {
 
             // check if a static from method exists
             try {
-                fromMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
+                fromMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                         public Method run() throws NoSuchMethodException {
                             return javaClass.getMethod("from", COMPOSITE_DATA_CLASS);
                         }
@@ -637,7 +638,7 @@ public abstract class MappedMXBeanType {
 
                 // Make a CompositeData containing all the getters
                 final Method[] methods =
-                    AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+                    AccessController.doPrivileged(new PrivilegedAction<>() {
                             public Method[] run() {
                                 return javaClass.getMethods();
                             }

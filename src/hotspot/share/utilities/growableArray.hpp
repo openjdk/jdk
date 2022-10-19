@@ -336,7 +336,7 @@ public:
   }
 
   void print() const {
-    tty->print("Growable Array " INTPTR_FORMAT, p2i(this));
+    tty->print("Growable Array " PTR_FORMAT, p2i(this));
     tty->print(": length %d (_max %d) { ", _len, _max);
     for (int i = 0; i < _len; i++) {
       tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
