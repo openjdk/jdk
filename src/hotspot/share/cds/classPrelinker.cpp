@@ -33,15 +33,16 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-ClassPrelinker* ClassPrelinker::_singleton = NULL;
+ClassPrelinker::ClassesTable* ClassPrelinker::_processed_classes = NULL;
+ClassPrelinker::ClassesTable* ClassPrelinker::_vm_classes = NULL;
 
 bool ClassPrelinker::is_vm_class(InstanceKlass* ik) {
-  return (_vm_classes.get(ik) != NULL);
+  return (_vm_classes->get(ik) != NULL);
 }
 
 void ClassPrelinker::add_one_vm_class(InstanceKlass* ik) {
   bool created;
-  _vm_classes.put_if_absent(ik, &created);
+  _vm_classes->put_if_absent(ik, &created);
   if (created) {
     InstanceKlass* super = ik->java_super();
     if (super != NULL) {
@@ -54,17 +55,21 @@ void ClassPrelinker::add_one_vm_class(InstanceKlass* ik) {
   }
 }
 
-ClassPrelinker::ClassPrelinker() {
-  assert(_singleton == NULL, "must be");
-  _singleton = this;
+void ClassPrelinker::initialize() {
+  assert(_vm_classes == NULL, "must be");
+  _vm_classes = new (ResourceObj::C_HEAP, mtClass)ClassesTable();
+  _processed_classes = new (ResourceObj::C_HEAP, mtClass)ClassesTable();
   for (auto id : EnumRange<vmClassID>{}) {
     add_one_vm_class(vmClasses::klass_at(id));
   }
 }
 
-ClassPrelinker::~ClassPrelinker() {
-  assert(_singleton == this, "must be");
-  _singleton = NULL;
+void ClassPrelinker::dispose() {
+  assert(_vm_classes != NULL, "must be");
+  delete _vm_classes;
+  delete _processed_classes;
+  _vm_classes = NULL;
+  _processed_classes = NULL;
 }
 
 bool ClassPrelinker::can_archive_resolved_klass(ConstantPool* cp, int cp_index) {
@@ -117,8 +122,9 @@ void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
   }
 
   bool first_time;
-  _processed_classes.put_if_absent(ik, &first_time);
+  _processed_classes->put_if_absent(ik, &first_time);
   if (!first_time) {
+    // We have already resolved the constants in class, so no need to do it again.
     return;
   }
 

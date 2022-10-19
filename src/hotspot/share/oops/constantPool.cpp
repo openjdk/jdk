@@ -420,7 +420,7 @@ bool ConstantPool::maybe_archive_resolved_klass_at(int cp_index) {
 
   if (k != NULL) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    if (ClassPrelinker::current()->can_archive_resolved_klass(src_cp, cp_index)) {
+    if (ClassPrelinker::can_archive_resolved_klass(src_cp, cp_index)) {
       if (log_is_enabled(Debug, cds, resolve)) {
         ResourceMark rm;
         log_debug(cds, resolve)("Resolved klass CP entry [%d]: %s => %s", cp_index,

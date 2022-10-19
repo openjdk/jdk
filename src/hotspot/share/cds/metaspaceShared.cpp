@@ -633,12 +633,12 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   // cpcache to be created. Class verification is done according
   // to -Xverify setting.
   bool res = MetaspaceShared::try_link_class(THREAD, ik);
-  ClassPrelinker::current()->dumptime_resolve_constants(ik, CHECK_(false));
+  ClassPrelinker::dumptime_resolve_constants(ik, CHECK_(false));
   return res;
 }
 
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
-  ClassPrelinker prelinker;
+  ClassPrelinker::initialize();
 
   if (!jcmd_request) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
