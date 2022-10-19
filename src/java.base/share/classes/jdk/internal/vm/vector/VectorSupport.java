@@ -240,7 +240,7 @@ public class VectorSupport {
         V index(V v, int step, S s);
     }
 
-    @IntrinsicCandidate
+    //FIXME @IntrinsicCandidate
     public static
     <V extends Vector<E>,
      E,
