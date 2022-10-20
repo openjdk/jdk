@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8006582 8037546 8138729
- * @summary javac should generate method parameters correctly.
- * @modules jdk.jdeps/com.sun.tools.classfile
- * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
- * @compile -parameters LambdaTest.java
- * @run main MethodParametersTester LambdaTest LambdaTest.out
- */
+// key: compiler.err.incompatible.diff.ret.same.type
 
-/**
- * Post https://bugs.openjdk.org/browse/JDK-8138729, this test verifies
- * that MethodParameters attribute are NOT emitted for lambdas.
- */
-class LambdaTest {
-
-    interface I {
-        int m(int x);
-    }
-
-    static int foo(I i) { return i.m(0); }
-
-    static {
-        foo((int x1) -> { return foo((int x2) -> { return x1 + x2; }); });
-    }
+interface A<T> {
+    byte m(String x);
+    char m(T x);
 }
 
-
-
+interface B extends A<String> {
+}
