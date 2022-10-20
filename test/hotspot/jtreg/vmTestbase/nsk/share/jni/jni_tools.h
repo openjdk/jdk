@@ -54,16 +54,6 @@
 
 #endif // !_WIN32
 
-/**
- * Additional Java basic types
- */
-
-#ifdef _WIN32
-    typedef unsigned __int64 julong;
-#else
-    typedef unsigned long long julong;
-#endif
-
 /*************************************************************/
 
 /**
@@ -124,23 +114,6 @@ int nsk_jni_lverify_void(JNIEnv* jni, const char file[], int line,
  * Otherwise, does noting and returns 0,
  */
 int nsk_jni_check_exception(JNIEnv* jni, const char file[], int line);
-
-/**
- * Convert the digits of the given value argument to a null-terminated
- * character string and store the result (up to 32 bytes) in string.
- * If value is negative, the first character of the stored string is
- * the minus sign (-). The function returns a pointer to the begining
- * of the result string.
- * Declared and defined in jvmti_common.h
- */
-//char *jlong_to_string(jlong value, char *string);
-
-/**
- * Convert the digits of the given value argument to a null-terminated
- * character string and store the result (up to 32 bytes) in string.
- * The function returns a pointer to the begining of the result string.
- */
-char *julong_to_string(julong value, char *string);
 
 /**
  * Sleep for given number of milliseconds.

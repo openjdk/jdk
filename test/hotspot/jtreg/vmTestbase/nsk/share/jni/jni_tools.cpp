@@ -98,28 +98,6 @@ int nsk_jni_lverify_void(JNIEnv* jni, const char file[], int line,
     return !failure;
 }
 
-char *julong_to_string(julong value, char *string) {
-    char buffer[32];
-    char *pbuf, *pstr;
-
-    pstr = string;
-    if (value == 0) {
-        *pstr++ = '0';
-    } else {
-        pbuf = buffer;
-        while (value != 0) {
-            *pbuf++ = '0' + (char)(value % 10);
-            value = value / 10;
-        }
-        while (pbuf != buffer) {
-            *pstr++ = *--pbuf;
-        }
-    }
-    *pstr = '\0';
-
-    return string;
-}
-
 void mssleep(long millis) {
 #if (defined(WIN32) || defined(_WIN32))
    Sleep(millis);
