@@ -71,7 +71,7 @@
  * request size, network speed, and handler processing delays. A value less than or equal
  * to zero means the duration is not limited. If the limit is
  * exceeded then the connection is terminated and the handler will receive a
- * {@link java.io.IOException}. This timer has an implementation specific granularity 
+ * {@link java.io.IOException}. This timer has an implementation specific granularity
  * that may mean requests are aborted later than the specified interval.
 
  * </li>
@@ -80,7 +80,7 @@
  * response size, network speed, and handler processing delays. A value less than or equal
  * to zero means the duration is not limited. If the limit is
  * exceeded then the connection is terminated and the handler will receive a
- * {@link java.io.IOException}. This timer has an implementation specific granularity 
+ * {@link java.io.IOException}. This timer has an implementation specific granularity
  * that may mean responses are aborted later than the specified interval.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.debug}</b> (default: false)<br>
