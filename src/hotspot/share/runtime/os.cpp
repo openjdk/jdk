@@ -1574,6 +1574,8 @@ static const char* errno_to_string (int e, bool short_text) {
 
 }
 
+const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
+
 const char* os::strerror(int e) {
   return errno_to_string(e, false);
 }
