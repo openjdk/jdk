@@ -463,8 +463,7 @@ abstract class ECDSASignature extends SignatureSpi {
         Optional<ECDSAOperations> opsOpt =
             ECDSAOperations.forParameters(params);
         if (opsOpt.isEmpty()) {
-            throw new SignatureException("Curve not supported: " +
-                params.toString());
+            throw new SignatureException("Curve not supported: " + params);
         }
         byte[] sig = signDigestImpl(opsOpt.get(), seedBits, digest, privateKey,
             random);
@@ -480,22 +479,33 @@ abstract class ECDSASignature extends SignatureSpi {
     @Override
     protected boolean engineVerify(byte[] signature) throws SignatureException {
 
+        ECPoint w = publicKey.getW();
+        ECParameterSpec params = publicKey.getParams();
+
+        // Partial public key validation
+        try {
+            ECUtil.validatePublicKey(w, params);
+        } catch (InvalidKeyException e) {
+            return false;
+        }
+
+        ECDSAOperations ops = ECDSAOperations.forParameters(params)
+                .orElseThrow(() -> new SignatureException("Curve not supported: " + params));
+
+        // Full public key validation, only necessary when h != 1.
+        if (params.getCofactor() != 1) {
+            if (!ops.getEcOperations().checkOrder(w)) {
+                return false;
+            }
+        }
+
         byte[] sig;
         if (p1363Format) {
             sig = signature;
         } else {
             sig = ECUtil.decodeSignature(signature);
         }
-
-        byte[] digest = getDigestValue();
-
-        Optional<ECDSAOperations> opsOpt =
-            ECDSAOperations.forParameters(publicKey.getParams());
-        if (opsOpt.isEmpty()) {
-            throw new SignatureException("Curve not supported: " +
-                publicKey.getParams().toString());
-        }
-        return opsOpt.get().verifySignedDigest(digest, sig, publicKey.getW());
+        return ops.verifySignedDigest(getDigestValue(), sig, w);
     }
 
     // set parameter, not supported. See JCA doc

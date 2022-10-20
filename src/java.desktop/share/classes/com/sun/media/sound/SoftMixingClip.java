@@ -315,7 +315,7 @@ public final class SoftMixingClip extends SoftMixingDataLine implements Clip {
                                                      IOException {
         if (isOpen()) {
             throw new IllegalStateException("Clip is already open with format "
-                    + getFormat() + " and frame lengh of " + getFrameLength());
+                    + getFormat() + " and frame length of " + getFrameLength());
         }
         if (AudioFloatConverter.getConverter(stream.getFormat()) == null)
             throw new IllegalArgumentException("Invalid format : "
@@ -358,7 +358,7 @@ public final class SoftMixingClip extends SoftMixingDataLine implements Clip {
             if (isOpen()) {
                 throw new IllegalStateException(
                         "Clip is already open with format " + getFormat()
-                                + " and frame lengh of " + getFrameLength());
+                                + " and frame length of " + getFrameLength());
             }
             if (AudioFloatConverter.getConverter(format) == null)
                 throw new IllegalArgumentException("Invalid format : "

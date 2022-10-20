@@ -66,7 +66,9 @@ public interface DiagramViewer {
     void zoomIn(Point zoomCenter, double speed);
 
     void setZoomPercentage(int percentage);
+
     int getZoomPercentage();
+
     ChangedEvent<DiagramViewer> getZoomChangedEvent();
 
     UndoRedo getUndoRedo();
