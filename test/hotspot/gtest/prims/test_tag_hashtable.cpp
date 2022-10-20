@@ -78,6 +78,8 @@ TEST_VM(Jvmti_TagMapTable, AddUpdateRemove){
 
     entry  = t.find( p);
 
+    t.remove(p);
+    entry = t.find(p);
 
     ASSERT_TRUE(entry == 110 ) ;
 
