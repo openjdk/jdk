@@ -47,6 +47,7 @@ import javax.swing.WindowConstants;
 /*
  * @test
  * @bug 8288882
+ * @key headful
  * @requires (os.family == "linux")
  * @summary Verifies if the size of an empty file is shown as 0.0 KB
  *          as well as checks the displayed file sizes are rounded up
