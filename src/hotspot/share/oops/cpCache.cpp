@@ -445,10 +445,12 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
   // out of the ConstantPoolCacheEntry.
   if (UseNewCode) {
-    //cpCache->resolved_invokedynamic_info_element(_invokedynamic_index)->fill_in(adapter, adapter->size_of_parameters(), adapter->result_type(), has_appendix);
-    tty->print_cr("The length of invokedynamicinfo array is %d", cpCache->resolved_invokedynamicinfo_length());
-    cpCache->resolved_invokedynamic_info_element(_invokedynamic_index);
-    tty->print_cr("index of invokevirtual is %d", _invokedynamic_index);
+    if (cpCache->resolved_invokedynamicinfo_length() > 0) {
+      //cpCache->resolved_invokedynamic_info_element(0);
+      cpCache->resolved_invokedynamic_info_element(_invokedynamic_index)->fill_in(adapter, adapter->size_of_parameters(), adapter->result_type(), has_appendix);
+      //tty->print_cr("The length of invokedynamicinfo array is %d", cpCache->resolved_invokedynamicinfo_length());
+      //tty->print_cr("index of invokevirtual is %d", _invokedynamic_index);
+    }
   }
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
@@ -689,15 +691,9 @@ void ConstantPoolCacheEntry::verify(outputStream* st) const {
 ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const intStack& index_map,
                                      const intStack& invokedynamic_index_map,
-<<<<<<< HEAD
-                                     const intStack& invokedynamic_map,
-                                     const GrowableArray<InvokeDynamicInfo>& invokedynamic_info,
-=======
                                      const intStack& invokedynamic_map,
                                      const GrowableArray<InvokeDynamicInfo> invokedynamic_info,
->>>>>>> Struct data correctly passed to Array
                                      TRAPS) {
-
 
   const int length = index_map.length() + invokedynamic_index_map.length();
   int size = ConstantPoolCache::size(length);
@@ -706,18 +702,8 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   Array<ResolvedInvokeDynamicInfo>* array = MetadataFactory::new_array<ResolvedInvokeDynamicInfo>(
                        loader_data, invokedynamic_info.length(), THREAD);
   for (int i = 0; i < invokedynamic_info.length(); i++) {
-<<<<<<< HEAD
-      array->at(i) = ResolvedInvokeDynamicInfo(invokedynamic_info.at(i)._resolved_info_index,
-            invokedynamic_info.at(i)._cp_index);
-=======
       array->at_put(i, ResolvedInvokeDynamicInfo(invokedynamic_info.at(i)._resolved_info_index,
             invokedynamic_info.at(i)._cp_index));
-      if (UseNewCode && invokedynamic_info.length()) {
-        tty->print_cr("Entry: %d Info index %d  cp index %d", i, array->at(i).resolved_references_index(), array->at(i).cpool_index());
-        tty->print_cr("Info index %d, cp index %d",invokedynamic_info.at(0)._resolved_info_index, invokedynamic_info.at(0)._cp_index);
-        tty->print_cr("Arr length %d", array->length());
-      }
->>>>>>> Struct data correctly passed to Array
   }
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
@@ -734,6 +720,7 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
                                                   _constant_pool(NULL),
                                                   _gc_epoch(0),
                                                   _resolved_invokedynamic_info_array(invokedynamic_info) {
+
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
   initialize(inverse_index_map, invokedynamic_inverse_index_map,
              invokedynamic_references_map);
@@ -813,6 +800,7 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   if (_initial_entries != NULL) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
+    MetadataFactory::free_array<ResolvedInvokeDynamicInfo>(data, _resolved_invokedynamic_info_array); // new code
     _initial_entries = NULL;
   }
 #endif
@@ -888,7 +876,9 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstantPoolCache): %p", this);
   it->push(&_constant_pool);
   it->push(&_reference_map);
-  //it->push(&_resolved_invokedynamic_info_array); // Maybe we need this?
+  /*for (int i = 0; i < resolved_invokedynamicinfo_length(); i++) {
+    it->push(resolved_invokedynamic_info_element(i)); // Maybe we need this?
+  }*/
 }
 
 // Printing

@@ -485,9 +485,11 @@ class ConstantPoolCache: public MetaspaceObj {
   void print_resolved_invokedynamicinfo_array(outputStream* st) const {
     for (int i = 0; i < _resolved_invokedynamic_info_array->length(); i++) {
         _resolved_invokedynamic_info_array->at(i).print_on(st);
-      }
+    }
   }
-  int resolved_invokedynamicinfo_length() { return _resolved_invokedynamic_info_array->length(); }
+  int resolved_invokedynamicinfo_length() const { 
+    return _resolved_invokedynamic_info_array->length(); 
+  }
 
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }

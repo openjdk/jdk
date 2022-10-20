@@ -111,6 +111,13 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   _pool->initialize_resolved_references(loader_data, _resolved_references_map,
                                         _resolved_reference_limit,
                                         THREAD);
+   for (int i = 0; i < _pool->cache()->resolved_invokedynamicinfo_length(); i++) {
+    if (UseNewCode && 0) {
+      tty->print_cr("In rewriter!! Entry: %d Info index %d  cp index %d", i, _pool->cache()->resolved_invokedynamic_info_element(i)->resolved_references_index(), 
+            _pool->cache()->resolved_invokedynamic_info_element(i)->cpool_index());
+      tty->print_cr("Arr length %d", _pool->cache()->resolved_invokedynamicinfo_length());
+    }
+  }
 #if INCLUDE_CDS
   if (!HAS_PENDING_EXCEPTION && Arguments::is_dumping_archive()) {
     if (_pool->pool_holder()->is_shared()) {
@@ -287,7 +294,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     _patch_invokedynamic_refs->push(resolved_index);
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
-      _stuff_to_collect_during_rewriting.push(ConstantPoolCache::InvokeDynamicInfo((u2)resolved_index, (u2)cp_index));
+    _stuff_to_collect_during_rewriting.push(ConstantPoolCache::InvokeDynamicInfo((u2)resolved_index, (u2)cp_index));
   } else {
     int cache_index = ConstantPool::decode_invokedynamic_index(
                         Bytes::get_native_u4(p));
