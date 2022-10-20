@@ -863,10 +863,69 @@ static void verify_oop_args(MacroAssembler* masm,
   }
 }
 
-// defined in stubGenerator_riscv.cpp
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
-void fill_continuation_entry(MacroAssembler* masm);
-void continuation_enter_cleanup(MacroAssembler* masm);
+// on exit, sp points to the ContinuationEntry
+static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
+  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
+
+  stack_slots += (int)ContinuationEntry::size() / wordSize;
+  __ sub(sp, sp, (int)ContinuationEntry::size()); // place Continuation metadata
+
+  OopMap* map = new OopMap(((int)ContinuationEntry::size() + wordSize) / VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
+  ContinuationEntry::setup_oopmap(map);
+
+  __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+  __ sd(t0, Address(sp, ContinuationEntry::parent_offset()));
+  __ sd(sp, Address(xthread, JavaThread::cont_entry_offset()));
+
+  return map;
+}
+
+// on entry c_rarg1 points to the continuation
+//          sp points to ContinuationEntry
+//          c_rarg3 -- isVirtualThread
+static void fill_continuation_entry(MacroAssembler* masm) {
+#ifdef ASSERT
+  __ mvw(t0, ContinuationEntry::cookie_value());
+  __ sw(t0, Address(sp, ContinuationEntry::cookie_offset()));
+#endif
+
+  __ sd(c_rarg1, Address(sp, ContinuationEntry::cont_offset()));
+  __ sw(c_rarg3, Address(sp, ContinuationEntry::flags_offset()));
+  __ sd(zr,      Address(sp, ContinuationEntry::chunk_offset()));
+  __ sw(zr,      Address(sp, ContinuationEntry::argsize_offset()));
+  __ sw(zr,      Address(sp, ContinuationEntry::pin_count_offset()));
+
+  __ ld(t0, Address(xthread, JavaThread::cont_fastpath_offset()));
+  __ sd(t0, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
+  __ ld(t0, Address(xthread, JavaThread::held_monitor_count_offset()));
+  __ sd(t0, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
+
+  __ sd(zr, Address(xthread, JavaThread::cont_fastpath_offset()));
+  __ sd(zr, Address(xthread, JavaThread::held_monitor_count_offset()));
+}
+
+// on entry, sp points to the ContinuationEntry
+// on exit, fp points to the spilled fp + 2 * wordSize in the entry frame
+static void continuation_enter_cleanup(MacroAssembler* masm) {
+#ifndef PRODUCT
+  Label OK;
+  __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+  __ beq(sp, t0, OK);
+  __ stop("incorrect sp");
+  __ bind(OK);
+#endif
+
+  __ ld(t0, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
+  __ sd(t0, Address(xthread, JavaThread::cont_fastpath_offset()));
+  __ ld(t0, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ sd(t0, Address(xthread, JavaThread::held_monitor_count_offset()));
+
+  __ ld(t0, Address(sp, ContinuationEntry::parent_offset()));
+  __ sd(t0, Address(xthread, JavaThread::cont_entry_offset()));
+  __ add(fp, sp, (int)ContinuationEntry::size() + 2 * wordSize /* 2 extra words to match up with leave() */);
+}
 
 // enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread)
 // On entry: c_rarg1 -- the continuation object
