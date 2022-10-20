@@ -83,6 +83,9 @@ public class Filters {
     }
 
     private static boolean unknownEventType(Predicate<EventType> f, List<EventType> types) {
+        if (types.isEmpty()) {
+            return false;
+        }
         return !types.stream().anyMatch(f);
     }
 
