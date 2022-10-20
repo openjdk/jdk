@@ -73,7 +73,6 @@
  * exceeded then the connection is terminated and the handler will receive a
  * {@link java.io.IOException}. This timer has an implementation specific granularity
  * that may mean requests are aborted later than the specified interval.
-
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxRspTime}</b> (default: -1)<br>
  * The maximum duration in milliseconds of a response. In practice, this is a function of
