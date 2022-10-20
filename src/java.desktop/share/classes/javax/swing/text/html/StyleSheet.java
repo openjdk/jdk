@@ -99,7 +99,7 @@ import javax.swing.text.*;
  * &nbsp;
  * </code></pre>
  * <p>
- * The semantics for when a CSS style should overide visual attributes
+ * The semantics for when a CSS style should override visual attributes
  * defined by an element are not well defined. For example, the html
  * <code>&lt;body bgcolor=red&gt;</code> makes the body have a red
  * background. But if the html file also contains the CSS rule
@@ -343,7 +343,7 @@ public class StyleSheet extends StyleContext {
      *  location of the stream and may be null.  All relative
      *  URLs specified in the stream will be based upon this
      *  parameter.
-     * @throws java.io.IOException if I/O error occured.
+     * @throws java.io.IOException if I/O error occurred.
      */
     public void loadRules(Reader in, URL ref) throws IOException {
         CssParser parser = new CssParser();
@@ -1818,8 +1818,6 @@ public class StyleSheet extends StyleContext {
     }
 
 
-    static final Border noBorder = new EmptyBorder(0,0,0,0);
-
     /**
      * Class to carry out some of the duties of
      * CSS formatting.  Implementations of this
@@ -2244,7 +2242,7 @@ public class StyleSheet extends StyleContext {
                 name != HTML.Tag.LI) {
                 return;
             }
-            // deside on what side draw bullets, etc.
+            // decide on what side draw bullets, etc.
             isLeftToRight =
                 host.getComponentOrientation().isLeftToRight();
 
@@ -2519,7 +2517,6 @@ public class StyleSheet extends StyleContext {
         private boolean checkedForStart;
         private int start;
         private CSS.Value type;
-        URL imageurl;
         private StyleSheet ss = null;
         Icon img = null;
         private int bulletgap = 5;
@@ -2847,7 +2844,7 @@ public class StyleSheet extends StyleContext {
         }
 
         /**
-         * If not overriden, the resolving parent defaults to
+         * If not overridden, the resolving parent defaults to
          * the parent element.
          *
          * @return the attributes from the parent
@@ -3223,8 +3220,6 @@ public class StyleSheet extends StyleContext {
 
     // ---- Variables ---------------------------------------------
 
-    static final int DEFAULT_FONT_SIZE = 3;
-
     private transient Object fontSizeInherit;
 
     private CSS css;
@@ -3355,7 +3350,7 @@ public class StyleSheet extends StyleContext {
                     // base that style sheet was loaded from. For the time
                     // being, this maps for LIST_STYLE_IMAGE, which appear
                     // to be the only one that currently matters. A more
-                    // general mechanism is definately needed.
+                    // general mechanism is definitely needed.
                     if (cssKey == CSS.Attribute.LIST_STYLE_IMAGE) {
                         if (value != null && !value.equals("none")) {
                             URL url = CSS.getURL(base, value);

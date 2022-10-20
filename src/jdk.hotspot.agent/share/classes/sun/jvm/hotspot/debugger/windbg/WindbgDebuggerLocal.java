@@ -316,7 +316,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   public synchronized long[] getThreadIntegerRegisterSet(long threadId)
     throws DebuggerException {
     requireAttach();
-    return (long[]) threadIntegerRegisterSet.get(threadId);
+    return threadIntegerRegisterSet.get(threadId);
   }
 
   public synchronized List<ThreadProxy> getThreadList() throws DebuggerException {
@@ -428,7 +428,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
       } // else fallthru...
     }
 
-    DLL dll = (DLL) nameToDllMap.get(objectName);
+    DLL dll = nameToDllMap.get(objectName);
     // The DLL can be null because we use this to search through known
     // DLLs in HotSpotTypeDataBase (for example)
     if (dll != null) {
@@ -507,7 +507,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
       // First place to search is co-located with saproc.dll in
       // $JAVA_HOME/jre/bin (java.home property is set to $JAVA_HOME/jre):
       searchList.add(System.getProperty("java.home") + File.separator + "bin");
-      saprocPath = (String) searchList.get(0) + File.separator +
+      saprocPath = searchList.get(0) + File.separator +
           "saproc.dll";
 
       // second place to search is specified by an environment variable:
@@ -536,7 +536,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     }
 
     for (int i = 0; i < searchList.size(); i++) {
-      File dir = new File((String) searchList.get(i));
+      File dir = new File(searchList.get(i));
       if (!dir.exists()) {
         if (loadLibraryDEBUG) {
           System.err.println("DEBUG: '" + searchList.get(i) +
@@ -546,8 +546,8 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
         continue;
       }
 
-      dbgengPath = (String) searchList.get(i) + File.separator + "dbgeng.dll";
-      dbghelpPath = (String) searchList.get(i) + File.separator + "dbghelp.dll";
+      dbgengPath = searchList.get(i) + File.separator + "dbgeng.dll";
+      dbghelpPath = searchList.get(i) + File.separator + "dbghelp.dll";
 
       File feng = new File(dbgengPath);
       File fhelp = new File(dbghelpPath);

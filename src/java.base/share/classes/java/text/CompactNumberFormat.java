@@ -353,6 +353,11 @@ public final class CompactNumberFormat extends NumberFormat {
     private transient Map<String, String> rulesMap;
 
     /**
+     * RegEx to parse number part of a compact number text
+     */
+    private transient Pattern numberPattern;
+
+    /**
      * Special pattern used for compact numbers
      */
     private static final String SPECIAL_PATTERN = "0";
@@ -588,17 +593,17 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern((long) roundedNumber);
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
-            int iPart = getIntegerPart(number, divisor);
-            if (checkIncrement(iPart, compactDataIndex, divisor)) {
+            double val = getNumberValue(number, divisor);
+            if (checkIncrement(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
-                iPart = getIntegerPart(number, divisor);
+                val = getNumberValue(number, divisor);
             }
-            String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
-            String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
+            String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
+            String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
 
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
-                if (!placeHolderPatterns.get(compactDataIndex).get(iPart).isEmpty()) {
+                if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
                     roundedNumber = roundedNumber / divisor;
                     decimalFormat.setDigitList(roundedNumber, isNegative, getMaximumFractionDigits());
                     decimalFormat.subformatNumber(result, delegate, isNegative,
@@ -661,16 +666,16 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern(number);
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
-            int iPart = getIntegerPart(number, divisor);
-            if (checkIncrement(iPart, compactDataIndex, divisor)) {
+            double val = getNumberValue(number, divisor);
+            if (checkIncrement(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
-                iPart = getIntegerPart(number, divisor);
+                val = getNumberValue(number, divisor);
             }
-            String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
-            String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
+            String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
+            String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
-                if (!placeHolderPatterns.get(compactDataIndex).get(iPart).isEmpty()) {
+                if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
                     if ((number % divisor == 0)) {
                         number = number / divisor;
                         decimalFormat.setDigitList(number, isNegative, 0);
@@ -760,16 +765,16 @@ public final class CompactNumberFormat extends NumberFormat {
 
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
-            int iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
-            if (checkIncrement(iPart, compactDataIndex, divisor.doubleValue())) {
+            double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
+            if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
-                iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+                val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             }
-            String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
-            String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
+            String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
+            String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
-                if (!placeHolderPatterns.get(compactDataIndex).get(iPart).isEmpty()) {
+                if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
                     number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
                     decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
                     decimalFormat.subformatNumber(result, delegate, isNegative,
@@ -831,16 +836,16 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern(number);
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
-            int iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
-            if (checkIncrement(iPart, compactDataIndex, divisor.doubleValue())) {
+            double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
+            if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
-                iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+                val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             }
-            String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
-            String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
+            String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
+            String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
-                if (!placeHolderPatterns.get(compactDataIndex).get(iPart).isEmpty()) {
+                if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
                     if (number.mod(new BigInteger(divisor.toString()))
                             .compareTo(BigInteger.ZERO) == 0) {
                         number = number.divide(new BigInteger(divisor.toString()));
@@ -879,12 +884,12 @@ public final class CompactNumberFormat extends NumberFormat {
      * Obtain the designated affix from the appropriate list of affixes,
      * based on the given arguments.
      */
-    private String getAffix(boolean isExpanded, boolean isPrefix, boolean isNegative, int compactDataIndex, int iPart) {
+    private String getAffix(boolean isExpanded, boolean isPrefix, boolean isNegative, int compactDataIndex, double val) {
         return (isExpanded ? (isPrefix ? (isNegative ? negativePrefixes : positivePrefixes) :
                                          (isNegative ? negativeSuffixes : positiveSuffixes)) :
                              (isPrefix ? (isNegative ? negativePrefixPatterns : positivePrefixPatterns) :
                                          (isNegative ? negativeSuffixPatterns : positiveSuffixPatterns)))
-                .get(compactDataIndex).get(iPart);
+                .get(compactDataIndex).get(val);
     }
 
     /**
@@ -1587,8 +1592,8 @@ public final class CompactNumberFormat extends NumberFormat {
 
         // Prefix matching
         for (int compactIndex = 0; compactIndex < compactPatterns.length; compactIndex++) {
-            String positivePrefix = getAffix(true, true, false, compactIndex, (int)num);
-            String negativePrefix = getAffix(true, true, true, compactIndex, (int)num);
+            String positivePrefix = getAffix(true, true, false, compactIndex, num);
+            String negativePrefix = getAffix(true, true, true, compactIndex, num);
 
             // Do not break if a match occur; there is a possibility that the
             // subsequent affixes may match the longer subsequence in the given
@@ -1736,7 +1741,6 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
-    private static final Pattern DIGITS = Pattern.compile("\\p{Nd}+");
     /**
      * Parse the number part in the input text into a number
      *
@@ -1745,15 +1749,18 @@ public final class CompactNumberFormat extends NumberFormat {
      * @return the number
      */
     private double parseNumberPart(String text, int position) {
+        if (numberPattern == null) {
+            numberPattern = Pattern.compile("[\\Q" + symbols.getDecimalSeparator() + "\\E\\p{Nd}]+");
+        }
         if (text.startsWith(symbols.getInfinity(), position)) {
             return Double.POSITIVE_INFINITY;
         } else if (!text.startsWith(symbols.getNaN(), position)) {
-            Matcher m = DIGITS.matcher(text);
+            Matcher m = numberPattern.matcher(text);
             if (m.find(position)) {
                 String digits = m.group();
-                int cp = digits.codePointAt(0);
-                if (Character.isDigit(cp)) {
+                if (Character.isDigit(digits.codePointAt(0))) {
                     return Double.parseDouble(digits.codePoints()
+                        .filter(cp -> cp != symbols.getDecimalSeparator())
                         .map(Character::getNumericValue)
                         .mapToObj(Integer::toString)
                         .collect(Collectors.joining()));
@@ -1909,10 +1916,10 @@ public final class CompactNumberFormat extends NumberFormat {
         String matchedPosSuffix = "";
         String matchedNegSuffix = "";
         for (int compactIndex = 0; compactIndex < compactPatterns.length; compactIndex++) {
-            String positivePrefix = getAffix(true, true, false, compactIndex, (int)num);
-            String negativePrefix = getAffix(true, true, true, compactIndex, (int)num);
-            String positiveSuffix = getAffix(true, false, false, compactIndex, (int)num);
-            String negativeSuffix = getAffix(true, false, true, compactIndex, (int)num);
+            String positivePrefix = getAffix(true, true, false, compactIndex, num);
+            String negativePrefix = getAffix(true, true, true, compactIndex, num);
+            String positiveSuffix = getAffix(true, false, false, compactIndex, num);
+            String negativeSuffix = getAffix(true, false, true, compactIndex, num);
 
             // Do not break if a match occur; there is a possibility that the
             // subsequent affixes may match the longer subsequence in the given
@@ -2407,19 +2414,20 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
-    private int getIntegerPart(double number, double divisor) {
-        return BigDecimal.valueOf(number)
-                .divide(BigDecimal.valueOf(divisor), roundingMode).intValue();
+    private double getNumberValue(double number, double divisor) {
+        var num = BigDecimal.valueOf(number)
+                .divide(BigDecimal.valueOf(divisor), roundingMode);
+        return getMaximumFractionDigits() > 0 ? num.doubleValue() : num.intValue();
     }
 
-    // Checks whether the iPart is incremented by the BigDecimal division in
-    // getIntegerPart(), and affects the compact number index.
-    private boolean checkIncrement(int iPart, int index, double divisor) {
+    // Checks whether the val is incremented by the BigDecimal division in
+    // getNumberValue(), and affects the compact number index.
+    private boolean checkIncrement(double val, int index, double divisor) {
         if (index < compactPatterns.length - 1 &&
             !"".equals(compactPatterns[index])) { // ignore empty pattern
             var nextDiv = divisors.get(index + 1).doubleValue();
             if (divisor != nextDiv) {
-                return Math.log10(iPart) == Math.log10(nextDiv) - Math.log10(divisor);
+                return Math.log10(val) == Math.log10(nextDiv) - Math.log10(divisor);
             }
         }
         return false;

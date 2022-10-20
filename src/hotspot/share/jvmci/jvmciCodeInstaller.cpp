@@ -1212,6 +1212,9 @@ void CodeInstaller::site_DataPatch(CodeBuffer& buffer, jint pc_offset, HotSpotCo
     case PATCH_DATA_SECTION_REFERENCE: {
       int data_offset = stream->read_u4("data:offset");
       if (0 <= data_offset && data_offset < _constants_size) {
+        if (!is_aligned(data_offset, CompilerToVM::Data::get_data_section_item_alignment())) {
+          JVMCI_ERROR("data offset 0x%x is not %d-byte aligned%s", data_offset, relocInfo::addr_unit(), stream->context());
+        }
         pd_patch_DataSectionReference(pc_offset, data_offset, JVMCI_CHECK);
       } else {
         JVMCI_ERROR("data offset 0x%x points outside data section (size 0x%x)%s", data_offset, _constants_size, stream->context());

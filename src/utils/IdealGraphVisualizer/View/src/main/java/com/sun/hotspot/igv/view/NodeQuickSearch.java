@@ -121,7 +121,7 @@ public class NodeQuickSearch implements SearchProvider {
                             final EditorTopComponent comp = EditorTopComponent.getActive();
                             if (comp != null) {
                                 if (theGraph != null) {
-                                    comp.getDiagramModel().selectGraph(theGraph);
+                                    comp.getModel().selectGraph(theGraph);
                                 }
                                 comp.setSelectedNodes(set);
                                 comp.requestActive();
@@ -150,7 +150,7 @@ public class NodeQuickSearch implements SearchProvider {
                                 final Set<InputNode> tmpSet = new HashSet<>();
                                 tmpSet.add(n);
                                 if (theGraph != null) {
-                                    comp.getDiagramModel().selectGraph(theGraph);
+                                    comp.getModel().selectGraph(theGraph);
                                 }
                                 comp.setSelectedNodes(tmpSet);
                                 comp.requestActive();
@@ -176,14 +176,11 @@ public class NodeQuickSearch implements SearchProvider {
             return matches.size() == 0 ? null : matches;
         } catch (Exception e) {
             final String msg = e.getMessage();
-            response.addResult(new Runnable() {
-                @Override
-                public void run() {
-                    Message desc = new NotifyDescriptor.Message("An exception occurred during the search, "
-                            + "perhaps due to a malformed query string:\n" + msg,
-                            NotifyDescriptor.WARNING_MESSAGE);
-                    DialogDisplayer.getDefault().notify(desc);
-                }
+            response.addResult(() -> {
+                Message desc = new Message("An exception occurred during the search, "
+                        + "perhaps due to a malformed query string:\n" + msg,
+                        NotifyDescriptor.WARNING_MESSAGE);
+                DialogDisplayer.getDefault().notify(desc);
             },
                     "(Error during search)"
             );
