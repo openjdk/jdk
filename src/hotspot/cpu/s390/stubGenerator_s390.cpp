@@ -2872,11 +2872,7 @@ class StubGenerator: public StubCodeGenerator {
     __ save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
 
     // Prep arg for VM call
-    // Create PTR to (R14 - Barrier_Length)
-    // This is the address of the entry point for the compiled fn we are examining.
-    // __ z_lay(Z_R1_scratch, -32, Z_R0, Z_R14);           // R1 <- R14 - 32
-    // __ z_stg(Z_R1_scratch, _z_abi(carg_2), Z_R0, Z_SP); // SP[abi_carg2] <- R1
-    // __ z_la(Z_ARG1, _z_abi(carg_2), Z_R0, Z_SP);        // R2 <- SP + abi_carg2
+    // Create ptr to stored return_pc in caller frame.
     __ z_la(Z_ARG1, _z_abi(return_pc) + frame::z_abi_160_size + nbytes_volatile, Z_R0, Z_SP);
 
     // VM-Call: BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
