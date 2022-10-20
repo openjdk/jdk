@@ -27,7 +27,6 @@ import java.io.IOException;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-
 /* @test
  * @summary Unit tests for formatter
  * @library /test/lib
@@ -64,7 +63,6 @@ public class BasicTestLauncher {
     // Test class
     private static final String TEST_CLASS = "Basic";
 
-
     /**
      * Executes Formatter Basic tests
      * @param timeZone the time zone to run tests against
@@ -78,7 +76,6 @@ public class BasicTestLauncher {
         System.out.printf("$$$ %s passed as expected!%n", timeZone);
     }
 
-
     /**
      * Creates and runs the testJVM process using Basic class
      * @param timeZone the time zone to be set in the testJVM environment
@@ -90,7 +87,6 @@ public class BasicTestLauncher {
         Process process = pb.start();
         return new OutputAnalyzer(process);
     }
-
 
     /**
      * Validates if the testJVM process passed all tests
