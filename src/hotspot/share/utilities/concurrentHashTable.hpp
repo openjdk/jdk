@@ -407,8 +407,6 @@ class ConcurrentHashTable : public CHeapObj<F> {
 
   ~ConcurrentHashTable();
 
-  class BucketsClaimer;
-
   size_t get_mem_size(Thread* thread);
 
   size_t get_size_log2(Thread* thread);
@@ -486,6 +484,8 @@ class ConcurrentHashTable : public CHeapObj<F> {
   template <typename SCAN_FUNC>
   void do_scan(Thread* thread, SCAN_FUNC& scan_f);
 
+
+  class BucketsClaimer;
   // Visit all items with SCAN_FUNC without any protection.
   // It will assume there is no other thread accessing this
   // table during the safepoint. Must be called with VM thread.
