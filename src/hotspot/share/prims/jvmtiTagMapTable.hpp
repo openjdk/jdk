@@ -91,7 +91,7 @@ public:
   bool add(oop obj, jlong tag);
 
 
-  void remove(oop obj);
+  bool remove(oop obj);
 
   // iterate over all entries in the hashmap
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
