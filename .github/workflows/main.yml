@@ -110,14 +110,14 @@ jobs:
             echo 'false'
           }
 
-          echo "::set-output name=linux-x64::$(check_platform linux-x64 linux x64)"
-          echo "::set-output name=linux-x86::$(check_platform linux-x86 linux x86)"
-          echo "::set-output name=linux-x64-variants::$(check_platform linux-x64-variants variants)"
-          echo "::set-output name=linux-cross-compile::$(check_platform linux-cross-compile cross-compile)"
-          echo "::set-output name=macos-x64::$(check_platform macos-x64 macos x64)"
-          echo "::set-output name=macos-aarch64::$(check_platform macos-aarch64 macos aarch64)"
-          echo "::set-output name=windows-x64::$(check_platform windows-x64 windows x64)"
-          echo "::set-output name=windows-aarch64::$(check_platform windows-aarch64 windows aarch64)"
+          echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
+          echo "linux-x86=$(check_platform linux-x86 linux x86)" >> $GITHUB_OUTPUT
+          echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
+          echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
+          echo "macos-x64=$(check_platform macos-x64 macos x64)" >> $GITHUB_OUTPUT
+          echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
+          echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
+          echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
 
   ###
   ### Build jobs
