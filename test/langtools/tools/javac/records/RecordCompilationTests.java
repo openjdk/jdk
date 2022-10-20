@@ -1569,65 +1569,52 @@ public class RecordCompilationTests extends CompilationTestCase {
     // JDK-8292159: TYPE_USE annotations on generic type arguments
     //              of record components discarded
     public void testOnlyTypeAnnotationsOnComponentField() throws Exception {
-        String[] previousOptions = getCompileOptions();
-        try {
-            String code =
-                    """
-                    import java.lang.annotation.*;
-                    import java.util.List;
-                    @Target({ElementType.TYPE_USE})
-                    @Retention(RetentionPolicy.RUNTIME)
-                    @interface Anno { }
-                    record R(List<@Anno String> s) {}
-                    """;
+        String code =
+                """
+                import java.lang.annotation.*;
+                import java.util.List;
+                @Target({ElementType.TYPE_USE})
+                @Retention(RetentionPolicy.RUNTIME)
+                @interface Anno { }
+                record R(List<@Anno String> s) {}
+                """;
 
-            String[] generalOptions = {
-                    "-processor", Processor.class.getName(),
-                    "-Atargets=ElementType.TYPE_USE"
-            };
+        File dir = assertOK(true, code);
 
-            String[] testOptions = generalOptions.clone();
-            setCompileOptions(testOptions);
+        ClassFile classFile = ClassFile.read(findClassFileOrFail(dir, "R.class"));
 
-            File dir = assertOK(true, code);
+        // field first
+        Assert.check(classFile.fields.length == 1);
+        Field field = classFile.fields[0];
+        checkTypeAnno(
+                classFile,
+                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                "FIELD",
+                "Anno");
 
-            ClassFile classFile = ClassFile.read(findClassFileOrFail(dir, "R.class"));
+        // checking for the annotation on the corresponding parameter of the canonical constructor
+        Method init = findMethodOrFail(classFile, "<init>");
+        checkTypeAnno(
+                classFile,
+                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                "METHOD_FORMAL_PARAMETER", "Anno");
 
-            // field first
-            Assert.check(classFile.fields.length == 1);
-            Field field = classFile.fields[0];
-            checkTypeAnno(
-                    classFile,
-                    (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
-                    "FIELD",
-                    "Anno");
+        // checking for the annotation in the accessor
+        Method accessor = findMethodOrFail(classFile, "s");
+        checkTypeAnno(
+                classFile,
+                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                "METHOD_RETURN", "Anno");
 
-            // checking for the annotation on the corresponding parameter of the canonical constructor
-            Method init = findMethodOrFail(classFile, "<init>");
-            checkTypeAnno(
-                    classFile,
-                    (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
-                    "METHOD_FORMAL_PARAMETER", "Anno");
-
-            // checking for the annotation in the accessor
-            Method accessor = findMethodOrFail(classFile, "s");
-            checkTypeAnno(
-                    classFile,
-                    (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
-                    "METHOD_RETURN", "Anno");
-
-            // checking for the annotation in the Record attribute
-            Record_attribute record = (Record_attribute) findAttributeOrFail(classFile.attributes, Record_attribute.class);
-            Assert.check(record.component_count == 1);
-            checkTypeAnno(
-                    classFile,
-                    (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(
-                                record.component_info_arr[0].attributes,
-                                    RuntimeVisibleTypeAnnotations_attribute.class),
-                            "FIELD", "Anno");
-        } finally {
-            setCompileOptions(previousOptions);
-        }
+        // checking for the annotation in the Record attribute
+        Record_attribute record = (Record_attribute) findAttributeOrFail(classFile.attributes, Record_attribute.class);
+        Assert.check(record.component_count == 1);
+        checkTypeAnno(
+                classFile,
+                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(
+                            record.component_info_arr[0].attributes,
+                                RuntimeVisibleTypeAnnotations_attribute.class),
+                        "FIELD", "Anno");
     }
 
     private void checkTypeAnno(ClassFile classFile,
