@@ -1327,7 +1327,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             /*
              * this adaptor is used by the BeanContextSupport class to forward
              * property changes from a child to the BeanContext, avoiding
-             * accidential serialization of the BeanContext by a badly
+             * accidental serialization of the BeanContext by a badly
              * behaved Serializable child.
              */
 
@@ -1341,7 +1341,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             /*
              * this adaptor is used by the BeanContextSupport class to forward
              * vetoable changes from a child to the BeanContext, avoiding
-             * accidential serialization of the BeanContext by a badly
+             * accidental serialization of the BeanContext by a badly
              * behaved Serializable child.
              */
 

@@ -655,7 +655,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         if (bitsPerPixel == 0 ||
             compression == BI_JPEG || compression == BI_PNG )
         {
-            // the colorModel and sampleModel will be initialzed
+            // the colorModel and sampleModel will be initialized
             // by the  reader of embedded image
             colorModel = null;
             sampleModel = null;
@@ -2082,7 +2082,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
     private static Boolean isWindowsPlatform = null;
 
     /**
-     * Verifies whether the byte array contans a unc path.
+     * Verifies whether the byte array contains a unc path.
      * Non-UNC path examples:
      *  c:\path\to\file  - simple notation
      *  \\?\c:\path\to\file - long notation

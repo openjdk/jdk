@@ -457,7 +457,7 @@ public class ConnectionPoolTest {
                 InetSocketAddress proxy,
                 boolean secured) {
             super(address, impl);
-            this.key = ConnectionPool.cacheKey(address, proxy);
+            this.key = ConnectionPool.cacheKey(secured, address, proxy);
             this.address = address;
             this.proxy = proxy;
             this.secured = secured;

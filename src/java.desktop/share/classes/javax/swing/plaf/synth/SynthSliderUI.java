@@ -59,10 +59,10 @@ public class SynthSliderUI extends BasicSliderUI
      * is a ComponentListener installed, it is not being notified. As such,
      * at times when being asked to paint the layout should first be redone.
      * At the end of the layout method we set this lastSize variable, which
-     * represents the size of the slider the last time it was layed out.
+     * represents the size of the slider the last time it was laid out.
      *
      * In the paint method we then check to see that this is accurate, that
-     * the slider has not changed sizes since being last layed out. If necessary
+     * the slider has not changed sizes since being last laid out. If necessary
      * we recompute the layout.
      */
     private Dimension lastSize;
