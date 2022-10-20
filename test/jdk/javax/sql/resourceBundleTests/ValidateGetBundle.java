@@ -25,7 +25,6 @@ import com.sun.rowset.JdbcRowSetResourceBundle;
 
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 /**
@@ -41,11 +40,10 @@ public class ValidateGetBundle{
     private static final String FULLY_QUALIFIED_CLASS_NAME = "com.sun.rowset.RowSetResourceBundle";
     // Resource bundle base name via a path
     private static final String PATH_TO_BUNDLE = "com/sun/rowset/RowSetResourceBundle";
-    // Default Locale
-    private static final Locale DEFAULT_LOCALE = Locale.getDefault();
+    // Use US Locale for fetching bundle
+    private static final Locale US_LOCALE = Locale.US;
 
     public static void main(String[] args) {
-
         // The resource bundle should be found with the fully qualified class name
         testResourceBundleAccess(FULLY_QUALIFIED_CLASS_NAME, true);
         // The resource bundle will not be found when the path is specified
@@ -59,10 +57,13 @@ public class ValidateGetBundle{
      */
     private static void testResourceBundleAccess(String bundleName, boolean expectBundle) {
         try {
-            var bundle = (PropertyResourceBundle) ResourceBundle.getBundle(
-                    bundleName, DEFAULT_LOCALE, JdbcRowSetResourceBundle.class.getModule());
+            var bundle = ResourceBundle.getBundle(bundleName,
+                    US_LOCALE, JdbcRowSetResourceBundle.class.getModule());
+            if (!expectBundle) {
+                String message = "$$$ '%s' shouldn't have loaded!%n";
+                throw new RuntimeException(String.format(message, bundleName));
+            }
             System.out.printf("$$$ %s found as expected!%n", bundleName);
-
         } catch (MissingResourceException mr) {
             if (expectBundle) {
                 throw new RuntimeException(String.format("Error:%s%n", mr.getMessage()));
