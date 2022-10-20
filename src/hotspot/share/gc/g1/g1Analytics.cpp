@@ -104,13 +104,10 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
 
   _card_scan_to_merge_ratio_seq.set_initial(young_card_scan_to_merge_ratio_defaults[index]);
   _cost_per_card_scan_ms_seq.set_initial(young_only_cost_per_card_scan_ms_defaults[index]);
-  _cost_per_card_merge_ms_seq.set_initial(0.001);
-  _pending_cards_seq.set_initial(0);
   _rs_length_seq.set_initial(0);
   _rs_length_diff_seq.set_initial(0.0);
 
   _copy_cost_per_byte_ms_seq.add(cost_per_byte_ms_defaults[index]);
-  // FIXME: not initialized: _cost_per_byte_ms_during_cm_seq
   _constant_other_time_ms_seq.add(constant_other_time_ms_defaults[index]);
   _young_other_cost_per_region_ms_seq.add(young_other_cost_per_region_ms_defaults[index]);
   _non_young_other_cost_per_region_ms_seq.add(non_young_other_cost_per_region_ms_defaults[index]);
