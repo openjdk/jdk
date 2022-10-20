@@ -35,6 +35,7 @@ import static org.testng.Assert.*;
  * @bug 8294989
  * @summary Check that the resource bundle can be accessed
  * @throws SQLException if an unexpected error occurs
+ * @run testng/othervm
  */
 public class ValidateResourceBundleAccess{
     // Expected JDBCResourceBundle message, jdbcrowsetimpl.invalstate
