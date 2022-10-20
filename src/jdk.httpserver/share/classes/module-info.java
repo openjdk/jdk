@@ -68,17 +68,17 @@
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqTime}</b> (default: -1)<br>
  * The maximum time in milliseconds allowed to receive a request headers and body.
- * In practice, this is a function of request size, network speed, and handler processing delays.
- * A value less than or equal to zero means the time is not limited. If the limit is
- * exceeded then the connection is terminated and the handler will receive a
+ * In practice, the actual time is a function of request size, network speed, and handler
+ * processing delays. A value less than or equal to zero means the time is not limited.
+ * If the limit is exceeded then the connection is terminated and the handler will receive a
  * {@link java.io.IOException}. This timer has an implementation specific granularity
  * that may mean requests are aborted later than the specified interval.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxRspTime}</b> (default: -1)<br>
  * The maximum time in milliseconds allowed to receive a response headers and body.
- * In practice, this is a function of response size, network speed, and handler processing delays.
- * A value less than or equal to zero means the time is not limited. If the limit is
- * exceeded then the connection is terminated and the handler will receive a
+ * In practice, the actual time is a function of response size, network speed, and handler
+ * processing delays. A value less than or equal to zero means the time is not limited.
+ * If the limit is exceeded then the connection is terminated and the handler will receive a
  * {@link java.io.IOException}. This timer has an implementation specific granularity
  * that may mean responses are aborted later than the specified interval.
  * </li>
