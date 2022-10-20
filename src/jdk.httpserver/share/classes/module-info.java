@@ -55,7 +55,7 @@
  * <li><p><b>{@systemProperty sun.net.httpserver.maxIdleConnections}</b> (default: 200)<br>
  * The maximum number of idle connections at a time.
  * </li>
- * <li><p><b>{@systemProperty sun.net.httpserver.drainAmount}</b> (default: 64K)<br>
+ * <li><p><b>{@systemProperty sun.net.httpserver.drainAmount}</b> (default: 65536)<br>
  * The maximum number of bytes that will be automatically read and discarded from a
  * request body that has not been completely consumed by its
  * {@link com.sun.net.httpserver.HttpHandler HttpHandler}. If the number of remaining
