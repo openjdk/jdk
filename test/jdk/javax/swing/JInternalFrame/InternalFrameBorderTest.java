@@ -76,7 +76,7 @@ public class InternalFrameBorderTest {
     private static final int FRAME_SIZE = 300;
     private static final int INTFRAME_SIZE = 150;
     private static final int MIDPOINT = INTFRAME_SIZE / 2;
-    private static final int BORDER_THICKNESS = 5;
+    private static final int BORDER_THICKNESS = 4;
 
     private static final StringBuffer errorLog = new StringBuffer();
 
@@ -249,7 +249,6 @@ public class InternalFrameBorderTest {
         jFrame.getContentPane().add(iFrame);
         iFrame.setSize(INTFRAME_SIZE, INTFRAME_SIZE);
         iFrame.setVisible(true);
-
         jFrame.setLocation(150, 150);
         jFrame.setVisible(true);
     }

@@ -62,7 +62,6 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
 
-import sun.java2d.pipe.Region;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
 
@@ -247,6 +246,19 @@ public class MetalBorders {
          */
         public InternalFrameBorder() {}
 
+        /**
+         * Rounds a double to the nearest integer. It rounds 0.5 down,
+         * for example 1.5 is rounded to 1.0.
+         *
+         * @param d number to be rounded
+         * @return the rounded value
+         */
+        private static int roundHalfDown(double d) {
+            double decP = (Math.ceil(d) - d);
+            return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
+        }
+
+
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
             Color background;
@@ -267,18 +279,11 @@ public class MetalBorders {
             AffineTransform at = g2d.getTransform();
             Stroke oldStk = g2d.getStroke();
             Color oldColor = g2d.getColor();
-            boolean resetTransform;
             int stkWidth = 1;
 
             // if m01 or m10 is non-zero, then there is a rotation or shear
             // skip resetting the transform
-            resetTransform = (at.getShearX() == 0) && (at.getShearY() == 0);
-
-            if (resetTransform) {
-                g2d.setTransform(new AffineTransform());
-                stkWidth = Region.clipRound(Math.min(at.getScaleX(), at.getScaleY()));
-                g2d.setStroke(new BasicStroke((float) stkWidth));
-            }
+            boolean resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
 
             int xtranslation = 0;
             int ytranslation = 0;
@@ -286,10 +291,12 @@ public class MetalBorders {
             int height = 0;
 
             if (resetTransform) {
-                width = Region.clipRound(at.getScaleX() * w);
-                height = Region.clipRound(at.getScaleY() * h);
-                xtranslation = Region.clipRound(at.getScaleX() * x + at.getTranslateX());
-                ytranslation = Region.clipRound(at.getScaleY() * y + at.getTranslateY());
+                g2d.setTransform(new AffineTransform());
+                stkWidth = roundHalfDown(Math.min(at.getScaleX(), at.getScaleY()));
+                width = roundHalfDown(at.getScaleX() * w);
+                height = roundHalfDown(at.getScaleY() * h);
+                xtranslation = roundHalfDown(at.getScaleX() * x + at.getTranslateX());
+                ytranslation = roundHalfDown(at.getScaleY() * y + at.getTranslateY());
             } else {
                 width = w;
                 height = h;
@@ -298,43 +305,48 @@ public class MetalBorders {
             }
             g2d.translate(xtranslation, ytranslation);
 
+            // scaled border
+            int thickness = (int) Math.ceil(4 * at.getScaleX());
+
             g.setColor(background);
-            // loop constraint for bulk of the border
-            int loopCount = (int) Math.ceil(5 * at.getScaleX());
             // Draw the bulk of the border
-            for (int i = 0; i <= loopCount; i++) {
-                g.drawRect(x + i,y + i,width - (i * 2), height - (i * 2));
+            for (int i = 0; i <= thickness; i++) {
+                g.drawRect(i, i, width - (i * 2), height - (i * 2));
             }
 
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
-                // border and corner scaling
-                int corner = (int) Math.round(CORNER * at.getScaleX());
+                // set new stroke to draw shadow and highlight lines
+                g2d.setStroke(new BasicStroke((float) stkWidth));
+
                 // midpoint at which highlight & shadow lines
                 // are positioned on the border
-                int midPoint = loopCount / 2;
+                int midPoint = thickness / 2;
+                int offset = ((at.getScaleX() - stkWidth) >= 0 && stkWidth % 2 != 0) ? 1 : 0;
+                int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
+                int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
+                // scaled corner
+                int corner = (int) Math.round(CORNER * at.getScaleX());
 
                 // Draw the Long highlight lines
                 g.setColor(highlight);
-                g.drawLine(corner + 1, midPoint + stkWidth,
-                        width - corner, midPoint + stkWidth); //top
-                g.drawLine(midPoint + stkWidth, corner + 1,
-                        midPoint + stkWidth, height - corner); //left
-                g.drawLine(width - midPoint, corner + 1,
-                        width - midPoint, height - corner); //right
-                g.drawLine(corner + 1, height - midPoint,
-                        width - corner, height - midPoint); //bottom
+                g.drawLine(corner + 1, loc2, width - corner, loc2); //top
+                g.drawLine(loc2, corner + 1, loc2, height - corner); //left
+                g.drawLine((width - offset) - loc1, corner + 1,
+                        (width - offset) - loc1, height - corner); //right
+                g.drawLine(corner + 1, (height - offset) - loc1,
+                        width - corner, (height - offset) - loc1); //bottom
 
                 // Draw the Long shadow lines
                 g.setColor(shadow);
-                g.drawLine(corner, midPoint, width - corner - 1, midPoint);
-                g.drawLine(midPoint, corner, midPoint, height - corner - 1);
-                g.drawLine(width - (midPoint + stkWidth), corner,
-                        width - (midPoint + stkWidth), height - corner - 1);
-                g.drawLine(corner, height - (midPoint + stkWidth),
-                        width - corner - 1, height - (midPoint + stkWidth));
+                g.drawLine(corner, loc1, width - corner - 1, loc1);
+                g.drawLine(loc1, corner, loc1, height - corner - 1);
+                g.drawLine((width - offset) - loc2, corner,
+                        (width - offset) - loc2, height - corner - 1);
+                g.drawLine(corner, (height - offset) - loc2,
+                        width - corner - 1, (height - offset) - loc2);
             }
 
-            // Undo the resetTransform setting from before
+            // restore previous transform
             g2d.translate(-xtranslation, -ytranslation);
             if (resetTransform) {
                 g2d.setColor(oldColor);
@@ -344,7 +356,7 @@ public class MetalBorders {
         }
 
         public Insets getBorderInsets(Component c, Insets newInsets) {
-            newInsets.set(5, 5, 5, 5);
+            newInsets.set(4, 4, 4, 4);
             return newInsets;
         }
     }
