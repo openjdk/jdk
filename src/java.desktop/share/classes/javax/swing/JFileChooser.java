@@ -784,7 +784,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * Creates and returns a new <code>JDialog</code> wrapping
      * <code>this</code> centered on the <code>parent</code>
      * in the <code>parent</code>'s frame.
-     * This method can be overriden to further manipulate the dialog,
+     * This method can be overridden to further manipulate the dialog,
      * to disable resizing, set the location, etc. Example:
      * <pre>
      *     class MyFileChooser extends JFileChooser {

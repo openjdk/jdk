@@ -602,12 +602,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (uc != NULL) {
     if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
       pc = (address)info->si_addr;
-    } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
-      // Non-arch-specific Zero code does not really know the pc.
-      // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
-      // available for Zero for known architectures. But for generic Zero
-      // code, it would still remain unknown.
-      pc = NULL;
     } else {
       pc = os::Posix::ucontext_get_pc(uc);
     }
@@ -664,12 +658,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Invoke fatal error handling.
   if (!signal_was_handled && abort_if_unrecognized) {
-    // For Zero, we ignore the crash context, because:
-    //  a) The crash would be in C++ interpreter code, so context is not really relevant;
-    //  b) Generic Zero code would not be able to parse it, so when generic error
-    //     reporting code asks e.g. about frames on stack, Zero would experience
-    //     a secondary ShouldNotCallThis() crash.
-    VMError::report_and_die(t, sig, pc, info, NOT_ZERO(ucVoid) ZERO_ONLY(NULL));
+    VMError::report_and_die(t, sig, pc, info, ucVoid);
     // VMError should not return.
     ShouldNotReachHere();
   }
@@ -795,7 +784,7 @@ static address get_signal_handler(const struct sigaction* action) {
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
 
-static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
+static void SR_handler(int sig, siginfo_t* siginfo, void* ucVoid);
 
 // Semantically compare two sigaction structures. Return true if they are referring to
 // the same handler, using the same flags.
@@ -1597,8 +1586,8 @@ static void resume_clear_context(OSThread *osthread) {
   osthread->set_siginfo(NULL);
 }
 
-static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontext_t* context) {
-  osthread->set_ucontext(context);
+static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, void* ucVoid) {
+  osthread->set_ucontext((ucontext_t*)ucVoid);
   osthread->set_siginfo(siginfo);
 }
 
@@ -1615,7 +1604,7 @@ static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontex
 //
 // Currently only ever called on the VMThread and JavaThreads (PC sampling)
 //
-static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
+static void SR_handler(int sig, siginfo_t* siginfo, void* ucVoid) {
 
   // Save and restore errno to avoid confusing native code with EINTR
   // after sigsuspend.
@@ -1658,7 +1647,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   SuspendResume::State current = osthread->sr.state();
 
   if (current == SuspendResume::SR_SUSPEND_REQUEST) {
-    suspend_save_context(osthread, siginfo, context);
+    suspend_save_context(osthread, siginfo, ucVoid);
 
     // attempt to switch the state, we assume we had a SUSPEND_REQUEST
     SuspendResume::State state = osthread->sr.suspended();
@@ -1724,7 +1713,7 @@ int SR_initialize() {
 
   // Set up signal handler for suspend/resume
   act.sa_flags = SA_RESTART|SA_SIGINFO;
-  act.sa_handler = (void (*)(int)) SR_handler;
+  act.sa_sigaction = SR_handler;
 
   // SR_signum is blocked when the handler runs.
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);
