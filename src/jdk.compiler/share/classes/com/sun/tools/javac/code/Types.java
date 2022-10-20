@@ -1852,7 +1852,7 @@ public class Types {
                     if (elemtype(t).isPrimitive() || elemtype(s).isPrimitive()) {
                         return elemtype(t).hasTag(elemtype(s).getTag());
                     } else {
-                        return visit(elemtype(t), elemtype(s));
+                        return isCastable(elemtype(t), elemtype(s), warnStack.head);
                     }
                 default:
                     return false;
@@ -2795,11 +2795,7 @@ public class Types {
      * @return true if t is a subsignature of s.
      */
     public boolean isSubSignature(Type t, Type s) {
-        return isSubSignature(t, s, true);
-    }
-
-    public boolean isSubSignature(Type t, Type s, boolean strict) {
-        return hasSameArgs(t, s, strict) || hasSameArgs(t, erasure(s), strict);
+        return hasSameArgs(t, s, true) || hasSameArgs(t, erasure(s), true);
     }
 
     /**

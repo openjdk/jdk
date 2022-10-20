@@ -27,36 +27,45 @@
 #include "utilities/ostream.hpp"
 #include "utilities/moveBits.hpp"
 
-// 32-bit self-inverse encoding of float bits
-// converts trailing zeroes (common in floats) to leading zeroes
-inline juint CompressedStream::reverse_int(juint i) {
-  return reverse_bits(i);
-}
-
 jint CompressedReadStream::read_signed_int() {
-  return decode_sign(read_int());
+  return UNSIGNED5::decode_sign(read_int());
 }
 
 // Compressing floats is simple, because the only common pattern
 // is trailing zeroes.  (Compare leading sign bits on ints.)
 // Since floats are left-justified, as opposed to right-justified
 // ints, we can bit-reverse them in order to take advantage of int
-// compression.
-
+// compression.  Since bit reversal converts trailing zeroes to
+// leading zeroes, effect is better compression of those common
+// 32-bit float values, such as integers or integers divided by
+// powers of two, that have many trailing zeroes.
 jfloat CompressedReadStream::read_float() {
   int rf = read_int();
-  int f  = reverse_int(rf);
+  int f  = reverse_bits(rf);
   return jfloat_cast(f);
 }
 
+// The treatment of doubles is similar.  We could bit-reverse each
+// entire 64-bit word, but it is almost as effective to bit-reverse
+// the individual halves.  Since we are going to encode them
+// separately as 32-bit halves anyway, it seems slightly simpler
+// to reverse after splitting, and when reading reverse each
+// half before joining them together.
 jdouble CompressedReadStream::read_double() {
   jint rh = read_int();
   jint rl = read_int();
-  jint h  = reverse_int(rh);
-  jint l  = reverse_int(rl);
+  jint h  = reverse_bits(rh);
+  jint l  = reverse_bits(rl);
   return jdouble_cast(jlong_from(h, l));
 }
 
+// A 64-bit long is encoded into distinct 32-bit halves.  This saves
+// us from having to define a 64-bit encoding and is almost as
+// effective.  A modified LEB128 could encode longs into 9 bytes, and
+// this technique maxes out at 10 bytes, so, if we didn't mind the
+// extra complexity of another coding system, we could process 64-bit
+// values as single units.  But, the complexity does not seem
+// worthwhile.
 jlong CompressedReadStream::read_long() {
   jint low  = read_signed_int();
   jint high = read_signed_int();
@@ -70,26 +79,31 @@ CompressedWriteStream::CompressedWriteStream(int initial_size) : CompressedStrea
 }
 
 void CompressedWriteStream::grow() {
-  u_char* _new_buffer = NEW_RESOURCE_ARRAY(u_char, _size * 2);
+  int nsize = _size * 2;
+  const int min_expansion = UNSIGNED5::MAX_LENGTH;
+  if (nsize < min_expansion*2) {
+    nsize = min_expansion*2;
+  }
+  u_char* _new_buffer = NEW_RESOURCE_ARRAY(u_char, nsize);
   memcpy(_new_buffer, _buffer, _position);
   _buffer = _new_buffer;
-  _size   = _size * 2;
+  _size   = nsize;
 }
 
 void CompressedWriteStream::write_float(jfloat value) {
   juint f = jint_cast(value);
-  juint rf = reverse_int(f);
-  assert(f == reverse_int(rf), "can re-read same bits");
+  juint rf = reverse_bits(f);
+  assert(f == reverse_bits(rf), "can re-read same bits");
   write_int(rf);
 }
 
 void CompressedWriteStream::write_double(jdouble value) {
   juint h  = high(jlong_cast(value));
   juint l  = low( jlong_cast(value));
-  juint rh = reverse_int(h);
-  juint rl = reverse_int(l);
-  assert(h == reverse_int(rh), "can re-read same bits");
-  assert(l == reverse_int(rl), "can re-read same bits");
+  juint rh = reverse_bits(h);
+  juint rl = reverse_bits(l);
+  assert(h == reverse_bits(rh), "can re-read same bits");
+  assert(l == reverse_bits(rl), "can re-read same bits");
   write_int(rh);
   write_int(rl);
 }

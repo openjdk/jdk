@@ -463,7 +463,6 @@ class Compile : public Phase {
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
-  void print_inlining_stream_free();
   void print_inlining_init();
   void print_inlining_reinit();
   void print_inlining_commit();
@@ -477,7 +476,7 @@ class Compile : public Phase {
 
   void* barrier_set_state() const { return _barrier_set_state; }
 
-  outputStream* print_inlining_stream() const {
+  stringStream* print_inlining_stream() {
     assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
     return _print_inlining_stream;
   }
@@ -491,7 +490,7 @@ class Compile : public Phase {
   void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     stringStream ss;
     CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
-    print_inlining_stream()->print("%s", ss.as_string());
+    print_inlining_stream()->print("%s", ss.freeze());
   }
 
 #ifndef PRODUCT
@@ -506,6 +505,7 @@ class Compile : public Phase {
 
   // Dump inlining replay data to the stream.
   void dump_inline_data(outputStream* out);
+  void dump_inline_data_reduced(outputStream* out);
 
  private:
   // Matching, CFG layout, allocation, code generation
@@ -950,7 +950,7 @@ class Compile : public Phase {
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              remove_useless_nodes (Unique_Node_List &useful);
+  void              disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist);
 
   void              remove_useless_node(Node* dead);
 
@@ -1058,6 +1058,10 @@ class Compile : public Phase {
           int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
+  ~Compile() {
+    delete _print_inlining_stream;
+  };
+
   // Are we compiling a method?
   bool has_method() { return method() != NULL; }
 
@@ -1125,9 +1129,9 @@ class Compile : public Phase {
 #endif
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.
-  void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc);
-  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop);
-  void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc );
+  void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void eliminate_redundant_card_marks(Node* n);
 
   // Logic cone optimization.

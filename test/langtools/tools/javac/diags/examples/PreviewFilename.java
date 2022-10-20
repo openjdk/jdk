@@ -25,9 +25,8 @@
 // key: compiler.note.preview.recompile
 // options: -XDforcePreview  -source ${jdk.version} --enable-preview
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.function.Function;
 
 class PreviewFilename {
-    List<String> ls = new ArrayList<>();
+    Function<String, String> f = (var s) -> s;
 }

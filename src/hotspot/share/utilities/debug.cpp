@@ -61,6 +61,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
 #include <stdio.h>
@@ -648,6 +649,37 @@ extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
   }
 }
 
+// check and decode a single u5 value
+extern "C" JNIEXPORT u4 u5decode(intptr_t addr) {
+  Command c("u5decode");
+  u1* arr = (u1*)addr;
+  size_t off = 0, lim = 5;
+  if (!UNSIGNED5::check_length(arr, off, lim)) {
+    return 0;
+  }
+  return UNSIGNED5::read_uint(arr, off, lim);
+}
+
+// Sets up a Reader from addr/limit and prints count items.
+// A limit of zero means no set limit; stop at the first null
+// or after count items are printed.
+// A count of zero or less is converted to -1, which means
+// there is no limit on the count of items printed; the
+// printing stops when an null is printed or at limit.
+// See documentation for UNSIGNED5::Reader::print(count).
+extern "C" JNIEXPORT intptr_t u5p(intptr_t addr,
+                                  intptr_t limit,
+                                  int count) {
+  Command c("u5p");
+  u1* arr = (u1*)addr;
+  if (limit && limit < addr)  limit = addr;
+  size_t lim = !limit ? 0 : (limit - addr);
+  size_t endpos = UNSIGNED5::print_count(count > 0 ? count : -1,
+                                         arr, (size_t)0, lim);
+  return addr + endpos;
+}
+
+
 // int versions of all methods to avoid having to type type casts in the debugger
 
 void pp(intptr_t p)          { pp((void*)p); }
@@ -688,7 +720,7 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
   Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
-  VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
+  VMError::print_native_stack(tty, fr, t, false, buf, sizeof(buf));
 }
 
 //
@@ -708,7 +740,7 @@ extern "C" JNIEXPORT void pns2() { // print native stack
   } else {
     Thread* t = Thread::current_or_null();
     frame fr = os::current_frame();
-    VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
+    VMError::print_native_stack(tty, fr, t, false, buf, sizeof(buf));
   }
 }
 #endif

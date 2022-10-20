@@ -1062,8 +1062,8 @@ void VirtualSpace::print_on(outputStream* out) const {
   out->cr();
   out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
   out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
-  out->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  p2i(low()), p2i(high()));
-  out->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
+  out->print_cr(" - [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));
+  out->print_cr(" - [low_b, high_b]: [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }
 
 void VirtualSpace::print() const {

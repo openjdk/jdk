@@ -24,6 +24,7 @@
 /*
  @test
  @bug 8041928 8158616
+ @requires (os.family != "mac")
  @summary Confirm that the Alt-Gr Modifier bit is set correctly.
  @run main/manual AltGraphModifierTest
  */

@@ -377,7 +377,7 @@ public class Decoration {
 
             CoreMetrics cm = label.getCoreMetrics();
 
-            // NOTE:  The performace of the following code may
+            // NOTE:  The performance of the following code may
             // be very poor.
             float ulThickness = cm.underlineThickness;
             float ulOffset = cm.underlineOffset;

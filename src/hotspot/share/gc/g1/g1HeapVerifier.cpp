@@ -305,7 +305,7 @@ public:
     if (hr->is_humongous()) {
       _has_humongous = true;
     }
-    log_info(gc, region, cds)("HeapRegion " INTPTR_FORMAT " %s%s", p2i(hr->bottom()), hr->get_type_str(), hole);
+    log_info(gc, region, cds)("HeapRegion " PTR_FORMAT " %s%s", p2i(hr->bottom()), hr->get_type_str(), hole);
     return false;
   }
 };

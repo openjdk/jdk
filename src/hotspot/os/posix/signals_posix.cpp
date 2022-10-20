@@ -342,7 +342,7 @@ static const struct {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// sun.misc.Signal support
+// sun.misc.Signal and BREAK_SIGNAL support
 
 void jdk_misc_signal_init() {
   // Initialize signal structures
@@ -563,11 +563,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 {
   assert(info != NULL && ucVoid != NULL, "sanity");
 
-  if (sig == BREAK_SIGNAL) {
-    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
-    return true; // ignore it
-  }
-
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
@@ -607,12 +602,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (uc != NULL) {
     if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
       pc = (address)info->si_addr;
-    } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
-      // Non-arch-specific Zero code does not really know the pc.
-      // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
-      // available for Zero for known architectures. But for generic Zero
-      // code, it would still remain unknown.
-      pc = NULL;
     } else {
       pc = os::Posix::ucontext_get_pc(uc);
     }
@@ -629,11 +618,10 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     signal_was_handled = true; // unconditionally.
   }
 
+#ifndef ZERO
   // Check for UD trap caused by NOP patching.
   // If it is, patch return address to be deopt handler.
-  if (!signal_was_handled) {
-    address pc = os::Posix::ucontext_get_pc(uc);
-    assert(pc != NULL, "");
+  if (!signal_was_handled && pc != NULL && os::is_readable_pointer(pc)) {
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
       CodeBlob* cb = CodeCache::find_blob(pc);
       if (cb != NULL && cb->is_compiled()) {
@@ -653,6 +641,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       }
     }
   }
+#endif // !ZERO
 
   // Call platform dependent signal handler.
   if (!signal_was_handled) {
@@ -669,12 +658,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Invoke fatal error handling.
   if (!signal_was_handled && abort_if_unrecognized) {
-    // For Zero, we ignore the crash context, because:
-    //  a) The crash would be in C++ interpreter code, so context is not really relevant;
-    //  b) Generic Zero code would not be able to parse it, so when generic error
-    //     reporting code asks e.g. about frames on stack, Zero would experience
-    //     a secondary ShouldNotCallThis() crash.
-    VMError::report_and_die(t, sig, pc, info, NOT_ZERO(ucVoid) ZERO_ONLY(NULL));
+    VMError::report_and_die(t, sig, pc, info, ucVoid);
     // VMError should not return.
     ShouldNotReachHere();
   }
@@ -800,7 +784,7 @@ static address get_signal_handler(const struct sigaction* action) {
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
 
-static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
+static void SR_handler(int sig, siginfo_t* siginfo, void* ucVoid);
 
 // Semantically compare two sigaction structures. Return true if they are referring to
 // the same handler, using the same flags.
@@ -1225,7 +1209,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig, bool do_check = true) {
+void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
@@ -1268,10 +1252,9 @@ void set_signal_handler(int sig, bool do_check = true) {
 #endif
 
   // Save handler setup for possible later checking
-  if (do_check) {
-    vm_handlers.set(sig, &sigAct);
-  }
-  do_check_signal_periodically[sig] = do_check;
+  vm_handlers.set(sig, &sigAct);
+
+  do_check_signal_periodically[sig] = true;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
@@ -1310,11 +1293,24 @@ void install_signal_handlers() {
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
   if (!ReduceSignalUsage) {
-    // This is just for early initialization phase. Intercepting the signal here reduces the risk
-    // that an attach client accidentally forces HotSpot to quit prematurely. We skip the periodic
-    // check because late initialization will overwrite it to UserHandler.
-    set_signal_handler(BREAK_SIGNAL, false);
+    // Install BREAK_SIGNAL's handler in early initialization phase, in
+    // order to reduce the risk that an attach client accidentally forces
+    // HotSpot to quit prematurely.
+    // The actual work for handling BREAK_SIGNAL is performed by the Signal
+    // Dispatcher thread, which is created and started at a much later point,
+    // see os::initialize_jdk_signal_support(). Any BREAK_SIGNAL received
+    // before the Signal Dispatcher thread is started is queued up via the
+    // pending_signals[BREAK_SIGNAL] counter, and will be processed by the
+    // Signal Dispatcher thread in a delayed fashion.
+    //
+    // Also note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
+    // Applications that require a custom BREAK_SIGNAL handler should run with
+    // -XX:+ReduceSignalUsage. Otherwise if libjsig is used together with
+    // -XX:+ReduceSignalUsage, libjsig will prevent changing BREAK_SIGNAL's
+    // handler to a custom handler.
+    os::signal(BREAK_SIGNAL, os::user_handler());
   }
+
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
   // handlers. By replacing the existing task exception handler, we disable lldb's mach
@@ -1397,7 +1393,6 @@ static void print_single_signal_handler(outputStream* st,
   st->print(", flags=");
   int flags = get_sanitized_sa_flags(act);
   print_sa_flags(st, flags);
-
 }
 
 // Print established signal handler for this signal.
@@ -1414,6 +1409,11 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   sigaction(sig, NULL, &current_act);
 
   print_single_signal_handler(st, &current_act, buf, buflen);
+
+  sigset_t thread_sig_mask;
+  if (::pthread_sigmask(/* ignored */ SIG_BLOCK, NULL, &thread_sig_mask) == 0) {
+    st->print(", %s", sigismember(&thread_sig_mask, sig) ? "blocked" : "unblocked");
+  }
   st->cr();
 
   // If we expected to see our own hotspot signal handler but found a different one,
@@ -1586,8 +1586,8 @@ static void resume_clear_context(OSThread *osthread) {
   osthread->set_siginfo(NULL);
 }
 
-static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontext_t* context) {
-  osthread->set_ucontext(context);
+static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, void* ucVoid) {
+  osthread->set_ucontext((ucontext_t*)ucVoid);
   osthread->set_siginfo(siginfo);
 }
 
@@ -1604,7 +1604,7 @@ static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontex
 //
 // Currently only ever called on the VMThread and JavaThreads (PC sampling)
 //
-static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
+static void SR_handler(int sig, siginfo_t* siginfo, void* ucVoid) {
 
   // Save and restore errno to avoid confusing native code with EINTR
   // after sigsuspend.
@@ -1647,7 +1647,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   SuspendResume::State current = osthread->sr.state();
 
   if (current == SuspendResume::SR_SUSPEND_REQUEST) {
-    suspend_save_context(osthread, siginfo, context);
+    suspend_save_context(osthread, siginfo, ucVoid);
 
     // attempt to switch the state, we assume we had a SUSPEND_REQUEST
     SuspendResume::State state = osthread->sr.suspended();
@@ -1713,7 +1713,7 @@ int SR_initialize() {
 
   // Set up signal handler for suspend/resume
   act.sa_flags = SA_RESTART|SA_SIGINFO;
-  act.sa_handler = (void (*)(int)) SR_handler;
+  act.sa_sigaction = SR_handler;
 
   // SR_signum is blocked when the handler runs.
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);
@@ -1819,12 +1819,12 @@ int PosixSignals::init() {
 
   signal_sets_init();
 
-  install_signal_handlers();
-
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal and BREAK_SIGNAL's handler.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
+
+  install_signal_handlers();
 
   return JNI_OK;
 }

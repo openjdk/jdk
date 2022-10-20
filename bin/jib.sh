@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,28 @@ install_jib() {
     echo "${data_string}" > "${install_data}"
 }
 
+# Returns a shell-escaped version of the argument given.
+shell_quote() {
+  if [[ -n "$1" ]]; then
+    # Uses only shell-safe characters?  No quoting needed.
+    # '=' is a zsh meta-character, but only in word-initial position.
+    if echo "$1" | grep '^[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\.:,%/+=_-]\{1,\}$' > /dev/null \
+        && ! echo "$1" | grep '^=' > /dev/null; then
+      quoted="$1"
+    else
+      if echo "$1" | grep "[\'!]" > /dev/null; then
+        # csh does history expansion within single quotes, but not
+        # when backslash-escaped!
+        local quoted_quote="'\\''" quoted_exclam="'\\!'"
+        word="${1//\'/${quoted_quote}}"
+        word="${1//\!/${quoted_exclam}}"
+      fi
+      quoted="'$1'"
+    fi
+    echo "$quoted"
+  fi
+}
+
 # Main body starts here
 
 setup_url
@@ -150,5 +172,17 @@ fi
 if [ -z "${JIB_SRC_DIR}" ]; then
     export JIB_SRC_DIR="${mydir}/../"
 fi
+
+
+# Save the original command line
+conf_quoted_arguments=()
+for conf_option; do
+  conf_quoted_arguments=("${conf_quoted_arguments[@]}" "$(shell_quote "$conf_option")")
+done
+export REAL_CONFIGURE_COMMAND_LINE="${conf_quoted_arguments[@]}"
+
+myfulldir="$(cd "${mydir}" > /dev/null && pwd)"
+export REAL_CONFIGURE_COMMAND_EXEC_FULL="$BASH $myfulldir/$myname"
+export REAL_CONFIGURE_COMMAND_EXEC_SHORT="$myname"
 
 ${installed_jib_script} "$@"

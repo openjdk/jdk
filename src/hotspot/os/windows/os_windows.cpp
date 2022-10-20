@@ -1699,7 +1699,6 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-#if _MSC_VER >= 1900
   // Starting with Visual Studio 2015, vsnprint is C99 compliant.
   ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
@@ -1708,29 +1707,6 @@ int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
     buf[len - 1] = '\0';
   }
   return result;
-#else
-  // Before Visual Studio 2015, vsnprintf is not C99 compliant, so use
-  // _vsnprintf, whose behavior seems to be *mostly* consistent across
-  // versions.  However, when len == 0, avoid _vsnprintf too, and just
-  // go straight to _vscprintf.  The output is going to be truncated in
-  // that case, except in the unusual case of empty output.  More
-  // importantly, the documentation for various versions of Visual Studio
-  // are inconsistent about the behavior of _vsnprintf when len == 0,
-  // including it possibly being an error.
-  int result = -1;
-  if (len > 0) {
-    result = _vsnprintf(buf, len, fmt, args);
-    // If output (including NUL terminator) is truncated, the buffer
-    // won't be NUL terminated.  Add the trailing NUL specified by C99.
-    if ((result < 0) || ((size_t)result >= len)) {
-      buf[len - 1] = '\0';
-    }
-  }
-  if (result < 0) {
-    result = _vscprintf(fmt, args);
-  }
-  return result;
-#endif // _MSC_VER dispatch
 }
 
 static inline time_t get_mtime(const char* filename) {
@@ -2242,6 +2218,15 @@ static void jdk_misc_signal_init() {
 
   // Add a CTRL-C handler
   SetConsoleCtrlHandler(consoleHandler, TRUE);
+
+  // Initialize sigbreakHandler.
+  // The actual work for handling CTRL-BREAK is performed by the Signal
+  // Dispatcher thread, which is created and started at a much later point,
+  // see os::initialize_jdk_signal_support(). Any CTRL-BREAK received
+  // before the Signal Dispatcher thread is started is queued up via the
+  // pending_signals[SIGBREAK] counter, and will be processed by the
+  // Signal Dispatcher thread in a delayed fashion.
+  os::signal(SIGBREAK, os::user_handler());
 }
 
 void os::signal_notify(int sig) {
@@ -4321,7 +4306,8 @@ jint os::init_2(void) {
 
   SymbolEngine::recalc_search_path();
 
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal, and install CTRL-C and
+  // CTRL-BREAK handlers.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }

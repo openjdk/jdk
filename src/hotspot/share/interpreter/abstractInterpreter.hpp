@@ -295,7 +295,7 @@ class AbstractInterpreterGenerator: public StackObj {
   InterpreterMacroAssembler* _masm;
 
  public:
-  AbstractInterpreterGenerator(StubQueue* _code);
+  AbstractInterpreterGenerator();
 };
 
 #endif // SHARE_INTERPRETER_ABSTRACTINTERPRETER_HPP

@@ -71,6 +71,15 @@ void ClassLoaderDataGraph::clear_claimed_marks(int claim) {
     cld->clear_claim(claim);
   }
 }
+
+void ClassLoaderDataGraph::verify_claimed_marks_cleared(int claim) {
+#ifdef ASSERT
+ for (ClassLoaderData* cld = Atomic::load_acquire(&_head); cld != NULL; cld = cld->next()) {
+    cld->verify_not_claimed(claim);
+  }
+#endif
+}
+
 // Class iterator used by the compiler.  It gets some number of classes at
 // a safepoint to decay invocation counters on the methods.
 class ClassLoaderDataGraphKlassIteratorStatic {
@@ -439,10 +448,10 @@ void ClassLoaderDataGraph::print_dictionary(outputStream* st) {
 
 void ClassLoaderDataGraph::print_table_statistics(outputStream* st) {
   FOR_ALL_DICTIONARY(cld) {
-    ResourceMark rm;
+    ResourceMark rm; // loader_name_and_id
     stringStream tempst;
     tempst.print("System Dictionary for %s class loader", cld->loader_name_and_id());
-    cld->dictionary()->print_table_statistics(st, tempst.as_string());
+    cld->dictionary()->print_table_statistics(st, tempst.freeze());
   }
 }
 

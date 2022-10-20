@@ -585,21 +585,21 @@ void Space::print() const { print_on(tty); }
 
 void Space::print_on(outputStream* st) const {
   print_short_on(st);
-  st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ")",
                 p2i(bottom()), p2i(end()));
 }
 
 void ContiguousSpace::print_on(outputStream* st) const {
   print_short_on(st);
-  st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                 p2i(bottom()), p2i(top()), p2i(end()));
 }
 
 #if INCLUDE_SERIALGC
 void OffsetTableContigSpace::print_on(outputStream* st) const {
   print_short_on(st);
-  st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", "
-                INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", "
+                PTR_FORMAT ", " PTR_FORMAT ")",
               p2i(bottom()), p2i(top()), p2i(_offsets.threshold()), p2i(end()));
 }
 #endif

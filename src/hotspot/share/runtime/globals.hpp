@@ -676,9 +676,6 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
           "Print the class loader data graph at exit")                      \
                                                                             \
-  product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
-          "Dynamically resize system dictionaries as needed")               \
-                                                                            \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
@@ -1297,6 +1294,9 @@ const int ObjectAlignmentInBytes = 8;
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
           range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
+                                                                            \
+  product(bool, UseSystemMemoryBarrier, false, EXPERIMENTAL,                \
+          "Try to enable system memory barrier")                            \
                                                                             \
   product(intx, NmethodSweepActivity, 4,                                    \
           "Removes cold nmethods from code cache if > 0. Higher values "    \

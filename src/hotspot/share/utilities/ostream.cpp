@@ -43,20 +43,16 @@
 extern "C" void jio_print(const char* s, size_t len);
 extern "C" int jio_printf(const char *fmt, ...);
 
-outputStream::outputStream(int width) {
-  _width       = width;
+outputStream::outputStream() {
   _position    = 0;
-  _newlines    = 0;
   _precount    = 0;
   _indentation = 0;
   _scratch     = NULL;
   _scratch_len = 0;
 }
 
-outputStream::outputStream(int width, bool has_time_stamps) {
-  _width       = width;
+outputStream::outputStream(bool has_time_stamps) {
   _position    = 0;
-  _newlines    = 0;
   _precount    = 0;
   _indentation = 0;
   _scratch     = NULL;
@@ -64,11 +60,12 @@ outputStream::outputStream(int width, bool has_time_stamps) {
   if (has_time_stamps)  _stamp.update();
 }
 
-void outputStream::update_position(const char* s, size_t len) {
+bool outputStream::update_position(const char* s, size_t len) {
+  bool saw_newline = false;
   for (size_t i = 0; i < len; i++) {
     char ch = s[i];
     if (ch == '\n') {
-      _newlines += 1;
+      saw_newline = true;
       _precount += _position + 1;
       _position = 0;
     } else if (ch == '\t') {
@@ -79,6 +76,7 @@ void outputStream::update_position(const char* s, size_t len) {
       _position += 1;
     }
   }
+  return saw_newline;
 }
 
 // Execute a vsprintf, using the given buffer if necessary.
@@ -288,7 +286,7 @@ void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_
       if (rel_addr) {
         indent().print("%07" PRIxPTR ":", i);
       } else {
-        indent().print(INTPTR_FORMAT ":", p2i((unsigned char*)data + i));
+        indent().print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
       }
     }
     if (i % 2 == 0) {
@@ -358,6 +356,7 @@ void stringStream::grow(size_t new_capacity) {
 }
 
 void stringStream::write(const char* s, size_t len) {
+  assert(_is_frozen == false, "Modification forbidden");
   assert(_capacity >= _written + 1, "Sanity");
   if (len == 0) {
     return;
@@ -397,8 +396,8 @@ void stringStream::zero_terminate() {
 }
 
 void stringStream::reset() {
+  assert(_is_frozen == false, "Modification forbidden");
   _written = 0; _precount = 0; _position = 0;
-  _newlines = 0;
   zero_terminate();
 }
 
@@ -669,7 +668,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
     return NULL;
   }
 
-  fileStream* file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
+  fileStream* file = new (mtInternal) fileStream(try_name);
   FREE_C_HEAP_ARRAY(char, try_name);
   if (file->is_open()) {
     return file;
@@ -687,7 +686,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
 
   jio_printf("Warning:  Forcing option -XX:LogFile=%s\n", try_name);
 
-  file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
+  file = new (mtInternal) fileStream(try_name);
   FREE_C_HEAP_ARRAY(char, try_name);
   if (file->is_open()) {
     return file;
@@ -704,7 +703,7 @@ void defaultStream::init_log() {
 
   if (file != NULL) {
     _log_file = file;
-    _outer_xmlStream = new(ResourceObj::C_HEAP, mtInternal) xmlStream(file);
+    _outer_xmlStream = new(mtInternal) xmlStream(file);
     start_log();
   } else {
     // and leave xtty as NULL
@@ -891,17 +890,17 @@ void defaultStream::write(const char* s, size_t len) {
   intx holder = hold(thread_id);
 
   if (DisplayVMOutput &&
-      (_outer_xmlStream == NULL || !_outer_xmlStream->inside_attrs())) {
+      (_outer_xmlStream == nullptr || !_outer_xmlStream->inside_attrs())) {
     // print to output stream. It can be redirected by a vfprintf hook
     jio_print(s, len);
   }
 
   // print to log file
-  if (has_log_file()) {
-    int nl0 = _newlines;
-    xmlTextStream::write(s, len);
+  if (has_log_file() && _outer_xmlStream != nullptr) {
+     _outer_xmlStream->write_text(s, len);
+    bool nl = update_position(s, len);
     // flush the log file too, if there were any newlines
-    if (nl0 != _newlines){
+    if (nl) {
       flush();
     }
   } else {
@@ -946,7 +945,7 @@ void ttyLocker::break_tty_lock_for_safepoint(intx holder) {
 
 void ostream_init() {
   if (defaultStream::instance == NULL) {
-    defaultStream::instance = new(ResourceObj::C_HEAP, mtInternal) defaultStream();
+    defaultStream::instance = new(mtInternal) defaultStream();
     tty = defaultStream::instance;
 
     // We want to ensure that time stamps in GC logs consider time 0

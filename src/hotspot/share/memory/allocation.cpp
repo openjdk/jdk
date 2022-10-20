@@ -101,7 +101,7 @@ bool MetaspaceObj::is_valid(const MetaspaceObj* p) {
 }
 
 void MetaspaceObj::print_address_on(outputStream* st) const {
-  st->print(" {" INTPTR_FORMAT "}", p2i(this));
+  st->print(" {" PTR_FORMAT "}", p2i(this));
 }
 
 void* ResourceObj::operator new(size_t size, Arena *arena) throw() {
@@ -160,7 +160,7 @@ void ResourceObj::operator delete(void* p) {
 void ResourceObj::set_allocation_type(address res, allocation_type type) {
   // Set allocation type in the resource object
   uintptr_t allocation = (uintptr_t)res;
-  assert((allocation & allocation_mask) == 0, "address should be aligned to 4 bytes at least: " INTPTR_FORMAT, p2i(res));
+  assert((allocation & allocation_mask) == 0, "address should be aligned to 4 bytes at least: " PTR_FORMAT, p2i(res));
   assert(type <= allocation_mask, "incorrect allocation type");
   ResourceObj* resobj = (ResourceObj *)res;
   resobj->_allocation_t[0] = ~(allocation + type);
@@ -242,7 +242,7 @@ ResourceObj::~ResourceObj() {
 void ResourceObj::print() const       { print_on(tty); }
 
 void ResourceObj::print_on(outputStream* st) const {
-  st->print_cr("ResourceObj(" INTPTR_FORMAT ")", p2i(this));
+  st->print_cr("ResourceObj(" PTR_FORMAT ")", p2i(this));
 }
 
 ReallocMark::ReallocMark() {

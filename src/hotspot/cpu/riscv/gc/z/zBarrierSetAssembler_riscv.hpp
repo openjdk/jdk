@@ -61,7 +61,8 @@ public:
                         Address dst,
                         Register val,
                         Register tmp1,
-                        Register tmp2);
+                        Register tmp2,
+                        Register tmp3);
 #endif // ASSERT
 
   virtual void arraycopy_prologue(MacroAssembler* masm,
