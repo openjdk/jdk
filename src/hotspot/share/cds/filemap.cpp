@@ -1492,6 +1492,29 @@ void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, b
   _mapped_base = NULL;
 }
 
+void FileMapRegion::init_bitmaps(ArchiveHeapBitmapInfo oopmap, ArchiveHeapBitmapInfo ptrmap) {
+  _oopmap_offset = oopmap._bm_region_offset;
+  _oopmap_size_in_bits = oopmap._size_in_bits;
+
+  _ptrmap_offset = ptrmap._bm_region_offset;
+  _ptrmap_size_in_bits = ptrmap._size_in_bits;
+}
+
+BitMapView FileMapRegion::bitmap_view(bool is_oopmap) {
+  char* bitmap_base = FileMapInfo::current_info()->map_bitmap_region();
+  bitmap_base += is_oopmap ? _oopmap_offset : _ptrmap_offset;
+  size_t size_in_bits = is_oopmap ? _oopmap_size_in_bits : _ptrmap_size_in_bits;
+  return BitMapView((BitMap::bm_word_t*)(bitmap_base), size_in_bits);
+}
+
+BitMapView FileMapRegion::oopmap_view() {
+  return bitmap_view(true);
+}
+
+BitMapView FileMapRegion::ptrmap_view() {
+  assert(has_ptrmap(), "must be");
+  return bitmap_view(false);
+}
 
 static const char* region_name(int region_index) {
   static const char* names[] = {
@@ -1566,41 +1589,41 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   }
 }
 
-size_t FileMapInfo::set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo>* oopmaps, size_t curr_size) {
-  for (int i = 0; i < oopmaps->length(); i++) {
-    oopmaps->at(i)._offset = curr_size;
-    curr_size += oopmaps->at(i)._oopmap_size_in_bytes;
+size_t FileMapInfo::set_bitmaps_offset(GrowableArray<ArchiveHeapBitmapInfo>* bitmaps, size_t curr_size) {
+  for (int i = 0; i < bitmaps->length(); i++) {
+    bitmaps->at(i)._bm_region_offset = curr_size;
+    curr_size += bitmaps->at(i)._size_in_bytes;
   }
   return curr_size;
 }
 
-size_t FileMapInfo::write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo>* oopmaps, size_t curr_offset, char* buffer) {
-  for (int i = 0; i < oopmaps->length(); i++) {
-    memcpy(buffer + curr_offset, oopmaps->at(i)._oopmap, oopmaps->at(i)._oopmap_size_in_bytes);
-    curr_offset += oopmaps->at(i)._oopmap_size_in_bytes;
+size_t FileMapInfo::write_bitmaps(GrowableArray<ArchiveHeapBitmapInfo>* bitmaps, size_t curr_offset, char* buffer) {
+  for (int i = 0; i < bitmaps->length(); i++) {
+    memcpy(buffer + curr_offset, bitmaps->at(i)._map, bitmaps->at(i)._size_in_bytes);
+    curr_offset += bitmaps->at(i)._size_in_bytes;
   }
   return curr_offset;
 }
 
 char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
-                                       GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                       GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                       GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
+                                       GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps,
                                        size_t &size_in_bytes) {
   size_t size_in_bits = ptrmap->size();
   size_in_bytes = ptrmap->size_in_bytes();
 
-  if (closed_oopmaps != NULL && open_oopmaps != NULL) {
-    size_in_bytes = set_oopmaps_offset(closed_oopmaps, size_in_bytes);
-    size_in_bytes = set_oopmaps_offset(open_oopmaps, size_in_bytes);
+  if (closed_bitmaps != NULL && open_bitmaps != NULL) {
+    size_in_bytes = set_bitmaps_offset(closed_bitmaps, size_in_bytes);
+    size_in_bytes = set_bitmaps_offset(open_bitmaps, size_in_bytes);
   }
 
   char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
   ptrmap->write_to((BitMap::bm_word_t*)buffer, ptrmap->size_in_bytes());
   header()->set_ptrmap_size_in_bits(size_in_bits);
 
-  if (closed_oopmaps != NULL && open_oopmaps != NULL) {
-    size_t curr_offset = write_oopmaps(closed_oopmaps, ptrmap->size_in_bytes(), buffer);
-    write_oopmaps(open_oopmaps, curr_offset, buffer);
+  if (closed_bitmaps != NULL && open_bitmaps != NULL) {
+    size_t curr_offset = write_bitmaps(closed_bitmaps, ptrmap->size_in_bytes(), buffer);
+    write_bitmaps(open_bitmaps, curr_offset, buffer);
   }
 
   write_region(MetaspaceShared::bm, (char*)buffer, size_in_bytes, /*read_only=*/true, /*allow_exec=*/false);
@@ -1639,7 +1662,7 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
 //             |
 //             +-- gap
 size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
-                                       GrowableArray<ArchiveHeapOopmapInfo>* oopmaps,
+                                       GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
                                        int first_region_id, int max_num_regions) {
   assert(max_num_regions <= 2, "Only support maximum 2 memory regions");
 
@@ -1665,8 +1688,10 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
     int region_idx = i + first_region_id;
     write_region(region_idx, start, size, false, false);
     if (size > 0) {
-      space_at(region_idx)->init_oopmap(oopmaps->at(i)._offset,
-                                        oopmaps->at(i)._oopmap_size_in_bits);
+      int oopmap_idx = i * 2;
+      int ptrmap_idx = i * 2 + 1;
+      space_at(region_idx)->init_bitmaps(bitmaps->at(oopmap_idx),
+                                         bitmaps->at(ptrmap_idx));
     }
   }
   return total_size;
@@ -2307,6 +2332,8 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
       log_info(cds)("UseSharedSpaces: mapped heap regions are corrupt");
       return false;
     }
+
+    si->set_mapped_base(base);
   }
 
   cleanup._aborted = false;

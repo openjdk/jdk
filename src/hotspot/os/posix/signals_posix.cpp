@@ -597,12 +597,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (uc != NULL) {
     if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
       pc = (address)info->si_addr;
-    } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
-      // Non-arch-specific Zero code does not really know the pc.
-      // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
-      // available for Zero for known architectures. But for generic Zero
-      // code, it would still remain unknown.
-      pc = NULL;
     } else {
       pc = os::Posix::ucontext_get_pc(uc);
     }
@@ -659,12 +653,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Invoke fatal error handling.
   if (!signal_was_handled && abort_if_unrecognized) {
-    // For Zero, we ignore the crash context, because:
-    //  a) The crash would be in C++ interpreter code, so context is not really relevant;
-    //  b) Generic Zero code would not be able to parse it, so when generic error
-    //     reporting code asks e.g. about frames on stack, Zero would experience
-    //     a secondary ShouldNotCallThis() crash.
-    VMError::report_and_die(t, sig, pc, info, NOT_ZERO(ucVoid) ZERO_ONLY(NULL));
+    VMError::report_and_die(t, sig, pc, info, ucVoid);
     // VMError should not return.
     ShouldNotReachHere();
   }
@@ -1619,8 +1608,8 @@ static void resume_clear_context(OSThread *osthread) {
   osthread->set_siginfo(NULL);
 }
 
-static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontext_t* context) {
-  osthread->set_ucontext(context);
+static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, void* ucVoid) {
+  osthread->set_ucontext((ucontext_t*)ucVoid);
   osthread->set_siginfo(siginfo);
 }
 
