@@ -40,8 +40,8 @@
  * <p>
  * <b id="httpserverprops">System properties used by the HTTP server API</b>
  * <p>
- * The following is a list of JDK specific system properties used by the HTTP
- * server implementation.
+ * The following is a list of JDK specific system properties used by the default HTTP
+ * server implementation in the JDK.
  * <ul>
  * <li><p><b>{@systemProperty sun.net.httpserver.idleInterval}</b> (default: 30 sec)<br>
  * Maximum duration in seconds which an idle connection is kept open. This timer
@@ -67,23 +67,20 @@
  * while the headers are being read, then the connection is terminated and the request ignored.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqTime}</b> (default: -1)<br>
- * The maximum duration in milliseconds of a request. In practice, this is a function of
- * request size, network speed, and handler processing delays. A value less than or equal
- * to zero means the duration is not limited. If the limit is
+ * The maximum time in milliseconds allowed to receive a request headers and body.
+ * In practice, this is a function of request size, network speed, and handler processing delays.
+ * A value less than or equal to zero means the time is not limited. If the limit is
  * exceeded then the connection is terminated and the handler will receive a
  * {@link java.io.IOException}. This timer has an implementation specific granularity
  * that may mean requests are aborted later than the specified interval.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxRspTime}</b> (default: -1)<br>
- * The maximum duration in milliseconds of a response. In practice, this is a function of
- * response size, network speed, and handler processing delays. A value less than or equal
- * to zero means the duration is not limited. If the limit is
+ * The maximum time in milliseconds allowed to receive a response headers and body.
+ * In practice, this is a function of response size, network speed, and handler processing delays.
+ * A value less than or equal to zero means the time is not limited. If the limit is
  * exceeded then the connection is terminated and the handler will receive a
  * {@link java.io.IOException}. This timer has an implementation specific granularity
  * that may mean responses are aborted later than the specified interval.
- * </li>
- * <li><p><b>{@systemProperty sun.net.httpserver.debug}</b> (default: false)<br>
- * Boolean value, which if true, generates debug information on the console.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.nodelay}</b> (default: false)<br>
  * Boolean value, which if true, sets the {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
