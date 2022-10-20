@@ -27,16 +27,10 @@ import java.io.*;
 /**
  * @test
  * @bug 8010464 8027570 8027687 8029354 8114860 8071660 8161291
- * @run main/othervm -Duser.language=tr URLPermissionTest
  */
 
-public class URLPermissionTest {
+public class URLPermissionTest extends URLTestUtils {
 
-    // super class for all test types
-    abstract static class Test {
-        boolean expected;
-        abstract boolean execute();
-    };
 
     // Instantiation: should succeed
     static class CreateTest extends Test {
@@ -190,29 +184,6 @@ public class URLPermissionTest {
 
     static HashCodeTest hashtest(String arg1, String arg2, int expected) {
         return new HashCodeTest(arg1, arg2, expected);
-    }
-
-    static class URLEqualityTest extends Test {
-        String arg1, arg2;
-
-        URLEqualityTest(String arg1, String arg2, boolean expected) {
-            this.arg1 = arg1;
-            this.arg2 = arg2;
-            this.expected = expected;
-        }
-
-        @Override
-          boolean execute() {
-            URLPermission p1 = new URLPermission(arg1);
-            URLPermission p2 = new URLPermission(arg2);
-            boolean result = p1.equals(p2);
-
-            return result == expected;
-        }
-    }
-
-    static URLEqualityTest eqtest(String arg1, String arg2, boolean expected) {
-        return new URLEqualityTest(arg1, arg2, expected);
     }
 
     static Test[] pathImplies = {
@@ -393,8 +364,7 @@ public class URLPermissionTest {
         eqtest("http://michael@foo.com/bar","http://michael@foo.com/bar", true),
         eqtest("http://Michael@foo.com/bar","http://michael@goo.com/bar",false),
         eqtest("http://michael@foo.com/bar","http://george@foo.com/bar", true),
-        eqtest("http://@foo.com/bar","http://foo.com/bar", true),
-        eqtest("http://www.IOU.com", "http://www.iou.com", true)
+        eqtest("http://@foo.com/bar","http://foo.com/bar", true)
     };
 
     static Test[] createTests = {
