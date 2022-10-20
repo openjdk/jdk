@@ -140,6 +140,22 @@ jint CompressedSparseDataReadStream::read_int() {
   // - the payload of the first byte is 6 bits, the payload of the following bytes is 7 bits
   // - the most significant bit in the first byte is occupied by a zero flag
   // - each byte has a bit indicating whether it is the last byte in the sequence
+  //
+  //       value | byte0    | byte1    | byte2    | byte3    | byte4
+  //  -----------+----------+----------+----------+----------+----------
+  //           0 | 0        |          |          |          |
+  //           1 | 10000001 |          |          |          |
+  //           2 | 10000010 |          |          |          |
+  //          63 | 10111111 |          |          |          |
+  //          64 | 11000000 | 00000001 |          |          |
+  //          65 | 11000001 | 00000001 |          |          |
+  //        8191 | 11111111 | 01111111 |          |          |
+  //        8192 | 11000000 | 10000000 | 00000001 |          |
+  //        8193 | 11000001 | 10000000 | 00000001 |          |
+  //     1048575 | 11111111 | 11111111 | 01111111 |          |
+  //     1048576 | 11000000 | 10000000 | 10000000 | 00000001 |
+  //  0xFFFFFFFF | 11111111 | 11111111 | 11111111 | 11111111 | 00011111
+  //
   uint8_t b = read_byte_impl();
   juint result = b & 0x3f;
   for (int i = 0; (i == 0) ? (b & 0x40) : (b & 0x80); i++) {
@@ -174,18 +190,19 @@ void CompressedSparseDataWriteStream::write_byte_impl(uint8_t b) {
   _curr_byte = (0xff >> (8 - _bit_pos)) & b;
 }
 
+// see CompressedSparseDataReadStream::read_int for a description of the encoding scheme
 void CompressedSparseDataWriteStream::write_int(juint val) {
   if (val == 0) {
     write_zero();
     return;
   }
-  int bit0 = 0x80; // first byte upper bit is set to indicate a value is not zero
+  int bit7 = 0x80; // first byte upper bit is set to indicate a value is not zero
   juint next = val >> 6;
-  int bit1 = (next != 0) ? 0x40 : 0; // bit indicating a last byte
-  write_byte_impl(bit0 | bit1 | (val & 0x3f));
+  int bit6 = (next != 0) ? 0x40 : 0; // bit indicating a last byte
+  write_byte_impl(bit7 | bit6 | (val & 0x3f));
   while (next != 0) {
-    bit1 = (next >> 7) ? 0x80 : 0;
-    write_byte_impl(bit1 | (next & 0x7f));
+    bit7 = (next >> 7) ? 0x80 : 0; // bit indicating a last byte
+    write_byte_impl(bit7 | (next & 0x7f));
     next >>= 7;
   }
 }
