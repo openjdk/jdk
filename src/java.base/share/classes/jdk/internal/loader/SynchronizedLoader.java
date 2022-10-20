@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.lang.ClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import jdk.internal.loader.ClassLoaderValue;
 
 /**
  * Defines a version of loadClass that handles synchronization on the ClassLoader object
@@ -38,48 +39,25 @@ import java.security.PrivilegedAction;
  **/
 public class SynchronizedLoader {
 
-    private static class NameLoaderRef {
-        private String name;
-        private ClassLoader loader;
-        public NameLoaderRef(String name, ClassLoader loader) {
-            this.name = name;
-            this.loader = loader;
-        }
-        @Override
-        public int hashCode() { return loader.hashCode() ^ name.hashCode(); }
-
-        public boolean equals(NameLoaderRef key) {
-            return key.name.equals(this.name) && key.loader == this.loader;
-        }
-        @Override
-        public boolean equals(Object obj) {
-            assert (obj instanceof NameLoaderRef);
-            return equals((NameLoaderRef) obj);
-        }
-
-        public ClassLoader loader() { return loader; }
-    }
-
     // Synchronization for class loading when the current class loader is NOT
     // parallel capable.  The non-parallel capable class loader locks
     // the ClassLoader object. This maps a class name to the thread that is currently
     // loading the class in case the ClassLoader lock is broken.
-    private static final ConcurrentHashMap<NameLoaderRef, Thread> threadLoadingClassMap
-        = new ConcurrentHashMap<>();
+    private static final ClassLoaderValue<Thread> threadLoadingClassMap = new ClassLoaderValue<>();
 
     // The threadLoadingClassMap is a concurrent hashtable that keeps track of the threads
     // that are currently loading each class by this class loader.  The class name is mapped to
     // the thread that is first seen loading that class, then removed when loading is complete
     // for that class.
-    private static final Thread threadLoadingClass(NameLoaderRef ref, Thread thread) {
-        return threadLoadingClassMap.putIfAbsent(ref, thread);
+    private static final Thread threadLoadingClass(ClassLoader loader, String name, Thread thread) {
+        return threadLoadingClassMap.sub(name).putIfAbsent(loader, thread);
     }
 
-    private static final void removeThreadLoadingClass(NameLoaderRef ref) {
-        threadLoadingClassMap.remove(ref);
+    private static final void removeThreadLoadingClass(ClassLoader loader, String name, Thread thread) {
+        threadLoadingClassMap.sub(name).remove(loader, thread);
         // Notify threads waiting on the class loader lock
         // that this class has been loaded or failed.
-        ref.loader().notifyAll();
+        loader.notifyAll();
     }
 
     // We only get here if the application has released the
@@ -89,12 +67,12 @@ public class SynchronizedLoader {
     // To minimize surprises, this thread waits while the first thread
     // that started to load a class completes the loading or fails.
     @SuppressWarnings("removal")
-    private static Thread waitForThreadLoadingClass(NameLoaderRef ref, Thread currentThread) {
+    private static Thread waitForThreadLoadingClass(ClassLoader loader, String name, Thread currentThread) {
         Thread thread;
         boolean interrupted = false;
-        while ((thread = threadLoadingClass(ref, currentThread)) != null) {
+        while ((thread = threadLoadingClass(loader, name, currentThread)) != null) {
             try {
-                ref.loader().wait();
+                loader.wait();
             } catch (InterruptedException e) {
                 interrupted = true;
                 // keep waiting, must be uninterruptible
@@ -123,14 +101,13 @@ public class SynchronizedLoader {
         // The JVM calls ClassLoader.loadClass directly for parallel-capable class loaders
         assert (!loader.isRegisteredAsParallelCapable());
         Thread currentThread = Thread.currentThread();
-        NameLoaderRef ref = new NameLoaderRef(name, loader);
         synchronized(loader) {
-            Thread thread = threadLoadingClass(ref, currentThread);
+            Thread thread = threadLoadingClass(loader, name, currentThread);
             // Another thread is loading the class.
             if (thread != null && thread != currentThread) {
                 // notify loading thread once
                 loader.notifyAll();
-                thread = waitForThreadLoadingClass(ref, currentThread);
+                thread = waitForThreadLoadingClass(loader, name, currentThread);
             }
             // Now load class if no other thread is loading it.
             if (thread == null) {
@@ -138,13 +115,13 @@ public class SynchronizedLoader {
                 try {
                     loadedClass = loader.loadClass(name);
                 } finally {
-                    removeThreadLoadingClass(ref);
+                    removeThreadLoadingClass(loader, name, currentThread);
                 }
                 return loadedClass;
             } else {
                 // A class circularity error is detected while loading this class
                 assert(thread == currentThread);
-                removeThreadLoadingClass(ref);
+                removeThreadLoadingClass(loader, name, currentThread);
                 throw new ClassCircularityError(name);
             }
         }

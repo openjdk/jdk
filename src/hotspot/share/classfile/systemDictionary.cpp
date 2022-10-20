@@ -582,6 +582,10 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   InstanceKlass* probe = dictionary->find(THREAD, name, protection_domain);
   if (probe != NULL) return probe;
 
+  // Lock non-parallel class loader
+  Handle lockObject = get_loader_lock_or_null(class_loader);
+  ObjectLocker ol(lockObject, THREAD);
+
   bool super_load_in_progress  = false;
   InstanceKlass* loaded_class = NULL;
   Symbol* superclassname = NULL;
