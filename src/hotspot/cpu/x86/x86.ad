@@ -1734,7 +1734,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_AbsVD:
     case Op_NegVD:
-    case Op_MulVL:
       if ((vlen == 8) && (VM_Version::supports_avx512dq() == false)) {
         return false; // 512bit vpmullq, vandpd and vxorpd are not available
       }
@@ -5640,114 +5639,66 @@ instruct vsubD_mem(vec dst, vec src, memory mem) %{
 // --------------------------------- MUL --------------------------------------
 
 // Byte vector mul
-instruct mulB_reg(vec dst, vec src1, vec src2, vec tmp) %{
-  predicate(Matcher::vector_length(n) == 4 ||
-            Matcher::vector_length(n) == 8);
+instruct vmul8B(vec dst, vec src1, vec src2, vec xtmp) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 8);
   match(Set dst (MulVB src1 src2));
-  effect(TEMP dst, TEMP tmp);
-  format %{"vector_mulB $dst,$src1,$src2" %}
+  effect(TEMP dst, TEMP xtmp);
+  format %{ "mulVB   $dst, $src1, $src2\t! using $xtmp as TEMP" %}
   ins_encode %{
     assert(UseSSE > 3, "required");
-    __ pmovsxbw($tmp$$XMMRegister, $src1$$XMMRegister);
-    __ pmovsxbw($dst$$XMMRegister, $src2$$XMMRegister);
-    __ pmullw($tmp$$XMMRegister, $dst$$XMMRegister);
-    __ movdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), noreg);
-    __ pand($dst$$XMMRegister, $tmp$$XMMRegister);
+    __ pmovsxbw($dst$$XMMRegister, $src1$$XMMRegister);
+    __ pmovsxbw($xtmp$$XMMRegister, $src2$$XMMRegister);
+    __ pmullw($dst$$XMMRegister, $xtmp$$XMMRegister);
+    __ psllw($dst$$XMMRegister, 8);
+    __ psrlw($dst$$XMMRegister, 8);
     __ packuswb($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct mul16B_reg(vec dst, vec src1, vec src2, vec tmp1, vec tmp2) %{
-  predicate(Matcher::vector_length(n) == 16 && UseAVX <= 1);
+instruct vmulB(vec dst, vec src1, vec src2, vec xtmp) %{
+  predicate(UseAVX == 0 && Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (MulVB src1 src2));
-  effect(TEMP dst, TEMP tmp1, TEMP tmp2);
-  format %{"vector_mulB $dst,$src1,$src2" %}
+  effect(TEMP dst, TEMP xtmp);
+  format %{ "mulVB   $dst, $src1, $src2\t! using $xtmp as TEMP" %}
   ins_encode %{
     assert(UseSSE > 3, "required");
-    __ pmovsxbw($tmp1$$XMMRegister, $src1$$XMMRegister);
-    __ pmovsxbw($tmp2$$XMMRegister, $src2$$XMMRegister);
-    __ pmullw($tmp1$$XMMRegister, $tmp2$$XMMRegister);
-    __ pshufd($tmp2$$XMMRegister, $src1$$XMMRegister, 0xEE);
-    __ pshufd($dst$$XMMRegister, $src2$$XMMRegister, 0xEE);
-    __ pmovsxbw($tmp2$$XMMRegister, $tmp2$$XMMRegister);
-    __ pmovsxbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pmullw($tmp2$$XMMRegister, $dst$$XMMRegister);
-    __ movdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), noreg);
-    __ pand($tmp2$$XMMRegister, $dst$$XMMRegister);
-    __ pand($dst$$XMMRegister, $tmp1$$XMMRegister);
-    __ packuswb($dst$$XMMRegister, $tmp2$$XMMRegister);
+    // Odd-index elements
+    __ movdqu($dst$$XMMRegister, $src1$$XMMRegister);
+    __ psrlw($dst$$XMMRegister, 8);
+    __ movdqu($xtmp$$XMMRegister, $src2$$XMMRegister);
+    __ psrlw($xtmp$$XMMRegister, 8);
+    __ pmullw($dst$$XMMRegister, $xtmp$$XMMRegister);
+    __ psllw($dst$$XMMRegister, 8);
+    // Even-index elements
+    __ movdqu($xtmp$$XMMRegister, $src1$$XMMRegister);
+    __ pmullw($xtmp$$XMMRegister, $src2$$XMMRegister);
+    __ psllw($xtmp$$XMMRegister, 8);
+    __ psrlw($xtmp$$XMMRegister, 8);
+    // Combine
+    __ por($dst$$XMMRegister, $xtmp$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vmul16B_reg_avx(vec dst, vec src1, vec src2, vec tmp) %{
-  predicate(Matcher::vector_length(n) == 16 && UseAVX > 1);
+instruct vmulB_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
+  predicate(UseAVX > 0 && Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (MulVB src1 src2));
-  effect(TEMP dst, TEMP tmp);
-  format %{"vector_mulB $dst,$src1,$src2" %}
+  effect(TEMP xtmp1, TEMP xtmp2);
+  format %{ "vmulVB  $dst, $src1, $src2\t! using $xtmp1, $xtmp2 as TEMP" %}
   ins_encode %{
-  int vlen_enc = Assembler::AVX_256bit;
-    __ vpmovsxbw($tmp$$XMMRegister, $src1$$XMMRegister, vlen_enc);
-    __ vpmovsxbw($dst$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-    __ vpmullw($tmp$$XMMRegister, $tmp$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vmovdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), noreg);
-    __ vpand($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister, vlen_enc);
-    __ vextracti128_high($tmp$$XMMRegister, $dst$$XMMRegister);
-    __ vpackuswb($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister, 0);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vmul32B_reg_avx(vec dst, vec src1, vec src2, vec tmp1, vec tmp2) %{
-  predicate(Matcher::vector_length(n) == 32);
-  match(Set dst (MulVB src1 src2));
-  effect(TEMP dst, TEMP tmp1, TEMP tmp2);
-  format %{"vector_mulB $dst,$src1,$src2" %}
-  ins_encode %{
-    assert(UseAVX > 1, "required");
-    int vlen_enc = Assembler::AVX_256bit;
-    __ vextracti128_high($tmp1$$XMMRegister, $src1$$XMMRegister);
-    __ vextracti128_high($dst$$XMMRegister, $src2$$XMMRegister);
-    __ vpmovsxbw($tmp1$$XMMRegister, $tmp1$$XMMRegister, vlen_enc);
-    __ vpmovsxbw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpmullw($tmp1$$XMMRegister, $tmp1$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpmovsxbw($tmp2$$XMMRegister, $src1$$XMMRegister, vlen_enc);
-    __ vpmovsxbw($dst$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-    __ vpmullw($tmp2$$XMMRegister, $tmp2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vmovdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), noreg);
-    __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpand($tmp1$$XMMRegister, $tmp1$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpand($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister, vlen_enc);
-    __ vpackuswb($dst$$XMMRegister, $dst$$XMMRegister, $tmp1$$XMMRegister, vlen_enc);
-    __ vpermq($dst$$XMMRegister, $dst$$XMMRegister, 0xD8, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vmul64B_reg_avx(vec dst, vec src1, vec src2, vec tmp1, vec tmp2) %{
-  predicate(Matcher::vector_length(n) == 64);
-  match(Set dst (MulVB src1 src2));
-  effect(TEMP dst, TEMP tmp1, TEMP tmp2);
-  format %{"vector_mulB $dst,$src1,$src2\n\t" %}
-  ins_encode %{
-    assert(UseAVX > 2, "required");
-    int vlen_enc = Assembler::AVX_512bit;
-    __ vextracti64x4_high($tmp1$$XMMRegister, $src1$$XMMRegister);
-    __ vextracti64x4_high($dst$$XMMRegister, $src2$$XMMRegister);
-    __ vpmovsxbw($tmp1$$XMMRegister, $tmp1$$XMMRegister, vlen_enc);
-    __ vpmovsxbw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpmullw($tmp1$$XMMRegister, $tmp1$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpmovsxbw($tmp2$$XMMRegister, $src1$$XMMRegister, vlen_enc);
-    __ vpmovsxbw($dst$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-    __ vpmullw($tmp2$$XMMRegister, $tmp2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vmovdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), noreg);
-    __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpand($tmp1$$XMMRegister, $tmp1$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpand($tmp2$$XMMRegister, $tmp2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpackuswb($dst$$XMMRegister, $tmp1$$XMMRegister, $tmp2$$XMMRegister, vlen_enc);
-    __ evmovdquq($tmp2$$XMMRegister, ExternalAddress(vector_byte_perm_mask()), vlen_enc, noreg);
-    __ vpermq($dst$$XMMRegister, $tmp2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+    int vlen_enc = vector_length_encoding(this);
+    // Odd-index elements
+    __ vpsrlw($xtmp2$$XMMRegister, $src1$$XMMRegister, 8, vlen_enc);
+    __ vpsrlw($xtmp1$$XMMRegister, $src2$$XMMRegister, 8, vlen_enc);
+    __ vpmullw($xtmp2$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
+    __ vpsllw($xtmp2$$XMMRegister, $xtmp2$$XMMRegister, 8, vlen_enc);
+    // Even-index elements
+    __ vpmullw($xtmp1$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+    __ vpsllw($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, 8, vlen_enc);
+    __ vpsrlw($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, 8, vlen_enc);
+    // Combine
+    __ vpor($dst$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5756,7 +5707,7 @@ instruct vmul64B_reg_avx(vec dst, vec src1, vec src2, vec tmp1, vec tmp2) %{
 instruct vmulS(vec dst, vec src) %{
   predicate(UseAVX == 0);
   match(Set dst (MulVS dst src));
-  format %{ "pmullw $dst,$src\t! mul packedS" %}
+  format %{ "pmullw  $dst,$src\t! mul packedS" %}
   ins_encode %{
     __ pmullw($dst$$XMMRegister, $src$$XMMRegister);
   %}
@@ -5822,78 +5773,76 @@ instruct vmulI_mem(vec dst, vec src, memory mem) %{
 %}
 
 // Longs vector mul
-instruct vmulL_reg(vec dst, vec src1, vec src2) %{
-  predicate(VM_Version::supports_avx512dq());
+instruct evmulL_reg(vec dst, vec src1, vec src2) %{
+  predicate((Matcher::vector_length_in_bytes(n) == 64 &&
+             VM_Version::supports_avx512dq()) ||
+            VM_Version::supports_avx512vldq());
   match(Set dst (MulVL src1 src2));
-  format %{ "vpmullq $dst,$src1,$src2\t! mul packedL" %}
+  format %{ "evpmullq $dst,$src1,$src2\t! mul packedL" %}
   ins_encode %{
     assert(UseAVX > 2, "required");
     int vlen_enc = vector_length_encoding(this);
-    __ vpmullq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+    __ evpmullq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vmulL_mem(vec dst, vec src, memory mem) %{
-  predicate(VM_Version::supports_avx512dq() &&
-              (Matcher::vector_length_in_bytes(n->in(1)) > 8));
+instruct evmulL_mem(vec dst, vec src, memory mem) %{
+  predicate((Matcher::vector_length_in_bytes(n) == 64 &&
+             VM_Version::supports_avx512dq()) ||
+            (Matcher::vector_length_in_bytes(n) > 8 &&
+             VM_Version::supports_avx512vldq()));
   match(Set dst (MulVL src (LoadVector mem)));
-  format %{ "vpmullq $dst,$src,$mem\t! mul packedL" %}
+  format %{ "evpmullq $dst,$src,$mem\t! mul packedL" %}
   ins_encode %{
     assert(UseAVX > 2, "required");
     int vlen_enc = vector_length_encoding(this);
-    __ vpmullq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vlen_enc);
+    __ evpmullq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct mul2L_reg(vec dst, vec src2, legVec tmp) %{
-  predicate(Matcher::vector_length(n) == 2 && !VM_Version::supports_avx512dq());
-  match(Set dst (MulVL dst src2));
-  effect(TEMP dst, TEMP tmp);
-  format %{ "pshufd $tmp,$src2, 177\n\t"
-            "pmulld $tmp,$dst\n\t"
-            "phaddd $tmp,$tmp\n\t"
-            "pmovzxdq $tmp,$tmp\n\t"
-            "psllq $tmp, 32\n\t"
-            "pmuludq $dst,$src2\n\t"
-            "paddq $dst,$tmp\n\t! mul packed2L" %}
-
+instruct vmulL(vec dst, vec src1, vec src2, vec xtmp) %{
+  predicate(UseAVX == 0);
+  match(Set dst (MulVL src1 src2));
+  effect(TEMP dst, TEMP xtmp);
+  format %{ "mulVL   $dst, $src1, $src2\t! using $xtmp as TEMP" %}
   ins_encode %{
     assert(VM_Version::supports_sse4_1(), "required");
-    int vlen_enc = Assembler::AVX_128bit;
-    __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 177);
-    __ pmulld($tmp$$XMMRegister, $dst$$XMMRegister);
-    __ phaddd($tmp$$XMMRegister, $tmp$$XMMRegister);
-    __ pmovzxdq($tmp$$XMMRegister, $tmp$$XMMRegister);
-    __ psllq($tmp$$XMMRegister, 32);
-    __ pmuludq($dst$$XMMRegister, $src2$$XMMRegister);
-    __ paddq($dst$$XMMRegister, $tmp$$XMMRegister);
+    // Get the lo-hi products, only the lower 32 bits is in concerns
+    __ pshufd($xtmp$$XMMRegister, $src2$$XMMRegister, 0xB1);
+    __ pmulld($xtmp$$XMMRegister, $src1$$XMMRegister);
+    __ pshufd($dst$$XMMRegister, $xtmp$$XMMRegister, 0xB1);
+    __ paddd($dst$$XMMRegister, $xtmp$$XMMRegister);
+    __ psllq($dst$$XMMRegister, 32);
+    // Get the lo-lo products
+    __ movdqu($xtmp$$XMMRegister, $src1$$XMMRegister);
+    __ pmuludq($xtmp$$XMMRegister, $src2$$XMMRegister);
+    __ paddq($dst$$XMMRegister, $xtmp$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vmul4L_reg_avx(vec dst, vec src1, vec src2, legVec tmp, legVec tmp1) %{
-  predicate(Matcher::vector_length(n) == 4 && !VM_Version::supports_avx512dq());
+instruct vmulL_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
+  predicate(UseAVX > 0 &&
+            ((Matcher::vector_length_in_bytes(n) == 64 &&
+              !VM_Version::supports_avx512dq()) ||
+             (Matcher::vector_length_in_bytes(n) < 64 &&
+              !VM_Version::supports_avx512vldq())));
   match(Set dst (MulVL src1 src2));
-  effect(TEMP tmp1, TEMP tmp);
-  format %{ "vpshufd $tmp,$src2\n\t"
-            "vpmulld $tmp,$src1,$tmp\n\t"
-            "vphaddd $tmp,$tmp,$tmp\n\t"
-            "vpmovzxdq $tmp,$tmp\n\t"
-            "vpsllq $tmp,$tmp\n\t"
-            "vpmuludq $tmp1,$src1,$src2\n\t"
-            "vpaddq $dst,$tmp,$tmp1\t! mul packed4L" %}
+  effect(TEMP xtmp1, TEMP xtmp2);
+  format %{ "vmulVL  $dst, $src1, $src2\t! using $xtmp1, $xtmp2 as TEMP" %}
   ins_encode %{
-    int vlen_enc = Assembler::AVX_256bit;
-    __ vpshufd($tmp$$XMMRegister, $src2$$XMMRegister, 177, vlen_enc);
-    __ vpmulld($tmp$$XMMRegister, $src1$$XMMRegister, $tmp$$XMMRegister, vlen_enc);
-    __ vextracti128_high($tmp1$$XMMRegister, $tmp$$XMMRegister);
-    __ vphaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp1$$XMMRegister, vlen_enc);
-    __ vpmovzxdq($tmp$$XMMRegister, $tmp$$XMMRegister, vlen_enc);
-    __ vpsllq($tmp$$XMMRegister, $tmp$$XMMRegister, 32, vlen_enc);
-    __ vpmuludq($tmp1$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
-    __ vpaddq($dst$$XMMRegister, $tmp$$XMMRegister, $tmp1$$XMMRegister, vlen_enc);
+    int vlen_enc = vector_length_encoding(this);
+    // Get the lo-hi products, only the lower 32 bits is in concerns
+    __ vpshufd($xtmp1$$XMMRegister, $src2$$XMMRegister, 0xB1, vlen_enc);
+    __ vpmulld($xtmp1$$XMMRegister, $src1$$XMMRegister, $xtmp1$$XMMRegister, vlen_enc);
+    __ vpshufd($xtmp2$$XMMRegister, $xtmp1$$XMMRegister, 0xB1, vlen_enc);
+    __ vpaddd($xtmp2$$XMMRegister, $xtmp2$$XMMRegister, $xtmp1$$XMMRegister, vlen_enc);
+    __ vpsllq($xtmp2$$XMMRegister, $xtmp2$$XMMRegister, 32, vlen_enc);
+    // Get the lo-lo products
+    __ vpmuludq($xtmp1$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+    __ vpaddq($dst$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8451,12 +8400,12 @@ instruct vmaskcast_avx(vec dst, vec src) %{
 //-------------------------------- Load Iota Indices ----------------------------------
 
 instruct loadIotaIndices(vec dst, immI_0 src) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (VectorLoadConst src));
   format %{ "vector_load_iota $dst CONSTANT_MEMORY\t! load iota indices" %}
   ins_encode %{
      int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
-     __ load_iota_indices($dst$$XMMRegister, vlen_in_bytes);
+     BasicType bt = Matcher::vector_element_basic_type(this);
+     __ load_iota_indices($dst$$XMMRegister, vlen_in_bytes, bt);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8468,14 +8417,11 @@ instruct VectorPopulateIndex(vec dst, rRegI src1, immI_1 src2, vec vtmp) %{
   format %{ "vector_populate_index $dst $src1 $src2\t! using $vtmp as TEMP" %}
   ins_encode %{
      assert($src2$$constant == 1, "required");
-     int vlen = Matcher::vector_length(this);
+     int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
      int vlen_enc = vector_length_encoding(this);
      BasicType elem_bt = Matcher::vector_element_basic_type(this);
      __ vpbroadcast(elem_bt, $vtmp$$XMMRegister, $src1$$Register, vlen_enc);
-     __ load_iota_indices($dst$$XMMRegister, vlen);
-     if (elem_bt != T_BYTE) {
-       __ vconvert_b2x(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-     }
+     __ load_iota_indices($dst$$XMMRegister, vlen_in_bytes, elem_bt);
      __ vpadd(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
@@ -8487,14 +8433,11 @@ instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp) %{
   format %{ "vector_populate_index $dst $src1 $src2\t! using $vtmp as TEMP" %}
   ins_encode %{
      assert($src2$$constant == 1, "required");
-     int vlen = Matcher::vector_length(this);
+     int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
      int vlen_enc = vector_length_encoding(this);
      BasicType elem_bt = Matcher::vector_element_basic_type(this);
      __ vpbroadcast(elem_bt, $vtmp$$XMMRegister, $src1$$Register, vlen_enc);
-     __ load_iota_indices($dst$$XMMRegister, vlen);
-     if (elem_bt != T_BYTE) {
-       __ vconvert_b2x(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-     }
+     __ load_iota_indices($dst$$XMMRegister, vlen_in_bytes, elem_bt);
      __ vpadd(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );

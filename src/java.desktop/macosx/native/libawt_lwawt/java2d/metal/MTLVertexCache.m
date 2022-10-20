@@ -253,9 +253,9 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
         // we need to pick appropriate source subtexture. In repalceRegion
         // we can give destination subtexturing properly but we can't
         // subtexture from system memory glyph we have. So in such
-        // cases we are creating seperate tile and scan the source
+        // cases we are creating a separate tile and scan the source
         // stride into destination using memcpy. In case of OpenGL we
-        // can update source pointers, in case of D3D we ar doing memcpy.
+        // can update source pointers, in case of D3D we are doing memcpy.
         // We can use MTLBuffer and then copy source subtexture but that
         // adds extra blitting logic.
         // TODO : Research more and try removing memcpy logic.

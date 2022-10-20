@@ -1442,6 +1442,17 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   return entry_point;
 }
 
+// Method entry for java.lang.Thread.currentThread
+address TemplateInterpreterGenerator::generate_currentThread() {
+  address entry_point = __ pc();
+
+  __ ld(x10, Address(xthread, JavaThread::vthread_offset()));
+  __ resolve_oop_handle(x10, t0, t1);
+  __ ret();
+
+  return entry_point;
+}
+
 //-----------------------------------------------------------------------------
 // Exceptions
 

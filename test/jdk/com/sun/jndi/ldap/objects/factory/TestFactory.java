@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,20 @@
  * questions.
  */
 
+package com.test;
 
-// class to print thread-annotated output
-class ThreadPrint {
-    public static void println(String s) {
-        System.out.println(Thread.currentThread().getName() + ": " + s);
-        System.out.flush();
+import javax.naming.Context;
+import javax.naming.Name;
+import javax.naming.spi.ObjectFactory;
+import java.util.Hashtable;
+
+public class TestFactory implements ObjectFactory {
+    public static final String RUNTIME_EXCEPTION_MESSAGE =
+            "Test object factory is called to instantiate factory";
+
+    @Override
+    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable<?, ?> environment) throws Exception {
+        System.err.println("obj:" + obj);
+        throw new RuntimeException(RUNTIME_EXCEPTION_MESSAGE);
     }
 }
