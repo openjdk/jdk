@@ -1669,7 +1669,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
   SuspendResume::State current = osthread->sr.state();
 
   if (current == SuspendResume::SR_SUSPEND_REQUEST) {
-    suspend_save_context(osthread, siginfo, (ucontext_t*)context);
+    suspend_save_context(osthread, siginfo, context);
 
     // attempt to switch the state, we assume we had a SUSPEND_REQUEST
     SuspendResume::State state = osthread->sr.suspended();
