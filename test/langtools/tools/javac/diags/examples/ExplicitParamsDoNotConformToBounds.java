@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.cant.apply.symbol
+// key: compiler.err.cant.apply.symbol.noargs
 // key: compiler.misc.explicit.param.do.not.conform.to.bounds
 
 class ExplicitParamsDoNotConformToBounds {
