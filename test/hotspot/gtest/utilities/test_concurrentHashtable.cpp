@@ -1199,7 +1199,7 @@ public:
 
   void doit() {
     size_t total_scanned = 0;
-    TestTable::BucketsClaimer bucket_claimer(_cht);
+    TestTable::BucketsClaimer bucket_claimer(_cht, 64);
 
     CHTParallelScanTask task(_cht, &bucket_claimer, &total_scanned);
     CHTWorkers::run_task(&task);
