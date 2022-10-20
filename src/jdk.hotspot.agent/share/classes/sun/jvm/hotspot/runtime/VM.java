@@ -502,9 +502,8 @@ public class VM {
     boolType = (CIntegerType) db.lookupType("bool");
 
     minObjAlignmentInBytes = getObjectAlignmentInBytes();
-    if (minObjAlignmentInBytes < 8 || minObjAlignmentInBytes > 256 ||
-        (minObjAlignmentInBytes & (minObjAlignmentInBytes - 1)) != 0) {
-      throw new RuntimeException("Object alignment " + minObjAlignmentInBytes + " is not yet supported");
+    if ((minObjAlignmentInBytes & (minObjAlignmentInBytes - 1)) != 0) {
+      throw new RuntimeException("Object alignment " + minObjAlignmentInBytes + " is not power of two");
     }
 
     logMinObjAlignmentInBytes = Integer.numberOfTrailingZeros(minObjAlignmentInBytes);
