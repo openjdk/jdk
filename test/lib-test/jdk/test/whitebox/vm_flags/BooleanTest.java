@@ -43,52 +43,16 @@ import sun.management.*;
 import com.sun.management.*;
 
 public class BooleanTest {
-    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final Boolean[] TESTS = {true, false, true, true, false};
     private static final String TEST_NAME = "BooleanTest";
     private static final String FLAG_NAME = "PrintCompilation";
     private static final String FLAG_DEBUG_NAME = "SafepointALot";
-    private static final String METHOD = TEST_NAME + "::method";
-    private static final String METHOD1 = METHOD + "1";
-    private static final String METHOD2 = METHOD + "2";
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            VmFlagTest.runTest(FLAG_NAME, TESTS,
-                VmFlagTest.WHITE_BOX::setBooleanVMFlag,
-                VmFlagTest.WHITE_BOX::getBooleanVMFlag);
-            testFunctional(false);
-            testFunctional(true);
-            VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getBooleanVMFlag);
-        } else {
-            boolean value = Boolean.valueOf(args[0]);
-            method1();
-            VmFlagTest.WHITE_BOX.setBooleanVMFlag(FLAG_NAME, value);
-            method2();
-        }
+        VmFlagTest.runTest(FLAG_NAME, TESTS,
+            VmFlagTest.WHITE_BOX::setBooleanVMFlag,
+            VmFlagTest.WHITE_BOX::getBooleanVMFlag);
+        VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getBooleanVMFlag);
     }
-
-    private static void testFunctional(boolean value) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xbootclasspath/a:.",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+WhiteBoxAPI",
-            "-Xcomp",
-            "-XX:CompileCommand=compileonly," + METHOD + "*",
-            "-XX:" + (value ? "-" : "+") + FLAG_NAME,
-            TEST_NAME,
-            "" + value);
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
-        if (value) {
-            out.shouldNotContain(METHOD1);
-            out.shouldContain(METHOD2);
-        } else {
-            out.shouldContain(METHOD1);
-            out.shouldNotContain(METHOD2);
-        }
-    }
-
-    private static void method1() { }
-    private static void method2() { }
 }
 

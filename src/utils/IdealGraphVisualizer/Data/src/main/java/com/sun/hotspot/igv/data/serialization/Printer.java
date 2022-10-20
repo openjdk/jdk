@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public class Printer {
 
-    private InputStream in;
+    private final InputStream in;
 
     public Printer() {
         this(null);
@@ -52,8 +52,7 @@ public class Printer {
 
         try {
             export(xmlWriter, document);
-        } catch (IOException ex) {
-        }
+        } catch (IOException ignored) {}
     }
 
     private void export(XMLWriter xmlWriter, GraphDocument document) throws IOException {
