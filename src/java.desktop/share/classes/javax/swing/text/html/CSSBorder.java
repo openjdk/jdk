@@ -183,7 +183,7 @@ class CSSBorder extends AbstractBorder {
      * Return the color with brightness adjusted by the specified factor.
      *
      * The factor values are between 0.0 (no change) and 1.0 (turn into white).
-     * Negative factor values decrease brigthness (ie, 1.0 turns into black).
+     * Negative factor values decrease brightness (ie, 1.0 turns into black).
      */
     static Color getAdjustedColor(Color c, double factor) {
         double f = 1 - Math.min(Math.abs(factor), 1);

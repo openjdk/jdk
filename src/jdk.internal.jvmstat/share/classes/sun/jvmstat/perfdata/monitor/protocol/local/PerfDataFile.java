@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,19 @@ public class PerfDataFile {
      * The file name pattern for PerfData shared memory files.
      * <p>
      * This pattern must be kept in synch with the file name pattern
-     * used by the 1.4.2 and later HotSpot JVM. Earlier versions are
-     * no longer supported.
+     * used by the 1.4.2 and later HotSpot JVM.
      */
     public static final String fileNamePattern = "^[0-9]+$";
+
+    /**
+     * The file name pattern for 1.4.1 PerfData shared memory files.
+     * <p>
+     * This pattern must be kept in synch with the file name pattern
+     * used by the 1.4.1 HotSpot JVM.
+     */
+    public static final String tmpFileNamePattern =
+            "^hsperfdata_[0-9]+(_[1-2]+)?$";
+
 
     /**
      * Platform Specific methods for looking up temporary directories
@@ -88,10 +97,24 @@ public class PerfDataFile {
      */
     public static int getLocalVmId(File file) {
         try {
+            // try 1.4.2 and later format first
             return(platSupport.getLocalVmId(file));
         } catch (NumberFormatException e) { }
 
-        throw new IllegalArgumentException("Cannot convert '" + file + "' to VM id");
+        // now try the 1.4.1 format
+        String name = file.getName();
+        if (name.startsWith(dirNamePrefix)) {
+            int first = name.indexOf('_');
+            int last = name.lastIndexOf('_');
+            try {
+                if (first == last) {
+                    return Integer.parseInt(name.substring(first + 1));
+                } else {
+                    return Integer.parseInt(name.substring(first + 1, last));
+                }
+            } catch (NumberFormatException e) { }
+        }
+        throw new IllegalArgumentException("file name does not match pattern");
     }
 
     /**
