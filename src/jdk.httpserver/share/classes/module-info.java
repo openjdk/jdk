@@ -71,17 +71,17 @@
  * request size, network speed, and handler processing delays. A value less than or equal
  * to zero means the duration is not limited. If the limit is
  * exceeded then the connection is terminated and the handler will receive a
- * {@link java.io.IOException}.
+ * {@link java.io.IOException}. This timer has an implementation specific granularity 
+ * that may mean requests are aborted later than the specified interval.
+
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxRspTime}</b> (default: -1)<br>
  * The maximum duration in milliseconds of a response. In practice, this is a function of
  * response size, network speed, and handler processing delays. A value less than or equal
  * to zero means the duration is not limited. If the limit is
  * exceeded then the connection is terminated and the handler will receive a
- * {@link java.io.IOException}.
- * </li>
- * <li><p><b>{@systemProperty sun.net.httpserver.timerMillis}</b> (default: 1 sec)<br>
- * The granularity of the timer that manages request and response times.
+ * {@link java.io.IOException}. This timer has an implementation specific granularity 
+ * that may mean responses are aborted later than the specified interval.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.debug}</b> (default: false)<br>
  * Boolean value, which if true, generates debug information on the console.
