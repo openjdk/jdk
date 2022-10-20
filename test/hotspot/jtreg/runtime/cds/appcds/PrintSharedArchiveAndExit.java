@@ -72,7 +72,7 @@ public class PrintSharedArchiveAndExit {
 
     TestCommon.run(
         "-cp", cp,
-        "-XX:+PrintSharedArchiveAndExit") 
+        "-XX:+PrintSharedArchiveAndExit")
       .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg, "java.lang.Object"));
 
     log("Normal execution -- Make sure -version, help message and app main()\n" +
