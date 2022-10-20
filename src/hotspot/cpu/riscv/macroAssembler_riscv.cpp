@@ -4113,7 +4113,7 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt) {
   srai(t1, t0, 3);
   sub(cnt, cnt, t1);
   add(t2, zr, zr);
-  wrap_label(t2, initial_table_end, (Assembler::jal_jalr_insn)&MacroAssembler::movptr);
+  wrap_label(t2, initial_table_end, (MacroAssembler::jal_jalr_insn)&MacroAssembler::movptr);
   srli(t1, t0, 1);
   sub(t1, t2, t1);
   j(t1);
