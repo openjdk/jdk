@@ -29,7 +29,7 @@
 #include "gc/g1/g1Predictions.hpp"
 
 bool G1PhaseDependentSeq::enough_samples_to_use_mixed_seq() const {
-  return G1Analytics::enough_samples_available(&_young_only_seq);
+  return G1Analytics::enough_samples_available(&_mixed_seq);
 }
 
 G1PhaseDependentSeq::G1PhaseDependentSeq(int length) :
