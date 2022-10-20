@@ -144,6 +144,10 @@ public class Lower extends TreeTranslator {
      */
     EndPosTable endPosTable;
 
+    /** If currentClass is an enum type, an ordered list of its identifiers.
+     */
+    List<Name> currentEnumNames;
+
 /**************************************************************************
  * Global mappings
  *************************************************************************/
@@ -419,14 +423,58 @@ public class Lower extends TreeTranslator {
     Map<TypeSymbol,EnumMapping> enumSwitchMap = new LinkedHashMap<>();
 
     EnumMapping mapForEnum(DiagnosticPosition pos, TypeSymbol enumClass) {
+        if (enumClass == currentClass)
+            return new CompileTimeEnumMapping(currentEnumNames);
         EnumMapping map = enumSwitchMap.get(enumClass);
         if (map == null)
-            enumSwitchMap.put(enumClass, map = new EnumMapping(pos, enumClass));
+            enumSwitchMap.put(enumClass, map = new RuntimeEnumMapping(pos, enumClass));
         return map;
     }
 
-    /** This map gives a translation table to be used for enum
-     *  switches.
+    /** Generates a test value and corresponding cases for a switch on an enum type.
+     */
+    interface EnumMapping {
+
+        /** Given an expression for the enum value's ordinal, generate an expression for the switch statement.
+         */
+        JCExpression switchValue(JCExpression ordinalExpr);
+
+        /** Generate the switch statement case value corresponding to the given enum value.
+         */
+        JCLiteral caseValue(VarSymbol v);
+
+        default void translate() {
+        }
+    }
+
+    /** EnumMapping using compile-time constants. Only valid when compiling the enum class itself,
+     *  because otherwise the ordinals we use could become obsolete if/when the enum class is recompiled.
+     */
+    class CompileTimeEnumMapping implements EnumMapping {
+
+        final List<Name> enumNames;
+
+        CompileTimeEnumMapping(List<Name> enumNames) {
+            Assert.check(enumNames != null);
+            this.enumNames = enumNames;
+        }
+
+        @Override
+        public JCExpression switchValue(JCExpression ordinalExpr) {
+            return ordinalExpr;
+        }
+
+        @Override
+        public JCLiteral caseValue(VarSymbol v) {
+            final int ordinal = enumNames.indexOf(v.name);
+            Assert.check(ordinal != -1);
+            return make.Literal(ordinal);
+        }
+    }
+
+    /** EnumMapping using run-time ordinal lookup.
+     *
+     *  This builds a translation table to be used for enum switches.
      *
      *  <p>For each enum that appears as the type of a switch
      *  expression, we maintain an EnumMapping to assist in the
@@ -458,8 +506,8 @@ public class Lower extends TreeTranslator {
      *  </pre>
      *  class EnumMapping provides mapping data and support methods for this translation.
      */
-    class EnumMapping {
-        EnumMapping(DiagnosticPosition pos, TypeSymbol forEnum) {
+    class RuntimeEnumMapping implements EnumMapping {
+        RuntimeEnumMapping(DiagnosticPosition pos, TypeSymbol forEnum) {
             this.forEnum = forEnum;
             this.values = new LinkedHashMap<>();
             this.pos = pos;
@@ -492,7 +540,13 @@ public class Lower extends TreeTranslator {
         // the mapped values
         final Map<VarSymbol,Integer> values;
 
-        JCLiteral forConstant(VarSymbol v) {
+        @Override
+        public JCExpression switchValue(JCExpression ordinalExpr) {
+            return make.Indexed(mapVar, ordinalExpr);
+        }
+
+        @Override
+        public JCLiteral caseValue(VarSymbol v) {
             Integer result = values.get(v);
             if (result == null)
                 values.put(v, result = next++);
@@ -500,7 +554,8 @@ public class Lower extends TreeTranslator {
         }
 
         // generate the field initializer for the map
-        void translate() {
+        @Override
+        public void translate() {
             boolean prevAllowProtectedAccess = attrEnv.info.allowProtectedAccess;
             try {
                 make.at(pos.getStartPosition());
@@ -2177,9 +2232,11 @@ public class Lower extends TreeTranslator {
         Env<AttrContext> prevEnv = attrEnv;
         ClassSymbol currentClassPrev = currentClass;
         MethodSymbol currentMethodSymPrev = currentMethodSym;
+        List<Name> currentEnumNamesPrev = currentEnumNames;
 
         currentClass = tree.sym;
         currentMethodSym = null;
+        currentEnumNames = null;
         attrEnv = typeEnvs.remove(currentClass);
         if (attrEnv == null)
             attrEnv = prevEnv;
@@ -2273,6 +2330,7 @@ public class Lower extends TreeTranslator {
         attrEnv = prevEnv;
         currentClass = currentClassPrev;
         currentMethodSym = currentMethodSymPrev;
+        currentEnumNames = currentEnumNamesPrev;
 
         // Return empty block {} as a placeholder for an inner class.
         result = make_at(tree.pos()).Block(SYNTHETIC, List.nil());
@@ -2324,6 +2382,7 @@ public class Lower extends TreeTranslator {
         ListBuffer<JCExpression> values = new ListBuffer<>();
         ListBuffer<JCTree> enumDefs = new ListBuffer<>();
         ListBuffer<JCTree> otherDefs = new ListBuffer<>();
+        ListBuffer<Name> idents = new ListBuffer<>();
         for (List<JCTree> defs = tree.defs;
              defs.nonEmpty();
              defs=defs.tail) {
@@ -2332,10 +2391,12 @@ public class Lower extends TreeTranslator {
                 visitEnumConstantDef(var, nextOrdinal++);
                 values.append(make.QualIdent(var.sym));
                 enumDefs.append(var);
+                idents.append(var.name);
             } else {
                 otherDefs.append(defs.head);
             }
         }
+        currentEnumNames = idents.toList();
 
         // synthetic private static T[] $values() { return new T[] { a, b, c }; }
         // synthetic private static final T[] $VALUES = $values();
@@ -3739,7 +3800,7 @@ public class Lower extends TreeTranslator {
                                                selector.type,
                                                currentMethodSym);
             JCStatement var = make.at(tree.pos()).VarDef(dollar_s, selector).setType(dollar_s.type);
-            newSelector = make.Indexed(map.mapVar,
+            newSelector = map.switchValue(
                     make.App(make.Select(make.Ident(dollar_s),
                             ordinalMethod)));
             newSelector =
@@ -3750,7 +3811,7 @@ public class Lower extends TreeTranslator {
                                      .setType(newSelector.type))
                         .setType(newSelector.type);
         } else {
-            newSelector = make.Indexed(map.mapVar,
+            newSelector = map.switchValue(
                     make.App(make.Select(selector,
                             ordinalMethod)));
         }
@@ -3762,7 +3823,7 @@ public class Lower extends TreeTranslator {
                     pat = makeLit(syms.intType, -1);
                 } else {
                     VarSymbol label = (VarSymbol)TreeInfo.symbol(((JCConstantCaseLabel) c.labels.head).expr);
-                    pat = map.forConstant(label);
+                    pat = map.caseValue(label);
                 }
                 newCases.append(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(pat)), c.stats, null));
             } else {
