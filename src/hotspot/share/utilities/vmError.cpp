@@ -75,6 +75,7 @@
 bool              VMError::coredump_status;
 char              VMError::coredump_message[O_BUFLEN];
 int               VMError::_current_step;
+int               VMError::_reentrant_iteration_step = -1;
 const char*       VMError::_current_step_info;
 volatile jlong    VMError::_reporting_start_time = -1;
 volatile bool     VMError::_reporting_did_timeout = false;
@@ -528,10 +529,52 @@ void VMError::clear_step_start_time() {
 // segment.
 void VMError::report(outputStream* st, bool _verbose) {
 
-# define BEGIN if (_current_step == 0) { _current_step = __LINE__;
-# define STEP(s) } if (_current_step < __LINE__) { _current_step = __LINE__; _current_step_info = s; \
-  record_step_start_time(); _step_did_timeout = false;
-# define END clear_step_start_time(); }
+// Used for  REENTRANT_STEP bookkeeping
+int reentry_step = _current_step;
+# define REENTRANT_ITERATION_STEP (_reentrant_iteration_step-1)
+# define BEGIN                                             \
+  if (_current_step == 0) {                                \
+    _current_step = __LINE__;                              \
+    {
+      // [Begin logic]
+# define STEP(s)                                           \
+    }                                                      \
+  }                                                        \
+  if (_current_step < __LINE__) {                          \
+    _current_step = __LINE__;                              \
+    _current_step_info = s;                                \
+    record_step_start_time();                              \
+    _step_did_timeout = false;                             \
+    {
+      // [Step logic]
+# define REENTRANT_STEP_IF(s,cond)                         \
+    }                                                      \
+  }                                                        \
+  if (_current_step < __LINE__) {                          \
+    reentry_step = _current_step;                          \
+    _current_step = __LINE__;                              \
+    _current_step_info = s;                                \
+    record_step_start_time();                              \
+    _step_did_timeout = false;                             \
+    if (cond) {                                            \
+      _current_step = reentry_step;                        \
+      if (_reentrant_iteration_step++ == -1) {
+        // [Renterant step pre loop logic]
+# define REENTRANT_LOOP_START(limit)                       \
+        _reentrant_iteration_step++;                       \
+      }                                                    \
+      while (REENTRANT_ITERATION_STEP  < (limit)) {
+        // [Renterant step loop logic]
+# define REENTRANT_LOOP_END                                \
+        _reentrant_iteration_step++;                       \
+      }                                                    \
+      _current_step = __LINE__;                            \
+      _reentrant_iteration_step = -1;
+      // [Renterant step post loop logic]
+# define END                                               \
+    }                                                      \
+    clear_step_start_time();                               \
+  }
 
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
@@ -599,6 +642,47 @@ void VMError::report(outputStream* st, bool _verbose) {
   TIMEOUT_TEST_STEP
   TIMEOUT_TEST_STEP
   TIMEOUT_TEST_STEP
+
+  // See corresponding test in test/runtime/ErrorHandling/TestReentrantErrorHandler.java
+  REENTRANT_STEP_IF("TestReentrantErrorHandler Step", _verbose && TestReentrantErrorHandler)
+    st->print_cr("TestReentrantErrorHandler Step: Start");
+      // Test secondary crash before loop
+    controlled_crash(TEST_SECONDARY_CRASH);
+    REENTRANT_LOOP_START(4)
+      // Test secondary crash in loop
+      if (REENTRANT_ITERATION_STEP == 0) {
+        controlled_crash(TEST_SECONDARY_CRASH);
+      }
+      // Test timeout in loop
+      if (REENTRANT_ITERATION_STEP % 2 == 1) {
+        os::infinite_sleep();
+      }
+      st->print_cr("TestReentrantErrorHandler Step: %d", REENTRANT_ITERATION_STEP);
+    REENTRANT_LOOP_END
+
+    st->print_cr("TestReentrantErrorHandler Step: Finished");
+    // Test secondary crash after loop
+    controlled_crash(TEST_SECONDARY_CRASH);
+
+  REENTRANT_STEP_IF("TestReentrantErrorHandler Step: After", _verbose && TestReentrantErrorHandler)
+    // Crashes in previous reentrant step does not change future reentrant steps
+    st->print_cr("TestReentrantErrorHandler Step: After still works");
+    REENTRANT_LOOP_START(4)
+      st->print_cr("TestReentrantErrorHandler Step: After %d", REENTRANT_ITERATION_STEP);
+    REENTRANT_LOOP_END
+    st->print_cr("TestReentrantErrorHandler Step: After End");
+
+  REENTRANT_STEP_IF("TestReentrantErrorHandler Step: Condition",
+    _verbose && TestReentrantErrorHandler && [](){
+      controlled_crash(TEST_SECONDARY_CRASH);
+      return true;
+    }())
+
+    st->print_cr("TestReentrantErrorHandler: BAD LINE.");
+    REENTRANT_LOOP_START(1)
+      st->print_cr("TestReentrantErrorHandler: BAD LINE.");
+    REENTRANT_LOOP_END
+    st->print_cr("TestReentrantErrorHandler: BAD LINE.");
 
   STEP("test safefetch in error handler")
     // test whether it is safe to use SafeFetch32 in Crash Handler. Test twice
@@ -904,14 +988,16 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("printing register info")
+  REENTRANT_STEP_IF("printing register info", _verbose && _context && _thread && Universe::is_fully_initialized())
+    st->print_cr("Register to memory mapping:");
 
-     // decode register contents if possible
-     if (_verbose && _context && _thread && Universe::is_fully_initialized()) {
-       ResourceMark rm(_thread);
-       os::print_register_info(st, _context);
-       st->cr();
-     }
+    REENTRANT_LOOP_START(os::print_nth_register_info_max_index())
+      // decode register contents if possible
+      ResourceMark rm(_thread);
+      os::print_nth_register_info(st, REENTRANT_ITERATION_STEP, _context);
+    REENTRANT_LOOP_END
+
+    st->cr();
 
   STEP("printing top of stack, instructions near pc")
 
@@ -921,24 +1007,21 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("inspecting top of stack")
+  REENTRANT_STEP_IF("inspecting top of stack", _verbose && _context && _thread && Universe::is_fully_initialized())
+    st->print_cr("Stack slot to memory mapping:");
 
-     // decode stack contents if possible
-     if (_verbose && _context && _thread && Universe::is_fully_initialized()) {
-       frame fr = os::fetch_frame_from_context(_context);
-       const int slots = 8;
-       const intptr_t *start = fr.sp();
-       const intptr_t *end = start + slots;
-       if (is_aligned(start, sizeof(intptr_t)) && os::is_readable_range(start, end)) {
-         st->print_cr("Stack slot to memory mapping:");
-         for (int i = 0; i < slots; ++i) {
-           st->print("stack at sp + %d slots: ", i);
-           ResourceMark rm(_thread);
-           os::print_location(st, *(start + i));
-         }
-       }
-       st->cr();
-     }
+    REENTRANT_LOOP_START(8)
+      // decode stack contents if possible
+      frame fr = os::fetch_frame_from_context(_context);
+      const intptr_t *slot = fr.sp() + REENTRANT_ITERATION_STEP;
+      if (is_aligned(slot, sizeof(intptr_t)) && os::is_readable_pointer(slot)) {
+        st->print("stack at sp + %d slots: ", REENTRANT_ITERATION_STEP);
+        ResourceMark rm(_thread);
+        os::print_location(st, *(slot));
+      }
+    REENTRANT_LOOP_END
+
+    st->cr();
 
   STEP("printing code blobs if possible")
 
@@ -1234,6 +1317,10 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 # undef BEGIN
 # undef STEP
+# undef REENTRANT_STEP_IF
+# undef REENTRANT_LOOP_START
+# undef REENTRANT_ITERATION_STEP
+# undef REENTRANT_LOOP_END
 # undef END
 }
 
@@ -1616,6 +1703,9 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         // The current step had a timeout. Lets continue reporting with the next step.
         st->print_raw("[timeout occurred during error reporting in step \"");
         st->print_raw(_current_step_info);
+        if (_reentrant_iteration_step > 0) {
+          st->print(", iteration step #%d", _reentrant_iteration_step-1);
+        }
         st->print_cr("\"] after " INT64_FORMAT " s.",
                      (int64_t)
                      ((get_current_timestamp() - _step_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
@@ -1633,8 +1723,13 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         stringStream ss(buffer, sizeof(buffer));
         // Note: this string does get parsed by a number of jtreg tests,
         // see hotspot/jtreg/runtime/ErrorHandling.
-        ss.print("[error occurred during error reporting (%s), id 0x%x",
-                   _current_step_info, id);
+        if (_reentrant_iteration_step > 0) {
+          ss.print("[error occurred during error reporting (%s, iteration step #%d), id 0x%x",
+                    _current_step_info, _reentrant_iteration_step-1, id);
+        } else {
+          ss.print("[error occurred during error reporting (%s), id 0x%x",
+                    _current_step_info, id);
+        }
         char signal_name[64];
         if (os::exception_name(id, signal_name, sizeof(signal_name))) {
           ss.print(", %s (0x%x) at pc=" PTR_FORMAT, signal_name, id, p2i(pc));
