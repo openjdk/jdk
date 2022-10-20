@@ -22,6 +22,7 @@
  */
 package test.rowset;
 
+import java.util.Locale;
 import java.sql.SQLException;
 import javax.sql.rowset.RowSetProvider;
 import org.testng.annotations.Test;
@@ -43,6 +44,9 @@ public class ValidateResourceBundleAccess{
 
     @Test
     public void testResourceBundleAccess() throws SQLException {
+        // Checking against English messages, set to US Locale
+        Locale.setDefault(Locale.US);
+
         var rsr = RowSetProvider.newFactory();
         var crs =rsr.createCachedRowSet();
         var jrs = rsr.createJdbcRowSet();
@@ -51,12 +55,18 @@ public class ValidateResourceBundleAccess{
         // is found from the resource bundle
         try {
             jrs.getMetaData();
+            // Unexpected case where exception is not forced
+            var msg = "$$$ Error: SQLException was not caught!%n";
+            throw new RuntimeException(String.format(msg));
         } catch (SQLException sqe) {
             assertTrue(sqe.getMessage().equals(invalidState));
         }
         // Now tests via CachedRowSet
         try {
             crs.execute();
+            // Unexpected case where exception is not forced
+            var msg = "$$$ Error: SQLException was not caught!%n";
+            throw new RuntimeException(String.format(msg));
         } catch (SQLException e) {
             assertTrue(e.getMessage().equals(rsReaderError));
         }

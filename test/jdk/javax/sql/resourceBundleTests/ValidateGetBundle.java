@@ -40,8 +40,6 @@ public class ValidateGetBundle{
     private static final String FULLY_QUALIFIED_CLASS_NAME = "com.sun.rowset.RowSetResourceBundle";
     // Resource bundle base name via a path
     private static final String PATH_TO_BUNDLE = "com/sun/rowset/RowSetResourceBundle";
-    // Use US Locale for fetching bundle
-    private static final Locale US_LOCALE = Locale.US;
 
     public static void main(String[] args) {
         // The resource bundle should be found with the fully qualified class name
@@ -58,7 +56,7 @@ public class ValidateGetBundle{
     private static void testResourceBundleAccess(String bundleName, boolean expectBundle) {
         try {
             var bundle = ResourceBundle.getBundle(bundleName,
-                    US_LOCALE, JdbcRowSetResourceBundle.class.getModule());
+                    Locale.US, JdbcRowSetResourceBundle.class.getModule());
             if (!expectBundle) {
                 String message = "$$$ '%s' shouldn't have loaded!%n";
                 throw new RuntimeException(String.format(message, bundleName));
